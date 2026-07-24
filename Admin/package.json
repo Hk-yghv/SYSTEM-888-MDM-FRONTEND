@@ -1,11 +1,11 @@
 {
   "name": "SYSTEM MDM",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm version patch --no-git-tag-version && node generate-manifest.js && vite build",
+    "build": "npm version patch --no-git-tag-version && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
