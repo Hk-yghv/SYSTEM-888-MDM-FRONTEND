@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    outline: none;
+    font-family: sans-serif;
+}
+
+body {
+    width: 100%;
+    background: #fff;
+    color: #000;
+}
+
+@font-face {
+    font-family: 'khmer';
+    src: url('../assets/font/font_khmer.ttf') format('woff2');
+}
+
+@font-face {
+    font-family: "bokor";
+    src: url('../assets/font/font_bokor.ttf') format('woff2');
+}
+
+@font-face {
+    font-family: 'moul';
+    src: url('../assets/font/font_moul.ttf') format('woff2');
+}
+
+@font-face {
+    font-family: "fasthand";
+    src: url('../assets/font/font_fasthand.ttf') format('woff2');
+}
+
+@font-face {
+    font-family: 'akaya';
+    src: url('../assets/font/font-akayaKanadaka.ttf') format('woff2');
+}

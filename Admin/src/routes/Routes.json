@@ -1,0 +1,30 @@
+{
+    "start": "/",
+    "dashboard": "/dashboard",
+    "customer": "/customer",
+    "device": "/device",
+    "contract": {
+        "application": "/contract/application",
+        "activated": "/contract/activated",
+        "check": "/contract/check",
+        "redeem": "/contract/redeem",
+        "comments": "/contract/comments",
+        "blacklist": "/contract/blacklist"
+    },
+    "installment": {
+        "paymentHistory": "/installment/paymentHistory"
+    },
+    "lostphone": {
+        "actionLockphone": "/lostphone/actions",
+        "lockPhone": "/lostphone/lockphone",
+        "unlockPhone": "/lostphone/unlockphone"
+    },
+    "wallpaper": {
+        "actionWallpaper": "/wallpaper/actions",
+        "lockWallpaper": "/wallpaper/lockphone",
+        "unlockWallpaper": "/wallpaper/unlockphone"
+    },
+    "settings": {
+        "controlSystem": "/settings/control-system"
+    }
+}

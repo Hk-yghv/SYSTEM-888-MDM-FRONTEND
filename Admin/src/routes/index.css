@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@layer base {
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        outline: none;
+        font-family: sans-serif;
+    }
+
+    body {
+        width: 100%;
+        background: #070913;
+        color: #e5e7eb;
+    }
+
+    /* CUSTOM SLEEK SCROLLBAR DESIGN */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #090c18;
+        border-radius: 99px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #4f46e5 0%, #06b6d4 100%);
+        border-radius: 99px;
+        box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #6366f1 0%, #22d3ee 100%);
+    }
+}
+
+@font-face {
+    font-family: 'khmer';
+    src: url('../assets/font/font_khmer.ttf') format('woff2');
+}
+
+@font-face {
+    font-family: "bokor";
+    src: url('../assets/font/font_bokor.ttf') format('woff2');
+}
+
+@font-face {
+    font-family: 'moul';
+    src: url('../assets/font/font_moul.ttf') format('woff2');
+}
+
+@font-face {
+    font-family: "fasthand";
+    src: url('../assets/font/font_fasthand.ttf') format('woff2');
+}
+
+@font-face {
+    font-family: 'akaya';
+    src: url('../assets/font/font-akayaKanadaka.ttf') format('woff2');
+}
+
+[select="none"] {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* CUSTOM ICON & GLASS ANIMATIONS */
+@keyframes pulseGlow {
+    0%, 100% {
+        filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.6));
+        transform: scale(1);
+    }
+    50% {
+        filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.9));
+        transform: scale(1.08);
+    }
+}
+
+@keyframes floatSoft {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-3px); }
+}
+
+@keyframes rotateReload {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.icon-animated-glow {
+    animation: pulseGlow 3s infinite ease-in-out;
+}
+
+.icon-float {
+    animation: floatSoft 4s infinite ease-in-out;
+}
+
+.spin-reload {
+    animation: rotateReload 0.8s linear infinite;
+}
+
+.glass-card {
+    background: rgba(17, 24, 39, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-nav-item {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-nav-item:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: translateX(4px);
+}
+
+.glass-nav-item:hover svg {
+    transform: scale(1.15) rotate(4deg);
+    color: #818cf8;
+    filter: drop-shadow(0 0 6px rgba(129, 140, 248, 0.8));
+}
+
+.gradient-text-blue {
+    background: linear-gradient(135deg, #60a5fa 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
