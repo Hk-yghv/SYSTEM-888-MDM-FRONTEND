@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { encryptText, decryptText } from '../utils/cryptoUtil.js';
 
 const contractSchema = new mongoose.Schema({
     contractId: { type: String, required: true, unique: true },
@@ -22,6 +21,7 @@ const contractSchema = new mongoose.Schema({
 
     // Device Information
     model: { type: String, required: true },
+    brand: { type: String, default: '' },
     serialNumber: { type: String, required: true },
     imei1: { type: String, default: '' },
     imei2: { type: String, default: '' },
@@ -52,31 +52,5 @@ const contractSchema = new mongoose.Schema({
     googleDrivePhotoUrl: { type: String, default: '' }
 }, { timestamps: true });
 
-// Encrypt sensitive customer details before saving
-contractSchema.pre('save', function (next) {
-    if (this.isModified('idCardNumber') && this.idCardNumber && !this.idCardNumber.includes(':')) {
-        this.idCardNumber = encryptText(this.idCardNumber);
-    }
-    if (this.isModified('phone') && this.phone && !this.phone.includes(':')) {
-        this.phone = encryptText(this.phone);
-    }
-    next();
-});
-
-contractSchema.post('find', function (docs) {
-    if (Array.isArray(docs)) {
-        docs.forEach(doc => {
-            if (doc.idCardNumber) doc.idCardNumber = decryptText(doc.idCardNumber);
-            if (doc.phone) doc.phone = decryptText(doc.phone);
-        });
-    }
-});
-
-contractSchema.post('findOne', function (doc) {
-    if (doc) {
-        if (doc.idCardNumber) doc.idCardNumber = decryptText(doc.idCardNumber);
-        if (doc.phone) doc.phone = decryptText(doc.phone);
-    }
-});
-
 export default mongoose.model('Contract', contractSchema);
+

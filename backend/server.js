@@ -34,16 +34,28 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/system_mdm';
 const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
 
-// Helper to decrypt all contract fields to plain text
+// User-agent parser utility
+const parseUserAgent = (ua) => {
+    let os = 'Unknown OS';
+    let browser = 'Unknown Browser';
+    if (!ua) return { os, browser };
+    if (ua.includes('Windows')) os = 'Windows';
+    else if (ua.includes('Macintosh') || ua.includes('Mac OS')) os = 'macOS';
+    else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+    else if (ua.includes('Android')) os = 'Android';
+    else if (ua.includes('Linux')) os = 'Linux';
+
+    if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+    else if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Edge') || ua.includes('Edg')) browser = 'Edge';
+    return { os, browser };
+};
+
+// Helper to decrypt all contract fields to plain text (kept for backwards compatibility, no-op now)
 const sanitizeAndDecryptContract = (c) => {
     if (!c) return c;
     const obj = c.toObject ? c.toObject() : { ...c };
-    if (obj.idCardNumber) obj.idCardNumber = decryptText(obj.idCardNumber);
-    if (obj.phone) obj.phone = decryptText(obj.phone);
-    if (obj.relativePhone) obj.relativePhone = decryptText(obj.relativePhone);
-    if (obj.serialNumber) obj.serialNumber = decryptText(obj.serialNumber);
-    if (obj.imei1) obj.imei1 = decryptText(obj.imei1);
-    if (obj.imei2) obj.imei2 = decryptText(obj.imei2);
     return obj;
 };
 
@@ -59,6 +71,8 @@ const MEM_DB = {
             username: '@hakyonghouv',
             email: 'yonghouvh@gmail.com',
             password: '', // set below
+            secondPassword: '',
+            brand: '',
             role: 'Administrator',
             isImmutable: true,
             status: 'Online',
@@ -77,7 +91,8 @@ const MEM_DB = {
         droplists: [
             { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
             { category: 'Contract Types', items: ['Standard Installment', 'VIP Premium', 'Corporate Plan'] },
-            { category: 'Payment Methods', items: ['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer'] }
+            { category: 'Payment Methods', items: ['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer'] },
+            { category: 'Brands', items: ['Apple', 'Samsung', 'OPPO', 'vivo', 'Xiaomi'] }
         ],
         call_phone_display: {
             title: 'SYSTEM MDM HOTLINE',
@@ -136,6 +151,8 @@ const ensureMasterAdmin = async () => {
                 username: masterUsername,
                 email: 'yonghouvh@gmail.com',
                 password: hashedPassword,
+                secondPassword: '',
+                brand: '',
                 role: 'Administrator',
                 isImmutable: true,
                 status: 'Online',
@@ -191,33 +208,68 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid username or password' });
         }
 
-        if (user.twoFactorEnabled) {
+        if (user.twoFactorEnabled && user.telegramId) {
             const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
             user.lastOtp = otpCode;
             if (isMongoConnected) await user.save();
 
             if (bot && user.telegramId) {
-                try {
-                    await bot.sendMessage(user.telegramId, `🔑 SYSTEM MDM Verification Code: ${otpCode}`);
-                } catch (tErr) { }
+                const otpMsg = `🔑 <b>SYSTEM MDM Verification Code</b>\n\n` +
+                               `Code: <tg-spoiler><code>${otpCode}</code></tg-spoiler>\n\n` +
+                               `<i>Tap the code inside the blurred box to copy.</i>`;
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        await bot.sendMessage(user.telegramId, otpMsg, { parse_mode: 'HTML' });
+                    } catch (tErr) {
+                        console.error('Error sending Telegram OTP message:', tErr.message);
+                    }
+                }
             }
 
-            return res.json({ require2FA: true, username: user.username, demoOtp: otpCode });
+            return res.json({ require2FA: true, username: user.username });
         }
 
+        // Direct Login without 2FA
         user.status = 'Online';
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+        const ua = req.headers['user-agent'] || 'Unknown Browser';
+        const { os, browser } = parseUserAgent(ua);
+        
+        user.loginHistory.push({
+            timestamp: new Date(),
+            ip,
+            deviceInfo: `${browser} on ${os}`
+        });
+
         if (isMongoConnected) await user.save();
+
+        // Send direct login alert to Telegram
+        if (bot && user.telegramId) {
+            const time = new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
+            const loginMessage = `🔔 <b>SYSTEM MDM Login Detected</b>\n\n` +
+                `👤 <b>Username:</b> ${user.username}\n` +
+                `🖥️ <b>OS:</b> ${os}\n` +
+                `🌐 <b>Browser:</b> ${browser}\n` +
+                `📍 <b>IP Address:</b> ${ip}\n` +
+                `⏰ <b>Time:</b> ${time} (Cambodia Time)\n\n` +
+                `<i>If this wasn't you, please secure your account immediately.</i>`;
+            try {
+                await bot.sendMessage(user.telegramId, loginMessage, { parse_mode: 'HTML' });
+            } catch (tErr) {}
+        }
 
         const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
 
         res.json({
             token,
+            deviceInfo: { ip, os, browser },
             user: {
                 userId: user.userId,
                 name: user.name,
                 username: user.username,
                 email: user.email,
                 role: user.role,
+                brand: user.brand || '',
                 isImmutable: user.isImmutable,
                 telegramId: user.telegramId,
                 twoFactorEnabled: user.twoFactorEnabled,
@@ -231,18 +283,52 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/auth/verify-otp', async (req, res) => {
     try {
-        const { username, otp } = req.body;
+        const { username, otp, secondPassword } = req.body;
         let user = isMongoConnected ? await User.findOne({ username }) : MEM_DB.users.find(u => u.username === username);
         if (!user || user.lastOtp !== otp) {
             return res.status(400).json({ error: 'Invalid OTP Verification Code' });
         }
 
+        // Verify second-tier password if configured on user model
+        if (user.secondPassword) {
+            const isMatch = await bcrypt.compare(secondPassword || '', user.secondPassword);
+            if (!isMatch) {
+                return res.status(401).json({ error: 'Invalid Second-Tier Password (Password តង់ទី២ មិនត្រឹមត្រូវ)' });
+            }
+        }
+
         user.status = 'Online';
         user.lastOtp = '';
+
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+        const ua = req.headers['user-agent'] || 'Unknown Browser';
+        const { os, browser } = parseUserAgent(ua);
+        
+        user.loginHistory.push({
+            timestamp: new Date(),
+            ip,
+            deviceInfo: `${browser} on ${os}`
+        });
+
         if (isMongoConnected) await user.save();
 
+        // Send login alert to Telegram
+        if (bot && user.telegramId) {
+            const time = new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
+            const loginMessage = `🔔 <b>SYSTEM MDM Login Detected</b>\n\n` +
+                `👤 <b>Username:</b> ${user.username}\n` +
+                `🖥️ <b>OS:</b> ${os}\n` +
+                `🌐 <b>Browser:</b> ${browser}\n` +
+                `📍 <b>IP Address:</b> ${ip}\n` +
+                `⏰ <b>Time:</b> ${time} (Cambodia Time)\n\n` +
+                `<i>If this wasn't you, please secure your account immediately.</i>`;
+            try {
+                await bot.sendMessage(user.telegramId, loginMessage, { parse_mode: 'HTML' });
+            } catch (tErr) {}
+        }
+
         const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
-        res.json({ token, user });
+        res.json({ token, user, deviceInfo: { ip, os, browser } });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -263,7 +349,7 @@ app.get('/api/users', async (req, res) => {
 
 app.post('/api/users', async (req, res) => {
     try {
-        const { name, username, email, password, role, permissions } = req.body;
+        const { name, username, email, password, role, permissions, brand } = req.body;
         const hashedPassword = await bcrypt.hash(password || '123456', 10);
         const newUser = {
             _id: 'u-' + Date.now(),
@@ -272,6 +358,8 @@ app.post('/api/users', async (req, res) => {
             username,
             email,
             password: hashedPassword,
+            secondPassword: '',
+            brand: brand || '',
             role: role || 'Staff',
             status: 'Offline',
             permissions: permissions || {}
@@ -304,11 +392,14 @@ app.delete('/api/users/:id', async (req, res) => {
 
 app.post('/api/users/telegram-setup', async (req, res) => {
     try {
-        const { username, telegramId, enable2FA } = req.body;
+        const { username, telegramId, enable2FA, secondPassword } = req.body;
         let user = isMongoConnected ? await User.findOne({ username }) : MEM_DB.users.find(u => u.username === username);
         if (user) {
             user.telegramId = telegramId;
             user.twoFactorEnabled = enable2FA;
+            if (secondPassword) {
+                user.secondPassword = await bcrypt.hash(secondPassword, 10);
+            }
             if (isMongoConnected) await user.save();
         }
         res.json({ message: 'Telegram 2FA updated', user });
@@ -317,22 +408,68 @@ app.post('/api/users/telegram-setup', async (req, res) => {
     }
 });
 
+// Update Profile & Password API
+app.post('/api/users/update-profile', async (req, res) => {
+    try {
+        const { username, email, oldPassword, newPassword, telegramId, enable2FA, secondPassword } = req.body;
+        let user = isMongoConnected ? await User.findOne({ username }) : MEM_DB.users.find(u => u.username === username);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (email) user.email = email;
+        if (telegramId !== undefined) user.telegramId = telegramId;
+        if (enable2FA !== undefined) user.twoFactorEnabled = !!enable2FA;
+
+        if (oldPassword && newPassword) {
+            const isMatch = await bcrypt.compare(oldPassword, user.password);
+            if (!isMatch) {
+                return res.status(400).json({ error: 'Current password is incorrect (Password បច្ចុប្បន្នមិនត្រឹមត្រូវ)' });
+            }
+            user.password = await bcrypt.hash(newPassword, 10);
+        }
+
+        if (secondPassword) {
+            user.secondPassword = await bcrypt.hash(secondPassword, 10);
+        }
+
+        if (isMongoConnected) {
+            await user.save();
+        } else {
+            const idx = MEM_DB.users.findIndex(u => u.username === username);
+            if (idx !== -1) MEM_DB.users[idx] = user;
+        }
+
+        res.json({ message: 'Profile updated successfully', user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // CONTRACTS API
 app.get('/api/contracts', async (req, res) => {
     try {
-        const { status } = req.query;
+        const { status, userBrand, userRole } = req.query;
+        let query = {};
+        if (status) query.status = status;
+
+        if (userBrand && userRole !== 'Administrator') {
+            query.brand = userBrand;
+        }
+
         if (isMongoConnected) {
-            const filter = status ? { status } : {};
-            const contracts = await Contract.find(filter).sort({ createdAt: -1 });
+            const contracts = await Contract.find(query).sort({ createdAt: -1 });
             const decrypted = contracts.map(sanitizeAndDecryptContract);
             return res.json(decrypted);
         }
-        const filtered = status ? MEM_DB.contracts.filter(c => c.status === status) : MEM_DB.contracts;
+        let filtered = MEM_DB.contracts;
+        if (status) filtered = filtered.filter(c => c.status === status);
+        if (userBrand && userRole !== 'Administrator') filtered = filtered.filter(c => c.brand === userBrand);
         const decrypted = filtered.map(sanitizeAndDecryptContract);
         res.json(decrypted);
     } catch (err) {
         const { status } = req.query;
-        const filtered = status ? MEM_DB.contracts.filter(c => c.status === status) : MEM_DB.contracts;
+        let filtered = MEM_DB.contracts;
+        if (status) filtered = filtered.filter(c => c.status === status);
+        if (userBrand && userRole !== 'Administrator') filtered = filtered.filter(c => c.brand === userBrand);
         const decrypted = filtered.map(sanitizeAndDecryptContract);
         res.json(decrypted);
     }
@@ -389,11 +526,23 @@ app.delete('/api/contracts/:id', async (req, res) => {
 // PAYMENTS & QR CODE API
 app.get('/api/payments', async (req, res) => {
     try {
+        const { userBrand, userRole } = req.query;
         if (isMongoConnected) {
-            const payments = await Payment.find().sort({ createdAt: -1 });
+            let filter = {};
+            if (userBrand && userRole !== 'Administrator') {
+                const matchedContracts = await Contract.find({ brand: userBrand }).select('contractId');
+                const contractIds = matchedContracts.map(c => c.contractId);
+                filter.contractId = { $in: contractIds };
+            }
+            const payments = await Payment.find(filter).sort({ createdAt: -1 });
             return res.json(payments);
         }
-        res.json(MEM_DB.payments);
+        let filtered = MEM_DB.payments;
+        if (userBrand && userRole !== 'Administrator') {
+            const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
+            filtered = filtered.filter(p => contractIds.includes(p.contractId));
+        }
+        res.json(filtered);
     } catch (err) {
         res.json(MEM_DB.payments);
     }
@@ -401,9 +550,13 @@ app.get('/api/payments', async (req, res) => {
 
 app.post('/api/payments', async (req, res) => {
     try {
+        const { contractId } = req.body;
+        let contract = isMongoConnected ? await Contract.findOne({ contractId }) : MEM_DB.contracts.find(c => c.contractId === contractId);
+        
         const payment = {
             _id: 'p-' + Date.now(),
             paymentId: 'PAY-' + Math.floor(1000 + Math.random() * 9000),
+            brand: contract?.brand || '',
             ...req.body
         };
         if (isMongoConnected) {
@@ -590,6 +743,7 @@ app.post('/api/lostphone/toggle-lock', async (req, res) => {
             _id: 'plog-' + Date.now(),
             logId: 'PLOG-' + Date.now(),
             contractId: contract?.contractId || contractId,
+            brand: contract?.brand || '',
             customerName: contract ? `${contract.customerNameEn} - ${contract.customerNameKh}` : 'Customer',
             model: contract?.model || 'Device',
             serialNumber: contract?.serialNumber || 'SN-UNKNOWN',
@@ -616,17 +770,31 @@ app.post('/api/lostphone/toggle-lock', async (req, res) => {
 
 app.get('/api/phonelogs', async (req, res) => {
     try {
-        const { action } = req.query;
+        const { action, userBrand, userRole } = req.query;
+        let query = {};
+        if (action) query.action = action;
+
+        if (userBrand && userRole !== 'Administrator') {
+            const matchedContracts = await Contract.find({ brand: userBrand }).select('contractId');
+            const contractIds = matchedContracts.map(c => c.contractId);
+            query.contractId = { $in: contractIds };
+        }
+
         if (isMongoConnected) {
-            const filter = action ? { action } : {};
-            const logs = await PhoneLog.find(filter).sort({ createdAt: -1 });
+            const logs = await PhoneLog.find(query).sort({ createdAt: -1 });
             return res.json(logs);
         }
-        const filtered = action ? MEM_DB.phoneLogs.filter(l => l.action === action) : MEM_DB.phoneLogs;
+        let filtered = MEM_DB.phoneLogs;
+        if (action) filtered = filtered.filter(l => l.action === action);
+        if (userBrand && userRole !== 'Administrator') {
+            const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
+            filtered = filtered.filter(l => contractIds.includes(l.contractId));
+        }
         res.json(filtered);
     } catch (err) {
         const { action } = req.query;
-        const filtered = action ? MEM_DB.phoneLogs.filter(l => l.action === action) : MEM_DB.phoneLogs;
+        let filtered = MEM_DB.phoneLogs;
+        if (action) filtered = filtered.filter(l => l.action === action);
         res.json(filtered);
     }
 });
@@ -645,6 +813,7 @@ app.post('/api/wallpaper/toggle-lock', async (req, res) => {
             _id: 'wlog-' + Date.now(),
             logId: 'WLOG-' + Date.now(),
             contractId: contract?.contractId || contractId,
+            brand: contract?.brand || '',
             customerName: contract ? `${contract.customerNameEn} - ${contract.customerNameKh}` : 'Customer',
             model: contract?.model || 'Device',
             serialNumber: contract?.serialNumber || 'SN-UNKNOWN',
@@ -668,17 +837,31 @@ app.post('/api/wallpaper/toggle-lock', async (req, res) => {
 
 app.get('/api/wallpaperlogs', async (req, res) => {
     try {
-        const { action } = req.query;
+        const { action, userBrand, userRole } = req.query;
+        let query = {};
+        if (action) query.action = action;
+
+        if (userBrand && userRole !== 'Administrator') {
+            const matchedContracts = await Contract.find({ brand: userBrand }).select('contractId');
+            const contractIds = matchedContracts.map(c => c.contractId);
+            query.contractId = { $in: contractIds };
+        }
+
         if (isMongoConnected) {
-            const filter = action ? { action } : {};
-            const logs = await WallpaperLog.find(filter).sort({ createdAt: -1 });
+            const logs = await WallpaperLog.find(query).sort({ createdAt: -1 });
             return res.json(logs);
         }
-        const filtered = action ? MEM_DB.wallpaperLogs.filter(l => l.action === action) : MEM_DB.wallpaperLogs;
+        let filtered = MEM_DB.wallpaperLogs;
+        if (action) filtered = filtered.filter(l => l.action === action);
+        if (userBrand && userRole !== 'Administrator') {
+            const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
+            filtered = filtered.filter(l => contractIds.includes(l.contractId));
+        }
         res.json(filtered);
     } catch (err) {
         const { action } = req.query;
-        const filtered = action ? MEM_DB.wallpaperLogs.filter(l => l.action === action) : MEM_DB.wallpaperLogs;
+        let filtered = MEM_DB.wallpaperLogs;
+        if (action) filtered = filtered.filter(l => l.action === action);
         res.json(filtered);
     }
 });
@@ -686,11 +869,29 @@ app.get('/api/wallpaperlogs', async (req, res) => {
 // CONTROL SYSTEM CONFIG API
 app.get('/api/controlsystem', async (req, res) => {
     try {
+        const brand = req.query.brand || '';
         if (isMongoConnected) {
-            const configs = await ControlSystem.find();
+            let configs = await ControlSystem.find({ brand });
+            if (configs.length === 0 && brand) {
+                // If brand specific configs don't exist, fallback to global configs
+                configs = await ControlSystem.find({ brand: '' });
+            }
             const mapped = {};
             configs.forEach(c => mapped[c.key] = c.value);
             if (Object.keys(mapped).length > 0) return res.json(mapped);
+        }
+        
+        // Local/In-Memory fallback:
+        if (!MEM_DB.controlSystems) {
+            MEM_DB.controlSystems = [{ brand: '', ...MEM_DB.controlSystem }];
+        }
+        let memConfig = MEM_DB.controlSystems.find(c => c.brand === brand);
+        if (!memConfig && brand) {
+            memConfig = MEM_DB.controlSystems.find(c => c.brand === '');
+        }
+        if (memConfig) {
+            const { brand: _, ...rest } = memConfig;
+            return res.json(rest);
         }
         res.json(MEM_DB.controlSystem);
     } catch (err) {
@@ -700,12 +901,26 @@ app.get('/api/controlsystem', async (req, res) => {
 
 app.post('/api/controlsystem', async (req, res) => {
     try {
-        const { key, value } = req.body;
+        const { key, value, brand } = req.body;
+        const targetBrand = brand || '';
         if (isMongoConnected) {
-            await ControlSystem.findOneAndUpdate({ key }, { key, value }, { upsert: true, new: true });
+            await ControlSystem.findOneAndUpdate(
+                { key, brand: targetBrand },
+                { key, value, brand: targetBrand },
+                { upsert: true, new: true }
+            );
         }
-        MEM_DB.controlSystem[key] = value;
-        res.json({ key, value });
+        
+        if (!MEM_DB.controlSystems) {
+            MEM_DB.controlSystems = [{ brand: '', ...MEM_DB.controlSystem }];
+        }
+        let memConfig = MEM_DB.controlSystems.find(c => c.brand === targetBrand);
+        if (!memConfig) {
+            memConfig = { brand: targetBrand };
+            MEM_DB.controlSystems.push(memConfig);
+        }
+        memConfig[key] = value;
+        res.json({ key, value, brand: targetBrand });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -714,32 +929,52 @@ app.post('/api/controlsystem', async (req, res) => {
 // DASHBOARD STATS API — uses MongoDB when available
 app.get('/api/dashboard/stats', async (req, res) => {
     try {
+        const { userBrand, userRole } = req.query;
         let totalContracts, activatedContracts, applicationContracts, checkContracts,
             redeemContracts, blacklistContracts, commentsContracts,
             lockedPhones, unlockedPhones, lockedWallpapers, unlockedWallpapers,
             totalRevenue, paymentCount;
 
+        let query = {};
+        if (userBrand && userRole !== 'Administrator') {
+            query.brand = userBrand;
+        }
+
         if (isMongoConnected) {
             [totalContracts, activatedContracts, applicationContracts, checkContracts,
              redeemContracts, blacklistContracts, commentsContracts,
-             lockedPhones, lockedWallpapers, paymentCount] = await Promise.all([
-                Contract.countDocuments(),
-                Contract.countDocuments({ status: 'Activated' }),
-                Contract.countDocuments({ status: 'Application' }),
-                Contract.countDocuments({ status: 'Check' }),
-                Contract.countDocuments({ status: 'Redeem' }),
-                Contract.countDocuments({ status: 'Blacklist' }),
-                Contract.countDocuments({ status: 'Comments' }),
-                Contract.countDocuments({ lockPhoneStatus: 'Locked' }),
-                Contract.countDocuments({ lockWallpaperStatus: 'Locked' }),
-                Payment.countDocuments()
+             lockedPhones, lockedWallpapers] = await Promise.all([
+                Contract.countDocuments(query),
+                Contract.countDocuments({ ...query, status: 'Activated' }),
+                Contract.countDocuments({ ...query, status: 'Application' }),
+                Contract.countDocuments({ ...query, status: 'Check' }),
+                Contract.countDocuments({ ...query, status: 'Redeem' }),
+                Contract.countDocuments({ ...query, status: 'Blacklist' }),
+                Contract.countDocuments({ ...query, status: 'Comments' }),
+                Contract.countDocuments({ ...query, lockPhoneStatus: 'Locked' }),
+                Contract.countDocuments({ ...query, lockWallpaperStatus: 'Locked' })
             ]);
             unlockedPhones = totalContracts - lockedPhones;
             unlockedWallpapers = totalContracts - lockedWallpapers;
-            const revenueAgg = await Payment.aggregate([{ $group: { _id: null, total: { $sum: '$amount' } } }]);
+
+            let paymentQuery = {};
+            if (userBrand && userRole !== 'Administrator') {
+                const matchedContracts = await Contract.find({ brand: userBrand }).select('contractId');
+                const contractIds = matchedContracts.map(c => c.contractId);
+                paymentQuery.contractId = { $in: contractIds };
+            }
+
+            paymentCount = await Payment.countDocuments(paymentQuery);
+            const revenueAgg = await Payment.aggregate([
+                { $match: paymentQuery },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]);
             totalRevenue = revenueAgg[0]?.total || 0;
         } else {
-            const contracts = MEM_DB.contracts;
+            const contracts = MEM_DB.contracts.filter(c => {
+                if (userBrand && userRole !== 'Administrator') return c.brand === userBrand;
+                return true;
+            });
             totalContracts = contracts.length;
             activatedContracts = contracts.filter(c => c.status === 'Activated').length;
             applicationContracts = contracts.filter(c => c.status === 'Application').length;
@@ -751,8 +986,14 @@ app.get('/api/dashboard/stats', async (req, res) => {
             unlockedPhones = contracts.filter(c => c.lockPhoneStatus !== 'Locked').length;
             lockedWallpapers = contracts.filter(c => c.lockWallpaperStatus === 'Locked').length;
             unlockedWallpapers = contracts.filter(c => c.lockWallpaperStatus !== 'Locked').length;
-            totalRevenue = MEM_DB.payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-            paymentCount = MEM_DB.payments.length;
+
+            const contractIds = contracts.map(c => c.contractId);
+            const filteredPayments = MEM_DB.payments.filter(p => {
+                if (userBrand && userRole !== 'Administrator') return contractIds.includes(p.contractId);
+                return true;
+            });
+            totalRevenue = filteredPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+            paymentCount = filteredPayments.length;
         }
 
         res.json({

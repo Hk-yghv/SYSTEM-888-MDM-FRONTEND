@@ -6,6 +6,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const { API_BASE, user } = useAuth();
 
     const [form, setForm] = useState({
+        brand: user?.brand || '',
         customerNameEn: '',
         customerNameKh: '',
         idCardNumber: '',
@@ -36,11 +37,52 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         monthlyPayment: 100
     });
 
+    const [brandsList, setBrandsList] = useState([]);
+    const [modelsList, setModelsList] = useState([]);
     const [submitting, setSubmitting] = useState(false);
+
+    // Fetch brands list globally on mount
+    useEffect(() => {
+        const fetchGlobalBrands = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/controlsystem?brand=`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const brandCat = data.droplists?.find(d => d.category === 'Brands');
+                    if (brandCat) setBrandsList(brandCat.items || []);
+                }
+            } catch (err) {
+                console.error('Global brands fetch error:', err);
+            }
+        };
+        fetchGlobalBrands();
+    }, [API_BASE]);
+
+    // Fetch brand specific models whenever brand changes
+    useEffect(() => {
+        const fetchBrandConfig = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/controlsystem?brand=${form.brand}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const modelCat = data.droplists?.find(d => d.category === 'Device Models');
+                    if (modelCat) {
+                        setModelsList(modelCat.items || []);
+                    } else {
+                        setModelsList([]);
+                    }
+                }
+            } catch (err) {
+                console.error('Fetch brand config error:', err);
+            }
+        };
+        fetchBrandConfig();
+    }, [form.brand, API_BASE]);
 
     useEffect(() => {
         if (editData) {
             setForm({
+                brand: editData.brand || user?.brand || '',
                 customerNameEn: editData.customerNameEn || editData.name_english || '',
                 customerNameKh: editData.customerNameKh || editData.name_khmer || '',
                 idCardNumber: editData.idCardNumber || editData.id_number || '',
@@ -70,8 +112,13 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 interestType: editData.interestType || '14%',
                 monthlyPayment: editData.monthlyPayment || 100
             });
+        } else {
+            setForm(prev => ({
+                ...prev,
+                brand: user?.brand || ''
+            }));
         }
-    }, [editData]);
+    }, [editData, user]);
 
     const handleChange = (e) => {
         const { id, value } = e.target;
@@ -182,6 +229,21 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 </select>
                             </div>
                             <div className="flex flex-col gap-1">
+                                <label htmlFor="brand" className="font-semibold text-gray-400">Brand (ម៉ាក)</label>
+                                <select
+                                    id="brand"
+                                    value={form.brand}
+                                    onChange={handleChange}
+                                    disabled={user?.role !== 'Administrator'}
+                                    className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 font-semibold disabled:opacity-60"
+                                >
+                                    <option value="">Select Brand</option>
+                                    {brandsList.map((b, idx) => (
+                                        <option key={idx} value={b}>{b}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-1">
                                 <label htmlFor="birthAddress" className="font-semibold text-gray-400">Birth Address</label>
                                 <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100" type="text" id="birthAddress" value={form.birthAddress} onChange={handleChange} placeholder="Birth address" />
                             </div>
@@ -209,7 +271,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 <label htmlFor="urlFb" className="font-semibold text-gray-400">URL Facebook</label>
                                 <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100" type="text" id="urlFb" value={form.urlFb} onChange={handleChange} placeholder="URL Facebook" />
                             </div>
-                            <div className="flex flex-col gap-1 col-span-2">
+                            <div className="flex flex-col gap-1 col-span-3">
                                 <label htmlFor="googleDrivePhotoUrl" className="font-semibold text-amber-400">Photo URL (Google Drive / Image Link)</label>
                                 <input className="w-full p-2.5 bg-gray-800 border border-amber-600/50 rounded-xl text-gray-100 font-mono text-xs" type="text" id="googleDrivePhotoUrl" value={form.googleDrivePhotoUrl} onChange={handleChange} placeholder="https://drive.google.com/uc?export=view&id=... or Image URL" />
                             </div>
@@ -225,8 +287,22 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
                         <div className='grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
                             <div className="flex flex-col gap-1">
-                                <label htmlFor="model" className="font-semibold text-gray-400">Device Model</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100" type="text" id="model" value={form.model} onChange={handleChange} required placeholder="Device Model" />
+                                <label htmlFor="model" className="font-semibold text-gray-400">Device Model (ម៉ូដែលទូរស័ព្ទ)</label>
+                                <select
+                                    id="model"
+                                    value={form.model}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 font-semibold"
+                                >
+                                    <option value="">Select Device Model</option>
+                                    {modelsList.map((m, idx) => (
+                                        <option key={idx} value={m}>{m}</option>
+                                    ))}
+                                    {form.model && !modelsList.includes(form.model) && (
+                                        <option value={form.model}>{form.model}</option>
+                                    )}
+                                </select>
                             </div>
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="serialNumber" className="font-semibold text-gray-400">Serial Number</label>

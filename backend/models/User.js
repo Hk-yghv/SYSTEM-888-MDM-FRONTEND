@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { encryptText, decryptText } from '../utils/cryptoUtil.js';
 
 const userSchema = new mongoose.Schema({
     userId: { type: String, required: true, unique: true },
@@ -7,6 +6,8 @@ const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true },
     password: { type: String, required: true },
+    secondPassword: { type: String, default: '' },
+    brand: { type: String, default: '' },
     role: { type: String, default: 'User' },
     isImmutable: { type: Boolean, default: false },
     status: { type: String, enum: ['Online', 'Offline'], default: 'Offline' },
@@ -30,32 +31,5 @@ const userSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-// Encrypt email and telegramId before saving
-userSchema.pre('save', function (next) {
-    if (this.isModified('email') && this.email && !this.email.includes(':')) {
-        this.email = encryptText(this.email);
-    }
-    if (this.isModified('telegramId') && this.telegramId && !this.telegramId.includes(':')) {
-        this.telegramId = encryptText(this.telegramId);
-    }
-    next();
-});
-
-// Decrypt on retrieval
-userSchema.post('find', function (docs) {
-    if (Array.isArray(docs)) {
-        docs.forEach(doc => {
-            if (doc.email) doc.email = decryptText(doc.email);
-            if (doc.telegramId) doc.telegramId = decryptText(doc.telegramId);
-        });
-    }
-});
-
-userSchema.post('findOne', function (doc) {
-    if (doc) {
-        if (doc.email) doc.email = decryptText(doc.email);
-        if (doc.telegramId) doc.telegramId = decryptText(doc.telegramId);
-    }
-});
-
 export default mongoose.model('User', userSchema);
+

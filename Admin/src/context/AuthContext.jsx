@@ -29,14 +29,14 @@ export const AuthProvider = ({ children }) => {
             }
 
             if (data.require2FA) {
-                return { require2FA: true, username: data.username, demoOtp: data.demoOtp };
+                return { require2FA: true, username: data.username };
             }
 
             setUser(data.user);
             setToken(data.token);
             localStorage.setItem('mdm_user', JSON.stringify(data.user));
             localStorage.setItem('mdm_token', data.token);
-            return { success: true };
+            return { success: true, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
             // Fallback for offline local demo if backend is not responding
@@ -47,6 +47,7 @@ export const AuthProvider = ({ children }) => {
                     username: '@hakyonghouv',
                     email: 'yonghouvh@gmail.com',
                     role: 'Administrator',
+                    brand: '',
                     isImmutable: true,
                     status: 'Online',
                     permissions: {}
@@ -61,13 +62,13 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const verifyOtp = async (username, otp) => {
+    const verifyOtp = async (username, otp, secondPassword) => {
         setLoading(true);
         try {
             const res = await fetch(`${API_BASE}/auth/verify-otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, otp })
+                body: JSON.stringify({ username, otp, secondPassword })
             });
             const data = await res.json();
             setLoading(false);
@@ -80,7 +81,7 @@ export const AuthProvider = ({ children }) => {
             setToken(data.token);
             localStorage.setItem('mdm_user', JSON.stringify(data.user));
             localStorage.setItem('mdm_token', data.token);
-            return { success: true };
+            return { success: true, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
             throw err;

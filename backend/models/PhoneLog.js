@@ -10,7 +10,8 @@ const phoneLogSchema = new mongoose.Schema({
     performedBy: { type: String, default: 'Administrator' },
     date: { type: String, required: true },
     time: { type: String, required: true },
-    reason: { type: String, default: '' }
+    reason: { type: String, default: '' },
+    brand: { type: String, default: '' }
 }, { timestamps: true });
 
 export default mongoose.model('PhoneLog', phoneLogSchema);

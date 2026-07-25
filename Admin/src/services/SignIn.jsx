@@ -9,8 +9,8 @@ const SignIn = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [otp, setOtp] = useState('');
+    const [secondPassword, setSecondPassword] = useState('');
     const [require2FA, setRequire2FA] = useState(false);
-    const [demoOtpCode, setDemoOtpCode] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -29,8 +29,11 @@ const SignIn = () => {
 
             if (res.require2FA) {
                 setRequire2FA(true);
-                setDemoOtpCode(res.demoOtp || '');
             } else if (res.success) {
+                if (res.deviceInfo) {
+                    sessionStorage.setItem('recent_login_device', JSON.stringify(res.deviceInfo));
+                    sessionStorage.setItem('show_login_toast', 'true');
+                }
                 navigate('/dashboard');
             }
         } catch (err) {
@@ -45,20 +48,19 @@ const SignIn = () => {
         setLoading(true);
 
         try {
-            const res = await verifyOtp(username, otp);
+            const res = await verifyOtp(username, otp, secondPassword);
             setLoading(false);
             if (res.success) {
+                if (res.deviceInfo) {
+                    sessionStorage.setItem('recent_login_device', JSON.stringify(res.deviceInfo));
+                    sessionStorage.setItem('show_login_toast', 'true');
+                }
                 navigate('/dashboard');
             }
         } catch (err) {
             setLoading(false);
             setError(err.message || 'OTP verification failed');
         }
-    };
-
-    const fillMasterAdmin = () => {
-        setUsername('@hakyonghouv');
-        setPassword('houv#^123');
     };
 
     return (
@@ -130,16 +132,6 @@ const SignIn = () => {
                                 </>
                             )}
                         </button>
-
-                        <div className="pt-2 text-center">
-                            <button
-                                type="button"
-                                onClick={fillMasterAdmin}
-                                className="text-xs text-indigo-400 hover:text-indigo-300 underline cursor-pointer font-mono"
-                            >
-                                Quick Fill Master Admin (@hakyonghouv)
-                            </button>
-                        </div>
                     </form>
                 ) : (
                     /* 2FA OTP Form */
@@ -150,11 +142,21 @@ const SignIn = () => {
                             <p className="text-xs text-gray-300 mt-1">
                                 An OTP code was dispatched to Telegram. Check your Telegram app.
                             </p>
-                            {demoOtpCode && (
-                                <div className="mt-3 p-2 bg-indigo-900/60 border border-indigo-700 rounded-lg text-xs font-mono text-indigo-200">
-                                    Demo OTP Code: <span className="font-bold text-white tracking-widest text-sm">{demoOtpCode}</span>
-                                </div>
-                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-300 mb-2">Password តង់ទី២ (2FA Second Password)</label>
+                            <div className="relative flex items-center">
+                                <FaLock className="absolute left-4 text-indigo-400 text-sm" />
+                                <input
+                                    type="password"
+                                    required
+                                    value={secondPassword}
+                                    onChange={(e) => setSecondPassword(e.target.value)}
+                                    placeholder="Enter 2FA Password"
+                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-xl text-sm text-gray-100 placeholder-gray-500 transition-all"
+                                />
+                            </div>
                         </div>
 
                         <div>

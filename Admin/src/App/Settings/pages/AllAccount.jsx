@@ -31,6 +31,7 @@ const AllAccount = () => {
 
     const [users, setUsers] = useState([]);
     const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer']);
+    const [brandsList, setBrandsList] = useState(['Apple', 'Samsung', 'OPPO', 'vivo', 'Xiaomi']);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
 
@@ -44,6 +45,7 @@ const AllAccount = () => {
         email: '',
         password: '',
         role: 'Staff',
+        brand: '',
         permissions: {}
     });
 
@@ -55,10 +57,12 @@ const AllAccount = () => {
                 const data = await res.json();
                 setUsers(data);
             }
-            const cRes = await fetch(`${API_BASE}/controlsystem`);
+            const cRes = await fetch(`${API_BASE}/controlsystem?brand=`);
             if (cRes.ok) {
                 const cData = await cRes.json();
                 if (cData.roles) setRoles(cData.roles);
+                const brandCat = cData.droplists?.find(d => d.category === 'Brands');
+                if (brandCat) setBrandsList(brandCat.items);
             }
         } catch (err) {
             console.error('Fetch users error:', err);
@@ -104,6 +108,7 @@ const AllAccount = () => {
                     email: '',
                     password: '',
                     role: 'Staff',
+                    brand: '',
                     permissions: {}
                 });
             } else {
@@ -183,6 +188,7 @@ const AllAccount = () => {
                             <th className='px-4 py-3'>{t('username')} & ID</th>
                             <th className='px-4 py-3'>Full Name & Email</th>
                             <th className='px-4 py-3 text-center'>{t('role')}</th>
+                            <th className='px-4 py-3 text-center'>Brand</th>
                             <th className='px-4 py-3 text-center'>Status</th>
                             <th className='px-4 py-3 text-center'>Last OTP Code</th>
                             <th className='px-4 py-3 text-center'>Login History</th>
@@ -207,6 +213,17 @@ const AllAccount = () => {
                                         <span className={`px-2.5 py-0.5 rounded-md font-bold text-[10px] uppercase border ${isMaster ? 'bg-purple-950 text-purple-300 border-purple-700' : 'bg-gray-800 text-gray-300 border-gray-700'}`}>
                                             {item.role || 'Staff'}
                                         </span>
+                                    </td>
+                                    <td className='px-4 py-3 text-center'>
+                                        {item.brand ? (
+                                            <span className="px-2 py-0.5 bg-indigo-900/60 border border-indigo-700 text-indigo-300 rounded-full font-bold text-[10px]">
+                                                {item.brand}
+                                            </span>
+                                        ) : (
+                                            <span className="px-2 py-0.5 bg-gray-800/80 border border-gray-700 text-gray-400 rounded-full font-bold text-[10px]">
+                                                All Brands
+                                            </span>
+                                        )}
                                     </td>
                                     <td className='px-4 py-3 text-center'>
                                         <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1 w-20 mx-auto ${item.status === 'Online' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-gray-800 text-gray-400 border border-gray-700'}`}>
@@ -345,15 +362,29 @@ const AllAccount = () => {
                                     />
                                 </div>
 
-                                <div className="sm:col-span-2">
+                                <div>
                                     <label className="block text-gray-300 font-semibold mb-1">Assign System Role (Configured in Control System)</label>
                                     <select
                                         value={formData.role}
                                         onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100"
+                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold"
                                     >
                                         {roles.map((r, rIdx) => (
                                             <option key={rIdx} value={r}>{r}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-semibold mb-1">Assigned Brand (ម៉ាកទូរស័ព្ទ)</label>
+                                    <select
+                                        value={formData.brand}
+                                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold"
+                                    >
+                                        <option value="">All Brands (គ្រប់ម៉ាកទាំងអស់)</option>
+                                        {brandsList.map((b, bIdx) => (
+                                            <option key={bIdx} value={b}>{b}</option>
                                         ))}
                                     </select>
                                 </div>

@@ -7,7 +7,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const UnlockPhone = () => {
     const { t } = useLanguage();
-    const { API_BASE } = useAuth();
+    const { API_BASE, user } = useAuth();
 
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,7 +16,12 @@ const UnlockPhone = () => {
     const fetchUnlockLogs = async () => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/phonelogs?action=Unlocked`);
+            const params = new URLSearchParams({ action: 'Unlocked' });
+            if (user?.brand && user?.role !== 'Administrator') {
+                params.append('userBrand', user.brand);
+                params.append('userRole', user.role);
+            }
+            const res = await fetch(`${API_BASE}/phonelogs?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setLogs(data);
@@ -112,6 +117,7 @@ const UnlockPhone = () => {
                             <th className='px-4 py-3'>{t('customerName')}</th>
                             <th className='px-4 py-3'>{t('model')}</th>
                             <th className='px-4 py-3'>{t('serialNumber')}</th>
+                            <th className='px-4 py-3'>Brand</th>
                             <th className='px-4 py-3'>User Name</th>
                             <th className='px-4 py-3'>Reason</th>
                         </tr>
@@ -133,6 +139,11 @@ const UnlockPhone = () => {
                                     <td className='px-4 py-3 font-bold text-gray-100'>{item.customerName}</td>
                                     <td className='px-4 py-3 font-semibold text-gray-300'>{item.model}</td>
                                     <td className='px-4 py-3 font-mono text-indigo-300'>{item.serialNumber}</td>
+                                    <td className='px-4 py-3'>
+                                        {item.brand ? (
+                                            <span className="px-2 py-0.5 bg-indigo-900/60 border border-indigo-700 text-indigo-300 rounded-full font-bold text-[10px]">{item.brand}</span>
+                                        ) : <span className="text-gray-600">-</span>}
+                                    </td>
                                     <td className='px-4 py-3 text-purple-300 font-semibold'>{item.userName || item.performedBy || 'BOY BOY'}</td>
                                     <td className='px-4 py-3 text-gray-400 text-[11px]'>{item.reason}</td>
                                 </tr>

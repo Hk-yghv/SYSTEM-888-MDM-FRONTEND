@@ -7,12 +7,16 @@ import { FaPhoneAlt, FaList, FaUserShield } from 'react-icons/fa';
 
 const ControlSystem = () => {
     const { t } = useLanguage();
-    const { API_BASE } = useAuth();
+    const { API_BASE, user } = useAuth();
+
+    const [selectedBrand, setSelectedBrand] = useState(user?.brand || '');
+    const [brandsList, setBrandsList] = useState(['MDM', 'ECloud']);
 
     const [droplists, setDroplists] = useState([
         { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
         { category: 'Contract Types', items: ['Standard Installment', 'VIP Premium', 'Corporate Plan'] },
-        { category: 'Payment Methods', items: ['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer'] }
+        { category: 'Payment Methods', items: ['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer'] },
+        { category: 'Brands', items: ['MDM', 'ECloud'] }
     ]);
 
     const [callPhoneDisplay, setCallPhoneDisplay] = useState({
@@ -37,7 +41,7 @@ const ControlSystem = () => {
     const fetchControlSystemConfigs = async () => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/controlsystem`);
+            const res = await fetch(`${API_BASE}/controlsystem?brand=${selectedBrand}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.droplists) setDroplists(data.droplists);
@@ -45,6 +49,14 @@ const ControlSystem = () => {
                 if (data.roles) setRoles(data.roles);
                 if (data.lockphone_display_text) setLockphoneDisplayText(data.lockphone_display_text);
                 if (data.lockphone_phone_number) setLockphonePhoneNumber(data.lockphone_phone_number);
+            }
+
+            // Always fetch the Global Brand list from the global config
+            const globalRes = await fetch(`${API_BASE}/controlsystem?brand=`);
+            if (globalRes.ok) {
+                const globalData = await globalRes.json();
+                const brandCat = globalData.droplists?.find(d => d.category === 'Brands');
+                if (brandCat) setBrandsList(brandCat.items);
             }
         } catch (err) {
             console.error('Fetch control system configs error:', err);
@@ -56,7 +68,7 @@ const ControlSystem = () => {
 
     useEffect(() => {
         fetchControlSystemConfigs();
-    }, []);
+    }, [selectedBrand]);
 
     const saveConfigToMongoDB = async (key, value) => {
         setSaving(true);
@@ -65,12 +77,12 @@ const ControlSystem = () => {
             const res = await fetch(`${API_BASE}/controlsystem`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key, value })
+                body: JSON.stringify({ key, value, brand: selectedBrand })
             });
 
             setSaving(false);
             if (res.ok) {
-                setMessage(`Control System '${key}' configuration updated in MongoDB successfully!`);
+                setMessage(`Control System '${key}' configuration updated for brand '${selectedBrand || 'Global'}' in MongoDB successfully!`);
                 setTimeout(() => setMessage(''), 3000);
             }
         } catch (err) {
@@ -139,6 +151,28 @@ const ControlSystem = () => {
                     <p>{t('reload')}</p>
                 </button>
             </header>
+
+            {user?.role === 'Administrator' ? (
+                <div className="p-4 bg-[#0f1426]/90 border border-gray-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-md">
+                    <span className="font-bold text-gray-200 flex items-center gap-1.5">
+                        Select Brand Tenant Settings to Configure (កំណត់ការកំណត់តាម Brand):
+                    </span>
+                    <select
+                        value={selectedBrand}
+                        onChange={(e) => setSelectedBrand(e.target.value)}
+                        className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer"
+                    >
+                        <option value="">Global Config (Global / Default)</option>
+                        {brandsList.map((br, idx) => (
+                            <option key={idx} value={br}>{br} Tenant Settings</option>
+                        ))}
+                    </select>
+                </div>
+            ) : (
+                <div className="p-4 bg-[#0f1426]/90 border border-gray-800 rounded-2xl text-xs text-indigo-400 font-semibold">
+                    Configuring tenant settings for brand: <span className="font-bold text-white">{selectedBrand || 'Global'}</span>
+                </div>
+            )}
 
             {message && (
                 <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs font-semibold animate-fade-in">
