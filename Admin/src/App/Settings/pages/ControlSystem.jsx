@@ -3,7 +3,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { IoIosSettings } from 'react-icons/io';
 import { MdOutlineSync, MdAddCircle, MdDelete, MdSave } from 'react-icons/md';
-import { FaPhoneAlt, FaList, FaUserShield } from 'react-icons/fa';
+import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup } from 'react-icons/fa';
 
 const ControlSystem = () => {
     const { t } = useLanguage();
@@ -37,6 +37,7 @@ const ControlSystem = () => {
     const [newRoleInput, setNewRoleInput] = useState('');
     const [newItemInput, setNewItemInput] = useState('');
     const [selectedCategoryIdx, setSelectedCategoryIdx] = useState(0);
+    const [newBrandInput, setNewBrandInput] = useState('');
 
     const fetchControlSystemConfigs = async () => {
         setReloading(true);
@@ -123,6 +124,99 @@ const ControlSystem = () => {
         updated[catIdx].items.splice(itemIdx, 1);
         setDroplists(updated);
         saveConfigToMongoDB('droplists', updated);
+    };
+
+    // --- Brand Management (Global Config only) ---
+    const handleAddBrand = async () => {
+        const name = newBrandInput.trim();
+        if (!name) return;
+        if (brandsList.includes(name)) {
+            setMessage(`Brand '${name}' already exists!`);
+            setTimeout(() => setMessage(''), 3000);
+            return;
+        }
+        const updatedBrands = [...brandsList, name];
+        setBrandsList(updatedBrands);
+        setNewBrandInput('');
+
+        // Persist into Global droplists 'Brands' category
+        setSaving(true);
+        setMessage('');
+        try {
+            const globalRes = await fetch(`${API_BASE}/controlsystem?brand=`);
+            let globalDroplists = [
+                { category: 'Device Models', items: [] },
+                { category: 'Contract Types', items: [] },
+                { category: 'Payment Methods', items: [] },
+                { category: 'Brands', items: [] }
+            ];
+            if (globalRes.ok) {
+                const gData = await globalRes.json();
+                if (gData.droplists) globalDroplists = gData.droplists;
+            }
+            const brandCatIdx = globalDroplists.findIndex(d => d.category === 'Brands');
+            if (brandCatIdx !== -1) {
+                globalDroplists[brandCatIdx].items = updatedBrands;
+            } else {
+                globalDroplists.push({ category: 'Brands', items: updatedBrands });
+            }
+            const saveRes = await fetch(`${API_BASE}/controlsystem`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'droplists', value: globalDroplists, brand: '' })
+            });
+            setSaving(false);
+            if (saveRes.ok) {
+                setMessage(`Brand '${name}' added to Global Config successfully!`);
+                setTimeout(() => setMessage(''), 3000);
+            }
+        } catch (err) {
+            setSaving(false);
+            console.error('Add brand error:', err);
+        }
+    };
+
+    const handleDeleteBrand = async (brandName) => {
+        if (brandsList.length <= 1) {
+            setMessage('Cannot remove the last brand!');
+            setTimeout(() => setMessage(''), 3000);
+            return;
+        }
+        const updatedBrands = brandsList.filter(b => b !== brandName);
+        setBrandsList(updatedBrands);
+
+        setSaving(true);
+        setMessage('');
+        try {
+            const globalRes = await fetch(`${API_BASE}/controlsystem?brand=`);
+            let globalDroplists = [
+                { category: 'Device Models', items: [] },
+                { category: 'Contract Types', items: [] },
+                { category: 'Payment Methods', items: [] },
+                { category: 'Brands', items: [] }
+            ];
+            if (globalRes.ok) {
+                const gData = await globalRes.json();
+                if (gData.droplists) globalDroplists = gData.droplists;
+            }
+            const brandCatIdx = globalDroplists.findIndex(d => d.category === 'Brands');
+            if (brandCatIdx !== -1) {
+                globalDroplists[brandCatIdx].items = updatedBrands;
+            }
+            const saveRes = await fetch(`${API_BASE}/controlsystem`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'droplists', value: globalDroplists, brand: '' })
+            });
+            setSaving(false);
+            if (saveRes.ok) {
+                setMessage(`Brand '${brandName}' removed from Global Config successfully!`);
+                setTimeout(() => setMessage(''), 3000);
+            }
+        } catch (err) {
+            setSaving(false);
+            console.error('Delete brand error:', err);
+        }
     };
 
     return (
@@ -368,6 +462,61 @@ const ControlSystem = () => {
                 </div>
 
             </div>
+
+            {/* Section 4: Brand Management — Administrator + Global Config only */}
+            {user?.role === 'Administrator' && selectedBrand === '' && (
+                <div className="p-6 rounded-3xl glass-card border border-amber-500/30 space-y-4 shadow-xl">
+                    <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-amber-300 text-xs font-bold uppercase">
+                        <FaLayerGroup /> Brand Tenant Management (Global Config — Add / Remove Brands)
+                    </div>
+
+                    <p className="text-[11px] text-gray-400">
+                        Brands listed here will appear in the <span className="text-amber-300 font-semibold">brand selector</span> above and in all dropdowns across the system. Only <span className="text-white font-bold">Administrator</span> editing Global Config can manage this list.
+                    </p>
+
+                    <div className="flex items-center gap-2 text-xs">
+                        <input
+                            type="text"
+                            value={newBrandInput}
+                            onChange={(e) => setNewBrandInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddBrand()}
+                            placeholder="New brand name (e.g. SuperTech)"
+                            className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 focus:border-amber-500 outline-none"
+                        />
+                        <button
+                            onClick={handleAddBrand}
+                            disabled={saving || !newBrandInput.trim()}
+                            className="px-4 h-10 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1 cursor-pointer transition-all"
+                        >
+                            <MdAddCircle size={16} /> Add Brand
+                        </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-1">
+                        {brandsList.length === 0 && (
+                            <p className="text-gray-500 text-xs italic">No brands defined yet.</p>
+                        )}
+                        {brandsList.map((br, brIdx) => (
+                            <div
+                                key={brIdx}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-amber-950/40 border border-amber-600/40 rounded-xl text-amber-200 text-xs font-semibold"
+                            >
+                                <FaLayerGroup size={11} className="text-amber-400" />
+                                <span>{br}</span>
+                                <button
+                                    onClick={() => handleDeleteBrand(br)}
+                                    disabled={saving}
+                                    className="text-red-400 hover:text-red-300 cursor-pointer disabled:opacity-50 transition-colors"
+                                    title={`Remove brand '${br}'`}
+                                >
+                                    <MdDelete size={14} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

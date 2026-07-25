@@ -31,7 +31,7 @@ const AllAccount = () => {
 
     const [users, setUsers] = useState([]);
     const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer']);
-    const [brandsList, setBrandsList] = useState(['Apple', 'Samsung', 'OPPO', 'vivo', 'Xiaomi']);
+    const [brandsList, setBrandsList] = useState([['MDM', 'ECloud']]);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
 

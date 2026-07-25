@@ -92,7 +92,7 @@ const MEM_DB = {
             { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
             { category: 'Contract Types', items: ['Standard Installment', 'VIP Premium', 'Corporate Plan'] },
             { category: 'Payment Methods', items: ['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer'] },
-            { category: 'Brands', items: ['Apple', 'Samsung', 'OPPO', 'vivo', 'Xiaomi'] }
+            { category: 'Brands', items: ['MDM', 'ECloud'] }
         ],
         call_phone_display: {
             title: 'SYSTEM MDM HOTLINE',
@@ -215,8 +215,8 @@ app.post('/api/auth/login', async (req, res) => {
 
             if (bot && user.telegramId) {
                 const otpMsg = `🔑 <b>SYSTEM MDM Verification Code</b>\n\n` +
-                               `Code: <tg-spoiler><code>${otpCode}</code></tg-spoiler>\n\n` +
-                               `<i>Tap the code inside the blurred box to copy.</i>`;
+                    `Code: <tg-spoiler><code>${otpCode}</code></tg-spoiler>\n\n` +
+                    `<i>Tap the code inside the blurred box to copy.</i>`;
                 for (let i = 0; i < 3; i++) {
                     try {
                         await bot.sendMessage(user.telegramId, otpMsg, { parse_mode: 'HTML' });
@@ -234,7 +234,7 @@ app.post('/api/auth/login', async (req, res) => {
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
         const ua = req.headers['user-agent'] || 'Unknown Browser';
         const { os, browser } = parseUserAgent(ua);
-        
+
         user.loginHistory.push({
             timestamp: new Date(),
             ip,
@@ -255,7 +255,7 @@ app.post('/api/auth/login', async (req, res) => {
                 `<i>If this wasn't you, please secure your account immediately.</i>`;
             try {
                 await bot.sendMessage(user.telegramId, loginMessage, { parse_mode: 'HTML' });
-            } catch (tErr) {}
+            } catch (tErr) { }
         }
 
         const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
@@ -303,7 +303,7 @@ app.post('/api/auth/verify-otp', async (req, res) => {
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
         const ua = req.headers['user-agent'] || 'Unknown Browser';
         const { os, browser } = parseUserAgent(ua);
-        
+
         user.loginHistory.push({
             timestamp: new Date(),
             ip,
@@ -324,7 +324,7 @@ app.post('/api/auth/verify-otp', async (req, res) => {
                 `<i>If this wasn't you, please secure your account immediately.</i>`;
             try {
                 await bot.sendMessage(user.telegramId, loginMessage, { parse_mode: 'HTML' });
-            } catch (tErr) {}
+            } catch (tErr) { }
         }
 
         const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
@@ -552,7 +552,7 @@ app.post('/api/payments', async (req, res) => {
     try {
         const { contractId } = req.body;
         let contract = isMongoConnected ? await Contract.findOne({ contractId }) : MEM_DB.contracts.find(c => c.contractId === contractId);
-        
+
         const payment = {
             _id: 'p-' + Date.now(),
             paymentId: 'PAY-' + Math.floor(1000 + Math.random() * 9000),
@@ -880,7 +880,7 @@ app.get('/api/controlsystem', async (req, res) => {
             configs.forEach(c => mapped[c.key] = c.value);
             if (Object.keys(mapped).length > 0) return res.json(mapped);
         }
-        
+
         // Local/In-Memory fallback:
         if (!MEM_DB.controlSystems) {
             MEM_DB.controlSystems = [{ brand: '', ...MEM_DB.controlSystem }];
@@ -910,7 +910,7 @@ app.post('/api/controlsystem', async (req, res) => {
                 { upsert: true, new: true }
             );
         }
-        
+
         if (!MEM_DB.controlSystems) {
             MEM_DB.controlSystems = [{ brand: '', ...MEM_DB.controlSystem }];
         }
@@ -942,18 +942,18 @@ app.get('/api/dashboard/stats', async (req, res) => {
 
         if (isMongoConnected) {
             [totalContracts, activatedContracts, applicationContracts, checkContracts,
-             redeemContracts, blacklistContracts, commentsContracts,
-             lockedPhones, lockedWallpapers] = await Promise.all([
-                Contract.countDocuments(query),
-                Contract.countDocuments({ ...query, status: 'Activated' }),
-                Contract.countDocuments({ ...query, status: 'Application' }),
-                Contract.countDocuments({ ...query, status: 'Check' }),
-                Contract.countDocuments({ ...query, status: 'Redeem' }),
-                Contract.countDocuments({ ...query, status: 'Blacklist' }),
-                Contract.countDocuments({ ...query, status: 'Comments' }),
-                Contract.countDocuments({ ...query, lockPhoneStatus: 'Locked' }),
-                Contract.countDocuments({ ...query, lockWallpaperStatus: 'Locked' })
-            ]);
+                redeemContracts, blacklistContracts, commentsContracts,
+                lockedPhones, lockedWallpapers] = await Promise.all([
+                    Contract.countDocuments(query),
+                    Contract.countDocuments({ ...query, status: 'Activated' }),
+                    Contract.countDocuments({ ...query, status: 'Application' }),
+                    Contract.countDocuments({ ...query, status: 'Check' }),
+                    Contract.countDocuments({ ...query, status: 'Redeem' }),
+                    Contract.countDocuments({ ...query, status: 'Blacklist' }),
+                    Contract.countDocuments({ ...query, status: 'Comments' }),
+                    Contract.countDocuments({ ...query, lockPhoneStatus: 'Locked' }),
+                    Contract.countDocuments({ ...query, lockWallpaperStatus: 'Locked' })
+                ]);
             unlockedPhones = totalContracts - lockedPhones;
             unlockedWallpapers = totalContracts - lockedWallpapers;
 
