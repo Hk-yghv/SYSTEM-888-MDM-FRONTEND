@@ -351,9 +351,33 @@ app.post('/api/users', async (req, res) => {
     try {
         const { name, username, email, password, role, permissions, brand } = req.body;
         const hashedPassword = await bcrypt.hash(password || '123456', 10);
+        const memId = 'u-' + Date.now();
+        const userId = 'USR-' + Math.floor(100000 + Math.random() * 900000);
+
+        if (isMongoConnected) {
+            // Do NOT pass custom _id to MongoDB — let it generate a valid ObjectId
+            const doc = new User({
+                userId,
+                name,
+                username,
+                email,
+                password: hashedPassword,
+                secondPassword: '',
+                brand: brand || '',
+                role: role || 'Staff',
+                status: 'Offline',
+                permissions: permissions || {}
+            });
+            await doc.save();
+            const saved = doc.toObject();
+            MEM_DB.users.push({ ...saved, _id: saved._id.toString() });
+            return res.status(201).json(saved);
+        }
+
+        // In-memory fallback
         const newUser = {
-            _id: 'u-' + Date.now(),
-            userId: 'USR-' + Math.floor(100000 + Math.random() * 900000),
+            _id: memId,
+            userId,
             name,
             username,
             email,
@@ -364,11 +388,6 @@ app.post('/api/users', async (req, res) => {
             status: 'Offline',
             permissions: permissions || {}
         };
-
-        if (isMongoConnected) {
-            const doc = new User(newUser);
-            await doc.save();
-        }
         MEM_DB.users.push(newUser);
         res.status(201).json(newUser);
     } catch (err) {
@@ -378,12 +397,24 @@ app.post('/api/users', async (req, res) => {
 
 app.delete('/api/users/:id', async (req, res) => {
     try {
-        let user = isMongoConnected ? await User.findById(req.params.id) : MEM_DB.users.find(u => u._id === req.params.id);
+        let user = null;
+        if (isMongoConnected) {
+            // Try findById (ObjectId), fallback to findOne by userId string
+            try {
+                user = await User.findById(req.params.id);
+            } catch {
+                user = await User.findOne({ userId: req.params.id });
+            }
+        } else {
+            user = MEM_DB.users.find(u => u._id === req.params.id || u.userId === req.params.id);
+        }
         if (user && (user.isImmutable || user.username === '@hakyonghouv')) {
             return res.status(403).json({ error: 'Master Admin account (@hakyonghouv) cannot be deleted!' });
         }
-        if (isMongoConnected) await User.findByIdAndDelete(req.params.id);
-        MEM_DB.users = MEM_DB.users.filter(u => u._id !== req.params.id);
+        if (isMongoConnected && user) {
+            await User.findByIdAndDelete(user._id);
+        }
+        MEM_DB.users = MEM_DB.users.filter(u => u._id !== req.params.id && u.userId !== req.params.id);
         res.json({ message: 'Deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
