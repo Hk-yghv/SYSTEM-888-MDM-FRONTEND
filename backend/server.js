@@ -509,19 +509,24 @@ app.get('/api/contracts', async (req, res) => {
 app.post('/api/contracts', async (req, res) => {
     try {
         const newContract = {
-            _id: 'c-' + Date.now(),
             contractId: 'CT-2026-' + Math.floor(100 + Math.random() * 900),
             status: 'Application',
             lockPhoneStatus: 'Unlocked',
             lockWallpaperStatus: 'Unlocked',
             ...req.body
         };
+
+        let savedContract = newContract;
+
         if (isMongoConnected) {
             const doc = new Contract(newContract);
             await doc.save();
+            savedContract = doc.toObject();
         }
-        MEM_DB.contracts.unshift(newContract);
-        res.status(201).json(sanitizeAndDecryptContract(newContract));
+
+        MEM_DB.contracts.unshift(savedContract);
+
+        res.status(201).json(savedContract);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
