@@ -592,16 +592,24 @@ app.post('/api/payments', async (req, res) => {
         let contract = isMongoConnected ? await Contract.findOne({ contractId }) : MEM_DB.contracts.find(c => c.contractId === contractId);
 
         const payment = {
-            _id: 'p-' + Date.now(),
             paymentId: 'PAY-' + Math.floor(1000 + Math.random() * 9000),
             brand: contract?.brand || '',
             ...req.body
         };
+
         if (isMongoConnected) {
             const doc = new Payment(payment);
             await doc.save();
+
+            // ប្រើ _id ដែល MongoDB បង្កើតឲ្យ
+            payment._id = doc._id;
+        } else {
+            // ប្រើតែពេល MEM_DB
+            payment._id = 'p-' + Date.now();
         }
+
         MEM_DB.payments.unshift(payment);
+
         res.status(201).json(payment);
     } catch (err) {
         console.error("===== PAYMENT ERROR =====");
@@ -752,10 +760,10 @@ app.get('/pay/:contractId', async (req, res) => {
             document.getElementById('successView').style.display = 'block';
         } else {
             const data = await res.json();
-        
+
             btn.disabled = false;
             btn.textContent = '💳 Submit Payment';
-        
+
             alert(data.error || "Submission failed.");
         }
       } catch(err) {
