@@ -214,9 +214,11 @@ app.post('/api/auth/login', async (req, res) => {
             if (isMongoConnected) await user.save();
 
             if (bot && user.telegramId) {
-                const otpMsg = `🔑 <b>SYSTEM MDM Verification Code</b>\n\n` +
+                const otpMsg = `<b>Username : ${user.username} , Login Code</b>\n\n` +
                     `Code: <tg-spoiler><code>${otpCode}</code></tg-spoiler>\n\n` +
-                    `<i>Tap the code inside the blurred box to copy.</i>`;
+                    `<b>Do not give this code to anyone, even if they say they are from SYSTEM MDM!</b>\n\n` +
+                    `This code can be used to log in to your System MDM account. We never ask it for anything else.` +
+                    `If you did not try to log in, please ignore this message.`;
                 for (let i = 0; i < 3; i++) {
                     try {
                         await bot.sendMessage(user.telegramId, otpMsg, { parse_mode: 'HTML' });
@@ -602,7 +604,14 @@ app.post('/api/payments', async (req, res) => {
         MEM_DB.payments.unshift(payment);
         res.status(201).json(payment);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error("===== PAYMENT ERROR =====");
+        console.error(err);
+        console.error(err.message);
+
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
     }
 });
 
@@ -739,11 +748,15 @@ app.get('/pay/:contractId', async (req, res) => {
           })
         });
         if (res.ok) {
-          document.getElementById('formCard').style.display = 'none';
-          document.getElementById('successView').style.display = 'block';
+            document.getElementById('formCard').style.display = 'none';
+            document.getElementById('successView').style.display = 'block';
         } else {
-          btn.disabled = false; btn.textContent = '💳 Submit Payment';
-          alert('Submission failed. Please try again.');
+            const data = await res.json();
+        
+            btn.disabled = false;
+            btn.textContent = '💳 Submit Payment';
+        
+            alert(data.error || "Submission failed.");
         }
       } catch(err) {
         btn.disabled = false; btn.textContent = '💳 Submit Payment';
