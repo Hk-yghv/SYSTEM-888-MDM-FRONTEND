@@ -779,48 +779,83 @@ app.get('/pay/:contractId', async (req, res) => {
 });
 
 // LOST PHONE & WALLPAPER LOCK LOGS
+// LOST PHONE LOCK / UNLOCK
 app.post('/api/lostphone/toggle-lock', async (req, res) => {
     try {
-        const { contractId, newStatus, performedBy, reason, displayText, phoneNumber, userName } = req.body;
-        let contract = isMongoConnected ? await Contract.findOne({ contractId }) : MEM_DB.contracts.find(c => c.contractId === contractId);
-        if (contract) {
-            contract.lockPhoneStatus = newStatus;
-            if (isMongoConnected) await contract.save();
+        const {
+            contractId,
+            newStatus,
+            performedBy,
+            reason,
+            displayText,
+            phoneNumber,
+            userName
+        } = req.body;
+
+        // 1. Find contract
+        let contract = isMongoConnected
+            ? await Contract.findOne({ contractId })
+            : MEM_DB.contracts.find(c => c.contractId === contractId);
+
+        if (!contract) {
+            return res.status(404).json({ error: 'Contract not found' });
         }
 
-        let finalDisplayText = displayText || '';
-        if (contract) {
-            finalDisplayText = finalDisplayText
-                .replace(/{{customerNameEn}}/g, contract.customerNameEn || '')
-                .replace(/{{customerNameKh}}/g, contract.customerNameKh || '');
-        }
-
-        const now = new Date();
-        const logEntry = {
-            _id: 'plog-' + Date.now(),
-            logId: 'PLOG-' + Date.now(),
-            contractId: contract?.contractId || contractId,
-            brand: contract?.brand || '',
-            customerName: contract ? `${contract.customerNameEn} - ${contract.customerNameKh}` : 'Customer',
-            model: contract?.model || 'Device',
-            serialNumber: contract?.serialNumber || 'SN-UNKNOWN',
-            action: newStatus === 'Locked' ? 'Locked' : 'Unlocked',
-            performedBy: performedBy || 'Administrator',
-            userName: userName || '',
-            displayText: finalDisplayText,
-            phoneNumber: phoneNumber || '',
-            date: now.toISOString().split('T')[0],
-            time: now.toTimeString().split(' ')[0],
-            reason: reason || `Status set to ${newStatus}`
-        };
+        // 2. Update lock status
+        contract.lockPhoneStatus = newStatus;
 
         if (isMongoConnected) {
-            const doc = new PhoneLog(logEntry);
-            await doc.save();
+            await contract.save();
         }
-        MEM_DB.phoneLogs.unshift(logEntry);
-        res.json({ contract, logEntry });
+
+        // 3. Create audit log object
+        const now = new Date();
+
+        const logData = {
+            logId: `LOG-${Date.now()}`,   // ⭐ បន្ថែមបន្ទាត់នេះ
+
+            contractId: contract.contractId,
+            customerName: `${contract.customerNameEn} (${contract.customerNameKh || ''})`,
+            model: contract.model,
+            serialNumber: contract.serialNumber,
+            brand: contract.brand || '',
+
+            action: newStatus,
+
+            performedBy: performedBy || 'SYSTEM',
+            userName: userName || performedBy || 'SYSTEM',
+
+            date: now.toISOString().split('T')[0],
+            time: now.toLocaleTimeString(),
+
+            reason: reason || `Device set to ${newStatus}`,
+
+            displayText: displayText || '',
+            phoneNumber: phoneNumber || ''
+        };
+
+        // 4. Save to MongoDB
+        if (isMongoConnected) {
+            const logDoc = new PhoneLog(logData);
+            await logDoc.save();
+        }
+
+        // 5. Save to memory fallback
+        MEM_DB.phoneLogs.unshift({
+            _id: 'log-' + Date.now(),
+            ...logData
+        });
+
+        // 6. Response
+        res.json({
+            success: true,
+            message: `Phone ${newStatus} successfully`,
+            contractId: contract.contractId,
+            lockPhoneStatus: contract.lockPhoneStatus
+        });
+
     } catch (err) {
+        console.error('Toggle lock error:', err);
         res.status(500).json({ error: err.message });
     }
 });
