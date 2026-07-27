@@ -20,9 +20,6 @@ const Actions = () => {
 
             if (res.ok) {
                 const result = await res.json();
-
-                console.log(result);
-
                 setContracts(Array.isArray(result.data) ? result.data : []);
             }
         } catch (err) {
