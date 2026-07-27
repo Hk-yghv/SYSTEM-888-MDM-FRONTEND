@@ -18,6 +18,7 @@ const Activated = () => {
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [total, setTotal] = useState(0);
     const itemsPerPage = 10;
 
     const [openMenuId, setOpenMenuId] = useState(null);
@@ -46,13 +47,16 @@ const Activated = () => {
     const [paymentSubmitting, setPaymentSubmitting] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-    const fetchActivatedContracts = async () => {
+    const fetchActivatedContracts = async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Activated`);
+            const params = new URLSearchParams({ status: 'Activated', page: pg, limit: itemsPerPage });
+            if (search) params.set('search', search);
+            const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
-                setActivatedContracts(data);
+                setActivatedContracts(data.data || []);
+                setTotal(data.total || 0);
             }
         } catch (err) {
             console.error('Fetch activated contracts error:', err);
@@ -74,18 +78,11 @@ const Activated = () => {
         } catch { }
     };
 
-    useEffect(() => {
-        fetchActivatedContracts();
-        fetchPaymentMethods();
-    }, []);
+    useEffect(() => { fetchActivatedContracts(currentPage, searchTerm); }, [currentPage]);
+    useEffect(() => { fetchActivatedContracts(1, searchTerm); setCurrentPage(1); }, [searchTerm]);
+    useEffect(() => { fetchPaymentMethods(); }, []);
 
-    const filteredContracts = activatedContracts.filter(c =>
-        (c.customerNameEn || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.customerNameKh || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.model || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.serialNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.contractId || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredContracts = activatedContracts; // server already filters+paginates
 
     const handleChangeStatus = async (item, targetStatus) => {
         try {
@@ -256,7 +253,7 @@ const Activated = () => {
                         <input
                             type="text"
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             placeholder="Search name, model, serial..."
                             className="pl-8 pr-3 py-1.5 bg-gray-900 border border-gray-700 rounded-xl text-xs text-gray-100 focus:border-indigo-500 w-52 outline-none"
                         />
@@ -278,7 +275,7 @@ const Activated = () => {
                     </button>
 
                     <button
-                        onClick={fetchActivatedContracts}
+                        onClick={() => fetchActivatedContracts(currentPage, searchTerm)}
                         disabled={reloading}
                         className='flex items-center gap-2 px-3 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-200 rounded-xl text-xs cursor-pointer border border-gray-700 transition-all'
                     >
@@ -303,7 +300,7 @@ const Activated = () => {
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
                         {filteredContracts.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="text-center py-8 text-gray-500 italic">
@@ -311,7 +308,7 @@ const Activated = () => {
                                 </td>
                             </tr>
                         ) : (
-                            filteredContracts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((item, idx) => (
+                            filteredContracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-gray-800/40 transition-colors'>
                                     <td className='px-4 py-3 text-center font-mono text-gray-400'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                                     <td className='px-4 py-3 font-mono text-gray-400'>{item.inputDate}</td>
@@ -407,7 +404,7 @@ const Activated = () => {
             {/* Pagination controls */}
             <Pagination
                 currentPage={currentPage}
-                totalItems={filteredContracts.length}
+                totalItems={total}
                 itemsPerPage={itemsPerPage}
                 onPageChange={(pg) => setCurrentPage(pg)}
             />

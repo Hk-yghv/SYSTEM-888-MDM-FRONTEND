@@ -5,6 +5,7 @@ import { AiOutlineMenu } from "react-icons/ai";
 import { MdOutlineSync, MdEdit, MdDelete, MdPictureAsPdf } from "react-icons/md";
 import { FaFileExcel } from 'react-icons/fa';
 import CreateApplication from '../components/CreateApplication';
+import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const BlackList = () => {
@@ -13,17 +14,21 @@ const BlackList = () => {
 
     const [contracts, setContracts] = useState([]);
     const [reloading, setReloading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const LIMIT = 10;
     const [openMenuId, setOpenMenuId] = useState(null);
     const [editData, setEditData] = useState(null);
     const [openEditModal, setOpenEditModal] = useState(false);
 
-    const fetchBlackListContracts = async () => {
+    const fetchBlackListContracts = async (pg = page) => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Blacklist`);
+            const res = await fetch(`${API_BASE}/contracts?status=Blacklist&page=${pg}&limit=${LIMIT}`);
             if (res.ok) {
                 const data = await res.json();
-                setContracts(data);
+                setContracts(data.data || []);
+                setTotal(data.total || 0);
             }
         } catch (err) {
             console.error('Fetch blacklist error:', err);
@@ -32,9 +37,7 @@ const BlackList = () => {
         }
     };
 
-    useEffect(() => {
-        fetchBlackListContracts();
-    }, []);
+    useEffect(() => { fetchBlackListContracts(page); }, [page]);
 
     const handleDelete = async (id) => {
         if (!window.confirm('Delete this blacklist record?')) return;
@@ -122,7 +125,7 @@ const BlackList = () => {
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
                         {contracts.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="text-center py-8 text-gray-500 italic">No blacklist contracts found in MongoDB.</td>
@@ -130,7 +133,7 @@ const BlackList = () => {
                         ) : (
                             contracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-gray-800/40 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{idx + 1}</td>
+                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{(page - 1) * LIMIT + idx + 1}</td>
                                     <td className='px-4 py-3 font-mono'>{item.inputDate}</td>
                                     <td className='px-4 py-3 font-bold text-gray-100'>{item.customerNameEn}</td>
                                     <td className='px-4 py-3 text-center'>
@@ -161,6 +164,8 @@ const BlackList = () => {
                     </tbody>
                 </table>
             </div>
+
+            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
 
             <CreateApplication open={openEditModal} setOpen={setOpenEditModal} editData={editData} onSaved={fetchBlackListContracts} />
         </div>

@@ -109,7 +109,7 @@ const UnlockPhone = () => {
                             <th className='px-4 py-3'>Reason</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
                         {loading ? (
                             <tr><td colSpan={8} className="text-center py-10 text-indigo-400">Loading...</td></tr>
                         ) : logs.length === 0 ? (

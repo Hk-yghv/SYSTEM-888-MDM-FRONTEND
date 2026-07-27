@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { MdOutlinePhoneIphone, MdOutlineSync, MdPictureAsPdf } from "react-icons/md";
 import { FaMobileAlt, FaLock, FaUnlock, FaFileExcel } from "react-icons/fa";
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import Pagination from '../../../components/Pagination';
 
 const Device = () => {
     const { t } = useLanguage();
@@ -13,14 +14,20 @@ const Device = () => {
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const LIMIT = 10;
 
-    const fetchDevices = async () => {
+    const fetchDevices = async (pg = page, search = searchTerm) => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Activated`);
+            const params = new URLSearchParams({ status: 'Activated', page: pg, limit: LIMIT });
+            if (search) params.set('search', search);
+            const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
-                setDevices(data);
+                setDevices(data.data || []);
+                setTotal(data.total || 0);
             }
         } catch (err) {
             console.error('Fetch devices error:', err);
@@ -30,15 +37,10 @@ const Device = () => {
         }
     };
 
-    useEffect(() => {
-        fetchDevices();
-    }, []);
+    useEffect(() => { fetchDevices(page, searchTerm); }, [page]);
+    useEffect(() => { fetchDevices(1, searchTerm); setPage(1); }, [searchTerm]);
 
-    const filteredDevices = devices.filter(d =>
-        (d.model || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (d.serialNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (d.customerNameEn || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredDevices = devices; // server already filters+paginates
 
     const handleExportExcel = () => {
         const data = filteredDevices.map((d, idx) => ({
@@ -133,7 +135,7 @@ const Device = () => {
                             <th className='px-4 py-3 text-center'>Wallpaper Status</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
                         {filteredDevices.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="text-center py-8 text-gray-500 italic">
@@ -143,7 +145,7 @@ const Device = () => {
                         ) : (
                             filteredDevices.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-gray-800/40 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{idx + 1}</td>
+                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{(page - 1) * LIMIT + idx + 1}</td>
                                     <td className='px-4 py-3 font-bold text-gray-100 flex items-center gap-2'>
                                         <FaMobileAlt className="text-indigo-400 text-sm" />
                                         {item.model}
@@ -170,6 +172,8 @@ const Device = () => {
                     </tbody>
                 </table>
             </div>
+
+            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
         </div>
     );
 };

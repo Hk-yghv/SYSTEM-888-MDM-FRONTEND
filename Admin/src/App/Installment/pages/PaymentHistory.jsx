@@ -157,7 +157,7 @@ const PaymentHistory = () => {
                             <th className='px-4 py-3'>{t('description')}</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
                         {loading ? (
                             <tr><td colSpan={8} className="text-center py-10 text-indigo-400">Loading...</td></tr>
                         ) : payments.length === 0 ? (

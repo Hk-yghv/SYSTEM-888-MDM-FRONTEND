@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { AiOutlineMenu, AiOutlinePlus } from "react-icons/ai";
@@ -16,6 +16,9 @@ const Application = () => {
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchInput, setSearchInput] = useState('');
     const itemsPerPage = 10;
 
     const [openCreateModal, setOpenCreateModal] = useState(false);
@@ -23,13 +26,16 @@ const Application = () => {
     const [infoData, setInfoData] = useState(null);
     const [openMenuId, setOpenMenuId] = useState(null);
 
-    const fetchApplications = async () => {
+    const fetchApplications = useCallback(async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Application`);
+            const params = new URLSearchParams({ status: 'Application', page: pg, limit: itemsPerPage });
+            if (search) params.set('search', search);
+            const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
-                setContracts(data);
+                setContracts(data.data || []);
+                setTotal(data.total || 0);
             }
         } catch (err) {
             console.error('Fetch applications error:', err);
@@ -37,11 +43,10 @@ const Application = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    };
+    }, [API_BASE, currentPage, searchTerm]);
 
-    useEffect(() => {
-        fetchApplications();
-    }, []);
+    useEffect(() => { fetchApplications(currentPage, searchTerm); }, [currentPage]);
+    useEffect(() => { fetchApplications(1, searchTerm); setCurrentPage(1); }, [searchTerm]);
 
     const handleOpenCreate = () => {
         setEditData(null);
@@ -158,7 +163,7 @@ const Application = () => {
                         </button>
                     )}
                     <button
-                        onClick={fetchApplications}
+                        onClick={() => fetchApplications(currentPage, searchTerm)}
                         disabled={reloading}
                         className='flex items-center gap-2 px-3 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-200 rounded-xl text-xs cursor-pointer border border-gray-700 transition-all'
                     >
@@ -182,7 +187,7 @@ const Application = () => {
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
                         {contracts.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="text-center py-8 text-gray-500 italic">
@@ -190,7 +195,7 @@ const Application = () => {
                                 </td>
                             </tr>
                         ) : (
-                            contracts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((item, idx) => (
+                            contracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-gray-800/40 transition-colors'>
                                     <td className='px-4 py-3 text-center font-mono text-gray-400'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                                     <td className='px-4 py-3 font-mono'>{item.inputDate}</td>
@@ -265,7 +270,7 @@ const Application = () => {
             {/* Pagination controls */}
             <Pagination
                 currentPage={currentPage}
-                totalItems={contracts.length}
+                totalItems={total}
                 itemsPerPage={itemsPerPage}
                 onPageChange={(pg) => setCurrentPage(pg)}
             />

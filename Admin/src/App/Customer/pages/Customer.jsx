@@ -17,15 +17,20 @@ const Customer = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [searchInput, setSearchInput] = useState('');
     const itemsPerPage = 10;
 
-    const fetchCustomers = async () => {
+    const fetchCustomers = async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Activated`);
+            const params = new URLSearchParams({ status: 'Activated', page: pg, limit: itemsPerPage });
+            if (search) params.set('search', search);
+            const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
-                setCustomers(data);
+                setCustomers(data.data || []);
+                setTotal(data.total || 0);
             }
         } catch (err) {
             console.error('Fetch customers error:', err);
@@ -35,17 +40,10 @@ const Customer = () => {
         }
     };
 
-    useEffect(() => {
-        fetchCustomers();
-    }, []);
+    useEffect(() => { fetchCustomers(currentPage, searchTerm); }, [currentPage]);
+    useEffect(() => { fetchCustomers(1, searchTerm); setCurrentPage(1); }, [searchTerm]);
 
-    const filteredCustomers = customers.filter(c =>
-        (c.customerNameEn || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.customerNameKh || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.model || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.idCardNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredCustomers = customers; // server already filters+paginates
 
     const handleExportExcel = () => {
         const excelData = filteredCustomers.map((c, idx) => ({
@@ -164,7 +162,7 @@ const Customer = () => {
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
                         {filteredCustomers.length === 0 ? (
                             <tr>
                                 <td colSpan={9} className="text-center py-8 text-gray-500 italic">
@@ -172,7 +170,7 @@ const Customer = () => {
                                 </td>
                             </tr>
                         ) : (
-                            filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((item, idx) => (
+                            filteredCustomers.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-gray-800/40 transition-colors'>
                                     <td className='px-4 py-3 text-center font-mono text-gray-400'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                                     <td className='px-4 py-3'>
@@ -215,7 +213,7 @@ const Customer = () => {
             {/* Pagination controls */}
             <Pagination
                 currentPage={currentPage}
-                totalItems={filteredCustomers.length}
+                totalItems={total}
                 itemsPerPage={itemsPerPage}
                 onPageChange={(pg) => setCurrentPage(pg)}
             />

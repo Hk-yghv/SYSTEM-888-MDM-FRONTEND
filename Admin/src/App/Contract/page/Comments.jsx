@@ -5,6 +5,7 @@ import { AiOutlineMenu } from "react-icons/ai";
 import { MdOutlineSync, MdEdit, MdDelete, MdComment, MdInfo, MdPictureAsPdf } from "react-icons/md";
 import { FaFileExcel } from 'react-icons/fa';
 import CreateApplication from '../components/CreateApplication';
+import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Comments = () => {
@@ -13,18 +14,22 @@ const Comments = () => {
 
     const [contracts, setContracts] = useState([]);
     const [reloading, setReloading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const LIMIT = 10;
     const [openMenuId, setOpenMenuId] = useState(null);
     const [editData, setEditData] = useState(null);
     const [openEditModal, setOpenEditModal] = useState(false);
     const [selectedInfo, setSelectedInfo] = useState(null);
 
-    const fetchCommentsContracts = async () => {
+    const fetchCommentsContracts = async (pg = page) => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Comments`);
+            const res = await fetch(`${API_BASE}/contracts?status=Comments&page=${pg}&limit=${LIMIT}`);
             if (res.ok) {
                 const data = await res.json();
-                setContracts(data);
+                setContracts(data.data || []);
+                setTotal(data.total || 0);
             }
         } catch (err) {
             console.error('Fetch comments error:', err);
@@ -33,9 +38,7 @@ const Comments = () => {
         }
     };
 
-    useEffect(() => {
-        fetchCommentsContracts();
-    }, []);
+    useEffect(() => { fetchCommentsContracts(page); }, [page]);
 
     const handleDelete = async (id) => {
         if (!window.confirm('Delete this record?')) return;
@@ -80,7 +83,7 @@ const Comments = () => {
                         <MdComment className="text-xl" />
                         <span>{t('comments')} List</span>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-800 font-normal">
-                            {contracts.length} Records with Comments
+                            {total} Records with Comments
                         </span>
                     </h1>
                 </div>
@@ -123,7 +126,7 @@ const Comments = () => {
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
                         {contracts.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="text-center py-8 text-gray-500 italic">No contracts with comments found in MongoDB.</td>
@@ -131,7 +134,7 @@ const Comments = () => {
                         ) : (
                             contracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-gray-800/40 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{idx + 1}</td>
+                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{(page - 1) * LIMIT + idx + 1}</td>
                                     <td className='px-4 py-3 font-mono text-gray-400'>{item.inputDate}</td>
                                     <td className='px-4 py-3 font-bold text-gray-100'>
                                         {item.customerNameEn} <span className="text-indigo-400 font-khmer text-xs">({item.customerNameKh})</span>
@@ -196,6 +199,8 @@ const Comments = () => {
                     </div>
                 </div>
             )}
+
+            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
 
             <CreateApplication open={openEditModal} setOpen={setOpenEditModal} editData={editData} onSaved={fetchCommentsContracts} />
         </div>

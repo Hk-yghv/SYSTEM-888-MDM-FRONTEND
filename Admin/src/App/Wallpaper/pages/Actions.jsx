@@ -17,9 +17,10 @@ const Actions = () => {
         setReloading(true);
         try {
             const res = await fetch(`${API_BASE}/contracts?status=Activated`);
+
             if (res.ok) {
-                const data = await res.json();
-                setContracts(data);
+                const result = await res.json();
+                setContracts(Array.isArray(result.data) ? result.data : []);
             }
         } catch (err) {
             console.error('Fetch wallpaper action contracts error:', err);
@@ -96,7 +97,7 @@ const Actions = () => {
                             <th className='px-4 py-3 text-center'>Toggle Action</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
                         {contracts.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="text-center py-8 text-gray-500 italic">
