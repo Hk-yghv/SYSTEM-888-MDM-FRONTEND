@@ -474,7 +474,7 @@ app.post('/api/users/block', async (req, res) => {
         const { userId, block } = req.body; // block: true = block, false = unblock
         let user = null;
         if (isMongoConnected) {
-            try { user = await User.findById(userId); } catch {}
+            try { user = await User.findById(userId); } catch { }
             if (!user) user = await User.findOne({ userId });
         } else {
             user = MEM_DB.users.find(u => u._id === userId || u.userId === userId);
@@ -1051,8 +1051,10 @@ app.get('/api/wallpaperlogs', async (req, res) => {
 app.get('/api/controlsystem', async (req, res) => {
     try {
         const brand = req.query.brand || '';
+        console.log("Requested brand:", brand);
         if (isMongoConnected) {
             let configs = await ControlSystem.find({ brand });
+            console.log("Configs:", configs);
             if (configs.length === 0 && brand) {
                 // If brand specific configs don't exist, fallback to global configs
                 configs = await ControlSystem.find({ brand: '' });
