@@ -6,7 +6,7 @@
         padding: 0;
         box-sizing: border-box;
         outline: none;
-        font-family: sans-serif;
+        font-family: 'KhmerAuto', sans-serif;
     }
 
     body {
@@ -20,18 +20,35 @@
         width: 6px;
         height: 6px;
     }
+
     ::-webkit-scrollbar-track {
         background: #090c18;
         border-radius: 99px;
     }
+
     ::-webkit-scrollbar-thumb {
         background: linear-gradient(180deg, #4f46e5 0%, #06b6d4 100%);
         border-radius: 99px;
         box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
     }
+
     ::-webkit-scrollbar-thumb:hover {
         background: linear-gradient(180deg, #6366f1 0%, #22d3ee 100%);
     }
+}
+
+@font-face {
+    font-family: 'KhmerAuto';
+    src: url('../assets/font/font_khmer.ttf') format('truetype');
+    unicode-range:
+        U+1780-17FF,
+        /* Khmer main block */
+        U+19E0-19FF,
+        /* Khmer Symbols */
+        U+200C-200D,
+        /* Zero Width Non-Joiner / Joiner (used in Khmer) */
+        U+25CC;
+    /* Dotted Circle (diacritic placeholder) */
 }
 
 @font-face {
@@ -68,10 +85,13 @@
 
 /* CUSTOM ICON & GLASS ANIMATIONS */
 @keyframes pulseGlow {
-    0%, 100% {
+
+    0%,
+    100% {
         filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.6));
         transform: scale(1);
     }
+
     50% {
         filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.9));
         transform: scale(1.08);
@@ -79,13 +99,25 @@
 }
 
 @keyframes floatSoft {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-3px); }
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
 }
 
 @keyframes rotateReload {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .icon-animated-glow {
@@ -127,4 +159,141 @@
     background: linear-gradient(135deg, #60a5fa 0%, #a855f7 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+/* ============================================
+   LIGHT MODE THEME OVERRIDES — body.light
+   ============================================ */
+body.light {
+    background: #f0f4ff;
+    color: #1e293b;
+}
+
+body.light .bg-\[\#070913\] {
+    background: #f0f4ff !important;
+}
+
+body.light .bg-\[\#0f1426\]\/90,
+body.light .bg-\[\#0f1426\] {
+    background: #ffffff !important;
+}
+
+body.light .bg-\[\#121629\] {
+    background: #ffffff !important;
+}
+
+body.light .bg-\[#0c0f1d\]\/90 {
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+body.light header.w-full {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.light .text-gray-100,
+body.light .text-gray-200 {
+    color: #1e293b !important;
+}
+
+body.light .text-gray-300 {
+    color: #334155 !important;
+}
+
+body.light .text-gray-400 {
+    color: #64748b !important;
+}
+
+body.light .text-gray-500 {
+    color: #94a3b8 !important;
+}
+
+body.light .border-gray-800,
+body.light .border-gray-800\/80,
+body.light .border-gray-800\/60 {
+    border-color: #e2e8f0 !important;
+}
+
+body.light .border-gray-700,
+body.light .border-gray-700\/60 {
+    border-color: #cbd5e1 !important;
+}
+
+body.light .bg-gray-900\/80,
+body.light .bg-gray-900\/90,
+body.light .bg-gray-900\/60,
+body.light .bg-gray-900 {
+    background: #f8fafc !important;
+}
+
+body.light .bg-gray-800\/70,
+body.light .bg-gray-800\/80,
+body.light .bg-gray-800\/60,
+body.light .bg-gray-800\/40,
+body.light .bg-gray-800 {
+    background: #f1f5f9 !important;
+}
+
+body.light .bg-gray-950\/60,
+body.light .bg-gray-950\/80 {
+    background: #f8fafc !important;
+}
+
+body.light .glass-card {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-color: #e2e8f0 !important;
+    backdrop-filter: blur(8px);
+}
+
+body.light tbody tr:hover {
+    background: #f1f5f9 !important;
+}
+
+body.light thead {
+    background: #f8fafc !important;
+}
+
+body.light .divide-gray-800\/60>* {
+    border-color: #e2e8f0 !important;
+}
+
+body.light input,
+body.light select,
+body.light textarea {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+body.light input:focus,
+body.light select:focus {
+    border-color: #6366f1 !important;
+}
+
+body.light input::placeholder {
+    color: #94a3b8 !important;
+}
+
+body.light .glass-nav-item:hover {
+    background: rgba(99, 102, 241, 0.1) !important;
+}
+
+body.light ::-webkit-scrollbar-track {
+    background: #e2e8f0;
+}
+
+body.light ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+body.light .bg-indigo-950\/20 {
+    background: rgba(99, 102, 241, 0.08) !important;
+}
+
+body.light .bg-red-950\/20 {
+    background: rgba(239, 68, 68, 0.08) !important;
+}
+
+body.light .bg-emerald-950\/30 {
+    background: rgba(16, 185, 129, 0.06) !important;
 }

@@ -170,15 +170,6 @@ mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 8000 })
     .then(async () => {
         isMongoConnected = true;
         console.log('Connected to MongoDB database successfully.');
-        try {
-            await Contract.deleteMany({});
-            await Payment.deleteMany({});
-            await PhoneLog.deleteMany({});
-            await WallpaperLog.deleteMany({});
-            console.log('Database collections (Contracts, Payments, Logs) cleared cleanly.');
-        } catch (dbErr) {
-            console.error('Error cleaning database on startup:', dbErr.message);
-        }
         await ensureMasterAdmin();
     })
     .catch(err => {
@@ -477,34 +468,93 @@ app.post('/api/users/update-profile', async (req, res) => {
     }
 });
 
+// BLOCK / UNBLOCK USER API (Administrator only)
+app.post('/api/users/block', async (req, res) => {
+    try {
+        const { userId, block } = req.body; // block: true = block, false = unblock
+        let user = null;
+        if (isMongoConnected) {
+            try { user = await User.findById(userId); } catch {}
+            if (!user) user = await User.findOne({ userId });
+        } else {
+            user = MEM_DB.users.find(u => u._id === userId || u.userId === userId);
+        }
+
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (user.isImmutable || user.username === '@hakyonghouv') {
+            return res.status(403).json({ error: 'Master Admin cannot be blocked!' });
+        }
+
+        user.isBlocked = !!block;
+        if (isMongoConnected) await user.save();
+        const memIdx = MEM_DB.users.findIndex(u => u._id === userId || u.userId === userId);
+        if (memIdx !== -1) MEM_DB.users[memIdx].isBlocked = !!block;
+
+        res.json({ success: true, isBlocked: user.isBlocked, username: user.username });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// STATUS CHECK — lightweight polling endpoint for real-time block detection
+app.get('/api/users/status-check', async (req, res) => {
+    try {
+        const { username } = req.query;
+        if (!username) return res.status(400).json({ error: 'username required' });
+
+        let user = null;
+        if (isMongoConnected) {
+            user = await User.findOne({ username }).select('username isBlocked status');
+        } else {
+            user = MEM_DB.users.find(u => u.username === username);
+        }
+
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json({ isBlocked: !!user.isBlocked, status: user.status });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // CONTRACTS API
 app.get('/api/contracts', async (req, res) => {
     try {
-        const { status, userBrand, userRole } = req.query;
+        const { status, userBrand, userRole, page = 1, limit = 10, search = '' } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
         let query = {};
         if (status) query.status = status;
-
-        if (userBrand && userRole !== 'Administrator') {
-            query.brand = userBrand;
+        if (userBrand && userRole !== 'Administrator') query.brand = userBrand;
+        if (search) {
+            query.$or = [
+                { customerNameEn: { $regex: search, $options: 'i' } },
+                { customerNameKh: { $regex: search, $options: 'i' } },
+                { serialNumber: { $regex: search, $options: 'i' } },
+                { contractId: { $regex: search, $options: 'i' } },
+                { model: { $regex: search, $options: 'i' } }
+            ];
         }
 
         if (isMongoConnected) {
-            const contracts = await Contract.find(query).sort({ createdAt: -1 });
-            const decrypted = contracts.map(sanitizeAndDecryptContract);
-            return res.json(decrypted);
+            const total = await Contract.countDocuments(query);
+            const contracts = await Contract.find(query).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+            const data = contracts.map(sanitizeAndDecryptContract);
+            return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
         let filtered = MEM_DB.contracts;
         if (status) filtered = filtered.filter(c => c.status === status);
         if (userBrand && userRole !== 'Administrator') filtered = filtered.filter(c => c.brand === userBrand);
-        const decrypted = filtered.map(sanitizeAndDecryptContract);
-        res.json(decrypted);
+        if (search) filtered = filtered.filter(c =>
+            (c.customerNameEn || '').toLowerCase().includes(search.toLowerCase()) ||
+            (c.customerNameKh || '').toLowerCase().includes(search.toLowerCase()) ||
+            (c.serialNumber || '').toLowerCase().includes(search.toLowerCase()) ||
+            (c.contractId || '').toLowerCase().includes(search.toLowerCase()) ||
+            (c.model || '').toLowerCase().includes(search.toLowerCase())
+        );
+        const total = filtered.length;
+        const data = filtered.slice(skip, skip + parseInt(limit)).map(sanitizeAndDecryptContract);
+        res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
     } catch (err) {
-        const { status } = req.query;
-        let filtered = MEM_DB.contracts;
-        if (status) filtered = filtered.filter(c => c.status === status);
-        if (userBrand && userRole !== 'Administrator') filtered = filtered.filter(c => c.brand === userBrand);
-        const decrypted = filtered.map(sanitizeAndDecryptContract);
-        res.json(decrypted);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -564,25 +614,43 @@ app.delete('/api/contracts/:id', async (req, res) => {
 // PAYMENTS & QR CODE API
 app.get('/api/payments', async (req, res) => {
     try {
-        const { userBrand, userRole } = req.query;
+        const { userBrand, userRole, page = 1, limit = 10, search = '' } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        let filter = {};
+        if (userBrand && userRole !== 'Administrator') {
+            const matchedContracts = isMongoConnected
+                ? await Contract.find({ brand: userBrand }).select('contractId')
+                : MEM_DB.contracts.filter(c => c.brand === userBrand);
+            filter.contractId = { $in: matchedContracts.map(c => c.contractId) };
+        }
+        if (search) {
+            filter.$or = [
+                { customerName: { $regex: search, $options: 'i' } },
+                { serialNumber: { $regex: search, $options: 'i' } },
+                { paidBy: { $regex: search, $options: 'i' } }
+            ];
+        }
+
         if (isMongoConnected) {
-            let filter = {};
-            if (userBrand && userRole !== 'Administrator') {
-                const matchedContracts = await Contract.find({ brand: userBrand }).select('contractId');
-                const contractIds = matchedContracts.map(c => c.contractId);
-                filter.contractId = { $in: contractIds };
-            }
-            const payments = await Payment.find(filter).sort({ createdAt: -1 });
-            return res.json(payments);
+            const total = await Payment.countDocuments(filter);
+            const data = await Payment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+            return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
         let filtered = MEM_DB.payments;
         if (userBrand && userRole !== 'Administrator') {
             const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
             filtered = filtered.filter(p => contractIds.includes(p.contractId));
         }
-        res.json(filtered);
+        if (search) filtered = filtered.filter(p =>
+            (p.customerName || '').toLowerCase().includes(search.toLowerCase()) ||
+            (p.serialNumber || '').toLowerCase().includes(search.toLowerCase()) ||
+            (p.paidBy || '').toLowerCase().includes(search.toLowerCase())
+        );
+        const total = filtered.length;
+        const data = filtered.slice(skip, skip + parseInt(limit));
+        res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
     } catch (err) {
-        res.json(MEM_DB.payments);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -808,11 +876,13 @@ app.post('/api/lostphone/toggle-lock', async (req, res) => {
             await contract.save();
         }
 
-        // 3. Create audit log object
+        // Resolve {{customerName}} template in displayText — includes both EN + KH names
         const now = new Date();
+        const fullCustomerName = [contract.customerNameEn, contract.customerNameKh].filter(Boolean).join(' ');
+        const resolvedDisplayText = (displayText || '').replace(/\{\{customerName\}\}/g, fullCustomerName);
 
         const logData = {
-            logId: `LOG-${Date.now()}`,   // ⭐ បន្ថែមបន្ទាត់នេះ
+            logId: `LOG-${Date.now()}`,
 
             contractId: contract.contractId,
             customerName: `${contract.customerNameEn} (${contract.customerNameKh || ''})`,
@@ -830,7 +900,7 @@ app.post('/api/lostphone/toggle-lock', async (req, res) => {
 
             reason: reason || `Device set to ${newStatus}`,
 
-            displayText: displayText || '',
+            displayText: resolvedDisplayText,
             phoneNumber: phoneNumber || ''
         };
 
@@ -862,19 +932,21 @@ app.post('/api/lostphone/toggle-lock', async (req, res) => {
 
 app.get('/api/phonelogs', async (req, res) => {
     try {
-        const { action, userBrand, userRole } = req.query;
+        const { action, userBrand, userRole, page = 1, limit = 10 } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
         let query = {};
         if (action) query.action = action;
-
         if (userBrand && userRole !== 'Administrator') {
-            const matchedContracts = await Contract.find({ brand: userBrand }).select('contractId');
-            const contractIds = matchedContracts.map(c => c.contractId);
-            query.contractId = { $in: contractIds };
+            const matchedContracts = isMongoConnected
+                ? await Contract.find({ brand: userBrand }).select('contractId')
+                : MEM_DB.contracts.filter(c => c.brand === userBrand);
+            query.contractId = { $in: matchedContracts.map(c => c.contractId) };
         }
 
         if (isMongoConnected) {
-            const logs = await PhoneLog.find(query).sort({ createdAt: -1 });
-            return res.json(logs);
+            const total = await PhoneLog.countDocuments(query);
+            const data = await PhoneLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+            return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
         let filtered = MEM_DB.phoneLogs;
         if (action) filtered = filtered.filter(l => l.action === action);
@@ -882,12 +954,11 @@ app.get('/api/phonelogs', async (req, res) => {
             const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
             filtered = filtered.filter(l => contractIds.includes(l.contractId));
         }
-        res.json(filtered);
+        const total = filtered.length;
+        const data = filtered.slice(skip, skip + parseInt(limit));
+        res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
     } catch (err) {
-        const { action } = req.query;
-        let filtered = MEM_DB.phoneLogs;
-        if (action) filtered = filtered.filter(l => l.action === action);
-        res.json(filtered);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -895,20 +966,28 @@ app.post('/api/wallpaper/toggle-lock', async (req, res) => {
     try {
         const { contractId, newStatus, performedBy, reason } = req.body;
         let contract = isMongoConnected ? await Contract.findOne({ contractId }) : MEM_DB.contracts.find(c => c.contractId === contractId);
-        if (contract) {
-            contract.lockWallpaperStatus = newStatus;
-            if (isMongoConnected) await contract.save();
+
+        if (!contract) {
+            return res.status(404).json({ error: 'Contract not found' });
         }
 
+        // Update wallpaper status on contract
+        contract.lockWallpaperStatus = newStatus;
+        if (isMongoConnected) await contract.save();
+
+        // Also sync MEM_DB contract
+        const memIdx = MEM_DB.contracts.findIndex(c => c.contractId === contractId);
+        if (memIdx !== -1) MEM_DB.contracts[memIdx].lockWallpaperStatus = newStatus;
+
         const now = new Date();
-        const logEntry = {
-            _id: 'wlog-' + Date.now(),
+        // Build log WITHOUT custom _id so MongoDB generates its own ObjectId
+        const logData = {
             logId: 'WLOG-' + Date.now(),
-            contractId: contract?.contractId || contractId,
-            brand: contract?.brand || '',
-            customerName: contract ? `${contract.customerNameEn} - ${contract.customerNameKh}` : 'Customer',
-            model: contract?.model || 'Device',
-            serialNumber: contract?.serialNumber || 'SN-UNKNOWN',
+            contractId: contract.contractId,
+            brand: contract.brand || '',
+            customerName: `${contract.customerNameEn} - ${contract.customerNameKh || ''}`,
+            model: contract.model || 'Device',
+            serialNumber: contract.serialNumber || 'SN-UNKNOWN',
             action: newStatus === 'Locked' ? 'Locked' : 'Unlocked',
             performedBy: performedBy || 'Administrator',
             date: now.toISOString().split('T')[0],
@@ -917,31 +996,42 @@ app.post('/api/wallpaper/toggle-lock', async (req, res) => {
         };
 
         if (isMongoConnected) {
-            const doc = new WallpaperLog(logEntry);
+            const doc = new WallpaperLog(logData);
             await doc.save();
+            MEM_DB.wallpaperLogs.unshift({ _id: doc._id.toString(), ...logData });
+        } else {
+            MEM_DB.wallpaperLogs.unshift({ _id: 'wlog-' + Date.now(), ...logData });
         }
-        MEM_DB.wallpaperLogs.unshift(logEntry);
-        res.json({ contract, logEntry });
+
+        res.json({
+            success: true,
+            message: `Wallpaper ${newStatus} successfully`,
+            contractId: contract.contractId,
+            lockWallpaperStatus: contract.lockWallpaperStatus
+        });
     } catch (err) {
+        console.error('Toggle wallpaper error:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
 app.get('/api/wallpaperlogs', async (req, res) => {
     try {
-        const { action, userBrand, userRole } = req.query;
+        const { action, userBrand, userRole, page = 1, limit = 10 } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
         let query = {};
         if (action) query.action = action;
-
         if (userBrand && userRole !== 'Administrator') {
-            const matchedContracts = await Contract.find({ brand: userBrand }).select('contractId');
-            const contractIds = matchedContracts.map(c => c.contractId);
-            query.contractId = { $in: contractIds };
+            const matchedContracts = isMongoConnected
+                ? await Contract.find({ brand: userBrand }).select('contractId')
+                : MEM_DB.contracts.filter(c => c.brand === userBrand);
+            query.contractId = { $in: matchedContracts.map(c => c.contractId) };
         }
 
         if (isMongoConnected) {
-            const logs = await WallpaperLog.find(query).sort({ createdAt: -1 });
-            return res.json(logs);
+            const total = await WallpaperLog.countDocuments(query);
+            const data = await WallpaperLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+            return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
         let filtered = MEM_DB.wallpaperLogs;
         if (action) filtered = filtered.filter(l => l.action === action);
@@ -949,12 +1039,11 @@ app.get('/api/wallpaperlogs', async (req, res) => {
             const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
             filtered = filtered.filter(l => contractIds.includes(l.contractId));
         }
-        res.json(filtered);
+        const total = filtered.length;
+        const data = filtered.slice(skip, skip + parseInt(limit));
+        res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
     } catch (err) {
-        const { action } = req.query;
-        let filtered = MEM_DB.wallpaperLogs;
-        if (action) filtered = filtered.filter(l => l.action === action);
-        res.json(filtered);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -1025,7 +1114,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
         let totalContracts, activatedContracts, applicationContracts, checkContracts,
             redeemContracts, blacklistContracts, commentsContracts,
             lockedPhones, unlockedPhones, lockedWallpapers, unlockedWallpapers,
-            totalRevenue, paymentCount;
+            totalRevenue, paymentCount, totalLoanAmount;
 
         let query = {};
         if (userBrand && userRole !== 'Administrator') {
@@ -1062,6 +1151,14 @@ app.get('/api/dashboard/stats', async (req, res) => {
                 { $group: { _id: null, total: { $sum: '$amount' } } }
             ]);
             totalRevenue = revenueAgg[0]?.total || 0;
+
+            // Total loan amount from ALL activated contracts
+            const activatedQuery = { ...query, status: 'Activated' };
+            const loanAgg = await Contract.aggregate([
+                { $match: activatedQuery },
+                { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+            ]);
+            totalLoanAmount = loanAgg[0]?.total || 0;
         } else {
             const contracts = MEM_DB.contracts.filter(c => {
                 if (userBrand && userRole !== 'Administrator') return c.brand === userBrand;
@@ -1086,13 +1183,17 @@ app.get('/api/dashboard/stats', async (req, res) => {
             });
             totalRevenue = filteredPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
             paymentCount = filteredPayments.length;
+            const activatedContracts2 = contracts.filter(c => c.status === 'Activated');
+            totalLoanAmount = activatedContracts2.reduce((sum, c) => sum + (Number(c.totalAmount) || Number(c.amount) || 0), 0);
         }
 
         res.json({
             totalContracts, activatedContracts, applicationContracts,
             checkContracts, redeemContracts, blacklistContracts, commentsContracts,
             lockedPhones, unlockedPhones, lockedWallpapers, unlockedWallpapers,
-            totalRevenue, paymentCount
+            totalRevenue, paymentCount,
+            totalLoanAmount: totalLoanAmount || 0,
+            outstandingBalance: Math.max((totalLoanAmount || 0) - (totalRevenue || 0), 0)
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

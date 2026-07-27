@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
     brand: { type: String, default: '' },
     role: { type: String, default: 'User' },
     isImmutable: { type: Boolean, default: false },
+    isBlocked: { type: Boolean, default: false },
     status: { type: String, enum: ['Online', 'Offline'], default: 'Offline' },
     telegramId: { type: String, default: '' },
     twoFactorEnabled: { type: Boolean, default: false },

@@ -338,8 +338,11 @@ const ControlSystem = () => {
                                 value={lockphoneDisplayText}
                                 onChange={(e) => setLockphoneDisplayText(e.target.value)}
                                 className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-khmer"
-                                placeholder="Display text on locked phone screen"
+                                placeholder="e.g. ទូរស័ព្ទរបស់ {{customerName}} ត្រូវបានចាក់សោ"
                             />
+                            <p className="mt-1.5 text-[10px] text-amber-400/80 font-mono leading-relaxed">
+                                💡 Use <span className="bg-amber-950/60 border border-amber-600/40 px-1.5 py-0.5 rounded text-amber-300 font-bold">{'{{customerName}}'}</span> — it will be replaced automatically with the customer's name when locking the phone.
+                            </p>
                         </div>
                         <div>
                             <label className="block text-gray-400 font-semibold mb-1">Hotline Phone Number to Call</label>

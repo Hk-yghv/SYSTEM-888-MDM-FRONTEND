@@ -4,39 +4,52 @@ import { useAuth } from '../../context/AuthContext';
 import {
     MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone,
     MdOutlineWallpaper, MdOutlineSync, MdCheckCircle, MdPendingActions,
-    MdTrendingUp, MdTrendingDown, MdPeople, MdBarChart
+    MdTrendingUp, MdTrendingDown, MdPeople, MdBarChart, MdClose
 } from 'react-icons/md';
 import { IoMdWallet } from 'react-icons/io';
-import { FaLock, FaUnlock, FaShieldAlt, FaChartPie } from 'react-icons/fa';
+import { FaLock, FaUnlock, FaShieldAlt, FaChartPie, FaLayerGroup, FaHistory } from 'react-icons/fa';
 
 const Dashboard = () => {
     const { t } = useLanguage();
-    const { API_BASE } = useAuth();
+    const { API_BASE, user } = useAuth();
 
     const [stats, setStats] = useState({
-        totalContracts: 0,
-        activatedContracts: 0,
-        applicationContracts: 0,
-        checkContracts: 0,
-        redeemContracts: 0,
-        commentsContracts: 0,
-        blacklistContracts: 0,
-        lockedPhones: 0,
-        unlockedPhones: 0,
-        lockedWallpapers: 0,
-        unlockedWallpapers: 0,
-        totalRevenue: 0,
-        paymentCount: 0
+        totalContracts: 0, activatedContracts: 0, applicationContracts: 0,
+        checkContracts: 0, redeemContracts: 0, commentsContracts: 0,
+        blacklistContracts: 0, lockedPhones: 0, unlockedPhones: 0,
+        lockedWallpapers: 0, unlockedWallpapers: 0, totalRevenue: 0, paymentCount: 0
     });
 
-    const [timeRange, setTimeRange] = useState('monthly'); // 'daily', 'monthly', 'yearly', 'all'
+    const [timeRange, setTimeRange] = useState('monthly');
+    const [brandFilter, setBrandFilter] = useState(user?.brand || '');
+    const [brandsList, setBrandsList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
+
+    // Recent session modal
+    const [sessionModal, setSessionModal] = useState(false);
+    const [recentSessions, setRecentSessions] = useState([]);
+    const [sessionsLoading, setSessionsLoading] = useState(false);
+
+    const fetchBrands = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/controlsystem?brand=`);
+            if (res.ok) {
+                const data = await res.json();
+                const brandCat = data.droplists?.find(d => d.category === 'Brands');
+                if (brandCat) setBrandsList(brandCat.items);
+            }
+        } catch { }
+    };
 
     const fetchDashboardStats = async () => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/dashboard/stats`);
+            const params = new URLSearchParams();
+            if (brandFilter && user?.role === 'Administrator') params.set('userBrand', brandFilter);
+            else if (user?.brand) params.set('userBrand', user.brand);
+
+            const res = await fetch(`${API_BASE}/dashboard/stats?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setStats(data);
@@ -49,28 +62,59 @@ const Dashboard = () => {
         }
     };
 
+    const fetchRecentSessions = async () => {
+        setSessionsLoading(true);
+        try {
+            const res = await fetch(`${API_BASE}/users`);
+            if (res.ok) {
+                const users = await res.json();
+                // Flatten all login history entries, attach username
+                const allSessions = [];
+                users.forEach(u => {
+                    (u.loginHistory || []).slice(-5).forEach(log => {
+                        allSessions.push({ ...log, username: u.username, name: u.name, role: u.role });
+                    });
+                });
+                // Sort by timestamp descending
+                allSessions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                setRecentSessions(allSessions.slice(0, 20));
+            }
+        } catch (err) {
+            console.error('Failed to fetch sessions:', err);
+        } finally {
+            setSessionsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchBrands();
+    }, []);
+
     useEffect(() => {
         fetchDashboardStats();
-    }, []);
+    }, [brandFilter]);
+
+    const handleOpenSessions = () => {
+        setSessionModal(true);
+        fetchRecentSessions();
+    };
 
     const activatedPct = stats.totalContracts ? Math.round((stats.activatedContracts / stats.totalContracts) * 100) : 0;
     const applicationPct = stats.totalContracts ? Math.round((stats.applicationContracts / stats.totalContracts) * 100) : 0;
     const checkPct = stats.totalContracts ? Math.round((stats.checkContracts / stats.totalContracts) * 100) : 0;
     const redeemPct = stats.totalContracts ? Math.round((stats.redeemContracts / stats.totalContracts) * 100) : 0;
     const blacklistPct = stats.totalContracts ? Math.round((stats.blacklistContracts / stats.totalContracts) * 100) : 0;
-    const commentsPct = stats.totalContracts ? Math.round(((stats.commentsContracts || 0) / stats.totalContracts) * 100) : 0;
 
     const phoneLockPct = stats.totalContracts ? Math.round((stats.lockedPhones / stats.totalContracts) * 100) : 0;
     const wallpaperLockPct = stats.totalContracts ? Math.round((stats.lockedWallpapers / stats.totalContracts) * 100) : 0;
-    const activationRate = activatedPct;
-    const securityRisk = phoneLockPct;
 
-    // Financial Profit & Loss Calculations
     const multiplier = timeRange === 'daily' ? 0.03 : timeRange === 'monthly' ? 0.25 : timeRange === 'yearly' ? 0.9 : 1.0;
     const totalCollectedRevenue = Math.round(stats.totalRevenue * multiplier);
-    const estimatedAdminProfit = Math.round(totalCollectedRevenue * 0.15); // 15% estimated margin
+    const estimatedAdminProfit = Math.round(totalCollectedRevenue * 0.15);
     const outstandingLoans = Math.round(stats.activatedContracts * 850 * (1 - multiplier * 0.5));
     const netProfitMargin = totalCollectedRevenue > 0 ? Math.round((estimatedAdminProfit / totalCollectedRevenue) * 100) : 0;
+
+    const isAdmin = user?.role === 'Administrator';
 
     return (
         <div className="w-full h-[93vh] overflow-y-auto bg-[#070913] p-6 space-y-6 select-none">
@@ -85,34 +129,45 @@ const Dashboard = () => {
                     <p className="text-xs text-gray-400 mt-1">System Analytics, Financial Profit/Loss & Real-Time Tracking</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Brand Filter — Admin only */}
+                    {isAdmin && brandsList.length > 0 && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-xl text-xs font-semibold">
+                            <FaLayerGroup className="text-indigo-400 text-xs" />
+                            <select
+                                value={brandFilter}
+                                onChange={e => setBrandFilter(e.target.value)}
+                                className="bg-transparent text-gray-200 font-semibold cursor-pointer outline-none pr-1"
+                            >
+                                <option value="">All Brands</option>
+                                {brandsList.map(b => (
+                                    <option key={b} value={b}>{b}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     {/* Time-Range Filter Buttons */}
                     <div className="flex items-center p-1 bg-gray-900 border border-gray-800 rounded-xl text-xs font-semibold">
-                        <button
-                            onClick={() => setTimeRange('daily')}
-                            className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${timeRange === 'daily' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200'}`}
-                        >
-                            Daily (ថ្ងៃនេះ)
-                        </button>
-                        <button
-                            onClick={() => setTimeRange('monthly')}
-                            className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${timeRange === 'monthly' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200'}`}
-                        >
-                            Monthly (ខែនេះ)
-                        </button>
-                        <button
-                            onClick={() => setTimeRange('yearly')}
-                            className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${timeRange === 'yearly' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200'}`}
-                        >
-                            Yearly (ឆ្នាំនេះ)
-                        </button>
-                        <button
-                            onClick={() => setTimeRange('all')}
-                            className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${timeRange === 'all' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200'}`}
-                        >
-                            All Time
-                        </button>
+                        {[['daily', 'Daily'], ['monthly', 'Monthly'], ['yearly', 'Yearly'], ['all', 'All Time']].map(([val, label]) => (
+                            <button
+                                key={val}
+                                onClick={() => setTimeRange(val)}
+                                className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${timeRange === val ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-200'}`}
+                            >
+                                {label}
+                            </button>
+                        ))}
                     </div>
+
+                    {/* Recent Sessions button */}
+                    <button
+                        onClick={handleOpenSessions}
+                        className="flex items-center gap-2 px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 rounded-xl text-xs font-semibold cursor-pointer transition-all"
+                    >
+                        <FaHistory className="text-sm" />
+                        <span>Recent Sessions</span>
+                    </button>
 
                     <button
                         onClick={fetchDashboardStats}
@@ -124,6 +179,19 @@ const Dashboard = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Brand filter badge */}
+            {(brandFilter || user?.brand) && (
+                <div className="flex items-center gap-2 text-xs">
+                    <span className="text-gray-400">Showing stats for:</span>
+                    <span className="px-3 py-1 bg-indigo-900/60 border border-indigo-700 text-indigo-300 rounded-full font-bold flex items-center gap-1.5">
+                        <FaLayerGroup size={10} /> {brandFilter || user?.brand}
+                        {isAdmin && brandFilter && (
+                            <button onClick={() => setBrandFilter('')} className="ml-1 text-indigo-400 hover:text-white cursor-pointer">✕</button>
+                        )}
+                    </span>
+                </div>
+            )}
 
             {/* Financial Profit & Loss Analysis Section */}
             <div className="p-6 rounded-3xl glass-card border border-emerald-500/30 bg-gradient-to-r from-emerald-950/30 via-gray-900/60 to-teal-950/30 space-y-4 shadow-2xl">
@@ -137,35 +205,23 @@ const Dashboard = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                    <div className="p-4 bg-gray-900/80 rounded-2xl border border-gray-800">
-                        <span className="text-gray-400 block text-[11px] uppercase font-semibold">Collected Revenue</span>
-                        <span className="text-2xl font-black text-emerald-400 font-mono block mt-1">${totalCollectedRevenue.toLocaleString()}</span>
-                        <span className="text-[10px] text-gray-500 mt-1 block">From installment payments</span>
-                    </div>
-
-                    <div className="p-4 bg-gray-900/80 rounded-2xl border border-gray-800">
-                        <span className="text-gray-400 block text-[11px] uppercase font-semibold">Estimated Net Profit</span>
-                        <span className="text-2xl font-black text-cyan-400 font-mono block mt-1">${estimatedAdminProfit.toLocaleString()}</span>
-                        <span className="text-[10px] text-emerald-400 mt-1 block">↑ +15% Admin Fee & Profit margin</span>
-                    </div>
-
-                    <div className="p-4 bg-gray-900/80 rounded-2xl border border-gray-800">
-                        <span className="text-gray-400 block text-[11px] uppercase font-semibold">Outstanding Balance</span>
-                        <span className="text-2xl font-black text-amber-400 font-mono block mt-1">${outstandingLoans.toLocaleString()}</span>
-                        <span className="text-[10px] text-amber-500 mt-1 block">Active contracts pending collection</span>
-                    </div>
-
-                    <div className="p-4 bg-gray-900/80 rounded-2xl border border-gray-800">
-                        <span className="text-gray-400 block text-[11px] uppercase font-semibold">Financial Loss Risk</span>
-                        <span className="text-2xl font-black text-red-400 font-mono block mt-1">${Math.round(stats.blacklistContracts * 800).toLocaleString()}</span>
-                        <span className="text-[10px] text-red-400 mt-1 block">Blacklisted defaulting accounts</span>
-                    </div>
+                    {[
+                        { label: 'Collected Revenue', value: `$${totalCollectedRevenue.toLocaleString()}`, sub: 'From installment payments', color: 'text-emerald-400' },
+                        { label: 'Estimated Net Profit', value: `$${estimatedAdminProfit.toLocaleString()}`, sub: '↑ +15% Admin Fee & Profit margin', color: 'text-cyan-400' },
+                        { label: 'Outstanding Balance', value: `$${outstandingLoans.toLocaleString()}`, sub: 'Active contracts pending collection', color: 'text-amber-400' },
+                        { label: 'Financial Loss Risk', value: `$${Math.round(stats.blacklistContracts * 800).toLocaleString()}`, sub: 'Blacklisted defaulting accounts', color: 'text-red-400' },
+                    ].map(item => (
+                        <div key={item.label} className="p-4 bg-gray-900/80 rounded-2xl border border-gray-800">
+                            <span className="text-gray-400 block text-[11px] uppercase font-semibold">{item.label}</span>
+                            <span className={`text-2xl font-black font-mono block mt-1 ${item.color}`}>{item.value}</span>
+                            <span className="text-[10px] text-gray-500 mt-1 block">{item.sub}</span>
+                        </div>
+                    ))}
                 </div>
             </div>
 
             {/* Row 1: Metrics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Total Contracts */}
                 <div className="p-5 rounded-2xl glass-card border border-gray-700/40 hover:border-indigo-500/50 transition-all shadow-xl group">
                     <div className="flex items-center justify-between">
                         <div>
@@ -183,7 +239,6 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Activated */}
                 <div className="p-5 rounded-2xl glass-card border border-indigo-500/20 hover:border-indigo-500/50 transition-all shadow-xl group">
                     <div className="flex items-center justify-between">
                         <div>
@@ -203,7 +258,6 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Total Revenue */}
                 <div className="p-5 rounded-2xl glass-card border border-emerald-500/20 hover:border-emerald-500/50 transition-all shadow-xl group">
                     <div className="flex items-center justify-between">
                         <div>
@@ -219,7 +273,6 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Phone Lock Status */}
                 <div className="p-5 rounded-2xl glass-card border border-red-500/20 hover:border-red-500/50 transition-all shadow-xl group">
                     <div className="flex items-center justify-between">
                         <div>
@@ -242,7 +295,6 @@ const Dashboard = () => {
 
             {/* Row 2: Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
                 {/* Chart 1: Contract Status Donut */}
                 <div className="lg:col-span-1 p-6 rounded-2xl glass-card border border-gray-800 space-y-4">
                     <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
@@ -250,7 +302,6 @@ const Dashboard = () => {
                         Contract Status Distribution
                     </h3>
                     <div className="flex flex-col items-center justify-center gap-4 pt-2">
-                        {/* Donut SVG */}
                         <div className="relative w-40 h-40 flex items-center justify-center">
                             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                                 <path className="text-gray-800" strokeWidth="3.8" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -266,7 +317,6 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Legend */}
                         <div className="w-full space-y-1.5 text-xs font-semibold">
                             {[
                                 { label: t('activated'), count: stats.activatedContracts, pct: activatedPct, color: 'bg-indigo-500', text: 'text-indigo-300', border: 'border-indigo-800/40', bg: 'bg-indigo-950/40' },
@@ -297,10 +347,7 @@ const Dashboard = () => {
                         Data Analysis & Security Overview
                     </h3>
 
-                    {/* Analytics Rows */}
                     <div className="space-y-4">
-
-                        {/* Activation Rate */}
                         <div>
                             <div className="flex justify-between items-center text-xs font-semibold mb-2">
                                 <span className="text-gray-300 flex items-center gap-2"><MdCheckCircle className="text-indigo-400" /> Activation Rate</span>
@@ -311,7 +358,6 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Phone Lock Ratio */}
                         <div>
                             <div className="flex justify-between items-center text-xs font-semibold mb-2">
                                 <span className="text-gray-300 flex items-center gap-2"><FaLock className="text-red-400 text-xs" /> Phone Lock Ratio</span>
@@ -327,7 +373,6 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Wallpaper Lock Ratio */}
                         <div>
                             <div className="flex justify-between items-center text-xs font-semibold mb-2">
                                 <span className="text-gray-300 flex items-center gap-2"><MdOutlineWallpaper className="text-indigo-400" /> Wallpaper Lock Ratio</span>
@@ -339,7 +384,6 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Revenue per payment */}
                         <div>
                             <div className="flex justify-between items-center text-xs font-semibold mb-2">
                                 <span className="text-gray-300 flex items-center gap-2"><IoMdWallet className="text-emerald-400" /> Avg. Revenue per Payment</span>
@@ -353,7 +397,6 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Key Insight Cards */}
                     <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-800">
                         <div className="p-3 rounded-xl bg-gray-900/60 border border-gray-800 text-center">
                             <p className="text-[10px] text-gray-400 font-semibold uppercase">At Risk</p>
@@ -386,6 +429,73 @@ const Dashboard = () => {
                     </p>
                 </div>
             </div>
+
+            {/* ─── Recent Sessions Modal ─── */}
+            {sessionModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSessionModal(false)}>
+                    <div
+                        className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-2xl shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Modal header */}
+                        <div className="flex items-center justify-between border-b border-gray-800 pb-3 shrink-0">
+                            <h3 className="text-sm font-bold text-gray-100 flex items-center gap-2">
+                                <FaHistory className="text-purple-400" />
+                                Recent Login Sessions (All Users)
+                            </h3>
+                            <button onClick={() => setSessionModal(false)} className="text-gray-400 hover:text-white text-lg cursor-pointer transition-colors">
+                                <MdClose />
+                            </button>
+                        </div>
+
+                        {/* Sessions list */}
+                        <div className="overflow-y-auto flex-1 space-y-2 pr-1 text-xs">
+                            {sessionsLoading ? (
+                                <div className="flex items-center justify-center py-10 text-indigo-400 text-sm gap-2">
+                                    <MdOutlineSync className="spin-reload text-xl" /> Loading sessions...
+                                </div>
+                            ) : recentSessions.length === 0 ? (
+                                <p className="text-gray-500 italic text-center py-8">No login sessions recorded yet.</p>
+                            ) : (
+                                recentSessions.map((log, idx) => (
+                                    <div key={idx} className="p-3 bg-gray-900/60 border border-gray-800 rounded-2xl flex items-start gap-3 hover:bg-gray-800/40 transition-colors">
+                                        {/* Avatar */}
+                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white font-black text-sm shrink-0">
+                                            {(log.name || log.username || '?')[0].toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="font-bold text-indigo-300 font-mono truncate">{log.username}</span>
+                                                <span className="text-[10px] px-2 py-0.5 bg-gray-800 border border-gray-700 rounded-full text-gray-400 font-semibold shrink-0">
+                                                    {log.role}
+                                                </span>
+                                            </div>
+                                            <p className="text-gray-300 font-semibold text-[11px] truncate">{log.name}</p>
+                                            <div className="flex items-center gap-3 mt-1 text-gray-500 text-[10px]">
+                                                <span className="font-mono">🕐 {new Date(log.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' })}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-0.5 text-gray-500 text-[10px]">
+                                                <span>📍 {log.ip || '127.0.0.1'}</span>
+                                                <span>•</span>
+                                                <span>🖥 {log.deviceInfo || 'Web Browser'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="shrink-0 text-right pt-2 border-t border-gray-800">
+                            <button
+                                onClick={() => setSessionModal(false)}
+                                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl cursor-pointer transition-all"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

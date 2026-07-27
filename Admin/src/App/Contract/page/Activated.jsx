@@ -36,6 +36,7 @@ const Activated = () => {
     const [selectedQrContract, setSelectedQrContract] = useState(null);
     const [qrPayload, setQrPayload] = useState(null);
     const [qrDataUrl, setQrDataUrl] = useState('');
+    const [paymentMethods, setPaymentMethods] = useState(['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer']);
     const [phoneForm, setPhoneForm] = useState({
         paidDate: new Date().toISOString().split('T')[0],
         paidBy: '',
@@ -61,8 +62,21 @@ const Activated = () => {
         }
     };
 
+    // Fetch Payment Methods from ControlSystem
+    const fetchPaymentMethods = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/controlsystem?brand=`);
+            if (res.ok) {
+                const data = await res.json();
+                const pmCat = data.droplists?.find(d => d.category === 'Payment Methods');
+                if (pmCat && pmCat.items?.length) setPaymentMethods(pmCat.items);
+            }
+        } catch { }
+    };
+
     useEffect(() => {
         fetchActivatedContracts();
+        fetchPaymentMethods();
     }, []);
 
     const filteredContracts = activatedContracts.filter(c =>
@@ -130,7 +144,7 @@ const Activated = () => {
         setPaymentSuccess(false);
         setPhoneForm({
             paidDate: new Date().toISOString().split('T')[0],
-            paidBy: contract.customerNameEn || '',
+            paidBy: paymentMethods[0] || 'Cash',
             amount: contract.monthlyPayment || 150,
             description: `Installment payment for ${contract.model}`
         });
@@ -534,8 +548,18 @@ const Activated = () => {
                                             <input type="date" required value={phoneForm.paidDate} onChange={(e) => setPhoneForm({ ...phoneForm, paidDate: e.target.value })} className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono" />
                                         </div>
                                         <div>
-                                            <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('paidBy')}</label>
-                                            <input type="text" required value={phoneForm.paidBy} onChange={(e) => setPhoneForm({ ...phoneForm, paidBy: e.target.value })} placeholder="Enter payer name" className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100" />
+                                            <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('paidBy')} / Payment Method</label>
+                                            <select
+                                                required
+                                                value={phoneForm.paidBy}
+                                                onChange={(e) => setPhoneForm({ ...phoneForm, paidBy: e.target.value })}
+                                                className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer"
+                                            >
+                                                <option value="">-- Select Payment Method --</option>
+                                                {paymentMethods.map(m => (
+                                                    <option key={m} value={m}>{m}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div>
                                             <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('amount')} ($ USD)</label>

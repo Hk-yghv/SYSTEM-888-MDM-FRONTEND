@@ -9,6 +9,7 @@ import Loading from "../utils/Loading";
 
 import { LanguageProvider } from "../context/LanguageContext";
 import { AuthProvider } from "../context/AuthContext";
+import { ThemeProvider } from "../context/ThemeContext";
 import ProtectRoute from "../services/ProtectRoute";
 import SignIn from "../services/SignIn";
 
@@ -65,6 +66,7 @@ const App = () => {
   return (
     <DesktopOnlyGuard>
       <Suspense fallback={<Loading />}>
+        <ThemeProvider>
         <AuthProvider>
           <LanguageProvider>
             <BrowserRouter>
@@ -249,8 +251,9 @@ const App = () => {
             </Routes>
           </BrowserRouter>
         </LanguageProvider>
-      </AuthProvider>
-    </Suspense>
+        </AuthProvider>
+        </ThemeProvider>
+      </Suspense>
     </DesktopOnlyGuard>
   );
 };

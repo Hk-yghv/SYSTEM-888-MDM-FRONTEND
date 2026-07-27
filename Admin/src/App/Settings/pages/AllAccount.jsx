@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
-import { FaShieldAlt, FaUserPlus, FaLock, FaTelegramPlane, FaHistory } from 'react-icons/fa';
+import { FaShieldAlt, FaUserPlus, FaLock, FaTelegramPlane, FaHistory, FaBan, FaUnlock } from 'react-icons/fa';
 import { MdOutlineSync, MdDelete, MdEdit } from 'react-icons/md';
 
 const ALL_SYSTEM_PAGES = [
@@ -141,6 +141,30 @@ const AllAccount = () => {
         }
     };
 
+    const handleToggleBlock = async (userObj) => {
+        const willBlock = !userObj.isBlocked;
+        const confirmMsg = willBlock
+            ? `Block account "${userObj.username}"? They will be kicked out immediately if online.`
+            : `Unblock account "${userObj.username}"? They will regain access immediately.`;
+        if (!window.confirm(confirmMsg)) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/users/block`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userObj._id, block: willBlock })
+            });
+            if (res.ok) {
+                fetchUsers();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Block action failed');
+            }
+        } catch (err) {
+            console.error('Block toggle error:', err);
+        }
+    };
+
     return (
         <div className='w-full h-[93vh] overflow-y-auto bg-[#070913] p-4 select-none space-y-4'>
             {/* Header */}
@@ -198,8 +222,9 @@ const AllAccount = () => {
                     <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
                         {users.map((item, idx) => {
                             const isMaster = item.isImmutable || item.username === '@hakyonghouv';
+                            const isBlockedUser = !!item.isBlocked;
                             return (
-                                <tr key={item._id || idx} className={`hover:bg-gray-800/40 transition-colors ${isMaster ? 'bg-indigo-950/20' : ''}`}>
+                                <tr key={item._id || idx} className={`hover:bg-gray-800/40 transition-colors ${isMaster ? 'bg-indigo-950/20' : ''} ${isBlockedUser ? 'bg-red-950/20 border-l-2 border-red-800' : ''}`}>
                                     <td className='px-4 py-3 text-center font-mono text-gray-400'>{idx + 1}</td>
                                     <td className='px-4 py-3'>
                                         <span className='font-bold text-indigo-300 font-mono block'>{item.username}</span>
@@ -252,13 +277,28 @@ const AllAccount = () => {
                                                 <FaLock size={9} /> Immutable Master Admin
                                             </span>
                                         ) : (
-                                            <button
-                                                onClick={() => handleDeleteUser(item)}
-                                                className="p-1.5 bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 rounded-lg cursor-pointer transition-all"
-                                                title="Delete Account"
-                                            >
-                                                <MdDelete size={16} />
-                                            </button>
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                {/* Block / Unblock */}
+                                                <button
+                                                    onClick={() => handleToggleBlock(item)}
+                                                    className={`p-1.5 border rounded-lg cursor-pointer transition-all text-[11px] font-bold flex items-center gap-1 px-2 ${
+                                                        item.isBlocked
+                                                            ? 'bg-emerald-950/80 hover:bg-emerald-900 border-emerald-700 text-emerald-300'
+                                                            : 'bg-orange-950/80 hover:bg-orange-900 border-orange-700 text-orange-300'
+                                                    }`}
+                                                    title={item.isBlocked ? 'Unblock User' : 'Block User'}
+                                                >
+                                                    {item.isBlocked ? <><FaUnlock size={11} /> Unblock</> : <><FaBan size={11} /> Block</>}
+                                                </button>
+                                                {/* Delete */}
+                                                <button
+                                                    onClick={() => handleDeleteUser(item)}
+                                                    className="p-1.5 bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 rounded-lg cursor-pointer transition-all"
+                                                    title="Delete Account"
+                                                >
+                                                    <MdDelete size={16} />
+                                                </button>
+                                            </div>
                                         )}
                                     </td>
                                 </tr>

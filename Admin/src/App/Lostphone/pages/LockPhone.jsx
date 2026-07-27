@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { FaLock, FaFileExcel } from 'react-icons/fa';
 import { MdOutlineSync, MdPictureAsPdf } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import Pagination from '../../../components/Pagination';
+
+const LIMIT = 10;
 
 const LockPhone = () => {
     const { t } = useLanguage();
@@ -12,11 +15,13 @@ const LockPhone = () => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
 
-    const fetchLockLogs = async () => {
+    const fetchLockLogs = useCallback(async (pg = page) => {
         setReloading(true);
         try {
-            const params = new URLSearchParams({ action: 'Locked' });
+            const params = new URLSearchParams({ action: 'Locked', page: pg, limit: LIMIT });
             if (user?.brand && user?.role !== 'Administrator') {
                 params.append('userBrand', user.brand);
                 params.append('userRole', user.role);
@@ -24,7 +29,8 @@ const LockPhone = () => {
             const res = await fetch(`${API_BASE}/phonelogs?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
-                setLogs(data);
+                setLogs(data.data || []);
+                setTotal(data.total || 0);
             }
         } catch (err) {
             console.error('Fetch phone lock logs error:', err);
@@ -32,11 +38,9 @@ const LockPhone = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    };
+    }, [API_BASE, user, page]);
 
-    useEffect(() => {
-        fetchLockLogs();
-    }, []);
+    useEffect(() => { fetchLockLogs(page); }, [page]);
 
     const handleExportExcel = () => {
         const data = logs.map((item, idx) => ({
@@ -46,6 +50,7 @@ const LockPhone = () => {
             'Customer Name': item.customerName || '',
             'Model': item.model || '',
             'Serial Number': item.serialNumber || '',
+            'Brand': item.brand || '',
             'User Name': item.userName || item.performedBy || '',
             'Reason': item.reason || '',
             'Display Text': item.displayText || '',
@@ -78,32 +83,19 @@ const LockPhone = () => {
                             {t('lockPhone')} Audit History Log
                         </h1>
                         <p className='text-xs text-red-400 font-semibold'>
-                            Automated records of devices set to Lock (Date, Time, Reason, Display Text, Hotline, User Name)
+                            {total} records — Date, Time, Reason, Display Text, Hotline, User Name
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-950/40 hover:bg-emerald-950/70 text-emerald-300 border border-emerald-800/40 rounded-xl text-xs font-semibold cursor-pointer transition-all'
-                    >
-                        <FaFileExcel />
-                        <span>Excel</span>
+                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-950/40 hover:bg-emerald-950/70 text-emerald-300 border border-emerald-800/40 rounded-xl text-xs font-semibold cursor-pointer transition-all'>
+                        <FaFileExcel /><span>Excel</span>
                     </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-950/40 hover:bg-red-950/70 text-red-300 border border-red-800/40 rounded-xl text-xs font-semibold cursor-pointer transition-all'
-                    >
-                        <MdPictureAsPdf className="text-sm" />
-                        <span>PDF</span>
+                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-950/40 hover:bg-red-950/70 text-red-300 border border-red-800/40 rounded-xl text-xs font-semibold cursor-pointer transition-all'>
+                        <MdPictureAsPdf className="text-sm" /><span>PDF</span>
                     </button>
-
-                    <button
-                        onClick={fetchLockLogs}
-                        disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-200 rounded-xl text-xs cursor-pointer border border-gray-700 transition-all'
-                    >
+                    <button onClick={() => fetchLockLogs(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-200 rounded-xl text-xs cursor-pointer border border-gray-700 transition-all'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-400' : ''} />
                         <p>{t('reload')}</p>
                     </button>
@@ -127,16 +119,14 @@ const LockPhone = () => {
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
-                        {logs.length === 0 ? (
-                            <tr>
-                                <td colSpan={9} className="text-center py-8 text-gray-500 italic">
-                                    No phone locking activity recorded yet.
-                                </td>
-                            </tr>
+                        {loading ? (
+                            <tr><td colSpan={10} className="text-center py-10 text-indigo-400">Loading...</td></tr>
+                        ) : logs.length === 0 ? (
+                            <tr><td colSpan={10} className="text-center py-8 text-gray-500 italic">No phone locking activity recorded yet.</td></tr>
                         ) : (
                             logs.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-gray-800/40 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{idx + 1}</td>
+                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{(page - 1) * LIMIT + idx + 1}</td>
                                     <td className='px-4 py-3 font-mono text-red-300 font-bold'>
                                         {item.date} <span className="text-gray-400 font-normal">at {item.time}</span>
                                     </td>
@@ -144,24 +134,22 @@ const LockPhone = () => {
                                     <td className='px-4 py-3 font-semibold text-gray-300'>{item.model}</td>
                                     <td className='px-4 py-3 font-mono text-indigo-300'>{item.serialNumber}</td>
                                     <td className='px-4 py-3'>
-                                        {item.brand ? (
-                                            <span className="px-2 py-0.5 bg-indigo-900/60 border border-indigo-700 text-indigo-300 rounded-full font-bold text-[10px]">{item.brand}</span>
-                                        ) : <span className="text-gray-600">-</span>}
+                                        {item.brand ? <span className="px-2 py-0.5 bg-indigo-900/60 border border-indigo-700 text-indigo-300 rounded-full font-bold text-[10px]">{item.brand}</span> : <span className="text-gray-600">-</span>}
                                     </td>
-                                    <td className='px-4 py-3 text-purple-300 font-semibold'>{item.userName || item.performedBy || 'BOY BOY'}</td>
+                                    <td className='px-4 py-3 text-purple-300 font-semibold'>{item.userName || item.performedBy || '-'}</td>
                                     <td className='px-4 py-3 text-gray-400 text-[11px]'>{item.reason}</td>
                                     <td className='px-4 py-3 text-amber-300 font-khmer text-[11px] max-w-[200px] truncate' title={item.displayText}>
                                         {item.displayText || 'ប្រព័ន្ធ SYSTEM MDM — ទូរស័ព្ទនេះត្រូវបានចាក់សោ'}
                                     </td>
-                                    <td className='px-4 py-3 font-mono text-emerald-400 font-bold'>
-                                        {item.phoneNumber || '+855 12 903 120'}
-                                    </td>
+                                    <td className='px-4 py-3 font-mono text-emerald-400 font-bold'>{item.phoneNumber || '-'}</td>
                                 </tr>
                             ))
                         )}
                     </tbody>
                 </table>
             </div>
+
+            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
         </div>
     );
 };

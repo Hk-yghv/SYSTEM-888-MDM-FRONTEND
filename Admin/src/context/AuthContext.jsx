@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { FaBan } from 'react-icons/fa';
 
 const AuthContext = createContext();
 
@@ -12,6 +13,51 @@ export const AuthProvider = ({ children }) => {
 
     const [token, setToken] = useState(() => localStorage.getItem('mdm_token') || '');
     const [loading, setLoading] = useState(false);
+    const [isBlocked, setIsBlocked] = useState(false);
+
+    const pollingRef = useRef(null);
+
+    const logout = useCallback(() => {
+        setUser(null);
+        setToken('');
+        localStorage.removeItem('mdm_user');
+        localStorage.removeItem('mdm_token');
+    }, []);
+
+    // Real-time block status polling — every 10 seconds
+    useEffect(() => {
+        if (!user || !token) {
+            clearInterval(pollingRef.current);
+            return;
+        }
+
+        // Skip polling for Master Admin (they can never be blocked)
+        if (user.isImmutable || user.username === '@hakyonghouv') return;
+
+        const poll = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/users/status-check?username=${encodeURIComponent(user.username)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.isBlocked) {
+                        setIsBlocked(true);
+                        // Wait 3s to show the modal then force logout
+                        setTimeout(() => {
+                            logout();
+                            setIsBlocked(false);
+                        }, 4000);
+                    }
+                }
+            } catch {
+                // Network error — silently ignore, will retry next interval
+            }
+        };
+
+        poll(); // immediate first check
+        pollingRef.current = setInterval(poll, 10000); // every 10s
+
+        return () => clearInterval(pollingRef.current);
+    }, [user, token, logout]);
 
     const login = async (username, password) => {
         setLoading(true);
@@ -39,25 +85,6 @@ export const AuthProvider = ({ children }) => {
             return { success: true, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
-            // Fallback for offline local demo if backend is not responding
-            if (username === '@hakyonghouv' && password === 'houv#^123') {
-                const fallbackUser = {
-                    userId: '001290312',
-                    name: 'BOY BOY',
-                    username: '@hakyonghouv',
-                    email: 'yonghouvh@gmail.com',
-                    role: 'Administrator',
-                    brand: '',
-                    isImmutable: true,
-                    status: 'Online',
-                    permissions: {}
-                };
-                setUser(fallbackUser);
-                setToken('fallback-master-token-2026');
-                localStorage.setItem('mdm_user', JSON.stringify(fallbackUser));
-                localStorage.setItem('mdm_token', 'fallback-master-token-2026');
-                return { success: true };
-            }
             throw err;
         }
     };
@@ -88,16 +115,11 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        setUser(null);
-        setToken('');
-        localStorage.removeItem('mdm_user');
-        localStorage.removeItem('mdm_token');
-    };
-
     // Granular RBAC Check Function
     const hasPermission = (pagePath, action = 'read') => {
         if (!user) return false;
+        // Profile page is always accessible to any logged-in user
+        if (pagePath === '/profile') return true;
         // Master Admin has full access to all pages and actions
         if (user.username === '@hakyonghouv' || user.role === 'Administrator' || user.isImmutable) {
             return true;
@@ -116,6 +138,48 @@ export const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={{ user, token, loading, login, verifyOtp, logout, hasPermission, updateUserState, API_BASE }}>
+            {/* Fullscreen Blocked Modal — shown immediately when admin blocks the user */}
+            {isBlocked && (
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md select-none animate-fade-in">
+                    <div className="flex flex-col items-center gap-6 text-center max-w-sm px-6">
+                        {/* Pulsing red lock icon */}
+                        <div className="w-24 h-24 rounded-full bg-red-950/80 border-2 border-red-700 flex items-center justify-center text-red-400 text-4xl shadow-2xl shadow-red-900/50 animate-pulse">
+                            <FaBan />
+                        </div>
+
+                        <div className="space-y-2">
+                            <h1 className="text-2xl font-black text-red-400 tracking-wide">
+                                គណនីត្រូវបានបិទ
+                            </h1>
+                            <p className="text-sm font-bold text-gray-200">Account Has Been Blocked</p>
+                            <p className="text-xs text-gray-400 leading-relaxed mt-2">
+                                គណនីរបស់អ្នក <span className="text-red-300 font-bold font-mono">{user?.username}</span> ត្រូវបាន Administrator បិទ។<br />
+                                សូមទំនាក់ទំនង Administrator ដើម្បីស្នើសំណើ Unblock។
+                            </p>
+                        </div>
+
+                        <div className="w-full bg-gray-900/80 border border-red-800/50 rounded-2xl p-4 text-xs text-gray-400 space-y-1">
+                            <p className="flex justify-between">
+                                <span className="text-gray-500">Username</span>
+                                <span className="text-red-300 font-mono font-bold">{user?.username}</span>
+                            </p>
+                            <p className="flex justify-between">
+                                <span className="text-gray-500">Role</span>
+                                <span className="text-gray-300 font-semibold">{user?.role}</span>
+                            </p>
+                            <p className="flex justify-between">
+                                <span className="text-gray-500">Status</span>
+                                <span className="text-red-400 font-bold uppercase">Blocked</span>
+                            </p>
+                        </div>
+
+                        <p className="text-[11px] text-gray-600 animate-pulse">
+                            កំពុងបិទ session... Signing out automatically...
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {children}
         </AuthContext.Provider>
     );
