@@ -71,7 +71,7 @@ const LockWallpaper = () => {
                             <th className='px-4 py-3'>Performed By</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
                         {loading ? (
                             <tr><td colSpan={7} className="text-center py-10 text-indigo-400">Loading...</td></tr>
                         ) : logs.length === 0 ? (

@@ -125,7 +125,7 @@ const BlackList = () => {
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200 h-[70dvh]'>
+                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
                         {contracts.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="text-center py-8 text-gray-500 italic">No blacklist contracts found in MongoDB.</td>
