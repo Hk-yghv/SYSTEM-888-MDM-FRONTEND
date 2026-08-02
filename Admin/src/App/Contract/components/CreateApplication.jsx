@@ -19,6 +19,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         facebookName: '',
         telegramName: '',
         urlFb: '',
+        mosyleUrl: '',
         customerPhoto: '',
         googleDrivePhotoUrl: '',
 
@@ -95,6 +96,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 facebookName: editData.facebookName || editData.facebook_name || '',
                 telegramName: editData.telegramName || editData.telegram_name || '',
                 urlFb: editData.urlFb || editData.url_fb || '',
+                mosyleUrl: editData.mosyleUrl || editData.mosyle_url || editData.urlMosyle || editData.mosyleURL || '',
                 customerPhoto: editData.customerPhoto || '',
                 googleDrivePhotoUrl: editData.googleDrivePhotoUrl || '',
 
@@ -134,6 +136,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         const payload = {
             ...form,
             customerPhoto: form.googleDrivePhotoUrl || form.customerPhoto,
+            mosyleUrl: form.mosyleUrl || '',
             inputDate: editData?.inputDate || new Date().toISOString().split('T')[0],
             status: editData?.status || 'Application',
             monthlyPayment: Number(form.monthlyPayment) || (Number(form.amount) / 10),
@@ -270,6 +273,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="urlFb" className="font-semibold text-gray-400">URL Facebook</label>
                                 <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100" type="text" id="urlFb" value={form.urlFb} onChange={handleChange} placeholder="URL Facebook" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="mosyleUrl" className="font-semibold text-gray-400">URL Mosyle</label>
+                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 font-mono" type="text" id="mosyleUrl" value={form.mosyleUrl} onChange={handleChange} placeholder="https://" />
                             </div>
                             <div className="flex flex-col gap-1 col-span-3">
                                 <label htmlFor="googleDrivePhotoUrl" className="font-semibold text-amber-400">Photo URL (Google Drive / Image Link)</label>

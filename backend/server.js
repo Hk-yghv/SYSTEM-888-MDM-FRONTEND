@@ -56,6 +56,8 @@ const parseUserAgent = (ua) => {
 const sanitizeAndDecryptContract = (c) => {
     if (!c) return c;
     const obj = c.toObject ? c.toObject() : { ...c };
+    obj.urlFb = obj.urlFb || obj.url_fb || '';
+    obj.mosyleUrl = obj.mosyleUrl || obj.mosyle_url || obj.mosyleURL || obj.urlMosyle || '';
     return obj;
 };
 

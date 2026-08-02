@@ -334,13 +334,22 @@ const Activated = () => {
                                     <td className='px-4 py-3 font-mono text-gray-400'>{item.serialNumber}</td>
                                     <td className='px-4 py-3 text-center font-mono font-bold text-emerald-400'>${item.monthlyPayment}/mo</td>
                                     <td className="px-4 py-3 text-center relative">
-                                        <div className="relative inline-block text-left">
-                                            <button
-                                                onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
-                                                className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-300 transition-all cursor-pointer"
-                                            >
-                                                <AiOutlineMenu size={16} />
-                                            </button>
+                                        <div className="flex items-center justify-center gap-2">
+                                            {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
+                                                <button
+                                                    onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
+                                                    className="px-3 h-8 rounded-lg bg-sky-950/80 hover:bg-sky-900 text-sky-300 flex items-center justify-center text-[10px] font-semibold transition-all"
+                                                >
+                                                    Mosyle
+                                                </button>
+                                            )}
+                                            <div className="relative inline-block text-left">
+                                                <button
+                                                    onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
+                                                    className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-300 transition-all cursor-pointer"
+                                                >
+                                                    <AiOutlineMenu size={16} />
+                                                </button>
 
                                             {openMenuId === item._id && (
                                                 <div className="absolute right-0 mt-2 w-48 bg-[#141a30] border border-gray-700 rounded-2xl shadow-2xl z-50 p-1 space-y-1">
@@ -351,6 +360,14 @@ const Activated = () => {
                                                         <MdInfo className="text-indigo-400 text-sm" />
                                                         <span>{t('information')}</span>
                                                     </button>
+                                                    {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
+                                                        <button
+                                                            onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
+                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-300 hover:bg-sky-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <span>Open Mosyle</span>
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => { handleOpenQrModal(item); setOpenMenuId(null); }}
                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
@@ -392,6 +409,7 @@ const Activated = () => {
                                                     </button>
                                                 </div>
                                             )}
+                                        </div>
                                         </div>
                                     </td>
                                 </tr>

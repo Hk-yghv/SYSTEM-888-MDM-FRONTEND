@@ -242,6 +242,14 @@ const Application = () => {
                                                         <MdCheckCircle className="text-emerald-400 text-sm" />
                                                         <span>Set to Activated</span>
                                                     </button>
+                                                    {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
+                                                        <button
+                                                            onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
+                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-300 hover:bg-sky-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <span>Open Mosyle</span>
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => handleOpenEdit(item)}
                                                         className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-950/50 rounded-xl flex items-center gap-2 cursor-pointer"

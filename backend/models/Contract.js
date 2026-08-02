@@ -17,6 +17,7 @@ const contractSchema = new mongoose.Schema({
     facebookName: { type: String, default: '' },
     telegramName: { type: String, default: '' },
     urlFb: { type: String, default: '' },
+    mosyleUrl: { type: String, default: '' },
     customerPhoto: { type: String, default: '' },
 
     // Device Information
