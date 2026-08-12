@@ -1,5 +1,6 @@
 {
     "start": "/",
+    "signin": "/signin",
     "dashboard": "/dashboard",
     "customer": "/customer",
     "device": "/device",
@@ -25,6 +26,8 @@
         "unlockWallpaper": "/wallpaper/unlockphone"
     },
     "settings": {
-        "controlSystem": "/settings/control-system"
+        "controlSystem": "/settings/control-system",
+        "allAccount": "/settings/all-account",
+        "profile": "/profile"
     }
 }
