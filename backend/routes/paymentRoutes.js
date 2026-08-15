@@ -379,7 +379,7 @@ router.get('/pay/:contractId', async (req, res) => {
                     }
                     const newRow = document.createElement('div');
                     newRow.className = 'pay-row';
-                    newRow.innerHTML = `<span class="p-date">${payload.paidDate} &nbsp; (QR Mobile Payment)</span><span class="p-amt">$${amt}</span>`;
+                    newRow.innerHTML = '<span class="p-date">' + payload.paidDate + ' &nbsp; (QR Mobile Payment)</span><span class="p-amt">$' + amt + '</span>';
                     list.insertBefore(newRow, list.firstChild);
 
                     // Scroll to top
