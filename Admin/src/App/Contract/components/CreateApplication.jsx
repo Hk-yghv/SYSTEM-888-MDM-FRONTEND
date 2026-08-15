@@ -232,7 +232,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             ...form,
             customerPhoto: form.googleDrivePhotoUrl || form.customerPhoto,
             mosyleUrl: form.mosyleUrl || '',
-            inputDate: editData?.inputDate || new Date().toISOString().split('T')[0],
+            inputDate: form.inputDate || editData?.inputDate || new Date().toISOString().split('T')[0],
             status: editData?.status || 'Application',
             monthlyPayment: Number(form.monthlyPayment) || (Number(form.amount) / 10),
             modifiedByAdmin: isAdmin ? true : Boolean(editData?.modifiedByAdmin),
