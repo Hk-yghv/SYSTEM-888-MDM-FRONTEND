@@ -51,11 +51,30 @@ router.post('/', async (req, res) => {
         if (isMongoConnected) {
             for (const item of updates) {
                 if (!item.key) continue;
-                await ControlSystem.updateOne(
-                    { key: item.key, brand: targetBrand },
-                    { $set: { key: item.key, value: item.value, brand: targetBrand } },
-                    { upsert: true }
-                );
+                
+                // 1. First search for existing config matching key and targetBrand exactly
+                let doc = await ControlSystem.findOne({ key: item.key, brand: targetBrand });
+                
+                // 2. If not found and targetBrand is Global (''), search for legacy documents missing brand field
+                if (!doc && targetBrand === '') {
+                    doc = await ControlSystem.findOne({
+                        key: item.key,
+                        $or: [{ brand: { $exists: false } }, { brand: null }]
+                    });
+                }
+
+                if (doc) {
+                    doc.value = item.value;
+                    doc.brand = targetBrand;
+                    doc.markModified('value');
+                    await doc.save();
+                } else {
+                    await ControlSystem.create({
+                        key: item.key,
+                        brand: targetBrand,
+                        value: item.value
+                    });
+                }
             }
         }
 

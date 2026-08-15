@@ -228,16 +228,19 @@ const ControlSystem = () => {
                 body: JSON.stringify({ configs, brand: selectedBrand })
             });
 
+            const data = await res.json().catch(() => ({}));
             setSaving(false);
+
             if (res.ok) {
                 setMessage(`ការកំណត់ទាំងអស់សម្រាប់ Brand '${selectedBrand || 'Global'}' ត្រូវបានរក្សាទុកដោយជោគជ័យ! (All configurations saved successfully!)`);
                 setTimeout(() => setMessage(''), 4000);
             } else {
-                alert('រក្សាទុកបរាជ័យ (Failed to save configurations)');
+                alert(`រក្សាទុកបរាជ័យ (Failed to save configurations): ${data.error || res.statusText || 'Server Error'}`);
             }
         } catch (err) {
             setSaving(false);
             console.error('Save all configs error:', err);
+            alert(`រក្សាទុកបរាជ័យ: Network Error (${err.message})`);
         }
     };
 
