@@ -64,6 +64,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Dat
 app.use('/api/auth', createAuthRoutes(bot));
 app.use('/api/users', userRoutes);
 app.use('/api/contracts', contractRoutes);
+app.use('/', contractRoutes);
 app.use('/api', paymentRoutes);
 app.use('/', paymentRoutes);
 app.use('/api/controlsystem', controlRoutes);

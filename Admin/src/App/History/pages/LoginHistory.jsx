@@ -11,7 +11,7 @@ const LIMIT = 10;
 
 const LoginHistory = () => {
     const { t } = useLanguage();
-    const { API_BASE } = useAuth();
+    const { API_BASE, user } = useAuth();
 
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -29,7 +29,12 @@ const LoginHistory = () => {
     const fetchLoginHistory = useCallback(async (pg = page, search = searchTerm, role = roleFilter) => {
         setReloading(true);
         try {
-            const params = new URLSearchParams({ page: pg, limit: LIMIT });
+            const params = new URLSearchParams({
+                page: pg,
+                limit: LIMIT,
+                userUsername: user?.username || '',
+                userRole: user?.role || ''
+            });
             if (search) params.append('search', search);
             if (role) params.append('role', role);
 
@@ -45,7 +50,7 @@ const LoginHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, page, searchTerm, roleFilter]);
+    }, [API_BASE, page, searchTerm, roleFilter, user]);
 
     const fetchReportSchedule = useCallback(async () => {
         try {

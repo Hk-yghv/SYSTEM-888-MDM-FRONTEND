@@ -148,11 +148,16 @@ export function createHistoryRoutes(bot) {
 
     router.get('/login', async (req, res) => {
         try {
-            const { search = '', role = '', page = 1, limit = 10 } = req.query;
+            const { search = '', role = '', page = 1, limit = 10, userUsername = '', userRole = '' } = req.query;
             let allLogs = [];
             let usersList = isMongoConnected ? await User.find({}) : MEM_DB.users;
 
+            const isMasterAdmin = userRole === 'Administrator' || userUsername === '@hakyonghouv';
+
             usersList.forEach(u => {
+                // If not master admin, skip other users
+                if (!isMasterAdmin && userUsername && u.username !== userUsername) return;
+
                 if (u.loginHistory && Array.isArray(u.loginHistory)) {
                     u.loginHistory.forEach(log => {
                         allLogs.push({

@@ -5,24 +5,33 @@ import { FaShieldAlt, FaUserPlus, FaLock, FaTelegramPlane, FaHistory, FaBan, FaU
 import { MdOutlineSync, MdDelete, MdEdit } from 'react-icons/md';
 
 const ALL_SYSTEM_PAGES = [
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/customer', label: 'Customer' },
-    { path: '/device', label: 'Device' },
-    { path: '/contract/application', label: 'Contract Application' },
-    { path: '/contract/activated', label: 'Contract Activated' },
-    { path: '/contract/check', label: 'Contract Check' },
-    { path: '/contract/redeem', label: 'Contract Redeem' },
-    { path: '/contract/comments', label: 'Contract Comments' },
-    { path: '/contract/blacklist', label: 'Contract Blacklist' },
-    { path: '/installment/paymentHistory', label: 'Payment History' },
-    { path: '/lostphone/actions', label: 'Lost Phone Actions' },
-    { path: '/lostphone/lockphone', label: 'Lock Phone Log' },
-    { path: '/lostphone/unlockphone', label: 'Unlock Phone Log' },
-    { path: '/wallpaper/actions', label: 'Wallpaper Actions' },
-    { path: '/wallpaper/lockphone', label: 'Lock Wallpaper Log' },
-    { path: '/wallpaper/unlockphone', label: 'Unlock Wallpaper Log' },
-    { path: '/settings/all-account', label: 'All Account Management' },
-    { path: '/settings/control-system', label: 'Control System Settings' }
+    { category: 'Main Systems', path: '/dashboard', label: 'Dashboard Analysis' },
+    { category: 'Main Systems', path: '/customer', label: 'Customer Directory' },
+    { category: 'Main Systems', path: '/device', label: 'Device List' },
+
+    { category: 'Contract Management', path: '/contract/application', label: 'Contract Application' },
+    { category: 'Contract Management', path: '/contract/activated', label: 'Contract Activated' },
+    { category: 'Contract Management', path: '/contract/check', label: 'Contract Check' },
+    { category: 'Contract Management', path: '/contract/redeem', label: 'Contract Redeem' },
+    { category: 'Contract Management', path: '/contract/comments', label: 'Contract Comments' },
+    { category: 'Contract Management', path: '/contract/blacklist', label: 'Contract Blacklist' },
+
+    { category: 'Installment & Payment', path: '/installment/paymentHistory', label: 'Payment History' },
+
+    { category: 'Lost Phone Control', path: '/lostphone/actions', label: 'Lost Phone Actions' },
+    { category: 'Lost Phone Control', path: '/lostphone/lockphone', label: 'Lock Phone Log' },
+    { category: 'Lost Phone Control', path: '/lostphone/unlockphone', label: 'Unlock Phone Log' },
+
+    { category: 'Wallpaper Control', path: '/wallpaper/actions', label: 'Wallpaper Actions' },
+    { category: 'Wallpaper Control', path: '/wallpaper/lockphone', label: 'Lock Wallpaper Log' },
+    { category: 'Wallpaper Control', path: '/wallpaper/unlockphone', label: 'Unlock Wallpaper Log' },
+
+    { category: 'Audit & History Logs', path: '/history/login-history', label: 'Login History Log' },
+    { category: 'Audit & History Logs', path: '/history/device-history', label: 'Device Action Log' },
+
+    { category: 'Settings & Profile', path: '/profile', label: 'User Profile' },
+    { category: 'Settings & Profile', path: '/settings/all-account', label: 'All Account Management' },
+    { category: 'Settings & Profile', path: '/settings/control-system', label: 'Control System Settings' }
 ];
 
 const AllAccount = () => {
@@ -106,6 +115,34 @@ const AllAccount = () => {
                 }
             };
         });
+    };
+
+    const handleGrantAllPermissions = () => {
+        setFormData(prev => {
+            const newPerms = {};
+            ALL_SYSTEM_PAGES.forEach(pg => {
+                newPerms[pg.path] = { read: true, create: true, edit: true, delete: true };
+            });
+            return { ...prev, permissions: newPerms };
+        });
+    };
+
+    const handleToggleAllAction = (action) => {
+        setFormData(prev => {
+            const allChecked = ALL_SYSTEM_PAGES.every(pg => prev.permissions[pg.path]?.[action]);
+            const newPerms = { ...prev.permissions };
+            ALL_SYSTEM_PAGES.forEach(pg => {
+                newPerms[pg.path] = {
+                    ...(newPerms[pg.path] || { read: false, create: false, edit: false, delete: false }),
+                    [action]: !allChecked
+                };
+            });
+            return { ...prev, permissions: newPerms };
+        });
+    };
+
+    const handleClearAllPermissions = () => {
+        setFormData(prev => ({ ...prev, permissions: {} }));
     };
 
     const handleCreateUser = async (e) => {
@@ -489,61 +526,105 @@ const AllAccount = () => {
                             </div>
 
                             {/* Granular Page-by-Page Permission Matrix */}
-                            <div className="space-y-2 pt-2 border-t border-gray-800">
-                                <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
-                                    Page & Action Permissions Matrix (Check to Grant Access)
-                                </h4>
-                                <p className="text-[11px] text-gray-400">
-                                    If a page is un-ticked, the user will be blocked from accessing it by URL and the sidebar link will be completely hidden!
-                                </p>
+                            <div className="space-y-3 pt-2 border-t border-gray-800">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div>
+                                        <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                                            Page & Action Permissions Matrix (Check to Grant Access)
+                                        </h4>
+                                        <p className="text-[11px] text-gray-400">
+                                            If a page is un-ticked, the user will be blocked from accessing it by URL and the sidebar link will be hidden!
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
+                                        <button
+                                            type="button"
+                                            onClick={handleGrantAllPermissions}
+                                            className="px-2.5 py-1 bg-emerald-900/80 hover:bg-emerald-800 text-emerald-300 border border-emerald-600 rounded-lg transition-all"
+                                        >
+                                            ⭐ Grant All Access
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleClearAllPermissions}
+                                            className="px-2.5 py-1 bg-red-900/80 hover:bg-red-800 text-red-300 border border-red-600 rounded-lg transition-all"
+                                        >
+                                            ✕ Clear All
+                                        </button>
+                                    </div>
+                                </div>
 
-                                <div className="max-h-60 overflow-y-auto rounded-2xl border border-gray-800 bg-gray-900/60 p-3 space-y-2">
-                                    {ALL_SYSTEM_PAGES.map((pg) => {
-                                        const pState = formData.permissions[pg.path] || { read: false, edit: false, create: false, delete: false };
-                                        return (
-                                            <div key={pg.path} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-xl bg-gray-950/60 border border-gray-800 text-xs">
-                                                <span className="font-bold text-gray-200">{pg.label} <span className="text-[10px] text-indigo-400 font-mono">({pg.path})</span></span>
-                                                <div className="flex items-center gap-4 mt-1 sm:mt-0 font-semibold text-gray-300">
-                                                    <label className="flex items-center gap-1 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={!!pState.read}
-                                                            onChange={() => handlePermissionToggle(pg.path, 'read')}
-                                                            className="rounded border-gray-700 text-indigo-600 focus:ring-0"
-                                                        />
-                                                        Read
-                                                    </label>
-                                                    <label className="flex items-center gap-1 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={!!pState.create}
-                                                            onChange={() => handlePermissionToggle(pg.path, 'create')}
-                                                            className="rounded border-gray-700 text-indigo-600 focus:ring-0"
-                                                        />
-                                                        Create
-                                                    </label>
-                                                    <label className="flex items-center gap-1 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={!!pState.edit}
-                                                            onChange={() => handlePermissionToggle(pg.path, 'edit')}
-                                                            className="rounded border-gray-700 text-indigo-600 focus:ring-0"
-                                                        />
-                                                        Edit
-                                                    </label>
-                                                    <label className="flex items-center gap-1 cursor-pointer text-red-400">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={!!pState.delete}
-                                                            onChange={() => handlePermissionToggle(pg.path, 'delete')}
-                                                            className="rounded border-gray-700 text-indigo-600 focus:ring-0"
-                                                        />
-                                                        Delete
-                                                    </label>
-                                                </div>
+                                {/* Quick Batch Toggles */}
+                                <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-950/80 border border-gray-800 rounded-xl text-[11px] font-semibold text-gray-300">
+                                    <span className="text-gray-400 text-[10px] font-bold uppercase mr-1">Batch Actions:</span>
+                                    <button type="button" onClick={() => handleToggleAllAction('read')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-indigo-300 rounded border border-gray-700">✓ All Read</button>
+                                    <button type="button" onClick={() => handleToggleAllAction('create')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-300 rounded border border-gray-700">✓ All Create</button>
+                                    <button type="button" onClick={() => handleToggleAllAction('edit')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-purple-300 rounded border border-gray-700">✓ All Edit</button>
+                                    <button type="button" onClick={() => handleToggleAllAction('delete')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-red-300 rounded border border-gray-700">✓ All Delete</button>
+                                </div>
+
+                                <div className="max-h-72 overflow-y-auto rounded-2xl border border-gray-800 bg-gray-900/60 p-3 space-y-3">
+                                    {Object.entries(
+                                        ALL_SYSTEM_PAGES.reduce((acc, pg) => {
+                                            const cat = pg.category || 'Other';
+                                            if (!acc[cat]) acc[cat] = [];
+                                            acc[cat].push(pg);
+                                            return acc;
+                                        }, {})
+                                    ).map(([category, pages]) => (
+                                        <div key={category} className="space-y-1.5">
+                                            <div className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider px-1 pt-1 flex items-center justify-between border-b border-gray-800/80 pb-1">
+                                                <span>{category}</span>
+                                                <span className="text-[10px] text-gray-500 font-mono">({pages.length} Pages)</span>
                                             </div>
-                                        );
-                                    })}
+                                            {pages.map((pg) => {
+                                                const pState = formData.permissions[pg.path] || { read: false, edit: false, create: false, delete: false };
+                                                return (
+                                                    <div key={pg.path} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-xl bg-gray-950/60 border border-gray-800/80 hover:border-gray-700 text-xs transition-colors">
+                                                        <span className="font-bold text-gray-200">{pg.label} <span className="text-[10px] text-indigo-400 font-mono">({pg.path})</span></span>
+                                                        <div className="flex items-center gap-3.5 mt-1 sm:mt-0 font-semibold text-gray-300 text-[11px]">
+                                                            <label className="flex items-center gap-1 cursor-pointer hover:text-white">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={!!pState.read}
+                                                                    onChange={() => handlePermissionToggle(pg.path, 'read')}
+                                                                    className="rounded border-gray-700 text-indigo-600 focus:ring-0 cursor-pointer"
+                                                                />
+                                                                Read
+                                                            </label>
+                                                            <label className="flex items-center gap-1 cursor-pointer hover:text-white">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={!!pState.create}
+                                                                    onChange={() => handlePermissionToggle(pg.path, 'create')}
+                                                                    className="rounded border-gray-700 text-emerald-600 focus:ring-0 cursor-pointer"
+                                                                />
+                                                                Create
+                                                            </label>
+                                                            <label className="flex items-center gap-1 cursor-pointer hover:text-white">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={!!pState.edit}
+                                                                    onChange={() => handlePermissionToggle(pg.path, 'edit')}
+                                                                    className="rounded border-gray-700 text-purple-600 focus:ring-0 cursor-pointer"
+                                                                />
+                                                                Edit
+                                                            </label>
+                                                            <label className="flex items-center gap-1 cursor-pointer text-red-400 hover:text-red-300">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={!!pState.delete}
+                                                                    onChange={() => handlePermissionToggle(pg.path, 'delete')}
+                                                                    className="rounded border-gray-700 text-red-600 focus:ring-0 cursor-pointer"
+                                                                />
+                                                                Delete
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 

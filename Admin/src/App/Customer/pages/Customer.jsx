@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { IoIosContact } from 'react-icons/io';
-import { MdOutlineSync, MdSearch, MdInfo, MdPictureAsPdf, MdTableChart } from 'react-icons/md';
-import { FaFileExcel } from 'react-icons/fa';
+import { MdOutlineSync, MdSearch, MdInfo, MdPictureAsPdf, MdTableChart, MdQrCode2, MdClose } from 'react-icons/md';
+import { FaFileExcel, FaQrcode } from 'react-icons/fa';
 import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
@@ -21,6 +21,11 @@ const Customer = () => {
     const [total, setTotal] = useState(0);
     const [searchInput, setSearchInput] = useState('');
     const itemsPerPage = 10;
+
+    // Customer QR Modal state
+    const [qrCustomer, setQrCustomer] = useState(null);
+    const [qrDataUrl, setQrDataUrl] = useState('');
+    const [qrInfoPageUrl, setQrInfoPageUrl] = useState('');
 
     const fetchCustomers = async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
@@ -45,6 +50,20 @@ const Customer = () => {
     useEffect(() => { fetchCustomers(1, searchTerm); setCurrentPage(1); }, [searchTerm]);
 
     const filteredCustomers = customers; // server already filters+paginates
+
+    const handleOpenQrModal = async (customer) => {
+        setQrCustomer(customer);
+        try {
+            const res = await fetch(`${API_BASE}/contracts/customer-qr-payload/${customer.contractId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setQrDataUrl(data.qrDataUrl);
+                setQrInfoPageUrl(data.infoPageUrl);
+            }
+        } catch (err) {
+            console.error('Fetch Customer QR payload error:', err);
+        }
+    };
 
     const handleExportExcel = () => {
         const excelData = filteredCustomers.map((c, idx) => ({
@@ -196,13 +215,24 @@ const Customer = () => {
                                         <span className='px-2.5 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>Activated</span>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
-                                        <button
-                                            onClick={() => setSelectedCustomer(item)}
-                                            className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-600 text-sm transition-all cursor-pointer mx-auto"
-                                            title="View Full Details"
-                                        >
-                                            <MdInfo />
-                                        </button>
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            {/* Details Info Button */}
+                                            <button
+                                                onClick={() => setSelectedCustomer(item)}
+                                                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-600 text-sm transition-all cursor-pointer"
+                                                title="View Full Details"
+                                            >
+                                                <MdInfo />
+                                            </button>
+                                            {/* QR Code Profile Button */}
+                                            <button
+                                                onClick={() => handleOpenQrModal(item)}
+                                                className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 text-sm transition-all cursor-pointer"
+                                                title="Scan Customer QR Profile"
+                                            >
+                                                <FaQrcode />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -291,6 +321,12 @@ const Customer = () => {
                                     className="flex items-center gap-1 px-3 py-1.5 bg-red-900/60 hover:bg-red-800 text-red-300 rounded-xl text-[11px] cursor-pointer border border-red-700/60 font-semibold"
                                 >
                                     <MdPictureAsPdf /> PDF
+                                </button>
+                                <button
+                                    onClick={() => handleOpenQrModal(selectedCustomer)}
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-indigo-900/60 hover:bg-indigo-800 text-indigo-300 rounded-xl text-[11px] cursor-pointer border border-indigo-700/60 font-semibold"
+                                >
+                                    <FaQrcode /> QR Profile
                                 </button>
                                 <button onClick={() => setSelectedCustomer(null)} className="w-8 h-8 rounded-xl bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-gray-200 text-sm font-bold cursor-pointer">✕</button>
                             </div>
@@ -387,6 +423,65 @@ const Customer = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Customer Profile QR Code Modal */}
+            {qrCustomer && (
+                <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[999999] p-4">
+                    <div className="bg-[#0b0f1e] border border-indigo-500/40 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden p-6 text-center space-y-4">
+                        <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                            <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider">
+                                <FaQrcode className="text-base" />
+                                <span>Customer Profile QR</span>
+                            </div>
+                            <button onClick={() => setQrCustomer(null)} className="w-7 h-7 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs font-bold cursor-pointer">✕</button>
+                        </div>
+
+                        {/* Customer Summary */}
+                        <div className="flex items-center gap-3 bg-gray-900/80 p-3 rounded-2xl border border-gray-800 text-left">
+                            <img
+                                src={qrCustomer.customerPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                                alt="avatar"
+                                className="w-12 h-12 rounded-xl object-cover border border-indigo-500/50"
+                            />
+                            <div>
+                                <h4 className="text-xs font-bold text-gray-100">{qrCustomer.customerNameEn}</h4>
+                                <p className="text-[11px] text-indigo-300 font-khmer">{qrCustomer.customerNameKh}</p>
+                                <p className="text-[10px] text-gray-500 font-mono">Contract: {qrCustomer.contractId}</p>
+                            </div>
+                        </div>
+
+                        {/* QR Code Display */}
+                        <div className="bg-white p-4 rounded-2xl border-4 border-indigo-500/20 inline-block mx-auto shadow-inner">
+                            {qrDataUrl ? (
+                                <img src={qrDataUrl} alt="Customer QR Code" className="w-48 h-48 mx-auto" />
+                            ) : (
+                                <div className="w-48 h-48 flex items-center justify-center text-gray-400 text-xs font-semibold animate-pulse">
+                                    Generating QR Code...
+                                </div>
+                            )}
+                        </div>
+
+                        <p className="text-[11px] text-gray-400 leading-relaxed font-khmer">
+                            📱 ស្កែន QR Code នេះជាមួយទូរស័ព្ទដៃដើម្បីមើល **ព័ត៌មានលម្អិតទាំងអស់របស់ភ្ញៀវ** (Personal Info, Device, Financial terms & Security status)
+                        </p>
+
+                        <div className="pt-2 flex gap-2">
+                            <button
+                                onClick={() => window.open(qrInfoPageUrl, '_blank')}
+                                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md"
+                            >
+                                Open Profile Link ↗
+                            </button>
+                            <button
+                                onClick={() => setQrCustomer(null)}
+                                className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold transition-all"
+                            >
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>

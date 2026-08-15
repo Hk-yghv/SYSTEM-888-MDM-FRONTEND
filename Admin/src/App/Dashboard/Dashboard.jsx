@@ -162,7 +162,12 @@ const Dashboard = () => {
             if (res.ok) {
                 const users = await res.json();
                 const allSessions = [];
+                const isMasterAdmin = user?.role === 'Administrator' || user?.username === '@hakyonghouv';
+
                 users.forEach(u => {
+                    // Non-master admins only see their own login sessions
+                    if (!isMasterAdmin && u.username !== user?.username) return;
+
                     (u.loginHistory || []).slice(-5).forEach(log => {
                         allSessions.push({ ...log, username: u.username, name: u.name, role: u.role });
                     });
