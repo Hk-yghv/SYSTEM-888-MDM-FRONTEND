@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
+import ControlSystem from '../models/ControlSystem.js';
 
 export let isMongoConnected = false;
 
@@ -102,6 +103,20 @@ export const connectDB = async (mongoUri) => {
         await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 8000 });
         isMongoConnected = true;
         console.log('Connected to MongoDB database successfully.');
+
+        // Clean up legacy single 'key_1' index if present and sync compound index ({ key: 1, brand: 1 })
+        try {
+            await ControlSystem.collection.dropIndex('key_1');
+            console.log('Dropped legacy key_1 index on ControlSystem.');
+        } catch (e) {
+            // Index key_1 does not exist, which is normal
+        }
+        try {
+            await ControlSystem.syncIndexes();
+        } catch (syncErr) {
+            console.warn('ControlSystem syncIndexes warning:', syncErr.message);
+        }
+
         await ensureMasterAdmin();
     } catch (err) {
         isMongoConnected = false;

@@ -49,31 +49,55 @@ router.post('/', async (req, res) => {
         }
 
         if (isMongoConnected) {
-            for (const item of updates) {
-                if (!item.key) continue;
-                
-                // 1. First search for existing config matching key and targetBrand exactly
-                let doc = await ControlSystem.findOne({ key: item.key, brand: targetBrand });
-                
-                // 2. If not found and targetBrand is Global (''), search for legacy documents missing brand field
-                if (!doc && targetBrand === '') {
-                    doc = await ControlSystem.findOne({
-                        key: item.key,
-                        $or: [{ brand: { $exists: false } }, { brand: null }]
-                    });
-                }
+            const saveItems = async () => {
+                for (const item of updates) {
+                    if (!item.key) continue;
+                    
+                    // 1. Search for existing config matching key and targetBrand exactly
+                    let doc = await ControlSystem.findOne({ key: item.key, brand: targetBrand });
+                    
+                    // 2. If not found and targetBrand is Global (''), search for legacy documents missing brand field
+                    if (!doc && targetBrand === '') {
+                        doc = await ControlSystem.findOne({
+                            key: item.key,
+                            $or: [{ brand: { $exists: false } }, { brand: null }]
+                        });
+                    }
 
-                if (doc) {
-                    doc.value = item.value;
-                    doc.brand = targetBrand;
-                    doc.markModified('value');
-                    await doc.save();
+                    if (doc) {
+                        doc.value = item.value;
+                        doc.brand = targetBrand;
+                        doc.markModified('value');
+                        await doc.save();
+                    } else {
+                        await ControlSystem.findOneAndUpdate(
+                            { key: item.key, brand: targetBrand },
+                            { key: item.key, brand: targetBrand, value: item.value },
+                            { upsert: true, new: true, setDefaultsOnInsert: true }
+                        );
+                    }
+                }
+            };
+
+            try {
+                await saveItems();
+            } catch (saveErr) {
+                if (saveErr.code === 11000 || (saveErr.message && saveErr.message.includes('E11000'))) {
+                    console.warn('Detected E11000 duplicate key index issue on ControlSystem. Repairing indexes...');
+                    try {
+                        await ControlSystem.collection.dropIndex('key_1');
+                    } catch (e) {
+                        // ignore if already dropped
+                    }
+                    try {
+                        await ControlSystem.syncIndexes();
+                    } catch (syncErr) {
+                        console.warn('Sync indexes warning:', syncErr.message);
+                    }
+                    // Retry save operations after repairing index
+                    await saveItems();
                 } else {
-                    await ControlSystem.create({
-                        key: item.key,
-                        brand: targetBrand,
-                        value: item.value
-                    });
+                    throw saveErr;
                 }
             }
         }

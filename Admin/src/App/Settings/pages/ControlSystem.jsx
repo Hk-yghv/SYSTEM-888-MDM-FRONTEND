@@ -81,14 +81,18 @@ const ControlSystem = () => {
                 body: JSON.stringify({ key, value, brand: selectedBrand })
             });
 
+            const data = await res.json().catch(() => ({}));
             setSaving(false);
             if (res.ok) {
                 setMessage(`Control System '${key}' configuration updated for brand '${selectedBrand || 'Global'}' in MongoDB successfully!`);
                 setTimeout(() => setMessage(''), 3000);
+            } else {
+                alert(`រក្សាទុកបរាជ័យ (Failed to save configuration): ${data.error || res.statusText || 'Server Error'}`);
             }
         } catch (err) {
             setSaving(false);
             console.error('Save config error:', err);
+            alert(`រក្សាទុកបរាជ័យ: Network Error (${err.message})`);
         }
     };
 
