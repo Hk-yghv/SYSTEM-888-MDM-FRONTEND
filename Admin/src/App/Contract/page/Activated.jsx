@@ -653,7 +653,7 @@ const Activated = () => {
                                 className="w-16 h-16 rounded-2xl object-cover border border-indigo-500/40"
                             />
                             <div>
-                                <h4 className="text-lg font-black text-white tracking-wide">{selectedInfo.customerNameEn}</h4>
+                                <h4 className="text-base font-bold text-gray-100">{selectedInfo.customerNameEn}</h4>
                                 <p className="text-sm text-indigo-400 font-khmer">{selectedInfo.customerNameKh}</p>
                                 <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
                                     ✓ Activated
