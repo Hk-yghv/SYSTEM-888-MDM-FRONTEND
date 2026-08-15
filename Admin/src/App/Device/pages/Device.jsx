@@ -122,7 +122,7 @@ const Device = () => {
             </header>
 
             {/* Device Table */}
-            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-180px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>

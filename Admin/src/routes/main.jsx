@@ -1,7 +1,32 @@
-import React from "react"
-import ReactDOM from "react-dom/client"
-import App from "./App.jsx"
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
 
+// ── Global System Security API Interceptor ──
+const originalFetch = window.fetch;
+window.fetch = async (...args) => {
+    let [resource, config] = args;
+    const urlStr = typeof resource === 'string' ? resource : resource?.url || '';
+    if (urlStr.includes('/api/') || urlStr.startsWith('/api')) {
+        config = config || {};
+        const token = localStorage.getItem('mdm_token');
+        const defaultHeaders = {
+            'x-system-api-key': 'SYSTEM_MDM_SECURE_AUTH_HEADER_TOKEN_2026',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        };
+
+        if (config.headers instanceof Headers) {
+            config.headers.set('x-system-api-key', 'SYSTEM_MDM_SECURE_AUTH_HEADER_TOKEN_2026');
+            if (token) config.headers.set('Authorization', `Bearer ${token}`);
+        } else {
+            config.headers = {
+                ...defaultHeaders,
+                ...config.headers
+            };
+        }
+    }
+    return originalFetch(resource, config);
+};
 
 document.title = __APP_NAME__;
 

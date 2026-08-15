@@ -19,6 +19,24 @@ const LockPhone = () => {
     const [reloading, setReloading] = useState(false);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
+    const [defaultDisplayText, setDefaultDisplayText] = useState('ប្រព័ន្ធ SYSTEM MDM — ទូរស័ព្ទនេះត្រូវបានចាក់សោ ហេតុថាមានបំណុលជំពាក់');
+
+    useEffect(() => {
+        const fetchControlConfig = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/controlsystem?brand=${user?.brand || ''}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.lockPhoneNotice) {
+                        setDefaultDisplayText(data.lockPhoneNotice);
+                    }
+                }
+            } catch (err) {
+                console.error('Fetch control config error:', err);
+            }
+        };
+        fetchControlConfig();
+    }, [API_BASE, user]);
 
     const fetchLockLogs = useCallback(async (pg = page) => {
         setReloading(true);
@@ -74,7 +92,7 @@ const LockPhone = () => {
     };
 
     return (
-        <div className='w-full min-h-screen bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div className='w-10 h-10 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-700 text-xl'>
@@ -104,9 +122,9 @@ const LockPhone = () => {
                 </div>
             </header>
 
-            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
-                <table className='w-full text-left text-xs'>
-                    <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-180px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+                <table className='w-full text-left text-xs whitespace-nowrap'>
+                    <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap'>
                         <tr>
                             <th className='px-4 py-3 text-center'>No</th>
                             <th className='px-4 py-3'>Locked Date & Time</th>
@@ -120,7 +138,7 @@ const LockPhone = () => {
                             <th className='px-4 py-3'>Hotline Phone</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
+                    <tbody className='divide-y divide-slate-100 font-medium text-slate-800 whitespace-nowrap'>
                         {loading ? (
                             <tr><td colSpan={10} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
                         ) : logs.length === 0 ? (
@@ -140,8 +158,8 @@ const LockPhone = () => {
                                     </td>
                                     <td className='px-4 py-3 text-purple-700 font-semibold'><CopyCell text={item.userName || item.performedBy || ''} className='text-purple-700 font-semibold' /></td>
                                     <td className='px-4 py-3 text-slate-600 text-[11px] font-medium'><CopyCell text={item.reason} className='text-slate-600 text-[11px] font-medium' /></td>
-                                    <td className='px-4 py-3 text-amber-700 font-khmer text-[11px] max-w-[200px] truncate' title={item.displayText}>
-                                        <CopyCell text={item.displayText || 'ប្រព័ន្ធ SYSTEM MDM — ទូរស័ព្ទនេះត្រូវបានចាក់សោ'} className='text-amber-700 font-khmer text-[11px]' />
+                                    <td className='px-4 py-3 text-amber-700 font-khmer text-[11px] max-w-[250px] truncate' title={item.displayText || defaultDisplayText.replace(/\{\{customerName\}\}/g, item.customerName || '')}>
+                                        <CopyCell text={item.displayText || defaultDisplayText.replace(/\{\{customerName\}\}/g, item.customerName || '')} className='text-amber-700 font-khmer text-[11px]' />
                                     </td>
                                     <td className='px-4 py-3 font-mono text-emerald-700 font-bold'><CopyCell text={item.phoneNumber || ''} className='font-mono text-emerald-700 font-bold' /></td>
                                 </tr>

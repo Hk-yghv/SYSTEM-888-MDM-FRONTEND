@@ -3,8 +3,8 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
 import { AiOutlineMenu } from "react-icons/ai";
-import { MdOutlineSync, MdInfo, MdQrCode2, MdCheckCircle, MdSearch, MdSwapHoriz, MdComment, MdPictureAsPdf } from "react-icons/md";
-import { FaQrcode, FaCheck, FaMobileAlt, FaFileExcel } from "react-icons/fa";
+import { MdOutlineSync, MdInfo, MdQrCode2, MdCheckCircle, MdSearch, MdSwapHoriz, MdComment, MdPictureAsPdf, MdOutlineWallpaper } from "react-icons/md";
+import { FaQrcode, FaCheck, FaMobileAlt, FaFileExcel, FaLock } from "react-icons/fa";
 import CreateApplication from '../components/CreateApplication';
 import CustomModal from '../../../components/CustomModal';
 import Pagination from '../../../components/Pagination';
@@ -85,7 +85,33 @@ const Activated = () => {
 
     const filteredContracts = activatedContracts; // server already filters+paginates
 
+    const [redeemItem, setRedeemItem] = useState(null);
+    const [redeemDateInput, setRedeemDateInput] = useState(new Date().toISOString().split('T')[0]);
+
     const handleChangeStatus = async (item, targetStatus) => {
+        if (targetStatus === 'Redeem') {
+            if (item.lockPhoneStatus === 'Locked' || item.lockWallpaperStatus === 'Locked') {
+                const isPhoneLocked = item.lockPhoneStatus === 'Locked';
+                const isWallpaperLocked = item.lockWallpaperStatus === 'Locked';
+                let lockReason = '';
+                if (isPhoneLocked && isWallpaperLocked) lockReason = 'ឧបករណ៍នេះកំពុងជាប់ចាក់សោរទាំង Lock Phone និង Lock Wallpaper';
+                else if (isPhoneLocked) lockReason = 'ឧបករណ៍នេះកំពុងជាប់ចាក់សោរ Lock Phone';
+                else lockReason = 'ឧបករណ៍នេះកំពុងជាប់ចាក់សោរ Lock Wallpaper';
+
+                setUiModal({
+                    open: true,
+                    title: '⚠️ មិនអាចធ្វើការ Redeem បានទេ (Redeem Blocked)',
+                    message: `${lockReason}! សូមធ្វើការដោះសោរ (Unlock) ឧបករណ៍នេះជាមុនសិន ទើបប្រព័ន្ធអនុញ្ញាតឱ្យផ្លាស់ប្តូរទៅកាន់ Redeem បាន។`,
+                    type: 'warning'
+                });
+                setOpenMenuId(null);
+                return;
+            }
+            setRedeemItem(item);
+            setRedeemDateInput(new Date().toISOString().split('T')[0]);
+            setOpenMenuId(null);
+            return;
+        }
         try {
             const res = await fetch(`${API_BASE}/contracts/${item._id}`, {
                 method: 'PUT',
@@ -104,6 +130,34 @@ const Activated = () => {
             }
         } catch (err) {
             console.error('Change status error:', err);
+        }
+    };
+
+    const handleConfirmRedeem = async (e) => {
+        e.preventDefault();
+        if (!redeemItem) return;
+        try {
+            const res = await fetch(`${API_BASE}/contracts/${redeemItem._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: 'Redeem',
+                    redeemDate: redeemDateInput,
+                    inputDate: redeemDateInput
+                })
+            });
+            if (res.ok) {
+                setUiModal({
+                    open: true,
+                    title: 'Redeem Successful',
+                    message: `Contract for "${redeemItem.customerNameEn}" moved to Redeem page on date ${redeemDateInput}!`,
+                    type: 'success'
+                });
+                setRedeemItem(null);
+                fetchActivatedContracts();
+            }
+        } catch (err) {
+            console.error('Confirm redeem error:', err);
         }
     };
 
@@ -263,6 +317,60 @@ const Activated = () => {
                 onConfirm={() => setUiModal({ ...uiModal, open: false })}
             />
 
+            {/* Redeem Date Selection Modal */}
+            {redeemItem && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-[999999] p-4">
+                    <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                                <MdSwapHoriz className="text-purple-600 text-lg" />
+                                ជ្រើសរើសកាលបរិច្ឆេទ Redeem (Move to Redeem)
+                            </h3>
+                            <button onClick={() => setRedeemItem(null)} className="text-slate-400 hover:text-slate-600 font-bold text-sm cursor-pointer">✕</button>
+                        </div>
+
+                        <form onSubmit={handleConfirmRedeem} className="space-y-4">
+                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl text-xs space-y-1">
+                                <p className="font-bold text-purple-900">អតិថិជន៖ {redeemItem.customerNameEn} ({redeemItem.customerNameKh})</p>
+                                <p className="text-purple-700 font-mono">ម៉ូឌែល/Serial: {redeemItem.model} • {redeemItem.serialNumber}</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                                    កាលបរិច្ឆេទ Redeem (Redeem Date)
+                                </label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={redeemDateInput}
+                                    onChange={(e) => setRedeemDateInput(e.target.value)}
+                                    className="w-full h-11 px-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-sm focus:outline-emerald-500"
+                                />
+                                <p className="text-[11px] text-slate-500 mt-1 italic">
+                                    * បំពេញអូតូថ្ងៃបច្ចុប្បន្ន។ អ្នកអាចប្តូរដាក់ថ្ងៃផ្សេងៗបានតាមតម្រូវការ។
+                                </p>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setRedeemItem(null)}
+                                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 cursor-pointer"
+                                >
+                                    {t('cancel')}
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-5 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700 shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <MdSwapHoriz size={16} /> Submit Redeem
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <header className='p-3 w-full border-b border-gray-800/80 bg-[#0f1426]/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md'>
                 <div>
@@ -314,7 +422,7 @@ const Activated = () => {
             </header>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-170px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -379,79 +487,79 @@ const Activated = () => {
                                                     <AiOutlineMenu size={16} />
                                                 </button>
 
-                                            {openMenuId === item._id && (
-                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
-                                                    <button
-                                                        onClick={() => { setSelectedInfo(item); setOpenMenuId(null); }}
-                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <MdInfo className="text-indigo-400 text-sm" />
-                                                        <span>{t('information')}</span>
-                                                    </button>
-                                                    {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
+                                                {openMenuId === item._id && (
+                                                    <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
                                                         <button
-                                                            onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
-                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-300 hover:bg-sky-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                            onClick={() => { setSelectedInfo(item); setOpenMenuId(null); }}
+                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-xl flex items-center gap-2 cursor-pointer"
                                                         >
-                                                            <span>Open Mosyle</span>
+                                                            <MdInfo className="text-indigo-600 text-sm" />
+                                                            <span>{t('information')}</span>
                                                         </button>
-                                                    )}
-                                                    <button
-                                                        onClick={() => { handleOpenQrModal(item); setOpenMenuId(null); }}
-                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <MdQrCode2 className="text-emerald-400 text-base" />
-                                                        <span>{t('qrCode')} Payment</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedCommentItem(item);
-                                                            setCommentInput(item.notes || '');
-                                                            setOpenMenuId(null);
-                                                        }}
-                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <MdComment className="text-cyan-400 text-base" />
-                                                        <span>Comment</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleQuickDeviceAction(item, 'Lock Phone')}
-                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <FaLock className="text-red-400 text-sm" />
-                                                        <span>Lock Device (Pending Log)</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleQuickDeviceAction(item, 'Set Wallpaper')}
-                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <MdOutlineWallpaper className="text-amber-400 text-sm" />
-                                                        <span>Set Wallpaper (Pending Log)</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleChangeStatus(item, 'Check')}
-                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-blue-300 hover:bg-blue-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <MdSwapHoriz className="text-blue-400 text-base" />
-                                                        <span>Move to Check</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleChangeStatus(item, 'Redeem')}
-                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-purple-300 hover:bg-purple-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <MdSwapHoriz className="text-purple-400 text-base" />
-                                                        <span>Move to Redeem</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleChangeStatus(item, 'Blacklist')}
-                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <MdSwapHoriz className="text-red-400 text-base" />
-                                                        <span>Move to Blacklist</span>
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
+                                                        {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
+                                                            <button
+                                                                onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
+                                                                className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                            >
+                                                                <span>Open Mosyle</span>
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => { handleOpenQrModal(item); setOpenMenuId(null); }}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <MdQrCode2 className="text-emerald-600 text-base" />
+                                                            <span>{t('qrCode')} Payment</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedCommentItem(item);
+                                                                setCommentInput(item.notes || '');
+                                                                setOpenMenuId(null);
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <MdComment className="text-cyan-600 text-base" />
+                                                            <span>Comment</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleQuickDeviceAction(item, 'Lock Phone')}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <FaLock className="text-red-600 text-sm" />
+                                                            <span>Lock Device</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleQuickDeviceAction(item, 'Set Wallpaper')}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <MdOutlineWallpaper className="text-amber-600 text-sm" />
+                                                            <span>Set Wallpaper</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleChangeStatus(item, 'Check')}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <MdSwapHoriz className="text-blue-600 text-base" />
+                                                            <span>Move to Check</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleChangeStatus(item, 'Redeem')}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <MdSwapHoriz className="text-purple-600 text-base" />
+                                                            <span>Move to Redeem</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleChangeStatus(item, 'Blacklist')}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <MdSwapHoriz className="text-red-600 text-base" />
+                                                            <span>Move to Blacklist</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>

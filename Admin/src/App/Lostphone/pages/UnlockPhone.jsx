@@ -72,7 +72,7 @@ const UnlockPhone = () => {
     };
 
     return (
-        <div className='w-full min-h-screen bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div className='w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 text-xl'>
@@ -97,9 +97,9 @@ const UnlockPhone = () => {
                 </div>
             </header>
 
-            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
-                <table className='w-full text-left text-xs'>
-                    <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-180px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+                <table className='w-full text-left text-xs whitespace-nowrap'>
+                    <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap'>
                         <tr>
                             <th className='px-4 py-3 text-center'>No</th>
                             <th className='px-4 py-3'>Unlocked Date & Time</th>
@@ -111,7 +111,7 @@ const UnlockPhone = () => {
                             <th className='px-4 py-3'>Reason</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
+                    <tbody className='divide-y divide-slate-100 font-medium text-slate-800 whitespace-nowrap'>
                         {loading ? (
                             <tr><td colSpan={8} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
                         ) : logs.length === 0 ? (

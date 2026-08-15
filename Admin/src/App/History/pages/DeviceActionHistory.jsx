@@ -162,7 +162,7 @@ const DeviceActionHistory = () => {
     };
 
     return (
-        <div className='w-full min-h-screen bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             {/* Header */}
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
@@ -246,7 +246,7 @@ const DeviceActionHistory = () => {
             </div>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-260px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>
@@ -296,11 +296,10 @@ const DeviceActionHistory = () => {
                                             <CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-bold' />
                                         </td>
                                         <td className='px-4 py-3 text-center'>
-                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 border ${
-                                                isLock ? 'bg-red-50 text-red-700 border-red-200' :
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 border ${isLock ? 'bg-red-50 text-red-700 border-red-200' :
                                                 isWallpaper ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                                                'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                            }`}>
+                                                    'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                }`}>
                                                 {isLock ? <FaLock size={10} /> : isWallpaper ? <MdOutlineWallpaper size={12} /> : <FaUnlock size={10} />}
                                                 {item.actionType}
                                             </span>

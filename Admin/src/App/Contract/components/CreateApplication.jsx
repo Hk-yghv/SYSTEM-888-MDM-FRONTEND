@@ -187,36 +187,36 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const handleAutoFill = (record) => {
         if (!record || typeof record !== 'object') return;
         setForm({
-            brand:              record.brand               || user?.brand || '',
-            customerNameEn:     record.customerNameEn      || record.name_english                         || '',
-            customerNameKh:     record.customerNameKh      || record.name_khmer                           || '',
-            idCardNumber:       record.idCardNumber        || record.id_number                            || '',
-            dob:                record.dob                 || '',
-            gender:             record.gender              || 'male',
-            birthAddress:       record.birthAddress        || record.birth_address                        || '',
-            currentAddress:     record.currentAddress      || record.current_address                      || '',
-            phone:              record.phone               || record.phone_number                         || '',
-            relativePhone:      record.relativePhone       || record.friend_or_relative_phone_number      || '',
-            facebookName:       record.facebookName        || record.facebook_name                        || '',
-            telegramName:       record.telegramName        || record.telegram_name                        || '',
-            urlFb:              record.urlFb               || record.url_fb                               || '',
-            mosyleUrl:          record.mosyleUrl           || record.mosyle_url || record.urlMosyle || record.mosyleURL || '',
-            customerPhoto:      record.customerPhoto       || '',
+            brand: record.brand || user?.brand || '',
+            customerNameEn: record.customerNameEn || record.name_english || '',
+            customerNameKh: record.customerNameKh || record.name_khmer || '',
+            idCardNumber: record.idCardNumber || record.id_number || '',
+            dob: record.dob || '',
+            gender: record.gender || 'male',
+            birthAddress: record.birthAddress || record.birth_address || '',
+            currentAddress: record.currentAddress || record.current_address || '',
+            phone: record.phone || record.phone_number || '',
+            relativePhone: record.relativePhone || record.friend_or_relative_phone_number || '',
+            facebookName: record.facebookName || record.facebook_name || '',
+            telegramName: record.telegramName || record.telegram_name || '',
+            urlFb: record.urlFb || record.url_fb || '',
+            mosyleUrl: record.mosyleUrl || record.mosyle_url || record.urlMosyle || record.mosyleURL || '',
+            customerPhoto: record.customerPhoto || '',
             googleDrivePhotoUrl: record.googleDrivePhotoUrl || '',
             // Device info
-            model:              record.model               || record.device_model                         || '',
-            serialNumber:       record.serialNumber        || record.serial_number                        || '',
-            imei1:              record.imei1               || record.imei1_number                         || '',
-            imei2:              record.imei2               || record.imei2_number                         || '',
-            color:              record.color               || '',
-            version:            record.version             || '',
+            model: record.model || record.device_model || '',
+            serialNumber: record.serialNumber || record.serial_number || '',
+            imei1: record.imei1 || record.imei1_number || '',
+            imei2: record.imei2 || record.imei2_number || '',
+            color: record.color || '',
+            version: record.version || '',
             // Loan info
-            amount:             record.amount              || record.totalAmount                          || 1000,
-            interest:           record.interest            || '14%',
-            adminFee:           record.adminFee            || 20,
-            duration:           record.duration            || '12 Months',
-            interestType:       record.interestType        || '14%',
-            monthlyPayment:     record.monthlyPayment      || 100,
+            amount: record.amount || record.totalAmount || 1000,
+            interest: record.interest || '14%',
+            adminFee: record.adminFee || 20,
+            duration: record.duration || '12 Months',
+            interestType: record.interestType || '14%',
+            monthlyPayment: record.monthlyPayment || 100,
         });
         setAutoFilled(true);
     };
@@ -255,7 +255,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     if (!open) return null;
 
     return (
-        <div className="w-[calc(100%-260px)] h-[87vh] overflow-auto absolute right-0 top-[7vh] bg-gray-900 border border-gray-700 z-[99999] shadow-2xl p-4">
+        <div className="w-[calc(100%-260px)] h-[88vh] overflow-auto absolute right-0 top-[7vh] bg-gray-900 border border-gray-700 z-[99999] shadow-2xl p-4">
             <form onSubmit={handleSubmit}>
                 {/* ── Form Header ── */}
                 <div className='flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800 rounded-t-2xl'>

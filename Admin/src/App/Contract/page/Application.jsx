@@ -175,7 +175,7 @@ const Application = () => {
             </header>
 
             {/* Application List Table */}
-            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-170px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -228,41 +228,41 @@ const Application = () => {
                                             </button>
 
                                             {openMenuId === item._id && (
-                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
                                                     <button
                                                         onClick={() => { setInfoData(item); setOpenMenuId(null); }}
-                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-xl flex items-center gap-2 cursor-pointer"
                                                     >
-                                                        <MdInfo className="text-indigo-400 text-sm" />
+                                                        <MdInfo className="text-indigo-600 text-sm" />
                                                         <span>{t('information')}</span>
                                                     </button>
                                                     <button
                                                         onClick={() => handleActivateContract(item._id)}
-                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-emerald-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer"
                                                     >
-                                                        <MdCheckCircle className="text-emerald-400 text-sm" />
+                                                        <MdCheckCircle className="text-emerald-600 text-sm" />
                                                         <span>Set to Activated</span>
                                                     </button>
                                                     {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
                                                         <button
                                                             onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
-                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-300 hover:bg-sky-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
                                                         >
                                                             <span>Open Mosyle</span>
                                                         </button>
                                                     )}
                                                     <button
                                                         onClick={() => handleOpenEdit(item)}
-                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2 cursor-pointer"
                                                     >
-                                                        <MdEdit className="text-amber-400 text-sm" />
+                                                        <MdEdit className="text-amber-600 text-sm" />
                                                         <span>{t('edit')}</span>
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteContract(item._id)}
-                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-950/50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
                                                     >
-                                                        <MdDelete className="text-red-400 text-sm" />
+                                                        <MdDelete className="text-red-600 text-sm" />
                                                         <span>{t('delete')}</span>
                                                     </button>
                                                 </div>

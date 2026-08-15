@@ -176,45 +176,37 @@ const ControlSystem = () => {
         }
     };
 
-    const handleDeleteBrand = async (brandName) => {
-        if (brandsList.length <= 1) {
-            setMessage('Cannot remove the last brand!');
-            setTimeout(() => setMessage(''), 3000);
-            return;
-        }
-        const updatedBrands = brandsList.filter(b => b !== brandName);
-        setBrandsList(updatedBrands);
+    const [deleteBrandModal, setDeleteBrandModal] = useState({ open: false, brandName: '' });
 
+    const handleDeleteBrandClick = (brandName) => {
+        setDeleteBrandModal({ open: true, brandName });
+    };
+
+    const handleConfirmDeleteBrand = async () => {
+        const brandName = deleteBrandModal.brandName;
+        if (!brandName) return;
         setSaving(true);
         setMessage('');
         try {
-            const globalRes = await fetch(`${API_BASE}/controlsystem?brand=`);
-            let globalDroplists = [
-                { category: 'Device Models', items: [] },
-                { category: 'Contract Types', items: [] },
-                { category: 'Payment Methods', items: [] },
-                { category: 'Brands', items: [] }
-            ];
-            if (globalRes.ok) {
-                const gData = await globalRes.json();
-                if (gData.droplists) globalDroplists = gData.droplists;
-            }
-            const brandCatIdx = globalDroplists.findIndex(d => d.category === 'Brands');
-            if (brandCatIdx !== -1) {
-                globalDroplists[brandCatIdx].items = updatedBrands;
-            }
-            const saveRes = await fetch(`${API_BASE}/controlsystem`, {
+            const res = await fetch(`${API_BASE}/controlsystem/delete-brand`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: 'droplists', value: globalDroplists, brand: '' })
+                body: JSON.stringify({ brand: brandName })
             });
+
             setSaving(false);
-            if (saveRes.ok) {
-                setMessage(`Brand '${brandName}' removed from Global Config successfully!`);
-                setTimeout(() => setMessage(''), 3000);
+            setDeleteBrandModal({ open: false, brandName: '' });
+            if (res.ok) {
+                const data = await res.json();
+                setMessage(data.message || `Brand '${brandName}' and all associated data purged successfully!`);
+                fetchControlSystemConfigs();
+                setTimeout(() => setMessage(''), 4000);
+            } else {
+                alert('Failed to delete brand');
             }
         } catch (err) {
             setSaving(false);
+            setDeleteBrandModal({ open: false, brandName: '' });
             console.error('Delete brand error:', err);
         }
     };
@@ -507,7 +499,7 @@ const ControlSystem = () => {
                                 <FaLayerGroup size={11} className="text-amber-400" />
                                 <span>{br}</span>
                                 <button
-                                    onClick={() => handleDeleteBrand(br)}
+                                    onClick={() => handleDeleteBrandClick(br)}
                                     disabled={saving}
                                     className="text-red-400 hover:text-red-300 cursor-pointer disabled:opacity-50 transition-colors"
                                     title={`Remove brand '${br}'`}
@@ -516,6 +508,59 @@ const ControlSystem = () => {
                                 </button>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Brand Delete Confirmation Modal */}
+            {deleteBrandModal.open && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[999999] p-4">
+                    <div className="bg-[#121829] border border-red-500/50 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                            <h3 className="text-sm font-bold text-red-400 flex items-center gap-2">
+                                <MdDelete size={18} />
+                                សួរបញ្ជាក់ពីការលុប Brand (Delete Brand Confirmation)
+                            </h3>
+                            <button onClick={() => setDeleteBrandModal({ open: false, brandName: '' })} className="text-gray-400 hover:text-gray-200 text-xs font-bold cursor-pointer">✕</button>
+                        </div>
+
+                        <div className="space-y-3 text-xs text-gray-200">
+                            <p className="font-bold text-sm text-white">
+                                តើអ្នកពិតជាចង់លុប Brand <span className="text-amber-400 font-mono">"{deleteBrandModal.brandName}"</span> នេះមែនទេ?
+                            </p>
+                            <div className="p-3 bg-red-950/50 border border-red-800/80 rounded-2xl space-y-1.5 text-red-200">
+                                <p className="font-bold uppercase text-[10px] text-red-400 tracking-wider">⚠️ ការប្រុងប្រយ័ត្នខ្ពស់ (High Alert Warning):</p>
+                                <p className="text-[11px] leading-relaxed">
+                                    នៅពេលលុប Brand នេះ ព័ត៌មាន និងទិន្នន័យទាំងអស់ដែលពាក់ព័ន្ធនឹង Brand <span className="font-mono font-bold text-amber-300">"{deleteBrandModal.brandName}"</span> រួមមាន៖
+                                </p>
+                                <ul className="list-disc list-inside text-[11px] space-y-0.5 text-red-300 font-medium">
+                                    <li>កិច្ចសន្យាទាំងអស់ (Contracts) របស់ Brand នេះ</li>
+                                    <li>Account System Users ដែលត្រូវបានកំណត់ក្នុង Brand នេះ</li>
+                                    <li>ប្រវត្តិចាក់សោ (Phone/Wallpaper Logs) និង Device Action Logs</li>
+                                </ul>
+                                <p className="text-[11px] font-bold text-red-400 pt-1">
+                                    ទិន្នន័យទាំងនេះនឹងត្រូវបានលុបចេញពីប្រព័ន្ធ MongoDB ទាំងស្រុង ដោយមិនអាចទាញយកមកវិញបានឡើយ!
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-800">
+                            <button
+                                type="button"
+                                onClick={() => setDeleteBrandModal({ open: false, brandName: '' })}
+                                className="px-4 py-2 bg-gray-800 text-gray-300 rounded-xl text-xs font-bold hover:bg-gray-700 cursor-pointer"
+                            >
+                                បោះបង់ (Cancel)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmDeleteBrand}
+                                disabled={saving}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-lg shadow-red-600/30 cursor-pointer flex items-center gap-1.5"
+                            >
+                                <MdDelete size={16} /> {saving ? 'Purging Data...' : 'លុប Brand និងទិន្នន័យទាំងអស់'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

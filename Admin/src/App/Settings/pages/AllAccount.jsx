@@ -38,7 +38,8 @@ const AllAccount = () => {
     const [openCreateModal, setOpenCreateModal] = useState(false);
     const [selectedHistoryUser, setSelectedHistoryUser] = useState(null);
 
-    // New User Form State
+    // New / Edit User Form State
+    const [editingUser, setEditingUser] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         username: '',
@@ -48,6 +49,23 @@ const AllAccount = () => {
         brand: '',
         permissions: {}
     });
+
+    const handleOpenEditUserModal = (userObj) => {
+        if (userObj.isImmutable || userObj.username === '@hakyonghouv') {
+            alert('Master Admin account (@hakyonghouv) is protected and CANNOT be edited!');
+            return;
+        }
+        setEditingUser(userObj);
+        setFormData({
+            name: userObj.name || '',
+            username: userObj.username || '',
+            email: userObj.email || '',
+            password: '',
+            role: userObj.role || 'Staff',
+            brand: userObj.brand || '',
+            permissions: userObj.permissions || {}
+        });
+    };
 
     const fetchUsers = async () => {
         setReloading(true);
@@ -120,6 +138,37 @@ const AllAccount = () => {
         }
     };
 
+    const handleUpdateUser = async (e) => {
+        e.preventDefault();
+        if (!editingUser) return;
+        try {
+            const res = await fetch(`${API_BASE}/users/${editingUser._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (res.ok) {
+                setEditingUser(null);
+                fetchUsers();
+                setFormData({
+                    name: '',
+                    username: '',
+                    email: '',
+                    password: '',
+                    role: 'Staff',
+                    brand: '',
+                    permissions: {}
+                });
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to update user');
+            }
+        } catch (err) {
+            console.error('Update user error:', err);
+        }
+    };
+
     const handleDeleteUser = async (userObj) => {
         if (userObj.isImmutable || userObj.username === '@hakyonghouv') {
             alert('Master Admin account (@hakyonghouv) is protected and CANNOT be deleted!');
@@ -166,7 +215,7 @@ const AllAccount = () => {
     };
 
     return (
-        <div className='w-full min-h-screen bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             {/* Header */}
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
@@ -204,7 +253,7 @@ const AllAccount = () => {
             </header>
 
             {/* Users Table */}
-            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-180px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -278,14 +327,21 @@ const AllAccount = () => {
                                             </span>
                                         ) : (
                                             <div className="flex items-center justify-center gap-1.5">
+                                                {/* Edit User */}
+                                                <button
+                                                    onClick={() => handleOpenEditUserModal(item)}
+                                                    className="p-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-lg cursor-pointer transition-all text-[11px] font-bold flex items-center gap-1 px-2"
+                                                    title="Edit User Info & Permissions"
+                                                >
+                                                    <MdEdit size={14} /> Edit
+                                                </button>
                                                 {/* Block / Unblock */}
                                                 <button
                                                     onClick={() => handleToggleBlock(item)}
-                                                    className={`p-1.5 border rounded-lg cursor-pointer transition-all text-[11px] font-bold flex items-center gap-1 px-2 ${
-                                                        item.isBlocked
-                                                            ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700'
-                                                            : 'bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-700'
-                                                    }`}
+                                                    className={`p-1.5 border rounded-lg cursor-pointer transition-all text-[11px] font-bold flex items-center gap-1 px-2 ${item.isBlocked
+                                                        ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700'
+                                                        : 'bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-700'
+                                                        }`}
                                                     title={item.isBlocked ? 'Unblock User' : 'Block User'}
                                                 >
                                                     {item.isBlocked ? <><FaUnlock size={11} /> Unblock</> : <><FaBan size={11} /> Block</>}
@@ -340,19 +396,19 @@ const AllAccount = () => {
                 </div>
             )}
 
-            {/* Create Account & Permissions Matrix Modal */}
-            {openCreateModal && (
+            {/* Create / Edit Account & Permissions Matrix Modal */}
+            {(openCreateModal || editingUser) && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
                     <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-3xl shadow-2xl space-y-5 my-8">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h2 className="text-base font-bold text-gray-100 flex items-center gap-2">
                                 <FaUserPlus className="text-indigo-400" />
-                                Create New System User & Assign Page Permissions
+                                {editingUser ? `Edit Account: ${editingUser.username}` : 'Create New System User & Assign Page Permissions'}
                             </h2>
-                            <button onClick={() => setOpenCreateModal(false)} className="text-gray-400 hover:text-gray-200 text-xs font-bold">✕</button>
+                            <button onClick={() => { setOpenCreateModal(false); setEditingUser(null); }} className="text-gray-400 hover:text-gray-200 text-xs font-bold">✕</button>
                         </div>
 
-                        <form onSubmit={handleCreateUser} className="space-y-4">
+                        <form onSubmit={editingUser ? handleUpdateUser : handleCreateUser} className="space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                                 <div>
                                     <label className="block text-gray-300 font-semibold mb-1">Full Name</label>
@@ -391,13 +447,15 @@ const AllAccount = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-gray-300 font-semibold mb-1">Password</label>
+                                    <label className="block text-gray-300 font-semibold mb-1">
+                                        Password {editingUser && <span className="text-[10px] text-gray-400 font-normal">(Leave blank to keep current password)</span>}
+                                    </label>
                                     <input
                                         type="password"
-                                        required
+                                        required={!editingUser}
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                        placeholder="Enter account password"
+                                        placeholder={editingUser ? 'Enter new password (optional)' : 'Enter account password'}
                                         className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100"
                                     />
                                 </div>
@@ -492,7 +550,7 @@ const AllAccount = () => {
                             <div className="flex justify-end gap-3 pt-3">
                                 <button
                                     type="button"
-                                    onClick={() => setOpenCreateModal(false)}
+                                    onClick={() => { setOpenCreateModal(false); setEditingUser(null); }}
                                     className="px-4 py-2 bg-gray-800 text-gray-300 text-xs font-bold rounded-xl hover:bg-gray-700 cursor-pointer"
                                 >
                                     {t('cancel')}
@@ -501,7 +559,7 @@ const AllAccount = () => {
                                     type="submit"
                                     className="px-5 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-500 cursor-pointer shadow-lg shadow-indigo-600/30"
                                 >
-                                    Save Account
+                                    {editingUser ? 'Update Account' : 'Save Account'}
                                 </button>
                             </div>
                         </form>

@@ -50,7 +50,9 @@ const Header = () => {
                 <div className='flex items-center gap-4'>
                     <Link to="/dashboard" className='flex items-center gap-2'>
                         <h1 className="text-xl font-extrabold tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors">
-                            SYSTEM MDM
+                            {(!user || user.isImmutable || user.username === '@hakyonghouv' || !user.brand) 
+                                ? 'SYSTEM' 
+                                : `SYSTEM ${user.brand.toUpperCase()}`}
                         </h1>
                     </Link>
 

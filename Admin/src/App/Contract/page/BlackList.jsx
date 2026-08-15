@@ -81,7 +81,7 @@ const BlackList = () => {
     };
 
     return (
-        <div className='w-full min-h-screen bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-base font-bold text-slate-900 flex items-center gap-2'>
@@ -114,7 +114,7 @@ const BlackList = () => {
                 </div>
             </header>
 
-            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-170px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -151,12 +151,12 @@ const BlackList = () => {
                                             </button>
 
                                             {openMenuId === item._id && (
-                                                <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
-                                                    <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-950/50 rounded-xl flex items-center gap-2">
-                                                        <MdEdit /> Edit
+                                                <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                    <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2">
+                                                        <MdEdit className="text-amber-600" /> Edit
                                                     </button>
-                                                    <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-950/50 rounded-xl flex items-center gap-2">
-                                                        <MdDelete /> Delete
+                                                    <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2">
+                                                        <MdDelete className="text-red-600" /> Delete
                                                     </button>
                                                 </div>
                                             )}

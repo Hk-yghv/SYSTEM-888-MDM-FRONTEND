@@ -540,23 +540,27 @@ const Dashboard = () => {
                             {trendData.length === 0 ? (
                                 <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">No trend data</div>
                             ) : (
-                                <div className="relative h-32 w-full flex items-end justify-between px-2 pt-4">
-                                    <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
-                                        <polyline fill="none" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                                            points={trendData.map((d, i) => {
-                                                const maxC = Math.max(...trendData.map(x => x.count), 1);
-                                                const x = (i / (trendData.length - 1 || 1)) * 92 + 4;
-                                                const y = 85 - (d.count / maxC) * 70;
-                                                return `${x}%,${y}%`;
-                                            }).join(' ')}
-                                        />
-                                    </svg>
+                                <div className={`relative h-32 w-full flex items-end ${trendData.length === 1 ? 'justify-center' : 'justify-between'} px-6 pt-4`}>
+                                    {trendData.length > 1 && (
+                                        <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                                            <polyline fill="none" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                                points={trendData.map((d, i) => {
+                                                    const maxC = Math.max(...trendData.map(x => x.count), 1);
+                                                    const x = (i / (trendData.length - 1)) * 90 + 5;
+                                                    const y = 85 - (d.count / maxC) * 70;
+                                                    return `${x}%,${y}%`;
+                                                }).join(' ')}
+                                            />
+                                        </svg>
+                                    )}
                                     {trendData.map((d) => (
                                         <div key={d.date} onClick={() => handleChartPointClick('Date Trend', d.date, true)}
                                             className="relative z-10 flex flex-col items-center cursor-pointer group">
-                                            <span className="text-[9px] font-mono font-bold text-sky-800 opacity-0 group-hover:opacity-100 transition-opacity">{d.count}</span>
-                                            <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-sky-600 group-hover:bg-sky-600 group-hover:scale-125 transition-all shadow-sm"></div>
-                                            <span className="text-[9px] font-mono text-slate-600 font-medium mt-1">{d.date.slice(5)}</span>
+                                            <span className="text-[10px] font-mono font-bold text-sky-800 opacity-100 group-hover:scale-110 transition-transform mb-1 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-md">{d.count}</span>
+                                            <div className="w-4 h-4 rounded-full bg-white border-2 border-sky-600 group-hover:bg-sky-600 group-hover:scale-125 transition-all shadow-sm flex items-center justify-center">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-sky-600 group-hover:bg-white"></div>
+                                            </div>
+                                            <span className="text-[10px] font-mono text-slate-700 font-bold mt-1.5">{d.date.slice(5)}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -637,11 +641,29 @@ const Dashboard = () => {
 
                     // Mini SVG line chart
                     const MiniLine = ({ data, stroke }) => {
-                        if (!data || data.length < 2) return (
-                            <div className="h-16 flex items-center justify-center text-slate-400 text-[10px] italic">
-                                {data?.length === 1 ? '1 data point' : 'No trend data'}
+                        if (!data || data.length === 0) return (
+                            <div className="h-16 flex flex-col items-center justify-center text-slate-400 text-[10px] italic">
+                                <span>No trend data</span>
                             </div>
                         );
+
+                        if (data.length === 1) {
+                            const item = data[0];
+                            return (
+                                <div className="relative h-16 w-full flex flex-col items-center justify-center px-4">
+                                    <div className="flex items-center justify-between w-full mb-1">
+                                        <span className="text-[10px] font-bold text-slate-600 font-mono">{item.date}</span>
+                                        <span className="text-xs font-black font-mono px-2 py-0.5 rounded-md text-white shadow-xs" style={{ backgroundColor: stroke }}>
+                                            {item.count} Record{item.count > 1 ? 's' : ''}
+                                        </span>
+                                    </div>
+                                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                                        <div className="h-full rounded-full" style={{ width: '100%', backgroundColor: stroke }}></div>
+                                    </div>
+                                </div>
+                            );
+                        }
+
                         const maxC = Math.max(...data.map(d => d.count), 1);
                         const pts = data.map((d, i) => {
                             const x = (i / (data.length - 1)) * 96 + 2;

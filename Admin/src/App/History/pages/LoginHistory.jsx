@@ -84,7 +84,7 @@ const LoginHistory = () => {
 
     const handleSendTelegramReport = async () => {
         if (sendingTelegram) return;
-        if (!window.confirm('តើអ្នកពិតជាចង់ផ្ញើរបាយការណ៍នេះទៅកាន់ Telegram Bot / Google Sheet ដោយបង្ខំ និងលុបទិន្នន័យប្រវត្តិ Login ដើម្បីរាប់ថយក្រោយជាថ្មីមែនទេ?')) {
+        if (!window.confirm('តើអ្នកពិតជាចង់ផ្ញើរបាយការណ៍នេះ និងលុបទិន្នន័យប្រវត្តិ Login ដើម្បីរាប់ថយក្រោយជាថ្មីមែនទេ?')) {
             return;
         }
 
@@ -140,7 +140,7 @@ const LoginHistory = () => {
     };
 
     return (
-        <div className='w-full min-h-screen bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
 
             {/* Notification Toast */}
             {toast && (
@@ -277,7 +277,7 @@ const LoginHistory = () => {
             </div>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-350px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>
