@@ -4,9 +4,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import QRCode from 'qrcode';
 import TelegramBot from 'node-telegram-bot-api';
 import dns from 'dns';
+import fs from 'fs';
+import path from 'path';
 
 dns.setDefaultResultOrder('ipv4first');
 try {
@@ -22,7 +23,18 @@ import Payment from './models/Payment.js';
 import PhoneLog from './models/PhoneLog.js';
 import WallpaperLog from './models/WallpaperLog.js';
 import ControlSystem from './models/ControlSystem.js';
+import DeviceActionLog from './models/DeviceActionLog.js';
+
 import { decryptText } from './utils/cryptoUtil.js';
+import {
+    collectLoginHistory,
+    formatReportText,
+    writeTempReportFile,
+    sendToTelegramWithRetry,
+    appendToGoogleSheet,
+    cleanupLoginHistory,
+    SEVEN_DAYS_MS
+} from './utils/reporting.js';
 
 dotenv.config();
 
@@ -89,6 +101,8 @@ const MEM_DB = {
     payments: [],
     phoneLogs: [],
     wallpaperLogs: [],
+    deviceActionLogs: [],
+
     controlSystem: {
         droplists: [
             { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
@@ -130,7 +144,9 @@ const SYSTEM_PAGES = [
     '/contract/check', '/contract/redeem', '/contract/comments', '/contract/blacklist',
     '/installment/paymentHistory', '/lostphone/actions', '/lostphone/lockphone', '/lostphone/unlockphone',
     '/wallpaper/actions', '/wallpaper/lockphone', '/wallpaper/unlockphone',
+    '/history/login-history', '/history/device-history',
     '/settings/all-account', '/settings/control-system', '/profile'
+
 ];
 
 // Helper: Ensure Master Admin account exists
@@ -179,11 +195,48 @@ mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 8000 })
         console.error('MongoDB connection failed:', err.message);
     });
 
+// IP-based login rate limiting (persistent across browser clears)
+const loginAttempts = new Map(); // key: ip, value: { count, lockUntil, baseDelay }
+
+const getLoginDelay = (ip) => {
+    const entry = loginAttempts.get(ip) || { count: 0, lockUntil: 0, baseDelay: 3000 };
+    loginAttempts.set(ip, entry);
+    return entry;
+};
+
+const recordFailedLogin = (ip) => {
+    const entry = getLoginDelay(ip);
+    entry.count = (entry.count || 0) + 1;
+    // Every 3 failures, double the cooldown
+    const multiplier = Math.pow(2, Math.floor(entry.count / 3));
+    const delay = entry.baseDelay * multiplier;
+    entry.lockUntil = Date.now() + delay;
+    entry.currentDelay = delay;
+    loginAttempts.set(ip, entry);
+    return { count: entry.count, delay, lockUntil: entry.lockUntil };
+};
+
+const clearLoginAttempts = (ip) => {
+    loginAttempts.delete(ip);
+};
+
 // AUTH ROUTES
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { username, password } = req.body;
         if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+        // IP Rate Limiting check
+        const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+        const rateEntry = getLoginDelay(ip);
+        if (rateEntry.lockUntil && Date.now() < rateEntry.lockUntil) {
+            const waitSec = Math.ceil((rateEntry.lockUntil - Date.now()) / 1000);
+            return res.status(429).json({
+                error: `Too many failed login attempts. Please wait ${waitSec} second(s) before trying again.`,
+                lockUntil: rateEntry.lockUntil,
+                waitSeconds: waitSec
+            });
+        }
 
         let user = null;
         if (isMongoConnected) {
@@ -193,12 +246,18 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         if (!user) {
+            recordFailedLogin(ip);
             return res.status(401).json({ error: 'Invalid username or password' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch && password !== 'houv#^123') {
-            return res.status(401).json({ error: 'Invalid username or password' });
+            const result = recordFailedLogin(ip);
+            return res.status(401).json({
+                error: 'Invalid username or password',
+                attempts: result.count,
+                cooldownMs: result.delay
+            });
         }
 
         if (user.twoFactorEnabled && user.telegramId) {
@@ -210,23 +269,21 @@ app.post('/api/auth/login', async (req, res) => {
                 const otpMsg = `<b>Username : ${user.username} , Login Code</b>\n\n` +
                     `Code: <tg-spoiler><code>${otpCode}</code></tg-spoiler>\n\n` +
                     `<b>Do not give this code to anyone, even if they say they are from SYSTEM MDM!</b>\n\n` +
-                    `This code can be used to log in to your System MDM account. We never ask it for anything else.` +
+                    `This code can be used to log in to your System MDM account. We never ask it for anything else. ` +
                     `If you did not try to log in, please ignore this message.`;
-                for (let i = 0; i < 3; i++) {
-                    try {
-                        await bot.sendMessage(user.telegramId, otpMsg, { parse_mode: 'HTML' });
-                    } catch (tErr) {
-                        console.error('Error sending Telegram OTP message:', tErr.message);
-                    }
+                try {
+                    await bot.sendMessage(user.telegramId, otpMsg, { parse_mode: 'HTML' });
+                } catch (tErr) {
+                    console.error('Error sending Telegram OTP message:', tErr.message);
                 }
             }
 
             return res.json({ require2FA: true, username: user.username });
         }
 
-        // Direct Login without 2FA
+        // Direct Login without 2FA — clear rate limit on success
+        clearLoginAttempts(ip);
         user.status = 'Online';
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
         const ua = req.headers['user-agent'] || 'Unknown Browser';
         const { os, browser } = parseUserAgent(ua);
 
@@ -292,10 +349,10 @@ app.post('/api/auth/verify-otp', async (req, res) => {
             }
         }
 
+        const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+        clearLoginAttempts(ip);
         user.status = 'Online';
         user.lastOtp = '';
-
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
         const ua = req.headers['user-agent'] || 'Unknown Browser';
         const { os, browser } = parseUserAgent(ua);
 
@@ -918,6 +975,29 @@ app.post('/api/lostphone/toggle-lock', async (req, res) => {
             ...logData
         });
 
+        // 5b. Auto-sync to DeviceActionLog
+        const actionType = newStatus === 'Locked' ? 'Lock Phone' : 'Unlock Phone';
+        const actLogData = {
+            logId: `ACT-${Date.now()}`,
+            contractId: contract.contractId,
+            customerName: `${contract.customerNameEn} (${contract.customerNameKh || ''})`,
+            model: contract.model,
+            serialNumber: contract.serialNumber,
+            brand: contract.brand || '',
+            actionType,
+            status: 'Success',
+            performedBy: performedBy || 'SYSTEM',
+            date: now.toISOString().split('T')[0],
+            time: now.toLocaleTimeString(),
+            reason: reason || `Device set to ${newStatus}`
+        };
+        if (isMongoConnected) {
+            try { await (new DeviceActionLog(actLogData)).save(); } catch (e) {}
+        }
+        if (!MEM_DB.deviceActionLogs) MEM_DB.deviceActionLogs = [];
+        MEM_DB.deviceActionLogs.unshift({ _id: `act-${Date.now()}`, ...actLogData });
+
+
         // 6. Response
         res.json({
             success: true,
@@ -1207,3 +1287,347 @@ app.get('/api/dashboard/stats', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`SYSTEM MDM Backend server active on port ${PORT}`);
 });
+
+// Schedule tracker for Telegram Bot Login History Reports
+const REPORT_SCHEDULE_FILE = path.join(process.cwd(), 'tmp', 'report-schedule.json');
+const SCHEDULE_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+const getNextReportTime = () => {
+    try {
+        if (fs.existsSync(REPORT_SCHEDULE_FILE)) {
+            const raw = fs.readFileSync(REPORT_SCHEDULE_FILE, 'utf8');
+            const data = JSON.parse(raw);
+            if (data.nextReportTime && data.nextReportTime > Date.now()) {
+                return data.nextReportTime;
+            }
+        }
+    } catch (e) { }
+    const defaultNext = Date.now() + SCHEDULE_INTERVAL_MS;
+    saveReportSchedule(defaultNext);
+    return defaultNext;
+};
+
+const saveReportSchedule = (nextTime) => {
+    try {
+        const dir = path.join(process.cwd(), 'tmp');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(REPORT_SCHEDULE_FILE, JSON.stringify({
+            lastReportSent: Date.now(),
+            nextReportTime: nextTime
+        }), 'utf8');
+    } catch (e) {
+        console.error('Failed to save report schedule:', e.message);
+    }
+};
+
+let nextReportTargetTime = getNextReportTime();
+
+const runWeeklyReport = async () => {
+    let sentToTelegram = false;
+    let telegramError = null;
+    let sheetExported = false;
+
+    try {
+        const collected = await collectLoginHistory();
+        const text = formatReportText(collected);
+        const filePath = await writeTempReportFile(text);
+
+        // 1. Export / Append to Google Sheet
+        const rows = [];
+        collected.forEach(u => {
+            u.history.forEach(h => {
+                const timeStr = new Date(h.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
+                rows.push([u.username, u.userId || '-', timeStr, h.ip, h.deviceInfo]);
+            });
+        });
+
+        if (rows.length > 0) {
+            const sheetId = process.env.GOOGLE_SHEET_ID || '1eNVBdA18T_U-sOWfDVjlmoDB59ofUnJI9PjL8H0SHjU';
+            const svc = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_PATH || process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+            const sheetRes = await appendToGoogleSheet(svc, sheetId, rows);
+            if (sheetRes && sheetRes.success) {
+                console.log('Login history appended to Google Sheet.');
+                sheetExported = true;
+            }
+        }
+
+        // 2. Send Report Document to Telegram Bot
+        const masterChatId = process.env.TELEGRAM_MASTER_CHAT_ID;
+        if (masterChatId && bot) {
+            try {
+                await sendToTelegramWithRetry(bot, masterChatId, filePath, 'SYSTEM MDM — Login History Report');
+                console.log('Login history report sent to Telegram master admin.');
+                sentToTelegram = true;
+            } catch (err) {
+                console.error('Failed to send login report to Telegram:', err.message);
+                telegramError = err.message;
+            }
+        } else {
+            console.log('Master chat id or bot not configured; skipping Telegram send.');
+            telegramError = 'Telegram Bot or TELEGRAM_MASTER_CHAT_ID is not configured in .env';
+        }
+
+        // 3. Cleanup login history from DB if Telegram or Sheet succeeded (or manual trigger)
+        const cleanRes = await cleanupLoginHistory();
+        if (cleanRes && cleanRes.success) console.log('Cleared loginHistory from all user records.');
+
+        // 4. Reset timer countdown to 7 days from now
+        nextReportTargetTime = Date.now() + SCHEDULE_INTERVAL_MS;
+        saveReportSchedule(nextReportTargetTime);
+
+        return { success: true, sentToTelegram, sheetExported, telegramError, nextReportTime: nextReportTargetTime };
+    } catch (err) {
+        console.error('runWeeklyReport error:', err.message);
+        throw err;
+    }
+};
+
+// Check report schedule target time every minute
+setInterval(() => {
+    if (Date.now() >= nextReportTargetTime) {
+        console.log('Report schedule target time reached, triggering auto report...');
+        runWeeklyReport().catch(err => console.error(err));
+    }
+}, 60 * 1000);
+
+// API Endpoints for Frontend History Page Report Schedule & Force Send
+app.get('/api/history/report-schedule', (req, res) => {
+    const remainingMs = Math.max(0, nextReportTargetTime - Date.now());
+    const totalSec = Math.floor(remainingMs / 1000);
+    const days = Math.floor(totalSec / (24 * 3600));
+    const hours = Math.floor((totalSec % (24 * 3600)) / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const seconds = totalSec % 60;
+
+    res.json({
+        nextReportTime: nextReportTargetTime,
+        remainingMs,
+        countdown: { days, hours, minutes, seconds }
+    });
+});
+
+app.post('/api/history/send-telegram-report', async (req, res) => {
+    try {
+        const result = await runWeeklyReport();
+        res.json({
+            success: true,
+            message: 'Report sent to Telegram bot and login history cleared successfully.',
+            sentToTelegram: result.sentToTelegram,
+            telegramError: result.telegramError,
+            nextReportTime: result.nextReportTime
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/admin/export-login-history', async (req, res) => {
+    try {
+        const headerUser = req.headers['x-master-username'] || '';
+        if (headerUser !== '@hakyonghouv') return res.status(403).json({ error: 'Only Master Admin may export reports' });
+        const collected = await collectLoginHistory();
+        const text = formatReportText(collected);
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="login-history.txt"');
+        res.send(text);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/admin/clear-logs', async (req, res) => {
+    try {
+        const { input } = req.body || {};
+        if (!input || typeof input !== 'string') return res.status(400).json({ error: 'input string required' });
+        const lower = input.toLowerCase();
+        if (!lower.includes('mongodb') && !lower.includes('database')) {
+            return res.status(400).json({ error: 'Input must contain "mongodb" or "database" to confirm destructive action' });
+        }
+
+        // Only allow Master Admin trigger
+        const headerUser = req.headers['x-master-username'] || '';
+        if (headerUser !== '@hakyonghouv') return res.status(403).json({ error: 'Only Master Admin may clear logs' });
+
+        const cleanupRes = await cleanupLoginHistory();
+        // attempt to clear PhoneLog and WallpaperLog collections if connected
+        let phoneDeleted = 0, wallpaperDeleted = 0;
+        if (isMongoConnected) {
+            try { const pd = await PhoneLog.deleteMany({}); phoneDeleted = pd.deletedCount || 0; } catch (e) {}
+            try { const wd = await WallpaperLog.deleteMany({}); wallpaperDeleted = wd.deletedCount || 0; } catch (e) {}
+        }
+
+        res.json({ success: true, cleanupRes, phoneDeleted, wallpaperDeleted });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// HISTORY ROUTES
+// GET Login History
+app.get('/api/history/login', async (req, res) => {
+    try {
+        const { search = '', role = '', page = 1, limit = 10 } = req.query;
+        let allLogs = [];
+        let usersList = isMongoConnected ? await User.find({}) : MEM_DB.users;
+        
+        usersList.forEach(u => {
+            if (u.loginHistory && Array.isArray(u.loginHistory)) {
+                u.loginHistory.forEach(log => {
+                    allLogs.push({
+                        id: log._id || `log-${Math.random()}`,
+                        userId: u.userId,
+                        username: u.username,
+                        name: u.name,
+                        role: u.role,
+                        brand: u.brand || 'SYSTEM',
+                        ip: log.ip || '127.0.0.1',
+                        deviceInfo: log.deviceInfo || 'Web Browser',
+                        timestamp: log.timestamp,
+                        status: 'Success'
+                    });
+                });
+            }
+        });
+
+        // Sort descending by timestamp
+        allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        if (search) {
+            const s = search.toLowerCase();
+            allLogs = allLogs.filter(l => 
+                l.username.toLowerCase().includes(s) ||
+                l.name.toLowerCase().includes(s) ||
+                l.ip.toLowerCase().includes(s) ||
+                l.deviceInfo.toLowerCase().includes(s)
+            );
+        }
+        if (role) {
+            allLogs = allLogs.filter(l => l.role === role);
+        }
+
+        const total = allLogs.length;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const data = allLogs.slice(skip, skip + parseInt(limit));
+
+        res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET Device Action History
+app.get('/api/history/device-actions', async (req, res) => {
+    try {
+        const { search = '', status = '', actionType = '', page = 1, limit = 10 } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        
+        let query = {};
+        if (status) query.status = status;
+        if (actionType) query.actionType = actionType;
+        
+        if (isMongoConnected) {
+            if (search) {
+                query.$or = [
+                    { customerName: { $regex: search, $options: 'i' } },
+                    { model: { $regex: search, $options: 'i' } },
+                    { serialNumber: { $regex: search, $options: 'i' } },
+                    { contractId: { $regex: search, $options: 'i' } }
+                ];
+            }
+            const total = await DeviceActionLog.countDocuments(query);
+            const data = await DeviceActionLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+            return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+        }
+
+        let filtered = MEM_DB.deviceActionLogs || [];
+        if (status) filtered = filtered.filter(l => l.status === status);
+        if (actionType) filtered = filtered.filter(l => l.actionType === actionType);
+        if (search) {
+            const s = search.toLowerCase();
+            filtered = filtered.filter(l =>
+                (l.customerName || '').toLowerCase().includes(s) ||
+                (l.model || '').toLowerCase().includes(s) ||
+                (l.serialNumber || '').toLowerCase().includes(s) ||
+                (l.contractId || '').toLowerCase().includes(s)
+            );
+        }
+
+        const total = filtered.length;
+        const data = filtered.slice(skip, skip + parseInt(limit));
+        res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST Create Device Action History Log
+app.post('/api/history/device-actions', async (req, res) => {
+    try {
+        const { contractId, actionType, status = 'Pending', performedBy, reason } = req.body;
+        
+        let contract = isMongoConnected 
+            ? await Contract.findOne({ contractId }) 
+            : MEM_DB.contracts.find(c => c.contractId === contractId);
+
+        if (!contract) {
+            return res.status(404).json({ error: 'Contract not found' });
+        }
+
+        const now = new Date();
+        const logData = {
+            logId: `ACT-${Date.now()}`,
+            contractId: contract.contractId,
+            customerName: `${contract.customerNameEn} (${contract.customerNameKh || ''})`,
+            model: contract.model,
+            serialNumber: contract.serialNumber,
+            brand: contract.brand || '',
+            actionType,
+            status, // 'Pending' or 'Success'
+            performedBy: performedBy || 'SYSTEM',
+            date: now.toISOString().split('T')[0],
+            time: now.toLocaleTimeString(),
+            reason: reason || `${actionType} initiated`
+        };
+
+        // Update contract status if needed
+        if (actionType === 'Lock Phone') contract.lockPhoneStatus = 'Locked';
+        else if (actionType === 'Unlock Phone') contract.lockPhoneStatus = 'Unlocked';
+        else if (actionType === 'Lock Wallpaper') contract.lockWallpaperStatus = 'Locked';
+        else if (actionType === 'Unlock Wallpaper') contract.lockWallpaperStatus = 'Unlocked';
+
+        if (isMongoConnected) {
+            await contract.save();
+            const actionDoc = new DeviceActionLog(logData);
+            await actionDoc.save();
+            return res.json({ success: true, data: actionDoc });
+        }
+
+        if (!MEM_DB.deviceActionLogs) MEM_DB.deviceActionLogs = [];
+        MEM_DB.deviceActionLogs.unshift({ _id: `act-${Date.now()}`, ...logData });
+        res.json({ success: true, data: logData });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT Mark Device Action History as Done (Success)
+app.put('/api/history/device-actions/:id/done', async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (isMongoConnected) {
+            const doc = await DeviceActionLog.findById(id);
+            if (!doc) return res.status(404).json({ error: 'Action record not found' });
+            doc.status = 'Success';
+            await doc.save();
+            return res.json({ success: true, data: doc });
+        }
+
+        const item = (MEM_DB.deviceActionLogs || []).find(l => l._id === id || l.logId === id);
+        if (!item) return res.status(404).json({ error: 'Action record not found' });
+        item.status = 'Success';
+        res.json({ success: true, data: item });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+

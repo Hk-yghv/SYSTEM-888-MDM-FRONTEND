@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { AiOutlineMenu, AiOutlinePlus } from "react-icons/ai";
 import { MdOutlineSync, MdCheckCircle, MdInfo, MdEdit, MdDelete, MdPictureAsPdf } from "react-icons/md";
 import { FaFileExcel } from 'react-icons/fa';
+import CopyCell from '../../../components/CopyCell';
 import CreateApplication from '../components/CreateApplication';
 import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
@@ -141,22 +142,22 @@ const Application = () => {
                 <div className='flex items-center gap-3'>
                     <button
                         onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-950/40 hover:bg-emerald-950/70 text-emerald-300 border border-emerald-800/40 rounded-xl text-xs font-semibold cursor-pointer transition-all'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
-                        <FaFileExcel />
+                        <FaFileExcel className="text-emerald-600 text-sm" />
                         <span>Excel</span>
                     </button>
                     <button
                         onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-950/40 hover:bg-red-950/70 text-red-300 border border-red-800/40 rounded-xl text-xs font-semibold cursor-pointer transition-all'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
-                        <MdPictureAsPdf className="text-sm" />
+                        <MdPictureAsPdf className="text-red-600 text-sm" />
                         <span>PDF</span>
                     </button>
                     {hasPermission('/contract/application', 'create') && (
                         <button
                             onClick={handleOpenCreate}
-                            className='flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs cursor-pointer shadow-lg shadow-indigo-600/30 transition-all'
+                            className='flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all'
                         >
                             <AiOutlinePlus size={16} />
                             <p>{t('create')}</p>
@@ -165,18 +166,18 @@ const Application = () => {
                     <button
                         onClick={() => fetchApplications(currentPage, searchTerm)}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-200 rounded-xl text-xs cursor-pointer border border-gray-700 transition-all'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-400' : ''} />
+                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
             {/* Application List Table */}
-            <div className='w-full overflow-x-auto rounded-2xl border border-gray-800 bg-[#0f1426]/90 shadow-xl'>
+            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
-                    <thead className='bg-gray-900/90 text-gray-400 uppercase tracking-wider border-b border-gray-800'>
+                    <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
                             <th className='px-4 py-3 text-center'>No</th>
                             <th className='px-4 py-3'>{t('inputDate')}</th>
@@ -187,47 +188,47 @@ const Application = () => {
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {contracts.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-8 text-gray-500 italic">
-                                    No pending applications found. Click "Create" to add a contract application.
+                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">
+                                    No pending applications found. Click "Create" to add a new application.
                                 </td>
                             </tr>
                         ) : (
                             contracts.map((item, idx) => (
-                                <tr key={item._id || idx} className='hover:bg-gray-800/40 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                                    <td className='px-4 py-3 font-mono'>{item.inputDate}</td>
+                                <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
+                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                    <td className='px-4 py-3 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
                                     <td className='px-4 py-3'>
                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                            <span className='font-bold text-gray-100'>{item.customerNameEn}</span>
-                                            {item.customerNameKh && <span className='text-indigo-400 font-khmer text-xs'>({item.customerNameKh})</span>}
+                                            <CopyCell text={item.customerNameEn} className='font-bold text-slate-900' />
+                                            {item.customerNameKh && <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs font-semibold' />}
                                             {item.modifiedByAdmin && (
-                                                <span className='px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/50 rounded-full font-bold text-[9px] uppercase shadow-sm' title={`Last modified by ${item.lastModifiedBy || 'Administrator'}`}>
+                                                <span className='px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-300 rounded-full font-bold text-[9px] uppercase shadow-2xs' title={`Last modified by ${item.lastModifiedBy || 'Administrator'}`}>
                                                     ⚡ Modified by Admin
                                                 </span>
                                             )}
                                         </div>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
-                                        <span className='px-3 py-1 bg-amber-950/70 border border-amber-700/60 text-amber-300 rounded-full font-bold text-[10px] uppercase'>
+                                        <span className='px-3 py-1 bg-amber-50 border border-amber-300 text-amber-800 rounded-full font-bold text-[10px] uppercase'>
                                             Application
                                         </span>
                                     </td>
-                                    <td className='px-4 py-3 font-semibold text-gray-300'>{item.model}</td>
-                                    <td className='px-4 py-3 font-mono text-gray-400'>{item.serialNumber || 'Pending'}</td>
+                                    <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                    <td className='px-4 py-3 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber || 'Pending'} className='font-mono text-slate-600 font-medium' /></td>
                                     <td className="px-4 py-3 text-center relative">
                                         <div className="relative inline-block text-left">
                                             <button
                                                 onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
-                                                className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-300 transition-all cursor-pointer"
+                                                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs"
                                             >
                                                 <AiOutlineMenu size={16} />
                                             </button>
 
                                             {openMenuId === item._id && (
-                                                <div className="absolute right-0 mt-2 w-44 bg-[#141a30] border border-gray-700 rounded-2xl shadow-2xl z-50 p-1 space-y-1">
+                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
                                                     <button
                                                         onClick={() => { setInfoData(item); setOpenMenuId(null); }}
                                                         className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-950/50 rounded-xl flex items-center gap-2 cursor-pointer"

@@ -25,6 +25,10 @@
         "lockWallpaper": "/wallpaper/lockphone",
         "unlockWallpaper": "/wallpaper/unlockphone"
     },
+    "history": {
+        "loginHistory": "/history/login-history",
+        "deviceHistory": "/history/device-history"
+    },
     "settings": {
         "controlSystem": "/settings/control-system",
         "allAccount": "/settings/all-account",

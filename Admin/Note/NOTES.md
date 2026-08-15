@@ -1,6 +1,1 @@
-ហើយមួយទៀតចាំជួយកែសម្រួល style សម្រាប់កន្លែងបង្ហាញទិន្ន័យនឹងខ្ញុំមិនចង់ឱ្យវាពង្រីកទទឹងតាមទិន្ន័យទេប្រសិនបើកម្ពស់វាសល់ space ប៉ុណ្ណាចង់ឱ្យវាទម្លាក់កម្ពស់វាត្រឹមនឹងដែរកុំឱ្យ scroll ច្រើនពេក
-
-
-
-
-នៅ frontend ក្នុង page application  ខ្ញុំចង់បន្ថែមកន្លែងបង្កើតទិន្ន័យដោយចង់បន្ថែមមួយទៀតគឺបន្ថែមឱ្យវាមានកន្លែងបញ្ចូល URL Mosyle ហើយពេលបញ្ចូលទៅវាsaveទៅ mongodb ដូចគ្នាហើយនៅ activateជួរAction ក៏មានបន្ថែម button Mosyle ពេលចុចទៅឱ្យវាបើក tab ថ្មីមួយហើយចូលទៅលីងដែលដាក់នៅ application កន្លែង url mosyle នឹង
+នៅ frontend ចង់បន្ថែម page មួយនៅក្នុង History គឺ Log in history ហើយនឹងតាម data មួយដែលយើងបង្កើតហើយ Activated ហើយគឺមាន HIstory មួយដូចគ្នាពេល lockphone unlock ដាក់ wallpaper ដែលមានបញ្ជាក់ថា Pending ឬក៏ scueess អីចឹងទៅដោយអានឹងពេលដែលដាក់ lock device ឬដាក់ wallpaper គឺឱ្យវាអូតូ កត់ត្រាហើយចេញ button done 

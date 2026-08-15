@@ -17,6 +17,12 @@
     "actions": "Actions",
     "lockPhone": "Lock Phone",
     "unlockPhone": "Unlock Phone",
+    "history": "History",
+    "loginHistory": "Log in History",
+    "deviceHistory": "Activated Device History",
+    "pending": "Pending",
+    "success": "Success",
+    "done": "Done",
     "wallpaper": "Wallpaper",
     "lockWallpaper": "Lock Wallpaper",
     "unlockWallpaper": "Unlock Wallpaper",
@@ -52,7 +58,12 @@
     "role": "Role",
     "telegram2FA": "Telegram 2-Step Verification",
     "otpCode": "OTP Code",
-    "verify": "Verify OTP"
+    "verify": "Verify OTP",
+    "sendToBot": "Send to Telegram Bot",
+    "autoSendCountdown": "Auto-Send Countdown",
+    "sendingReport": "Sending report...",
+    "sendSuccessReport": "Login history report sent to Telegram bot & logs reset successfully!",
+    "nextAutoSend": "Next scheduled auto-send to Telegram in:"
   },
   "km": {
     "systemTitle": "ប្រព័ន្ធ SYSTEM MDM",
@@ -72,6 +83,12 @@
     "actions": "សកម្មភាព",
     "lockPhone": "ទូរស័ព្ទត្រូវបានលាក់/សោរ",
     "unlockPhone": "ទូរស័ព្ទត្រូវបានបើកសោរ",
+    "history": "ប្រវត្តិ",
+    "loginHistory": "ប្រវត្តិនៃការចូលប្រើប្រាស់",
+    "deviceHistory": "ប្រវត្តិប្រតិបត្តិការលើឧបករណ៍ Activated",
+    "pending": "រង់ចាំ",
+    "success": "ជោគជ័យ",
+    "done": "រួចរាល់",
     "wallpaper": "រូបភាពផ្ទៃខាងក្រោយ",
     "lockWallpaper": "លាក់ Wallpaper",
     "unlockWallpaper": "បើក Wallpaper",
@@ -107,7 +124,12 @@
     "role": "តួនាទី",
     "telegram2FA": "ការផ្ទៀងផ្ទាត់ 2-Step Telegram",
     "otpCode": "លេខកូដ OTP",
-    "verify": "ផ្ទៀងផ្ទាត់ OTP"
+    "verify": "ផ្ទៀងផ្ទាត់ OTP",
+    "sendToBot": "ផ្ញើទៅ Telegram Bot",
+    "autoSendCountdown": "រាប់ថយក្រោយនៃការផ្ញើអូតូ",
+    "sendingReport": "កំពុងផ្ញើរបាយការណ៍...",
+    "sendSuccessReport": "បានផ្ញើប្រវត្តិ Login ទៅ Telegram Bot និងលុបទិន្នន័យដើម្បីរាប់ថយក្រោយថ្មីដោយជោគជ័យ!",
+    "nextAutoSend": "ថ្ងៃដែលនៅសល់ត្រូវផ្ញើទៅ Telegram Bot ម្តងទៀត៖"
   },
   "ja": {
     "systemTitle": "SYSTEM MDM",

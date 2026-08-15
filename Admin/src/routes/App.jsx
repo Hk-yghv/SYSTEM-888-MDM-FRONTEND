@@ -43,6 +43,11 @@ import ActionWallpaper from "../App/Wallpaper/pages/Actions";
 import LockWallpaper from "../App/Wallpaper/pages/LockWallpaper";
 import UnlockWallpaper from "../App/Wallpaper/pages/UnlockWallpaper";
 
+// History
+import LoginHistory from "../App/History/pages/LoginHistory";
+import DeviceActionHistory from "../App/History/pages/DeviceActionHistory";
+
+
 // Settings & Profile
 import ControlSystem from "../App/Settings/pages/ControlSystem";
 import AllAccount from "../App/Settings/pages/AllAccount";
@@ -51,11 +56,11 @@ import Profile from "../App/Profile/Profile";
 import DesktopOnlyGuard from "../components/DesktopOnlyGuard";
 
 const MainLayout = ({ children }) => (
-  <div className="flex flex-col h-screen bg-[#070913]">
+  <div className="flex flex-col h-screen bg-[#f4f6f8]">
     <Header />
     <div className="flex flex-1 overflow-hidden">
       <Left />
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-4">
         {children}
       </div>
     </div>
@@ -97,6 +102,10 @@ const App = () => {
                   <Route path={json.wallpaper.actionWallpaper} element={<ProtectRoute pagePath={json.wallpaper.actionWallpaper}> <MainLayout><ActionWallpaper /></MainLayout> </ProtectRoute>} />
                   <Route path={json.wallpaper.lockWallpaper} element={<ProtectRoute pagePath={json.wallpaper.lockWallpaper}> <MainLayout><LockWallpaper /></MainLayout> </ProtectRoute>} />
                   <Route path={json.wallpaper.unlockWallpaper} element={<ProtectRoute pagePath={json.wallpaper.unlockWallpaper}> <MainLayout><UnlockWallpaper /></MainLayout> </ProtectRoute>} />
+                  {/* History */}
+                  <Route path={json.history?.loginHistory || '/history/login-history'} element={<ProtectRoute pagePath={json.history?.loginHistory || '/history/login-history'}> <MainLayout><LoginHistory /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.history?.deviceHistory || '/history/device-history'} element={<ProtectRoute pagePath={json.history?.deviceHistory || '/history/device-history'}> <MainLayout><DeviceActionHistory /></MainLayout> </ProtectRoute>} />
+
                   {/* Settings */}
                   <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />
                   <Route path={json.settings.controlSystem} element={<ProtectRoute pagePath={json.settings.controlSystem}><MainLayout><ControlSystem /></MainLayout></ProtectRoute>} />

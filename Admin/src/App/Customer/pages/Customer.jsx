@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { IoIosContact } from 'react-icons/io';
 import { MdOutlineSync, MdSearch, MdInfo, MdPictureAsPdf, MdTableChart } from 'react-icons/md';
 import { FaFileExcel } from 'react-icons/fa';
+import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 
@@ -89,48 +90,48 @@ const Customer = () => {
     };
 
     return (
-        <div className='w-full h-[93vh] overflow-y-auto bg-[#070913] p-4 select-none space-y-4'>
+        <div className='w-full min-h-screen bg-[#f4f6f8] p-4 select-none space-y-4'>
 
             {/* Header */}
-            <header className='p-3 w-full border-b border-gray-800/80 bg-[#0f1426]/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl'>
+                    <div className='w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 text-xl'>
                         <IoIosContact />
                     </div>
                     <div>
-                        <h1 className='text-lg font-bold text-gray-100'>{t('customer')} Profile Directory</h1>
-                        <p className='text-xs text-indigo-400 font-semibold'>{filteredCustomers.length} Active Customers</p>
+                        <h1 className='text-lg font-bold text-slate-900'>{t('customer')} Profile Directory</h1>
+                        <p className='text-xs text-emerald-700 font-bold'>{filteredCustomers.length} Active Customers</p>
                     </div>
                 </div>
 
                 <div className='flex flex-wrap items-center gap-2'>
                     {/* Search */}
                     <div className="relative">
-                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-base" />
+                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search name, phone, model..."
-                            className="pl-8 pr-3 py-1.5 bg-gray-900 border border-gray-700 rounded-xl text-xs text-gray-100 focus:border-indigo-500 w-52 outline-none"
+                            className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
                         />
                     </div>
 
                     {/* Export to Excel */}
                     <button
                         onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-900/60 hover:bg-emerald-800/80 text-emerald-300 rounded-xl text-xs cursor-pointer border border-emerald-700/60 transition-all font-semibold'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs cursor-pointer border border-emerald-300 transition-all font-bold shadow-xs'
                     >
-                        <FaFileExcel />
+                        <FaFileExcel className="text-emerald-600 text-sm" />
                         <span>Excel</span>
                     </button>
 
                     {/* Export to PDF */}
                     <button
                         onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-900/60 hover:bg-red-800/80 text-red-300 rounded-xl text-xs cursor-pointer border border-red-700/60 transition-all font-semibold'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 rounded-xl text-xs cursor-pointer border border-red-300 transition-all font-bold shadow-xs'
                     >
-                        <MdPictureAsPdf className="text-sm" />
+                        <MdPictureAsPdf className="text-red-600 text-sm" />
                         <span>PDF</span>
                     </button>
 
@@ -138,18 +139,18 @@ const Customer = () => {
                     <button
                         onClick={fetchCustomers}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-200 rounded-xl text-xs cursor-pointer border border-gray-700 transition-all'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs cursor-pointer border border-slate-300 transition-all font-bold shadow-xs'
                     >
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-400' : ''} />
+                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
             {/* Customer Table */}
-            <div className='w-full overflow-x-auto rounded-2xl border border-gray-800 bg-[#0f1426]/90 shadow-xl'>
+            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
-                    <thead className='bg-gray-900/90 text-gray-400 uppercase tracking-wider border-b border-gray-800'>
+                    <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
                             <th className='px-4 py-3 text-center'>No</th>
                             <th className='px-4 py-3'>Customer</th>
@@ -162,42 +163,42 @@ const Customer = () => {
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredCustomers.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-8 text-gray-500 italic">
+                                <td colSpan={9} className="text-center py-8 text-slate-500 italic font-medium">
                                     {searchTerm ? `No results for "${searchTerm}"` : 'No active customers found.'}
                                 </td>
                             </tr>
                         ) : (
                             filteredCustomers.map((item, idx) => (
-                                <tr key={item._id || idx} className='hover:bg-gray-800/40 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
+                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                                     <td className='px-4 py-3'>
                                         <div className="flex items-center gap-2">
                                             <img
                                                 src={item.customerPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                                                 alt="avatar"
-                                                className="w-8 h-8 rounded-full object-cover border border-gray-700"
+                                                className="w-8 h-8 rounded-full object-cover border border-slate-200"
                                             />
                                             <div>
-                                                <span className='font-bold text-gray-100 block'>{item.customerNameEn}</span>
-                                                <span className='text-indigo-400 font-khmer text-[11px]'>{item.customerNameKh}</span>
+                                                <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
+                                                <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-[11px] font-semibold' />
                                             </div>
                                         </div>
                                     </td>
-                                    <td className='px-4 py-3 font-mono text-gray-400 text-[11px]'>{item.idCardNumber || '-'}</td>
-                                    <td className='px-4 py-3 font-mono text-gray-300'>{item.phone || '-'}</td>
-                                    <td className='px-4 py-3 font-semibold text-gray-200'>{item.model}</td>
-                                    <td className='px-4 py-3 font-mono text-indigo-300 text-[11px]'>{item.serialNumber}</td>
-                                    <td className='px-4 py-3 text-center font-mono font-bold text-emerald-400'>${item.monthlyPayment}/mo</td>
+                                    <td className='px-4 py-3 font-mono text-slate-600 text-[11px]'><CopyCell text={item.idCardNumber || '-'} className='font-mono text-slate-600 text-[11px]' /></td>
+                                    <td className='px-4 py-3 font-mono text-slate-700 font-medium'><CopyCell text={item.phone || '-'} className='font-mono text-slate-700 font-medium' /></td>
+                                    <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                    <td className='px-4 py-3 font-mono text-emerald-700 font-semibold text-[11px]'><CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-semibold text-[11px]' /></td>
+                                    <td className='px-4 py-3 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
                                     <td className='px-4 py-3 text-center'>
-                                        <span className='px-2.5 py-1 bg-emerald-950/70 border border-emerald-700/60 text-emerald-300 rounded-full font-bold text-[10px] uppercase'>Activated</span>
+                                        <span className='px-2.5 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>Activated</span>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
                                         <button
                                             onClick={() => setSelectedCustomer(item)}
-                                            className="w-8 h-8 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/40 flex items-center justify-center text-indigo-300 text-sm transition-all cursor-pointer mx-auto"
+                                            className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-600 text-sm transition-all cursor-pointer mx-auto"
                                             title="View Full Details"
                                         >
                                             <MdInfo />

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { FaLock, FaUser, FaKey, FaShieldAlt, FaTelegramPlane } from 'react-icons/fa';
+import { FaLock, FaUser, FaKey, FaShieldAlt, FaTelegramPlane, FaExclamationTriangle, FaClock } from 'react-icons/fa';
 import { MdOutlineDashboard } from 'react-icons/md';
 
 const SignIn = () => {
@@ -14,12 +14,30 @@ const SignIn = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Rate limit countdown state
+    const [cooldownSec, setCooldownSec] = useState(0);
+    const [attempts, setAttempts] = useState(0);
+    const cooldownRef = useRef(null);
+
     const { login, verifyOtp } = useAuth();
     const { t } = useLanguage();
     const navigate = useNavigate();
 
+    // Countdown timer
+    useEffect(() => {
+        if (cooldownSec > 0) {
+            cooldownRef.current = setTimeout(() => setCooldownSec(s => s - 1), 1000);
+        }
+        return () => clearTimeout(cooldownRef.current);
+    }, [cooldownSec]);
+
+    const startCooldown = (seconds) => {
+        setCooldownSec(seconds);
+    };
+
     const handleSignIn = async (e) => {
         e.preventDefault();
+        if (cooldownSec > 0) return; // blocked
         setError('');
         setLoading(true);
 
@@ -29,7 +47,11 @@ const SignIn = () => {
 
             if (res.require2FA) {
                 setRequire2FA(true);
+                setAttempts(0);
+                setCooldownSec(0);
             } else if (res.success) {
+                setAttempts(0);
+                setCooldownSec(0);
                 if (res.deviceInfo) {
                     sessionStorage.setItem('recent_login_device', JSON.stringify(res.deviceInfo));
                     sessionStorage.setItem('show_login_toast', 'true');
@@ -38,7 +60,22 @@ const SignIn = () => {
             }
         } catch (err) {
             setLoading(false);
-            setError(err.message || 'Sign in failed. Check credentials.');
+            const msg = err.message || 'Sign in failed. Check credentials.';
+
+            // Parse rate limit response
+            if (err.waitSeconds) {
+                startCooldown(err.waitSeconds);
+                setError(`🔒 Too many failed attempts. Please wait ${err.waitSeconds}s.`);
+            } else if (err.cooldownMs) {
+                const secs = Math.ceil(err.cooldownMs / 1000);
+                startCooldown(secs);
+                const newAttempts = err.attempts || attempts + 1;
+                setAttempts(newAttempts);
+                setError(`❌ Wrong password. Cooling down for ${secs}s (Attempt ${newAttempts})`);
+            } else {
+                setAttempts(a => a + 1);
+                setError(msg);
+            }
         }
     };
 
@@ -63,6 +100,8 @@ const SignIn = () => {
         }
     };
 
+    const isBlocked = cooldownSec > 0;
+
     return (
         <div className="w-full h-screen bg-[#070913] flex items-center justify-center relative overflow-hidden select-none p-4">
             {/* Ambient Background Glows */}
@@ -80,9 +119,25 @@ const SignIn = () => {
                     <p className="text-xs text-gray-400 mt-1 font-medium">Mobile Device Management Control Portal</p>
                 </div>
 
+                {/* Error Message */}
                 {error && (
-                    <div className="mb-6 p-3 rounded-xl bg-red-950/60 border border-red-800/80 text-red-300 text-xs font-semibold text-center animate-shake">
-                        {error}
+                    <div className={`mb-5 p-3 rounded-xl border text-xs font-semibold text-center flex items-start gap-2 ${isBlocked ? 'bg-amber-950/60 border-amber-700/80 text-amber-300' : 'bg-red-950/60 border-red-800/80 text-red-300'}`}>
+                        {isBlocked ? <FaClock className="text-amber-400 text-sm flex-shrink-0 mt-0.5" /> : <FaExclamationTriangle className="text-red-400 text-sm flex-shrink-0 mt-0.5" />}
+                        <span>{error}</span>
+                    </div>
+                )}
+
+                {/* Cooldown Timer Banner */}
+                {isBlocked && (
+                    <div className="mb-5 p-4 rounded-2xl bg-amber-950/50 border border-amber-700/60 text-center">
+                        <p className="text-amber-400 font-bold text-sm mb-1 flex items-center justify-center gap-2">
+                            <FaClock className="animate-pulse" />
+                            Login Locked — IP Cooldown Active
+                        </p>
+                        <p className="text-4xl font-black font-mono text-amber-300 tabular-nums">{cooldownSec}s</p>
+                        <p className="text-xs text-amber-500/80 mt-1">
+                            {attempts >= 6 ? `⚠ High risk — cooldown doubles every 3 attempts` : `After cooldown, you may try again`}
+                        </p>
                     </div>
                 )}
 
@@ -98,7 +153,8 @@ const SignIn = () => {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     placeholder="Enter username (e.g. @hakyonghouv)"
-                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-xl text-sm text-gray-100 placeholder-gray-500 transition-all"
+                                    disabled={isBlocked}
+                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-xl text-sm text-gray-100 placeholder-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
                         </div>
@@ -113,18 +169,31 @@ const SignIn = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter password"
-                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-xl text-sm text-gray-100 placeholder-gray-500 transition-all"
+                                    disabled={isBlocked}
+                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-xl text-sm text-gray-100 placeholder-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
                         </div>
 
+                        {attempts > 0 && !isBlocked && (
+                            <p className="text-[11px] text-amber-400 font-semibold text-center flex items-center justify-center gap-1">
+                                <FaExclamationTriangle size={10} />
+                                Failed attempt #{attempts} — Cooldown multiplies every 3 wrong tries
+                            </p>
+                        )}
+
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all transform active:scale-95 cursor-pointer text-sm flex items-center justify-center gap-2"
+                            disabled={loading || isBlocked}
+                            className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all transform active:scale-95 cursor-pointer text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
                         >
                             {loading ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : isBlocked ? (
+                                <>
+                                    <FaClock />
+                                    <span>Wait {cooldownSec}s...</span>
+                                </>
                             ) : (
                                 <>
                                     <FaShieldAlt />
@@ -198,7 +267,7 @@ const SignIn = () => {
                 )}
 
                 <div className="mt-8 text-center border-t border-gray-800/80 pt-4">
-                    <p className="text-[10px] text-gray-500 font-semibold tracking-wider uppercase">SYSTEM MDM &bull; Encrypted & Secured</p>
+                    <p className="text-[10px] text-gray-500 font-semibold tracking-wider uppercase">SYSTEM MDM &bull; Encrypted &amp; Secured</p>
                 </div>
             </div>
         </div>

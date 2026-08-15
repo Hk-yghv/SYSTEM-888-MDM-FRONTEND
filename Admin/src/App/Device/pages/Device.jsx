@@ -71,17 +71,17 @@ const Device = () => {
     };
 
     return (
-        <div className='w-full h-[93vh] overflow-y-auto bg-[#070913] p-4 select-none space-y-4'>
-            <header className='p-3 w-full border-b border-gray-800/80 bg-[#0f1426]/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md'>
+        <div className='w-full min-h-screen bg-[#f4f6f8] p-4 select-none space-y-4'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-400 text-xl'>
+                    <div className='w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 text-xl'>
                         <MdOutlinePhoneIphone />
                     </div>
                     <div>
-                        <h1 className='text-lg font-bold text-gray-100 flex items-center gap-2'>
+                        <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
                             {t('device')} Inventory Management
                         </h1>
-                        <p className='text-xs text-purple-400 font-semibold'>
+                        <p className='text-xs text-purple-700 font-bold'>
                             {devices.length} Registered Activated Devices
                         </p>
                     </div>
@@ -90,16 +90,16 @@ const Device = () => {
                 <div className='flex items-center gap-3'>
                     <button
                         onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-950/40 hover:bg-emerald-950/70 text-emerald-300 border border-emerald-800/40 rounded-xl text-xs font-semibold cursor-pointer transition-all'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
-                        <FaFileExcel />
+                        <FaFileExcel className="text-emerald-600 text-sm" />
                         <span>Excel</span>
                     </button>
                     <button
                         onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-950/40 hover:bg-red-950/70 text-red-300 border border-red-800/40 rounded-xl text-xs font-semibold cursor-pointer transition-all'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
-                        <MdPictureAsPdf className="text-sm" />
+                        <MdPictureAsPdf className="text-red-600 text-sm" />
                         <span>PDF</span>
                     </button>
                     <input
@@ -107,24 +107,24 @@ const Device = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder={t('search')}
-                        className="px-3 py-1.5 bg-gray-900 border border-gray-700 rounded-xl text-xs text-gray-100 focus:border-indigo-500 w-48"
+                        className="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-48 font-medium outline-none shadow-xs"
                     />
 
                     <button
                         onClick={fetchDevices}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-200 rounded-xl text-xs cursor-pointer border border-gray-700 transition-all'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-400' : ''} />
+                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
             {/* Device Table */}
-            <div className='w-full overflow-x-auto rounded-2xl border border-gray-800 bg-[#0f1426]/90 shadow-xl'>
+            <div className='w-full overflow-x-auto min-h-[380px] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
-                    <thead className='bg-gray-900/90 text-gray-400 uppercase tracking-wider border-b border-gray-800'>
+                    <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
                             <th className='px-4 py-3 text-center'>No</th>
                             <th className='px-4 py-3'>{t('model')}</th>
@@ -135,34 +135,34 @@ const Device = () => {
                             <th className='px-4 py-3 text-center'>Wallpaper Status</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-gray-800/60 font-medium text-gray-200'>
+                    <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredDevices.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-8 text-gray-500 italic">
+                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">
                                     No devices linked to activated contracts.
                                 </td>
                             </tr>
                         ) : (
                             filteredDevices.map((item, idx) => (
-                                <tr key={item._id || idx} className='hover:bg-gray-800/40 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-gray-400'>{(page - 1) * LIMIT + idx + 1}</td>
-                                    <td className='px-4 py-3 font-bold text-gray-100 flex items-center gap-2'>
-                                        <FaMobileAlt className="text-indigo-400 text-sm" />
+                                <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
+                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                    <td className='px-4 py-3 font-bold text-slate-900 flex items-center gap-2'>
+                                        <FaMobileAlt className="text-emerald-600 text-sm" />
                                         {item.model}
                                     </td>
-                                    <td className='px-4 py-3 font-mono text-indigo-300 font-semibold'>{item.serialNumber}</td>
-                                    <td className='px-4 py-3 font-mono text-gray-400'>{item.imei1 || '354890123456789'}</td>
-                                    <td className='px-4 py-3 font-semibold text-gray-300'>
-                                        {item.customerNameEn} <span className="text-indigo-400 font-khmer text-xs">({item.customerNameKh})</span>
+                                    <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'>{item.serialNumber}</td>
+                                    <td className='px-4 py-3 font-mono text-slate-600'>{item.imei1 || '354890123456789'}</td>
+                                    <td className='px-4 py-3 font-semibold text-slate-800'>
+                                        {item.customerNameEn} <span className="text-emerald-700 font-khmer text-xs font-semibold">({item.customerNameKh})</span>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
-                                        <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 w-24 mx-auto ${item.lockPhoneStatus === 'Locked' ? 'bg-red-950/80 border border-red-800 text-red-300' : 'bg-emerald-950/80 border border-emerald-800 text-emerald-300'}`}>
+                                        <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 w-24 mx-auto ${item.lockPhoneStatus === 'Locked' ? 'bg-red-50 border border-red-300 text-red-700' : 'bg-emerald-50 border border-emerald-300 text-emerald-800'}`}>
                                             {item.lockPhoneStatus === 'Locked' ? <FaLock size={10} /> : <FaUnlock size={10} />}
                                             {item.lockPhoneStatus || 'Unlocked'}
                                         </span>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
-                                        <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 w-24 mx-auto ${item.lockWallpaperStatus === 'Locked' ? 'bg-purple-950/80 border border-purple-800 text-purple-300' : 'bg-blue-950/80 border border-blue-800 text-blue-300'}`}>
+                                        <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 w-24 mx-auto ${item.lockWallpaperStatus === 'Locked' ? 'bg-purple-50 border border-purple-300 text-purple-700' : 'bg-blue-50 border border-blue-300 text-blue-700'}`}>
                                             {item.lockWallpaperStatus || 'Unlocked'}
                                         </span>
                                     </td>

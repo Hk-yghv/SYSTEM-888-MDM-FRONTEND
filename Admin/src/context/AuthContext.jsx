@@ -71,7 +71,12 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
 
             if (!res.ok) {
-                throw new Error(data.error || 'Sign in failed');
+                const err = new Error(data.error || 'Sign in failed');
+                err.attempts = data.attempts;
+                err.cooldownMs = data.cooldownMs;
+                err.waitSeconds = data.waitSeconds;
+                err.lockUntil = data.lockUntil;
+                throw err;
             }
 
             if (data.require2FA) {
