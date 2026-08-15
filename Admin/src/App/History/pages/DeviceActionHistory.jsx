@@ -254,6 +254,7 @@ const DeviceActionHistory = () => {
                             <th className='px-4 py-3'>Date & Time</th>
                             <th className='px-4 py-3'>{t('customerName')}</th>
                             <th className='px-4 py-3'>{t('model')}</th>
+                            <th className='px-4 py-3'>Brand</th>
                             <th className='px-4 py-3 font-mono'>{t('serialNumber')}</th>
                             <th className='px-4 py-3 text-center'>Action Type</th>
                             <th className='px-4 py-3 text-center'>{t('status')}</th>
@@ -264,11 +265,11 @@ const DeviceActionHistory = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-10 text-slate-400">Loading device action logs...</td>
+                                <td colSpan={10} className="text-center py-10 text-slate-400">Loading device action logs...</td>
                             </tr>
                         ) : logs.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-10 text-slate-500 italic font-medium">
+                                <td colSpan={10} className="text-center py-10 text-slate-500 italic font-medium">
                                     No device history records found for Activated devices.
                                 </td>
                             </tr>
@@ -291,6 +292,11 @@ const DeviceActionHistory = () => {
                                         </td>
                                         <td className='px-4 py-3 font-semibold text-slate-800'>
                                             <CopyCell text={item.model} className='font-semibold text-slate-800' />
+                                        </td>
+                                        <td className='px-4 py-3'>
+                                            <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
+                                                {item.brand || '—'}
+                                            </span>
                                         </td>
                                         <td className='px-4 py-3 font-mono text-emerald-700 font-bold'>
                                             <CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-bold' />

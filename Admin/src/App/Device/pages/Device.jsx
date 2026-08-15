@@ -128,6 +128,7 @@ const Device = () => {
                         <tr>
                             <th className='px-4 py-3 text-center'>No</th>
                             <th className='px-4 py-3'>{t('model')}</th>
+                            <th className='px-4 py-3'>Brand</th>
                             <th className='px-4 py-3'>{t('serialNumber')}</th>
                             <th className='px-4 py-3'>IMEI 1</th>
                             <th className='px-4 py-3'>{t('customerName')}</th>
@@ -138,7 +139,7 @@ const Device = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredDevices.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={8} className="text-center py-8 text-slate-500 italic font-medium">
                                     No devices linked to activated contracts.
                                 </td>
                             </tr>
@@ -149,6 +150,11 @@ const Device = () => {
                                     <td className='px-4 py-3 font-bold text-slate-900 flex items-center gap-2'>
                                         <FaMobileAlt className="text-emerald-600 text-sm" />
                                         {item.model}
+                                    </td>
+                                    <td className='px-4 py-3'>
+                                        <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
+                                            {item.brand || '—'}
+                                        </span>
                                     </td>
                                     <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'>{item.serialNumber}</td>
                                     <td className='px-4 py-3 font-mono text-slate-600'>{item.imei1 || '354890123456789'}</td>

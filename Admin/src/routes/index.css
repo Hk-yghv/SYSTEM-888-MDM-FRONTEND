@@ -157,9 +157,9 @@ body, body.light {
     font-weight: 600 !important;
 }
 
-/* Table Design & Top Alignment */
+/* Table Design & Vertical Center Alignment */
 table th, table td {
-    vertical-align: top !important;
+    vertical-align: middle !important;
 }
 
 table th {

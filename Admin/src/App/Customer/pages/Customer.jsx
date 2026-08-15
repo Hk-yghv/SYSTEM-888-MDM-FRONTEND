@@ -175,6 +175,7 @@ const Customer = () => {
                             <th className='px-4 py-3'>Customer</th>
                             <th className='px-4 py-3'>ID Card</th>
                             <th className='px-4 py-3'>Phone</th>
+                            <th className='px-4 py-3'>Brand</th>
                             <th className='px-4 py-3'>Device Model</th>
                             <th className='px-4 py-3'>Serial No.</th>
                             <th className='px-4 py-3 text-center'>Monthly</th>
@@ -185,7 +186,7 @@ const Customer = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredCustomers.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={10} className="text-center py-8 text-slate-500 italic font-medium">
                                     {searchTerm ? `No results for "${searchTerm}"` : 'No active customers found.'}
                                 </td>
                             </tr>
@@ -208,6 +209,11 @@ const Customer = () => {
                                     </td>
                                     <td className='px-4 py-3 font-mono text-slate-600 text-[11px]'><CopyCell text={item.idCardNumber || '-'} className='font-mono text-slate-600 text-[11px]' /></td>
                                     <td className='px-4 py-3 font-mono text-slate-700 font-medium'><CopyCell text={item.phone || '-'} className='font-mono text-slate-700 font-medium' /></td>
+                                    <td className='px-4 py-3'>
+                                        <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
+                                            {item.brand || '—'}
+                                        </span>
+                                    </td>
                                     <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
                                     <td className='px-4 py-3 font-mono text-emerald-700 font-semibold text-[11px]'><CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-semibold text-[11px]' /></td>
                                     <td className='px-4 py-3 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>

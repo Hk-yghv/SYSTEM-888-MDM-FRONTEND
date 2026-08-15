@@ -290,6 +290,7 @@ const LoginHistory = () => {
                             <th className='px-4 py-3'>{t('username')}</th>
                             <th className='px-4 py-3'>Full Name</th>
                             <th className='px-4 py-3 text-center'>{t('role')}</th>
+                            <th className='px-4 py-3'>Brand</th>
                             <th className='px-4 py-3 font-mono'>IP Address</th>
                             <th className='px-4 py-3'>Device & OS</th>
                             <th className='px-4 py-3'>Date & Time</th>
@@ -299,11 +300,11 @@ const LoginHistory = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
                             <tr>
-                                <td colSpan={8} className="text-center py-10 text-slate-400">Loading history logs...</td>
+                                <td colSpan={9} className="text-center py-10 text-slate-400">Loading history logs...</td>
                             </tr>
                         ) : logs.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="text-center py-10 text-slate-500 italic">
+                                <td colSpan={9} className="text-center py-10 text-slate-500 italic">
                                     No login history records found.
                                 </td>
                             </tr>
@@ -322,6 +323,11 @@ const LoginHistory = () => {
                                     <td className='px-4 py-3 text-center'>
                                         <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${item.role === 'Administrator' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                                             {item.role || 'User'}
+                                        </span>
+                                    </td>
+                                    <td className='px-4 py-3'>
+                                        <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
+                                            {item.brand || 'Global'}
                                         </span>
                                     </td>
                                     <td className='px-4 py-3 font-mono text-slate-700 font-bold'>

@@ -184,6 +184,7 @@ const Application = () => {
                             <th className='px-4 py-3'>{t('customerName')}</th>
                             <th className='px-4 py-3 text-center'>{t('status')}</th>
                             <th className='px-4 py-3'>{t('model')}</th>
+                            <th className='px-4 py-3'>Brand</th>
                             <th className='px-4 py-3'>{t('serialNumber')}</th>
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
@@ -191,7 +192,7 @@ const Application = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {contracts.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={8} className="text-center py-8 text-slate-500 italic font-medium">
                                     No pending applications found. Click "Create" to add a new application.
                                 </td>
                             </tr>
@@ -217,6 +218,11 @@ const Application = () => {
                                         </span>
                                     </td>
                                     <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                    <td className='px-4 py-3'>
+                                        <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
+                                            {item.brand || '—'}
+                                        </span>
+                                    </td>
                                     <td className='px-4 py-3 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber || 'Pending'} className='font-mono text-slate-600 font-medium' /></td>
                                     <td className="px-4 py-3 text-center relative">
                                         <div className="relative inline-block text-left">
