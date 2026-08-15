@@ -64,6 +64,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const { API_BASE, user } = useAuth();
 
     const emptyForm = {
+        inputDate: new Date().toISOString().split('T')[0],
         brand: user?.brand || '',
         customerNameEn: '', customerNameKh: '',
         idCardNumber: '', dob: '', gender: 'male',
@@ -141,6 +142,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     useEffect(() => {
         if (editData) {
             setForm({
+                inputDate: editData.inputDate || editData.input_date || new Date().toISOString().split('T')[0],
                 brand: editData.brand || user?.brand || '',
                 customerNameEn: editData.customerNameEn || editData.name_english || '',
                 customerNameKh: editData.customerNameKh || editData.name_khmer || '',
@@ -187,6 +189,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const handleAutoFill = (record) => {
         if (!record || typeof record !== 'object') return;
         setForm({
+            inputDate: record.inputDate || record.input_date || new Date().toISOString().split('T')[0],
             brand: record.brand || user?.brand || '',
             customerNameEn: record.customerNameEn || record.name_english || '',
             customerNameKh: record.customerNameKh || record.name_khmer || '',
@@ -469,7 +472,12 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             <FaAngleDoubleRight /> Loan & Financial Terms
                         </h2>
                         <hr className='border-gray-800 mb-4' />
-                        <div className='grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'>
+                        <div className='grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5'>
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="inputDate" className="font-semibold text-indigo-300">កាលបរិច្ឆេទស្នើកម្ចី *</label>
+                                <input className="w-full p-2.5 bg-gray-800 border border-indigo-600/70 rounded-xl text-gray-100 font-mono text-xs outline-none focus:border-indigo-500 font-bold"
+                                    type="date" id="inputDate" value={form.inputDate} onChange={handleChange} required />
+                            </div>
                             <div className="flex flex-col gap-1">
                                 <label htmlFor="amount" className="font-semibold text-gray-400">Total Amount ($ USD)</label>
                                 <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
