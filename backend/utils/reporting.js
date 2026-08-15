@@ -83,10 +83,12 @@ const appendToGoogleSheet = async (serviceAccountJsonOrPath, sheetId, rows) => {
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sheetId, rows })
+                    body: JSON.stringify({ sheetId, rows }),
+                    redirect: 'follow'
                 });
+                const resText = await response.text();
+                console.log('Appended rows to Google Sheet via Webhook status:', response.status, resText);
                 if (response.ok) {
-                    console.log('Appended rows to Google Sheet via Webhook successfully.');
                     return { success: true, via: 'webhook' };
                 }
             } catch (webErr) {
