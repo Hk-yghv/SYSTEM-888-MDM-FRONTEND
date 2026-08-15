@@ -52,25 +52,40 @@ router.get('/payments', async (req, res) => {
 // POST payment
 router.post('/payments', async (req, res) => {
     try {
-        const { contractId } = req.body;
-        let contract = isMongoConnected ? await Contract.findOne({ contractId }) : MEM_DB.contracts.find(c => c.contractId === contractId);
+        const { contractId, amount, customerName, serialNumber, model, paidDate, paidBy, description } = req.body;
 
-        const payment = {
-            paymentId: 'PAY-' + Math.floor(1000 + Math.random() * 9000),
-            brand: contract?.brand || '',
-            ...req.body
+        let contract = null;
+        if (contractId) {
+            contract = isMongoConnected 
+                ? await Contract.findOne({ contractId }) 
+                : MEM_DB.contracts.find(c => c.contractId === contractId);
+        }
+
+        const uniquePaymentId = 'PAY-' + Date.now() + '-' + Math.floor(100 + Math.random() * 900);
+        const paymentObj = {
+            paymentId: uniquePaymentId,
+            contractId: contractId || 'N/A',
+            customerName: customerName || contract?.customerNameEn || contract?.customerNameKh || 'Customer',
+            photo: contract?.customerPhoto || '',
+            serialNumber: serialNumber || contract?.serialNumber || 'N/A',
+            model: model || contract?.model || 'Device',
+            paidDate: paidDate || new Date().toISOString().split('T')[0],
+            paidBy: paidBy || 'QR Mobile Payment',
+            amount: Number(amount) || 0,
+            description: description || 'Paid via Mobile QR',
+            brand: contract?.brand || ''
         };
 
         if (isMongoConnected) {
-            const doc = new Payment(payment);
+            const doc = new Payment(paymentObj);
             await doc.save();
-            payment._id = doc._id;
+            paymentObj._id = doc._id;
         } else {
-            payment._id = 'p-' + Date.now();
+            paymentObj._id = 'p-' + Date.now();
         }
 
-        MEM_DB.payments.unshift(payment);
-        res.status(201).json(payment);
+        MEM_DB.payments.unshift(paymentObj);
+        res.status(201).json({ success: true, payment: paymentObj });
     } catch (err) {
         console.error("===== PAYMENT ERROR =====", err);
         res.status(500).json({ success: false, error: err.message });
@@ -323,9 +338,9 @@ router.get('/pay/:contractId', async (req, res) => {
 
             const payload = {
                 contractId: contractData.contractId,
-                customerName: contractData.customerName,
-                serialNumber: contractData.serialNumber,
-                model: contractData.model,
+                customerName: contractData.customerName || 'Customer',
+                serialNumber: contractData.serialNumber || 'N/A',
+                model: contractData.model || 'Device',
                 amount: amt,
                 paidDate: new Date().toISOString().split('T')[0],
                 paidBy: 'QR Mobile Payment',
@@ -333,12 +348,20 @@ router.get('/pay/:contractId', async (req, res) => {
             };
 
             try {
-                // Try backend payment endpoint
-                const res = await fetch('/api/payments', {
+                // Try /api/payments first, fallback to /payments
+                let res = await fetch('/api/payments', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+
+                if (!res.ok) {
+                    res = await fetch('/payments', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
 
                 closeConfirmModal();
                 confirmBtn.innerText = 'យល់ព្រមបង់';
@@ -351,15 +374,19 @@ router.get('/pay/:contractId', async (req, res) => {
 
                     // Prepend to history UI
                     const list = document.getElementById('paymentHistoryList');
+                    if (list.innerHTML.includes('មិនទាន់មាន')) {
+                        list.innerHTML = '';
+                    }
                     const newRow = document.createElement('div');
                     newRow.className = 'pay-row';
-                    newRow.innerHTML = \`<span class="p-date">\${payload.paidDate} &nbsp; (QR Mobile Payment)</span><span class="p-amt">$\${amt}</span>\`;
+                    newRow.innerHTML = `<span class="p-date">${payload.paidDate} &nbsp; (QR Mobile Payment)</span><span class="p-amt">$${amt}</span>`;
                     list.insertBefore(newRow, list.firstChild);
 
                     // Scroll to top
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
-                    alert('មានបញ្ហាក្នុងការបង់ប្រាក់ សូមព្យាយាមម្ដងទៀត!');
+                    const errData = await res.json().catch(() => ({}));
+                    alert('មានបញ្ហាក្នុងការបង់ប្រាក់: ' + (errData.error || errData.message || 'HTTP ' + res.status));
                 }
             } catch (err) {
                 closeConfirmModal();
