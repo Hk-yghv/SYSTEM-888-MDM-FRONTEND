@@ -211,6 +211,36 @@ const ControlSystem = () => {
         }
     };
 
+    const handleSaveAllConfigs = async () => {
+        setSaving(true);
+        setMessage('');
+        try {
+            const configs = [
+                { key: 'call_phone_display', value: callPhoneDisplay },
+                { key: 'lockphone_display_text', value: lockphoneDisplayText },
+                { key: 'lockphone_phone_number', value: lockphonePhoneNumber },
+                { key: 'roles', value: roles },
+                { key: 'droplists', value: droplists }
+            ];
+            const res = await fetch(`${API_BASE}/controlsystem`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ configs, brand: selectedBrand })
+            });
+
+            setSaving(false);
+            if (res.ok) {
+                setMessage(`ការកំណត់ទាំងអស់សម្រាប់ Brand '${selectedBrand || 'Global'}' ត្រូវបានរក្សាទុកដោយជោគជ័យ! (All configurations saved successfully!)`);
+                setTimeout(() => setMessage(''), 4000);
+            } else {
+                alert('រក្សាទុកបរាជ័យ (Failed to save configurations)');
+            }
+        } catch (err) {
+            setSaving(false);
+            console.error('Save all configs error:', err);
+        }
+    };
+
     return (
         <div className='w-full h-[93vh] overflow-y-auto bg-[#070913] p-4 select-none space-y-6'>
             <header className='p-3 w-full border-b border-gray-800/80 bg-[#0f1426]/90 rounded-2xl flex items-center justify-between shadow-md'>
@@ -228,14 +258,24 @@ const ControlSystem = () => {
                     </div>
                 </div>
 
-                <button
-                    onClick={fetchControlSystemConfigs}
-                    disabled={reloading}
-                    className='flex items-center gap-2 px-3 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-200 rounded-xl text-xs cursor-pointer border border-gray-700 transition-all'
-                >
-                    <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-400' : ''} />
-                    <p>{t('reload')}</p>
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleSaveAllConfigs}
+                        disabled={saving}
+                        className='flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold cursor-pointer shadow-lg shadow-emerald-600/20 transition-all'
+                    >
+                        <MdSave size={16} />
+                        <span>{saving ? 'រក្សាទុក...' : 'Save All Settings'}</span>
+                    </button>
+                    <button
+                        onClick={fetchControlSystemConfigs}
+                        disabled={reloading}
+                        className='flex items-center gap-2 px-3 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-200 rounded-xl text-xs cursor-pointer border border-gray-700 transition-all'
+                    >
+                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-400' : ''} />
+                        <p>{t('reload')}</p>
+                    </button>
+                </div>
             </header>
 
             {user?.role === 'Administrator' ? (
@@ -243,20 +283,38 @@ const ControlSystem = () => {
                     <span className="font-bold text-gray-200 flex items-center gap-1.5">
                         Select Brand Tenant Settings to Configure (កំណត់ការកំណត់តាម Brand):
                     </span>
-                    <select
-                        value={selectedBrand}
-                        onChange={(e) => setSelectedBrand(e.target.value)}
-                        className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer"
-                    >
-                        <option value="">Global Config (Global / Default)</option>
-                        {brandsList.map((br, idx) => (
-                            <option key={idx} value={br}>{br} Tenant Settings</option>
-                        ))}
-                    </select>
+                    <div className="flex items-center gap-3">
+                        <select
+                            value={selectedBrand}
+                            onChange={(e) => setSelectedBrand(e.target.value)}
+                            className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer"
+                        >
+                            <option value="">Global Config (Global / Default)</option>
+                            {brandsList.map((br, idx) => (
+                                <option key={idx} value={br}>{br} Tenant Settings</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={handleSaveAllConfigs}
+                            disabled={saving}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-600/30 transition-all"
+                        >
+                            <MdSave size={16} />
+                            <span>{saving ? 'រក្សាទុក...' : 'Save All Settings'}</span>
+                        </button>
+                    </div>
                 </div>
             ) : (
-                <div className="p-4 bg-[#0f1426]/90 border border-gray-800 rounded-2xl text-xs text-indigo-400 font-semibold">
-                    Configuring tenant settings for brand: <span className="font-bold text-white">{selectedBrand || 'Global'}</span>
+                <div className="p-4 bg-[#0f1426]/90 border border-gray-800 rounded-2xl flex items-center justify-between text-xs text-indigo-400 font-semibold">
+                    <span>Configuring tenant settings for brand: <span className="font-bold text-white">{selectedBrand || 'Global'}</span></span>
+                    <button
+                        onClick={handleSaveAllConfigs}
+                        disabled={saving}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-600/30 transition-all"
+                    >
+                        <MdSave size={16} />
+                        <span>{saving ? 'រក្សាទុក...' : 'Save All Settings'}</span>
+                    </button>
                 </div>
             )}
 

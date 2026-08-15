@@ -34,17 +34,28 @@ router.get('/', async (req, res) => {
     }
 });
 
-// POST control system config
+// POST control system config (supports single key or bulk configs)
 router.post('/', async (req, res) => {
     try {
-        const { key, value, brand } = req.body;
+        const { key, value, brand, configs } = req.body;
         const targetBrand = brand || '';
+
+        const updates = Array.isArray(configs)
+            ? configs
+            : (key ? [{ key, value }] : []);
+
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'No configuration data provided' });
+        }
+
         if (isMongoConnected) {
-            await ControlSystem.findOneAndUpdate(
-                { key, brand: targetBrand },
-                { key, value, brand: targetBrand },
-                { upsert: true, new: true }
-            );
+            for (const item of updates) {
+                await ControlSystem.findOneAndUpdate(
+                    { key: item.key, brand: targetBrand },
+                    { key: item.key, value: item.value, brand: targetBrand },
+                    { upsert: true, new: true }
+                );
+            }
         }
 
         if (!MEM_DB.controlSystems) {
@@ -55,8 +66,11 @@ router.post('/', async (req, res) => {
             memConfig = { brand: targetBrand };
             MEM_DB.controlSystems.push(memConfig);
         }
-        memConfig[key] = value;
-        res.json({ key, value, brand: targetBrand });
+        for (const item of updates) {
+            memConfig[item.key] = item.value;
+        }
+
+        res.json({ message: 'Saved successfully', brand: targetBrand });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
