@@ -175,6 +175,7 @@ router.get('/customer-info/:contractId', async (req, res) => {
     <div class="card">
         <div class="section-title">💰 Loan & Financial Terms / លក្ខខណ្ឌហិរញ្ញវត្ថុ</div>
         <div class="grid-2">
+            <div class="item" style="grid-column: span 2"><div class="lbl">Loan Application Date / កាលបរិច្ឆេទដាក់ស្នើ</div><div class="val" style="color:#fbbf24;font-family:monospace">${contract.inputDate || '—'}</div></div>
             <div class="item"><div class="lbl">Total Loan ($)</div><div class="val" style="color:#34d399">$${contract.amount || contract.totalAmount || 0}</div></div>
             <div class="item"><div class="lbl">Customer Received ($)</div><div class="val" style="color:#38bdf8">$${contract.monthlyPayment || 0}</div></div>
             <div class="item"><div class="lbl">Interest Rate</div><div class="val">${contract.interest || '—'}</div></div>

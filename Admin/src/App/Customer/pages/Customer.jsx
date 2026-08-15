@@ -394,8 +394,9 @@ const Customer = () => {
                                 <h4 className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span> Loan & Financial Terms
                                 </h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                                     {[
+                                        ['Loan Date (កាលបរិច្ឆេទដាក់ស្នើ)', selectedCustomer.inputDate || '-'],
                                         ['Total Amount', `$${selectedCustomer.amount || selectedCustomer.totalAmount || 0}`],
                                         ['Monthly Installment', `$${selectedCustomer.monthlyPayment}/mo`],
                                         ['Interest Rate', selectedCustomer.interest || '-'],
