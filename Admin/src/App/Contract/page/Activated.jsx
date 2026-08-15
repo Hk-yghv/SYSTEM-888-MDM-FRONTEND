@@ -12,7 +12,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Activated = () => {
     const { t } = useLanguage();
-    const { API_BASE } = useAuth();
+    const { API_BASE, hasPermission } = useAuth();
 
     const [activatedContracts, setActivatedContracts] = useState([]);
     const [loading, setLoading] = useState(true);
