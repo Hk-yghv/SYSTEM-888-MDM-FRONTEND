@@ -7,22 +7,66 @@ const API_BASE = import.meta.env.VITE_API_BACKEND || 'http://localhost:5000/api'
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
-        const saved = localStorage.getItem('mdm_user');
+        // Clean up legacy localStorage auth to enforce session-only auth
+        localStorage.removeItem('mdm_user');
+        localStorage.removeItem('mdm_token');
+        const saved = sessionStorage.getItem('mdm_user');
         return saved ? JSON.parse(saved) : null;
     });
 
-    const [token, setToken] = useState(() => localStorage.getItem('mdm_token') || '');
+    const [token, setToken] = useState(() => sessionStorage.getItem('mdm_token') || '');
     const [loading, setLoading] = useState(false);
     const [isBlocked, setIsBlocked] = useState(false);
 
     const pollingRef = useRef(null);
+    const lastActivityRef = useRef(Date.now());
 
     const logout = useCallback(() => {
         setUser(null);
         setToken('');
+        sessionStorage.removeItem('mdm_user');
+        sessionStorage.removeItem('mdm_token');
         localStorage.removeItem('mdm_user');
         localStorage.removeItem('mdm_token');
     }, []);
+
+    // ── 15-Minute Inactivity Auto Logout ──
+    useEffect(() => {
+        if (!user || !token) return;
+
+        const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes in ms
+
+        const resetActivity = () => {
+            lastActivityRef.current = Date.now();
+        };
+
+        // Events to detect user activity
+        const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+        activityEvents.forEach(evt => window.addEventListener(evt, resetActivity, { passive: true }));
+
+        const checkInactivity = () => {
+            if (Date.now() - lastActivityRef.current >= INACTIVITY_TIMEOUT) {
+                logout();
+            }
+        };
+
+        // Interval check every 10 seconds
+        const intervalId = setInterval(checkInactivity, 10000);
+
+        // Check when tab becomes visible again
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                checkInactivity();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            activityEvents.forEach(evt => window.removeEventListener(evt, resetActivity));
+            clearInterval(intervalId);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [user, token, logout]);
 
     // Real-time block status polling — every 10 seconds
     useEffect(() => {
@@ -85,8 +129,8 @@ export const AuthProvider = ({ children }) => {
 
             setUser(data.user);
             setToken(data.token);
-            localStorage.setItem('mdm_user', JSON.stringify(data.user));
-            localStorage.setItem('mdm_token', data.token);
+            sessionStorage.setItem('mdm_user', JSON.stringify(data.user));
+            sessionStorage.setItem('mdm_token', data.token);
             return { success: true, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
@@ -111,8 +155,8 @@ export const AuthProvider = ({ children }) => {
 
             setUser(data.user);
             setToken(data.token);
-            localStorage.setItem('mdm_user', JSON.stringify(data.user));
-            localStorage.setItem('mdm_token', data.token);
+            sessionStorage.setItem('mdm_user', JSON.stringify(data.user));
+            sessionStorage.setItem('mdm_token', data.token);
             return { success: true, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
@@ -138,7 +182,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateUserState = (updatedUser) => {
         setUser(updatedUser);
-        localStorage.setItem('mdm_user', JSON.stringify(updatedUser));
+        sessionStorage.setItem('mdm_user', JSON.stringify(updatedUser));
     };
 
     return (

@@ -9,7 +9,7 @@ window.fetch = async (...args) => {
     const urlStr = typeof resource === 'string' ? resource : resource?.url || '';
     if (urlStr.includes('/api/') || urlStr.startsWith('/api')) {
         config = config || {};
-        const token = localStorage.getItem('mdm_token');
+        const token = sessionStorage.getItem('mdm_token') || localStorage.getItem('mdm_token');
         const defaultHeaders = {
             'x-system-api-key': 'SYSTEM_MDM_SECURE_AUTH_HEADER_TOKEN_2026',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
