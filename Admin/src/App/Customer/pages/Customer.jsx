@@ -269,7 +269,7 @@ const Customer = () => {
                                     className="w-14 h-14 rounded-2xl object-cover border-2 border-indigo-500/40"
                                 />
                                 <div>
-                                    <h3 className="text-base font-black text-gray-100">{selectedCustomer.customerNameEn}</h3>
+                                    <h3 className="text-lg font-black text-white tracking-wide">{selectedCustomer.customerNameEn}</h3>
                                     <p className="text-sm text-indigo-400 font-khmer">{selectedCustomer.customerNameKh}</p>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">✓ Activated</span>
