@@ -11,7 +11,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Check = () => {
     const { t } = useLanguage();
-    const { API_BASE } = useAuth();
+    const { API_BASE, hasPermission } = useAuth();
 
     const [contracts, setContracts] = useState([]);
     const [reloading, setReloading] = useState(false);
@@ -168,15 +168,21 @@ const Check = () => {
 
                                             {openMenuId === item._id && (
                                                 <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
-                                                    <button onClick={() => handleMoveToActivated(item)} className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer">
-                                                        <MdCheckCircle className="text-emerald-600" /> Move to Activated
-                                                    </button>
-                                                    <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2">
-                                                        <MdEdit className="text-amber-600" /> Edit
-                                                    </button>
-                                                    <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2">
-                                                        <MdDelete className="text-red-600" /> Delete
-                                                    </button>
+                                                    {hasPermission('/contract/check', 'edit') && (
+                                                        <button onClick={() => handleMoveToActivated(item)} className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer">
+                                                            <MdCheckCircle className="text-emerald-600" /> Move to Activated
+                                                        </button>
+                                                    )}
+                                                    {hasPermission('/contract/check', 'edit') && (
+                                                        <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2">
+                                                            <MdEdit className="text-amber-600" /> Edit
+                                                        </button>
+                                                    )}
+                                                    {hasPermission('/contract/check', 'delete') && (
+                                                        <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2">
+                                                            <MdDelete className="text-red-600" /> Delete
+                                                        </button>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

@@ -66,140 +66,162 @@ const Left = () => {
             )}
 
             {/* Contract */}
-            <div>
-                <div onClick={() => toggleMenu("contract")} className={dropdownHeaderClass("contract")}>
-                    <p className="flex items-center gap-3">
-                        <MdOutlineContactPhone size={20} className="text-emerald-600" />
-                        {t('contract')}
-                    </p>
-                    <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "contract" ? "rotate-180" : ""}`} />
-                </div>
+            {(hasPermission(json.contract.application, 'read') ||
+              hasPermission(json.contract.activated, 'read') ||
+              hasPermission(json.contract.check, 'read') ||
+              hasPermission(json.contract.redeem, 'read') ||
+              hasPermission(json.contract.comments, 'read') ||
+              hasPermission(json.contract.blacklist, 'read')) && (
+                <div>
+                    <div onClick={() => toggleMenu("contract")} className={dropdownHeaderClass("contract")}>
+                        <p className="flex items-center gap-3">
+                            <MdOutlineContactPhone size={20} className="text-emerald-600" />
+                            {t('contract')}
+                        </p>
+                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "contract" ? "rotate-180" : ""}`} />
+                    </div>
 
-                <div className={`overflow-hidden transition-all duration-300 ${openMenu === "contract" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
-                    {hasPermission(json.contract.application, 'read') && (
-                        <Link to={json.contract.application} className={subItemClass(json.contract.application)}>{t('application')}</Link>
-                    )}
-                    {hasPermission(json.contract.activated, 'read') && (
-                        <Link to={json.contract.activated} className={subItemClass(json.contract.activated)}>{t('activated')}</Link>
-                    )}
-                    {hasPermission(json.contract.check, 'read') && (
-                        <Link to={json.contract.check} className={subItemClass(json.contract.check)}>{t('check')}</Link>
-                    )}
-                    {hasPermission(json.contract.redeem, 'read') && (
-                        <Link to={json.contract.redeem} className={subItemClass(json.contract.redeem)}>{t('redeem')}</Link>
-                    )}
-                    {hasPermission(json.contract.comments, 'read') && (
-                        <Link to={json.contract.comments} className={subItemClass(json.contract.comments)}>{t('comments')}</Link>
-                    )}
-                    {hasPermission(json.contract.blacklist, 'read') && (
-                        <Link to={json.contract.blacklist} className={subItemClass(json.contract.blacklist)}>{t('blacklist')}</Link>
-                    )}
+                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "contract" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        {hasPermission(json.contract.application, 'read') && (
+                            <Link to={json.contract.application} className={subItemClass(json.contract.application)}>{t('application')}</Link>
+                        )}
+                        {hasPermission(json.contract.activated, 'read') && (
+                            <Link to={json.contract.activated} className={subItemClass(json.contract.activated)}>{t('activated')}</Link>
+                        )}
+                        {hasPermission(json.contract.check, 'read') && (
+                            <Link to={json.contract.check} className={subItemClass(json.contract.check)}>{t('check')}</Link>
+                        )}
+                        {hasPermission(json.contract.redeem, 'read') && (
+                            <Link to={json.contract.redeem} className={subItemClass(json.contract.redeem)}>{t('redeem')}</Link>
+                        )}
+                        {hasPermission(json.contract.comments, 'read') && (
+                            <Link to={json.contract.comments} className={subItemClass(json.contract.comments)}>{t('comments')}</Link>
+                        )}
+                        {hasPermission(json.contract.blacklist, 'read') && (
+                            <Link to={json.contract.blacklist} className={subItemClass(json.contract.blacklist)}>{t('blacklist')}</Link>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Installment */}
-            <div>
-                <div onClick={() => toggleMenu("installment")} className={dropdownHeaderClass("installment")}>
-                    <p className="flex items-center gap-3">
-                        <IoMdWallet size={20} className="text-emerald-600" />
-                        {t('installment')}
-                    </p>
-                    <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "installment" ? "rotate-180" : ""}`} />
-                </div>
+            {hasPermission(json.installment.paymentHistory, 'read') && (
+                <div>
+                    <div onClick={() => toggleMenu("installment")} className={dropdownHeaderClass("installment")}>
+                        <p className="flex items-center gap-3">
+                            <IoMdWallet size={20} className="text-emerald-600" />
+                            {t('installment')}
+                        </p>
+                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "installment" ? "rotate-180" : ""}`} />
+                    </div>
 
-                <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
-                    {hasPermission(json.installment.paymentHistory, 'read') && (
-                        <Link to={json.installment.paymentHistory} className={subItemClass(json.installment.paymentHistory)}>{t('paymentHistory')}</Link>
-                    )}
+                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        {hasPermission(json.installment.paymentHistory, 'read') && (
+                            <Link to={json.installment.paymentHistory} className={subItemClass(json.installment.paymentHistory)}>{t('paymentHistory')}</Link>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Lost Phone */}
-            <div>
-                <div onClick={() => toggleMenu("lostphone")} className={dropdownHeaderClass("lostphone")}>
-                    <p className="flex items-center gap-3">
-                        <MdOutlinePhoneIphone size={20} className="text-emerald-600" />
-                        {t('lostPhone')}
-                    </p>
-                    <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "lostphone" ? "rotate-180" : ""}`} />
-                </div>
+            {(hasPermission(json.lostphone.actionLockphone, 'read') ||
+              hasPermission(json.lostphone.lockPhone, 'read') ||
+              hasPermission(json.lostphone.unlockPhone, 'read')) && (
+                <div>
+                    <div onClick={() => toggleMenu("lostphone")} className={dropdownHeaderClass("lostphone")}>
+                        <p className="flex items-center gap-3">
+                            <MdOutlinePhoneIphone size={20} className="text-emerald-600" />
+                            {t('lostPhone')}
+                        </p>
+                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "lostphone" ? "rotate-180" : ""}`} />
+                    </div>
 
-                <div className={`overflow-hidden transition-all duration-300 ${openMenu === "lostphone" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
-                    {hasPermission(json.lostphone.actionLockphone, 'read') && (
-                        <Link to={json.lostphone.actionLockphone} className={subItemClass(json.lostphone.actionLockphone)}>{t('actions')}</Link>
-                    )}
-                    {hasPermission(json.lostphone.lockPhone, 'read') && (
-                        <Link to={json.lostphone.lockPhone} className={subItemClass(json.lostphone.lockPhone)}>{t('lockPhone')}</Link>
-                    )}
-                    {hasPermission(json.lostphone.unlockPhone, 'read') && (
-                        <Link to={json.lostphone.unlockPhone} className={subItemClass(json.lostphone.unlockPhone)}>{t('unlockPhone')}</Link>
-                    )}
+                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "lostphone" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        {hasPermission(json.lostphone.actionLockphone, 'read') && (
+                            <Link to={json.lostphone.actionLockphone} className={subItemClass(json.lostphone.actionLockphone)}>{t('actions')}</Link>
+                        )}
+                        {hasPermission(json.lostphone.lockPhone, 'read') && (
+                            <Link to={json.lostphone.lockPhone} className={subItemClass(json.lostphone.lockPhone)}>{t('lockPhone')}</Link>
+                        )}
+                        {hasPermission(json.lostphone.unlockPhone, 'read') && (
+                            <Link to={json.lostphone.unlockPhone} className={subItemClass(json.lostphone.unlockPhone)}>{t('unlockPhone')}</Link>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Wallpaper */}
-            <div>
-                <div onClick={() => toggleMenu("wallpaper")} className={dropdownHeaderClass("wallpaper")}>
-                    <p className="flex items-center gap-3">
-                        <MdOutlineWallpaper size={20} className="text-emerald-600" />
-                        {t('wallpaper')}
-                    </p>
-                    <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "wallpaper" ? "rotate-180" : ""}`} />
-                </div>
+            {(hasPermission(json.wallpaper.actionWallpaper, 'read') ||
+              hasPermission(json.wallpaper.lockWallpaper, 'read') ||
+              hasPermission(json.wallpaper.unlockWallpaper, 'read')) && (
+                <div>
+                    <div onClick={() => toggleMenu("wallpaper")} className={dropdownHeaderClass("wallpaper")}>
+                        <p className="flex items-center gap-3">
+                            <MdOutlineWallpaper size={20} className="text-emerald-600" />
+                            {t('wallpaper')}
+                        </p>
+                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "wallpaper" ? "rotate-180" : ""}`} />
+                    </div>
 
-                <div className={`overflow-hidden transition-all duration-300 ${openMenu === "wallpaper" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
-                    {hasPermission(json.wallpaper.actionWallpaper, 'read') && (
-                        <Link to={json.wallpaper.actionWallpaper} className={subItemClass(json.wallpaper.actionWallpaper)}>{t('actions')}</Link>
-                    )}
-                    {hasPermission(json.wallpaper.lockWallpaper, 'read') && (
-                        <Link to={json.wallpaper.lockWallpaper} className={subItemClass(json.wallpaper.lockWallpaper)}>{t('lockWallpaper')}</Link>
-                    )}
-                    {hasPermission(json.wallpaper.unlockWallpaper, 'read') && (
-                        <Link to={json.wallpaper.unlockWallpaper} className={subItemClass(json.wallpaper.unlockWallpaper)}>{t('unlockWallpaper')}</Link>
-                    )}
+                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "wallpaper" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        {hasPermission(json.wallpaper.actionWallpaper, 'read') && (
+                            <Link to={json.wallpaper.actionWallpaper} className={subItemClass(json.wallpaper.actionWallpaper)}>{t('actions')}</Link>
+                        )}
+                        {hasPermission(json.wallpaper.lockWallpaper, 'read') && (
+                            <Link to={json.wallpaper.lockWallpaper} className={subItemClass(json.wallpaper.lockWallpaper)}>{t('lockWallpaper')}</Link>
+                        )}
+                        {hasPermission(json.wallpaper.unlockWallpaper, 'read') && (
+                            <Link to={json.wallpaper.unlockWallpaper} className={subItemClass(json.wallpaper.unlockWallpaper)}>{t('unlockWallpaper')}</Link>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* History */}
-            <div>
-                <div onClick={() => toggleMenu("history")} className={dropdownHeaderClass("history")}>
-                    <p className="flex items-center gap-3">
-                        <FaHistory size={18} className="text-emerald-600" />
-                        {t('history')}
-                    </p>
-                    <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "history" ? "rotate-180" : ""}`} />
-                </div>
+            {(hasPermission(json.history?.loginHistory || '/history/login-history', 'read') ||
+              hasPermission(json.history?.deviceHistory || '/history/device-history', 'read')) && (
+                <div>
+                    <div onClick={() => toggleMenu("history")} className={dropdownHeaderClass("history")}>
+                        <p className="flex items-center gap-3">
+                            <FaHistory size={18} className="text-emerald-600" />
+                            {t('history')}
+                        </p>
+                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "history" ? "rotate-180" : ""}`} />
+                    </div>
 
-                <div className={`overflow-hidden transition-all duration-300 ${openMenu === "history" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
-                    {hasPermission(json.history?.loginHistory || '/history/login-history', 'read') && (
-                        <Link to={json.history?.loginHistory || '/history/login-history'} className={subItemClass(json.history?.loginHistory || '/history/login-history')}>{t('loginHistory')}</Link>
-                    )}
-                    {hasPermission(json.history?.deviceHistory || '/history/device-history', 'read') && (
-                        <Link to={json.history?.deviceHistory || '/history/device-history'} className={subItemClass(json.history?.deviceHistory || '/history/device-history')}>{t('deviceHistory')}</Link>
-                    )}
+                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "history" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        {hasPermission(json.history?.loginHistory || '/history/login-history', 'read') && (
+                            <Link to={json.history?.loginHistory || '/history/login-history'} className={subItemClass(json.history?.loginHistory || '/history/login-history')}>{t('loginHistory')}</Link>
+                        )}
+                        {hasPermission(json.history?.deviceHistory || '/history/device-history', 'read') && (
+                            <Link to={json.history?.deviceHistory || '/history/device-history'} className={subItemClass(json.history?.deviceHistory || '/history/device-history')}>{t('deviceHistory')}</Link>
+                        )}
+                    </div>
                 </div>
-            </div>
-
+            )}
 
             {/* Setting */}
-            <div>
-                <div onClick={() => toggleMenu("setting")} className={dropdownHeaderClass("setting")}>
-                    <p className="flex items-center gap-3">
-                        <IoIosSettings size={20} className="text-emerald-600" />
-                        {t('settings')}
-                    </p>
-                    <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "setting" ? "rotate-180" : ""}`} />
-                </div>
+            {(hasPermission('/settings/all-account', 'read') ||
+              hasPermission(json.settings.controlSystem, 'read')) && (
+                <div>
+                    <div onClick={() => toggleMenu("setting")} className={dropdownHeaderClass("setting")}>
+                        <p className="flex items-center gap-3">
+                            <IoIosSettings size={20} className="text-emerald-600" />
+                            {t('settings')}
+                        </p>
+                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "setting" ? "rotate-180" : ""}`} />
+                    </div>
 
-                <div className={`overflow-hidden transition-all duration-300 ${openMenu === "setting" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
-                    {hasPermission('/settings/all-account', 'read') && (
-                        <Link to="/settings/all-account" className={subItemClass('/settings/all-account')}>{t('allAccount')}</Link>
-                    )}
-                    {hasPermission(json.settings.controlSystem, 'read') && (
-                        <Link to={json.settings.controlSystem} className={subItemClass(json.settings.controlSystem)}>{t('controlSystem')}</Link>
-                    )}
+                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "setting" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        {hasPermission('/settings/all-account', 'read') && (
+                            <Link to="/settings/all-account" className={subItemClass('/settings/all-account')}>{t('allAccount')}</Link>
+                        )}
+                        {hasPermission(json.settings.controlSystem, 'read') && (
+                            <Link to={json.settings.controlSystem} className={subItemClass(json.settings.controlSystem)}>{t('controlSystem')}</Link>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
         </div>
     );

@@ -6,7 +6,7 @@ import { MdOutlineSync, MdOutlinePhoneIphone } from 'react-icons/md';
 
 const Actions = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE, user, hasPermission } = useAuth();
 
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -137,26 +137,30 @@ const Actions = () => {
                                             </span>
                                         </td>
                                         <td className='px-4 py-3 text-center'>
-                                            {isLocked ? (
-                                                <button
-                                                    onClick={() => handleToggleLock(item, 'Unlocked')}
-                                                    disabled={togglingId === item._id}
-                                                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
-                                                >
-                                                    <FaUnlock size={11} />
-                                                    <span>Set to Unlock Phone</span>
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleToggleLock(item, 'Locked')}
-                                                    disabled={togglingId === item._id}
-                                                    className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-red-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
-                                                >
-                                                    <FaLock size={11} />
-                                                    <span>Set to Lock Phone</span>
-                                                </button>
-                                            )}
-                                        </td>
+                                             {hasPermission('/lostphone/actions', 'edit') || hasPermission('/lostphone/actions', 'create') ? (
+                                                 isLocked ? (
+                                                     <button
+                                                         onClick={() => handleToggleLock(item, 'Unlocked')}
+                                                         disabled={togglingId === item._id}
+                                                         className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                                                     >
+                                                         <FaUnlock size={11} />
+                                                         <span>Set to Unlock Phone</span>
+                                                     </button>
+                                                 ) : (
+                                                     <button
+                                                         onClick={() => handleToggleLock(item, 'Locked')}
+                                                         disabled={togglingId === item._id}
+                                                         className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-red-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                                                     >
+                                                         <FaLock size={11} />
+                                                         <span>Set to Lock Phone</span>
+                                                     </button>
+                                                 )
+                                             ) : (
+                                                 <span className="text-slate-400 font-semibold text-xs italic">Read Only</span>
+                                             )}
+                                         </td>
                                     </tr>
                                 );
                             })

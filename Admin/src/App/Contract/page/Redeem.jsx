@@ -11,7 +11,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Redeem = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE, user, hasPermission } = useAuth();
 
     const [contracts, setContracts] = useState([]);
     const [reloading, setReloading] = useState(false);
@@ -180,12 +180,16 @@ const Redeem = () => {
                                                             <span>Move to Activated</span>
                                                         </button>
                                                     )}
-                                                    <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2">
-                                                        <MdEdit className="text-amber-600" /> Edit
-                                                    </button>
-                                                    <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2">
-                                                        <MdDelete className="text-red-600" /> Delete
-                                                    </button>
+                                                    {hasPermission('/contract/redeem', 'edit') && (
+                                                        <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2">
+                                                            <MdEdit className="text-amber-600" /> Edit
+                                                        </button>
+                                                    )}
+                                                    {hasPermission('/contract/redeem', 'delete') && (
+                                                        <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2">
+                                                            <MdDelete className="text-red-600" /> Delete
+                                                        </button>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

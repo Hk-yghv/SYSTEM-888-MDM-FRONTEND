@@ -36,7 +36,7 @@ const ALL_SYSTEM_PAGES = [
 
 const AllAccount = () => {
     const { t } = useLanguage();
-    const { API_BASE } = useAuth();
+    const { API_BASE, hasPermission } = useAuth();
 
     const [users, setUsers] = useState([]);
     const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer']);
@@ -270,13 +270,15 @@ const AllAccount = () => {
                 </div>
 
                 <div className='flex items-center gap-3'>
-                    <button
-                        onClick={() => setOpenCreateModal(true)}
-                        className='flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all'
-                    >
-                        <FaUserPlus size={14} />
-                        <p>{t('create')} Account</p>
-                    </button>
+                    {hasPermission('/settings/all-account', 'create') && (
+                        <button
+                            onClick={() => setOpenCreateModal(true)}
+                            className='flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all'
+                        >
+                            <FaUserPlus size={14} />
+                            <p>{t('create')} Account</p>
+                        </button>
+                    )}
 
                     <button
                         onClick={fetchUsers}
@@ -365,32 +367,38 @@ const AllAccount = () => {
                                         ) : (
                                             <div className="flex items-center justify-center gap-1.5">
                                                 {/* Edit User */}
-                                                <button
-                                                    onClick={() => handleOpenEditUserModal(item)}
-                                                    className="p-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-lg cursor-pointer transition-all text-[11px] font-bold flex items-center gap-1 px-2"
-                                                    title="Edit User Info & Permissions"
-                                                >
-                                                    <MdEdit size={14} /> Edit
-                                                </button>
+                                                {hasPermission('/settings/all-account', 'edit') && (
+                                                    <button
+                                                        onClick={() => handleOpenEditUserModal(item)}
+                                                        className="p-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-lg cursor-pointer transition-all text-[11px] font-bold flex items-center gap-1 px-2"
+                                                        title="Edit User Info & Permissions"
+                                                    >
+                                                        <MdEdit size={14} /> Edit
+                                                    </button>
+                                                )}
                                                 {/* Block / Unblock */}
-                                                <button
-                                                    onClick={() => handleToggleBlock(item)}
-                                                    className={`p-1.5 border rounded-lg cursor-pointer transition-all text-[11px] font-bold flex items-center gap-1 px-2 ${item.isBlocked
-                                                        ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700'
-                                                        : 'bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-700'
-                                                        }`}
-                                                    title={item.isBlocked ? 'Unblock User' : 'Block User'}
-                                                >
-                                                    {item.isBlocked ? <><FaUnlock size={11} /> Unblock</> : <><FaBan size={11} /> Block</>}
-                                                </button>
+                                                {hasPermission('/settings/all-account', 'edit') && (
+                                                    <button
+                                                        onClick={() => handleToggleBlock(item)}
+                                                        className={`p-1.5 border rounded-lg cursor-pointer transition-all text-[11px] font-bold flex items-center gap-1 px-2 ${item.isBlocked
+                                                            ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700'
+                                                            : 'bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-700'
+                                                            }`}
+                                                        title={item.isBlocked ? 'Unblock User' : 'Block User'}
+                                                    >
+                                                        {item.isBlocked ? <><FaUnlock size={11} /> Unblock</> : <><FaBan size={11} /> Block</>}
+                                                    </button>
+                                                )}
                                                 {/* Delete */}
-                                                <button
-                                                    onClick={() => handleDeleteUser(item)}
-                                                    className="p-1.5 bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 rounded-lg cursor-pointer transition-all"
-                                                    title="Delete Account"
-                                                >
-                                                    <MdDelete size={16} />
-                                                </button>
+                                                {hasPermission('/settings/all-account', 'delete') && (
+                                                    <button
+                                                        onClick={() => handleDeleteUser(item)}
+                                                        className="p-1.5 bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 rounded-lg cursor-pointer transition-all"
+                                                        title="Delete Account"
+                                                    >
+                                                        <MdDelete size={16} />
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                     </td>

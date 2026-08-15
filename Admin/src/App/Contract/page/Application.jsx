@@ -242,13 +242,15 @@ const Application = () => {
                                                         <MdInfo className="text-indigo-600 text-sm" />
                                                         <span>{t('information')}</span>
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleActivateContract(item._id)}
-                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <MdCheckCircle className="text-emerald-600 text-sm" />
-                                                        <span>Set to Activated</span>
-                                                    </button>
+                                                    {hasPermission('/contract/application', 'edit') && (
+                                                        <button
+                                                            onClick={() => handleActivateContract(item._id)}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <MdCheckCircle className="text-emerald-600 text-sm" />
+                                                            <span>Set to Activated</span>
+                                                        </button>
+                                                    )}
                                                     {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
                                                         <button
                                                             onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
@@ -257,20 +259,24 @@ const Application = () => {
                                                             <span>Open Mosyle</span>
                                                         </button>
                                                     )}
-                                                    <button
-                                                        onClick={() => handleOpenEdit(item)}
-                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <MdEdit className="text-amber-600 text-sm" />
-                                                        <span>{t('edit')}</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteContract(item._id)}
-                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <MdDelete className="text-red-600 text-sm" />
-                                                        <span>{t('delete')}</span>
-                                                    </button>
+                                                    {hasPermission('/contract/application', 'edit') && (
+                                                        <button
+                                                            onClick={() => handleOpenEdit(item)}
+                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <MdEdit className="text-amber-600 text-sm" />
+                                                            <span>{t('edit')}</span>
+                                                        </button>
+                                                    )}
+                                                    {hasPermission('/contract/application', 'delete') && (
+                                                        <button
+                                                            onClick={() => handleDeleteContract(item._id)}
+                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <MdDelete className="text-red-600 text-sm" />
+                                                            <span>{t('delete')}</span>
+                                                        </button>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

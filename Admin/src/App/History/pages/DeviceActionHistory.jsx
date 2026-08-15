@@ -12,7 +12,7 @@ const LIMIT = 10;
 
 const DeviceActionHistory = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE, user, hasPermission } = useAuth();
 
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -328,14 +328,18 @@ const DeviceActionHistory = () => {
                                         </td>
                                         <td className='px-4 py-3 text-center whitespace-nowrap'>
                                             {isPending ? (
-                                                <button
-                                                    onClick={() => handleMarkDone(item)}
-                                                    disabled={markingDoneId === (item._id || item.logId)}
-                                                    className='px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-600/20 inline-flex items-center gap-1 cursor-pointer transition-all'
-                                                >
-                                                    <FaCheckCircle size={12} />
-                                                    <span>{t('done')} (រួចរាល់)</span>
-                                                </button>
+                                                hasPermission('/history/device-history', 'edit') ? (
+                                                    <button
+                                                        onClick={() => handleMarkDone(item)}
+                                                        disabled={markingDoneId === (item._id || item.logId)}
+                                                        className='px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-600/20 inline-flex items-center gap-1 cursor-pointer transition-all'
+                                                    >
+                                                        <FaCheckCircle size={12} />
+                                                        <span>{t('done')} (រួចរាល់)</span>
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-amber-700 font-semibold text-xs italic">Pending (Read Only)</span>
+                                                )
                                             ) : (
                                                 <span className='text-xs text-emerald-700 font-bold flex items-center justify-center gap-1'>
                                                     <FaCheckCircle /> Completed

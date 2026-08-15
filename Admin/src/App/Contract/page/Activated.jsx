@@ -517,52 +517,56 @@ const Activated = () => {
                                                             <MdQrCode2 className="text-emerald-600 text-base" />
                                                             <span>{t('qrCode')} Payment</span>
                                                         </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedCommentItem(item);
-                                                                setCommentInput(item.notes || '');
-                                                                setOpenMenuId(null);
-                                                            }}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <MdComment className="text-cyan-600 text-base" />
-                                                            <span>Comment</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleQuickDeviceAction(item, 'Lock Phone')}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <FaLock className="text-red-600 text-sm" />
-                                                            <span>Lock Device</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleQuickDeviceAction(item, 'Set Wallpaper')}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <MdOutlineWallpaper className="text-amber-600 text-sm" />
-                                                            <span>Set Wallpaper</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleChangeStatus(item, 'Check')}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <MdSwapHoriz className="text-blue-600 text-base" />
-                                                            <span>Move to Check</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleChangeStatus(item, 'Redeem')}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <MdSwapHoriz className="text-purple-600 text-base" />
-                                                            <span>Move to Redeem</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleChangeStatus(item, 'Blacklist')}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <MdSwapHoriz className="text-red-600 text-base" />
-                                                            <span>Move to Blacklist</span>
-                                                        </button>
+                                                        {hasPermission('/contract/activated', 'edit') && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedCommentItem(item);
+                                                                        setCommentInput(item.notes || '');
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <MdComment className="text-cyan-600 text-base" />
+                                                                    <span>Comment</span>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleQuickDeviceAction(item, 'Lock Phone')}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <FaLock className="text-red-600 text-sm" />
+                                                                    <span>Lock Device</span>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleQuickDeviceAction(item, 'Set Wallpaper')}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <MdOutlineWallpaper className="text-amber-600 text-sm" />
+                                                                    <span>Set Wallpaper</span>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleChangeStatus(item, 'Check')}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <MdSwapHoriz className="text-blue-600 text-base" />
+                                                                    <span>Move to Check</span>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleChangeStatus(item, 'Redeem')}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <MdSwapHoriz className="text-purple-600 text-base" />
+                                                                    <span>Move to Redeem</span>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleChangeStatus(item, 'Blacklist')}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <MdSwapHoriz className="text-red-600 text-base" />
+                                                                    <span>Move to Blacklist</span>
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
