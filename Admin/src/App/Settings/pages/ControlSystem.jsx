@@ -294,27 +294,11 @@ const ControlSystem = () => {
                                 <option key={idx} value={br}>{br} Tenant Settings</option>
                             ))}
                         </select>
-                        <button
-                            onClick={handleSaveAllConfigs}
-                            disabled={saving}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-600/30 transition-all"
-                        >
-                            <MdSave size={16} />
-                            <span>{saving ? 'រក្សាទុក...' : 'Save All Settings'}</span>
-                        </button>
                     </div>
                 </div>
             ) : (
                 <div className="p-4 bg-[#0f1426]/90 border border-gray-800 rounded-2xl flex items-center justify-between text-xs text-indigo-400 font-semibold">
                     <span>Configuring tenant settings for brand: <span className="font-bold text-white">{selectedBrand || 'Global'}</span></span>
-                    <button
-                        onClick={handleSaveAllConfigs}
-                        disabled={saving}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-600/30 transition-all"
-                    >
-                        <MdSave size={16} />
-                        <span>{saving ? 'រក្សាទុក...' : 'Save All Settings'}</span>
-                    </button>
                 </div>
             )}
 

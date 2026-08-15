@@ -50,10 +50,11 @@ router.post('/', async (req, res) => {
 
         if (isMongoConnected) {
             for (const item of updates) {
-                await ControlSystem.findOneAndUpdate(
+                if (!item.key) continue;
+                await ControlSystem.updateOne(
                     { key: item.key, brand: targetBrand },
-                    { key: item.key, value: item.value, brand: targetBrand },
-                    { upsert: true, new: true }
+                    { $set: { key: item.key, value: item.value, brand: targetBrand } },
+                    { upsert: true }
                 );
             }
         }
@@ -67,11 +68,12 @@ router.post('/', async (req, res) => {
             MEM_DB.controlSystems.push(memConfig);
         }
         for (const item of updates) {
-            memConfig[item.key] = item.value;
+            if (item.key) memConfig[item.key] = item.value;
         }
 
         res.json({ message: 'Saved successfully', brand: targetBrand });
     } catch (err) {
+        console.error('Error saving control system config:', err);
         res.status(500).json({ error: err.message });
     }
 });

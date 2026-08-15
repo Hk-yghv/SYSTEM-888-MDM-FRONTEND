@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const controlSystemSchema = new mongoose.Schema({
     key: { type: String, required: true },
     brand: { type: String, default: '' },
-    value: { type: mongoose.Schema.Types.Mixed, required: true }
+    value: { type: mongoose.Schema.Types.Mixed }
 }, { timestamps: true });
 
 // Compound index to allow brand-specific keys
