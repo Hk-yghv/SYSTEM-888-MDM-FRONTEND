@@ -476,7 +476,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                     type="number" id="amount" value={form.amount} onChange={handleChange} placeholder="Amount" />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <label htmlFor="monthlyPayment" className="font-semibold text-gray-400">Monthly Installment ($ USD)</label>
+                                <label htmlFor="monthlyPayment" className="font-semibold text-gray-400">Customer Received Amount ($ USD)</label>
                                 <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
                                     type="number" id="monthlyPayment" value={form.monthlyPayment} onChange={handleChange} placeholder="Monthly Payment" />
                             </div>

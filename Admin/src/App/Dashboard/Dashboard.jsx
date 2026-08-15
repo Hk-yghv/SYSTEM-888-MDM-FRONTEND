@@ -17,7 +17,8 @@ const Dashboard = () => {
         totalContracts: 0, activatedContracts: 0, applicationContracts: 0,
         checkContracts: 0, redeemContracts: 0, commentsContracts: 0,
         blacklistContracts: 0, lockedPhones: 0, unlockedPhones: 0,
-        lockedWallpapers: 0, unlockedWallpapers: 0, totalRevenue: 0, paymentCount: 0
+        lockedWallpapers: 0, unlockedWallpapers: 0, totalRevenue: 0, paymentCount: 0,
+        totalLoanAmount: 0, totalCustomerReceived: 0, totalBorrowers: 0, outstandingBalance: 0
     });
 
     const [timeRange, setTimeRange] = useState('monthly');
@@ -221,11 +222,17 @@ const Dashboard = () => {
     const phoneLockPct = stats.totalContracts ? Math.round((stats.lockedPhones / stats.totalContracts) * 100) : 0;
     const wallpaperLockPct = stats.totalContracts ? Math.round((stats.lockedWallpapers / stats.totalContracts) * 100) : 0;
 
-    const multiplier = timeRange === 'daily' ? 0.03 : timeRange === 'monthly' ? 0.25 : timeRange === 'yearly' ? 0.9 : 1.0;
-    const totalCollectedRevenue = Math.round(stats.totalRevenue * multiplier);
-    const estimatedAdminProfit = Math.round(totalCollectedRevenue * 0.15);
-    const outstandingLoans = Math.round(stats.activatedContracts * 850 * (1 - multiplier * 0.5));
-    const netProfitMargin = totalCollectedRevenue > 0 ? Math.round((estimatedAdminProfit / totalCollectedRevenue) * 100) : 0;
+    // ── Real Financial Data from Backend ──
+    const customerReceivedAmt = stats.totalCustomerReceived || 0;     // ទឹកប្រាក់ដែលភ្ញៀវទទួល (monthlyPayment)
+    const loanOutAmt = stats.totalLoanAmount || 0;                    // ប្រាក់ LOAN ចេញ (amount)
+    const weCollectedAmt = stats.totalRevenue || 0;                   // ទឹកប្រាក់ដែលយើងទទួល (payments)
+    const totalBorrowers = stats.totalBorrowers || stats.totalContracts || 0; // ចំនួនភ្ញៀវខ្ចី
+    const netProfitLoss = weCollectedAmt - loanOutAmt;                // ចំណេញ/ខាត (collected - loan out)
+    const outstandingBal = stats.outstandingBalance || 0;             // ប្រាក់ជំពាក់
+    const profitPct = loanOutAmt > 0 ? ((netProfitLoss / loanOutAmt) * 100).toFixed(1) : '0.0';
+    const collectionPct = loanOutAmt > 0 ? Math.round((weCollectedAmt / loanOutAmt) * 100) : 0;
+    const outstandingPct = loanOutAmt > 0 ? Math.round((outstandingBal / loanOutAmt) * 100) : 0;
+    const isProfit = netProfitLoss >= 0;
     const isAdmin = user?.role === 'Administrator';
 
     const modalFilteredItems = useMemo(() => {
@@ -294,28 +301,139 @@ const Dashboard = () => {
             )}
 
             {/* ── Profit & Loss ── */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 space-y-4 shadow-md">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 space-y-5 shadow-md">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                     <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                        <MdTrendingUp className="text-xl text-emerald-600" /> Profit & Loss Financial Analytics ({timeRange.toUpperCase()} View)
+                        <MdTrendingUp className="text-xl text-emerald-600" /> Profit &amp; Loss Financial Analytics
                     </h2>
-                    <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-full font-mono text-xs font-bold">
-                        Net Profit Margin: {netProfitMargin}%
+                    <span className={`px-3 py-1 border rounded-full font-mono text-xs font-bold ${
+                        isProfit
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                            : 'bg-red-50 text-red-800 border-red-300'
+                    }`}>
+                        {isProfit ? '▲' : '▼'} Net {isProfit ? 'Profit' : 'Loss'}: {Math.abs(Number(profitPct))}%
                     </span>
                 </div>
+
+                {/* ── 4 Real Finance Cards ── */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                    {[
-                        { label: 'Collected Revenue', value: `$${totalCollectedRevenue.toLocaleString()}`, sub: 'From installment payments', color: 'text-emerald-700' },
-                        { label: 'Estimated Net Profit', value: `$${estimatedAdminProfit.toLocaleString()}`, sub: '↑ +15% Admin Fee & Profit margin', color: 'text-teal-700' },
-                        { label: 'Outstanding Balance', value: `$${outstandingLoans.toLocaleString()}`, sub: 'Active contracts pending collection', color: 'text-amber-700' },
-                        { label: 'Financial Loss Risk', value: `$${Math.round(stats.blacklistContracts * 800).toLocaleString()}`, sub: 'Blacklisted defaulting accounts', color: 'text-red-700' },
-                    ].map(item => (
-                        <div key={item.label} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200">
-                            <span className="text-slate-600 block text-[11px] uppercase font-bold">{item.label}</span>
-                            <span className={`text-2xl font-black font-mono block mt-1 ${item.color}`}>{item.value}</span>
-                            <span className="text-[10px] text-slate-500 font-medium mt-1 block">{item.sub}</span>
+
+                    {/* Card 1: Customer Received Amount */}
+                    <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200">
+                        <span className="text-blue-600 block text-[11px] uppercase font-bold tracking-wide">ទឹកប្រាក់ភ្ញៀវទទួល</span>
+                        <span className="text-2xl font-black font-mono block mt-1 text-blue-700">
+                            ${customerReceivedAmt.toLocaleString()}
+                        </span>
+                        <span className="text-[10px] text-blue-500 font-semibold mt-1 block">Customer Received Amount</span>
+                        <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-blue-100">
+                            <span className="text-[10px] text-blue-400 font-medium">Loan Out: <span className="font-mono font-bold text-blue-600">${loanOutAmt.toLocaleString()}</span></span>
+                            <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded-full">{totalBorrowers} ភ្ញៀវ</span>
                         </div>
-                    ))}
+                    </div>
+
+                    {/* Card 2: We Collected */}
+                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
+                        <span className="text-emerald-700 block text-[11px] uppercase font-bold tracking-wide">ទឹកប្រាក់ដែលយើងទទួល</span>
+                        <span className="text-2xl font-black font-mono block mt-1 text-emerald-700">${weCollectedAmt.toLocaleString()}</span>
+                        <span className="text-[10px] text-emerald-600 font-semibold mt-1 block">Total Collected ({collectionPct}% of Loan)</span>
+                        <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-emerald-100">
+                            <span className="text-[10px] text-emerald-500 font-medium">{stats.paymentCount} Transactions</span>
+                            <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">{collectionPct}%</span>
+                        </div>
+                    </div>
+
+                    {/* Card 3: Net Profit / Loss */}
+                    <div className={`p-4 rounded-2xl border ${
+                        isProfit ? 'bg-teal-50 border-teal-200' : 'bg-red-50 border-red-200'
+                    }`}>
+                        <span className={`block text-[11px] uppercase font-bold tracking-wide ${
+                            isProfit ? 'text-teal-700' : 'text-red-700'
+                        }`}>ចំណេញ / ខាត</span>
+                        <span className={`text-2xl font-black font-mono block mt-1 ${
+                            isProfit ? 'text-teal-700' : 'text-red-700'
+                        }`}>
+                            {isProfit ? '+' : '-'}${Math.abs(netProfitLoss).toLocaleString()}
+                        </span>
+                        <span className={`text-[10px] font-semibold mt-1 block ${
+                            isProfit ? 'text-teal-600' : 'text-red-600'
+                        }`}>Net {isProfit ? 'Profit' : 'Loss'} ({profitPct}%)</span>
+                        <div className={`flex items-center justify-between mt-1.5 pt-1.5 border-t ${
+                            isProfit ? 'border-teal-100' : 'border-red-100'
+                        }`}>
+                            <span className={`text-[10px] font-medium ${
+                                isProfit ? 'text-teal-500' : 'text-red-400'
+                            }`}>{isProfit ? 'Revenue > Loan Out' : 'Loss: Below loan'}</span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                isProfit ? 'bg-teal-100 text-teal-700' : 'bg-red-100 text-red-700'
+                            }`}>{isProfit ? '+' : ''}{profitPct}%</span>
+                        </div>
+                    </div>
+
+                    {/* Card 4: Outstanding Balance */}
+                    <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
+                        <span className="text-amber-700 block text-[11px] uppercase font-bold tracking-wide">ប្រាក់ជំពាក់នៅសេសសល់</span>
+                        <span className="text-2xl font-black font-mono block mt-1 text-amber-700">${outstandingBal.toLocaleString()}</span>
+                        <span className="text-[10px] text-amber-600 font-semibold mt-1 block">Outstanding Balance</span>
+                        <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-amber-100">
+                            <span className="text-[10px] text-amber-500 font-medium">Pending collection</span>
+                            <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-full">{outstandingPct}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Stacked Bar Chart ── */}
+                <div className="space-y-3 pt-2 border-t border-slate-200">
+                    <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Financial Flow Visualization</p>
+                    {/* Loan vs Collected Bar */}
+                    <div>
+                        <div className="flex justify-between text-[10px] font-bold text-slate-600 mb-1">
+                            <span>Loan Disbursed vs Collected</span>
+                            <span className="font-mono">{collectionPct}% collected</span>
+                        </div>
+                        <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
+                            <div
+                                className="h-full bg-emerald-500 transition-all duration-700 flex items-center justify-center"
+                                style={{ width: `${Math.min(collectionPct, 100)}%` }}
+                            >
+                                {collectionPct > 10 && <span className="text-[9px] text-white font-bold">{collectionPct}%</span>}
+                            </div>
+                            <div
+                                className="h-full bg-blue-300 transition-all duration-700"
+                                style={{ width: `${Math.max(100 - collectionPct, 0)}%` }}
+                            />
+                        </div>
+                        <div className="flex gap-4 mt-1 text-[10px] text-slate-600 font-semibold">
+                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500 rounded-sm" />Collected ${weCollectedAmt.toLocaleString()}</span>
+                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-blue-300 rounded-sm" />Remaining ${outstandingBal.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    {/* Profit/Loss Bar */}
+                    <div>
+                        <div className="flex justify-between text-[10px] font-bold text-slate-600 mb-1">
+                            <span>Profit / Loss Ratio</span>
+                            <span className={`font-mono ${isProfit ? 'text-teal-700' : 'text-red-700'}`}>
+                                {isProfit ? '+' : ''}{profitPct}%
+                            </span>
+                        </div>
+                        <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
+                            <div
+                                className={`h-full transition-all duration-700 flex items-center justify-center ${
+                                    isProfit ? 'bg-teal-500' : 'bg-red-500'
+                                }`}
+                                style={{ width: `${Math.min(Math.abs(Number(profitPct)), 100)}%` }}
+                            >
+                                {Math.abs(Number(profitPct)) > 5 && (
+                                    <span className="text-[9px] text-white font-bold">{Math.abs(Number(profitPct))}%</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex gap-4 mt-1 text-[10px] text-slate-600 font-semibold">
+                            <span className={`flex items-center gap-1 ${isProfit ? 'text-teal-700' : 'text-red-700'}`}>
+                                <span className={`w-2 h-2 rounded-sm ${isProfit ? 'bg-teal-500' : 'bg-red-500'}`} />
+                                {isProfit ? 'Profit' : 'Loss'}: {isProfit ? '+' : '-'}${Math.abs(netProfitLoss).toLocaleString()} ({profitPct}%)
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 

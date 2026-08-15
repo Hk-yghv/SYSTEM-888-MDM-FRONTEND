@@ -65,6 +65,7 @@ app.use('/api/auth', createAuthRoutes(bot));
 app.use('/api/users', userRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api', paymentRoutes);
+app.use('/', paymentRoutes);
 app.use('/api/controlsystem', controlRoutes);
 app.use('/api', lostphoneRoutes);
 app.use('/api', wallpaperRoutes);

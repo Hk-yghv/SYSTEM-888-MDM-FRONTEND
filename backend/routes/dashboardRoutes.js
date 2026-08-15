@@ -12,7 +12,7 @@ router.get('/stats', async (req, res) => {
         let totalContracts, activatedContracts, applicationContracts, checkContracts,
             redeemContracts, blacklistContracts, commentsContracts,
             lockedPhones, unlockedPhones, lockedWallpapers, unlockedWallpapers,
-            totalRevenue, paymentCount, totalLoanAmount;
+            totalRevenue, paymentCount, totalLoanAmount, totalCustomerReceived, totalBorrowers;
 
         let query = {};
         if (userBrand && userRole !== 'Administrator') {
@@ -36,13 +36,13 @@ router.get('/stats', async (req, res) => {
             unlockedPhones = totalContracts - lockedPhones;
             unlockedWallpapers = totalContracts - lockedWallpapers;
 
+            // Payments
             let paymentQuery = {};
             if (userBrand && userRole !== 'Administrator') {
                 const matchedContracts = await Contract.find({ brand: userBrand }).select('contractId');
                 const contractIds = matchedContracts.map(c => c.contractId);
                 paymentQuery.contractId = { $in: contractIds };
             }
-
             paymentCount = await Payment.countDocuments(paymentQuery);
             const revenueAgg = await Payment.aggregate([
                 { $match: paymentQuery },
@@ -50,13 +50,18 @@ router.get('/stats', async (req, res) => {
             ]);
             totalRevenue = revenueAgg[0]?.total || 0;
 
+            // ── Financial metrics aggregated ONLY from Activated contracts ──
             const activatedQuery = { ...query, status: 'Activated' };
-            const loanAgg = await Contract.aggregate([
+            const activatedLoanAgg = await Contract.aggregate([
                 { $match: activatedQuery },
-                { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+                { $group: { _id: null, totalAmt: { $sum: '$amount' }, totalMonthly: { $sum: '$monthlyPayment' }, count: { $sum: 1 } } }
             ]);
-            totalLoanAmount = loanAgg[0]?.total || 0;
+            totalLoanAmount = activatedLoanAgg[0]?.totalAmt || 0;
+            totalCustomerReceived = activatedLoanAgg[0]?.totalMonthly || 0;
+            totalBorrowers = activatedLoanAgg[0]?.count || activatedContracts || 0;
+
         } else {
+            // MEM_DB fallback
             const contracts = MEM_DB.contracts.filter(c => {
                 if (userBrand && userRole !== 'Administrator') return c.brand === userBrand;
                 return true;
@@ -80,9 +85,15 @@ router.get('/stats', async (req, res) => {
             });
             totalRevenue = filteredPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
             paymentCount = filteredPayments.length;
-            const activatedContracts2 = contracts.filter(c => c.status === 'Activated');
-            totalLoanAmount = activatedContracts2.reduce((sum, c) => sum + (Number(c.totalAmount) || Number(c.amount) || 0), 0);
+
+            // Aggregate ONLY Activated contracts for financial metrics
+            const activatedList = contracts.filter(c => c.status === 'Activated');
+            totalLoanAmount = activatedList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+            totalCustomerReceived = activatedList.reduce((sum, c) => sum + (Number(c.monthlyPayment) || 0), 0);
+            totalBorrowers = activatedList.length;
         }
+
+        const outstandingBalance = Math.max((totalLoanAmount || 0) - (totalRevenue || 0), 0);
 
         res.json({
             totalContracts, activatedContracts, applicationContracts,
@@ -90,7 +101,9 @@ router.get('/stats', async (req, res) => {
             lockedPhones, unlockedPhones, lockedWallpapers, unlockedWallpapers,
             totalRevenue, paymentCount,
             totalLoanAmount: totalLoanAmount || 0,
-            outstandingBalance: Math.max((totalLoanAmount || 0) - (totalRevenue || 0), 0)
+            totalCustomerReceived: totalCustomerReceived || 0,
+            totalBorrowers: totalBorrowers || 0,
+            outstandingBalance
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -98,3 +111,4 @@ router.get('/stats', async (req, res) => {
 });
 
 export default router;
+
