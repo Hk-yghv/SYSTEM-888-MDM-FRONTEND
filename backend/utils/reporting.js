@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import mongoose from 'mongoose';
 import User from '../models/User.js';
+import { queryAllDBs, getWriteModel, isAnyDBConnected } from '../config/multiDB.js';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -9,26 +9,27 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const collectLoginHistory = async () => {
     const result = [];
     try {
-        if (mongoose.connection && mongoose.connection.readyState === 1) {
-            const users = await User.find().select('username userId loginHistory');
-            console.log(`collectLoginHistory: Found ${users.length} users in DB`);
-            users.forEach(u => {
-                if (Array.isArray(u.loginHistory) && u.loginHistory.length) {
-                    result.push({
-                        username: u.username,
-                        userId: u.userId,
-                        history: u.loginHistory.map(h => ({
-                            timestamp: h.timestamp,
-                            ip: h.ip || 'N/A',
-                            deviceInfo: h.deviceInfo || 'Unknown'
-                        }))
-                    });
-                }
-            });
-            console.log(`collectLoginHistory: Collected history for ${result.length} users`);
-        } else {
-            console.warn('collectLoginHistory: MongoDB not connected (readyState=' + mongoose.connection?.readyState + ')');
+        if (!isAnyDBConnected()) {
+            console.warn('collectLoginHistory: No MongoDB connected (multiDB), skipping.');
+            return result;
         }
+        // Use queryAllDBs — same pattern as historyRoutes.js to work with multi-DB
+        const users = await queryAllDBs(User, (M) => M.find({}).select('username userId loginHistory'));
+        console.log(`collectLoginHistory: Found ${users.length} users across all DBs`);
+        users.forEach(u => {
+            if (Array.isArray(u.loginHistory) && u.loginHistory.length) {
+                result.push({
+                    username: u.username,
+                    userId: u.userId,
+                    history: u.loginHistory.map(h => ({
+                        timestamp: h.timestamp,
+                        ip: h.ip || 'N/A',
+                        deviceInfo: h.deviceInfo || 'Unknown'
+                    }))
+                });
+            }
+        });
+        console.log(`collectLoginHistory: Collected history for ${result.length} users with login records`);
     } catch (err) {
         console.error('collectLoginHistory error:', err.message);
     }
@@ -216,13 +217,15 @@ const appendToGoogleSheet = async (serviceAccountJsonOrPath, sheetId, rows) => {
 // ==================== cleanupLoginHistory ====================
 const cleanupLoginHistory = async () => {
     try {
-        if (mongoose.connection && mongoose.connection.readyState === 1) {
-            const res = await User.updateMany({}, { $set: { loginHistory: [] } });
-            console.log(`cleanupLoginHistory: Cleared loginHistory for ${res.modifiedCount} users.`);
-            return { success: true, modifiedCount: res.modifiedCount };
+        if (!isAnyDBConnected()) {
+            console.warn('cleanupLoginHistory: No MongoDB connected (multiDB), skipping.');
+            return { skipped: true };
         }
-        console.warn('cleanupLoginHistory: MongoDB not connected, skipping.');
-        return { skipped: true };
+        // Use getWriteModel — writes to active DB (DB1 → DB2 → DB3 fallback)
+        const UserWrite = getWriteModel(User) || User;
+        const res = await UserWrite.updateMany({}, { $set: { loginHistory: [] } });
+        console.log(`cleanupLoginHistory: Cleared loginHistory for ${res.modifiedCount} users.`);
+        return { success: true, modifiedCount: res.modifiedCount };
     } catch (err) {
         console.error('cleanupLoginHistory error:', err.message);
         return { success: false, error: err.message };
