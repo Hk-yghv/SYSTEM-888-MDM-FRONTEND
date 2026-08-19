@@ -2,6 +2,7 @@ import express from 'express';
 import QRCode from 'qrcode';
 import Contract from '../models/Contract.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 
@@ -32,8 +33,9 @@ router.get('/', async (req, res) => {
         }
 
         if (isMongoConnected) {
-            const total = await Contract.countDocuments(query);
-            const contracts = await Contract.find(query).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+            const allContracts = await queryAllDBs(Contract, (M) => M.find(query).sort({ createdAt: -1 }));
+            const total = allContracts.length;
+            const contracts = allContracts.slice(skip, skip + parseInt(limit));
             const data = contracts.map(sanitizeAndDecryptContract);
             return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
@@ -58,9 +60,13 @@ router.get('/', async (req, res) => {
 // GET Customer QR payload
 router.get('/customer-qr-payload/:contractId', async (req, res) => {
     try {
-        let contract = isMongoConnected
-            ? await Contract.findOne({ contractId: req.params.contractId })
-            : MEM_DB.contracts.find(c => c.contractId === req.params.contractId);
+        let contract = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, (M) => M.find({ contractId: req.params.contractId }));
+            contract = results[0] || null;
+        } else {
+            contract = MEM_DB.contracts.find(c => c.contractId === req.params.contractId);
+        }
 
         if (!contract) return res.status(404).json({ error: 'Customer contract not found' });
 
@@ -77,9 +83,13 @@ router.get('/customer-qr-payload/:contractId', async (req, res) => {
 router.get('/customer-info/:contractId', async (req, res) => {
     try {
         const { contractId } = req.params;
-        let contract = isMongoConnected
-            ? await Contract.findOne({ contractId })
-            : MEM_DB.contracts.find(c => c.contractId === contractId);
+        let contract = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, (M) => M.find({ contractId }));
+            contract = results[0] || null;
+        } else {
+            contract = MEM_DB.contracts.find(c => c.contractId === contractId);
+        }
 
         if (!contract) {
             return res.status(404).send(`
@@ -231,7 +241,8 @@ router.post('/', async (req, res) => {
         let savedContract = newContract;
 
         if (isMongoConnected) {
-            const doc = new Contract(newContract);
+            const ContractWrite = getWriteModel(Contract) || Contract;
+            const doc = new ContractWrite(newContract);
             await doc.save();
             savedContract = doc.toObject();
         }
@@ -248,8 +259,19 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         if (isMongoConnected) {
-            const updated = await Contract.findByIdAndUpdate(req.params.id, req.body, { new: true });
-            if (updated) return res.json(sanitizeAndDecryptContract(updated));
+            const results = await queryAllDBs(Contract, (M) => {
+                try { return M.findById(req.params.id).then(r => r ? [r] : []); } catch { return []; }
+            });
+            let contractDoc = results[0];
+            if (!contractDoc) {
+                const r2 = await queryAllDBs(Contract, (M) => M.find({ contractId: req.params.id }));
+                contractDoc = r2[0] || null;
+            }
+            if (contractDoc) {
+                Object.assign(contractDoc, req.body);
+                await contractDoc.save();
+                return res.json(sanitizeAndDecryptContract(contractDoc));
+            }
         }
         const idx = MEM_DB.contracts.findIndex(c => c._id === req.params.id || c.contractId === req.params.id);
         if (idx !== -1) {
@@ -265,7 +287,17 @@ router.put('/:id', async (req, res) => {
 // DELETE contract
 router.delete('/:id', async (req, res) => {
     try {
-        if (isMongoConnected) await Contract.findByIdAndDelete(req.params.id);
+        if (isMongoConnected) {
+            await Promise.allSettled(
+                [Contract].map(async (M) => {
+                    await queryAllDBs(M, async (BoundM) => {
+                        try { await BoundM.findByIdAndDelete(req.params.id); } catch {}
+                        try { await BoundM.deleteMany({ contractId: req.params.id }); } catch {}
+                        return [];
+                    });
+                })
+            );
+        }
         MEM_DB.contracts = MEM_DB.contracts.filter(c => c._id !== req.params.id);
         res.json({ message: 'Contract deleted' });
     } catch (err) {

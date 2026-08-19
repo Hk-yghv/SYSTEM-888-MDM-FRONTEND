@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs } from '../config/multiDB.js';
 import { parseUserAgent } from '../middleware/security.js';
 
 const router = express.Router();
@@ -49,7 +50,13 @@ export default function createAuthRoutes(bot) {
                 });
             }
 
-            let user = isMongoConnected ? await User.findOne({ username }) : MEM_DB.users.find(u => u.username === username);
+            let user = null;
+            if (isMongoConnected) {
+                const users = await queryAllDBs(User, (M) => M.find({ username }));
+                user = users[0] || null;
+            } else {
+                user = MEM_DB.users.find(u => u.username === username);
+            }
 
             if (!user) {
                 recordFailedLogin(ip);
@@ -140,7 +147,13 @@ export default function createAuthRoutes(bot) {
     router.post('/verify-otp', async (req, res) => {
         try {
             const { username, otp, secondPassword } = req.body;
-            let user = isMongoConnected ? await User.findOne({ username }) : MEM_DB.users.find(u => u.username === username);
+            let user = null;
+            if (isMongoConnected) {
+                const users = await queryAllDBs(User, (M) => M.find({ username }));
+                user = users[0] || null;
+            } else {
+                user = MEM_DB.users.find(u => u.username === username);
+            }
             if (!user || user.lastOtp !== otp) {
                 return res.status(400).json({ error: 'Invalid OTP Verification Code' });
             }

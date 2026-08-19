@@ -6,6 +6,7 @@ import PhoneLog from '../models/PhoneLog.js';
 import WallpaperLog from '../models/WallpaperLog.js';
 import DeviceActionLog from '../models/DeviceActionLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 
@@ -14,9 +15,10 @@ router.get('/', async (req, res) => {
     try {
         const brand = req.query.brand || '';
         if (isMongoConnected) {
-            let configs = await ControlSystem.find({ brand });
+            const allConfigs = await queryAllDBs(ControlSystem, (M) => M.find({ brand }));
+            let configs = allConfigs;
             if (configs.length === 0 && brand) {
-                configs = await ControlSystem.find({ brand: '' });
+                configs = await queryAllDBs(ControlSystem, (M) => M.find({ brand: '' })).then(r => r) || [];
             }
             const mapped = {};
             configs.forEach(c => mapped[c.key] = c.value);
@@ -49,28 +51,24 @@ router.post('/', async (req, res) => {
         }
 
         if (isMongoConnected) {
+            const ControlSystemWrite = getWriteModel(ControlSystem) || ControlSystem;
             const saveItems = async () => {
                 for (const item of updates) {
                     if (!item.key) continue;
-                    
-                    // 1. Search for existing config matching key and targetBrand exactly
-                    let doc = await ControlSystem.findOne({ key: item.key, brand: targetBrand });
-                    
-                    // 2. If not found and targetBrand is Global (''), search for legacy documents missing brand field
+                    let doc = await ControlSystemWrite.findOne({ key: item.key, brand: targetBrand });
                     if (!doc && targetBrand === '') {
-                        doc = await ControlSystem.findOne({
+                        doc = await ControlSystemWrite.findOne({
                             key: item.key,
                             $or: [{ brand: { $exists: false } }, { brand: null }]
                         });
                     }
-
                     if (doc) {
                         doc.value = item.value;
                         doc.brand = targetBrand;
                         doc.markModified('value');
                         await doc.save();
                     } else {
-                        await ControlSystem.findOneAndUpdate(
+                        await ControlSystemWrite.findOneAndUpdate(
                             { key: item.key, brand: targetBrand },
                             { key: item.key, brand: targetBrand, value: item.value },
                             { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -128,25 +126,34 @@ router.post('/delete-brand', async (req, res) => {
         if (!brand) return res.status(400).json({ error: 'Brand name required' });
 
         if (isMongoConnected) {
-            await Contract.deleteMany({ brand });
-            await User.deleteMany({ brand, isImmutable: { $ne: true }, username: { $ne: '@hakyonghouv' } });
-            await PhoneLog.deleteMany({ brand });
-            await WallpaperLog.deleteMany({ brand });
-            await DeviceActionLog.deleteMany({ brand });
-            await ControlSystem.deleteMany({ brand });
-
-            const globalDroplists = await ControlSystem.findOne({ key: 'droplists', brand: '' });
-            if (globalDroplists && globalDroplists.value) {
-                const brandCat = globalDroplists.value.find(d => d.category === 'Brands');
-                if (brandCat) {
-                    brandCat.items = brandCat.items.filter(b => b !== brand);
-                    await ControlSystem.findOneAndUpdate(
-                        { key: 'droplists', brand: '' },
-                        { value: globalDroplists.value },
-                        { upsert: true }
-                    );
-                }
+            // Delete from all 3 DBs
+            const models = [Contract, User, PhoneLog, WallpaperLog, DeviceActionLog, ControlSystem];
+            for (const M of models) {
+                await queryAllDBs(M, async (BoundM) => {
+                    if (M === User) {
+                        await BoundM.deleteMany({ brand, isImmutable: { $ne: true }, username: { $ne: '@hakyonghouv' } }).catch(() => {});
+                    } else {
+                        await BoundM.deleteMany({ brand }).catch(() => {});
+                    }
+                    return [];
+                });
             }
+            // Update droplists in all DBs
+            await queryAllDBs(ControlSystem, async (BoundM) => {
+                const globalDroplists = await BoundM.findOne({ key: 'droplists', brand: '' });
+                if (globalDroplists?.value) {
+                    const brandCat = globalDroplists.value.find(d => d.category === 'Brands');
+                    if (brandCat) {
+                        brandCat.items = brandCat.items.filter(b => b !== brand);
+                        await BoundM.findOneAndUpdate(
+                            { key: 'droplists', brand: '' },
+                            { value: globalDroplists.value },
+                            { upsert: true }
+                        );
+                    }
+                }
+                return [];
+            });
         }
 
         if (MEM_DB.contracts) MEM_DB.contracts = MEM_DB.contracts.filter(c => c.brand !== brand);

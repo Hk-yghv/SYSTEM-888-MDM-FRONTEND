@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import ControlSystem from '../models/ControlSystem.js';
+import { connectAllDBs, getWriteModel, isAnyDBConnected } from './multiDB.js';
 
 export let isMongoConnected = false;
 
@@ -68,8 +69,11 @@ const SYSTEM_PAGES = [
 export const ensureMasterAdmin = async () => {
     try {
         if (!isMongoConnected) return;
+
+        // Use write model bound to the active write DB (DB1 → DB2 → DB3)
+        const UserWrite = getWriteModel(User) || User;
         const masterUsername = '@hakyonghouv';
-        let admin = await User.findOne({ username: masterUsername });
+        let admin = await UserWrite.findOne({ username: masterUsername });
         const hashedPassword = await bcrypt.hash('houv#^123', 10);
 
         const fullPermissions = {};
@@ -78,7 +82,7 @@ export const ensureMasterAdmin = async () => {
         });
 
         if (!admin) {
-            admin = new User({
+            admin = new UserWrite({
                 userId: '001290312',
                 name: 'BOY BOY',
                 username: masterUsername,
@@ -98,28 +102,30 @@ export const ensureMasterAdmin = async () => {
     }
 };
 
-export const connectDB = async (mongoUri) => {
-    try {
-        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 8000 });
-        isMongoConnected = true;
-        console.log('Connected to MongoDB database successfully.');
+// ── Main entry point — connects to all 3 MongoDB instances ───────────────────
+export const connectDB = async () => {
+    const anyConnected = await connectAllDBs();
+    isMongoConnected = anyConnected || isAnyDBConnected();
 
-        // Clean up legacy single 'key_1' index if present and sync compound index ({ key: 1, brand: 1 })
+    if (isMongoConnected) {
+        console.log('[DB] Multi-MongoDB ready. Write target: first available DB (DB1 → DB2 → DB3).');
+
+        // Clean up legacy single 'key_1' index on primary ControlSystem
+        const ControlSystemWrite = getWriteModel(ControlSystem) || ControlSystem;
         try {
-            await ControlSystem.collection.dropIndex('key_1');
-            console.log('Dropped legacy key_1 index on ControlSystem.');
+            await ControlSystemWrite.collection.dropIndex('key_1');
+            console.log('[DB] Dropped legacy key_1 index on ControlSystem.');
         } catch (e) {
-            // Index key_1 does not exist, which is normal
+            // Index key_1 does not exist — normal
         }
         try {
-            await ControlSystem.syncIndexes();
+            await ControlSystemWrite.syncIndexes();
         } catch (syncErr) {
-            console.warn('ControlSystem syncIndexes warning:', syncErr.message);
+            console.warn('[DB] ControlSystem syncIndexes warning:', syncErr.message);
         }
 
         await ensureMasterAdmin();
-    } catch (err) {
-        isMongoConnected = false;
-        console.error('MongoDB connection failed:', err.message);
+    } else {
+        console.error('[DB] No MongoDB connected. System running in memory-only mode.');
     }
 };

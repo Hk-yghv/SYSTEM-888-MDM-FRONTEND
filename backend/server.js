@@ -15,6 +15,7 @@ try {
 dotenv.config();
 
 import { connectDB } from './config/db.js';
+import { getDBStatus } from './config/multiDB.js';
 import {
     sanitizeMiddleware,
     rateLimiterMiddleware,
@@ -38,7 +39,6 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/system_mdm';
 
 // Initialize Telegram Bot if token provided
 let bot = null;
@@ -60,6 +60,9 @@ app.use(verifySecurityAuth);
 // ── Health Check ──
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
+// ── DB Status ──
+app.get('/api/db-status', (req, res) => res.json({ databases: getDBStatus(), timestamp: new Date() }));
+
 // ── Mount Modular Routes ──
 app.use('/api/auth', createAuthRoutes(bot));
 app.use('/api/users', userRoutes);
@@ -74,8 +77,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/history', createHistoryRoutes(bot));
 
-// ── Connect Database & Start Server ──
-connectDB(MONGO_URI).then(() => {
+// ── Connect All Databases & Start Server ──
+connectDB().then(() => {
     app.listen(PORT, () => {
         console.log(`SYSTEM MDM Backend server active on port ${PORT}`);
     });

@@ -2,6 +2,7 @@ import express from 'express';
 import Contract from '../models/Contract.js';
 import Payment from '../models/Payment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs } from '../config/multiDB.js';
 
 const router = express.Router();
 
@@ -20,46 +21,35 @@ router.get('/stats', async (req, res) => {
         }
 
         if (isMongoConnected) {
-            [totalContracts, activatedContracts, applicationContracts, checkContracts,
-                redeemContracts, blacklistContracts, commentsContracts,
-                lockedPhones, lockedWallpapers] = await Promise.all([
-                    Contract.countDocuments(query),
-                    Contract.countDocuments({ ...query, status: 'Activated' }),
-                    Contract.countDocuments({ ...query, status: 'Application' }),
-                    Contract.countDocuments({ ...query, status: 'Check' }),
-                    Contract.countDocuments({ ...query, status: 'Redeem' }),
-                    Contract.countDocuments({ ...query, status: 'Blacklist' }),
-                    Contract.countDocuments({ ...query, status: 'Comments' }),
-                    Contract.countDocuments({ ...query, lockPhoneStatus: 'Locked' }),
-                    Contract.countDocuments({ ...query, lockWallpaperStatus: 'Locked' })
-                ]);
+            const allContracts = await queryAllDBs(Contract, (M) => M.find(query));
+            totalContracts = allContracts.length;
+            activatedContracts = allContracts.filter(c => c.status === 'Activated').length;
+            applicationContracts = allContracts.filter(c => c.status === 'Application').length;
+            checkContracts = allContracts.filter(c => c.status === 'Check').length;
+            redeemContracts = allContracts.filter(c => c.status === 'Redeem').length;
+            blacklistContracts = allContracts.filter(c => c.status === 'Blacklist').length;
+            commentsContracts = allContracts.filter(c => c.status === 'Comments').length;
+            lockedPhones = allContracts.filter(c => c.lockPhoneStatus === 'Locked').length;
             unlockedPhones = totalContracts - lockedPhones;
+            lockedWallpapers = allContracts.filter(c => c.lockWallpaperStatus === 'Locked').length;
             unlockedWallpapers = totalContracts - lockedWallpapers;
 
             // Payments
-            let paymentQuery = {};
-            if (userBrand && userRole !== 'Administrator') {
-                const matchedContracts = await Contract.find({ brand: userBrand }).select('contractId');
-                const contractIds = matchedContracts.map(c => c.contractId);
-                paymentQuery.contractId = { $in: contractIds };
-            }
-            paymentCount = await Payment.countDocuments(paymentQuery);
-            const revenueAgg = await Payment.aggregate([
-                { $match: paymentQuery },
-                { $group: { _id: null, total: { $sum: '$amount' } } }
-            ]);
-            totalRevenue = revenueAgg[0]?.total || 0;
+            const contractIds = allContracts.map(c => c.contractId);
+            const allPayments = await queryAllDBs(Payment, (M) => {
+                if (userBrand && userRole !== 'Administrator') {
+                    return M.find({ contractId: { $in: contractIds } });
+                }
+                return M.find();
+            });
+            paymentCount = allPayments.length;
+            totalRevenue = allPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
-            // ── Financial metrics aggregated ONLY from Activated contracts ──
-            const activatedQuery = { ...query, status: 'Activated' };
-            const activatedLoanAgg = await Contract.aggregate([
-                { $match: activatedQuery },
-                { $group: { _id: null, totalAmt: { $sum: '$amount' }, totalMonthly: { $sum: '$monthlyPayment' }, count: { $sum: 1 } } }
-            ]);
-            totalLoanAmount = activatedLoanAgg[0]?.totalAmt || 0;
-            totalCustomerReceived = activatedLoanAgg[0]?.totalMonthly || 0;
-            totalBorrowers = activatedLoanAgg[0]?.count || activatedContracts || 0;
-
+            // Financial metrics aggregated from Activated contracts
+            const activatedList = allContracts.filter(c => c.status === 'Activated');
+            totalLoanAmount = activatedList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+            totalCustomerReceived = activatedList.reduce((sum, c) => sum + (Number(c.monthlyPayment) || 0), 0);
+            totalBorrowers = activatedList.length;
         } else {
             // MEM_DB fallback
             const contracts = MEM_DB.contracts.filter(c => {

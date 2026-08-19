@@ -2,6 +2,7 @@ import express from 'express';
 import Contract from '../models/Contract.js';
 import WallpaperLog from '../models/WallpaperLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 
@@ -17,9 +18,13 @@ router.post('/wallpaper/toggle-lock', async (req, res) => {
             userName
         } = req.body;
 
-        let contract = isMongoConnected
-            ? await Contract.findOne({ contractId })
-            : MEM_DB.contracts.find(c => c.contractId === contractId);
+        let contract = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, (M) => M.find({ contractId }));
+            contract = results[0] || null;
+        } else {
+            contract = MEM_DB.contracts.find(c => c.contractId === contractId);
+        }
 
         if (!contract) {
             return res.status(404).json({ error: 'Contract not found' });
@@ -46,7 +51,8 @@ router.post('/wallpaper/toggle-lock', async (req, res) => {
         };
 
         if (isMongoConnected) {
-            const logDoc = new WallpaperLog(logData);
+            const WallpaperLogWrite = getWriteModel(WallpaperLog) || WallpaperLog;
+            const logDoc = new WallpaperLogWrite(logData);
             await logDoc.save();
         }
 
@@ -73,14 +79,15 @@ router.get('/wallpaperlogs', async (req, res) => {
         if (action) filter.action = action;
         if (userBrand && userRole !== 'Administrator') {
             const matchedContracts = isMongoConnected
-                ? await Contract.find({ brand: userBrand }).select('contractId')
+                ? await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'))
                 : MEM_DB.contracts.filter(c => c.brand === userBrand);
             filter.contractId = { $in: matchedContracts.map(c => c.contractId) };
         }
 
         if (isMongoConnected) {
-            const total = await WallpaperLog.countDocuments(filter);
-            const data = await WallpaperLog.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+            const allLogs = await queryAllDBs(WallpaperLog, (M) => M.find(filter).sort({ createdAt: -1 }));
+            const total = allLogs.length;
+            const data = allLogs.slice(skip, skip + parseInt(limit));
             return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
 

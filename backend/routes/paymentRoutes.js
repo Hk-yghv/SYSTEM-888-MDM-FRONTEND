@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import Payment from '../models/Payment.js';
 import Contract from '../models/Contract.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 
@@ -12,23 +13,19 @@ router.get('/payments', async (req, res) => {
         const { userBrand, userRole, page = 1, limit = 10, search = '' } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
         let filter = {};
-        if (userBrand && userRole !== 'Administrator') {
-            const matchedContracts = isMongoConnected
-                ? await Contract.find({ brand: userBrand }).select('contractId')
-                : MEM_DB.contracts.filter(c => c.brand === userBrand);
-            filter.contractId = { $in: matchedContracts.map(c => c.contractId) };
-        }
-        if (search) {
-            filter.$or = [
-                { customerName: { $regex: search, $options: 'i' } },
-                { serialNumber: { $regex: search, $options: 'i' } },
-                { paidBy: { $regex: search, $options: 'i' } }
-            ];
-        }
-
         if (isMongoConnected) {
-            const total = await Payment.countDocuments(filter);
-            const data = await Payment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+            let matchedContractIds = null;
+            if (userBrand && userRole !== 'Administrator') {
+                const matchedContracts = await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'));
+                matchedContractIds = matchedContracts.map(c => c.contractId);
+            }
+            const allPayments = await queryAllDBs(Payment, (M) => {
+                let f = { ...filter };
+                if (matchedContractIds) f.contractId = { $in: matchedContractIds };
+                return M.find(f).sort({ createdAt: -1 });
+            });
+            const total = allPayments.length;
+            const data = allPayments.slice(skip, skip + parseInt(limit));
             return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
         let filtered = MEM_DB.payments;
@@ -56,9 +53,12 @@ router.post('/payments', async (req, res) => {
 
         let contract = null;
         if (contractId) {
-            contract = isMongoConnected 
-                ? await Contract.findOne({ contractId }) 
-                : MEM_DB.contracts.find(c => c.contractId === contractId);
+            if (isMongoConnected) {
+                const contracts = await queryAllDBs(Contract, (M) => M.find({ contractId }));
+                contract = contracts[0] || null;
+            } else {
+                contract = MEM_DB.contracts.find(c => c.contractId === contractId);
+            }
         }
 
         const uniquePaymentId = 'PAY-' + Date.now() + '-' + Math.floor(100 + Math.random() * 900);
@@ -77,7 +77,8 @@ router.post('/payments', async (req, res) => {
         };
 
         if (isMongoConnected) {
-            const doc = new Payment(paymentObj);
+            const PaymentWrite = getWriteModel(Payment) || Payment;
+            const doc = new PaymentWrite(paymentObj);
             await doc.save();
             paymentObj._id = doc._id;
         } else {
@@ -95,7 +96,13 @@ router.post('/payments', async (req, res) => {
 // QR payload
 router.get('/payments/qr-payload/:contractId', async (req, res) => {
     try {
-        let contract = isMongoConnected ? await Contract.findOne({ contractId: req.params.contractId }) : MEM_DB.contracts.find(c => c.contractId === req.params.contractId);
+        let contract = null;
+        if (isMongoConnected) {
+            const contracts = await queryAllDBs(Contract, (M) => M.find({ contractId: req.params.contractId }));
+            contract = contracts[0] || null;
+        } else {
+            contract = MEM_DB.contracts.find(c => c.contractId === req.params.contractId);
+        }
         if (!contract) return res.status(404).json({ error: 'Activated contract not found' });
 
         const payloadData = {

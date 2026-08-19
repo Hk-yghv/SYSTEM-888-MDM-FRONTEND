@@ -3,6 +3,7 @@ import Contract from '../models/Contract.js';
 import PhoneLog from '../models/PhoneLog.js';
 import DeviceActionLog from '../models/DeviceActionLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 
@@ -19,9 +20,13 @@ router.post('/lostphone/toggle-lock', async (req, res) => {
             userName
         } = req.body;
 
-        let contract = isMongoConnected
-            ? await Contract.findOne({ contractId })
-            : MEM_DB.contracts.find(c => c.contractId === contractId);
+        let contract = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, (M) => M.find({ contractId }));
+            contract = results[0] || null;
+        } else {
+            contract = MEM_DB.contracts.find(c => c.contractId === contractId);
+        }
 
         if (!contract) {
             return res.status(404).json({ error: 'Contract not found' });
@@ -51,7 +56,8 @@ router.post('/lostphone/toggle-lock', async (req, res) => {
         };
 
         if (isMongoConnected) {
-            const logDoc = new PhoneLog(logData);
+            const PhoneLogWrite = getWriteModel(PhoneLog) || PhoneLog;
+            const logDoc = new PhoneLogWrite(logData);
             await logDoc.save();
         }
 
@@ -78,14 +84,15 @@ router.get('/phonelogs', async (req, res) => {
         if (action) filter.action = action;
         if (userBrand && userRole !== 'Administrator') {
             const matchedContracts = isMongoConnected
-                ? await Contract.find({ brand: userBrand }).select('contractId')
+                ? await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'))
                 : MEM_DB.contracts.filter(c => c.brand === userBrand);
             filter.contractId = { $in: matchedContracts.map(c => c.contractId) };
         }
 
         if (isMongoConnected) {
-            const total = await PhoneLog.countDocuments(filter);
-            const data = await PhoneLog.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+            const allLogs = await queryAllDBs(PhoneLog, (M) => M.find(filter).sort({ createdAt: -1 }));
+            const total = allLogs.length;
+            const data = allLogs.slice(skip, skip + parseInt(limit));
             return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
 
@@ -111,14 +118,15 @@ router.get('/history/device-actions', async (req, res) => {
         let filter = {};
         if (userBrand && userRole !== 'Administrator') {
             const matchedContracts = isMongoConnected
-                ? await Contract.find({ brand: userBrand }).select('contractId')
+                ? await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'))
                 : MEM_DB.contracts.filter(c => c.brand === userBrand);
             filter.contractId = { $in: matchedContracts.map(c => c.contractId) };
         }
 
         if (isMongoConnected) {
-            const total = await DeviceActionLog.countDocuments(filter);
-            const data = await DeviceActionLog.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit));
+            const allLogs = await queryAllDBs(DeviceActionLog, (M) => M.find(filter).sort({ createdAt: -1 }));
+            const total = allLogs.length;
+            const data = allLogs.slice(skip, skip + parseInt(limit));
             return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
 
@@ -139,7 +147,13 @@ router.get('/history/device-actions', async (req, res) => {
 router.post('/history/device-actions', async (req, res) => {
     try {
         const { contractId, actionType, performedBy, reason } = req.body;
-        let contract = isMongoConnected ? await Contract.findOne({ contractId }) : MEM_DB.contracts.find(c => c.contractId === contractId);
+        let contract = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, (M) => M.find({ contractId }));
+            contract = results[0] || null;
+        } else {
+            contract = MEM_DB.contracts.find(c => c.contractId === contractId);
+        }
         if (!contract) return res.status(404).json({ error: 'Contract not found' });
 
         const now = new Date();
@@ -159,7 +173,8 @@ router.post('/history/device-actions', async (req, res) => {
         };
 
         if (isMongoConnected) {
-            const doc = new DeviceActionLog(actionLog);
+            const DeviceActionLogWrite = getWriteModel(DeviceActionLog) || DeviceActionLog;
+            const doc = new DeviceActionLogWrite(actionLog);
             await doc.save();
         }
 

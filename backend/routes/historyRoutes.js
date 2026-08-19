@@ -6,6 +6,7 @@ import PhoneLog from '../models/PhoneLog.js';
 import WallpaperLog from '../models/WallpaperLog.js';
 import DeviceActionLog from '../models/DeviceActionLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs } from '../config/multiDB.js';
 import {
     collectLoginHistory,
     formatReportText,
@@ -150,7 +151,7 @@ export function createHistoryRoutes(bot) {
         try {
             const { search = '', role = '', page = 1, limit = 10, userUsername = '', userRole = '' } = req.query;
             let allLogs = [];
-            let usersList = isMongoConnected ? await User.find({}) : MEM_DB.users;
+            let usersList = isMongoConnected ? await queryAllDBs(User, (M) => M.find({})) : MEM_DB.users;
 
             const isMasterAdmin = userRole === 'Administrator' || userUsername === '@hakyonghouv';
 

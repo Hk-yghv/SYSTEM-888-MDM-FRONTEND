@@ -2,14 +2,15 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 
-// GET all users
+// GET all users — merged from all 3 DBs
 router.get('/', async (req, res) => {
     try {
         if (isMongoConnected) {
-            const users = await User.find().sort({ createdAt: -1 });
+            const users = await queryAllDBs(User, (M) => M.find().sort({ createdAt: -1 }));
             return res.json(users);
         }
         res.json(MEM_DB.users);
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// STATUS CHECK — lightweight polling endpoint
+// STATUS CHECK — lightweight polling endpoint (search across all DBs)
 router.get('/status-check', async (req, res) => {
     try {
         const { username } = req.query;
@@ -26,7 +27,8 @@ router.get('/status-check', async (req, res) => {
 
         let user = null;
         if (isMongoConnected) {
-            user = await User.findOne({ username }).select('username isBlocked status');
+            const results = await queryAllDBs(User, (M) => M.find({ username }).select('username isBlocked status'));
+            user = results[0] || null;
         } else {
             user = MEM_DB.users.find(u => u.username === username);
         }
@@ -38,7 +40,7 @@ router.get('/status-check', async (req, res) => {
     }
 });
 
-// CREATE user
+// CREATE user — write to active DB
 router.post('/', async (req, res) => {
     try {
         const { name, username, email, password, role, permissions, brand } = req.body;
@@ -47,7 +49,8 @@ router.post('/', async (req, res) => {
         const userId = 'USR-' + Math.floor(100000 + Math.random() * 900000);
 
         if (isMongoConnected) {
-            const doc = new User({
+            const UserWrite = getWriteModel(User) || User;
+            const doc = new UserWrite({
                 userId,
                 name,
                 username,
@@ -85,16 +88,19 @@ router.post('/', async (req, res) => {
     }
 });
 
-// UPDATE user
+// UPDATE user — search all DBs, write to the DB that has it
 router.put('/:id', async (req, res) => {
     try {
         const { name, username, email, password, role, brand, permissions } = req.body;
         let user = null;
         if (isMongoConnected) {
-            try {
-                user = await User.findById(req.params.id);
-            } catch {
-                user = await User.findOne({ userId: req.params.id });
+            const results = await queryAllDBs(User, (M) => {
+                try { return M.findById(req.params.id).then(r => r ? [r] : []); } catch { return []; }
+            });
+            user = results[0];
+            if (!user) {
+                const r2 = await queryAllDBs(User, (M) => M.find({ userId: req.params.id }));
+                user = r2[0] || null;
             }
         } else {
             user = MEM_DB.users.find(u => u._id === req.params.id || u.userId === req.params.id);
@@ -125,15 +131,18 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE user
+// DELETE user — remove from all DBs that have it
 router.delete('/:id', async (req, res) => {
     try {
         let user = null;
         if (isMongoConnected) {
-            try {
-                user = await User.findById(req.params.id);
-            } catch {
-                user = await User.findOne({ userId: req.params.id });
+            const results = await queryAllDBs(User, (M) => {
+                try { return M.findById(req.params.id).then(r => r ? [r] : []); } catch { return []; }
+            });
+            user = results[0];
+            if (!user) {
+                const r2 = await queryAllDBs(User, (M) => M.find({ userId: req.params.id }));
+                user = r2[0] || null;
             }
         } else {
             user = MEM_DB.users.find(u => u._id === req.params.id || u.userId === req.params.id);
@@ -142,7 +151,15 @@ router.delete('/:id', async (req, res) => {
             return res.status(403).json({ error: 'Master Admin account (@hakyonghouv) cannot be deleted!' });
         }
         if (isMongoConnected && user) {
-            await User.findByIdAndDelete(user._id);
+            // Delete from all DBs that have this document
+            await Promise.allSettled(
+                [User].map(async (M) => {
+                    await queryAllDBs(M, async (BoundM) => {
+                        await BoundM.findByIdAndDelete(user._id).catch(() => {});
+                        return [];
+                    });
+                })
+            );
         }
         MEM_DB.users = MEM_DB.users.filter(u => u._id !== req.params.id && u.userId !== req.params.id);
         res.json({ message: 'Deleted' });
@@ -151,11 +168,17 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// TELEGRAM SETUP
+// TELEGRAM SETUP — search all DBs
 router.post('/telegram-setup', async (req, res) => {
     try {
         const { username, telegramId, enable2FA, secondPassword } = req.body;
-        let user = isMongoConnected ? await User.findOne({ username }) : MEM_DB.users.find(u => u.username === username);
+        let user = null;
+        if (isMongoConnected) {
+            const r = await queryAllDBs(User, (M) => M.find({ username }));
+            user = r[0] || null;
+        } else {
+            user = MEM_DB.users.find(u => u.username === username);
+        }
         if (user) {
             user.telegramId = telegramId;
             user.twoFactorEnabled = enable2FA;
@@ -170,11 +193,17 @@ router.post('/telegram-setup', async (req, res) => {
     }
 });
 
-// UPDATE PROFILE
+// UPDATE PROFILE — search all DBs
 router.post('/update-profile', async (req, res) => {
     try {
         const { username, email, oldPassword, newPassword, telegramId, enable2FA, secondPassword } = req.body;
-        let user = isMongoConnected ? await User.findOne({ username }) : MEM_DB.users.find(u => u.username === username);
+        let user = null;
+        if (isMongoConnected) {
+            const r = await queryAllDBs(User, (M) => M.find({ username }));
+            user = r[0] || null;
+        } else {
+            user = MEM_DB.users.find(u => u.username === username);
+        }
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         if (email) user.email = email;
@@ -206,14 +235,20 @@ router.post('/update-profile', async (req, res) => {
     }
 });
 
-// BLOCK / UNBLOCK USER
+// BLOCK / UNBLOCK USER — search across all DBs
 router.post('/block', async (req, res) => {
     try {
         const { userId, block } = req.body;
         let user = null;
         if (isMongoConnected) {
-            try { user = await User.findById(userId); } catch { }
-            if (!user) user = await User.findOne({ userId });
+            const results = await queryAllDBs(User, (M) => {
+                try { return M.findById(userId).then(r => r ? [r] : []); } catch { return []; }
+            });
+            user = results[0];
+            if (!user) {
+                const r2 = await queryAllDBs(User, (M) => M.find({ userId }));
+                user = r2[0] || null;
+            }
         } else {
             user = MEM_DB.users.find(u => u._id === userId || u.userId === userId);
         }
