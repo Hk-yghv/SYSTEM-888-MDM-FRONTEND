@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import User from '../models/User.js';
+import LoginLog from '../models/LoginLog.js';
 import PhoneLog from '../models/PhoneLog.js';
 import WallpaperLog from '../models/WallpaperLog.js';
 import DeviceActionLog from '../models/DeviceActionLog.js';
@@ -149,11 +150,40 @@ export function createHistoryRoutes(bot) {
 
     router.get('/login', async (req, res) => {
         try {
-            const { search = '', role = '', page = 1, limit = 10, userUsername = '', userRole = '' } = req.query;
+            const { search = '', role = '', status = '', page = 1, limit = 10, userUsername = '', userRole = '' } = req.query;
             let allLogs = [];
-            let usersList = isMongoConnected ? await queryAllDBs(User, (M) => M.find({})) : MEM_DB.users;
-
+            const seenIds = new Set();
             const isMasterAdmin = userRole === 'Administrator' || userUsername === '@hakyonghouv';
+
+            if (isMongoConnected) {
+                try {
+                    const standaloneLogs = await queryAllDBs(LoginLog, (M) => M.find({}));
+                    standaloneLogs.forEach(log => {
+                        if (!isMasterAdmin && userUsername && log.username !== userUsername) return;
+                        const idStr = log._id?.toString();
+                        if (idStr && !seenIds.has(idStr)) {
+                            seenIds.add(idStr);
+                            allLogs.push({
+                                id: idStr,
+                                userId: log.userId || '-',
+                                username: log.username,
+                                name: log.name || 'Unknown User',
+                                role: log.role || 'Guest',
+                                brand: log.brand || 'SYSTEM',
+                                ip: log.ip || '127.0.0.1',
+                                deviceInfo: log.deviceInfo || 'Web Browser',
+                                timestamp: log.timestamp,
+                                status: log.status || 'Failed',
+                                reason: log.reason || ''
+                            });
+                        }
+                    });
+                } catch (lErr) {
+                    console.error('Fetch standalone LoginLog error:', lErr.message);
+                }
+            }
+
+            let usersList = isMongoConnected ? await queryAllDBs(User, (M) => M.find({})) : MEM_DB.users;
 
             usersList.forEach(u => {
                 // If not master admin, skip other users
@@ -161,18 +191,22 @@ export function createHistoryRoutes(bot) {
 
                 if (u.loginHistory && Array.isArray(u.loginHistory)) {
                     u.loginHistory.forEach(log => {
-                        allLogs.push({
-                            id: log._id || `log-${Math.random()}`,
-                            userId: u.userId,
-                            username: u.username,
-                            name: u.name,
-                            role: u.role,
-                            brand: u.brand || 'SYSTEM',
-                            ip: log.ip || '127.0.0.1',
-                            deviceInfo: log.deviceInfo || 'Web Browser',
-                            timestamp: log.timestamp,
-                            status: log.status || 'Success'
-                        });
+                        const idStr = log._id ? log._id.toString() : `${u.username}-${log.timestamp}`;
+                        if (!seenIds.has(idStr)) {
+                            seenIds.add(idStr);
+                            allLogs.push({
+                                id: idStr,
+                                userId: u.userId,
+                                username: u.username,
+                                name: u.name,
+                                role: u.role,
+                                brand: u.brand || 'SYSTEM',
+                                ip: log.ip || '127.0.0.1',
+                                deviceInfo: log.deviceInfo || 'Web Browser',
+                                timestamp: log.timestamp,
+                                status: log.status || 'Success'
+                            });
+                        }
                     });
                 }
             });
@@ -190,6 +224,9 @@ export function createHistoryRoutes(bot) {
             }
             if (role) {
                 allLogs = allLogs.filter(l => l.role === role);
+            }
+            if (status) {
+                allLogs = allLogs.filter(l => (l.status || '').toLowerCase() === status.toLowerCase());
             }
 
             const total = allLogs.length;

@@ -20,13 +20,14 @@ const LoginHistory = () => {
     const [total, setTotal] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
 
     // Schedule Countdown state
     const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
     const [sendingTelegram, setSendingTelegram] = useState(false);
     const [toast, setToast] = useState(null);
 
-    const fetchLoginHistory = useCallback(async (pg = page, search = searchTerm, role = roleFilter) => {
+    const fetchLoginHistory = useCallback(async (pg = page, search = searchTerm, role = roleFilter, status = statusFilter) => {
         setReloading(true);
         try {
             const params = new URLSearchParams({
@@ -37,6 +38,7 @@ const LoginHistory = () => {
             });
             if (search) params.append('search', search);
             if (role) params.append('role', role);
+            if (status) params.append('status', status);
 
             const res = await fetch(`${API_BASE}/history/login?${params.toString()}`);
             if (res.ok) {
@@ -50,7 +52,7 @@ const LoginHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, page, searchTerm, roleFilter, user]);
+    }, [API_BASE, page, searchTerm, roleFilter, statusFilter, user]);
 
     const fetchReportSchedule = useCallback(async () => {
         try {
@@ -67,16 +69,16 @@ const LoginHistory = () => {
     }, [API_BASE]);
 
     useEffect(() => {
-        fetchLoginHistory(page, searchTerm, roleFilter);
+        fetchLoginHistory(page, searchTerm, roleFilter, statusFilter);
     }, [page]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
             setPage(1);
-            fetchLoginHistory(1, searchTerm, roleFilter);
+            fetchLoginHistory(1, searchTerm, roleFilter, statusFilter);
         }, 300);
         return () => clearTimeout(timer);
-    }, [searchTerm, roleFilter]);
+    }, [searchTerm, roleFilter, statusFilter]);
 
     // Schedule polling timer (every second for live clock)
     useEffect(() => {
@@ -126,7 +128,8 @@ const LoginHistory = () => {
             Role: l.role,
             IP: l.ip,
             DeviceInfo: l.deviceInfo,
-            Timestamp: l.timestamp ? new Date(l.timestamp).toLocaleString() : ''
+            Timestamp: l.timestamp ? new Date(l.timestamp).toLocaleString() : '',
+            Status: l.status || 'Success'
         }));
         exportToExcel(dataToExport, 'User_Login_History');
     };
@@ -139,7 +142,8 @@ const LoginHistory = () => {
             { header: 'Role', accessor: 'role' },
             { header: 'IP Address', accessor: 'ip' },
             { header: 'Device / Browser', accessor: 'deviceInfo' },
-            { header: 'Time', cell: (r) => r.timestamp ? new Date(r.timestamp).toLocaleString() : '' }
+            { header: 'Time', cell: (r) => r.timestamp ? new Date(r.timestamp).toLocaleString() : '' },
+            { header: 'Status', cell: (r) => r.status || 'Success' }
         ];
         exportToPDF('User Login Audit History Report', columns, logs);
     };
@@ -263,21 +267,38 @@ const LoginHistory = () => {
                     />
                 </div>
 
-                <div className='flex items-center gap-2'>
-                    <label className='text-xs font-bold text-slate-600 flex items-center gap-1'>
-                        <FaUserShield className='text-indigo-600' /> Filter Role:
-                    </label>
-                    <select
-                        value={roleFilter}
-                        onChange={(e) => setRoleFilter(e.target.value)}
-                        className='px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer'
-                    >
-                        <option value=''>All Roles</option>
-                        <option value='Administrator'>Administrator</option>
-                        <option value='Manager'>Manager</option>
-                        <option value='Staff'>Staff</option>
-                        <option value='Viewer'>Viewer</option>
-                    </select>
+                <div className='flex items-center gap-2 flex-wrap'>
+                    <div className='flex items-center gap-1.5'>
+                        <label className='text-xs font-bold text-slate-600 flex items-center gap-1'>
+                            <FaUserShield className='text-indigo-600' /> Role:
+                        </label>
+                        <select
+                            value={roleFilter}
+                            onChange={(e) => setRoleFilter(e.target.value)}
+                            className='px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer'
+                        >
+                            <option value=''>All Roles</option>
+                            <option value='Administrator'>Administrator</option>
+                            <option value='Manager'>Manager</option>
+                            <option value='Staff'>Staff</option>
+                            <option value='Viewer'>Viewer</option>
+                        </select>
+                    </div>
+
+                    <div className='flex items-center gap-1.5'>
+                        <label className='text-xs font-bold text-slate-600 flex items-center gap-1'>
+                            Status:
+                        </label>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className='px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer'
+                        >
+                            <option value=''>All Statuses</option>
+                            <option value='Success'>Success Only</option>
+                            <option value='Failed'>Failed Only</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -340,8 +361,18 @@ const LoginHistory = () => {
                                         {item.timestamp ? new Date(item.timestamp).toLocaleString() : 'N/A'}
                                     </td>
                                     <td className='px-4 py-3 text-center'>
-                                        <span className='px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 border border-emerald-300 text-emerald-800'>
-                                            Success
+                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center gap-1 ${item.status === 'Failed' ? 'bg-red-100 border-red-300 text-red-800' : 'bg-emerald-100 border-emerald-300 text-emerald-800'}`}>
+                                            {item.status === 'Failed' ? (
+                                                <>
+                                                    <FaExclamationTriangle size={9} />
+                                                    <span>Failed</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <FaCheckCircle size={9} />
+                                                    <span>Success</span>
+                                                </>
+                                            )}
                                         </span>
                                     </td>
                                 </tr>

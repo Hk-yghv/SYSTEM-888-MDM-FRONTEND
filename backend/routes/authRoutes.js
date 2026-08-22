@@ -2,8 +2,9 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import LoginLog from '../models/LoginLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
-import { queryAllDBs } from '../config/multiDB.js';
+import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { parseUserAgent } from '../middleware/security.js';
 
 const router = express.Router();
@@ -41,6 +42,28 @@ const formatPermissions = (perms) => {
     return perms;
 };
 
+const recordLoginLog = async ({ userId = '', username, name = 'Unknown User', role = 'Guest', brand = 'SYSTEM', ip, deviceInfo, status = 'Failed', reason = '' }) => {
+    try {
+        if (isMongoConnected) {
+            const LogModel = getWriteModel(LoginLog) || LoginLog;
+            await LogModel.create({
+                userId,
+                username,
+                name,
+                role,
+                brand,
+                ip,
+                deviceInfo,
+                status,
+                reason,
+                timestamp: new Date()
+            });
+        }
+    } catch (err) {
+        console.error('Record login log error:', err.message);
+    }
+};
+
 export default function createAuthRoutes(bot) {
     router.post('/login', async (req, res) => {
         try {
@@ -60,6 +83,7 @@ export default function createAuthRoutes(bot) {
 
             const ua = req.headers['user-agent'] || 'Unknown Browser';
             const { os, browser } = parseUserAgent(ua);
+            const deviceInfo = `${browser} on ${os}`;
 
             let user = null;
             if (isMongoConnected) {
@@ -71,6 +95,16 @@ export default function createAuthRoutes(bot) {
 
             if (!user) {
                 const result = recordFailedLogin(ip);
+                await recordLoginLog({
+                    username,
+                    name: 'Unknown User',
+                    role: 'Guest',
+                    brand: 'SYSTEM',
+                    ip,
+                    deviceInfo,
+                    status: 'Failed',
+                    reason: 'User Not Found'
+                });
                 return res.status(401).json({ error: 'Invalid username or password', attempts: result.count, waitSeconds: result.waitSeconds });
             }
 
@@ -82,13 +116,25 @@ export default function createAuthRoutes(bot) {
                     user.loginHistory.push({
                         timestamp: new Date(),
                         ip,
-                        deviceInfo: `${browser} on ${os}`,
+                        deviceInfo,
                         status: 'Failed'
                     });
                     if (isMongoConnected) await user.save();
                 } catch (sErr) {
                     console.error('Failed to save user login history (Failed):', sErr.message);
                 }
+
+                await recordLoginLog({
+                    userId: user.userId,
+                    username: user.username,
+                    name: user.name,
+                    role: user.role,
+                    brand: user.brand || 'SYSTEM',
+                    ip,
+                    deviceInfo,
+                    status: 'Failed',
+                    reason: 'Wrong Password'
+                });
 
                 return res.status(401).json({
                     error: 'Invalid username or password',
@@ -131,13 +177,24 @@ export default function createAuthRoutes(bot) {
                 user.loginHistory.push({
                     timestamp: new Date(),
                     ip,
-                    deviceInfo: `${browser} on ${os}`,
+                    deviceInfo,
                     status: 'Success'
                 });
                 if (isMongoConnected) await user.save();
             } catch (sErr) {
                 console.error('Failed to save user login history (Success):', sErr.message);
             }
+
+            await recordLoginLog({
+                userId: user.userId,
+                username: user.username,
+                name: user.name,
+                role: user.role,
+                brand: user.brand || 'SYSTEM',
+                ip,
+                deviceInfo,
+                status: 'Success'
+            });
 
             if (bot && user.telegramId) {
                 const time = new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
