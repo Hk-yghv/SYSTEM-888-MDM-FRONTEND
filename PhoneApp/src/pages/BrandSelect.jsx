@@ -8,9 +8,23 @@ const BrandSelect = ({ API_BASE, onSelectBrand, onUpdateApiUrl }) => {
     const fetchBrands = async () => {
         setLoading(true);
         try {
-            const foundBrands = new Set();
+            // 1. Try dedicated /controlsystem/all-brands endpoint
+            try {
+                const res = await fetch(`${API_BASE}/controlsystem/all-brands`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.brands && Array.isArray(data.brands) && data.brands.length > 0) {
+                        setBrands(data.brands);
+                        setLoading(false);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn('Dedicated all-brands fetch warning:', err);
+            }
 
-            // 1. Fetch from ControlSystem config droplists
+            // Fallback manual gathering
+            const foundBrands = new Set();
             try {
                 const res = await fetch(`${API_BASE}/controlsystem?brand=`);
                 if (res.ok) {
@@ -22,36 +36,11 @@ const BrandSelect = ({ API_BASE, onSelectBrand, onUpdateApiUrl }) => {
                 }
             } catch { }
 
-            // 2. Fetch active brands from Contracts database
-            try {
-                const cRes = await fetch(`${API_BASE}/contracts?limit=100`);
-                if (cRes.ok) {
-                    const cData = await cRes.json();
-                    if (cData.data && Array.isArray(cData.data)) {
-                        cData.data.forEach(item => {
-                            if (item.brand && item.brand.trim()) foundBrands.add(item.brand.trim());
-                        });
-                    }
-                }
-            } catch { }
-
-            // 3. Fetch active brands from Users database
-            try {
-                const uRes = await fetch(`${API_BASE}/users`);
-                if (uRes.ok) {
-                    const uData = await uRes.json();
-                    const usersList = Array.isArray(uData) ? uData : (uData.data || []);
-                    usersList.forEach(u => {
-                        if (u.brand && u.brand.trim()) foundBrands.add(u.brand.trim());
-                    });
-                }
-            } catch { }
-
             const uniqueList = Array.from(foundBrands).filter(Boolean);
             if (uniqueList.length > 0) {
                 setBrands(uniqueList);
             } else {
-                setBrands(['888MDM']); // Fallback default brand if empty
+                setBrands(['888MDM']);
             }
         } catch (err) {
             console.error('Fetch brands error:', err);

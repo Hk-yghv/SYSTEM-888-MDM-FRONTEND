@@ -10,6 +10,52 @@ import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 
+// GET all active system brands for Phone App and Control System
+router.get('/all-brands', async (req, res) => {
+    try {
+        const foundBrands = new Set();
+
+        if (isMongoConnected) {
+            // 1. ControlSystem droplists
+            const controlConfigs = await queryAllDBs(ControlSystem, (M) => M.find({ key: 'droplists' }));
+            controlConfigs.forEach(c => {
+                if (Array.isArray(c.value)) {
+                    const bCat = c.value.find(d => d.category === 'Brands');
+                    if (bCat && Array.isArray(bCat.items)) {
+                        bCat.items.forEach(b => b && foundBrands.add(b.trim()));
+                    }
+                }
+            });
+
+            // 2. Distinct brands from Users
+            const users = await queryAllDBs(User, (M) => M.find({}).select('brand'));
+            users.forEach(u => u.brand && foundBrands.add(u.brand.trim()));
+
+            // 3. Distinct brands from Contracts
+            const contracts = await queryAllDBs(Contract, (M) => M.find({}).select('brand'));
+            contracts.forEach(c => c.brand && foundBrands.add(c.brand.trim()));
+        } else {
+            if (MEM_DB.controlSystem?.droplists) {
+                const bCat = MEM_DB.controlSystem.droplists.find(d => d.category === 'Brands');
+                if (bCat && Array.isArray(bCat.items)) {
+                    bCat.items.forEach(b => b && foundBrands.add(b.trim()));
+                }
+            }
+            if (MEM_DB.users) MEM_DB.users.forEach(u => u.brand && foundBrands.add(u.brand.trim()));
+            if (MEM_DB.contracts) MEM_DB.contracts.forEach(c => c.brand && foundBrands.add(c.brand.trim()));
+        }
+
+        const brandsList = Array.from(foundBrands).filter(Boolean);
+        if (brandsList.length === 0) {
+            brandsList.push('888MDM');
+        }
+        res.json({ success: true, brands: brandsList });
+    } catch (err) {
+        console.error('Error fetching all brands:', err);
+        res.json({ success: true, brands: ['888MDM'] });
+    }
+});
+
 // GET control system config
 router.get('/', async (req, res) => {
     try {
