@@ -4,7 +4,14 @@
     "dashboard": "/dashboard",
     "customer": "/customer",
     "device": "/device",
-    "report": "/report",
+    "report": {
+        "allCustomers": "/report/all-customers",
+        "activated": "/report/activated",
+        "redeem": "/report/redeem",
+        "lockPhone": "/report/lock-phone",
+        "setWallpaper": "/report/set-wallpaper",
+        "installment": "/report/installment"
+    },
     "contract": {
         "application": "/contract/application",
         "activated": "/contract/activated",

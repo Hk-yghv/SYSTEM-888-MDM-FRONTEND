@@ -26,6 +26,13 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Wallpaper Control', path: '/wallpaper/lockphone', label: 'Lock Wallpaper Log' },
     { category: 'Wallpaper Control', path: '/wallpaper/unlockphone', label: 'Unlock Wallpaper Log' },
 
+    { category: 'Reports & Analytics', path: '/report/all-customers', label: 'All Customer Report' },
+    { category: 'Reports & Analytics', path: '/report/activated', label: 'Activated Contract Report' },
+    { category: 'Reports & Analytics', path: '/report/redeem', label: 'Redeem Contract Report' },
+    { category: 'Reports & Analytics', path: '/report/lock-phone', label: 'Lock Phone Report' },
+    { category: 'Reports & Analytics', path: '/report/set-wallpaper', label: 'Set Wallpaper Report' },
+    { category: 'Reports & Analytics', path: '/report/installment', label: 'Installment Payment Report' },
+
     { category: 'Audit & History Logs', path: '/history/login-history', label: 'Login History Log' },
     { category: 'Audit & History Logs', path: '/history/device-history', label: 'Device Action Log' },
 

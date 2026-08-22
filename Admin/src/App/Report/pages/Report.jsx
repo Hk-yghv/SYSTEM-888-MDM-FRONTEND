@@ -7,21 +7,30 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 
+import { useLocation } from 'react-router-dom';
+
 const LIMIT = 10;
 
 const Report = () => {
     const { t } = useLanguage();
     const { API_BASE, user } = useAuth();
+    const location = useLocation();
 
-    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'detail', 'summary'
-    const [activeCategory, setActiveCategory] = useState('all_customers'); // 'all_customers', 'activated', 'redeem', 'lock_device', 'set_wallpaper', 'installment'
-    
-    const [dataList, setDataList] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [reloading, setReloading] = useState(false);
-    const [page, setPage] = useState(1);
-    const [total, setTotal] = useState(0);
-    const [searchTerm, setSearchTerm] = useState('');
+    const getCategoryFromPath = (path) => {
+        if (path.includes('activated')) return 'activated';
+        if (path.includes('redeem')) return 'redeem';
+        if (path.includes('lock-phone')) return 'lock_device';
+        if (path.includes('set-wallpaper')) return 'set_wallpaper';
+        if (path.includes('installment')) return 'installment';
+        return 'all_customers';
+    };
+
+    const [activeTab, setActiveTab] = useState('dashboard');
+    const [activeCategory, setActiveCategory] = useState(getCategoryFromPath(location.pathname));
+
+    useEffect(() => {
+        setActiveCategory(getCategoryFromPath(location.pathname));
+    }, [location.pathname]);
 
     const fetchReportData = useCallback(async (cat = activeCategory, pg = page, search = searchTerm) => {
         setReloading(true);
