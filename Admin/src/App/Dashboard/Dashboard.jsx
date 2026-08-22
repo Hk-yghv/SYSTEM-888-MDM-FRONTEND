@@ -34,6 +34,9 @@ const Dashboard = () => {
     const todayStr = new Date().toISOString().split('T')[0];
     const thirtyDaysAgoStr = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+    const [rawContracts, setRawContracts] = useState([]);
+    const [rawPayments, setRawPayments] = useState([]);
+
     const [startDate, setStartDate] = useState(thirtyDaysAgoStr);
     const [endDate, setEndDate] = useState(todayStr);
     const [activityTypeFilter, setActivityTypeFilter] = useState('All');
@@ -91,6 +94,7 @@ const Dashboard = () => {
             if (cRes.ok) {
                 const cData = await cRes.json();
                 const contracts = cData.data || cData.contracts || (Array.isArray(cData) ? cData : []);
+                setRawContracts(contracts);
                 contracts.forEach(item => {
                     const dateVal = toDate(item.inputDate || item.createdAt);
                     logs.push({
@@ -133,6 +137,7 @@ const Dashboard = () => {
             if (pRes.ok) {
                 const pData = await pRes.json();
                 const payments = pData.data || pData.payments || (Array.isArray(pData) ? pData : []);
+                setRawPayments(payments);
                 payments.forEach(item => {
                     const dateVal = toDate(item.paidDate || item.paymentDate || item.createdAt);
                     logs.push({
@@ -250,42 +255,143 @@ const Dashboard = () => {
     }, [detailModal.items, detailSearch]);
 
     const barChartData = useMemo(() => {
+        const filteredContracts = rawContracts.filter(c => {
+            if (brandFilter && user?.role === 'Administrator') return c.brand === brandFilter;
+            if (user?.brand && !user?.isImmutable && user?.username !== '@hakyonghouv') return c.brand === user.brand;
+            return true;
+        });
+
+        const filteredPayments = rawPayments.filter(p => {
+            if (brandFilter && user?.role === 'Administrator') return !p.brand || p.brand === brandFilter;
+            return true;
+        });
+
+        const toDateStr = (raw) => {
+            if (!raw) return todayStr;
+            const s = String(raw);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+            const d = new Date(s);
+            if (!isNaN(d)) return d.toISOString().split('T')[0];
+            return todayStr;
+        };
+
         if (timeRange === 'daily') {
-            return [
-                { label: 'Mon', revenue: Math.round(weCollectedAmt * 0.12), loan: Math.round(loanOutAmt * 0.15), profit: Math.round(netProfitLoss * 0.1), entry: Math.max(1, Math.round(stats.activatedContracts * 0.12)), exit: Math.max(0, Math.round(stats.redeemContracts * 0.1)) },
-                { label: 'Tue', revenue: Math.round(weCollectedAmt * 0.18), loan: Math.round(loanOutAmt * 0.14), profit: Math.round(netProfitLoss * 0.15), entry: Math.max(1, Math.round(stats.activatedContracts * 0.18)), exit: Math.max(0, Math.round(stats.redeemContracts * 0.12)) },
-                { label: 'Wed', revenue: Math.round(weCollectedAmt * 0.15), loan: Math.round(loanOutAmt * 0.16), profit: Math.round(netProfitLoss * 0.14), entry: Math.max(1, Math.round(stats.activatedContracts * 0.15)), exit: Math.max(0, Math.round(stats.redeemContracts * 0.15)) },
-                { label: 'Thu', revenue: Math.round(weCollectedAmt * 0.20), loan: Math.round(loanOutAmt * 0.18), profit: Math.round(netProfitLoss * 0.22), entry: Math.max(1, Math.round(stats.activatedContracts * 0.20)), exit: Math.max(0, Math.round(stats.redeemContracts * 0.20)) },
-                { label: 'Fri', revenue: Math.round(weCollectedAmt * 0.14), loan: Math.round(loanOutAmt * 0.12), profit: Math.round(netProfitLoss * 0.16), entry: Math.max(1, Math.round(stats.activatedContracts * 0.14)), exit: Math.max(0, Math.round(stats.redeemContracts * 0.14)) },
-                { label: 'Sat', revenue: Math.round(weCollectedAmt * 0.11), loan: Math.round(loanOutAmt * 0.13), profit: Math.round(netProfitLoss * 0.13), entry: Math.max(1, Math.round(stats.activatedContracts * 0.11)), exit: Math.max(0, Math.round(stats.redeemContracts * 0.15)) },
-                { label: 'Today', revenue: Math.round(weCollectedAmt * 0.10), loan: Math.round(loanOutAmt * 0.12), profit: Math.round(netProfitLoss * 0.10), entry: Math.max(1, Math.round(stats.activatedContracts * 0.10)), exit: Math.max(0, Math.round(stats.redeemContracts * 0.14)) }
-            ];
+            const daysMap = {};
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+                const key = d.toISOString().split('T')[0];
+                const label = i === 0 ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+                daysMap[key] = { label, dateKey: key, revenue: 0, loan: 0, profit: 0, entry: 0, exit: 0 };
+            }
+
+            filteredContracts.forEach(c => {
+                const dKey = toDateStr(c.inputDate || c.createdAt);
+                if (daysMap[dKey]) {
+                    if (c.status === 'Activated') {
+                        daysMap[dKey].entry += 1;
+                        daysMap[dKey].loan += (Number(c.amount) || 0);
+                    } else if (c.status === 'Redeem') {
+                        daysMap[dKey].exit += 1;
+                    }
+                }
+            });
+
+            filteredPayments.forEach(p => {
+                const dKey = toDateStr(p.paidDate || p.paymentDate || p.createdAt);
+                if (daysMap[dKey]) {
+                    daysMap[dKey].revenue += (Number(p.amount) || 0);
+                }
+            });
+
+            return Object.values(daysMap).map(d => ({
+                ...d,
+                profit: d.revenue - d.loan
+            }));
+
         } else if (timeRange === 'monthly') {
-            return [
-                { label: 'Jan', revenue: Math.round(weCollectedAmt * 0.08), loan: Math.round(loanOutAmt * 0.09), profit: Math.round(netProfitLoss * 0.07), entry: Math.round(stats.activatedContracts * 0.08), exit: Math.round(stats.redeemContracts * 0.08) },
-                { label: 'Feb', revenue: Math.round(weCollectedAmt * 0.10), loan: Math.round(loanOutAmt * 0.11), profit: Math.round(netProfitLoss * 0.09), entry: Math.round(stats.activatedContracts * 0.10), exit: Math.round(stats.redeemContracts * 0.10) },
-                { label: 'Mar', revenue: Math.round(weCollectedAmt * 0.12), loan: Math.round(loanOutAmt * 0.10), profit: Math.round(netProfitLoss * 0.13), entry: Math.round(stats.activatedContracts * 0.12), exit: Math.round(stats.redeemContracts * 0.11) },
-                { label: 'Apr', revenue: Math.round(weCollectedAmt * 0.15), loan: Math.round(loanOutAmt * 0.14), profit: Math.round(netProfitLoss * 0.16), entry: Math.round(stats.activatedContracts * 0.15), exit: Math.round(stats.redeemContracts * 0.14) },
-                { label: 'May', revenue: Math.round(weCollectedAmt * 0.18), loan: Math.round(loanOutAmt * 0.17), profit: Math.round(netProfitLoss * 0.19), entry: Math.round(stats.activatedContracts * 0.18), exit: Math.round(stats.redeemContracts * 0.17) },
-                { label: 'Current Month', revenue: Math.round(weCollectedAmt * 0.37), loan: Math.round(loanOutAmt * 0.39), profit: Math.round(netProfitLoss * 0.36), entry: Math.round(stats.activatedContracts * 0.37), exit: Math.round(stats.redeemContracts * 0.40) }
-            ];
+            const monthMap = {};
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                monthMap[mKey] = { label, monthKey: mKey, revenue: 0, loan: 0, profit: 0, entry: 0, exit: 0 };
+            }
+
+            filteredContracts.forEach(c => {
+                const dKey = toDateStr(c.inputDate || c.createdAt).slice(0, 7);
+                if (monthMap[dKey]) {
+                    if (c.status === 'Activated') {
+                        monthMap[dKey].entry += 1;
+                        monthMap[dKey].loan += (Number(c.amount) || 0);
+                    } else if (c.status === 'Redeem') {
+                        monthMap[dKey].exit += 1;
+                    }
+                }
+            });
+
+            filteredPayments.forEach(p => {
+                const dKey = toDateStr(p.paidDate || p.paymentDate || p.createdAt).slice(0, 7);
+                if (monthMap[dKey]) {
+                    monthMap[dKey].revenue += (Number(p.amount) || 0);
+                }
+            });
+
+            return Object.values(monthMap).map(m => ({
+                ...m,
+                profit: m.revenue - m.loan
+            }));
+
         } else if (timeRange === 'yearly') {
-            return [
-                { label: '2024', revenue: Math.round(weCollectedAmt * 0.25), loan: Math.round(loanOutAmt * 0.28), profit: Math.round(netProfitLoss * 0.24), entry: Math.round(stats.activatedContracts * 0.25), exit: Math.round(stats.redeemContracts * 0.26) },
-                { label: '2025', revenue: Math.round(weCollectedAmt * 0.35), loan: Math.round(loanOutAmt * 0.34), profit: Math.round(netProfitLoss * 0.36), entry: Math.round(stats.activatedContracts * 0.35), exit: Math.round(stats.redeemContracts * 0.34) },
-                { label: '2026 (YTD)', revenue: Math.round(weCollectedAmt * 0.40), loan: Math.round(loanOutAmt * 0.38), profit: Math.round(netProfitLoss * 0.40), entry: Math.round(stats.activatedContracts * 0.40), exit: Math.round(stats.redeemContracts * 0.40) }
-            ];
+            const yearMap = {};
+            const curYear = new Date().getFullYear();
+            [curYear - 2, curYear - 1, curYear].forEach(yr => {
+                const yKey = String(yr);
+                yearMap[yKey] = { label: yKey, yearKey: yKey, revenue: 0, loan: 0, profit: 0, entry: 0, exit: 0 };
+            });
+
+            filteredContracts.forEach(c => {
+                const yKey = toDateStr(c.inputDate || c.createdAt).slice(0, 4);
+                if (yearMap[yKey]) {
+                    if (c.status === 'Activated') {
+                        yearMap[yKey].entry += 1;
+                        yearMap[yKey].loan += (Number(c.amount) || 0);
+                    } else if (c.status === 'Redeem') {
+                        yearMap[yKey].exit += 1;
+                    }
+                }
+            });
+
+            filteredPayments.forEach(p => {
+                const yKey = toDateStr(p.paidDate || p.paymentDate || p.createdAt).slice(0, 4);
+                if (yearMap[yKey]) {
+                    yearMap[yKey].revenue += (Number(p.amount) || 0);
+                }
+            });
+
+            return Object.values(yearMap).map(y => ({
+                ...y,
+                profit: y.revenue - y.loan
+            }));
+
         } else {
+            const totalLoan = filteredContracts.filter(c => c.status === 'Activated').reduce((s, c) => s + (Number(c.amount) || 0), 0);
+            const totalRev = filteredPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+            const totalProfit = totalRev - totalLoan;
+            const totalEntry = filteredContracts.filter(c => c.status === 'Activated').length;
+            const totalExit = filteredContracts.filter(c => c.status === 'Redeem').length;
+            const totalBal = Math.max(totalLoan - totalRev, 0);
+
             return [
-                { label: 'Loan Disbursed', amount: loanOutAmt, color: 'bg-blue-600', text: 'text-blue-700', type: 'financial' },
-                { label: 'Revenue Collected', amount: weCollectedAmt, color: 'bg-emerald-600', text: 'text-emerald-700', type: 'financial' },
-                { label: isProfit ? 'Net Profit' : 'Net Loss', amount: Math.abs(netProfitLoss), color: isProfit ? 'bg-teal-600' : 'bg-red-600', text: isProfit ? 'text-teal-700' : 'text-red-700', type: 'financial' },
-                { label: 'Outstanding Balance', amount: outstandingBal, color: 'bg-amber-500', text: 'text-amber-700', type: 'financial' },
-                { label: 'Entry Customers', amount: stats.activatedContracts, color: 'bg-indigo-600', text: 'text-indigo-700', type: 'count' },
-                { label: 'Exit Redeemed', amount: stats.redeemContracts, color: 'bg-purple-600', text: 'text-purple-700', type: 'count' }
+                { label: 'Loan Disbursed', amount: totalLoan, color: 'bg-blue-600', text: 'text-blue-700', type: 'financial', entry: 0, exit: 0 },
+                { label: 'Revenue Collected', amount: totalRev, color: 'bg-emerald-600', text: 'text-emerald-700', type: 'financial', entry: 0, exit: 0 },
+                { label: totalProfit >= 0 ? 'Net Profit' : 'Net Loss', amount: Math.abs(totalProfit), color: totalProfit >= 0 ? 'bg-teal-600' : 'bg-red-600', text: totalProfit >= 0 ? 'text-teal-700' : 'text-red-700', type: 'financial', entry: 0, exit: 0 },
+                { label: 'Outstanding Balance', amount: totalBal, color: 'bg-amber-500', text: 'text-amber-700', type: 'financial', entry: 0, exit: 0 },
+                { label: 'Entry Customers', amount: totalEntry, color: 'bg-indigo-600', text: 'text-indigo-700', type: 'count', entry: totalEntry, exit: 0 },
+                { label: 'Exit Redeemed', amount: totalExit, color: 'bg-purple-600', text: 'text-purple-700', type: 'count', entry: 0, exit: totalExit }
             ];
         }
-    }, [timeRange, weCollectedAmt, loanOutAmt, netProfitLoss, stats, isProfit, outstandingBal]);
+    }, [timeRange, rawContracts, rawPayments, brandFilter, user, todayStr]);
 
     return (
         <div className="w-full min-h-screen bg-[#f4f6f8] p-6 space-y-6 select-none">
@@ -536,19 +642,35 @@ const Dashboard = () => {
                 </div>
 
                 {/* Vertical Bar Chart Container */}
-                <div className="h-72 w-full bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-end justify-around gap-4 overflow-x-auto">
+                <div className="h-80 w-full bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-end justify-around gap-4 overflow-x-auto relative">
                     {timeRange === 'all' ? (
                         barChartData.map((item, idx) => {
                             const maxVal = Math.max(...barChartData.map(b => b.amount || 1));
-                            const heightPct = Math.max(15, Math.min(100, Math.round((item.amount / maxVal) * 100)));
+                            const heightPct = Math.max(18, Math.min(100, Math.round((item.amount / maxVal) * 100)));
                             return (
-                                <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                                    <span className={`text-[11px] font-black font-mono ${item.text}`}>
+                                <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group relative cursor-pointer">
+                                    {/* Hover Popover Tooltip */}
+                                    <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col bg-slate-900 text-white text-[11px] p-3 rounded-xl shadow-2xl z-30 min-w-[170px] pointer-events-none transition-all animate-fade-in border border-slate-700">
+                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1.5 text-emerald-400 font-mono">{item.label}</div>
+                                        <div className="flex justify-between items-center py-0.5">
+                                            <span className="text-slate-400">Value:</span>
+                                            <span className="font-bold font-mono text-emerald-300">
+                                                {item.type === 'financial' ? `$${item.amount.toLocaleString()}` : `${item.amount} នាក់`}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-0.5 text-[10px]">
+                                            <span className="text-slate-400">Type:</span>
+                                            <span className="font-bold text-indigo-300 uppercase">{item.type}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Number on top of bar */}
+                                    <span className={`text-[11px] font-black font-mono px-1.5 py-0.5 rounded bg-white border border-slate-200 shadow-2xs ${item.text}`}>
                                         {item.type === 'financial' ? `$${item.amount.toLocaleString()}` : `${item.amount} នាក់`}
                                     </span>
                                     <div
                                         style={{ height: `${heightPct}%` }}
-                                        className={`w-full max-w-[50px] ${item.color} rounded-t-xl transition-all duration-500 group-hover:brightness-110 shadow-md flex items-center justify-center`}
+                                        className={`w-full max-w-[54px] ${item.color} rounded-t-xl transition-all duration-500 group-hover:scale-105 group-hover:brightness-110 shadow-md flex items-center justify-center`}
                                     >
                                         <span className="text-[10px] font-bold text-white font-mono">{heightPct}%</span>
                                     </div>
@@ -557,33 +679,71 @@ const Dashboard = () => {
                             );
                         })
                     ) : (
-                        barChartData.map((item, idx) => (
-                            <div key={idx} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                                <div className="w-full flex items-end justify-center gap-1.5 h-[80%]">
-                                    <div
-                                        title={`Revenue: $${item.revenue.toLocaleString()}`}
-                                        style={{ height: `${Math.max(12, Math.min(100, (item.revenue / (weCollectedAmt || 1)) * 300))}%` }}
-                                        className="w-full max-w-[14px] bg-emerald-600 rounded-t-md transition-all group-hover:brightness-110"
-                                    ></div>
-                                    <div
-                                        title={`Loan Disbursed: $${item.loan.toLocaleString()}`}
-                                        style={{ height: `${Math.max(12, Math.min(100, (item.loan / (loanOutAmt || 1)) * 300))}%` }}
-                                        className="w-full max-w-[14px] bg-blue-600 rounded-t-md transition-all group-hover:brightness-110"
-                                    ></div>
-                                    <div
-                                        title={`Entry Customers: ${item.entry}`}
-                                        style={{ height: `${Math.max(12, Math.min(100, (item.entry / (stats.activatedContracts || 1)) * 300))}%` }}
-                                        className="w-full max-w-[14px] bg-indigo-600 rounded-t-md transition-all group-hover:brightness-110"
-                                    ></div>
-                                    <div
-                                        title={`Exit Customers: ${item.exit}`}
-                                        style={{ height: `${Math.max(12, Math.min(100, (item.exit / (stats.redeemContracts || 1)) * 300))}%` }}
-                                        className="w-full max-w-[14px] bg-purple-600 rounded-t-md transition-all group-hover:brightness-110"
-                                    ></div>
+                        barChartData.map((item, idx) => {
+                            const maxVal = Math.max(...barChartData.map(b => Math.max(b.revenue, b.loan, 1)));
+                            return (
+                                <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group relative cursor-pointer">
+                                    {/* Hover Popover Tooltip */}
+                                    <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col bg-slate-900 text-white text-[11px] p-3 rounded-2xl shadow-2xl z-30 min-w-[210px] pointer-events-none transition-all animate-fade-in border border-slate-700 space-y-1">
+                                        <div className="font-bold border-b border-slate-700 pb-1 text-emerald-400 font-mono text-xs flex justify-between items-center">
+                                            <span>{item.label}</span>
+                                            <span className="text-[10px] text-slate-400 uppercase font-sans">{timeRange}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-emerald-300 font-mono text-[11px]">
+                                            <span>🟢 Revenue Collected:</span>
+                                            <span className="font-bold">${item.revenue.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-blue-300 font-mono text-[11px]">
+                                            <span>🔵 Loan Disbursed:</span>
+                                            <span className="font-bold">${item.loan.toLocaleString()}</span>
+                                        </div>
+                                        <div className={`flex justify-between items-center font-mono text-[11px] ${item.profit >= 0 ? 'text-teal-300' : 'text-red-300'}`}>
+                                            <span>{item.profit >= 0 ? '🟣 Net Profit:' : '🔴 Net Loss:'}</span>
+                                            <span className="font-bold">{item.profit >= 0 ? '+' : '-'}${Math.abs(item.profit).toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-indigo-300 font-mono text-[11px] border-t border-slate-800 pt-1">
+                                            <span>👤 Entry Customers:</span>
+                                            <span className="font-bold">{item.entry} នាក់</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-purple-300 font-mono text-[11px]">
+                                            <span>🔄 Exit Customers:</span>
+                                            <span className="font-bold">{item.exit} នាក់</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Numbers on Top of Bars */}
+                                    <div className="flex items-center gap-1 text-[10px] font-bold font-mono">
+                                        {item.revenue > 0 && <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 rounded">${item.revenue > 1000 ? `${(item.revenue/1000).toFixed(1)}k` : item.revenue}</span>}
+                                        {item.entry > 0 && <span className="text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 rounded">{item.entry} នាក់</span>}
+                                    </div>
+
+                                    {/* Bars Columns */}
+                                    <div className="w-full flex items-end justify-center gap-1.5 h-[75%]">
+                                        {/* Revenue Bar */}
+                                        <div
+                                            style={{ height: `${Math.max(14, Math.min(100, (item.revenue / (maxVal || 1)) * 100))}%` }}
+                                            className="w-full max-w-[16px] bg-emerald-600 rounded-t-md transition-all group-hover:scale-105 group-hover:brightness-110 shadow-xs"
+                                        ></div>
+                                        {/* Loan Bar */}
+                                        <div
+                                            style={{ height: `${Math.max(14, Math.min(100, (item.loan / (maxVal || 1)) * 100))}%` }}
+                                            className="w-full max-w-[16px] bg-blue-600 rounded-t-md transition-all group-hover:scale-105 group-hover:brightness-110 shadow-xs"
+                                        ></div>
+                                        {/* Entry Customers Bar */}
+                                        <div
+                                            style={{ height: `${Math.max(14, Math.min(100, (item.entry / (Math.max(...barChartData.map(b => b.entry), 1)) * 100)))}%` }}
+                                            className="w-full max-w-[16px] bg-indigo-600 rounded-t-md transition-all group-hover:scale-105 group-hover:brightness-110 shadow-xs"
+                                        ></div>
+                                        {/* Exit Customers Bar */}
+                                        <div
+                                            style={{ height: `${Math.max(14, Math.min(100, (item.exit / (Math.max(...barChartData.map(b => b.exit), 1)) * 100)))}%` }}
+                                            className="w-full max-w-[16px] bg-purple-600 rounded-t-md transition-all group-hover:scale-105 group-hover:brightness-110 shadow-xs"
+                                        ></div>
+                                    </div>
+                                    <span className="text-[11px] font-bold text-slate-800 text-center font-mono mt-1">{item.label}</span>
                                 </div>
-                                <span className="text-[11px] font-bold text-slate-800 text-center font-mono mt-1">{item.label}</span>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
             </div>
