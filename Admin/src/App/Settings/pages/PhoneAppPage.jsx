@@ -389,13 +389,12 @@ const PhoneAppPage = () => {
                     <div className="bg-[#0f1426] border border-gray-800 rounded-2xl p-6 shadow-xl space-y-4">
                         {activeTab === 'qrcode' && (
                             <div className="flex flex-col md:flex-row items-center gap-6">
-                                {/* Real Scannable QRCodeSVG Box */}
+                                {/* Real Static Scannable QRCodeSVG Box */}
                                 <div className="p-4 bg-white rounded-2xl border-4 border-indigo-500 shadow-2xl flex flex-col items-center justify-center relative">
                                     <QRCodeSVG
                                         value={JSON.stringify({
                                             apiUrl: API_BASE,
-                                            pairToken: "SYSTEM-MDM-PAIR-8829",
-                                            timestamp: Date.now()
+                                            pairToken: "SYSTEM-MDM-PAIR-8829"
                                         })}
                                         size={180}
                                         level="H"
