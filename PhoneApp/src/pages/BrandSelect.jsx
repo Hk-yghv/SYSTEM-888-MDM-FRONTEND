@@ -1,27 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { FaBuilding, FaChevronRight, FaSyncAlt, FaShieldAlt } from 'react-icons/fa';
 
-const BrandSelect = ({ API_BASE, onSelectBrand }) => {
+const BrandSelect = ({ API_BASE, onSelectBrand, onUpdateApiUrl }) => {
     const [brands, setBrands] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchBrands = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/controlsystem?brand=`);
-            if (res.ok) {
-                const data = await res.json();
-                const cat = data.droplists?.find(d => d.category === 'Brands');
-                if (cat && cat.items && cat.items.length > 0) {
-                    setBrands(cat.items);
-                    setLoading(false);
-                    return;
+            const foundBrands = new Set();
+
+            // 1. Fetch from ControlSystem config droplists
+            try {
+                const res = await fetch(`${API_BASE}/controlsystem?brand=`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const cat = data.droplists?.find(d => d.category === 'Brands');
+                    if (cat && cat.items && Array.isArray(cat.items)) {
+                        cat.items.forEach(b => b && foundBrands.add(b.trim()));
+                    }
                 }
+            } catch { }
+
+            // 2. Fetch active brands from Contracts database
+            try {
+                const cRes = await fetch(`${API_BASE}/contracts?limit=100`);
+                if (cRes.ok) {
+                    const cData = await cRes.json();
+                    if (cData.data && Array.isArray(cData.data)) {
+                        cData.data.forEach(item => {
+                            if (item.brand && item.brand.trim()) foundBrands.add(item.brand.trim());
+                        });
+                    }
+                }
+            } catch { }
+
+            // 3. Fetch active brands from Users database
+            try {
+                const uRes = await fetch(`${API_BASE}/users`);
+                if (uRes.ok) {
+                    const uData = await uRes.json();
+                    const usersList = Array.isArray(uData) ? uData : (uData.data || []);
+                    usersList.forEach(u => {
+                        if (u.brand && u.brand.trim()) foundBrands.add(u.brand.trim());
+                    });
+                }
+            } catch { }
+
+            const uniqueList = Array.from(foundBrands).filter(Boolean);
+            if (uniqueList.length > 0) {
+                setBrands(uniqueList);
+            } else {
+                setBrands(['888MDM']); // Fallback default brand if empty
             }
-            // Fallback: If no custom brands created yet in system, show 1 default brand
-            setBrands(['SYSTEM MAIN']);
-        } catch {
-            setBrands(['SYSTEM MAIN']);
+        } catch (err) {
+            console.error('Fetch brands error:', err);
+            setBrands(['888MDM']);
         } finally {
             setLoading(false);
         }
@@ -29,7 +63,7 @@ const BrandSelect = ({ API_BASE, onSelectBrand }) => {
 
     useEffect(() => {
         fetchBrands();
-    }, []);
+    }, [API_BASE]);
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#0b0f19] via-[#070913] to-[#04060c] flex flex-col justify-between p-6 select-none relative overflow-hidden">
@@ -61,7 +95,7 @@ const BrandSelect = ({ API_BASE, onSelectBrand }) => {
                 <div className="flex items-center justify-between px-1">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider font-khmer flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        បញ្ជី Brand ដែលមានក្នុង System
+                        បញ្ជី Brand ទាំងអស់ ({brands.length})
                     </span>
                     <button onClick={fetchBrands} className="text-xs text-indigo-400 flex items-center gap-1.5 hover:text-indigo-300 cursor-pointer font-medium">
                         <FaSyncAlt className={loading ? "animate-spin text-emerald-400" : ""} /> Refresh

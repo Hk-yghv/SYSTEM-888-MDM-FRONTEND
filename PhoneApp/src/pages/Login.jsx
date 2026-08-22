@@ -38,7 +38,7 @@ const Login = ({ API_BASE, selectedBrand, onChangeBrand, onLoginSuccess, onUpdat
 
             const authenticatedUser = {
                 ...data.user,
-                brand: selectedBrand || data.user?.brand || 'Main System'
+                brand: (data.user?.brand && data.user.brand.trim()) ? data.user.brand : (selectedBrand || '888MDM')
             };
 
             onLoginSuccess(authenticatedUser, data.token);

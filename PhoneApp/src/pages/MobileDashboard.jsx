@@ -121,7 +121,7 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
                     <img src="/mdm_logo.svg" alt="MDM Logo" className="w-7 h-7 object-contain" />
                     <div>
                         <h1 className="text-xs font-black text-emerald-400 leading-tight tracking-wide">
-                            SYSTEM {user?.brand?.toUpperCase()}
+                            {user?.brand ? (user.brand.toUpperCase().startsWith('SYSTEM') ? user.brand.toUpperCase() : `SYSTEM ${user.brand.toUpperCase()}`) : 'SYSTEM 888MDM'}
                         </h1>
                         <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">{user?.name || 'Administrator'}</p>
                     </div>
