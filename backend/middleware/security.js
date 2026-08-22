@@ -3,62 +3,197 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
 const SYSTEM_API_KEY = process.env.SYSTEM_API_KEY || 'SYSTEM_MDM_SECURE_AUTH_HEADER_TOKEN_2026';
 
-// ── NoSQL Injection Prevention Sanitizer ──
+let telegramBotInstance = null;
+export const setSecurityTelegramBot = (bot) => {
+    telegramBotInstance = bot;
+};
+
+// ── LAYER 1: HTTP Security Headers & Hardening ──
+export const securityHeadersMiddleware = (req, res, next) => {
+    // Suppress server fingerprinting
+    res.removeHeader('X-Powered-By');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self';");
+    next();
+};
+
+// ── LAYER 2: Bot Scanner & Malicious User-Agent Firewall ──
+const HACKER_BOT_USER_AGENTS = [
+    'sqlmap', 'nikto', 'nmap', 'masscan', 'dirbuster', 'gobuster', 'wpscan',
+    'zgrab', 'censys', 'shodan', 'acunetix', 'nessus', 'qualys', 'openvas',
+    'havij', 'hydra', 'medusa', 'commix', 'sublist3r', 'amass'
+];
+
+export const botFirewallMiddleware = (req, res, next) => {
+    const ua = (req.headers['user-agent'] || '').toLowerCase();
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+
+    const isHackerBot = HACKER_BOT_USER_AGENTS.some(botName => ua.includes(botName));
+    if (isHackerBot) {
+        notifySecurityAlert(`⚠️ <b>HACKER BOT SCANNER BLOCKED</b>\nIP: <code>${clientIp}</code>\nUser-Agent: <code>${req.headers['user-agent']}</code>\nPath: <code>${req.originalUrl}</code>`);
+        return res.status(403).json({
+            error: 'Security Warning: Automated security scanner / bot traffic blocked by SYSTEM MDM Firewall.'
+        });
+    }
+    next();
+};
+
+// ── LAYER 3: Anti-Command Injection & Path Traversal Engine ──
+const PATH_TRAVERSAL_REGEX = /\.\.\/|\.\.\\|%2e%2e%2f|%2e%2e\/|%2e%2e%5c/i;
+const COMMAND_INJECTION_REGEX = /;|&&|\|\||`|\$\([^)]*\)/i;
+
+export const pathAndCommandGuardMiddleware = (req, res, next) => {
+    const rawUrl = decodeURIComponent(req.originalUrl || '');
+    if (PATH_TRAVERSAL_REGEX.test(rawUrl) || PATH_TRAVERSAL_REGEX.test(req.path)) {
+        return res.status(400).json({ error: 'Security Protection: Directory path traversal attack detected and blocked.' });
+    }
+
+    const checkValue = (val) => {
+        if (typeof val === 'string' && COMMAND_INJECTION_REGEX.test(val)) {
+            return true;
+        }
+        if (val && typeof val === 'object') {
+            return Object.values(val).some(checkValue);
+        }
+        return false;
+    };
+
+    if (checkValue(req.query) || checkValue(req.body)) {
+        return res.status(400).json({ error: 'Security Protection: Command injection pattern blocked by SYSTEM MDM Security engine.' });
+    }
+
+    next();
+};
+
+// ── LAYER 4: Deep Input Sanitization & Anti-Injection Engine ──
+const NOSQL_OPERATOR_REGEX = /^\$|\.(?=[^.]*$)/g;
+const MALICIOUS_PAYLOAD_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>|javascript:|onerror\s*=|onload\s*=|eval\(|document\.cookie/gi;
+
+export const sanitizeValue = (val) => {
+    if (typeof val === 'string') {
+        let clean = val.replace(MALICIOUS_PAYLOAD_REGEX, '');
+        if (clean.startsWith('$') && (clean.includes('where') || clean.includes('gt') || clean.includes('ne') || clean.includes('regex'))) {
+            clean = clean.replace(/^\$/, '_');
+        }
+        return clean;
+    }
+    if (val && typeof val === 'object') {
+        return sanitizeInput(val);
+    }
+    return val;
+};
+
 export const sanitizeInput = (obj) => {
-    if (!obj || typeof obj !== 'object') return obj;
+    if (!obj || typeof obj !== 'object') return sanitizeValue(obj);
     if (Array.isArray(obj)) return obj.map(sanitizeInput);
+
     const sanitized = {};
     for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            const cleanKey = key.replace(/^\$|\./g, '');
-            sanitized[cleanKey] = typeof obj[key] === 'object' ? sanitizeInput(obj[key]) : obj[key];
+            const cleanKey = key.replace(NOSQL_OPERATOR_REGEX, '');
+            sanitized[cleanKey] = sanitizeValue(obj[key]);
         }
     }
     return sanitized;
 };
 
+export const preventHPP = (req, res, next) => {
+    if (req.query) {
+        for (const k in req.query) {
+            if (Array.isArray(req.query[k])) {
+                req.query[k] = req.query[k][req.query[k].length - 1];
+            }
+        }
+    }
+    next();
+};
+
 export const sanitizeMiddleware = (req, res, next) => {
-    if (req.body) req.body = sanitizeInput(req.body);
-    if (req.query) req.query = sanitizeInput(req.query);
-    if (req.params) req.params = sanitizeInput(req.params);
+    preventHPP(req, res, () => {
+        if (req.body) req.body = sanitizeInput(req.body);
+        if (req.query) req.query = sanitizeInput(req.query);
+        if (req.params) req.params = sanitizeInput(req.params);
+        next();
+    });
+};
+
+// ── LAYER 5: Anti-Replay Attack Protection ──
+export const antiReplayMiddleware = (req, res, next) => {
+    const clientTimestamp = req.headers['x-request-timestamp'] || req.headers['x-timestamp'];
+    if (clientTimestamp) {
+        const reqTime = parseInt(clientTimestamp, 10);
+        const now = Date.now();
+        if (isNaN(reqTime) || Math.abs(now - reqTime) > 5 * 60 * 1000) {
+            return res.status(401).json({
+                error: 'Security Protection: Request expired or potential Replay Attack detected.'
+            });
+        }
+    }
     next();
 };
 
-// ── Security Headers Middleware ──
-export const securityHeadersMiddleware = (req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-    next();
-};
-
-// ── Rate Limiter Security (Anti-DDoS / Brute Force Protection) ──
+// ── LAYER 6: Adaptive Multi-Tier Rate Limiter & Anti-Brute Force Engine ──
 const ipRateMap = new Map();
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 mins
-const MAX_AUTH_ATTEMPTS = 15;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes window
+const MAX_AUTH_ATTEMPTS = 10;
 const MAX_API_ATTEMPTS = 600;
+const BAN_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes ban for extreme violators
+
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, rec] of ipRateMap.entries()) {
+        if (rec.bannedUntil && now > rec.bannedUntil) {
+            ipRateMap.delete(ip);
+        } else if (now - rec.startTime > RATE_LIMIT_WINDOW_MS && !rec.bannedUntil) {
+            ipRateMap.delete(ip);
+        }
+    }
+}, 10 * 60 * 1000);
 
 export const rateLimiterMiddleware = (req, res, next) => {
-    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
     const now = Date.now();
     let record = ipRateMap.get(clientIp);
 
-    if (!record || now - record.startTime > RATE_LIMIT_WINDOW_MS) {
-        record = { startTime: now, authCount: 0, apiCount: 0 };
+    if (!record || (now - record.startTime > RATE_LIMIT_WINDOW_MS && !record.bannedUntil)) {
+        record = { startTime: now, authCount: 0, apiCount: 0, violations: 0, bannedUntil: null };
+    }
+
+    if (record.bannedUntil && now < record.bannedUntil) {
+        const remainingMin = Math.ceil((record.bannedUntil - now) / 60000);
+        return res.status(429).json({
+            error: `Security Alert: Your IP address (${clientIp}) has been temporarily locked out due to suspicious security violations. Try again in ${remainingMin} minute(s).`
+        });
     }
 
     if (req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/verify-otp')) {
         record.authCount += 1;
         if (record.authCount > MAX_AUTH_ATTEMPTS) {
+            record.violations += 1;
+            if (record.violations >= 2) {
+                record.bannedUntil = now + BAN_THRESHOLD_MS;
+                notifySecurityAlert(`🚨 <b>SECURITY BAN ALERT</b>\nIP: <code>${clientIp}</code> has been banned for 30 minutes due to repeated authentication brute-force attempts!`);
+            }
             ipRateMap.set(clientIp, record);
-            return res.status(429).json({ error: 'Security Warning: Too many authentication attempts! Please try again in 15 minutes.' });
+            return res.status(429).json({
+                error: 'Security Warning: Too many authentication attempts! Access restricted to prevent brute-force attacks. Please try again in 15 minutes.'
+            });
         }
     } else if (req.path.startsWith('/api')) {
         record.apiCount += 1;
         if (record.apiCount > MAX_API_ATTEMPTS) {
+            record.violations += 1;
             ipRateMap.set(clientIp, record);
-            return res.status(429).json({ error: 'Security Protection: Rate limit exceeded. Too many API requests from your IP address.' });
+            return res.status(429).json({
+                error: 'Security Protection: Rate limit exceeded. Automated scraping or DoS activity detected from your IP address.'
+            });
         }
     }
 
@@ -66,9 +201,16 @@ export const rateLimiterMiddleware = (req, res, next) => {
     next();
 };
 
-// ── Security Protection Middleware: Block direct API scraping / unauthenticated requests ──
+// ── LAYER 7: Token Session Revocation ──
+const revokedTokensMap = new Set();
+export const revokeToken = (token) => {
+    if (token) revokedTokensMap.add(token);
+};
+export const isTokenRevoked = (token) => revokedTokensMap.has(token);
+
+// ── LAYER 8: Security Verification Auth Middleware ──
 export const verifySecurityAuth = (req, res, next) => {
-    const publicPaths = ['/api/auth/login', '/api/auth/verify-otp', '/api/health', '/api/history/report-schedule'];
+    const publicPaths = ['/api/auth/login', '/api/auth/verify-otp', '/api/health', '/api/history/report-schedule', '/api/db-status'];
     if (!req.path.startsWith('/api') || publicPaths.some(p => req.path === p || req.path.startsWith('/api/health'))) {
         return next();
     }
@@ -82,8 +224,12 @@ export const verifySecurityAuth = (req, res, next) => {
     }
 
     if (token) {
+        if (isTokenRevoked(token)) {
+            return res.status(401).json({ error: 'Security Notice: Session has been revoked or logged out. Please log in again.' });
+        }
+
         try {
-            const decoded = jwt.verify(token, JWT_SECRET);
+            const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
             req.user = decoded;
             return next();
         } catch (err) {
@@ -94,6 +240,48 @@ export const verifySecurityAuth = (req, res, next) => {
     return res.status(401).json({
         error: 'Security Protection: Access Denied! Direct API scraping or unauthorized access is blocked by SYSTEM MDM Security Protocol.'
     });
+};
+
+// ── LAYER 9: Sensitive Data Response Masking ──
+const SENSITIVE_FIELDS = ['password', 'lastOtp', 'jwtSecret', 'dbPassword', 'dbUri'];
+
+const maskSensitiveData = (data) => {
+    if (!data || typeof data !== 'object') return data;
+    if (Array.isArray(data)) return data.map(maskSensitiveData);
+
+    const cleaned = {};
+    for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+            if (SENSITIVE_FIELDS.includes(key)) {
+                continue;
+            }
+            cleaned[key] = maskSensitiveData(data[key]);
+        }
+    }
+    return cleaned;
+};
+
+export const sensitiveDataMaskingMiddleware = (req, res, next) => {
+    const originalJson = res.json;
+    res.json = function (data) {
+        if (data && typeof data === 'object') {
+            data = maskSensitiveData(data);
+        }
+        return originalJson.call(this, data);
+    };
+    next();
+};
+
+// ── LAYER 10: Real-time Telegram Security Alerting ──
+export const notifySecurityAlert = (message) => {
+    const adminChatId = process.env.TELEGRAM_ALERT_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
+    if (telegramBotInstance && adminChatId) {
+        try {
+            telegramBotInstance.sendMessage(adminChatId, message, { parse_mode: 'HTML' }).catch(() => {});
+        } catch (e) {
+            // Ignore telegram error
+        }
+    }
 };
 
 export const parseUserAgent = (ua) => {
