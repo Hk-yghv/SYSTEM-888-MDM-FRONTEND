@@ -317,55 +317,7 @@ const ControlSystem = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                {/* Section 1: Call Phone Display Text Configuration */}
-                <div className="p-6 rounded-3xl glass-card border border-gray-800 space-y-4 shadow-xl">
-                    <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-indigo-300 text-xs font-bold uppercase">
-                        <FaPhoneAlt /> Call Phone & Hotline Display Text Configuration
-                    </div>
-
-                    <div className="space-y-3 text-xs">
-                        <div>
-                            <label className="block text-gray-300 font-semibold mb-1">Display Title / Script</label>
-                            <input
-                                type="text"
-                                value={callPhoneDisplay.title}
-                                onChange={(e) => setCallPhoneDisplay({ ...callPhoneDisplay, title: e.target.value })}
-                                className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-bold"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-gray-300 font-semibold mb-1">Hotline Phone Number</label>
-                            <input
-                                type="text"
-                                value={callPhoneDisplay.phoneNumber}
-                                onChange={(e) => setCallPhoneDisplay({ ...callPhoneDisplay, phoneNumber: e.target.value })}
-                                className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-indigo-400 font-mono font-bold"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-gray-300 font-semibold mb-1">Subtext / Notice Message</label>
-                            <input
-                                type="text"
-                                value={callPhoneDisplay.subtext}
-                                onChange={(e) => setCallPhoneDisplay({ ...callPhoneDisplay, subtext: e.target.value })}
-                                className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-300"
-                            />
-                        </div>
-                        <div className="pt-2 text-right">
-                            <button
-                                onClick={() => saveConfigToMongoDB('call_phone_display', callPhoneDisplay)}
-                                disabled={saving}
-                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-lg shadow-indigo-600/30"
-                            >
-                                <MdSave size={16} /> Save Hotline to MongoDB
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Section 1.5: Lock Phone Display Text & Phone Number */}
+                {/* Section 1: Lock Phone Display Text & Phone Number */}
                 <div className="p-6 rounded-3xl glass-card border border-red-500/30 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-red-400 text-xs font-bold uppercase">
                         <FaPhoneAlt /> Lost Phone Lock Display Text & Hotline Number
