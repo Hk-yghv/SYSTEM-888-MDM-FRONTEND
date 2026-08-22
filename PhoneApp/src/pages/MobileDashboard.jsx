@@ -109,19 +109,13 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
                         <FaSyncAlt className={loading ? "animate-spin" : ""} />
                     </button>
 
-                    {isMasterAdmin ? (
-                        <button
-                            onClick={onChangeBrand}
-                            className="px-2.5 py-1.5 bg-slate-900 border border-slate-700/80 text-indigo-300 rounded-xl text-[10px] font-bold flex items-center gap-1 cursor-pointer hover:border-indigo-500"
-                            title="Click to Switch Brand (Master Admin Only)"
-                        >
-                            <FaBuilding /> {user?.brand || '888MDM'}
-                        </button>
-                    ) : (
-                        <span className="px-2.5 py-1.5 bg-slate-900/90 border border-slate-800 text-indigo-300 rounded-xl text-[10px] font-bold flex items-center gap-1">
-                            <FaBuilding /> {user?.brand || '888MDM'}
-                        </span>
-                    )}
+                    <button
+                        onClick={onChangeBrand}
+                        className="px-2.5 py-1.5 bg-slate-900 border border-slate-700/80 hover:border-indigo-500 text-indigo-300 rounded-xl text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-sm"
+                        title="Click to Switch Brand"
+                    >
+                        <FaBuilding /> {user?.brand || '888MDM'}
+                    </button>
 
                     <button
                         onClick={onLogout}
