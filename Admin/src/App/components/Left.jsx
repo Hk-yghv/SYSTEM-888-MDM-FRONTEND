@@ -220,9 +220,6 @@ const Left = () => {
                         {hasPermission(json.settings.controlSystem, 'read') && (
                             <Link to={json.settings.controlSystem} className={subItemClass(json.settings.controlSystem)}>{t('controlSystem')}</Link>
                         )}
-                        <Link to={json.settings.phoneApp || '/settings/phone-app'} className={subItemClass(json.settings.phoneApp || '/settings/phone-app')}>
-                            📱 Phone App Connection
-                        </Link>
                     </div>
                 </div>
             )}
