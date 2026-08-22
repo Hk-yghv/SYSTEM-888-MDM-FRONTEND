@@ -22,8 +22,13 @@ import Customer from "../App/Customer/pages/Customer";
 // Device
 import Device from "../App/Device/pages/Device";
 
-// Report
-import Report from "../App/Report/pages/Report";
+// Report Pages (each sub-route has its own dedicated component)
+import AllCustomersReport from "../App/Report/pages/AllCustomersReport";
+import ActivatedReport from "../App/Report/pages/ActivatedReport";
+import RedeemReport from "../App/Report/pages/RedeemReport";
+import LockPhoneReport from "../App/Report/pages/LockPhoneReport";
+import SetWallpaperReport from "../App/Report/pages/SetWallpaperReport";
+import InstallmentReport from "../App/Report/pages/InstallmentReport";
 
 // Contract 
 import Application from "../App/Contract/page/Application";
@@ -88,14 +93,14 @@ const App = () => {
                   <Route path={json.customer} element={<ProtectRoute pagePath={json.customer}> <MainLayout><Customer /></MainLayout> </ProtectRoute>} />
                   {/* Device */}
                   <Route path={json.device} element={<ProtectRoute pagePath={json.device}> <MainLayout><Device /></MainLayout> </ProtectRoute>} />
-                  {/* Report Droplist Sub-Routes */}
+                  {/* Report Droplist Sub-Routes — each page is its own dedicated component */}
                   <Route path="/report" element={<Navigate to="/report/all-customers" replace />} />
-                  <Route path={json.report?.allCustomers || '/report/all-customers'} element={<ProtectRoute pagePath={json.report?.allCustomers || '/report/all-customers'}> <MainLayout><Report /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.activated || '/report/activated'} element={<ProtectRoute pagePath={json.report?.activated || '/report/activated'}> <MainLayout><Report /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.redeem || '/report/redeem'} element={<ProtectRoute pagePath={json.report?.redeem || '/report/redeem'}> <MainLayout><Report /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.lockPhone || '/report/lock-phone'} element={<ProtectRoute pagePath={json.report?.lockPhone || '/report/lock-phone'}> <MainLayout><Report /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.setWallpaper || '/report/set-wallpaper'} element={<ProtectRoute pagePath={json.report?.setWallpaper || '/report/set-wallpaper'}> <MainLayout><Report /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.installment || '/report/installment'} element={<ProtectRoute pagePath={json.report?.installment || '/report/installment'}> <MainLayout><Report /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.allCustomers || '/report/all-customers'} element={<ProtectRoute pagePath={json.report?.allCustomers || '/report/all-customers'}> <MainLayout><AllCustomersReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.activated || '/report/activated'} element={<ProtectRoute pagePath={json.report?.activated || '/report/activated'}> <MainLayout><ActivatedReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.redeem || '/report/redeem'} element={<ProtectRoute pagePath={json.report?.redeem || '/report/redeem'}> <MainLayout><RedeemReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.lockPhone || '/report/lock-phone'} element={<ProtectRoute pagePath={json.report?.lockPhone || '/report/lock-phone'}> <MainLayout><LockPhoneReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.setWallpaper || '/report/set-wallpaper'} element={<ProtectRoute pagePath={json.report?.setWallpaper || '/report/set-wallpaper'}> <MainLayout><SetWallpaperReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.installment || '/report/installment'} element={<ProtectRoute pagePath={json.report?.installment || '/report/installment'}> <MainLayout><InstallmentReport /></MainLayout> </ProtectRoute>} />
                   {/* Contract */}
                   <Route path={json.contract.application} element={<ProtectRoute pagePath={json.contract.application}> <MainLayout><Application /></MainLayout> </ProtectRoute>} />
                   <Route path={json.contract.activated} element={<ProtectRoute pagePath={json.contract.activated}> <MainLayout><Activated /></MainLayout> </ProtectRoute>} />
