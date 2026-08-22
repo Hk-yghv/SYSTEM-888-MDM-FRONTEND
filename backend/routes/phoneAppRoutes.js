@@ -3,8 +3,9 @@ import express from 'express';
 const router = express.Router();
 
 // In-memory state for Phone App & Real-time Live Session
+// Manual Connect Rule: Device is NOT auto-connected by default; Admin user must click Connect in System!
 let activeDevice = {
-    isConnected: true,
+    isConnected: false, // Default false: requires manual admin connect action in System!
     id: "PH-8829-S24U",
     model: "Samsung Galaxy S24 Ultra",
     brand: "SAMSUNG",
@@ -21,7 +22,7 @@ let activeDevice = {
     recentSms: [
         { sender: "Smart", text: "Your main balance is $12.50 valid until 30/09/2026", date: "Today 14:20" },
         { sender: "ABA Bank", text: "Received $150.00 from John Doe (Ref: 981245)", date: "Today 10:15" },
-        { sender: "SYSTEM MDM", text: "Device paired successfully with SYSTEM Admin", date: "Yesterday 18:30" }
+        { sender: "SYSTEM MDM", text: "Device paired with SYSTEM Admin", date: "Yesterday 18:30" }
     ],
     lastSeen: new Date().toISOString()
 };
@@ -57,18 +58,52 @@ router.post('/create-session', (req, res) => {
     });
 });
 
+// ── MANUAL CONNECT Device (Triggered by System Admin) ──
+router.post('/connect', (req, res) => {
+    if (activeDevice) {
+        activeDevice.isConnected = true;
+        activeDevice.lastSeen = new Date().toISOString();
+    } else {
+        activeDevice = {
+            isConnected: true,
+            id: "PH-8829-S24U",
+            model: "Samsung Galaxy S24 Ultra",
+            brand: "SAMSUNG",
+            lastSeen: new Date().toISOString()
+        };
+    }
+    res.json({
+        success: true,
+        message: "ឧបករណ៍ទូរស័ព្ទត្រូវបានភ្ជាប់ទៅកាន់ System ដោយជោគជ័យ!",
+        device: activeDevice
+    });
+});
+
+// ── DISCONNECT Device (Triggered by System Admin) ──
+router.post('/disconnect', (req, res) => {
+    if (activeDevice) {
+        activeDevice.isConnected = false;
+        activeDevice.lastSeen = new Date().toISOString();
+    }
+    res.json({
+        success: true,
+        message: "ការភ្ជាប់ទៅកាន់ទូរស័ព្ទត្រូវបានផ្តាច់ចេញពី System រួចរាល់!",
+        device: activeDevice
+    });
+});
+
 // ── PAIR Device (from QR, Wi-Fi, or Hotspot) ──
 router.post('/pair', (req, res) => {
     const deviceInfo = req.body;
     activeDevice = {
         ...activeDevice,
         ...deviceInfo,
-        isConnected: true,
+        isConnected: false, // Paired, but requires manual Connect button click in System
         lastSeen: new Date().toISOString()
     };
     res.json({
         success: true,
-        message: "Device paired successfully",
+        message: "Device paired successfully. Please click 'Connect Device' in System to activate connection.",
         device: activeDevice
     });
 });
@@ -83,17 +118,17 @@ router.post('/heartbeat', (req, res) => {
     res.json({ success: true, createSessionActive });
 });
 
-// ── UNPAIR / Disconnect Device ──
-router.post('/disconnect', (req, res) => {
-    if (activeDevice) {
-        activeDevice.isConnected = false;
-    }
-    res.json({ success: true, message: "Device disconnected" });
-});
-
 // ── REAL-TIME SCAN SYNC (From Mobile Phone App) ──
 router.post('/scan-sync', (req, res) => {
-    // REQUIREMENT: Computer system MUST have Create page open first
+    // REQUIREMENT: Device must be connected AND Computer system MUST have Create page open
+    if (!activeDevice || !activeDevice.isConnected) {
+        return res.status(403).json({
+            success: false,
+            errorCode: "DEVICE_NOT_CONNECTED",
+            message: "ទូរស័ព្ទមិនទាន់បានភ្ជាប់ជាមួយ System ទេ! សូមចូលទៅកាន់ Settings -> Phone App រួចចុច 'Connect Phone' ជាមុនសិន។"
+        });
+    }
+
     if (!createSessionActive) {
         return res.status(403).json({
             success: false,
@@ -119,7 +154,7 @@ router.post('/scan-sync', (req, res) => {
     });
 });
 
-// ── CONSUME Scanned Doc Data (Called by Computer after auto-populating) ──
+// ── CONSUME Scanned Doc Data ──
 router.post('/consume-scanned-doc', (req, res) => {
     const consumed = latestScannedDoc;
     latestScannedDoc = null;
