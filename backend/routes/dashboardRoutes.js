@@ -9,14 +9,16 @@ const router = express.Router();
 // DASHBOARD STATS API
 router.get('/stats', async (req, res) => {
     try {
-        const { userBrand, userRole } = req.query;
+        const { userBrand, userRole, username, isImmutable } = req.query;
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true);
+
         let totalContracts, activatedContracts, applicationContracts, checkContracts,
             redeemContracts, blacklistContracts, commentsContracts,
             lockedPhones, unlockedPhones, lockedWallpapers, unlockedWallpapers,
             totalRevenue, paymentCount, totalLoanAmount, totalCustomerReceived, totalBorrowers;
 
         let query = {};
-        if (userBrand && userRole !== 'Administrator') {
+        if (userBrand && !isMasterAdmin) {
             query.brand = userBrand;
         }
 
@@ -37,7 +39,7 @@ router.get('/stats', async (req, res) => {
             // Payments
             const contractIds = allContracts.map(c => c.contractId);
             const allPayments = await queryAllDBs(Payment, (M) => {
-                if (userBrand && userRole !== 'Administrator') {
+                if (userBrand && !isMasterAdmin) {
                     return M.find({ contractId: { $in: contractIds } });
                 }
                 return M.find();
@@ -53,7 +55,7 @@ router.get('/stats', async (req, res) => {
         } else {
             // MEM_DB fallback
             const contracts = MEM_DB.contracts.filter(c => {
-                if (userBrand && userRole !== 'Administrator') return c.brand === userBrand;
+                if (userBrand && !isMasterAdmin) return c.brand === userBrand;
                 return true;
             });
             totalContracts = contracts.length;
@@ -70,7 +72,7 @@ router.get('/stats', async (req, res) => {
 
             const contractIds = contracts.map(c => c.contractId);
             const filteredPayments = MEM_DB.payments.filter(p => {
-                if (userBrand && userRole !== 'Administrator') return contractIds.includes(p.contractId);
+                if (userBrand && !isMasterAdmin) return contractIds.includes(p.contractId);
                 return true;
             });
             totalRevenue = filteredPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);

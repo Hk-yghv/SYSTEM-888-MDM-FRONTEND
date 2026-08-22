@@ -17,11 +17,13 @@ const sanitizeAndDecryptContract = (c) => {
 // GET contracts
 router.get('/', async (req, res) => {
     try {
-        const { status, userBrand, userRole, page = 1, limit = 10, search = '' } = req.query;
+        const { status, userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '' } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true);
+        
         let query = {};
         if (status) query.status = status;
-        if (userBrand && userRole !== 'Administrator') query.brand = userBrand;
+        if (userBrand && !isMasterAdmin) query.brand = userBrand;
         if (search) {
             query.$or = [
                 { customerNameEn: { $regex: search, $options: 'i' } },
@@ -41,7 +43,7 @@ router.get('/', async (req, res) => {
         }
         let filtered = MEM_DB.contracts;
         if (status) filtered = filtered.filter(c => c.status === status);
-        if (userBrand && userRole !== 'Administrator') filtered = filtered.filter(c => c.brand === userBrand);
+        if (userBrand && !isMasterAdmin) filtered = filtered.filter(c => c.brand === userBrand);
         if (search) filtered = filtered.filter(c =>
             (c.customerNameEn || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.customerNameKh || '').toLowerCase().includes(search.toLowerCase()) ||

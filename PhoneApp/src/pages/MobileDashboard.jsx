@@ -20,10 +20,12 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
+    const isMasterAdmin = (user?.username === '@hakyonghouv' || user?.username === 'hakyonghouv' || user?.isImmutable);
+
     const fetchAllData = async () => {
         setLoading(true);
         try {
-            const brandParam = user?.brand ? `userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}` : '';
+            const brandParam = user?.brand ? `userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}&username=${encodeURIComponent(user?.username || '')}&isImmutable=${user?.isImmutable ? 'true' : 'false'}` : '';
             const [contractsRes, statsRes] = await Promise.all([
                 fetch(`${API_BASE}/contracts?limit=200${brandParam ? '&' + brandParam : ''}`),
                 fetch(`${API_BASE}/dashboard/stats?${brandParam}`)
@@ -106,12 +108,21 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
                     >
                         <FaSyncAlt className={loading ? "animate-spin" : ""} />
                     </button>
-                    <button
-                        onClick={onChangeBrand}
-                        className="px-2.5 py-1.5 bg-slate-900 border border-slate-700/80 text-indigo-300 rounded-xl text-[10px] font-bold flex items-center gap-1 cursor-pointer hover:border-indigo-500"
-                    >
-                        <FaBuilding /> {user?.brand || '888MDM'}
-                    </button>
+
+                    {isMasterAdmin ? (
+                        <button
+                            onClick={onChangeBrand}
+                            className="px-2.5 py-1.5 bg-slate-900 border border-slate-700/80 text-indigo-300 rounded-xl text-[10px] font-bold flex items-center gap-1 cursor-pointer hover:border-indigo-500"
+                            title="Click to Switch Brand (Master Admin Only)"
+                        >
+                            <FaBuilding /> {user?.brand || '888MDM'}
+                        </button>
+                    ) : (
+                        <span className="px-2.5 py-1.5 bg-slate-900/90 border border-slate-800 text-indigo-300 rounded-xl text-[10px] font-bold flex items-center gap-1">
+                            <FaBuilding /> {user?.brand || '888MDM'}
+                        </span>
+                    )}
+
                     <button
                         onClick={onLogout}
                         className="p-2 bg-red-950/80 border border-red-800 text-red-400 rounded-xl text-xs cursor-pointer hover:bg-red-900"
