@@ -76,7 +76,7 @@ export const pathAndCommandGuardMiddleware = (req, res, next) => {
 const NOSQL_OPERATOR_REGEX = /^\$|\.(?=[^.]*$)/g;
 const MALICIOUS_PAYLOAD_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>|javascript:|onerror\s*=|onload\s*=|eval\(|document\.cookie/gi;
 
-export const sanitizeValue = (val) => {
+export const sanitizeValue = (val, _seen = new WeakSet()) => {
     if (typeof val === 'string') {
         let clean = val.replace(MALICIOUS_PAYLOAD_REGEX, '');
         if (clean.startsWith('$') && (clean.includes('where') || clean.includes('gt') || clean.includes('ne') || clean.includes('regex'))) {
@@ -85,20 +85,24 @@ export const sanitizeValue = (val) => {
         return clean;
     }
     if (val && typeof val === 'object') {
-        return sanitizeInput(val);
+        return sanitizeInput(val, _seen);
     }
     return val;
 };
 
-export const sanitizeInput = (obj) => {
-    if (!obj || typeof obj !== 'object') return sanitizeValue(obj);
-    if (Array.isArray(obj)) return obj.map(sanitizeInput);
+export const sanitizeInput = (obj, _seen = new WeakSet()) => {
+    if (!obj || typeof obj !== 'object') return sanitizeValue(obj, _seen);
+
+    if (_seen.has(obj)) return obj;
+    _seen.add(obj);
+
+    if (Array.isArray(obj)) return obj.map(item => sanitizeInput(item, _seen));
 
     const sanitized = {};
     for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
             const cleanKey = key.replace(NOSQL_OPERATOR_REGEX, '');
-            sanitized[cleanKey] = sanitizeValue(obj[key]);
+            sanitized[cleanKey] = sanitizeValue(obj[key], _seen);
         }
     }
     return sanitized;
@@ -210,7 +214,8 @@ export const isTokenRevoked = (token) => revokedTokensMap.has(token);
 
 // ── LAYER 8: Security Verification Auth Middleware ──
 export const verifySecurityAuth = (req, res, next) => {
-    const publicPaths = ['/api/auth/login', '/api/auth/verify-otp', '/api/health', '/api/history/report-schedule', '/api/db-status'];
+    // Only strictly public endpoints bypass auth check
+    const publicPaths = ['/api/auth/login', '/api/auth/verify-otp', '/api/health', '/api/history/report-schedule'];
     if (!req.path.startsWith('/api') || publicPaths.some(p => req.path === p || req.path.startsWith('/api/health'))) {
         return next();
     }
@@ -242,12 +247,33 @@ export const verifySecurityAuth = (req, res, next) => {
     });
 };
 
-// ── LAYER 9: Sensitive Data Response Masking ──
-const SENSITIVE_FIELDS = ['password', 'lastOtp', 'jwtSecret', 'dbPassword', 'dbUri'];
+// Administrator Authorization Check
+export const requireAdminRole = (req, res, next) => {
+    const systemKey = req.headers['x-system-api-key'];
+    if (systemKey === SYSTEM_API_KEY) {
+        return next();
+    }
+    if (req.user && (req.user.role === 'Administrator' || req.user.role === 'Admin')) {
+        return next();
+    }
+    return res.status(403).json({ error: 'Security Protection: Administrator privileges required to execute this operation.' });
+};
 
-const maskSensitiveData = (data) => {
+// ── LAYER 9: Sensitive Data Response Masking ──
+const SENSITIVE_FIELDS = [
+    'password', 'lastOtp', 'jwtSecret', 'dbPassword', 'dbUri',
+    'FIREBASE_SECRET_KEY', 'FIREBASE_DATABASE_URL', 'authSecret',
+    'secondPassword', 'telegramToken', 'botToken', 'secretKey'
+];
+
+const maskSensitiveData = (data, _seen = new WeakSet()) => {
     if (!data || typeof data !== 'object') return data;
-    if (Array.isArray(data)) return data.map(maskSensitiveData);
+
+    // Circular reference guard — break the cycle instead of blowing the stack
+    if (_seen.has(data)) return '[Circular]';
+    _seen.add(data);
+
+    if (Array.isArray(data)) return data.map(item => maskSensitiveData(item, _seen));
 
     const cleaned = {};
     for (const key in data) {
@@ -255,7 +281,7 @@ const maskSensitiveData = (data) => {
             if (SENSITIVE_FIELDS.includes(key)) {
                 continue;
             }
-            cleaned[key] = maskSensitiveData(data[key]);
+            cleaned[key] = maskSensitiveData(data[key], _seen);
         }
     }
     return cleaned;

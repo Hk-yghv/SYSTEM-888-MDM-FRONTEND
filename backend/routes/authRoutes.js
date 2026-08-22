@@ -208,7 +208,22 @@ export default function createAuthRoutes(bot) {
             }
 
             const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
-            res.json({ token, user, deviceInfo: { ip, os, browser } });
+            res.json({
+                token,
+                deviceInfo: { ip, os, browser },
+                user: {
+                    userId: user.userId,
+                    name: user.name,
+                    username: user.username,
+                    email: user.email,
+                    role: user.role,
+                    brand: user.brand || '',
+                    isImmutable: user.isImmutable,
+                    telegramId: user.telegramId,
+                    twoFactorEnabled: user.twoFactorEnabled,
+                    permissions: user.permissions
+                }
+            });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }

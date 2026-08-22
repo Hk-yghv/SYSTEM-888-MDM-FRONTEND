@@ -30,6 +30,7 @@ import {
     sanitizeMiddleware,
     rateLimiterMiddleware,
     verifySecurityAuth,
+    requireAdminRole,
     setSecurityTelegramBot
 } from './middleware/security.js';
 
@@ -82,18 +83,18 @@ app.use(sanitizeMiddleware);
 app.use(rateLimiterMiddleware);
 app.use(verifySecurityAuth);
 
-// ── Health Check ──
+// ── Health Check (Public Endpoint) ──
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
-// ── DB Status & Firebase Backup Info ──
+// ── DB Status & Firebase Backup Info (Protected Endpoint) ──
 app.get('/api/db-status', (req, res) => res.json({
     databases: getDBStatus(),
     firebaseBackup: getFirebaseBackupStatus(),
     timestamp: new Date()
 }));
 
-// ── Manual Firebase Backup Trigger Endpoint ──
-app.all(['/api/db-status/backup-firebase', '/api/backup-firebase'], async (req, res) => {
+// ── Manual Firebase Backup Trigger Endpoint (Protected Admin-Only Endpoint) ──
+app.all(['/api/db-status/backup-firebase', '/api/backup-firebase'], requireAdminRole, async (req, res) => {
     try {
         const result = await runFirebaseBackup();
         res.json({
