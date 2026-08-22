@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../../context/AuthContext';
 import { FaQrcode, FaWifi, FaBroadcastTower, FaMobileAlt, FaBatteryThreeQuarters, FaMicrochip, FaMemory, FaHdd, FaSms, FaSyncAlt, FaUnlink, FaCheckCircle, FaLaptop, FaPlug, FaTimesCircle, FaExclamationTriangle, FaHourglass } from 'react-icons/fa';
 import { MdPhoneAndroid, MdDeveloperMode, MdOutlineSignalCellular4Bar } from 'react-icons/md';
@@ -388,26 +389,20 @@ const PhoneAppPage = () => {
                     <div className="bg-[#0f1426] border border-gray-800 rounded-2xl p-6 shadow-xl space-y-4">
                         {activeTab === 'qrcode' && (
                             <div className="flex flex-col md:flex-row items-center gap-6">
-                                {/* Simulated QR Code Box */}
+                                {/* Real Scannable QRCodeSVG Box */}
                                 <div className="p-4 bg-white rounded-2xl border-4 border-indigo-500 shadow-2xl flex flex-col items-center justify-center relative">
-                                    <div className="w-44 h-44 bg-slate-900 rounded-xl p-3 flex flex-col items-center justify-center text-center space-y-2 relative overflow-hidden">
-                                        {/* SVG QR Code pattern */}
-                                        <svg viewBox="0 0 100 100" className="w-full h-full fill-indigo-400">
-                                            <rect x="5" y="5" width="30" height="30" fill="none" stroke="#6366f1" strokeWidth="6" />
-                                            <rect x="12" y="12" width="16" height="16" fill="#6366f1" />
-                                            <rect x="65" y="5" width="30" height="30" fill="none" stroke="#6366f1" strokeWidth="6" />
-                                            <rect x="72" y="12" width="16" height="16" fill="#6366f1" />
-                                            <rect x="5" y="65" width="30" height="30" fill="none" stroke="#6366f1" strokeWidth="6" />
-                                            <rect x="12" y="72" width="16" height="16" fill="#6366f1" />
-                                            <rect x="42" y="42" width="16" height="16" fill="#10b981" />
-                                            <rect x="65" y="65" width="12" height="12" fill="#6366f1" />
-                                            <rect x="80" y="80" width="15" height="15" fill="#10b981" />
-                                            <rect x="45" y="10" width="10" height="20" fill="#6366f1" />
-                                            <rect x="10" y="45" width="20" height="10" fill="#6366f1" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-[10px] font-bold text-slate-800 mt-2 font-mono">
-                                        TOKEN: SYSTEM-MDM-PAIR-9982
+                                    <QRCodeSVG
+                                        value={JSON.stringify({
+                                            apiUrl: API_BASE,
+                                            pairToken: "SYSTEM-MDM-PAIR-8829",
+                                            timestamp: Date.now()
+                                        })}
+                                        size={180}
+                                        level="H"
+                                        includeMargin={true}
+                                    />
+                                    <span className="text-[10px] font-bold text-indigo-900 mt-2 font-mono break-all text-center max-w-[200px]">
+                                        {API_BASE}
                                     </span>
                                 </div>
 

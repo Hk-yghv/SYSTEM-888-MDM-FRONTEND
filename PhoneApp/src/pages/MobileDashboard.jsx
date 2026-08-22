@@ -8,7 +8,7 @@ import {
 } from 'react-icons/fa';
 import { MdOutlinePhoneIphone, MdOutlineWallpaper, MdInfo, MdOutlineContactPhone } from 'react-icons/md';
 
-const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
+const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand, onUpdateApiUrl }) => {
     const [activeCategory, setActiveCategory] = useState('scan');
     const [subPage, setSubPage] = useState('');
     const [menuOpen, setMenuOpen] = useState(false);
@@ -259,7 +259,7 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
             {/* Page Content View */}
             <main className="flex-1 pb-20 overflow-y-auto">
                 {activeCategory === 'scan' && (
-                    <ScanPage API_BASE={API_BASE} />
+                    <ScanPage API_BASE={API_BASE} onUpdateApiUrl={onUpdateApiUrl} />
                 )}
 
                 {activeCategory === 'dashboard' && (
