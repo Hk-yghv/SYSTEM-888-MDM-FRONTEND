@@ -18,7 +18,8 @@ const userSchema = new mongoose.Schema({
     loginHistory: [{
         timestamp: { type: Date, default: Date.now },
         ip: { type: String, default: '127.0.0.1' },
-        deviceInfo: { type: String, default: 'Web Browser' }
+        deviceInfo: { type: String, default: 'Web Browser' },
+        status: { type: String, default: 'Success' }
     }],
     permissions: {
         type: Map,

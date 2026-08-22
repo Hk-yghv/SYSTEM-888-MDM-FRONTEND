@@ -24,7 +24,8 @@ const collectLoginHistory = async () => {
                     history: u.loginHistory.map(h => ({
                         timestamp: h.timestamp,
                         ip: h.ip || 'N/A',
-                        deviceInfo: h.deviceInfo || 'Unknown'
+                        deviceInfo: h.deviceInfo || 'Unknown',
+                        status: h.status || 'Success'
                     }))
                 });
             }
@@ -50,7 +51,8 @@ const formatReportText = (collected) => {
             lines.push(`User: ${user.username} (${user.userId || '-'})`);
             user.history.forEach(h => {
                 const ts = new Date(h.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
-                lines.push(` - ${ts} | IP: ${h.ip} | Device: ${h.deviceInfo}`);
+                const st = h.status || 'Success';
+                lines.push(` - ${ts} | Status: ${st} | IP: ${h.ip} | Device: ${h.deviceInfo}`);
             });
             lines.push('');
         });
@@ -125,7 +127,7 @@ const appendToGoogleSheet = async (serviceAccountJsonOrPath, sheetId, rows) => {
             const csvPath = path.join(dir, 'login-history-backup.csv');
             // Add header if file doesn't exist yet
             if (!fs.existsSync(csvPath)) {
-                fs.writeFileSync(csvPath, '"Username","UserID","Timestamp","IP","Device"\n', 'utf8');
+                fs.writeFileSync(csvPath, '"Username","UserID","Timestamp","Status","IP","Device"\n', 'utf8');
             }
             const csvLines = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n') + '\n';
             fs.appendFileSync(csvPath, csvLines, 'utf8');

