@@ -261,6 +261,11 @@ const Header = () => {
                             <h3 className="text-lg font-black text-white pt-2 font-khmer">
                                 {phoneDevice.model || 'Samsung Galaxy S24 Ultra'}
                             </h3>
+                            <div className="flex items-center justify-center gap-2 text-xs font-bold text-indigo-300 font-mono">
+                                <span>Account: {phoneDevice.username || '@houv'}</span>
+                                <span>&bull;</span>
+                                <span>Brand: {phoneDevice.brand || '888MDM'}</span>
+                            </div>
                             <p className="text-xs text-slate-400 font-mono">
                                 Device ID: {phoneDevice.id} &bull; IP: {phoneDevice.ip || '192.168.1.105'}
                             </p>

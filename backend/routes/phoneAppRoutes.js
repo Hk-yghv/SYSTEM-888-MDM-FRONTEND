@@ -57,8 +57,9 @@ router.post('/pair', (req, res) => {
     
     const fullDeviceInfo = {
         id: deviceInfo.id || "PH-" + Math.floor(1000 + Math.random() * 9000),
+        username: deviceInfo.username || "@houv",
         model: deviceInfo.model || "Samsung Galaxy S24 Ultra",
-        brand: deviceInfo.brand || "SAMSUNG",
+        brand: deviceInfo.brand || "888MDM",
         imei1: deviceInfo.imei1 || "358941109482103",
         imei2: deviceInfo.imei2 || "358941109482104",
         osVersion: deviceInfo.osVersion || "Android 14 (One UI 6.1)",

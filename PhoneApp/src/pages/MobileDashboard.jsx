@@ -78,9 +78,10 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand, onUpdateApiU
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    username: user?.username || '@houv',
+                    brand: user?.brand || '888MDM',
                     id: "PH-" + Math.floor(1000 + Math.random() * 9000),
                     model: "Samsung Galaxy S24 Ultra",
-                    brand: "SAMSUNG",
                     osVersion: "Android 14",
                     batteryLevel: 94,
                     ip: "192.168.1.105"
@@ -259,7 +260,7 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand, onUpdateApiU
             {/* Page Content View */}
             <main className="flex-1 pb-20 overflow-y-auto">
                 {activeCategory === 'scan' && (
-                    <ScanPage API_BASE={API_BASE} onUpdateApiUrl={onUpdateApiUrl} />
+                    <ScanPage API_BASE={API_BASE} user={user} onUpdateApiUrl={onUpdateApiUrl} />
                 )}
 
                 {activeCategory === 'dashboard' && (

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createWorker } from 'tesseract.js';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { FaCamera, FaImage, FaCheckCircle, FaExclamationTriangle, FaSyncAlt, FaSpinner, FaIdCard, FaLaptop, FaQrcode, FaPlug, FaHourglass, FaPaperPlane } from 'react-icons/fa';
 
-const ScanPage = ({ API_BASE, onUpdateApiUrl }) => {
+const ScanPage = ({ API_BASE, user, onUpdateApiUrl }) => {
     const [scanMode, setScanMode] = useState('doc'); // 'doc' (Document Scan) | 'qr' (Live QR System Connect)
     const [createSessionActive, setCreateSessionActive] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState('disconnected'); // 'connected' | 'pending' | 'disconnected'
@@ -15,9 +15,11 @@ const ScanPage = ({ API_BASE, onUpdateApiUrl }) => {
     const [errorMessage, setErrorMessage] = useState('');
     const [pairMsg, setPairMsg] = useState('');
     const [pairStatus, setPairStatus] = useState('');
+    const [cameraPermissionGranted, setCameraPermissionGranted] = useState(false);
 
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
+    const qrFileInputRef = useRef(null);
     const scannerRef = useRef(null);
 
     const checkComputerStatus = async () => {
@@ -47,6 +49,21 @@ const ScanPage = ({ API_BASE, onUpdateApiUrl }) => {
         return () => clearInterval(interval);
     }, [API_BASE]);
 
+    // Request Camera Permission on Android Native / Web
+    const requestCameraPermission = async () => {
+        try {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                setCameraPermissionGranted(true);
+                // Stop tracks after permission check
+                stream.getTracks().forEach(track => track.stop());
+            }
+        } catch (err) {
+            console.warn('Camera permission request error:', err);
+            setCameraPermissionGranted(false);
+        }
+    };
+
     // Send Pairing Request using Target API Base
     const sendPairRequest = async (targetApiBase = API_BASE) => {
         setScanning(true);
@@ -60,9 +77,10 @@ const ScanPage = ({ API_BASE, onUpdateApiUrl }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    username: user?.username || '@houv',
+                    brand: user?.brand || '888MDM',
                     id: "PH-" + Math.floor(1000 + Math.random() * 9000),
                     model: "Samsung Galaxy S24 Ultra",
-                    brand: "SAMSUNG",
                     osVersion: "Android 14",
                     batteryLevel: 94,
                     ip: "192.168.1.105"
@@ -96,7 +114,6 @@ const ScanPage = ({ API_BASE, onUpdateApiUrl }) => {
         
         let targetApi = API_BASE;
         try {
-            // Parse JSON payload from computer QR Code
             if (decodedText.startsWith('{')) {
                 const payload = JSON.parse(decodedText);
                 if (payload.apiUrl) {
@@ -113,20 +130,40 @@ const ScanPage = ({ API_BASE, onUpdateApiUrl }) => {
             }
         } catch { }
 
-        // Send pairing request immediately upon live scan detection
         await sendPairRequest(targetApi);
+    };
+
+    // Decode QR Code from Image File Upload Fallback
+    const handleQrFileDecode = async (file) => {
+        if (!file) return;
+        setScanning(true);
+        setStatusText('កំពុងអានរូបភាព QR Code...');
+        try {
+            const html5Qrcode = new Html5Qrcode("qr-file-dummy");
+            const decodedText = await html5Qrcode.scanFile(file, true);
+            await handleQrDecoded(decodedText);
+        } catch (err) {
+            console.warn('Scan file error:', err);
+            // Fallback: Send pair request directly even if QR text parse fails
+            await sendPairRequest();
+        } finally {
+            setScanning(false);
+        }
     };
 
     // Initialize Real-time Live Video Camera Stream Scanner when QR mode active
     useEffect(() => {
         if (scanMode !== 'qr') return;
 
+        requestCameraPermission();
+
         const scanner = new Html5QrcodeScanner(
             "qr-reader-container",
             {
-                fps: 15,
-                qrbox: { width: 240, height: 240 },
+                fps: 10,
+                qrbox: { width: 220, height: 220 },
                 rememberLastUsedCamera: true,
+                showTorchButtonIfSupported: true,
                 aspectRatio: 1.0
             },
             /* verbose= */ false
@@ -135,14 +172,11 @@ const ScanPage = ({ API_BASE, onUpdateApiUrl }) => {
         scanner.render(
             (decodedText) => {
                 handleQrDecoded(decodedText);
-                // Pause or clear scanner after successful scan
                 try {
                     scanner.clear();
                 } catch { }
             },
-            () => {
-                // Ignore scanning in progress frames
-            }
+            () => { }
         );
 
         scannerRef.current = scanner;
@@ -303,6 +337,9 @@ const ScanPage = ({ API_BASE, onUpdateApiUrl }) => {
 
     return (
         <div className="p-4 space-y-4 max-w-md mx-auto select-none">
+            <div id="qr-file-dummy" className="hidden"></div>
+            <input ref={qrFileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleQrFileDecode(e.target.files[0])} />
+
             {/* Mode Switcher Tabs */}
             <div className="bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-2">
                 <button
@@ -447,6 +484,21 @@ const ScanPage = ({ API_BASE, onUpdateApiUrl }) => {
                         </p>
                     </div>
 
+                    {!cameraPermissionGranted && (
+                        <div className="p-3 bg-amber-950/80 border border-amber-700/80 rounded-2xl text-xs text-amber-300 font-khmer space-y-2">
+                            <p className="font-bold flex items-center justify-center gap-1.5">
+                                <FaExclamationTriangle className="text-amber-400 text-base" />
+                                សូមចុចអនុញ្ញាត (Allow) ការប្រើប្រាស់កាំមេរ៉ា!
+                            </p>
+                            <button
+                                onClick={requestCameraPermission}
+                                className="px-4 py-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded-xl text-xs font-bold font-khmer"
+                            >
+                                🎥 អនុញ្ញាតឱ្យប្រើប្រាស់ Camera (Grant Permission)
+                            </button>
+                        </div>
+                    )}
+
                     {pairMsg && (
                         <div className={`p-3.5 rounded-2xl text-xs font-khmer font-bold flex items-center gap-2 text-left border ${
                             pairStatus === 'connected'
@@ -463,15 +515,26 @@ const ScanPage = ({ API_BASE, onUpdateApiUrl }) => {
                         <div id="qr-reader-container" className="w-full text-slate-100 font-khmer"></div>
                     </div>
 
-                    {/* One-Tap Manual Fallback Pairing Request Button */}
-                    <button
-                        onClick={() => sendPairRequest()}
-                        disabled={scanning}
-                        className="w-full py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-bold rounded-2xl text-xs shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer font-khmer transition-all active:scale-[0.98]"
-                    >
-                        <FaPaperPlane className="text-base" />
-                        <span>{scanning ? 'កំពុងផ្ញើសំណើ...' : '⚡ ផ្ញើសំណើភ្ជាប់ទៅ Computer (Manual Request)'}</span>
-                    </button>
+                    {/* Pairing Controls & Fallbacks */}
+                    <div className="grid grid-cols-2 gap-2.5 pt-1">
+                        <button
+                            onClick={() => sendPairRequest()}
+                            disabled={scanning}
+                            className="py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-bold rounded-2xl text-xs shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-1.5 cursor-pointer font-khmer transition-all active:scale-[0.98]"
+                        >
+                            <FaPaperPlane className="text-xs" />
+                            <span>⚡ ផ្ញើសំណើភ្ជាប់ភ្លាមៗ</span>
+                        </button>
+
+                        <button
+                            onClick={() => qrFileInputRef.current?.click()}
+                            disabled={scanning}
+                            className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold rounded-2xl text-xs flex items-center justify-center gap-1.5 cursor-pointer font-khmer transition-all"
+                        >
+                            <FaImage className="text-xs text-indigo-400" />
+                            <span>ជ្រើសរើសរូប QR Code</span>
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
