@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaAngleDoubleRight, FaSearch, FaUserCheck } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
+import DocumentScanner from '../../../components/DocumentScanner';
 
 /* ── Autocomplete field with suggestions dropdown ── */
 const AutoField = ({ id, label, value, onChange, placeholder, list, onSelect, inputClass = '', font = '' }) => {
@@ -121,6 +122,70 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         };
         if (open) go();
     }, [API_BASE, open]);
+
+    // ── Live Session & Real-time Scan Listener from Mobile App ──
+    useEffect(() => {
+        if (!open) return;
+
+        // Register session start on backend
+        fetch(`${API_BASE}/phone-app/create-session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ active: true })
+        }).catch(() => {});
+
+        // Poll for real-time document scan pushed from Phone App
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`${API_BASE}/phone-app/status`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.latestScannedDoc) {
+                        const doc = data.latestScannedDoc;
+                        setForm(prev => ({
+                            ...prev,
+                            customerNameEn: doc.customerNameEn || prev.customerNameEn,
+                            customerNameKh: doc.customerNameKh || prev.customerNameKh,
+                            idCardNumber: doc.idCardNumber || prev.idCardNumber,
+                            dob: doc.dob || prev.dob,
+                            gender: doc.gender || prev.gender,
+                            birthAddress: doc.birthAddress || prev.birthAddress,
+                            currentAddress: doc.currentAddress || prev.currentAddress,
+                        }));
+                        setAutoFilled(true);
+
+                        // Consume scanned data so it doesn't re-trigger
+                        fetch(`${API_BASE}/phone-app/consume-scanned-doc`, { method: 'POST' }).catch(() => {});
+                    }
+                }
+            } catch { }
+        }, 1500);
+
+        return () => {
+            clearInterval(interval);
+            // Notify backend session closed
+            fetch(`${API_BASE}/phone-app/create-session`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: false })
+            }).catch(() => {});
+        };
+    }, [open, API_BASE]);
+
+    const handleDocumentParsed = (parsed) => {
+        if (!parsed) return;
+        setForm(prev => ({
+            ...prev,
+            customerNameEn: parsed.customerNameEn || prev.customerNameEn,
+            customerNameKh: parsed.customerNameKh || prev.customerNameKh,
+            idCardNumber: parsed.idCardNumber || prev.idCardNumber,
+            dob: parsed.dob || prev.dob,
+            gender: parsed.gender || prev.gender,
+            birthAddress: parsed.birthAddress || prev.birthAddress,
+            currentAddress: parsed.currentAddress || prev.currentAddress,
+        }));
+        setAutoFilled(true);
+    };
 
     // ── Fetch brand-specific models ──
     useEffect(() => {
@@ -286,6 +351,9 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 </div>
 
                 <div className='p-4 w-full h-[75vh] overflow-y-auto space-y-6 text-xs text-gray-200'>
+
+                    {/* ── Document Scanner (Drag & Drop ID Card / Passport) ── */}
+                    <DocumentScanner onParsedData={handleDocumentParsed} />
 
                     {/* ── Section 1: Customer Information ── */}
                     <div>

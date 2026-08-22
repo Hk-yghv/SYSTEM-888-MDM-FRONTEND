@@ -32,6 +32,7 @@
     "settings": {
         "controlSystem": "/settings/control-system",
         "allAccount": "/settings/all-account",
+        "phoneApp": "/settings/phone-app",
         "profile": "/profile"
     }
 }

@@ -5,6 +5,7 @@ import { MdOutlinePhoneIphone, MdOutlineSync, MdPictureAsPdf } from "react-icons
 import { FaMobileAlt, FaLock, FaUnlock, FaFileExcel } from "react-icons/fa";
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
+import Device3DPointers from '../../../components/Device3DPointers';
 
 const Device = () => {
     const { t } = useLanguage();
@@ -14,6 +15,7 @@ const Device = () => {
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedDevice, setSelectedDevice] = useState(null);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const LIMIT = 10;
@@ -133,7 +135,7 @@ const Device = () => {
                             <th className='px-4 py-3'>IMEI 1</th>
                             <th className='px-4 py-3'>{t('customerName')}</th>
                             <th className='px-4 py-3 text-center'>Phone Lock Status</th>
-                            <th className='px-4 py-3 text-center'>Wallpaper Status</th>
+                            <th className='px-4 py-3 text-center'>3D Info</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -168,9 +170,13 @@ const Device = () => {
                                         </span>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
-                                        <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 w-24 mx-auto ${item.lockWallpaperStatus === 'Locked' ? 'bg-purple-50 border border-purple-300 text-purple-700' : 'bg-blue-50 border border-blue-300 text-blue-700'}`}>
-                                            {item.lockWallpaperStatus || 'Unlocked'}
-                                        </span>
+                                        <button
+                                            onClick={() => setSelectedDevice(item)}
+                                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 mx-auto cursor-pointer"
+                                        >
+                                            <FaMobileAlt />
+                                            <span>3D View</span>
+                                        </button>
                                     </td>
                                 </tr>
                             ))
@@ -180,6 +186,37 @@ const Device = () => {
             </div>
 
             <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
+
+            {/* 3D Device Information Modal */}
+            {selectedDevice && (
+                <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
+                    <div className="bg-[#0b0f1e] border border-indigo-500/40 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                            <h3 className="text-sm font-bold text-indigo-400 flex items-center gap-2">
+                                <FaMobileAlt className="text-lg" />
+                                <span>Device Specifications & Interactive 3D Model</span>
+                            </h3>
+                            <button onClick={() => setSelectedDevice(null)} className="w-8 h-8 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs font-bold cursor-pointer">✕</button>
+                        </div>
+
+                        {/* Device Specs Summary */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                            <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Model</span><span className="font-bold text-white">{selectedDevice.model}</span></div>
+                            <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Serial Number</span><span className="font-mono font-bold text-indigo-300">{selectedDevice.serialNumber}</span></div>
+                            <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 1</span><span className="font-mono text-emerald-400">{selectedDevice.imei1 || '-'}</span></div>
+                        </div>
+
+                        {/* Interactive 3D Model with Feature Lines */}
+                        <div className="bg-[#070913] p-4 rounded-2xl border border-indigo-500/30">
+                            <Device3DPointers device={selectedDevice} />
+                        </div>
+
+                        <div className="text-right">
+                            <button onClick={() => setSelectedDevice(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl cursor-pointer">Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

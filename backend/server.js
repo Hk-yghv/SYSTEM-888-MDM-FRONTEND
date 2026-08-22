@@ -32,6 +32,7 @@ import lostphoneRoutes from './routes/lostphoneRoutes.js';
 import wallpaperRoutes from './routes/wallpaperRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import historyRoutes, { createHistoryRoutes } from './routes/historyRoutes.js';
+import phoneAppRoutes from './routes/phoneAppRoutes.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -76,6 +77,7 @@ app.use('/api', wallpaperRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/history', createHistoryRoutes(bot));
+app.use('/api/phone-app', phoneAppRoutes);
 
 // ── Connect All Databases & Start Server ──
 connectDB().then(() => {

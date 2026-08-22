@@ -1,0 +1,63 @@
+name: Build SYSTEM MDM Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install PhoneApp Dependencies
+        run: |
+          cd PhoneApp
+          npm install
+
+      - name: Build Web Application
+        run: |
+          cd PhoneApp
+          npm run build
+
+      - name: Initialize Capacitor & Add Android Platform
+        run: |
+          cd PhoneApp
+          npx cap init "SYSTEM MDM" "com.system.mdm.phoneapp" --web-dir dist
+          npx cap add android || true
+          npx cap copy android
+          npx cap update android
+
+      - name: Build Debug APK via Gradle
+        run: |
+          cd PhoneApp/android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-mdm-phone-app-debug.apk
+          path: PhoneApp/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30

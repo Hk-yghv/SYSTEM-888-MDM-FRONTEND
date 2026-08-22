@@ -15,6 +15,7 @@ const Header = () => {
 
     // Outstanding Balance State
     const [balance, setBalance] = useState({ totalLoanAmount: 0, totalRevenue: 0, outstandingBalance: 0 });
+    const [phoneDevice, setPhoneDevice] = useState(null);
 
     useEffect(() => {
         const fetchBalance = async () => {
@@ -31,8 +32,22 @@ const Header = () => {
                 }
             } catch { }
         };
+        const fetchPhoneStatus = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/phone-app/status`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setPhoneDevice(data.device || null);
+                }
+            } catch { }
+        };
+
         fetchBalance();
-        const interval = setInterval(fetchBalance, 60000); // refresh every 60s
+        fetchPhoneStatus();
+        const interval = setInterval(() => {
+            fetchBalance();
+            fetchPhoneStatus();
+        }, 5000);
         return () => clearInterval(interval);
     }, [API_BASE, user]);
 
@@ -48,12 +63,31 @@ const Header = () => {
         <>
             <header className='w-full h-[7vh] flex items-center justify-between px-6 bg-white/90 border-b border-emerald-500/20 backdrop-blur-md z-40 select-none shadow-sm'>
                 <div className='flex items-center gap-4'>
-                    <Link to="/dashboard" className='flex items-center gap-2'>
+                    <Link to="/dashboard" className='flex items-center gap-2.5 group'>
+                        <img src="/mdm_logo.svg" alt="MDM System Logo" className="w-8 h-8 object-contain transition-transform group-hover:scale-105" />
                         <h1 className="text-xl font-extrabold tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors">
                             {(!user || user.isImmutable || user.username === '@hakyonghouv' || !user.brand) 
                                 ? 'SYSTEM' 
                                 : `SYSTEM ${user.brand.toUpperCase()}`}
                         </h1>
+                    </Link>
+
+                    {/* ─── Device Connection Status Badge ─── */}
+                    <Link
+                        to="/settings/phone-app"
+                        className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                            phoneDevice?.isConnected 
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100' 
+                                : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
+                        }`}
+                        title="Click to view Phone App settings"
+                    >
+                        <span className={`w-2 h-2 rounded-full ${phoneDevice?.isConnected ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`}></span>
+                        <span>
+                            {phoneDevice?.isConnected 
+                                ? `📱 Device: ${phoneDevice.model || 'Phone'} Connected` 
+                                : '📱 No Device Connected'}
+                        </span>
                     </Link>
 
                     {/* ─── Outstanding Balance Widget ─── */}

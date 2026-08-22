@@ -7,6 +7,7 @@ import { FaFileExcel, FaQrcode } from 'react-icons/fa';
 import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
+import IDCard3DViewer from '../../../components/IDCard3DViewer';
 
 const Customer = () => {
     const { t } = useLanguage();
@@ -339,6 +340,14 @@ const Customer = () => {
                         </div>
 
                         <div className="p-6 space-y-5 text-xs">
+                            {/* 3D Interactive ID Card Viewer */}
+                            <div className="bg-[#070913] p-3 rounded-2xl border border-indigo-500/30">
+                                <h4 className="text-[11px] font-bold text-indigo-300 uppercase tracking-wider mb-1 text-center font-khmer">
+                                    🪪 អត្តសញ្ញាណប័ណ្ណ / 3D National ID Card Viewer
+                                </h4>
+                                <IDCard3DViewer customer={selectedCustomer} />
+                            </div>
+
                             {/* Customer Information */}
                             <div>
                                 <h4 className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-3 flex items-center gap-2">
