@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { createWorker } from 'tesseract.js';
-import { FaIdCard, FaCloudUploadAlt, FaSpinner, FaCheckCircle, FaExclamationTriangle, FaMagic } from 'react-icons/fa';
+import { FaIdCard, FaCloudUploadAlt, FaSpinner, FaCheckCircle, FaExclamationTriangle, FaMobileAlt } from 'react-icons/fa';
 import { MdOutlineCleaningServices } from 'react-icons/md';
 
 const DocumentScanner = ({ onParsedData }) => {
@@ -30,47 +30,36 @@ const DocumentScanner = ({ onParsedData }) => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
-                // Upscale image 2x for small or blurry text readability
                 const scale = Math.max(1.5, 1200 / Math.max(img.width, img.height));
                 canvas.width = img.width * scale;
                 canvas.height = img.height * scale;
 
-                // Draw upscaled image
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                // Get Image Data for Contrast Enhancement & Grayscale Binarization
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imageData.data;
 
-                // Contrast Factor
-                const contrast = 40; // High contrast adjustment
+                const contrast = 40;
                 const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
 
                 for (let i = 0; i < data.length; i += 4) {
-                    // Grayscale conversion
                     const avg = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-                    
-                    // Contrast enhancement
                     const color = factor * (avg - 128) + 128;
-                    
-                    // High Threshold Binarization
                     const finalColor = color > 140 ? 255 : color < 90 ? 0 : color;
 
-                    data[i] = finalColor;     // R
-                    data[i + 1] = finalColor; // G
-                    data[i + 2] = finalColor; // B
+                    data[i] = finalColor;
+                    data[i + 1] = finalColor;
+                    data[i + 2] = finalColor;
                 }
 
                 ctx.putImageData(imageData, 0, 0);
-
-                // Return processed Canvas data URL
                 resolve(canvas.toDataURL('image/jpeg', 0.95));
             };
             img.src = URL.createObjectURL(imageFile);
         });
     };
 
-    // Smart regex parser supporting Khmer and English ID Cards & Passports
+    // Smart parser supporting ID Cards, Passports AND Phone Specs Screenshots
     const parseDocumentText = (rawText) => {
         const normalizedText = convertKhmerNumbers(rawText);
         const lines = normalizedText.split('\n').map(l => l.trim()).filter(Boolean);
@@ -83,10 +72,40 @@ const DocumentScanner = ({ onParsedData }) => {
             dob: '',
             gender: 'male',
             birthAddress: '',
-            currentAddress: ''
+            currentAddress: '',
+            // Device Specs Fields
+            brandName: '',
+            modelName: '',
+            imei1: '',
+            imei2: '',
+            ramStorage: ''
         };
 
-        // 1. Parse ID Card / Passport Number (9 digits or letter + digits)
+        // ── Device Specs Parsing (Phone Screenshots / Specs photos) ──
+        const imeiMatches = normalizedText.match(/\b(35\d{13}|86\d{13}|01\d{13}|\d{15})\b/g);
+        if (imeiMatches && imeiMatches.length > 0) {
+            parsed.imei1 = imeiMatches[0];
+            if (imeiMatches.length > 1) parsed.imei2 = imeiMatches[1];
+        }
+
+        const brandsList = ['SAMSUNG', 'APPLE', 'IPHONE', 'OPPO', 'VIVO', 'REALME', 'XIAOMI', 'REDMI', 'ONEPLUS', 'GOOGLE', 'PIXEL', 'HONOR', 'HUAWEI'];
+        const foundBrand = brandsList.find(b => fullText.includes(b));
+        if (foundBrand) {
+            parsed.brandName = foundBrand === 'IPHONE' ? 'APPLE' : foundBrand;
+        }
+
+        const modelLine = lines.find(l => {
+            const up = l.toUpperCase();
+            return up.includes('GALAXY') || up.includes('IPHONE') || up.includes('REDMI') || up.includes('POCO') || up.includes('PRO MAX') || up.includes('ULTRA');
+        });
+        if (modelLine) parsed.modelName = modelLine;
+
+        const ramStorageMatch = normalizedText.match(/\b(\d{1,3}\s?GB|\d{1,3}\s?TB)\b/gi);
+        if (ramStorageMatch) {
+            parsed.ramStorage = ramStorageMatch.join(' / ');
+        }
+
+        // ── Customer Document Parsing (ID Cards / Passports) ──
         const idMatches = normalizedText.match(/\b\d{3}\s?\d{3}\s?\d{3}\b/) || 
                           normalizedText.match(/\b(ID|NO|NUM|PASSPORT|លេខ)[:\s]*([A-Z0-9]{7,12})\b/i) ||
                           normalizedText.match(/\b([A-Z]\d{7,8}|\d{9,10})\b/);
@@ -94,7 +113,6 @@ const DocumentScanner = ({ onParsedData }) => {
             parsed.idCardNumber = (idMatches[2] || idMatches[1] || idMatches[0]).replace(/\s+/g, '');
         }
 
-        // 2. Parse Date of Birth (DOB)
         const dobMatch = normalizedText.match(/\b(\d{2}[\/\.-]\d{2}[\/\.-]\d{4}|\d{4}[\/\.-]\d{2}[\/\.-]\d{2})\b/);
         if (dobMatch) {
             const rawDate = dobMatch[1].replace(/[\.-]/g, '/');
@@ -106,14 +124,12 @@ const DocumentScanner = ({ onParsedData }) => {
             }
         }
 
-        // 3. Gender Detection (Khmer & English)
         if (fullText.includes('FEMALE') || fullText.includes('SEX: F') || fullText.includes('ស្រី') || fullText.includes('ភេទ ស្រី')) {
             parsed.gender = 'female';
         } else if (fullText.includes('MALE') || fullText.includes('SEX: M') || fullText.includes('ប្រុស') || fullText.includes('ភេទ ប្រុស')) {
             parsed.gender = 'male';
         }
 
-        // 4. English Name Extraction
         const nameCandidates = lines.filter(line => {
             const clean = line.replace(/[^A-Z\s]/g, '').trim();
             return clean.length >= 3 && clean === line.toUpperCase() && !clean.includes('KINGDOM') && !clean.includes('NATIONAL') && strokeCount(clean) === 0;
@@ -122,7 +138,6 @@ const DocumentScanner = ({ onParsedData }) => {
             parsed.customerNameEn = nameCandidates[0].replace(/[^A-Za-z\s]/g, '').trim();
         }
 
-        // 5. Khmer Name Extraction
         const khmerLines = lines.filter(line => /[\u1780-\u17FF]/.test(line));
         const khmerNameLine = khmerLines.find(l => !l.includes('ព្រះរាជាណាចក្រ') && !l.includes('អត្តសញ្ញាណប័ណ្ណ') && !l.includes('សញ្ជាតិ'));
         if (khmerNameLine) {
@@ -142,7 +157,6 @@ const DocumentScanner = ({ onParsedData }) => {
             return;
         }
 
-        // Preview original image
         const reader = new FileReader();
         reader.onload = (e) => setImagePreview(e.target.result);
         reader.readAsDataURL(file);
@@ -152,12 +166,10 @@ const DocumentScanner = ({ onParsedData }) => {
         setStatusText('កំពុងរៀបចំ និង Sharpen រូបភាព (ប្រឆាំងរូបព្រាល)...');
 
         try {
-            // 1. Preprocess blurry image on Canvas
             const enhancedImageDataUrl = await preprocessImageForOCR(file);
             setProgress(35);
-            setStatusText('កំពុងអានភាសាខ្មែរ (Khmer) និង អង់គ្លេស (English)...');
+            setStatusText('កំពុងអានអត្ថបទ (ខ្មែរ + អង់គ្លេស)...');
 
-            // 2. Initialize Tesseract with Multi-language support ('eng' + 'khm')
             let worker;
             try {
                 worker = await createWorker(['eng', 'khm']);
@@ -166,11 +178,11 @@ const DocumentScanner = ({ onParsedData }) => {
             }
 
             setProgress(65);
-            setStatusText('កំពុងស្កេន និងអានអត្ថបទអត្តសញ្ញាណប័ណ្ណ...');
+            setStatusText('កំពុងស្កេន និងបំបែកព័ត៌មានឯកសារ / ព័ត៌មានទូរស័ព្ទ...');
 
             const { data } = await worker.recognize(enhancedImageDataUrl);
             setProgress(85);
-            setStatusText('កំពុងបំបែកព័ត៌មានអត្តសញ្ញាណប័ណ្ណ...');
+            setStatusText('កំពុងបំពេញចូលក្នុង Form អូតូ...');
 
             const parsed = parseDocumentText(data.text || '');
             await worker.terminate();
@@ -223,13 +235,13 @@ const DocumentScanner = ({ onParsedData }) => {
                     </div>
                     <div>
                         <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
-                            <span>Khmer & Global ID Document Scanner</span>
+                            <span>Universal OCR Scanner</span>
                             <span className="px-2 py-0.5 bg-emerald-950/80 border border-emerald-600 text-emerald-400 text-[9px] rounded-full font-khmer">
-                                🇰🇭 ភាសាខ្មែរ + ព្រាលតិចតួច
+                                🪪 អត្តសញ្ញាណប័ណ្ណ / Passport + 📱 ព័ត៌មានទូរស័ព្ទ (Specs/IMEI)
                             </span>
                         </h4>
                         <p className="text-[10px] text-slate-400 font-khmer">
-                            ទម្លាក់រូបភាពចូល (Drag & Drop) — ប្រព័ន្ធមាន Blur Sharpener & គាំទ្រអក្សរខ្មែរ
+                            ទម្លាក់រូបភាពអត្តសញ្ញាណប័ណ្ណ ឬ រូបថត/Screenshot ព័ត៌មានទូរស័ព្ទ (Specs/IMEI) ចូលដើម្បីអានទិន្នន័យអូតូ
                         </p>
                     </div>
                 </div>
@@ -287,26 +299,46 @@ const DocumentScanner = ({ onParsedData }) => {
                         />
                         <div className="flex-1 w-full text-left space-y-1">
                             <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
-                                <FaCheckCircle /> Khmer & English Document Scanned!
+                                <FaCheckCircle /> Document & Phone Specs Scanned Successfully!
                             </div>
                             {extractedFields && (
-                                <div className="grid grid-cols-2 gap-1.5 text-[11px] pt-1">
-                                    <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
-                                        <span className="text-slate-400 block text-[9px]">ឈ្មោះ អង់គ្លេស</span>
-                                        <span className="font-bold text-white">{extractedFields.customerNameEn || '—'}</span>
-                                    </div>
-                                    <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
-                                        <span className="text-slate-400 block text-[9px]">ឈ្មោះ ខ្មែរ</span>
-                                        <span className="font-bold text-indigo-300 font-khmer">{extractedFields.customerNameKh || '—'}</span>
-                                    </div>
-                                    <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
-                                        <span className="text-slate-400 block text-[9px]">ID / Passport No</span>
-                                        <span className="font-mono font-bold text-emerald-400">{extractedFields.idCardNumber || '—'}</span>
-                                    </div>
-                                    <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
-                                        <span className="text-slate-400 block text-[9px]">DOB / Gender</span>
-                                        <span className="capitalize text-slate-200">{extractedFields.dob} &bull; {extractedFields.gender}</span>
-                                    </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px] pt-1">
+                                    {extractedFields.customerNameEn && (
+                                        <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
+                                            <span className="text-slate-400 block text-[9px]">ឈ្មោះ អង់គ្លេស</span>
+                                            <span className="font-bold text-white">{extractedFields.customerNameEn}</span>
+                                        </div>
+                                    )}
+                                    {extractedFields.customerNameKh && (
+                                        <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
+                                            <span className="text-slate-400 block text-[9px]">ឈ្មោះ ខ្មែរ</span>
+                                            <span className="font-bold text-indigo-300 font-khmer">{extractedFields.customerNameKh}</span>
+                                        </div>
+                                    )}
+                                    {extractedFields.idCardNumber && (
+                                        <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
+                                            <span className="text-slate-400 block text-[9px]">ID / Passport No</span>
+                                            <span className="font-mono font-bold text-emerald-400">{extractedFields.idCardNumber}</span>
+                                        </div>
+                                    )}
+                                    {extractedFields.modelName && (
+                                        <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
+                                            <span className="text-slate-400 block text-[9px]">ម៉ូឌែលទូរស័ព្ទ (Model)</span>
+                                            <span className="font-bold text-amber-300">{extractedFields.modelName}</span>
+                                        </div>
+                                    )}
+                                    {extractedFields.imei1 && (
+                                        <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
+                                            <span className="text-slate-400 block text-[9px]">IMEI 1</span>
+                                            <span className="font-mono font-bold text-sky-400">{extractedFields.imei1}</span>
+                                        </div>
+                                    )}
+                                    {extractedFields.ramStorage && (
+                                        <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
+                                            <span className="text-slate-400 block text-[9px]">RAM & Storage</span>
+                                            <span className="font-bold text-slate-200">{extractedFields.ramStorage}</span>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -318,10 +350,10 @@ const DocumentScanner = ({ onParsedData }) => {
                         </div>
                         <div>
                             <p className="text-xs font-bold text-slate-200 font-khmer">
-                                ទម្លាក់រូបភាពអត្តសញ្ញាណប័ណ្ណខ្មែរ ឬ លិខិតឆ្លងដែន ទីនេះ
+                                ទម្លាក់រូបភាពអត្តសញ្ញាណប័ណ្ណខ្មែរ / Passport ឬ រូបថតព័ត៌មានទូរស័ព្ទ (Specs/IMEI) ទីនេះ
                             </p>
                             <p className="text-[10px] text-slate-400 mt-0.5">
-                                Drag & Drop Document Image Here or <span className="text-indigo-400 underline font-semibold">Browse File</span>
+                                Drag & Drop Document / Phone Specs Image Here or <span className="text-indigo-400 underline font-semibold">Browse File</span>
                             </p>
                         </div>
                     </div>

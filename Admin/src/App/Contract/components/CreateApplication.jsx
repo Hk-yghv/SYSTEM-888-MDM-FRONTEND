@@ -151,6 +151,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             gender: doc.gender || prev.gender,
                             birthAddress: doc.birthAddress || prev.birthAddress,
                             currentAddress: doc.currentAddress || prev.currentAddress,
+                            deviceModel: doc.modelName || doc.deviceModel || prev.deviceModel,
+                            imei1: doc.imei1 || prev.imei1,
+                            imei2: doc.imei2 || prev.imei2,
+                            brand: doc.brandName || prev.brand
                         }));
                         setAutoFilled(true);
 
@@ -183,6 +187,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             gender: parsed.gender || prev.gender,
             birthAddress: parsed.birthAddress || prev.birthAddress,
             currentAddress: parsed.currentAddress || prev.currentAddress,
+            deviceModel: parsed.modelName || parsed.deviceModel || prev.deviceModel,
+            imei1: parsed.imei1 || prev.imei1,
+            imei2: parsed.imei2 || prev.imei2,
+            brand: parsed.brandName || prev.brand
         }));
         setAutoFilled(true);
     };

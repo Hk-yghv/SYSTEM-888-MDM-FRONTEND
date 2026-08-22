@@ -129,30 +129,9 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand, onUpdateApiU
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* One-Tap Connection Status Button */}
-                    <button
-                        onClick={handleQuickConnect}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md font-khmer ${
-                            phoneStatus === 'connected'
-                                ? 'bg-emerald-950/80 border border-emerald-700 text-emerald-300'
-                                : phoneStatus === 'pending'
-                                ? 'bg-amber-950/80 border border-amber-700 text-amber-300 animate-pulse'
-                                : 'bg-gradient-to-r from-indigo-600 to-emerald-600 text-white border border-indigo-500 hover:scale-[1.03]'
-                        }`}
-                        title="Click to Pair Phone with Computer System"
-                    >
-                        <span className={`w-2 h-2 rounded-full ${phoneStatus === 'connected' ? 'bg-emerald-400' : phoneStatus === 'pending' ? 'bg-amber-400 animate-ping' : 'bg-white animate-ping'}`}></span>
-                        <span>
-                            {connectMsg ? connectMsg
-                                : phoneStatus === 'connected' ? '🟢 Connected'
-                                : phoneStatus === 'pending' ? '⏳ Pending...'
-                                : '⚡ Connect Phone'}
-                        </span>
-                    </button>
-
                     <button
                         onClick={onChangeBrand}
-                        className="px-2 py-1 bg-slate-900 border border-slate-700/80 text-indigo-300 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer hover:border-indigo-500"
+                        className="px-2.5 py-1 bg-slate-900 border border-slate-700/80 text-indigo-300 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer hover:border-indigo-500"
                     >
                         <FaBuilding /> {user?.brand}
                     </button>

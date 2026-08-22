@@ -1,194 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { createWorker } from 'tesseract.js';
-import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
-import { FaCamera, FaImage, FaCheckCircle, FaExclamationTriangle, FaSyncAlt, FaSpinner, FaIdCard, FaLaptop, FaQrcode, FaPlug, FaHourglass, FaPaperPlane } from 'react-icons/fa';
+import { FaCamera, FaImage, FaCheckCircle, FaExclamationTriangle, FaSpinner, FaIdCard, FaMobileAlt, FaBuilding, FaMicrochip, FaMemory, FaHdd, FaBarcode } from 'react-icons/fa';
 
-const ScanPage = ({ API_BASE, user, onUpdateApiUrl }) => {
-    const [scanMode, setScanMode] = useState('doc'); // 'doc' (Document Scan) | 'qr' (Live QR System Connect)
-    const [createSessionActive, setCreateSessionActive] = useState(false);
-    const [connectionStatus, setConnectionStatus] = useState('disconnected'); // 'connected' | 'pending' | 'disconnected'
-    const [loadingStatus, setLoadingStatus] = useState(true);
+const ScanPage = ({ API_BASE, user }) => {
+    const [scanTab, setScanTab] = useState('doc'); // 'doc' (ID/Passport) | 'device' (Phone Specs/IMEI)
     const [scanning, setScanning] = useState(false);
     const [statusText, setStatusText] = useState('');
     const [previewUrl, setPreviewUrl] = useState(null);
     const [syncSuccess, setSyncSuccess] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
-    const [pairMsg, setPairMsg] = useState('');
-    const [pairStatus, setPairStatus] = useState('');
-    const [cameraPermissionGranted, setCameraPermissionGranted] = useState(false);
+    const [parsedResult, setParsedResult] = useState(null);
 
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
-    const qrFileInputRef = useRef(null);
-    const scannerRef = useRef(null);
-
-    const checkComputerStatus = async () => {
-        try {
-            const res = await fetch(`${API_BASE}/phone-app/status`);
-            if (res.ok) {
-                const data = await res.json();
-                setCreateSessionActive(Boolean(data.createSessionActive));
-                if (data.device?.isConnected) {
-                    setConnectionStatus('connected');
-                } else if (data.device?.isPending) {
-                    setConnectionStatus('pending');
-                } else {
-                    setConnectionStatus('disconnected');
-                }
-            }
-        } catch (err) {
-            console.error('Check status error:', err);
-        } finally {
-            setLoadingStatus(false);
-        }
-    };
-
-    useEffect(() => {
-        checkComputerStatus();
-        const interval = setInterval(checkComputerStatus, 2000);
-        return () => clearInterval(interval);
-    }, [API_BASE]);
-
-    // Request Camera Permission on Android Native / Web
-    const requestCameraPermission = async () => {
-        try {
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                setCameraPermissionGranted(true);
-                // Stop tracks after permission check
-                stream.getTracks().forEach(track => track.stop());
-            }
-        } catch (err) {
-            console.warn('Camera permission request error:', err);
-            setCameraPermissionGranted(false);
-        }
-    };
-
-    // Send Pairing Request using Target API Base
-    const sendPairRequest = async (targetApiBase = API_BASE) => {
-        setScanning(true);
-        setStatusText('កំពុងផ្ញើសំណើភ្ជាប់ទៅកាន់ Computer System...');
-        setPairMsg('');
-        setPairStatus('');
-        setErrorMessage('');
-
-        try {
-            const res = await fetch(`${targetApiBase}/phone-app/pair`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: user?.username || '@houv',
-                    brand: user?.brand || '888MDM',
-                    id: "PH-" + Math.floor(1000 + Math.random() * 9000),
-                    model: "Samsung Galaxy S24 Ultra",
-                    osVersion: "Android 14",
-                    batteryLevel: 94,
-                    ip: "192.168.1.105"
-                })
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                if (data.status === 'connected') {
-                    setPairStatus('connected');
-                    setPairMsg('🟢 ទូរស័ព្ទត្រូវបានភ្ជាប់ទៅកាន់ Computer System រួចរាល់!');
-                } else {
-                    setPairStatus('pending');
-                    setPairMsg('⏳ ស្កេនជោគជ័យ! សំណើភ្ជាប់ត្រូវបានផ្ញើទៅ Computer! សូមមើលលើអេក្រង់ Computer ត្រង់ Settings > Phone App រួចចុច "Approve & Connect (អនុម័ត)"');
-                }
-                checkComputerStatus();
-            } else {
-                setErrorMessage(data.message || 'មិនអាចផ្ញើសំណើភ្ជាប់បានទេ');
-            }
-        } catch (err) {
-            console.error('QR Pair error:', err);
-            setErrorMessage('មិនអាចភ្ជាប់ទៅកាន់ប្រព័ន្ធបានទេ សូមពិនិត្យមើលអុីនធឺណិត');
-        } finally {
-            setScanning(false);
-        }
-    };
-
-    // Live Camera Stream QR Code Reader Callback
-    const handleQrDecoded = async (decodedText) => {
-        if (!decodedText) return;
-        
-        let targetApi = API_BASE;
-        try {
-            if (decodedText.startsWith('{')) {
-                const payload = JSON.parse(decodedText);
-                if (payload.apiUrl) {
-                    targetApi = payload.apiUrl;
-                    if (onUpdateApiUrl) {
-                        onUpdateApiUrl(targetApi);
-                    }
-                }
-            } else if (decodedText.startsWith('http')) {
-                targetApi = decodedText;
-                if (onUpdateApiUrl) {
-                    onUpdateApiUrl(targetApi);
-                }
-            }
-        } catch { }
-
-        await sendPairRequest(targetApi);
-    };
-
-    // Decode QR Code from Image File Upload Fallback
-    const handleQrFileDecode = async (file) => {
-        if (!file) return;
-        setScanning(true);
-        setStatusText('កំពុងអានរូបភាព QR Code...');
-        try {
-            const html5Qrcode = new Html5Qrcode("qr-file-dummy");
-            const decodedText = await html5Qrcode.scanFile(file, true);
-            await handleQrDecoded(decodedText);
-        } catch (err) {
-            console.warn('Scan file error:', err);
-            // Fallback: Send pair request directly even if QR text parse fails
-            await sendPairRequest();
-        } finally {
-            setScanning(false);
-        }
-    };
-
-    // Initialize Real-time Live Video Camera Stream Scanner when QR mode active
-    useEffect(() => {
-        if (scanMode !== 'qr') return;
-
-        requestCameraPermission();
-
-        const scanner = new Html5QrcodeScanner(
-            "qr-reader-container",
-            {
-                fps: 10,
-                qrbox: { width: 220, height: 220 },
-                rememberLastUsedCamera: true,
-                showTorchButtonIfSupported: true,
-                aspectRatio: 1.0
-            },
-            /* verbose= */ false
-        );
-
-        scanner.render(
-            (decodedText) => {
-                handleQrDecoded(decodedText);
-                try {
-                    scanner.clear();
-                } catch { }
-            },
-            () => { }
-        );
-
-        scannerRef.current = scanner;
-
-        return () => {
-            if (scannerRef.current) {
-                try {
-                    scannerRef.current.clear().catch(() => {});
-                } catch { }
-            }
-        };
-    }, [scanMode]);
 
     const convertKhmerNumbers = (str) => {
         const khmerNums = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
@@ -222,6 +46,7 @@ const ScanPage = ({ API_BASE, user, onUpdateApiUrl }) => {
                     const avg = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
                     const color = factor * (avg - 128) + 128;
                     const finalColor = color > 140 ? 255 : color < 90 ? 0 : color;
+
                     data[i] = finalColor;
                     data[i + 1] = finalColor;
                     data[i + 2] = finalColor;
@@ -234,7 +59,8 @@ const ScanPage = ({ API_BASE, user, onUpdateApiUrl }) => {
         });
     };
 
-    const parseDoc = (text) => {
+    // Parse ID Cards / Passports
+    const parseDocData = (text) => {
         const normalizedText = convertKhmerNumbers(text);
         const lines = normalizedText.split('\n').map(l => l.trim()).filter(Boolean);
         const fullText = normalizedText.toUpperCase();
@@ -245,8 +71,7 @@ const ScanPage = ({ API_BASE, user, onUpdateApiUrl }) => {
             idCardNumber: '',
             dob: '',
             gender: 'male',
-            birthAddress: '',
-            currentAddress: ''
+            type: 'doc'
         };
 
         const idMatches = normalizedText.match(/\b\d{3}\s?\d{3}\s?\d{3}\b/) || 
@@ -275,21 +100,53 @@ const ScanPage = ({ API_BASE, user, onUpdateApiUrl }) => {
         return parsed;
     };
 
+    // Parse Device Information / Specs Screenshots
+    const parseDeviceData = (text) => {
+        const normalizedText = convertKhmerNumbers(text);
+        const lines = normalizedText.split('\n').map(l => l.trim()).filter(Boolean);
+        const fullText = normalizedText.toUpperCase();
+
+        let parsed = {
+            brandName: '',
+            modelName: '',
+            imei1: '',
+            imei2: '',
+            ramStorage: '',
+            type: 'device'
+        };
+
+        const imeiMatches = normalizedText.match(/\b(35\d{13}|86\d{13}|01\d{13}|\d{15})\b/g);
+        if (imeiMatches && imeiMatches.length > 0) {
+            parsed.imei1 = imeiMatches[0];
+            if (imeiMatches.length > 1) parsed.imei2 = imeiMatches[1];
+        }
+
+        const brandsList = ['SAMSUNG', 'APPLE', 'IPHONE', 'OPPO', 'VIVO', 'REALME', 'XIAOMI', 'REDMI', 'ONEPLUS', 'GOOGLE', 'PIXEL', 'HONOR', 'HUAWEI'];
+        const foundBrand = brandsList.find(b => fullText.includes(b));
+        if (foundBrand) {
+            parsed.brandName = foundBrand === 'IPHONE' ? 'APPLE' : foundBrand;
+        }
+
+        const modelLine = lines.find(l => {
+            const up = l.toUpperCase();
+            return up.includes('GALAXY') || up.includes('IPHONE') || up.includes('REDMI') || up.includes('POCO') || up.includes('PRO MAX') || up.includes('ULTRA');
+        });
+        if (modelLine) parsed.modelName = modelLine;
+
+        const ramStorageMatch = normalizedText.match(/\b(\d{1,3}\s?GB|\d{1,3}\s?TB)\b/gi);
+        if (ramStorageMatch) {
+            parsed.ramStorage = ramStorageMatch.join(' / ');
+        }
+
+        return parsed;
+    };
+
     const handleFileScan = async (file) => {
         if (!file) return;
 
-        if (connectionStatus !== 'connected') {
-            setErrorMessage('ទូរស័ព្ទមិនទាន់ភ្ជាប់ទៅ Computer System ទេ! សូមចុច "Scan QR ភ្ជាប់ System" រួចចុច "ផ្ញើសំណើភ្ជាប់" មុននឹងស្កេន!');
-            return;
-        }
-
-        if (!createSessionActive) {
-            setErrorMessage('សូមបើកកន្លែង Create លើ Computer សិន ទើបអាចស្កេនបាន!');
-            return;
-        }
-
         setErrorMessage('');
         setSyncSuccess(false);
+        setParsedResult(null);
 
         const reader = new FileReader();
         reader.onload = (e) => setPreviewUrl(e.target.result);
@@ -312,23 +169,26 @@ const ScanPage = ({ API_BASE, user, onUpdateApiUrl }) => {
             const { data } = await worker.recognize(enhancedDataUrl);
             await worker.terminate();
 
-            const parsedData = parseDoc(data.text || '');
-            setStatusText('កំពុងផ្ញើទិន្នន័យទៅកាន់ Computer System ក្នុង Real-time...');
+            const parsed = scanTab === 'doc' ? parseDocData(data.text || '') : parseDeviceData(data.text || '');
+            setParsedResult(parsed);
 
+            setStatusText('កំពុងបញ្ជូនទិន្នន័យទៅកាន់ Computer System...');
+
+            const payloadKey = scanTab === 'doc' ? { docData: parsed } : { deviceSpecs: parsed };
             const res = await fetch(`${API_BASE}/phone-app/scan-sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ docData: parsedData })
+                body: JSON.stringify(payloadKey)
             });
 
             const resData = await res.json();
             if (res.ok && resData.success) {
                 setSyncSuccess(true);
             } else {
-                setErrorMessage(resData.message || 'សូមបើកកន្លែង Create លើ Computer សិន ទើបអាចស្កេនបាន!');
+                setErrorMessage(resData.message || 'មិនអាចបញ្ជូនទិន្នន័យបានទេ');
             }
         } catch (err) {
-            console.error('Mobile scan sync error:', err);
+            console.error('Scan error:', err);
             setErrorMessage('ការស្កេនមានបញ្ហា សូមព្យាយាមម្តងទៀត');
         } finally {
             setScanning(false);
@@ -336,207 +196,150 @@ const ScanPage = ({ API_BASE, user, onUpdateApiUrl }) => {
     };
 
     return (
-        <div className="p-4 space-y-4 max-w-md mx-auto select-none">
-            <div id="qr-file-dummy" className="hidden"></div>
-            <input ref={qrFileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleQrFileDecode(e.target.files[0])} />
+        <div className="p-4 space-y-5 max-w-md mx-auto select-none font-sans">
+            {/* Header Title */}
+            <div className="text-center space-y-1">
+                <h2 className="text-lg font-black text-slate-100 font-khmer flex items-center justify-center gap-2">
+                    <span>SYSTEM MDM Scanner</span>
+                </h2>
+                <p className="text-xs text-slate-400 font-khmer">
+                    ស្កេនអត្តសញ្ញាណប័ណ្ណ ឬ ព័ត៌មានទូរស័ព្ទ (Specs/IMEI)
+                </p>
+            </div>
 
-            {/* Mode Switcher Tabs */}
-            <div className="bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-2">
+            {/* Premium Glassmorphic Tab Switcher */}
+            <div className="bg-slate-900/90 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-2 shadow-xl backdrop-blur-md">
                 <button
-                    onClick={() => setScanMode('doc')}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold font-khmer flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        scanMode === 'doc' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white'
+                    onClick={() => { setScanTab('doc'); setParsedResult(null); setPreviewUrl(null); setSyncSuccess(false); setErrorMessage(''); }}
+                    className={`flex-1 py-3 rounded-xl text-xs font-bold font-khmer flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        scanTab === 'doc' 
+                            ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-600/30' 
+                            : 'text-slate-400 hover:text-white'
                     }`}
                 >
-                    <FaIdCard /> ស្កេនឯកសារ ID / Passport
+                    <FaIdCard className="text-base" />
+                    <span>🪪 ស្កេនអត្តសញ្ញាណប័ណ្ណ</span>
                 </button>
                 <button
-                    onClick={() => setScanMode('qr')}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold font-khmer flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        scanMode === 'qr' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'text-slate-400 hover:text-white'
+                    onClick={() => { setScanTab('device'); setParsedResult(null); setPreviewUrl(null); setSyncSuccess(false); setErrorMessage(''); }}
+                    className={`flex-1 py-3 rounded-xl text-xs font-bold font-khmer flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        scanTab === 'device' 
+                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/30' 
+                            : 'text-slate-400 hover:text-white'
                     }`}
                 >
-                    <FaQrcode /> Scan QR ភ្ជាប់ System
+                    <FaMobileAlt className="text-base" />
+                    <span>📱 ស្កេន Specs ទូរស័ព្ទ</span>
                 </button>
             </div>
 
-            {/* Connection Status Banner */}
-            <div className={`p-3.5 rounded-2xl border transition-all text-xs font-khmer shadow-lg flex items-center justify-between ${
-                connectionStatus === 'connected'
-                    ? 'bg-emerald-950/80 border-emerald-700/80 text-emerald-300'
-                    : connectionStatus === 'pending'
-                    ? 'bg-amber-950/80 border-amber-700/80 text-amber-300 animate-pulse'
-                    : 'bg-red-950/80 border-red-800/80 text-red-300'
-            }`}>
-                <div className="flex items-center gap-2 font-bold text-xs">
-                    {connectionStatus === 'connected' ? (
-                        <><FaPlug className="text-emerald-400 text-base" /> <span>🟢 បានភ្ជាប់ទៅ Computer រួចរាល់ (Connected)</span></>
-                    ) : connectionStatus === 'pending' ? (
-                        <><FaHourglass className="text-amber-400 text-base animate-spin" /> <span>⏳ កំពុងរង់ចាំ Admin លើ Computer អនុម័ត...</span></>
-                    ) : (
-                        <><FaExclamationTriangle className="text-red-400 text-base" /> <span>🔴 មិនទាន់ភ្ជាប់ទៅ Computer ទេ (Disconnected)</span></>
-                    )}
+            {/* Hidden File Inputs */}
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileScan(e.target.files[0])} />
+            <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileScan(e.target.files[0])} />
+
+            {/* Error Feedback */}
+            {errorMessage && (
+                <div className="p-4 bg-red-950/80 border border-red-800 text-red-300 rounded-2xl text-xs font-khmer font-bold flex items-center gap-3 shadow-xl animate-shake">
+                    <FaExclamationTriangle className="text-xl text-red-400 flex-shrink-0" />
+                    <span>{errorMessage}</span>
                 </div>
-                <button onClick={checkComputerStatus} className="text-slate-300 hover:text-white p-1">
-                    <FaSyncAlt className={loadingStatus ? "animate-spin text-indigo-400" : ""} />
-                </button>
-            </div>
+            )}
 
-            {/* Document Scan Mode */}
-            {scanMode === 'doc' && (
-                <>
-                    <div className={`p-3.5 rounded-2xl border transition-all text-xs font-khmer shadow-md ${
-                        createSessionActive 
-                            ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300' 
-                            : 'bg-slate-900 border-slate-800 text-slate-400'
-                    }`}>
-                        <div className="flex items-center gap-2 font-bold">
-                            <FaLaptop className="text-base text-indigo-400" />
-                            <span>
-                                {createSessionActive 
-                                    ? '🟢 ផ្ទាំង Create លើ Computer កំពុងបើកចំហ (Ready to Sync)' 
-                                    : '🔴 ផ្ទាំង Create លើ Computer មិនទាន់បើកទេ (Blocked)'}
-                            </span>
-                        </div>
+            {/* Success Feedback */}
+            {syncSuccess && (
+                <div className="p-4 bg-emerald-950/80 border border-emerald-700 text-emerald-300 rounded-2xl text-xs font-khmer font-bold flex items-start gap-3 shadow-xl">
+                    <FaCheckCircle className="text-2xl text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                        <p className="text-sm font-bold font-khmer">ស្កេន និងបញ្ជូនទិន្នន័យជោគជ័យ!</p>
+                        <p className="text-[11px] text-emerald-300/90 font-normal font-khmer">
+                            {scanTab === 'doc'
+                                ? 'ទិន្នន័យអត្តសញ្ញាណប័ណ្ណ ត្រូវបញ្ជូនទៅបំពេញក្នុង Computer Form រួចរាល់។'
+                                : 'ទិន្នន័យម៉ូឌែលទូរស័ព្ទ & IMEI ត្រូវបញ្ជូនទៅប្រព័ន្ធ Computer រួចរាល់។'}
+                        </p>
                     </div>
+                </div>
+            )}
 
-                    {errorMessage && (
-                        <div className="p-4 bg-red-950 border border-red-800 text-red-300 rounded-2xl text-xs font-khmer font-bold flex items-center gap-2 shadow-xl">
-                            <FaExclamationTriangle className="text-xl text-red-400 flex-shrink-0" />
-                            <span>{errorMessage}</span>
-                        </div>
-                    )}
-
-                    {syncSuccess && (
-                        <div className="p-4 bg-emerald-950 border border-emerald-700 text-emerald-300 rounded-2xl text-xs font-khmer font-bold flex items-center gap-2 shadow-xl">
-                            <FaCheckCircle className="text-xl text-emerald-400 flex-shrink-0" />
-                            <div>
-                                <p className="text-sm font-bold font-khmer">ស្កេន និងបញ្ជូនទិន្នន័យជោគជ័យ!</p>
-                                <p className="text-[11px] opacity-90 font-normal font-khmer">
-                                    ទិន្នន័យអត្តសញ្ញាណប័ណ្ណខ្មែរ ត្រូវបំពេញចូលក្នុង Computer Form អូតូ realtime រួចរាល់។
-                                </p>
+            {/* Loading Spinner */}
+            {scanning ? (
+                <div className="p-8 bg-slate-900/90 border border-indigo-500/40 rounded-3xl text-center space-y-3 backdrop-blur-md shadow-2xl">
+                    <FaSpinner className="text-4xl text-indigo-400 animate-spin mx-auto" />
+                    <p className="text-xs text-indigo-300 font-khmer animate-pulse">{statusText}</p>
+                </div>
+            ) : previewUrl ? (
+                <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-3xl space-y-3 shadow-xl backdrop-blur-md">
+                    <img src={previewUrl} alt="Scanned preview" className="max-h-52 mx-auto rounded-2xl border border-slate-700 shadow-md object-contain" />
+                    
+                    {parsedResult && (
+                        <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-2xl text-xs space-y-1.5 text-left">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-khmer">
+                                📊 លទ្ធផលបំបែកទិន្នន័យស្កេន (Parsed Results)
+                            </span>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                {parsedResult.customerNameEn && (
+                                    <div className="p-2 bg-slate-900 rounded-xl border border-slate-800">
+                                        <span className="text-[9px] text-slate-400 block">Name EN</span>
+                                        <span className="font-bold text-white">{parsedResult.customerNameEn}</span>
+                                    </div>
+                                )}
+                                {parsedResult.customerNameKh && (
+                                    <div className="p-2 bg-slate-900 rounded-xl border border-slate-800">
+                                        <span className="text-[9px] text-slate-400 block">ឈ្មោះ ខ្មែរ</span>
+                                        <span className="font-bold text-indigo-300 font-khmer">{parsedResult.customerNameKh}</span>
+                                    </div>
+                                )}
+                                {parsedResult.idCardNumber && (
+                                    <div className="p-2 bg-slate-900 rounded-xl border border-slate-800">
+                                        <span className="text-[9px] text-slate-400 block">ID Number</span>
+                                        <span className="font-mono font-bold text-emerald-400">{parsedResult.idCardNumber}</span>
+                                    </div>
+                                )}
+                                {parsedResult.modelName && (
+                                    <div className="p-2 bg-slate-900 rounded-xl border border-slate-800">
+                                        <span className="text-[9px] text-slate-400 block">Model</span>
+                                        <span className="font-bold text-amber-300">{parsedResult.modelName}</span>
+                                    </div>
+                                )}
+                                {parsedResult.imei1 && (
+                                    <div className="p-2 bg-slate-900 rounded-xl border border-slate-800">
+                                        <span className="text-[9px] text-slate-400 block">IMEI 1</span>
+                                        <span className="font-mono font-bold text-sky-400">{parsedResult.imei1}</span>
+                                    </div>
+                                )}
+                                {parsedResult.ramStorage && (
+                                    <div className="p-2 bg-slate-900 rounded-xl border border-slate-800">
+                                        <span className="text-[9px] text-slate-400 block">Storage</span>
+                                        <span className="font-bold text-slate-200">{parsedResult.ramStorage}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
-
-                    <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileScan(e.target.files[0])} />
-                    <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFileScan(e.target.files[0])} />
-
-                    {scanning ? (
-                        <div className="p-8 bg-slate-900 border border-indigo-500/40 rounded-3xl text-center space-y-3">
-                            <FaSpinner className="text-4xl text-indigo-400 animate-spin mx-auto" />
-                            <p className="text-xs text-indigo-300 font-khmer animate-pulse">{statusText}</p>
-                        </div>
-                    ) : previewUrl ? (
-                        <div className="p-3 bg-slate-900 border border-slate-800 rounded-2xl text-center space-y-2">
-                            <img src={previewUrl} alt="Scanned preview" className="max-h-48 mx-auto rounded-xl border border-slate-700 shadow-md" />
-                        </div>
-                    ) : null}
-
-                    <div className="grid grid-cols-2 gap-3 pt-1">
-                        <button
-                            onClick={() => {
-                                if (connectionStatus !== 'connected') {
-                                    setErrorMessage('ទូរស័ព្ទមិនទាន់ភ្ជាប់ទៅ Computer System ទេ! សូមចុច "Scan QR ភ្ជាប់ System" រួចចុច "ផ្ញើសំណើភ្ជាប់" មុននឹងស្កេន!');
-                                    return;
-                                }
-                                if (!createSessionActive) { setErrorMessage('សូមបើកកន្លែង Create លើ Computer សិន ទើបអាចស្កេនបាន!'); return; }
-                                cameraInputRef.current?.click();
-                            }}
-                            className={`p-4 rounded-2xl border font-khmer text-xs font-bold flex flex-col items-center justify-center gap-2 cursor-pointer transition-all shadow-xl ${
-                                connectionStatus === 'connected' && createSessionActive ? 'bg-gradient-to-br from-indigo-600 to-indigo-800 text-white border-indigo-500 hover:scale-[1.02]' : 'bg-slate-900 text-slate-500 border-slate-800 opacity-60'
-                            }`}
-                        >
-                            <FaCamera className="text-2xl" />
-                            <span>ថតតាមកាំមេរ៉ា (Camera)</span>
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                if (connectionStatus !== 'connected') {
-                                    setErrorMessage('ទូរស័ព្ទមិនទាន់ភ្ជាប់ទៅ Computer System ទេ! សូមចុច "Scan QR ភ្ជាប់ System" រួចចុច "ផ្ញើសំណើភ្ជាប់" មុននឹងស្កេន!');
-                                    return;
-                                }
-                                if (!createSessionActive) { setErrorMessage('សូមបើកកន្លែង Create លើ Computer សិន ទើបអាចស្កេនបាន!'); return; }
-                                galleryInputRef.current?.click();
-                            }}
-                            className={`p-4 rounded-2xl border font-khmer text-xs font-bold flex flex-col items-center justify-center gap-2 cursor-pointer transition-all shadow-xl ${
-                                connectionStatus === 'connected' && createSessionActive ? 'bg-gradient-to-br from-emerald-600 to-emerald-800 text-white border-emerald-500 hover:scale-[1.02]' : 'bg-slate-900 text-slate-500 border-slate-800 opacity-60'
-                            }`}
-                        >
-                            <FaImage className="text-2xl" />
-                            <span>ទម្លាក់រូបថតចូល (Gallery)</span>
-                        </button>
-                    </div>
-                </>
-            )}
-
-            {/* Real-time Automatic Live Video Camera QR Code Scanner */}
-            {scanMode === 'qr' && (
-                <div className="p-4 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 text-center shadow-xl">
-                    <div>
-                        <h3 className="text-base font-bold text-slate-100 font-khmer flex items-center justify-center gap-2">
-                            <FaQrcode className="text-emerald-400" />
-                            <span>កាំមេរ៉ាស្កេន QR Code ភ្ជាប់ប្រព័ន្ធ</span>
-                        </h3>
-                        <p className="text-xs text-slate-400 font-khmer mt-1 leading-relaxed">
-                            គ្រាន់តែតម្រង់កាំមេរ៉ាទូរស័ព្ទឱ្យចំ QR Code លើអេក្រង់ Computer ត្រង់ទំព័រ <strong className="text-indigo-400">Settings &rarr; Phone App</strong> នោះប្រព័ន្ធនឹងស្កេន និងផ្ញើសំណើភ្ជាប់អូតូភ្លាមៗ!
-                        </p>
-                    </div>
-
-                    {!cameraPermissionGranted && (
-                        <div className="p-3 bg-amber-950/80 border border-amber-700/80 rounded-2xl text-xs text-amber-300 font-khmer space-y-2">
-                            <p className="font-bold flex items-center justify-center gap-1.5">
-                                <FaExclamationTriangle className="text-amber-400 text-base" />
-                                សូមចុចអនុញ្ញាត (Allow) ការប្រើប្រាស់កាំមេរ៉ា!
-                            </p>
-                            <button
-                                onClick={requestCameraPermission}
-                                className="px-4 py-1.5 bg-amber-700 hover:bg-amber-600 text-white rounded-xl text-xs font-bold font-khmer"
-                            >
-                                🎥 អនុញ្ញាតឱ្យប្រើប្រាស់ Camera (Grant Permission)
-                            </button>
-                        </div>
-                    )}
-
-                    {pairMsg && (
-                        <div className={`p-3.5 rounded-2xl text-xs font-khmer font-bold flex items-center gap-2 text-left border ${
-                            pairStatus === 'connected'
-                                ? 'bg-emerald-950 border-emerald-700 text-emerald-300'
-                                : 'bg-amber-950 border-amber-700 text-amber-300 animate-pulse'
-                        }`}>
-                            <FaCheckCircle className="text-emerald-400 text-xl flex-shrink-0" />
-                            <span>{pairMsg}</span>
-                        </div>
-                    )}
-
-                    {/* Live HTML5 Video Camera Feed Frame Container */}
-                    <div className="overflow-hidden rounded-2xl border-2 border-emerald-500/60 bg-black min-h-[260px] flex items-center justify-center relative shadow-inner">
-                        <div id="qr-reader-container" className="w-full text-slate-100 font-khmer"></div>
-                    </div>
-
-                    {/* Pairing Controls & Fallbacks */}
-                    <div className="grid grid-cols-2 gap-2.5 pt-1">
-                        <button
-                            onClick={() => sendPairRequest()}
-                            disabled={scanning}
-                            className="py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-bold rounded-2xl text-xs shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-1.5 cursor-pointer font-khmer transition-all active:scale-[0.98]"
-                        >
-                            <FaPaperPlane className="text-xs" />
-                            <span>⚡ ផ្ញើសំណើភ្ជាប់ភ្លាមៗ</span>
-                        </button>
-
-                        <button
-                            onClick={() => qrFileInputRef.current?.click()}
-                            disabled={scanning}
-                            className="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold rounded-2xl text-xs flex items-center justify-center gap-1.5 cursor-pointer font-khmer transition-all"
-                        >
-                            <FaImage className="text-xs text-indigo-400" />
-                            <span>ជ្រើសរើសរូប QR Code</span>
-                        </button>
-                    </div>
                 </div>
-            )}
+            ) : null}
+
+            {/* Scan Action Buttons */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="p-5 rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 hover:from-indigo-500 hover:to-indigo-800 text-white font-khmer text-xs font-bold flex flex-col items-center justify-center gap-2.5 cursor-pointer transition-all shadow-xl shadow-indigo-600/25 active:scale-[0.98] border border-indigo-500/40"
+                >
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white text-2xl shadow-inner">
+                        <FaCamera />
+                    </div>
+                    <span>ថតតាមកាំមេរ៉ា (Camera)</span>
+                </button>
+
+                <button
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="p-5 rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-700 to-emerald-900 hover:from-emerald-500 hover:to-teal-800 text-white font-khmer text-xs font-bold flex flex-col items-center justify-center gap-2.5 cursor-pointer transition-all shadow-xl shadow-emerald-600/25 active:scale-[0.98] border border-emerald-500/40"
+                >
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white text-2xl shadow-inner">
+                        <FaImage />
+                    </div>
+                    <span>ទម្លាក់រូបថតចូល (Gallery)</span>
+                </button>
+            </div>
         </div>
     );
 };

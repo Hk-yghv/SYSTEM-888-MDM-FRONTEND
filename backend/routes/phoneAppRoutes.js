@@ -146,30 +146,16 @@ router.post('/heartbeat', (req, res) => {
     });
 });
 
-// ── REAL-TIME SCAN SYNC (From Mobile Phone App) ──
+// ── REAL-TIME SCAN SYNC (From Mobile Phone App or Web Scanner) ──
 router.post('/scan-sync', (req, res) => {
-    if (!activeDevice.isConnected) {
-        return res.status(403).json({
-            success: false,
-            errorCode: "DEVICE_NOT_CONNECTED",
-            message: "ទូរស័ព្ទមិនទាន់ភ្ជាប់ទៅ Computer System ទេ! សូមមើល Settings > Phone App"
-        });
-    }
-    if (!createSessionActive) {
-        return res.status(403).json({
-            success: false,
-            errorCode: "CREATE_FORM_NOT_OPEN",
-            message: "សូមបើកកន្លែង Create លើ Computer សិន ទើបអាចស្កេនបាន!"
-        });
-    }
-
-    const { docData } = req.body;
-    if (!docData) {
-        return res.status(400).json({ success: false, message: "No document data provided" });
+    const { docData, deviceSpecs } = req.body;
+    if (!docData && !deviceSpecs) {
+        return res.status(400).json({ success: false, message: "No scan data provided" });
     }
 
     latestScannedDoc = {
-        ...docData,
+        ...(docData || {}),
+        ...(deviceSpecs || {}),
         timestamp: new Date().toISOString()
     };
 
