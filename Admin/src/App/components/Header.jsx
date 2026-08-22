@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaShieldAlt } from 'react-icons/fa';
+import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaShieldAlt, FaMobileAlt, FaPlug, FaHourglass, FaCheckCircle, FaTimesCircle, FaExclamationTriangle } from 'react-icons/fa';
 
 const Header = () => {
     const [accountOpen, setAccountOpen] = useState(false);
@@ -13,43 +13,75 @@ const Header = () => {
     const { user, logout, API_BASE } = useAuth();
     const navigate = useNavigate();
 
-    // Outstanding Balance State
+    // Outstanding Balance & Telemetry State
     const [balance, setBalance] = useState({ totalLoanAmount: 0, totalRevenue: 0, outstandingBalance: 0 });
     const [phoneDevice, setPhoneDevice] = useState(null);
+    const [actionLoading, setActionLoading] = useState(false);
+
+    const fetchBalance = async () => {
+        try {
+            const params = user?.brand && user?.role !== 'Administrator' ? `?userBrand=${user.brand}&userRole=${user.role}` : '';
+            const res = await fetch(`${API_BASE}/dashboard/stats${params}`);
+            if (res.ok) {
+                const data = await res.json();
+                setBalance({
+                    totalLoanAmount: data.totalLoanAmount || 0,
+                    totalRevenue: data.totalRevenue || 0,
+                    outstandingBalance: data.outstandingBalance || 0
+                });
+            }
+        } catch { }
+    };
+
+    const fetchPhoneStatus = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/phone-app/status`);
+            if (res.ok) {
+                const data = await res.json();
+                setPhoneDevice(data.device || null);
+            }
+        } catch { }
+    };
 
     useEffect(() => {
-        const fetchBalance = async () => {
-            try {
-                const params = user?.brand && user?.role !== 'Administrator' ? `?userBrand=${user.brand}&userRole=${user.role}` : '';
-                const res = await fetch(`${API_BASE}/dashboard/stats${params}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setBalance({
-                        totalLoanAmount: data.totalLoanAmount || 0,
-                        totalRevenue: data.totalRevenue || 0,
-                        outstandingBalance: data.outstandingBalance || 0
-                    });
-                }
-            } catch { }
-        };
-        const fetchPhoneStatus = async () => {
-            try {
-                const res = await fetch(`${API_BASE}/phone-app/status`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setPhoneDevice(data.device || null);
-                }
-            } catch { }
-        };
-
         fetchBalance();
         fetchPhoneStatus();
         const interval = setInterval(() => {
             fetchBalance();
             fetchPhoneStatus();
-        }, 5000);
+        }, 2000); // 2-second real-time check
         return () => clearInterval(interval);
     }, [API_BASE, user]);
+
+    // Handle Approve Connection
+    const handleApproveConnect = async () => {
+        setActionLoading(true);
+        try {
+            const res = await fetch(`${API_BASE}/phone-app/approve-connect`, { method: 'POST' });
+            if (res.ok) {
+                fetchPhoneStatus();
+            }
+        } catch (err) {
+            console.error('Approve error:', err);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Handle Reject / Disconnect
+    const handleRejectConnect = async () => {
+        setActionLoading(true);
+        try {
+            const res = await fetch(`${API_BASE}/phone-app/disconnect`, { method: 'POST' });
+            if (res.ok) {
+                fetchPhoneStatus();
+            }
+        } catch (err) {
+            console.error('Reject error:', err);
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -78,14 +110,20 @@ const Header = () => {
                         className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs ${
                             phoneDevice?.isConnected 
                                 ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100' 
+                                : phoneDevice?.isPending
+                                ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 animate-pulse'
                                 : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
                         }`}
                         title="Click to view Phone App settings"
                     >
-                        <span className={`w-2 h-2 rounded-full ${phoneDevice?.isConnected ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`}></span>
+                        <span className={`w-2 h-2 rounded-full ${
+                            phoneDevice?.isConnected ? 'bg-emerald-500 animate-ping' : phoneDevice?.isPending ? 'bg-amber-500 animate-ping' : 'bg-red-500'
+                        }`}></span>
                         <span>
                             {phoneDevice?.isConnected 
                                 ? `📱 Device: ${phoneDevice.model || 'Phone'} Connected` 
+                                : phoneDevice?.isPending
+                                ? `⏳ Requesting Pair: ${phoneDevice.model || 'Phone'}`
                                 : '📱 No Device Connected'}
                         </span>
                     </Link>
@@ -207,6 +245,52 @@ const Header = () => {
                     </div>
                 </div>
             </header>
+
+            {/* ─── GLOBAL SYSTEM POPUP MODAL FOR PENDING DEVICE CONNECTION ─── */}
+            {phoneDevice?.isPending && !phoneDevice?.isConnected && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-[#0b0f1e] border-2 border-amber-500 rounded-3xl max-w-md w-full p-6 text-slate-100 space-y-4 shadow-2xl text-center relative overflow-hidden">
+                        <div className="w-16 h-16 rounded-full bg-amber-950/80 border border-amber-600 mx-auto flex items-center justify-center text-amber-400 text-3xl shadow-xl animate-bounce">
+                            <FaMobileAlt />
+                        </div>
+
+                        <div className="space-y-1">
+                            <span className="px-3 py-1 bg-amber-950 text-amber-400 border border-amber-700 text-[10px] font-bold uppercase rounded-full tracking-wider font-khmer">
+                                🔔 ឧបករណ៍ទូរស័ព្ទស្នើសុំភ្ជាប់ប្រព័ន្ធ!
+                            </span>
+                            <h3 className="text-lg font-black text-white pt-2 font-khmer">
+                                {phoneDevice.model || 'Samsung Galaxy S24 Ultra'}
+                            </h3>
+                            <p className="text-xs text-slate-400 font-mono">
+                                Device ID: {phoneDevice.id} &bull; IP: {phoneDevice.ip || '192.168.1.105'}
+                            </p>
+                            <p className="text-xs text-amber-300 font-khmer pt-1">
+                                ទូរស័ព្ទនេះបានផ្ញើសំណើភ្ជាប់មកកាន់ Computer System! តើអ្នកយល់ព្រមអនុញ្ញាតឱ្យភ្ជាប់ដែរឬទេ?
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                            <button
+                                onClick={handleApproveConnect}
+                                disabled={actionLoading}
+                                className="py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-2xl text-xs shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer font-khmer transition-all"
+                            >
+                                <FaCheckCircle className="text-base" />
+                                <span>{actionLoading ? 'កំពុងភ្ជាប់...' : '✅ យល់ព្រមអនុញ្ញាត (Approve)'}</span>
+                            </button>
+
+                            <button
+                                onClick={handleRejectConnect}
+                                disabled={actionLoading}
+                                className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 cursor-pointer font-khmer transition-all"
+                            >
+                                <FaTimesCircle className="text-base text-red-400" />
+                                <span>{actionLoading ? 'កំពុងបដិសេធ...' : '❌ បដិសេធ (Reject)'}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
