@@ -14,7 +14,6 @@ const ScanPage = ({ API_BASE }) => {
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
 
-    // ── Check Computer System Live Session Active Status ──
     const checkComputerStatus = async () => {
         try {
             const res = await fetch(`${API_BASE}/phone-app/status`);
@@ -35,9 +34,56 @@ const ScanPage = ({ API_BASE }) => {
         return () => clearInterval(interval);
     }, [API_BASE]);
 
-    // Parse Document Text (ID Card / Passport)
+    const convertKhmerNumbers = (str) => {
+        const khmerNums = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+        let result = str;
+        khmerNums.forEach((kh, i) => {
+            result = result.replace(new RegExp(kh, 'g'), i.toString());
+        });
+        return result;
+    };
+
+    // Preprocessing on canvas for blurry/low contrast images
+    const preprocessImageForOCR = (imageFile) => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                const scale = Math.max(1.5, 1200 / Math.max(img.width, img.height));
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+
+                const contrast = 40;
+                const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+                for (let i = 0; i < data.length; i += 4) {
+                    const avg = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                    const color = factor * (avg - 128) + 128;
+                    const finalColor = color > 140 ? 255 : color < 90 ? 0 : color;
+                    data[i] = finalColor;
+                    data[i + 1] = finalColor;
+                    data[i + 2] = finalColor;
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+                resolve(canvas.toDataURL('image/jpeg', 0.95));
+            };
+            img.src = URL.createObjectURL(imageFile);
+        });
+    };
+
     const parseDoc = (text) => {
-        const fullText = text.toUpperCase();
+        const normalizedText = convertKhmerNumbers(text);
+        const lines = normalizedText.split('\n').map(l => l.trim()).filter(Boolean);
+        const fullText = normalizedText.toUpperCase();
+
         let parsed = {
             customerNameEn: '',
             customerNameKh: '',
@@ -48,12 +94,12 @@ const ScanPage = ({ API_BASE }) => {
             currentAddress: ''
         };
 
-        const idMatches = text.match(/\b\d{3}\s?\d{3}\s?\d{3}\b/) || 
-                          text.match(/\b(ID|NO|NUM|PASSPORT)[:\s]*([A-Z0-9]{7,12})\b/i) ||
-                          text.match(/\b([A-Z]\d{7,8}|\d{9,10})\b/);
+        const idMatches = normalizedText.match(/\b\d{3}\s?\d{3}\s?\d{3}\b/) || 
+                          normalizedText.match(/\b(ID|NO|NUM|PASSPORT|លេខ)[:\s]*([A-Z0-9]{7,12})\b/i) ||
+                          normalizedText.match(/\b([A-Z]\d{7,8}|\d{9,10})\b/);
         if (idMatches) parsed.idCardNumber = (idMatches[2] || idMatches[1] || idMatches[0]).replace(/\s+/g, '');
 
-        const dobMatch = text.match(/\b(\d{2}[\/\.-]\d{2}[\/\.-]\d{4}|\d{4}[\/\.-]\d{2}[\/\.-]\d{2})\b/);
+        const dobMatch = normalizedText.match(/\b(\d{2}[\/\.-]\d{2}[\/\.-]\d{4}|\d{4}[\/\.-]\d{2}[\/\.-]\d{2})\b/);
         if (dobMatch) {
             const rawDate = dobMatch[1].replace(/[\.-]/g, '/');
             const parts = rawDate.split('/');
@@ -64,12 +110,12 @@ const ScanPage = ({ API_BASE }) => {
         if (fullText.includes('FEMALE') || fullText.includes('SEX: F') || fullText.includes('ស្រី')) parsed.gender = 'female';
         else if (fullText.includes('MALE') || fullText.includes('SEX: M') || fullText.includes('ប្រុស')) parsed.gender = 'male';
 
-        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
         const nameCandidate = lines.find(l => l.length >= 4 && l === l.toUpperCase() && !l.includes('KINGDOM'));
         if (nameCandidate) parsed.customerNameEn = nameCandidate.replace(/[^A-Za-z\s]/g, '').trim();
 
-        const khmerCandidate = lines.find(l => /[\u1780-\u17FF]/.test(l));
-        if (khmerCandidate) parsed.customerNameKh = khmerCandidate.trim();
+        const khmerLines = lines.filter(line => /[\u1780-\u17FF]/.test(line));
+        const khmerNameLine = khmerLines.find(l => !l.includes('ព្រះរាជាណាចក្រ') && !l.includes('អត្តសញ្ញាណប័ណ្ណ'));
+        if (khmerNameLine) parsed.customerNameKh = khmerNameLine.replace(/(ឈ្មោះ|ភេទ|ថ្ងៃកំណើត|សញ្ជាតិ)/g, '').trim();
 
         return parsed;
     };
@@ -77,7 +123,6 @@ const ScanPage = ({ API_BASE }) => {
     const handleFileScan = async (file) => {
         if (!file) return;
 
-        // STRICT ENFORCEMENT: Check Computer Create session first!
         if (!createSessionActive) {
             setErrorMessage('សូមបើកកន្លែង Create លើ Computer សិន ទើបអាចស្កេនបាន!');
             return;
@@ -86,23 +131,30 @@ const ScanPage = ({ API_BASE }) => {
         setErrorMessage('');
         setSyncSuccess(false);
 
-        // Preview Image
         const reader = new FileReader();
         reader.onload = (e) => setPreviewUrl(e.target.result);
         reader.readAsDataURL(file);
 
         setScanning(true);
-        setStatusText('កំពុងអានទិន្នន័យឯកសារ (ID / Passport)...');
+        setStatusText('កំពុងរៀបចំ និង Sharpen រូបភាព (ប្រឆាំងរូបព្រាល)...');
 
         try {
-            const worker = await createWorker('eng');
-            const { data } = await worker.recognize(file);
+            const enhancedDataUrl = await preprocessImageForOCR(file);
+            setStatusText('កំពុងអានអត្ថបទ (ខ្មែរ + អង់គ្លេស)...');
+
+            let worker;
+            try {
+                worker = await createWorker(['eng', 'khm']);
+            } catch {
+                worker = await createWorker('eng');
+            }
+
+            const { data } = await worker.recognize(enhancedDataUrl);
             await worker.terminate();
 
             const parsedData = parseDoc(data.text || '');
             setStatusText('កំពុងផ្ញើទិន្នន័យទៅកាន់ Computer System ក្នុង Real-time...');
 
-            // Submit to Backend Real-Time Scan Sync
             const res = await fetch(`${API_BASE}/phone-app/scan-sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -125,8 +177,6 @@ const ScanPage = ({ API_BASE }) => {
 
     return (
         <div className="p-4 space-y-4 max-w-md mx-auto select-none">
-            
-            {/* Header Badge */}
             <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-lg">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-indigo-950 border border-indigo-700 flex items-center justify-center text-indigo-400">
@@ -137,7 +187,7 @@ const ScanPage = ({ API_BASE }) => {
                             Real-time Document Scanner
                         </h2>
                         <p className="text-[11px] text-indigo-300 font-khmer">
-                            ស្កេនអត្តសញ្ញាណប័ណ្ណ / Passport ចូល Computer Form
+                            ស្កេនអត្តសញ្ញាណប័ណ្ណខ្មែរ / Passport (ប្រឆាំងរូបព្រាល)
                         </p>
                     </div>
                 </div>
@@ -147,7 +197,6 @@ const ScanPage = ({ API_BASE }) => {
                 </button>
             </div>
 
-            {/* Computer Create Session Status Indicator */}
             <div className={`p-4 rounded-2xl border transition-all text-xs font-khmer shadow-lg ${
                 createSessionActive 
                     ? 'bg-emerald-950/60 border-emerald-700/80 text-emerald-300' 
@@ -161,14 +210,8 @@ const ScanPage = ({ API_BASE }) => {
                             : '🔴 ផ្ទាំង Create លើ Computer មិនទាន់បើកទេ (Blocked)'}
                     </span>
                 </div>
-                <p className="text-[11px] mt-1 opacity-90">
-                    {createSessionActive
-                        ? 'អ្នកអាចស្កេនឥឡូវនេះបាន ទិន្នន័យនឹងរត់ចូល Computer Form ភ្លាមៗ realtime!'
-                        : 'សូមបើកកន្លែង Create លើ Computer សិន ទើបអាចអនុញ្ញាតឱ្យស្កេនបាន។'}
-                </p>
             </div>
 
-            {/* Error / Warning Alert */}
             {errorMessage && (
                 <div className="p-4 bg-red-950 border border-red-800 text-red-300 rounded-2xl text-xs font-khmer font-bold flex items-center gap-2 shadow-xl animate-shake">
                     <FaExclamationTriangle className="text-xl text-red-400 flex-shrink-0" />
@@ -176,20 +219,18 @@ const ScanPage = ({ API_BASE }) => {
                 </div>
             )}
 
-            {/* Success Sync Alert */}
             {syncSuccess && (
                 <div className="p-4 bg-emerald-950 border border-emerald-700 text-emerald-300 rounded-2xl text-xs font-khmer font-bold flex items-center gap-2 shadow-xl">
                     <FaCheckCircle className="text-xl text-emerald-400 flex-shrink-0" />
                     <div>
                         <p className="text-sm font-bold">ស្កេន និងបញ្ជូនទិន្នន័យជោគជ័យ!</p>
                         <p className="text-[11px] opacity-90 font-normal">
-                            ទិន្នន័យអត្តសញ្ញាណប័ណ្ណត្រូវបំពេញចូលក្នុង Computer Form អូតូ realtime រួចរាល់។
+                            ទិន្នន័យអត្តសញ្ញាណប័ណ្ណខ្មែរ ត្រូវបំពេញចូលក្នុង Computer Form អូតូ realtime រួចរាល់។
                         </p>
                     </div>
                 </div>
             )}
 
-            {/* Hidden Input Elements */}
             <input
                 ref={cameraInputRef}
                 type="file"
@@ -206,7 +247,6 @@ const ScanPage = ({ API_BASE }) => {
                 onChange={(e) => e.target.files?.[0] && handleFileScan(e.target.files[0])}
             />
 
-            {/* Image Preview / Scan Loading */}
             {scanning ? (
                 <div className="p-8 bg-slate-900 border border-indigo-500/40 rounded-3xl text-center space-y-3">
                     <FaSpinner className="text-4xl text-indigo-400 animate-spin mx-auto" />
@@ -218,7 +258,6 @@ const ScanPage = ({ API_BASE }) => {
                 </div>
             ) : null}
 
-            {/* Scan Action Buttons: Camera & Gallery Upload */}
             <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                     onClick={() => {
@@ -256,7 +295,6 @@ const ScanPage = ({ API_BASE }) => {
                     <span>ទម្លាក់រូបថតចូល (Gallery)</span>
                 </button>
             </div>
-
         </div>
     );
 };

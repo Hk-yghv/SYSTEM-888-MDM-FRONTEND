@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ScanPage from './ScanPage';
-import IDCard3DViewer from '../../../Admin/src/components/IDCard3DViewer';
-import Device3DPointers from '../../../Admin/src/components/Device3DPointers';
+import IDCard3DViewer from '../components/IDCard3DViewer';
+import Device3DPointers from '../components/Device3DPointers';
 import { 
     FaQrcode, FaThLarge, FaUsers, FaMobileAlt, FaFileContract, FaCog, FaSignOutAlt, 
     FaBuilding, FaSearch, FaHistory, FaTimes, FaBars, FaLock, FaUnlock, FaWallet, FaImage, FaCheckCircle, FaUserCheck
