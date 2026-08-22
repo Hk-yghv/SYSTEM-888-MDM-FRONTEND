@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+          cache-dependency-path: 'PhoneApp/package-lock.json'
 
       - name: Setup Java JDK 17
         uses: actions/setup-java@v4
@@ -34,17 +35,16 @@ jobs:
       - name: Install PhoneApp Dependencies
         run: |
           cd PhoneApp
-          npm install
+          npm ci || npm install
 
       - name: Build Web Application
         run: |
           cd PhoneApp
           npm run build
 
-      - name: Initialize Capacitor & Add Android Platform
+      - name: Prepare Capacitor & Sync Android Platform
         run: |
           cd PhoneApp
-          npx cap init "SYSTEM MDM" "com.system.mdm.phoneapp" --web-dir dist
           npx cap add android || true
           npx cap copy android
           npx cap update android

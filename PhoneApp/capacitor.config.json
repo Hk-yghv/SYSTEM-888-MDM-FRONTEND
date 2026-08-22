@@ -1,0 +1,8 @@
+{
+  "appId": "com.system.mdm.phoneapp",
+  "appName": "SYSTEM MDM",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
