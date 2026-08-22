@@ -11,7 +11,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Application = () => {
     const { t } = useLanguage();
-    const { API_BASE, hasPermission } = useAuth();
+    const { API_BASE, hasPermission, user } = useAuth();
 
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -30,7 +30,15 @@ const Application = () => {
     const fetchApplications = useCallback(async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
         try {
-            const params = new URLSearchParams({ status: 'Application', page: pg, limit: itemsPerPage });
+            const params = new URLSearchParams({
+                status: 'Application',
+                page: pg,
+                limit: itemsPerPage,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
             if (search) params.set('search', search);
             const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
             if (res.ok) {
@@ -44,7 +52,7 @@ const Application = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, currentPage, searchTerm]);
+    }, [API_BASE, currentPage, searchTerm, user]);
 
     useEffect(() => { fetchApplications(currentPage, searchTerm); }, [currentPage]);
     useEffect(() => { fetchApplications(1, searchTerm); setCurrentPage(1); }, [searchTerm]);

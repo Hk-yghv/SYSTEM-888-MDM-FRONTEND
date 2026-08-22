@@ -9,7 +9,7 @@ import Device3DPointers from '../../../components/Device3DPointers';
 
 const Device = () => {
     const { t } = useLanguage();
-    const { API_BASE } = useAuth();
+    const { API_BASE, user } = useAuth();
 
     const [devices, setDevices] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -23,7 +23,15 @@ const Device = () => {
     const fetchDevices = async (pg = page, search = searchTerm) => {
         setReloading(true);
         try {
-            const params = new URLSearchParams({ status: 'Activated', page: pg, limit: LIMIT });
+            const params = new URLSearchParams({
+                status: 'Activated',
+                page: pg,
+                limit: LIMIT,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
             if (search) params.set('search', search);
             const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
             if (res.ok) {

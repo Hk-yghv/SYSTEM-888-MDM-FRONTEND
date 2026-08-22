@@ -25,7 +25,8 @@ const Redeem = () => {
     const fetchRedeemContracts = async (pg = page) => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Redeem&page=${pg}&limit=${LIMIT}`);
+            const brandParam = user?.brand ? `&userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}&username=${encodeURIComponent(user?.username || '')}&isImmutable=${user?.isImmutable ? 'true' : 'false'}` : '';
+            const res = await fetch(`${API_BASE}/contracts?status=Redeem&page=${pg}&limit=${LIMIT}${brandParam}`);
             if (res.ok) {
                 const data = await res.json();
                 setContracts(data.data || []);

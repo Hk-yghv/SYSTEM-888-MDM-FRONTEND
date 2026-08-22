@@ -12,7 +12,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Activated = () => {
     const { t } = useLanguage();
-    const { API_BASE, hasPermission } = useAuth();
+    const { API_BASE, hasPermission, user } = useAuth();
 
     const [activatedContracts, setActivatedContracts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -51,7 +51,15 @@ const Activated = () => {
     const fetchActivatedContracts = async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
         try {
-            const params = new URLSearchParams({ status: 'Activated', page: pg, limit: itemsPerPage });
+            const params = new URLSearchParams({
+                status: 'Activated',
+                page: pg,
+                limit: itemsPerPage,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
             if (search) params.set('search', search);
             const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
             if (res.ok) {

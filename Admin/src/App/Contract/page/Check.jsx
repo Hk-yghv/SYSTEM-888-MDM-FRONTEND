@@ -11,7 +11,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Check = () => {
     const { t } = useLanguage();
-    const { API_BASE, hasPermission } = useAuth();
+    const { API_BASE, hasPermission, user } = useAuth();
 
     const [contracts, setContracts] = useState([]);
     const [reloading, setReloading] = useState(false);
@@ -25,7 +25,8 @@ const Check = () => {
     const fetchCheckContracts = async (pg = page) => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Check&page=${pg}&limit=${LIMIT}`);
+            const brandParam = user?.brand ? `&userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}&username=${encodeURIComponent(user?.username || '')}&isImmutable=${user?.isImmutable ? 'true' : 'false'}` : '';
+            const res = await fetch(`${API_BASE}/contracts?status=Check&page=${pg}&limit=${LIMIT}${brandParam}`);
             if (res.ok) {
                 const data = await res.json();
                 setContracts(data.data || []);
