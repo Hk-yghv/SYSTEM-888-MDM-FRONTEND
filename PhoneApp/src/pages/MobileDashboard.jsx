@@ -17,23 +17,38 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
     const [selectedDevice, setSelectedDevice] = useState(null);
 
     const [contracts, setContracts] = useState([]);
+    const [stats, setStats] = useState({ totalLoanAmount: 0, totalRevenue: 0, outstandingBalance: 0, totalContracts: 0 });
     const [loading, setLoading] = useState(false);
 
-    // Fetch contracts/customers/devices from System API
+    // Fetch live MongoDB contracts, customers, devices & stats from System API
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const res = await fetch(`${API_BASE}/contracts?limit=50`);
-                if (res.ok) {
-                    const data = await res.json();
+                const params = user?.brand ? `?userBrand=${encodeURIComponent(user.brand)}&userRole=${user?.role || ''}` : '';
+                const [contractsRes, statsRes] = await Promise.all([
+                    fetch(`${API_BASE}/contracts?limit=100`),
+                    fetch(`${API_BASE}/dashboard/stats${params}`)
+                ]);
+
+                if (contractsRes.ok) {
+                    const data = await contractsRes.json();
                     setContracts(data.data || []);
+                }
+                if (statsRes.ok) {
+                    const sData = await statsRes.json();
+                    setStats({
+                        totalLoanAmount: sData.totalLoanAmount || 0,
+                        totalRevenue: sData.totalRevenue || 0,
+                        outstandingBalance: sData.outstandingBalance || 0,
+                        totalContracts: sData.totalContracts || 0
+                    });
                 }
             } catch { }
             setLoading(false);
         };
         fetchData();
-    }, [API_BASE]);
+    }, [API_BASE, user]);
 
     const selectCategory = (cat, sub = '') => {
         setActiveCategory(cat);
@@ -167,8 +182,10 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
                             <p className="text-xs text-slate-400 font-khmer">ព័ត៌មានសង្ខេបប្រព័ន្ធ SYSTEM MDM ({user?.brand})</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 text-xs">
-                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800"><span className="text-slate-400 block text-[10px]">Total Contracts</span><span className="text-base font-bold text-white">{contracts.length || 128}</span></div>
-                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800"><span className="text-slate-400 block text-[10px]">Active Devices</span><span className="text-base font-bold text-emerald-400">114</span></div>
+                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800"><span className="text-slate-400 block text-[10px]">Total Loan Amount</span><span className="text-base font-bold text-emerald-400 font-mono">${stats.totalLoanAmount.toLocaleString()}</span></div>
+                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800"><span className="text-slate-400 block text-[10px]">Collected Revenue</span><span className="text-base font-bold text-emerald-400 font-mono">${stats.totalRevenue.toLocaleString()}</span></div>
+                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800"><span className="text-slate-400 block text-[10px]">Outstanding Balance</span><span className="text-base font-bold text-amber-400 font-mono">${stats.outstandingBalance.toLocaleString()}</span></div>
+                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800"><span className="text-slate-400 block text-[10px]">Total Contracts</span><span className="text-base font-bold text-indigo-300 font-mono">{contracts.length}</span></div>
                         </div>
                     </div>
                 )}
@@ -288,12 +305,12 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
 
                 {activeCategory === 'settings' && (
                     <div className="p-4 space-y-3">
-                        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-2">
+                        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-2 text-left">
                             <h2 className="text-sm font-bold text-indigo-400 flex items-center gap-2">
                                 <FaCog /> System Settings & Controls
                             </h2>
-                            <p className="text-xs text-slate-400">API Endpoint: {API_BASE}</p>
-                            <p className="text-xs text-slate-400">Current Brand: {user?.brand}</p>
+                            <p className="text-xs text-slate-300 font-khmer">ប្រព័ន្ធត្រួតពិនិត្យ និងភ្ជាប់ទំនាក់ទំនងទូរស័ព្ទ (SYSTEM MDM)</p>
+                            <p className="text-xs text-slate-400 font-bold">Current Brand Domain: <span className="text-indigo-400">{user?.brand}</span></p>
                         </div>
                     </div>
                 )}
