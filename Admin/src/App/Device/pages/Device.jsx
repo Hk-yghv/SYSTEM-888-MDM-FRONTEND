@@ -143,7 +143,7 @@ const Device = () => {
                             <th className='px-4 py-3'>IMEI 1</th>
                             <th className='px-4 py-3'>{t('customerName')}</th>
                             <th className='px-4 py-3 text-center'>Phone Lock Status</th>
-                            <th className='px-4 py-3 text-center'>3D Info</th>
+                            <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -183,7 +183,7 @@ const Device = () => {
                                             className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 mx-auto cursor-pointer"
                                         >
                                             <FaMobileAlt />
-                                            <span>3D View</span>
+                                            <span>View Info</span>
                                         </button>
                                     </td>
                                 </tr>
@@ -195,14 +195,14 @@ const Device = () => {
 
             <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
 
-            {/* 3D Device Information Modal */}
+            {/* Device Information Modal */}
             {selectedDevice && (
                 <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
                     <div className="bg-[#0b0f1e] border border-indigo-500/40 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden p-6 space-y-4 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-sm font-bold text-indigo-400 flex items-center gap-2">
                                 <FaMobileAlt className="text-lg" />
-                                <span>Device Specifications & Interactive 3D Model</span>
+                                <span>Device Specifications</span>
                             </h3>
                             <button onClick={() => setSelectedDevice(null)} className="w-8 h-8 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs font-bold cursor-pointer">✕</button>
                         </div>
