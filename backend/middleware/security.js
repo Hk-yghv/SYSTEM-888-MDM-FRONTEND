@@ -72,9 +72,11 @@ export const pathAndCommandGuardMiddleware = (req, res, next) => {
     next();
 };
 
-// ── LAYER 4: Deep Input Sanitization & Anti-Injection Engine ──
-const NOSQL_OPERATOR_REGEX = /^\$|\.(?=[^.]*$)/g;
-const MALICIOUS_PAYLOAD_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>|javascript:|onerror\s*=|onload\s*=|eval\(|document\.cookie/gi;
+const isPlainObject = (obj) => {
+    if (!obj || typeof obj !== 'object') return false;
+    const proto = Object.getPrototypeOf(obj);
+    return proto === null || proto === Object.prototype;
+};
 
 export const sanitizeValue = (val, _seen = new WeakSet()) => {
     if (typeof val === 'string') {
@@ -98,12 +100,14 @@ export const sanitizeInput = (obj, _seen = new WeakSet()) => {
 
     if (Array.isArray(obj)) return obj.map(item => sanitizeInput(item, _seen));
 
+    if (obj instanceof Map || obj.constructor?.name === 'MongooseMap' || !isPlainObject(obj)) {
+        return obj;
+    }
+
     const sanitized = {};
-    for (const key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            const cleanKey = key.replace(NOSQL_OPERATOR_REGEX, '');
-            sanitized[cleanKey] = sanitizeValue(obj[key], _seen);
-        }
+    for (const key of Object.keys(obj)) {
+        const cleanKey = key.replace(NOSQL_OPERATOR_REGEX, '');
+        sanitized[cleanKey] = sanitizeValue(obj[key], _seen);
     }
     return sanitized;
 };
@@ -275,12 +279,34 @@ const maskSensitiveData = (data, _seen = new WeakSet()) => {
 
     if (Array.isArray(data)) return data.map(item => maskSensitiveData(item, _seen));
 
-    const cleaned = {};
-    for (const key in data) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
-            if (SENSITIVE_FIELDS.includes(key)) {
-                continue;
+    // Convert Map / MongooseMap to plain object
+    if (data instanceof Map || data.constructor?.name === 'MongooseMap') {
+        const cleanedMap = {};
+        for (const [key, value] of data.entries()) {
+            if (!SENSITIVE_FIELDS.includes(key)) {
+                cleanedMap[key] = maskSensitiveData(value, _seen);
             }
+        }
+        return cleanedMap;
+    }
+
+    // Convert Mongoose document if toObject exists
+    if (typeof data.toObject === 'function') {
+        try {
+            return maskSensitiveData(data.toObject(), _seen);
+        } catch {
+            // fallback
+        }
+    }
+
+    // Skip non-plain objects (e.g. Date, ObjectId, Buffer, etc.)
+    if (!isPlainObject(data)) {
+        return data;
+    }
+
+    const cleaned = {};
+    for (const key of Object.keys(data)) {
+        if (!SENSITIVE_FIELDS.includes(key)) {
             cleaned[key] = maskSensitiveData(data[key], _seen);
         }
     }
