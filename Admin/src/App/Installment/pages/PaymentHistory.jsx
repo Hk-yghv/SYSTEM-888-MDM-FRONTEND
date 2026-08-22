@@ -24,7 +24,14 @@ const PaymentHistory = () => {
     const fetchPayments = useCallback(async (pg = 1, search = searchTerm) => {
         setReloading(true);
         try {
-            const params = new URLSearchParams({ page: pg, limit: LIMIT });
+            const params = new URLSearchParams({
+                page: pg,
+                limit: LIMIT,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
             if (search) params.set('search', search);
             const res = await fetch(`${API_BASE}/payments?${params.toString()}`);
             if (res.ok) {

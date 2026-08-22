@@ -37,7 +37,14 @@ const DeviceActionHistory = () => {
     const fetchDeviceActionLogs = useCallback(async (pg = page, search = searchTerm, st = statusFilter, act = actionFilter) => {
         setReloading(true);
         try {
-            const params = new URLSearchParams({ page: pg, limit: LIMIT });
+            const params = new URLSearchParams({
+                page: pg,
+                limit: LIMIT,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
             if (search) params.append('search', search);
             if (st) params.append('status', st);
             if (act) params.append('actionType', act);
@@ -54,7 +61,7 @@ const DeviceActionHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, page, searchTerm, statusFilter, actionFilter]);
+    }, [API_BASE, page, searchTerm, statusFilter, actionFilter, user]);
 
     // Fetch activated contracts list for modal select dropdown
     const fetchActivatedContracts = async () => {

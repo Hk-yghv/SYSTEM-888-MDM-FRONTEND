@@ -78,11 +78,12 @@ router.post('/lostphone/toggle-lock', async (req, res) => {
 // GET Phone Logs
 router.get('/phonelogs', async (req, res) => {
     try {
-        const { action, userBrand, userRole, page = 1, limit = 10 } = req.query;
+        const { action, userBrand, userRole, username, isImmutable, page = 1, limit = 10 } = req.query;
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
         const skip = (parseInt(page) - 1) * parseInt(limit);
         let filter = {};
         if (action) filter.action = action;
-        if (userBrand && userRole !== 'Administrator') {
+        if (userBrand && !isMasterAdmin) {
             const matchedContracts = isMongoConnected
                 ? await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'))
                 : MEM_DB.contracts.filter(c => c.brand === userBrand);
@@ -98,7 +99,7 @@ router.get('/phonelogs', async (req, res) => {
 
         let filtered = MEM_DB.phoneLogs;
         if (action) filtered = filtered.filter(l => l.action === action);
-        if (userBrand && userRole !== 'Administrator') {
+        if (userBrand && !isMasterAdmin) {
             const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
             filtered = filtered.filter(l => contractIds.includes(l.contractId));
         }
@@ -113,10 +114,11 @@ router.get('/phonelogs', async (req, res) => {
 // GET Device Action History
 router.get('/history/device-actions', async (req, res) => {
     try {
-        const { userBrand, userRole, page = 1, limit = 10 } = req.query;
+        const { userBrand, userRole, username, isImmutable, page = 1, limit = 10 } = req.query;
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
         const skip = (parseInt(page) - 1) * parseInt(limit);
         let filter = {};
-        if (userBrand && userRole !== 'Administrator') {
+        if (userBrand && !isMasterAdmin) {
             const matchedContracts = isMongoConnected
                 ? await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'))
                 : MEM_DB.contracts.filter(c => c.brand === userBrand);
@@ -131,7 +133,7 @@ router.get('/history/device-actions', async (req, res) => {
         }
 
         let filtered = MEM_DB.deviceActionLogs || [];
-        if (userBrand && userRole !== 'Administrator') {
+        if (userBrand && !isMasterAdmin) {
             const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
             filtered = filtered.filter(l => contractIds.includes(l.contractId));
         }

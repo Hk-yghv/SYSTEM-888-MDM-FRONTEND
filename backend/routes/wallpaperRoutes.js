@@ -73,11 +73,12 @@ router.post('/wallpaper/toggle-lock', async (req, res) => {
 // GET Wallpaper Logs
 router.get('/wallpaperlogs', async (req, res) => {
     try {
-        const { action, userBrand, userRole, page = 1, limit = 10 } = req.query;
+        const { action, userBrand, userRole, username, isImmutable, page = 1, limit = 10 } = req.query;
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
         const skip = (parseInt(page) - 1) * parseInt(limit);
         let filter = {};
         if (action) filter.action = action;
-        if (userBrand && userRole !== 'Administrator') {
+        if (userBrand && !isMasterAdmin) {
             const matchedContracts = isMongoConnected
                 ? await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'))
                 : MEM_DB.contracts.filter(c => c.brand === userBrand);
@@ -93,7 +94,7 @@ router.get('/wallpaperlogs', async (req, res) => {
 
         let filtered = MEM_DB.wallpaperLogs;
         if (action) filtered = filtered.filter(l => l.action === action);
-        if (userBrand && userRole !== 'Administrator') {
+        if (userBrand && !isMasterAdmin) {
             const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
             filtered = filtered.filter(l => contractIds.includes(l.contractId));
         }

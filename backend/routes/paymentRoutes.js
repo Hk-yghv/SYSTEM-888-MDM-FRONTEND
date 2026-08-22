@@ -10,12 +10,13 @@ const router = express.Router();
 // GET payments
 router.get('/payments', async (req, res) => {
     try {
-        const { userBrand, userRole, page = 1, limit = 10, search = '' } = req.query;
+        const { userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '' } = req.query;
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
         const skip = (parseInt(page) - 1) * parseInt(limit);
         let filter = {};
         if (isMongoConnected) {
             let matchedContractIds = null;
-            if (userBrand && userRole !== 'Administrator') {
+            if (userBrand && !isMasterAdmin) {
                 const matchedContracts = await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'));
                 matchedContractIds = matchedContracts.map(c => c.contractId);
             }
@@ -29,7 +30,7 @@ router.get('/payments', async (req, res) => {
             return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
         let filtered = MEM_DB.payments;
-        if (userBrand && userRole !== 'Administrator') {
+        if (userBrand && !isMasterAdmin) {
             const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
             filtered = filtered.filter(p => contractIds.includes(p.contractId));
         }

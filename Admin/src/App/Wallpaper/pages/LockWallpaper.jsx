@@ -21,11 +21,15 @@ const LockWallpaper = () => {
     const fetchLogs = useCallback(async (pg = page) => {
         setReloading(true);
         try {
-            const params = new URLSearchParams({ action: 'Locked', page: pg, limit: LIMIT });
-            if (user?.brand && user?.role !== 'Administrator') {
-                params.append('userBrand', user.brand);
-                params.append('userRole', user.role);
-            }
+            const params = new URLSearchParams({
+                action: 'Locked',
+                page: pg,
+                limit: LIMIT,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
             const res = await fetch(`${API_BASE}/wallpaperlogs?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
