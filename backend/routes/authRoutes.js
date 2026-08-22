@@ -30,6 +30,10 @@ const recordFailedLogin = (ip) => {
     return { count: entry.count, delay, lockUntil: entry.lockUntil, waitSeconds: Math.ceil(delay / 1000) };
 };
 
+const clearLoginAttempts = (ip) => {
+    loginAttempts.delete(ip);
+};
+
 const formatPermissions = (perms) => {
     if (!perms) return {};
     if (perms instanceof Map) return Object.fromEntries(perms);
