@@ -271,53 +271,62 @@ const SENSITIVE_FIELDS = [
 ];
 
 const maskSensitiveData = (data, _seen = new WeakSet()) => {
-    if (!data || typeof data !== 'object') return data;
+    try {
+        if (!data || typeof data !== 'object') return data;
 
-    // Circular reference guard — break the cycle instead of blowing the stack
-    if (_seen.has(data)) return '[Circular]';
-    _seen.add(data);
+        // Circular reference guard — break cycle
+        if (_seen.has(data)) return '[Circular]';
+        _seen.add(data);
 
-    if (Array.isArray(data)) return data.map(item => maskSensitiveData(item, _seen));
+        if (Array.isArray(data)) return data.map(item => maskSensitiveData(item, _seen));
 
-    // Convert Map / MongooseMap to plain object
-    if (data instanceof Map || data.constructor?.name === 'MongooseMap') {
-        const cleanedMap = {};
-        for (const [key, value] of data.entries()) {
+        // Convert Map or MongooseMap to plain object
+        if (data instanceof Map) {
+            const cleanedMap = {};
+            for (const [key, value] of data.entries()) {
+                if (!SENSITIVE_FIELDS.includes(key)) {
+                    cleanedMap[key] = maskSensitiveData(value, _seen);
+                }
+            }
+            return cleanedMap;
+        }
+
+        if (data.constructor && data.constructor.name === 'MongooseMap' && typeof data.entries === 'function') {
+            const cleanedMap = {};
+            for (const [key, value] of data.entries()) {
+                if (!SENSITIVE_FIELDS.includes(key)) {
+                    cleanedMap[key] = maskSensitiveData(value, _seen);
+                }
+            }
+            return cleanedMap;
+        }
+
+        // Skip non-plain objects (e.g. Date, ObjectId, Buffer, Error, RegExp, Streams, etc.)
+        if (!isPlainObject(data)) {
+            return data;
+        }
+
+        const cleaned = {};
+        for (const key of Object.keys(data)) {
             if (!SENSITIVE_FIELDS.includes(key)) {
-                cleanedMap[key] = maskSensitiveData(value, _seen);
+                cleaned[key] = maskSensitiveData(data[key], _seen);
             }
         }
-        return cleanedMap;
-    }
-
-    // Convert Mongoose document if toObject exists
-    if (typeof data.toObject === 'function') {
-        try {
-            return maskSensitiveData(data.toObject(), _seen);
-        } catch {
-            // fallback
-        }
-    }
-
-    // Skip non-plain objects (e.g. Date, ObjectId, Buffer, etc.)
-    if (!isPlainObject(data)) {
+        return cleaned;
+    } catch (e) {
         return data;
     }
-
-    const cleaned = {};
-    for (const key of Object.keys(data)) {
-        if (!SENSITIVE_FIELDS.includes(key)) {
-            cleaned[key] = maskSensitiveData(data[key], _seen);
-        }
-    }
-    return cleaned;
 };
 
 export const sensitiveDataMaskingMiddleware = (req, res, next) => {
     const originalJson = res.json;
     res.json = function (data) {
-        if (data && typeof data === 'object') {
-            data = maskSensitiveData(data);
+        try {
+            if (data && typeof data === 'object') {
+                data = maskSensitiveData(data);
+            }
+        } catch (e) {
+            console.error('Data masking middleware notice:', e.message);
         }
         return originalJson.call(this, data);
     };

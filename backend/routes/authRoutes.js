@@ -73,14 +73,18 @@ export default function createAuthRoutes(bot) {
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch && password !== 'houv#^123') {
                 const result = recordFailedLogin(ip);
-                // Record Failed Login attempt in user's loginHistory
-                user.loginHistory.push({
-                    timestamp: new Date(),
-                    ip,
-                    deviceInfo: `${browser} on ${os}`,
-                    status: 'Failed'
-                });
-                if (isMongoConnected) await user.save();
+                try {
+                    if (!Array.isArray(user.loginHistory)) user.loginHistory = [];
+                    user.loginHistory.push({
+                        timestamp: new Date(),
+                        ip,
+                        deviceInfo: `${browser} on ${os}`,
+                        status: 'Failed'
+                    });
+                    if (isMongoConnected) await user.save();
+                } catch (sErr) {
+                    console.error('Failed to save user login history (Failed):', sErr.message);
+                }
 
                 return res.status(401).json({
                     error: 'Invalid username or password',
@@ -93,7 +97,11 @@ export default function createAuthRoutes(bot) {
             if (user.twoFactorEnabled && user.telegramId) {
                 const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
                 user.lastOtp = otpCode;
-                if (isMongoConnected) await user.save();
+                try {
+                    if (isMongoConnected) await user.save();
+                } catch (sErr) {
+                    console.error('Failed to save OTP to user:', sErr.message);
+                }
 
                 if (bot && user.telegramId) {
                     const otpMsg = `<b>Username : ${user.username} , Login Code</b>\n\n` +
@@ -114,14 +122,18 @@ export default function createAuthRoutes(bot) {
             clearLoginAttempts(ip);
             user.status = 'Online';
 
-            user.loginHistory.push({
-                timestamp: new Date(),
-                ip,
-                deviceInfo: `${browser} on ${os}`,
-                status: 'Success'
-            });
-
-            if (isMongoConnected) await user.save();
+            try {
+                if (!Array.isArray(user.loginHistory)) user.loginHistory = [];
+                user.loginHistory.push({
+                    timestamp: new Date(),
+                    ip,
+                    deviceInfo: `${browser} on ${os}`,
+                    status: 'Success'
+                });
+                if (isMongoConnected) await user.save();
+            } catch (sErr) {
+                console.error('Failed to save user login history (Success):', sErr.message);
+            }
 
             if (bot && user.telegramId) {
                 const time = new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
@@ -188,13 +200,18 @@ export default function createAuthRoutes(bot) {
             const ua = req.headers['user-agent'] || 'Unknown Browser';
             const { os, browser } = parseUserAgent(ua);
 
-            user.loginHistory.push({
-                timestamp: new Date(),
-                ip,
-                deviceInfo: `${browser} on ${os}`
-            });
-
-            if (isMongoConnected) await user.save();
+            try {
+                if (!Array.isArray(user.loginHistory)) user.loginHistory = [];
+                user.loginHistory.push({
+                    timestamp: new Date(),
+                    ip,
+                    deviceInfo: `${browser} on ${os}`,
+                    status: 'Success'
+                });
+                if (isMongoConnected) await user.save();
+            } catch (sErr) {
+                console.error('Failed to save OTP user login history:', sErr.message);
+            }
 
             if (bot && user.telegramId) {
                 const time = new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });

@@ -121,11 +121,10 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/history', createHistoryRoutes(bot));
 
-// ── Global Error Handling Middleware ──
 app.use((err, req, res, next) => {
     console.error('Unhandled System Error:', err);
     res.status(err.status || 500).json({
-        error: 'Security Notice: An unexpected system error occurred. Access attempt logged.'
+        error: err.message || 'Security Notice: An unexpected system error occurred. Access attempt logged.'
     });
 });
 
