@@ -22,6 +22,9 @@ import Customer from "../App/Customer/pages/Customer";
 // Device
 import Device from "../App/Device/pages/Device";
 
+// Report
+import Report from "../App/Report/pages/Report";
+
 // Contract 
 import Application from "../App/Contract/page/Application";
 import Activated from "../App/Contract/page/Activated";
@@ -85,6 +88,8 @@ const App = () => {
                   <Route path={json.customer} element={<ProtectRoute pagePath={json.customer}> <MainLayout><Customer /></MainLayout> </ProtectRoute>} />
                   {/* Device */}
                   <Route path={json.device} element={<ProtectRoute pagePath={json.device}> <MainLayout><Device /></MainLayout> </ProtectRoute>} />
+                  {/* Report */}
+                  <Route path={json.report || '/report'} element={<ProtectRoute pagePath={json.report || '/report'}> <MainLayout><Report /></MainLayout> </ProtectRoute>} />
                   {/* Contract */}
                   <Route path={json.contract.application} element={<ProtectRoute pagePath={json.contract.application}> <MainLayout><Application /></MainLayout> </ProtectRoute>} />
                   <Route path={json.contract.activated} element={<ProtectRoute pagePath={json.contract.activated}> <MainLayout><Activated /></MainLayout> </ProtectRoute>} />

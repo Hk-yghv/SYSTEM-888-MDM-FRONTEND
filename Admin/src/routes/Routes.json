@@ -4,6 +4,7 @@
     "dashboard": "/dashboard",
     "customer": "/customer",
     "device": "/device",
+    "report": "/report",
     "contract": {
         "application": "/contract/application",
         "activated": "/contract/activated",

@@ -86,17 +86,18 @@ const LockPhone = () => {
     const handleExportPDF = () => {
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Date & Time', cell: (r) => `${r.date} ${r.time}` },
             { header: 'Customer', accessor: 'customerName' },
             { header: 'Model', accessor: 'model' },
-            { header: 'User Name', accessor: 'userName' },
-            { header: 'Reason', accessor: 'reason' },
+            { header: 'Serial No.', accessor: 'serialNumber' },
+            { header: 'Last Lock', cell: (r) => r.lastLockTime || `${r.date} ${r.time}` },
+            { header: 'Performed By', accessor: 'performedBy' },
+            { header: 'Reason', accessor: 'reason' }
         ];
-        exportToPDF('Phone Lock Audit History Report', columns, logs);
+        exportToPDF('Lock Phone Audit Logs', columns, logs, user?.brand || '');
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full min-h-screen bg-[#f4f6f8] p-4 select-none space-y-4'>
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div className='w-10 h-10 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-700 text-xl'>
@@ -107,7 +108,7 @@ const LockPhone = () => {
                             {t('lockPhone')} Audit History Log
                         </h1>
                         <p className='text-xs text-red-700 font-bold'>
-                            {total} records — Date, Time, Reason, Display Text, Hotline, User Name
+                            {total} records — Date, Time, Last Lock, Reason, Display Text, Hotline, User Name
                         </p>
                     </div>
                 </div>
@@ -132,6 +133,7 @@ const LockPhone = () => {
                         <tr>
                             <th className='px-4 py-3 text-center'>No</th>
                             <th className='px-4 py-3'>Locked Date & Time</th>
+                            <th className='px-4 py-3 text-center bg-red-50 text-red-800 font-bold'>Last Lock</th>
                             <th className='px-4 py-3'>{t('customerName')}</th>
                             <th className='px-4 py-3'>{t('model')}</th>
                             <th className='px-4 py-3'>{t('serialNumber')}</th>
@@ -144,15 +146,18 @@ const LockPhone = () => {
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800 whitespace-nowrap'>
                         {loading ? (
-                            <tr><td colSpan={10} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
+                            <tr><td colSpan={11} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
                         ) : logs.length === 0 ? (
-                            <tr><td colSpan={10} className="text-center py-8 text-slate-500 italic font-medium">No phone locking activity recorded yet.</td></tr>
+                            <tr><td colSpan={11} className="text-center py-8 text-slate-500 italic font-medium">No phone locking activity recorded yet.</td></tr>
                         ) : (
                             logs.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-red-50/40 transition-colors'>
                                     <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
                                     <td className='px-4 py-3 font-mono text-red-700 font-bold'>
                                         <CopyCell text={`${item.date} at ${item.time}`} className='font-mono text-red-700 font-bold' />
+                                    </td>
+                                    <td className='px-4 py-3 text-center font-mono text-red-600 font-bold bg-red-50/50 rounded-lg'>
+                                        <CopyCell text={item.lastLockTime || `${item.date} ${item.time}`} className='font-mono text-red-600 font-bold' />
                                     </td>
                                     <td className='px-4 py-3 font-bold text-slate-900'><CopyCell text={item.customerName} className='font-bold text-slate-900' /></td>
                                     <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
@@ -167,7 +172,6 @@ const LockPhone = () => {
                                     </td>
                                     <td className='px-4 py-3 font-mono text-emerald-700 font-bold'><CopyCell text={item.phoneNumber || ''} className='font-mono text-emerald-700 font-bold' /></td>
                                 </tr>
-
                             ))
                         )}
                     </tbody>

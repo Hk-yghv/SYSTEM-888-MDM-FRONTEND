@@ -4,7 +4,7 @@ import json from "../../routes/Routes.json";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 
-import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper } from "react-icons/md";
+import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
 import { FaHistory } from "react-icons/fa";
 
@@ -62,6 +62,14 @@ const Left = () => {
                 <Link to={json.device} className={navItemClass(json.device)}>
                     <MdOutlinePhoneIphone size={20} className={isActive(json.device) ? "text-white" : "text-emerald-600"} />
                     {t('device')}
+                </Link>
+            )}
+
+            {/* Report */}
+            {hasPermission(json.report || '/report', 'read') && (
+                <Link to={json.report || '/report'} className={navItemClass(json.report || '/report')}>
+                    <MdOutlineBarChart size={20} className={isActive(json.report || '/report') ? "text-white" : "text-indigo-600"} />
+                    <span>Report (របាយការណ៍)</span>
                 </Link>
             )}
 
