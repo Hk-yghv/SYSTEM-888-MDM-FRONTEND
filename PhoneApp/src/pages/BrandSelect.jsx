@@ -14,14 +14,14 @@ const BrandSelect = ({ API_BASE, onSelectBrand }) => {
                 const cat = data.droplists?.find(d => d.category === 'Brands');
                 if (cat && cat.items && cat.items.length > 0) {
                     setBrands(cat.items);
-                } else {
-                    setBrands(['SYSTEM MAIN', 'BRAND ALPHA', 'BRAND BETA', 'ENTERPRISE']);
+                    setLoading(false);
+                    return;
                 }
-            } else {
-                setBrands(['SYSTEM MAIN', 'BRAND ALPHA', 'BRAND BETA']);
             }
+            // Fallback: If no custom brands created yet in system, show 1 default brand
+            setBrands(['SYSTEM MAIN']);
         } catch {
-            setBrands(['SYSTEM MAIN', 'BRAND ALPHA', 'BRAND BETA']);
+            setBrands(['SYSTEM MAIN']);
         } finally {
             setLoading(false);
         }
@@ -48,7 +48,7 @@ const BrandSelect = ({ API_BASE, onSelectBrand }) => {
                     </h1>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-950/80 border border-indigo-700/60 rounded-full text-[11px] font-bold text-indigo-300 font-khmer">
                         <FaShieldAlt className="text-indigo-400" />
-                        <span>សូមជ្រើសរើស Brand ដើមប្រព័ន្ធ</span>
+                        <span>ជ្រើសរើស Brand ក្នុងប្រព័ន្ធ ({brands.length})</span>
                     </div>
                     <p className="text-[11px] text-slate-400 font-medium">
                         Select System Brand domain before signing in
@@ -61,7 +61,7 @@ const BrandSelect = ({ API_BASE, onSelectBrand }) => {
                 <div className="flex items-center justify-between px-1">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider font-khmer flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        បញ្ជី Brand ទាំងអស់ ({brands.length})
+                        បញ្ជី Brand ដែលមានក្នុង System
                     </span>
                     <button onClick={fetchBrands} className="text-xs text-indigo-400 flex items-center gap-1.5 hover:text-indigo-300 cursor-pointer font-medium">
                         <FaSyncAlt className={loading ? "animate-spin text-emerald-400" : ""} /> Refresh
