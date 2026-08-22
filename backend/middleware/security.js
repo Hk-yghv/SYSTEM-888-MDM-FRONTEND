@@ -72,6 +72,10 @@ export const pathAndCommandGuardMiddleware = (req, res, next) => {
     next();
 };
 
+// ── LAYER 4: Deep Input Sanitization & Anti-Injection Engine ──
+const NOSQL_OPERATOR_REGEX = /^\$|\.(?=[^.]*$)/g;
+const MALICIOUS_PAYLOAD_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>|javascript:|onerror\s*=|onload\s*=|eval\(|document\.cookie/gi;
+
 const isPlainObject = (obj) => {
     if (!obj || typeof obj !== 'object') return false;
     const proto = Object.getPrototypeOf(obj);
