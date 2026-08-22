@@ -10,48 +10,67 @@ import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 
-// GET all active system brands for Phone App and Control System
+// GET all active system brands for Phone App and Control System directly from database
 router.get('/all-brands', async (req, res) => {
     try {
         const foundBrands = new Set();
 
         if (isMongoConnected) {
-            // 1. ControlSystem droplists
-            const controlConfigs = await queryAllDBs(ControlSystem, (M) => M.find({ key: 'droplists' }));
+            // 1. All ControlSystem documents
+            const controlConfigs = await queryAllDBs(ControlSystem, (M) => M.find({}));
             controlConfigs.forEach(c => {
-                if (Array.isArray(c.value)) {
+                if (c.brand && typeof c.brand === 'string') {
+                    const trimmed = c.brand.trim();
+                    if (trimmed) foundBrands.add(trimmed);
+                }
+                if (c.key === 'droplists' && Array.isArray(c.value)) {
                     const bCat = c.value.find(d => d.category === 'Brands');
                     if (bCat && Array.isArray(bCat.items)) {
-                        bCat.items.forEach(b => b && foundBrands.add(b.trim()));
+                        bCat.items.forEach(b => b && typeof b === 'string' && foundBrands.add(b.trim()));
                     }
                 }
             });
 
-            // 2. Distinct brands from Users
-            const users = await queryAllDBs(User, (M) => M.find({}).select('brand'));
-            users.forEach(u => u.brand && foundBrands.add(u.brand.trim()));
-
-            // 3. Distinct brands from Contracts
-            const contracts = await queryAllDBs(Contract, (M) => M.find({}).select('brand'));
-            contracts.forEach(c => c.brand && foundBrands.add(c.brand.trim()));
-        } else {
-            if (MEM_DB.controlSystem?.droplists) {
-                const bCat = MEM_DB.controlSystem.droplists.find(d => d.category === 'Brands');
-                if (bCat && Array.isArray(bCat.items)) {
-                    bCat.items.forEach(b => b && foundBrands.add(b.trim()));
+            // 2. All Users
+            const users = await queryAllDBs(User, (M) => M.find({}));
+            users.forEach(u => {
+                if (u.brand && typeof u.brand === 'string') {
+                    const trimmed = u.brand.trim();
+                    if (trimmed) foundBrands.add(trimmed);
                 }
-            }
-            if (MEM_DB.users) MEM_DB.users.forEach(u => u.brand && foundBrands.add(u.brand.trim()));
-            if (MEM_DB.contracts) MEM_DB.contracts.forEach(c => c.brand && foundBrands.add(c.brand.trim()));
+            });
+
+            // 3. All Contracts
+            const contracts = await queryAllDBs(Contract, (M) => M.find({}));
+            contracts.forEach(c => {
+                if (c.brand && typeof c.brand === 'string') {
+                    const trimmed = c.brand.trim();
+                    if (trimmed) foundBrands.add(trimmed);
+                }
+            });
         }
+
+        // 4. MEM_DB Fallback
+        if (MEM_DB.controlSystem?.droplists) {
+            const bCat = MEM_DB.controlSystem.droplists.find(d => d.category === 'Brands');
+            if (bCat && Array.isArray(bCat.items)) {
+                bCat.items.forEach(b => b && typeof b === 'string' && foundBrands.add(b.trim()));
+            }
+        }
+        if (MEM_DB.controlSystems && Array.isArray(MEM_DB.controlSystems)) {
+            MEM_DB.controlSystems.forEach(cs => cs.brand && foundBrands.add(cs.brand.trim()));
+        }
+        if (MEM_DB.users) MEM_DB.users.forEach(u => u.brand && foundBrands.add(u.brand.trim()));
+        if (MEM_DB.contracts) MEM_DB.contracts.forEach(c => c.brand && foundBrands.add(c.brand.trim()));
 
         const brandsList = Array.from(foundBrands).filter(Boolean);
         if (brandsList.length === 0) {
             brandsList.push('888MDM');
         }
+
         res.json({ success: true, brands: brandsList });
     } catch (err) {
-        console.error('Error fetching all brands:', err);
+        console.error('Error fetching all brands from database:', err);
         res.json({ success: true, brands: ['888MDM'] });
     }
 });
