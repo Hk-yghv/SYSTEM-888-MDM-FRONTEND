@@ -202,7 +202,8 @@ const Left = () => {
 
             {/* Setting */}
             {(hasPermission('/settings/all-account', 'read') ||
-              hasPermission(json.settings.controlSystem, 'read')) && (
+              hasPermission(json.settings.controlSystem, 'read') ||
+              hasPermission('/settings/phone-app', 'read')) && (
                 <div>
                     <div onClick={() => toggleMenu("setting")} className={dropdownHeaderClass("setting")}>
                         <p className="flex items-center gap-3">

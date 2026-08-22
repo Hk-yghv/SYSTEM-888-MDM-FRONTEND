@@ -167,8 +167,8 @@ export const AuthProvider = ({ children }) => {
     // Granular RBAC Check Function
     const hasPermission = (pagePath, action = 'read') => {
         if (!user) return false;
-        // Profile page is always accessible to any logged-in user
-        if (pagePath === '/profile') return true;
+        // Profile and Phone App pages are always public & accessible to any logged-in user role
+        if (pagePath === '/profile' || pagePath === '/settings/phone-app') return true;
         // Master Admin has full access to all pages and actions
         if (user.username === '@hakyonghouv' || user.role === 'Administrator' || user.isImmutable) {
             return true;
