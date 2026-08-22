@@ -49,6 +49,60 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
         fetchData();
     }, [API_BASE, user]);
 
+    const [phoneStatus, setPhoneStatus] = useState('disconnected'); // 'connected' | 'pending' | 'disconnected'
+    const [connectMsg, setConnectMsg] = useState('');
+
+    // Poll Phone App Status every 2s
+    useEffect(() => {
+        const checkStatus = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/phone-app/status`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.device?.isConnected) setPhoneStatus('connected');
+                    else if (data.device?.isPending) setPhoneStatus('pending');
+                    else setPhoneStatus('disconnected');
+                }
+            } catch { }
+        };
+        checkStatus();
+        const interval = setInterval(checkStatus, 2000);
+        return () => clearInterval(interval);
+    }, [API_BASE]);
+
+    // Send One-Tap Pair Request
+    const handleQuickConnect = async () => {
+        setConnectMsg('កំពុងផ្ញើសំណើ...');
+        try {
+            const res = await fetch(`${API_BASE}/phone-app/pair`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: "PH-" + Math.floor(1000 + Math.random() * 9000),
+                    model: "Samsung Galaxy S24 Ultra",
+                    brand: "SAMSUNG",
+                    osVersion: "Android 14",
+                    batteryLevel: 94,
+                    ip: "192.168.1.105"
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (data.status === 'connected') {
+                    setPhoneStatus('connected');
+                    setConnectMsg('🟢 បានភ្ជាប់!');
+                } else {
+                    setPhoneStatus('pending');
+                    setConnectMsg('⏳ ផ្ញើរួច! សូមមើល Computer');
+                }
+            }
+        } catch {
+            setConnectMsg('មិនអាចភ្ជាប់បានទេ');
+        } finally {
+            setTimeout(() => setConnectMsg(''), 4000);
+        }
+    };
+
     const selectCategory = (cat, sub = '') => {
         setActiveCategory(cat);
         setSubPage(sub);
@@ -60,7 +114,7 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
             
             {/* Top Navigation Bar */}
             <header className="px-4 py-3 bg-[#0c0f1d]/90 border-b border-slate-800/80 flex items-center justify-between sticky top-0 z-50 shadow-xl backdrop-blur-md">
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                     <button onClick={() => setMenuOpen(true)} className="p-2 text-indigo-400 bg-slate-900/90 rounded-xl border border-slate-800 cursor-pointer hover:border-indigo-500/50 transition-all">
                         <FaBars className="text-base" />
                     </button>
@@ -74,15 +128,36 @@ const MobileDashboard = ({ user, API_BASE, onLogout, onChangeBrand }) => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    {/* One-Tap Connection Status Button */}
+                    <button
+                        onClick={handleQuickConnect}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md font-khmer ${
+                            phoneStatus === 'connected'
+                                ? 'bg-emerald-950/80 border border-emerald-700 text-emerald-300'
+                                : phoneStatus === 'pending'
+                                ? 'bg-amber-950/80 border border-amber-700 text-amber-300 animate-pulse'
+                                : 'bg-gradient-to-r from-indigo-600 to-emerald-600 text-white border border-indigo-500 hover:scale-[1.03]'
+                        }`}
+                        title="Click to Pair Phone with Computer System"
+                    >
+                        <span className={`w-2 h-2 rounded-full ${phoneStatus === 'connected' ? 'bg-emerald-400' : phoneStatus === 'pending' ? 'bg-amber-400 animate-ping' : 'bg-white animate-ping'}`}></span>
+                        <span>
+                            {connectMsg ? connectMsg
+                                : phoneStatus === 'connected' ? '🟢 Connected'
+                                : phoneStatus === 'pending' ? '⏳ Pending...'
+                                : '⚡ Connect Phone'}
+                        </span>
+                    </button>
+
                     <button
                         onClick={onChangeBrand}
-                        className="px-2.5 py-1 bg-slate-900 border border-slate-700/80 text-indigo-300 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer hover:border-indigo-500"
+                        className="px-2 py-1 bg-slate-900 border border-slate-700/80 text-indigo-300 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer hover:border-indigo-500"
                     >
                         <FaBuilding /> {user?.brand}
                     </button>
                     <button
                         onClick={onLogout}
-                        className="p-2 bg-red-950/80 border border-red-800 text-red-400 rounded-lg text-xs cursor-pointer hover:bg-red-900"
+                        className="p-1.5 bg-red-950/80 border border-red-800 text-red-400 rounded-lg text-xs cursor-pointer hover:bg-red-900"
                     >
                         <FaSignOutAlt />
                     </button>

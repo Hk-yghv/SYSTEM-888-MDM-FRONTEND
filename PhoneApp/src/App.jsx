@@ -4,15 +4,17 @@ import Login from './pages/Login';
 import MobileDashboard from './pages/MobileDashboard';
 
 const getApiBase = () => {
-    if (import.meta.env.VITE_API_BACKEND) {
-        return import.meta.env.VITE_API_BACKEND;
-    }
-    if (typeof window !== 'undefined' && window.location.hostname) {
+    if (typeof window !== 'undefined') {
+        const savedUrl = localStorage.getItem('mdm_custom_api_url');
+        if (savedUrl) return savedUrl;
+
         const host = window.location.hostname;
-        if (host === 'localhost' || host === '127.0.0.1') {
+        if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
             return `http://${host}:5000/api`;
         }
-        return `${window.location.protocol}//${host}:5000/api`;
+    }
+    if (import.meta.env.VITE_API_BACKEND) {
+        return import.meta.env.VITE_API_BACKEND;
     }
     return 'http://localhost:5000/api';
 };
