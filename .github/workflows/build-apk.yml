@@ -48,6 +48,7 @@ jobs:
           npx cap add android || true
           npx cap copy android
           npx cap update android
+          node scripts/inject-manifest.js
 
       - name: Build Debug APK via Gradle
         run: |
