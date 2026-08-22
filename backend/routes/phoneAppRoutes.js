@@ -3,32 +3,28 @@ import express from 'express';
 const router = express.Router();
 
 // In-memory state for Phone App & Real-time Live Session
-// Manual Connect Rule: Device is NOT auto-connected by default; Admin user must click Connect in System!
 let activeDevice = {
-    isConnected: false, // Default false: requires manual admin connect action in System!
-    id: "PH-8829-S24U",
-    model: "Samsung Galaxy S24 Ultra",
-    brand: "SAMSUNG",
-    imei1: "358941109482103",
-    imei2: "358941109482104",
-    osVersion: "Android 14 (One UI 6.1)",
-    batteryLevel: 88,
+    isConnected: false,      // MANUAL: must be approved by Admin, not auto-connect
+    isPending: false,         // Device requested to pair, waiting for Admin approval
+    id: null,
+    model: null,
+    brand: null,
+    imei1: null,
+    imei2: null,
+    osVersion: null,
+    batteryLevel: null,
     isCharging: false,
-    storage: "256 GB (82 GB Available)",
-    ram: "12 GB (4.8 GB Available)",
-    carrier: "Smart Axiata 5G",
-    ip: "192.168.1.105",
-    smsCount: 42,
-    recentSms: [
-        { sender: "Smart", text: "Your main balance is $12.50 valid until 30/09/2026", date: "Today 14:20" },
-        { sender: "ABA Bank", text: "Received $150.00 from John Doe (Ref: 981245)", date: "Today 10:15" },
-        { sender: "SYSTEM MDM", text: "Device paired with SYSTEM Admin", date: "Yesterday 18:30" }
-    ],
-    lastSeen: new Date().toISOString()
+    storage: null,
+    ram: null,
+    carrier: null,
+    ip: null,
+    smsCount: 0,
+    recentSms: [],
+    lastSeen: null
 };
 
-let createSessionActive = false; // Computer create page status
-let latestScannedDoc = null;    // Real-time scanned payload from mobile app
+let createSessionActive = false;
+let latestScannedDoc = null;
 
 // ── GET Phone App & Live Session Status ──
 router.get('/status', (req, res) => {
@@ -45,12 +41,9 @@ router.get('/status', (req, res) => {
 router.post('/create-session', (req, res) => {
     const { active } = req.body;
     createSessionActive = Boolean(active);
-    
-    // If closed, clear pending scanned doc
     if (!createSessionActive) {
         latestScannedDoc = null;
     }
-
     res.json({
         success: true,
         createSessionActive,
@@ -58,77 +51,89 @@ router.post('/create-session', (req, res) => {
     });
 });
 
-// ── MANUAL CONNECT Device (Triggered by System Admin) ──
-router.post('/connect', (req, res) => {
-    if (activeDevice) {
-        activeDevice.isConnected = true;
-        activeDevice.lastSeen = new Date().toISOString();
-    } else {
-        activeDevice = {
-            isConnected: true,
-            id: "PH-8829-S24U",
-            model: "Samsung Galaxy S24 Ultra",
-            brand: "SAMSUNG",
-            lastSeen: new Date().toISOString()
-        };
-    }
-    res.json({
-        success: true,
-        message: "ឧបករណ៍ទូរស័ព្ទត្រូវបានភ្ជាប់ទៅកាន់ System ដោយជោគជ័យ!",
-        device: activeDevice
-    });
-});
-
-// ── DISCONNECT Device (Triggered by System Admin) ──
-router.post('/disconnect', (req, res) => {
-    if (activeDevice) {
-        activeDevice.isConnected = false;
-        activeDevice.lastSeen = new Date().toISOString();
-    }
-    res.json({
-        success: true,
-        message: "ការភ្ជាប់ទៅកាន់ទូរស័ព្ទត្រូវបានផ្តាច់ចេញពី System រួចរាល់!",
-        device: activeDevice
-    });
-});
-
-// ── PAIR Device (from QR, Wi-Fi, or Hotspot) ──
+// ── REQUEST TO PAIR (from Mobile App) → Sets device as Pending, NOT connected yet ──
 router.post('/pair', (req, res) => {
     const deviceInfo = req.body;
+
+    // If already connected, update telemetry but keep connection state
+    if (activeDevice.isConnected) {
+        activeDevice = {
+            ...activeDevice,
+            ...deviceInfo,
+            isConnected: true,
+            isPending: false,
+            lastSeen: new Date().toISOString()
+        };
+        return res.json({
+            success: true,
+            status: 'connected',
+            message: "Device telemetry updated (already connected)",
+            device: activeDevice
+        });
+    }
+
+    // New pairing request → mark as PENDING, wait for Admin to approve
     activeDevice = {
         ...activeDevice,
         ...deviceInfo,
-        isConnected: false, // Paired, but requires manual Connect button click in System
+        isConnected: false,
+        isPending: true,
         lastSeen: new Date().toISOString()
     };
+
     res.json({
         success: true,
-        message: "Device paired successfully. Please click 'Connect Device' in System to activate connection.",
+        status: 'pending',
+        message: "ការស្នើសុំភ្ជាប់ ត្រូវបានទទួល! កំពុងរង់ចាំការអនុម័តពី Computer Administrator...",
         device: activeDevice
     });
+});
+
+// ── ADMIN APPROVES CONNECTION (Manual "Connect" button in System) ──
+router.post('/approve-connect', (req, res) => {
+    if (!activeDevice.isPending && !activeDevice.id) {
+        return res.status(404).json({ success: false, message: "គ្មាន Device ណាស្នើសុំភ្ជាប់ទេ" });
+    }
+    activeDevice.isConnected = true;
+    activeDevice.isPending = false;
+    activeDevice.lastSeen = new Date().toISOString();
+    res.json({
+        success: true,
+        message: "Device ត្រូវបានភ្ជាប់ (Approved by Admin)",
+        device: activeDevice
+    });
+});
+
+// ── ADMIN DISCONNECTS / UNPAIRS Device ──
+router.post('/disconnect', (req, res) => {
+    activeDevice.isConnected = false;
+    activeDevice.isPending = false;
+    res.json({ success: true, message: "Device ត្រូវបានផ្តាច់ (Disconnected by Admin)" });
 });
 
 // ── HEARTBEAT Telemetry ──
 router.post('/heartbeat', (req, res) => {
-    if (activeDevice) {
+    if (activeDevice.isConnected) {
         activeDevice.lastSeen = new Date().toISOString();
         if (req.body.batteryLevel !== undefined) activeDevice.batteryLevel = req.body.batteryLevel;
         if (req.body.isCharging !== undefined) activeDevice.isCharging = req.body.isCharging;
     }
-    res.json({ success: true, createSessionActive });
+    res.json({
+        success: true,
+        createSessionActive,
+        connectionStatus: activeDevice.isConnected ? 'connected' : activeDevice.isPending ? 'pending' : 'disconnected'
+    });
 });
 
 // ── REAL-TIME SCAN SYNC (From Mobile Phone App) ──
 router.post('/scan-sync', (req, res) => {
-    // REQUIREMENT: Device must be connected AND Computer system MUST have Create page open
-    if (!activeDevice || !activeDevice.isConnected) {
+    if (!activeDevice.isConnected) {
         return res.status(403).json({
             success: false,
             errorCode: "DEVICE_NOT_CONNECTED",
-            message: "ទូរស័ព្ទមិនទាន់បានភ្ជាប់ជាមួយ System ទេ! សូមចូលទៅកាន់ Settings -> Phone App រួចចុច 'Connect Phone' ជាមុនសិន។"
+            message: "ទូរស័ព្ទមិនទាន់ភ្ជាប់ទៅ Computer System ទេ! សូមមើល Settings > Phone App"
         });
     }
-
     if (!createSessionActive) {
         return res.status(403).json({
             success: false,
@@ -154,7 +159,7 @@ router.post('/scan-sync', (req, res) => {
     });
 });
 
-// ── CONSUME Scanned Doc Data ──
+// ── CONSUME Scanned Doc Data (Called by Computer after auto-populating) ──
 router.post('/consume-scanned-doc', (req, res) => {
     const consumed = latestScannedDoc;
     latestScannedDoc = null;

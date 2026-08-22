@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useAuth } from '../../../context/AuthContext';
-import { FaQrcode, FaWifi, FaBroadcastTower, FaMobileAlt, FaBatteryThreeQuarters, FaMicrochip, FaMemory, FaHdd, FaSms, FaSyncAlt, FaUnlink, FaCheckCircle, FaLaptop } from 'react-icons/fa';
+import { FaQrcode, FaWifi, FaBroadcastTower, FaMobileAlt, FaBatteryThreeQuarters, FaMicrochip, FaMemory, FaHdd, FaSms, FaSyncAlt, FaUnlink, FaCheckCircle, FaLaptop, FaPlug, FaTimesCircle, FaExclamationTriangle, FaHourglass } from 'react-icons/fa';
 import { MdPhoneAndroid, MdDeveloperMode, MdOutlineSignalCellular4Bar } from 'react-icons/md';
 
 const PhoneAppPage = () => {
@@ -11,6 +11,8 @@ const PhoneAppPage = () => {
     const [createSessionActive, setCreateSessionActive] = useState(false);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
+    const [actionMsg, setActionMsg] = useState('');
 
     const canvasRef = useRef(null);
 
@@ -32,32 +34,42 @@ const PhoneAppPage = () => {
         }
     };
 
-    // ── Connect & Disconnect Handlers ──
-    const handleConnectDevice = async () => {
+    // Manual Approve & Connect
+    const handleConnect = async () => {
+        setActionLoading(true);
+        setActionMsg('');
         try {
-            const res = await fetch(`${API_BASE}/phone-app/connect`, { method: 'POST' });
-            if (res.ok) {
-                fetchStatus();
-            }
-        } catch (err) {
-            console.error('Connect device error:', err);
+            const res = await fetch(`${API_BASE}/phone-app/approve-connect`, { method: 'POST' });
+            const data = await res.json();
+            setActionMsg(data.message || 'ភ្ជាប់ជោគជ័យ!');
+            fetchStatus();
+        } catch {
+            setActionMsg('ភ្ជាប់បរាជ័យ សូមព្យាយាមម្តងទៀត');
+        } finally {
+            setActionLoading(false);
         }
     };
 
-    const handleDisconnectDevice = async () => {
+    // Manual Disconnect
+    const handleDisconnect = async () => {
+        if (!window.confirm('តើអ្នកប្រាកដថាចង់ផ្តាច់ Device ចេញពីប្រព័ន្ធ?')) return;
+        setActionLoading(true);
+        setActionMsg('');
         try {
             const res = await fetch(`${API_BASE}/phone-app/disconnect`, { method: 'POST' });
-            if (res.ok) {
-                fetchStatus();
-            }
-        } catch (err) {
-            console.error('Disconnect device error:', err);
+            const data = await res.json();
+            setActionMsg(data.message || 'ផ្តាច់ការភ្ជាប់ជោគជ័យ!');
+            fetchStatus();
+        } catch {
+            setActionMsg('ផ្តាច់ការភ្ជាប់បរាជ័យ');
+        } finally {
+            setActionLoading(false);
         }
     };
 
     useEffect(() => {
         fetchStatus();
-        const interval = setInterval(fetchStatus, 3000);
+        const interval = setInterval(fetchStatus, 5000);
         return () => clearInterval(interval);
     }, [API_BASE]);
 
@@ -264,7 +276,44 @@ const PhoneAppPage = () => {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* Connection Status Badge */}
+                    <span className={`px-3 py-1.5 text-xs font-bold rounded-full border flex items-center gap-1.5 ${
+                        deviceData?.isConnected
+                            ? 'bg-emerald-950 border-emerald-700 text-emerald-400'
+                            : deviceData?.isPending
+                            ? 'bg-amber-950 border-amber-700 text-amber-400 animate-pulse'
+                            : 'bg-red-950 border-red-800 text-red-400'
+                    }`}>
+                        {deviceData?.isConnected ? <><FaPlug /> 🟢 Connected</>
+                            : deviceData?.isPending ? <><FaHourglass className="animate-spin" /> ⏳ Pending Approval</>
+                            : <><FaTimesCircle /> 🔴 Disconnected</>}
+                    </span>
+
+                    {/* APPROVE CONNECT Button (when device is Pending) */}
+                    {deviceData?.isPending && !deviceData?.isConnected && (
+                        <button
+                            onClick={handleConnect}
+                            disabled={actionLoading}
+                            className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg shadow-emerald-600/30 animate-pulse font-khmer"
+                        >
+                            <FaPlug />
+                            <span>{actionLoading ? 'កំពុងភ្ជាប់...' : '✅ Connect Device (អនុម័ត)'}</span>
+                        </button>
+                    )}
+
+                    {/* DISCONNECT Button (when device is Connected) */}
+                    {deviceData?.isConnected && (
+                        <button
+                            onClick={handleDisconnect}
+                            disabled={actionLoading}
+                            className="px-3.5 py-2 bg-red-900 hover:bg-red-800 text-red-200 border border-red-700 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg font-khmer"
+                        >
+                            <FaUnlink />
+                            <span>{actionLoading ? 'កំពុងផ្តាច់...' : '⛔ Disconnect (ផ្តាច់)'}</span>
+                        </button>
+                    )}
+
                     <button
                         onClick={fetchStatus}
                         disabled={reloading}
@@ -395,97 +444,69 @@ const PhoneAppPage = () => {
                         )}
                     </div>
 
-                    {/* Device Info Card + Manual Connect / Disconnect Controls */}
-                    <div className="bg-[#0f1426] border border-gray-800 rounded-2xl p-5 shadow-xl space-y-5">
+                    {/* Detailed Connected Phone Information */}
+                    <div className="bg-[#0f1426] border border-gray-800 rounded-2xl p-5 shadow-xl space-y-4">
 
-                        {/* Header */}
-                        <div className="flex items-center justify-between border-b border-gray-800 pb-4">
-                            <h3 className="text-sm font-bold text-indigo-400 flex items-center gap-2">
-                                <FaMobileAlt /> Paired Device Info & Connection Control
-                            </h3>
-                            <span className={`px-3 py-1.5 text-[10px] font-black rounded-full border tracking-wide ${
-                                deviceData?.isConnected 
-                                    ? 'bg-emerald-950/80 border-emerald-600 text-emerald-400' 
-                                    : 'bg-red-950/80 border-red-700 text-red-400'
+                        {/* Action Message Feedback */}
+                        {actionMsg && (
+                            <div className={`p-3 rounded-xl text-xs font-bold font-khmer flex items-center gap-2 border ${
+                                actionMsg.includes('ជោគជ័យ') || actionMsg.includes('Approved')
+                                    ? 'bg-emerald-950 border-emerald-700 text-emerald-300'
+                                    : 'bg-amber-950 border-amber-700 text-amber-300'
                             }`}>
-                                {deviceData?.isConnected ? '🟢 CONNECTED' : '🔴 DISCONNECTED'}
+                                <FaCheckCircle className="flex-shrink-0" />
+                                <span>{actionMsg}</span>
+                            </div>
+                        )}
+
+                        {/* Pending Request Banner */}
+                        {deviceData?.isPending && !deviceData?.isConnected && (
+                            <div className="p-4 bg-amber-950/70 border border-amber-700/80 rounded-xl flex items-start gap-3 animate-pulse">
+                                <FaExclamationTriangle className="text-amber-400 text-xl flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-xs font-bold text-amber-300 font-khmer">⏳ Device ស្នើសុំភ្ជាប់ — រង់ចាំការអនុម័តពីអ្នក!</p>
+                                    <p className="text-[11px] text-amber-400/90 font-khmer mt-0.5">
+                                        <strong>{deviceData?.model || 'Unknown Device'}</strong> (ID: {deviceData?.id}) កំពុងស្នើសុំភ្ជាប់។
+                                        សូមចុចប៊ូតុង <strong className="text-white">"✅ Connect Device (អនុម័ត)"</strong> ខាងលើ ដើម្បីអនុញ្ញាតឱ្យភ្ជាប់!
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                            <h3 className="text-sm font-bold text-indigo-400 flex items-center gap-2">
+                                <FaMobileAlt /> Connected Device Telemetry & Specifications
+                            </h3>
+                            <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border ${
+                                deviceData?.isConnected
+                                    ? 'bg-emerald-950 border-emerald-700 text-emerald-400'
+                                    : deviceData?.isPending
+                                    ? 'bg-amber-950 border-amber-700 text-amber-400'
+                                    : 'bg-red-950 border-red-800 text-red-400'
+                            }`}>
+                                {deviceData?.isConnected ? '🟢 ACTIVE CONNECTED'
+                                    : deviceData?.isPending ? '⏳ PENDING APPROVAL'
+                                    : '🔴 DISCONNECTED'}
                             </span>
                         </div>
 
-                        {/* Device Identity Summary Card */}
-                        <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
-                            deviceData?.isConnected 
-                                ? 'bg-emerald-950/30 border-emerald-700/60' 
-                                : 'bg-slate-900/60 border-slate-700/60'
-                        }`}>
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl border shadow-inner ${
-                                deviceData?.isConnected 
-                                    ? 'bg-emerald-900/50 border-emerald-600 text-emerald-300' 
-                                    : 'bg-slate-800/80 border-slate-600 text-slate-400'
-                            }`}>
-                                📱
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-base font-black text-white truncate">
-                                    {deviceData?.model || 'No Device Paired'}
-                                </p>
-                                <p className="text-xs text-slate-400 font-semibold mt-0.5">
-                                    Brand: <span className="text-indigo-300">{deviceData?.brand || '—'}</span>
-                                    &nbsp;&bull;&nbsp;
-                                    ID: <span className="font-mono text-amber-300">{deviceData?.id || '—'}</span>
-                                </p>
-                                <p className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">
-                                    IMEI: {deviceData?.imei1 || '—'}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Manual Connect / Disconnect Buttons */}
-                        <div className="flex items-center gap-3">
-                            {!deviceData?.isConnected ? (
-                                <button
-                                    onClick={handleConnectDevice}
-                                    className="flex-1 py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-600/20 cursor-pointer transition-all active:scale-[0.98]"
-                                >
-                                    <FaCheckCircle className="text-base" />
-                                    <span className="font-khmer">ភ្ជាប់ (Connect Phone)</span>
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={handleDisconnectDevice}
-                                    className="flex-1 py-3 px-4 bg-gradient-to-r from-red-700 to-red-800 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 shadow-xl shadow-red-700/20 cursor-pointer transition-all active:scale-[0.98]"
-                                >
-                                    <FaUnlink className="text-base" />
-                                    <span className="font-khmer">ផ្តាច់ (Disconnect Phone)</span>
-                                </button>
-                            )}
-                            <button
-                                onClick={fetchStatus}
-                                className={`p-3 rounded-2xl bg-slate-900 border border-slate-700 text-slate-400 hover:text-white hover:border-indigo-500 cursor-pointer transition-all ${reloading ? 'animate-spin text-indigo-400' : ''}`}
-                                title="Refresh Status"
-                            >
-                                <FaSyncAlt />
-                            </button>
-                        </div>
-
-                        {/* Device Spec Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs border-t border-gray-800 pt-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                             <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                                <span className="text-slate-400 block text-[10px] font-semibold uppercase tracking-wider">Device Model</span>
-                                <span className="font-bold text-white mt-0.5 block">{deviceData?.model || '—'}</span>
+                                <span className="text-slate-400 block text-[10px] font-semibold">Device Model</span>
+                                <span className="font-bold text-white">{deviceData?.model || '—'}</span>
                             </div>
                             <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                                <span className="text-slate-400 block text-[10px] font-semibold uppercase tracking-wider">IMEI 1</span>
-                                <span className="font-mono text-indigo-300 mt-0.5 block">{deviceData?.imei1 || '—'}</span>
+                                <span className="text-slate-400 block text-[10px] font-semibold">IMEI 1</span>
+                                <span className="font-mono text-indigo-300">{deviceData?.imei1 || '—'}</span>
                             </div>
                             <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                                <span className="text-slate-400 block text-[10px] font-semibold uppercase tracking-wider">IMEI 2</span>
-                                <span className="font-mono text-indigo-300 mt-0.5 block">{deviceData?.imei2 || '—'}</span>
+                                <span className="text-slate-400 block text-[10px] font-semibold">IMEI 2</span>
+                                <span className="font-mono text-indigo-300">{deviceData?.imei2 || '—'}</span>
                             </div>
                             <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                                <span className="text-slate-400 block text-[10px] font-semibold uppercase tracking-wider">Battery & Charging</span>
+                                <span className="text-slate-400 block text-[10px] font-semibold">Battery & Charging</span>
                                 <span className="font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                                    <FaBatteryThreeQuarters /> {deviceData?.batteryLevel ?? '—'}% {deviceData?.isCharging ? '(Charging ⚡)' : ''}
+                                    <FaBatteryThreeQuarters /> {deviceData?.batteryLevel}% {deviceData?.isCharging ? '(Charging)' : ''}
                                 </span>
                             </div>
                             <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
