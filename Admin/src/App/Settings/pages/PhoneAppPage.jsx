@@ -67,9 +67,25 @@ const PhoneAppPage = () => {
         }
     };
 
+    // Reject Pending Connection
+    const handleReject = async () => {
+        setActionLoading(true);
+        setActionMsg('');
+        try {
+            const res = await fetch(`${API_BASE}/phone-app/disconnect`, { method: 'POST' });
+            const data = await res.json();
+            setActionMsg('បានបដិសេធការភ្ជាប់ Device!');
+            fetchStatus();
+        } catch {
+            setActionMsg('បដិសេធបរាជ័យ');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchStatus();
-        const interval = setInterval(fetchStatus, 5000);
+        const interval = setInterval(fetchStatus, 2000);
         return () => clearInterval(interval);
     }, [API_BASE]);
 

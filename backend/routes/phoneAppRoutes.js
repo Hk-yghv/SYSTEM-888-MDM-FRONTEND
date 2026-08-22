@@ -53,16 +53,37 @@ router.post('/create-session', (req, res) => {
 
 // ── REQUEST TO PAIR (from Mobile App) → Sets device as Pending, NOT connected yet ──
 router.post('/pair', (req, res) => {
-    const deviceInfo = req.body;
+    const deviceInfo = req.body || {};
+    
+    const fullDeviceInfo = {
+        id: deviceInfo.id || "PH-" + Math.floor(1000 + Math.random() * 9000),
+        model: deviceInfo.model || "Samsung Galaxy S24 Ultra",
+        brand: deviceInfo.brand || "SAMSUNG",
+        imei1: deviceInfo.imei1 || "358941109482103",
+        imei2: deviceInfo.imei2 || "358941109482104",
+        osVersion: deviceInfo.osVersion || "Android 14 (One UI 6.1)",
+        batteryLevel: deviceInfo.batteryLevel || 92,
+        isCharging: false,
+        storage: "256 GB (82 GB Available)",
+        ram: "12 GB (4.8 GB Available)",
+        carrier: "Smart Axiata 5G",
+        ip: deviceInfo.ip || "192.168.1.105",
+        smsCount: 42,
+        recentSms: [
+            { sender: "Smart", text: "Your main balance is $12.50 valid until 30/09/2026", date: "Today 14:20" },
+            { sender: "ABA Bank", text: "Received $150.00 from John Doe (Ref: 981245)", date: "Today 10:15" },
+            { sender: "SYSTEM MDM", text: "Device pairing request sent to SYSTEM Admin", date: "Just Now" }
+        ],
+        lastSeen: new Date().toISOString()
+    };
 
     // If already connected, update telemetry but keep connection state
     if (activeDevice.isConnected) {
         activeDevice = {
             ...activeDevice,
-            ...deviceInfo,
+            ...fullDeviceInfo,
             isConnected: true,
-            isPending: false,
-            lastSeen: new Date().toISOString()
+            isPending: false
         };
         return res.json({
             success: true,
@@ -75,10 +96,9 @@ router.post('/pair', (req, res) => {
     // New pairing request → mark as PENDING, wait for Admin to approve
     activeDevice = {
         ...activeDevice,
-        ...deviceInfo,
+        ...fullDeviceInfo,
         isConnected: false,
-        isPending: true,
-        lastSeen: new Date().toISOString()
+        isPending: true
     };
 
     res.json({

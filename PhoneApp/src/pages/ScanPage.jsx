@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createWorker } from 'tesseract.js';
-import { FaCamera, FaImage, FaCheckCircle, FaExclamationTriangle, FaSyncAlt, FaSpinner, FaIdCard, FaLaptop, FaQrcode, FaPlug } from 'react-icons/fa';
+import { FaCamera, FaImage, FaCheckCircle, FaExclamationTriangle, FaSyncAlt, FaSpinner, FaIdCard, FaLaptop, FaQrcode, FaPlug, FaHourglass, FaPaperPlane } from 'react-icons/fa';
 
 const ScanPage = ({ API_BASE }) => {
     const [scanMode, setScanMode] = useState('doc'); // 'doc' (Document Scan) | 'qr' (QR System Connect)
     const [createSessionActive, setCreateSessionActive] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState('disconnected'); // 'connected' | 'pending' | 'disconnected'
     const [loadingStatus, setLoadingStatus] = useState(true);
     const [scanning, setScanning] = useState(false);
     const [statusText, setStatusText] = useState('');
     const [previewUrl, setPreviewUrl] = useState(null);
     const [syncSuccess, setSyncSuccess] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
-    const [pairSuccessMsg, setPairSuccessMsg] = useState('');
+    const [pairMsg, setPairMsg] = useState('');
+    const [pairStatus, setPairStatus] = useState('');
 
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
@@ -23,6 +25,13 @@ const ScanPage = ({ API_BASE }) => {
             if (res.ok) {
                 const data = await res.json();
                 setCreateSessionActive(Boolean(data.createSessionActive));
+                if (data.device?.isConnected) {
+                    setConnectionStatus('connected');
+                } else if (data.device?.isPending) {
+                    setConnectionStatus('pending');
+                } else {
+                    setConnectionStatus('disconnected');
+                }
             }
         } catch (err) {
             console.error('Check status error:', err);
@@ -37,21 +46,15 @@ const ScanPage = ({ API_BASE }) => {
         return () => clearInterval(interval);
     }, [API_BASE]);
 
-    // Pair Phone App with System via QR Code payload
-    const handleQrCodeScan = async (file) => {
-        if (!file) return;
+    // Send Connection / Pairing Request to Computer System
+    const sendPairRequest = async () => {
         setScanning(true);
-        setStatusText('កំពុងអាន QR Code ភ្ជាប់ប្រព័ន្ធ...');
-        setPairSuccessMsg('');
+        setStatusText('កំពុងផ្ញើសំណើភ្ជាប់ទៅកាន់ Computer System...');
+        setPairMsg('');
+        setPairStatus('');
         setErrorMessage('');
 
         try {
-            // Read QR payload
-            const worker = await createWorker('eng');
-            const { data } = await worker.recognize(file);
-            await worker.terminate();
-
-            // Submit pairing request to Backend
             const res = await fetch(`${API_BASE}/phone-app/pair`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -59,16 +62,28 @@ const ScanPage = ({ API_BASE }) => {
                     id: "PH-" + Math.floor(1000 + Math.random() * 9000),
                     model: "Samsung Galaxy S24 Ultra",
                     brand: "SAMSUNG",
-                    lastSeen: new Date().toISOString()
+                    osVersion: "Android 14",
+                    batteryLevel: 94,
+                    ip: "192.168.1.105"
                 })
             });
 
+            const data = await res.json();
             if (res.ok) {
-                setPairSuccessMsg('ទូរស័ព្ទត្រូវបានភ្ជាប់ទៅកាន់ Computer System ដោយជោគជ័យ!');
+                if (data.status === 'connected') {
+                    setPairStatus('connected');
+                    setPairMsg('🟢 ទូរស័ព្ទត្រូវបានភ្ជាប់ទៅកាន់ Computer System រួចរាល់!');
+                } else {
+                    setPairStatus('pending');
+                    setPairMsg('⏳ សំណើភ្ជាប់ត្រូវបានផ្ញើ! សូមមើលលើអេក្រង់ Computer ត្រង់ Settings > Phone App រួចចុច "Approve & Connect (អនុម័ត)"');
+                }
+                checkComputerStatus();
+            } else {
+                setErrorMessage(data.message || 'មិនអាចផ្ញើសំណើភ្ជាប់បានទេ');
             }
         } catch (err) {
             console.error('QR Pair error:', err);
-            setErrorMessage('មិនអាចស្កេន QR Code បានទេ សូមព្យាយាមម្តងទៀត');
+            setErrorMessage('មិនអាចភ្ជាប់ទៅកាន់ប្រព័ន្ធបានទេ សូមពិនិត្យមើលអុីនធឺណិត');
         } finally {
             setScanning(false);
         }
@@ -162,6 +177,11 @@ const ScanPage = ({ API_BASE }) => {
     const handleFileScan = async (file) => {
         if (!file) return;
 
+        if (connectionStatus !== 'connected') {
+            setErrorMessage('ទូរស័ព្ទមិនទាន់ភ្ជាប់ទៅ Computer System ទេ! សូមចុច "Scan QR ភ្ជាប់ System" រួចចុច "ផ្ញើសំណើភ្ជាប់" មុននឹងស្កេន!');
+            return;
+        }
+
         if (!createSessionActive) {
             setErrorMessage('សូមបើកកន្លែង Create លើ Computer សិន ទើបអាចស្កេនបាន!');
             return;
@@ -220,51 +240,54 @@ const ScanPage = ({ API_BASE }) => {
             <div className="bg-slate-900 border border-slate-800 p-1.5 rounded-2xl flex items-center gap-2">
                 <button
                     onClick={() => setScanMode('doc')}
-                    className={`flex-1 py-2 rounded-xl text-xs font-bold font-khmer flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        scanMode === 'doc' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold font-khmer flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        scanMode === 'doc' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:text-white'
                     }`}
                 >
                     <FaIdCard /> ស្កេនឯកសារ ID / Passport
                 </button>
                 <button
                     onClick={() => setScanMode('qr')}
-                    className={`flex-1 py-2 rounded-xl text-xs font-bold font-khmer flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        scanMode === 'qr' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold font-khmer flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        scanMode === 'qr' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'text-slate-400 hover:text-white'
                     }`}
                 >
                     <FaQrcode /> Scan QR ភ្ជាប់ System
                 </button>
             </div>
 
+            {/* Connection Status Banner */}
+            <div className={`p-3.5 rounded-2xl border transition-all text-xs font-khmer shadow-lg flex items-center justify-between ${
+                connectionStatus === 'connected'
+                    ? 'bg-emerald-950/80 border-emerald-700/80 text-emerald-300'
+                    : connectionStatus === 'pending'
+                    ? 'bg-amber-950/80 border-amber-700/80 text-amber-300 animate-pulse'
+                    : 'bg-red-950/80 border-red-800/80 text-red-300'
+            }`}>
+                <div className="flex items-center gap-2 font-bold text-xs">
+                    {connectionStatus === 'connected' ? (
+                        <><FaPlug className="text-emerald-400 text-base" /> <span>🟢 បានភ្ជាប់ទៅ Computer រួចរាល់ (Connected)</span></>
+                    ) : connectionStatus === 'pending' ? (
+                        <><FaHourglass className="text-amber-400 text-base animate-spin" /> <span>⏳ កំពុងរង់ចាំ Admin លើ Computer អនុម័ត...</span></>
+                    ) : (
+                        <><FaExclamationTriangle className="text-red-400 text-base" /> <span>🔴 មិនទាន់ភ្ជាប់ទៅ Computer ទេ (Disconnected)</span></>
+                    )}
+                </div>
+                <button onClick={checkComputerStatus} className="text-slate-300 hover:text-white p-1">
+                    <FaSyncAlt className={loadingStatus ? "animate-spin text-indigo-400" : ""} />
+                </button>
+            </div>
+
             {/* Document Scan Mode */}
             {scanMode === 'doc' && (
                 <>
-                    <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-lg">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-950 border border-indigo-700 flex items-center justify-center text-indigo-400">
-                                <FaIdCard className="text-xl" />
-                            </div>
-                            <div>
-                                <h2 className="text-sm font-bold text-slate-100 font-khmer">
-                                    Real-time Document Scanner
-                                </h2>
-                                <p className="text-[11px] text-indigo-300 font-khmer">
-                                    ស្កេនអត្តសញ្ញាណប័ណ្ណខ្មែរ / Passport ចូល Computer
-                                </p>
-                            </div>
-                        </div>
-                        <button onClick={checkComputerStatus} className="text-slate-400 hover:text-white p-2">
-                            <FaSyncAlt className={loadingStatus ? "animate-spin text-indigo-400" : ""} />
-                        </button>
-                    </div>
-
-                    <div className={`p-4 rounded-2xl border transition-all text-xs font-khmer shadow-lg ${
+                    <div className={`p-3.5 rounded-2xl border transition-all text-xs font-khmer shadow-md ${
                         createSessionActive 
-                            ? 'bg-emerald-950/60 border-emerald-700/80 text-emerald-300' 
-                            : 'bg-amber-950/60 border-amber-800/80 text-amber-300'
+                            ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300' 
+                            : 'bg-slate-900 border-slate-800 text-slate-400'
                     }`}>
-                        <div className="flex items-center gap-2 font-bold text-sm">
-                            <FaLaptop className="text-lg" />
+                        <div className="flex items-center gap-2 font-bold">
+                            <FaLaptop className="text-base text-indigo-400" />
                             <span>
                                 {createSessionActive 
                                     ? '🟢 ផ្ទាំង Create លើ Computer កំពុងបើកចំហ (Ready to Sync)' 
@@ -274,7 +297,7 @@ const ScanPage = ({ API_BASE }) => {
                     </div>
 
                     {errorMessage && (
-                        <div className="p-4 bg-red-950 border border-red-800 text-red-300 rounded-2xl text-xs font-khmer font-bold flex items-center gap-2 shadow-xl animate-shake">
+                        <div className="p-4 bg-red-950 border border-red-800 text-red-300 rounded-2xl text-xs font-khmer font-bold flex items-center gap-2 shadow-xl">
                             <FaExclamationTriangle className="text-xl text-red-400 flex-shrink-0" />
                             <span>{errorMessage}</span>
                         </div>
@@ -306,14 +329,18 @@ const ScanPage = ({ API_BASE }) => {
                         </div>
                     ) : null}
 
-                    <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="grid grid-cols-2 gap-3 pt-1">
                         <button
                             onClick={() => {
+                                if (connectionStatus !== 'connected') {
+                                    setErrorMessage('ទូរស័ព្ទមិនទាន់ភ្ជាប់ទៅ Computer System ទេ! សូមចុច "Scan QR ភ្ជាប់ System" រួចចុច "ផ្ញើសំណើភ្ជាប់" មុននឹងស្កេន!');
+                                    return;
+                                }
                                 if (!createSessionActive) { setErrorMessage('សូមបើកកន្លែង Create លើ Computer សិន ទើបអាចស្កេនបាន!'); return; }
                                 cameraInputRef.current?.click();
                             }}
                             className={`p-4 rounded-2xl border font-khmer text-xs font-bold flex flex-col items-center justify-center gap-2 cursor-pointer transition-all shadow-xl ${
-                                createSessionActive ? 'bg-gradient-to-br from-indigo-600 to-indigo-800 text-white border-indigo-500 hover:scale-[1.02]' : 'bg-slate-900 text-slate-500 border-slate-800 opacity-60'
+                                connectionStatus === 'connected' && createSessionActive ? 'bg-gradient-to-br from-indigo-600 to-indigo-800 text-white border-indigo-500 hover:scale-[1.02]' : 'bg-slate-900 text-slate-500 border-slate-800 opacity-60'
                             }`}
                         >
                             <FaCamera className="text-2xl" />
@@ -322,11 +349,15 @@ const ScanPage = ({ API_BASE }) => {
 
                         <button
                             onClick={() => {
+                                if (connectionStatus !== 'connected') {
+                                    setErrorMessage('ទូរស័ព្ទមិនទាន់ភ្ជាប់ទៅ Computer System ទេ! សូមចុច "Scan QR ភ្ជាប់ System" រួចចុច "ផ្ញើសំណើភ្ជាប់" មុននឹងស្កេន!');
+                                    return;
+                                }
                                 if (!createSessionActive) { setErrorMessage('សូមបើកកន្លែង Create លើ Computer សិន ទើបអាចស្កេនបាន!'); return; }
                                 galleryInputRef.current?.click();
                             }}
                             className={`p-4 rounded-2xl border font-khmer text-xs font-bold flex flex-col items-center justify-center gap-2 cursor-pointer transition-all shadow-xl ${
-                                createSessionActive ? 'bg-gradient-to-br from-emerald-600 to-emerald-800 text-white border-emerald-500 hover:scale-[1.02]' : 'bg-slate-900 text-slate-500 border-slate-800 opacity-60'
+                                connectionStatus === 'connected' && createSessionActive ? 'bg-gradient-to-br from-emerald-600 to-emerald-800 text-white border-emerald-500 hover:scale-[1.02]' : 'bg-slate-900 text-slate-500 border-slate-800 opacity-60'
                             }`}
                         >
                             <FaImage className="text-2xl" />
@@ -338,36 +369,52 @@ const ScanPage = ({ API_BASE }) => {
 
             {/* QR System Pair Connect Mode */}
             {scanMode === 'qr' && (
-                <div className="p-5 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 text-center">
-                    <input ref={qrCameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && handleQrCodeScan(e.target.files[0])} />
+                <div className="p-5 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 text-center shadow-xl">
+                    <input ref={qrCameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && sendPairRequest()} />
 
-                    <div className="w-16 h-16 rounded-2xl bg-emerald-950 border border-emerald-700 mx-auto flex items-center justify-center text-emerald-400">
+                    <div className="w-16 h-16 rounded-2xl bg-emerald-950 border border-emerald-700 mx-auto flex items-center justify-center text-emerald-400 shadow-inner">
                         <FaQrcode className="text-3xl" />
                     </div>
 
                     <div>
                         <h3 className="text-base font-bold text-slate-100 font-khmer">
-                            Scan QR Code ភ្ជាប់ជាមួយ Computer System
+                            ភ្ជាប់ទូរស័ព្ទទៅកាន់ Computer System
                         </h3>
                         <p className="text-xs text-slate-400 font-khmer mt-1 leading-relaxed">
-                            សូមតម្រង់កាំមេរ៉ាមកកាន់ QR Code ដែលបង្ហាញលើ Computer ត្រង់ទំព័រ <strong className="text-indigo-400">Settings &rarr; Phone App</strong>
+                            ចុចប៊ូតុងខាងក្រោមដើម្បីផ្ញើសំណើភ្ជាប់ ឬ ថត Scan QR Code ដែលបង្ហាញលើ Computer ត្រង់ទំព័រ <strong className="text-indigo-400">Settings &rarr; Phone App</strong>
                         </p>
                     </div>
 
-                    {pairSuccessMsg && (
-                        <div className="p-3 bg-emerald-950 border border-emerald-700 text-emerald-300 rounded-xl text-xs font-khmer font-bold flex items-center gap-2">
-                            <FaCheckCircle className="text-emerald-400 text-base" />
-                            <span>{pairSuccessMsg}</span>
+                    {pairMsg && (
+                        <div className={`p-3.5 rounded-2xl text-xs font-khmer font-bold flex items-center gap-2 text-left border ${
+                            pairStatus === 'connected'
+                                ? 'bg-emerald-950 border-emerald-700 text-emerald-300'
+                                : 'bg-amber-950 border-amber-700 text-amber-300 animate-pulse'
+                        }`}>
+                            <FaCheckCircle className="text-emerald-400 text-xl flex-shrink-0" />
+                            <span>{pairMsg}</span>
                         </div>
                     )}
 
-                    <button
-                        onClick={() => qrCameraInputRef.current?.click()}
-                        className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer font-khmer"
-                    >
-                        <FaCamera className="text-base" />
-                        <span>ថត Scan QR Code លើ Computer</span>
-                    </button>
+                    <div className="space-y-2.5 pt-1">
+                        <button
+                            onClick={sendPairRequest}
+                            disabled={scanning}
+                            className="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-bold rounded-2xl text-xs shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer font-khmer transition-all active:scale-[0.98]"
+                        >
+                            <FaPaperPlane className="text-base" />
+                            <span>{scanning ? 'កំពុងផ្ញើសំណើ...' : '⚡ ផ្ញើសំណើភ្ជាប់ទៅ Computer (Send Pair Request)'}</span>
+                        </button>
+
+                        <button
+                            onClick={() => qrCameraInputRef.current?.click()}
+                            disabled={scanning}
+                            className="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 cursor-pointer font-khmer transition-all"
+                        >
+                            <FaCamera className="text-base text-emerald-400" />
+                            <span>ថត Scan QR Code លើ Computer</span>
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
