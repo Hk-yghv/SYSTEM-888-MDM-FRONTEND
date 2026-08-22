@@ -6,27 +6,43 @@ import MobileDashboard from './pages/MobileDashboard';
 const getApiBase = () => {
     if (typeof window !== 'undefined') {
         const savedUrl = localStorage.getItem('mdm_custom_api_url');
-        if (savedUrl) return savedUrl;
-
-        const host = window.location.hostname;
-        if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
-            return `http://${host}:5000/api`;
-        }
+        if (savedUrl && savedUrl.trim()) return savedUrl.trim();
     }
+
+    // Explicit production / backend environment URL
     if (import.meta.env.VITE_API_BACKEND) {
         return import.meta.env.VITE_API_BACKEND;
     }
-    return 'http://localhost:5000/api';
+
+    // Only fallback to localhost if running in local web browser (NOT inside Capacitor native app)
+    if (typeof window !== 'undefined' && window.location.hostname) {
+        const host = window.location.hostname;
+        const isCapacitorNative = window.Capacitor?.isNativePlatform() || window.location.protocol === 'capacitor:';
+        if (!isCapacitorNative && (host === 'localhost' || host === '127.0.0.1')) {
+            return `http://${host}:5000/api`;
+        }
+    }
+
+    return 'https://system-mdm.onrender.com/api';
 };
 
-const API_BASE = getApiBase();
-
 const App = () => {
+    const [apiBase, setApiBase] = useState(getApiBase());
     const [selectedBrand, setSelectedBrand] = useState(null);
     const [user, setUser] = useState(() => {
         const saved = sessionStorage.getItem('phone_mdm_user');
         return saved ? JSON.parse(saved) : null;
     });
+
+    const handleUpdateApiUrl = (newUrl) => {
+        if (newUrl) {
+            localStorage.setItem('mdm_custom_api_url', newUrl);
+            setApiBase(newUrl);
+        } else {
+            localStorage.removeItem('mdm_custom_api_url');
+            setApiBase(getApiBase());
+        }
+    };
 
     const handleLoginSuccess = (userObj, token) => {
         setUser(userObj);
@@ -42,19 +58,26 @@ const App = () => {
         sessionStorage.removeItem('phone_mdm_token');
     };
 
-    // Step 1: Select Brand (if not already logged in)
+    // Step 1: Select Brand (if not logged in)
     if (!selectedBrand && !user) {
-        return <BrandSelect API_BASE={API_BASE} onSelectBrand={(brand) => setSelectedBrand(brand)} />;
+        return (
+            <BrandSelect
+                API_BASE={apiBase}
+                onSelectBrand={(brand) => setSelectedBrand(brand)}
+                onUpdateApiUrl={handleUpdateApiUrl}
+            />
+        );
     }
 
     // Step 2: Login to System API
     if (!user) {
         return (
             <Login
-                API_BASE={API_BASE}
+                API_BASE={apiBase}
                 selectedBrand={selectedBrand}
                 onChangeBrand={() => setSelectedBrand(null)}
                 onLoginSuccess={handleLoginSuccess}
+                onUpdateApiUrl={handleUpdateApiUrl}
             />
         );
     }
@@ -63,9 +86,10 @@ const App = () => {
     return (
         <MobileDashboard
             user={user}
-            API_BASE={API_BASE}
+            API_BASE={apiBase}
             onLogout={handleLogout}
             onChangeBrand={() => { handleLogout(); setSelectedBrand(null); }}
+            onUpdateApiUrl={handleUpdateApiUrl}
         />
     );
 };

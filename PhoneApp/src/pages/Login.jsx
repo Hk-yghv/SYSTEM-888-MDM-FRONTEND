@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { FaUser, FaLock, FaBuilding, FaArrowLeft, FaSignInAlt, FaExclamationTriangle, FaShieldAlt } from 'react-icons/fa';
+import { FaUser, FaLock, FaBuilding, FaArrowLeft, FaSignInAlt, FaExclamationTriangle, FaCog, FaServer, FaCheckCircle } from 'react-icons/fa';
 
-const Login = ({ API_BASE, selectedBrand, onChangeBrand, onLoginSuccess }) => {
+const Login = ({ API_BASE, selectedBrand, onChangeBrand, onLoginSuccess, onUpdateApiUrl }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    
+    // Server Config Modal State
+    const [showConfig, setShowConfig] = useState(false);
+    const [customUrl, setCustomUrl] = useState(API_BASE);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -41,8 +45,16 @@ const Login = ({ API_BASE, selectedBrand, onChangeBrand, onLoginSuccess }) => {
         } catch (err) {
             setLoading(false);
             console.error('Auth Error:', err);
-            setError('មិនអាចភ្ជាប់ទៅកាន់ប្រព័ន្ធបានទេ សូមពិនិត្យមើលអុីនធឺណិត');
+            setError(`មិនអាចភ្ជាប់ទៅកាន់ប្រព័ន្ធ (${API_BASE}) បានទេ! សូមពិនិត្យមើលអុីនធឺណិត ឬចុចប៊ូតុង ⚙️ កែប្រែ Server IP/URL`);
         }
+    };
+
+    const handleSaveServerUrl = () => {
+        if (onUpdateApiUrl) {
+            onUpdateApiUrl(customUrl);
+        }
+        setShowConfig(false);
+        setError('');
     };
 
     return (
@@ -58,6 +70,14 @@ const Login = ({ API_BASE, selectedBrand, onChangeBrand, onLoginSuccess }) => {
                 >
                     <FaArrowLeft />
                     <span className="font-khmer">ជ្រើសរើស Brand ឡើងវិញ ({selectedBrand})</span>
+                </button>
+
+                <button
+                    onClick={() => setShowConfig(true)}
+                    className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-indigo-400 cursor-pointer shadow-md transition-all"
+                    title="Server URL Settings"
+                >
+                    <FaCog className="text-sm" />
                 </button>
             </div>
 
@@ -80,9 +100,18 @@ const Login = ({ API_BASE, selectedBrand, onChangeBrand, onLoginSuccess }) => {
 
                 <form onSubmit={handleSubmit} className="space-y-4.5 bg-slate-900/80 border border-slate-800/80 p-6 rounded-3xl shadow-2xl backdrop-blur-md">
                     {error && (
-                        <div className="p-3.5 bg-red-950/80 border border-red-800 text-red-300 rounded-2xl text-xs font-khmer font-semibold flex items-center gap-2 shadow-lg">
-                            <FaExclamationTriangle className="text-red-400 text-base flex-shrink-0" />
-                            <span>{error}</span>
+                        <div className="p-3.5 bg-red-950/80 border border-red-800 text-red-300 rounded-2xl text-xs font-khmer font-semibold space-y-2 shadow-lg text-left">
+                            <div className="flex items-center gap-2">
+                                <FaExclamationTriangle className="text-red-400 text-base flex-shrink-0" />
+                                <span>{error}</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowConfig(true)}
+                                className="w-full py-1.5 bg-red-900 hover:bg-red-800 text-white rounded-xl text-[11px] font-bold font-khmer flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                                <FaCog /> ⚙️ ចុចកែប្រែ Server IP / URL ទីនេះ
+                            </button>
                         </div>
                     )}
 
@@ -124,6 +153,56 @@ const Login = ({ API_BASE, selectedBrand, onChangeBrand, onLoginSuccess }) => {
                     </button>
                 </form>
             </div>
+
+            {/* Server Settings Modal */}
+            {showConfig && (
+                <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
+                    <div className="bg-[#0b0f1e] border border-indigo-500/50 rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl text-left">
+                        <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+                            <h3 className="text-xs font-bold text-indigo-400 font-khmer flex items-center gap-2">
+                                <FaServer /> កែប្រែ Server Backend API URL
+                            </h3>
+                            <button onClick={() => setShowConfig(false)} className="text-gray-400 text-xs font-bold">✕</button>
+                        </div>
+
+                        <div className="space-y-2 text-xs">
+                            <label className="text-slate-300 font-bold block font-khmer">
+                                Server URL / IP Address:
+                            </label>
+                            <input
+                                type="text"
+                                value={customUrl}
+                                onChange={(e) => setCustomUrl(e.target.value)}
+                                placeholder="https://system-mdm.onrender.com/api"
+                                className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-xs outline-none focus:border-indigo-500"
+                            />
+                            <p className="text-[10px] text-slate-400 font-khmer">
+                                ឧទាហរណ៍ ៖ <code className="text-indigo-400">https://system-mdm.onrender.com/api</code> ឬ <code className="text-emerald-400">http://192.168.1.100:5000/api</code>
+                            </p>
+                        </div>
+
+                        <div className="space-y-2 pt-1">
+                            <button
+                                onClick={handleSaveServerUrl}
+                                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs font-khmer flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                                <FaCheckCircle /> <span>រក្សាទុក Server URL ថ្មី</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setCustomUrl('https://system-mdm.onrender.com/api');
+                                    onUpdateApiUrl('https://system-mdm.onrender.com/api');
+                                    setShowConfig(false);
+                                }}
+                                className="w-full py-2 bg-slate-800 text-slate-300 rounded-xl text-[11px] font-bold font-khmer cursor-pointer"
+                            >
+                                🔄 ប្រើប្រាស់ Online Production Server (Default)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Clean Footer */}
             <div className="text-center text-[10px] text-slate-500 font-khmer z-10">
