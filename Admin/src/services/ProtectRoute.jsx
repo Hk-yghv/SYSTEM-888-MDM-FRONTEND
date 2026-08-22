@@ -1,10 +1,12 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { FaLock } from 'react-icons/fa';
 
 const ProtectRoute = ({ children, pagePath }) => {
     const { token, user, hasPermission } = useAuth();
+    const { t } = useLanguage();
     const location = useLocation();
 
     if (!token || !user) {
@@ -20,9 +22,9 @@ const ProtectRoute = ({ children, pagePath }) => {
                 <div className="w-20 h-20 rounded-full bg-red-950/60 border border-red-800 flex items-center justify-center text-red-400 text-3xl mb-4 shadow-xl animate-pulse">
                     <FaLock />
                 </div>
-                <h2 className="text-xl font-bold text-gray-100">Access Denied / គ្មានសិទ្ធិចូលប្រើប្រាស់</h2>
+                <h2 className="text-xl font-bold text-gray-100">{t('accessDenied')}</h2>
                 <p className="text-xs text-gray-400 max-w-md mt-2">
-                    Your user account ({user.username}) does not have permission to view this page ({currentPath}). Please contact your Administrator.
+                    {t('accessDeniedMsg')} ({user.username})
                 </p>
             </div>
         );

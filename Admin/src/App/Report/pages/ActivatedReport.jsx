@@ -87,20 +87,20 @@ const ActivatedReport = () => {
                     </div>
                     <div>
                         <h1 className='text-xl font-black text-slate-900 flex items-center gap-2 tracking-wide'>
-                            {user?.brand ? (user.brand.toUpperCase().startsWith('SYSTEM') ? user.brand.toUpperCase() : `SYSTEM ${user.brand.toUpperCase()}`) : 'SYSTEM MDM'} — Activated Contracts Report
+                            {user?.brand ? (user.brand.toUpperCase().startsWith('SYSTEM') ? user.brand.toUpperCase() : `SYSTEM ${user.brand.toUpperCase()}`) : 'SYSTEM MDM'} — {t('activatedReport')}
                         </h1>
-                        <p className='text-xs text-emerald-700 font-bold font-khmer'>
-                            របាយការណ៍កិច្ចសន្យាសកម្ម ({total} គ្រឿង)
+                        <p className='text-xs text-emerald-700 font-bold'>
+                            {t('activatedReport')} ({total})
                         </p>
                     </div>
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
                     <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
+                        <FaFileExcel className="text-emerald-600 text-sm" /><span>{t('exportExcel')}</span>
                     </button>
                     <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
+                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>{t('exportPDF')}</span>
                     </button>
                     <button onClick={() => fetchData(page, searchTerm)} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} /><span>{t('reload')}</span>
@@ -110,13 +110,13 @@ const ActivatedReport = () => {
 
             <div className="flex items-center border-b border-slate-200 bg-white rounded-t-2xl px-3 pt-2 gap-2 shadow-xs">
                 <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'dashboard' ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-xl' : 'border-transparent text-slate-500'}`}>
-                    <MdPieChart size={16} /><span>1. Dashboard (ក្រាបវិភាគ)</span>
+                    <MdPieChart size={16} /><span>1. {t('dashboardAnalytics')}</span>
                 </button>
                 <button onClick={() => setActiveTab('detail')} className={`px-4 py-2.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'detail' ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-xl' : 'border-transparent text-slate-500'}`}>
-                    <MdTableChart size={16} /><span>2. ព័ត៌មានលម្អិត (Detailed Info)</span>
+                    <MdTableChart size={16} /><span>2. {t('detailedInfo')}</span>
                 </button>
                 <button onClick={() => setActiveTab('summary')} className={`px-4 py-2.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'summary' ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-xl' : 'border-transparent text-slate-500'}`}>
-                    <MdOutlineBarChart size={16} /><span>3. ព័ត៌មានសង្ខេប (Summary Table)</span>
+                    <MdOutlineBarChart size={16} /><span>3. {t('summaryTable')}</span>
                 </button>
             </div>
 
