@@ -11,7 +11,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Application = () => {
     const { t } = useLanguage();
-    const { API_BASE, hasPermission, user } = useAuth();
+    const { API_BASE, API_BASE1, hasPermission, user } = useAuth();
 
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);

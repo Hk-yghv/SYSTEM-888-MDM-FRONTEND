@@ -11,7 +11,7 @@ import IDCard3DViewer from '../../../components/IDCard3DViewer';
 
 const Customer = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE, API_BASE1, user } = useAuth();
 
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
