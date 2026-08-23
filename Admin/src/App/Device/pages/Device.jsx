@@ -315,7 +315,7 @@ const Device = () => {
                         </div>
 
                         <div className="flex justify-end gap-2 pt-1 border-t border-gray-800">
-                            <button onClick={() => setSelectedDevice(null)} className="px-5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold text-xs rounded-xl cursor-pointer transition-all">
+                            <button onClick={() => setSelectedDevice(null)} className="px-5 py-2 bg-gray-800 hover:bg-gray-700 text-black-200 font-bold text-xs rounded-xl cursor-pointer transition-all">
                                 Close
                             </button>
                         </div>

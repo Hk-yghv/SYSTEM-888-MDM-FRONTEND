@@ -405,10 +405,7 @@ const Customer = () => {
 
                         <div className="p-6 space-y-6 text-xs">
                             {/* 3D Interactive ID Card Viewer */}
-                            <div className="bg-[#070913] p-3 rounded-2xl border border-indigo-500/30">
-                                <h4 className="text-[11px] font-bold text-indigo-300 uppercase tracking-wider mb-1 text-center font-khmer">
-                                    🪪 អត្តសញ្ញាណប័ណ្ណ / 3D National ID Card Viewer
-                                </h4>
+                            <div className="bg-[#070913] rounded-2xl border border-indigo-500/30">
                                 <IDCard3DViewer customer={selectedCustomer} />
                             </div>
 
@@ -417,7 +414,7 @@ const Customer = () => {
                                 <h4 className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span> 👤 Customer Personal Information
                                 </h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <div className="grid grid-cols-2 text-black-600 sm:grid-cols-4 gap-2">
                                     {[
                                         ['Name English', selectedCustomer.customerNameEn],
                                         ['Name Khmer', selectedCustomer.customerNameKh],
@@ -434,7 +431,7 @@ const Customer = () => {
                                     ].map(([label, value]) => (
                                         <div key={label} className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800">
                                             <span className="text-gray-400 block text-[10px] font-semibold mb-0.5">{label}</span>
-                                            <span className="font-semibold text-gray-100 break-words">{value}</span>
+                                            <span className="font-semibold text-black-100 break-words">{value}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -485,7 +482,7 @@ const Customer = () => {
                                 <h4 className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span> 💰 Loan & Financial Agreement
                                 </h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                <div className="grid grid-cols-2 text-black sm:grid-cols-5 gap-2">
                                     {[
                                         ['Loan Date (កាលបរិច្ឆេទ)', selectedCustomer.inputDate || '-'],
                                         ['Total Loan Amount', `$${totalLoan.toLocaleString()}`],
@@ -494,8 +491,8 @@ const Customer = () => {
                                         ['Duration', selectedCustomer.duration || '-'],
                                     ].map(([label, value]) => (
                                         <div key={label} className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800">
-                                            <span className="text-gray-400 block text-[10px] font-semibold mb-0.5">{label}</span>
-                                            <span className="font-bold text-emerald-400 font-mono">{value}</span>
+                                            <span className="text-black-600 block text-[10px] font-semibold mb-0.5">{label}</span>
+                                            <span className="font-bold text-black-100 font-mono">{value}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -517,7 +514,7 @@ const Customer = () => {
                                     <div className="grid grid-cols-3 gap-3 mb-2 text-center">
                                         <div className="p-2 bg-gray-900/80 rounded-xl border border-gray-800">
                                             <span className="text-gray-500 text-[10px] block">Total Loan</span>
-                                            <span className="text-gray-200 font-mono font-bold text-sm">${totalLoan.toLocaleString()}</span>
+                                            <span className="text-black-200 font-mono font-bold text-sm">${totalLoan.toLocaleString()}</span>
                                         </div>
                                         <div className="p-2 bg-gray-900/80 rounded-xl border border-gray-800">
                                             <span className="text-gray-500 text-[10px] block">Total Paid So Far</span>
@@ -671,13 +668,13 @@ const Customer = () => {
                             <button
                                 onClick={() => window.open(qrInfoPageUrl, '_blank')}
                                 disabled={!qrInfoPageUrl}
-                                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-md"
+                                className="flex-1 py-2.5 bg-indigo-600 cursor-pointer hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-md"
                             >
                                 Open Profile Link ↗
                             </button>
                             <button
                                 onClick={() => setQrCustomer(null)}
-                                className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold transition-all"
+                                className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-black-300 cursor-pointer rounded-xl text-xs font-bold transition-all"
                             >
                                 Close
                             </button>
