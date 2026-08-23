@@ -10,7 +10,7 @@ const LIMIT = 10;
 
 const UnlockWallpaper = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE2, user } = useAuth();
 
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -30,7 +30,7 @@ const UnlockWallpaper = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
-            const res = await fetch(`${API_BASE}/wallpaperlogs?${params.toString()}`);
+            const res = await fetch(`${API_BASE2}/wallpaperlogs?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setLogs(data.data || []);
@@ -42,7 +42,7 @@ const UnlockWallpaper = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, user, page]);
+    }, [API_BASE2, user, page]);
 
     useEffect(() => { fetchLogs(page); }, [page]);
 

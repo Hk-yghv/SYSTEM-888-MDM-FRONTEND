@@ -41,7 +41,7 @@ const Customer = () => {
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
             if (search) params.set('search', search);
-            const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setCustomers(data.data || []);
@@ -63,7 +63,7 @@ const Customer = () => {
     const handleOpenQrModal = async (customer) => {
         setQrCustomer(customer);
         try {
-            const res = await fetch(`${API_BASE}/contracts/customer-qr-payload/${customer.contractId}`);
+            const res = await fetch(`${API_BASE1}/contracts/customer-qr-payload/${customer.contractId}`);
             if (res.ok) {
                 const data = await res.json();
                 setQrDataUrl(data.qrDataUrl);

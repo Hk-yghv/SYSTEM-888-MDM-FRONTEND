@@ -9,7 +9,7 @@ import Device3DPointers from '../../../components/Device3DPointers';
 
 const Device = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE1, user } = useAuth();
 
     const [devices, setDevices] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -33,7 +33,7 @@ const Device = () => {
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
             if (search) params.set('search', search);
-            const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setDevices(data.data || []);

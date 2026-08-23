@@ -12,7 +12,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Activated = () => {
     const { t } = useLanguage();
-    const { API_BASE, hasPermission, user } = useAuth();
+    const { API_BASE, API_BASE1, API_BASE2, hasPermission, user } = useAuth();
 
     const [activatedContracts, setActivatedContracts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -61,7 +61,7 @@ const Activated = () => {
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
             if (search) params.set('search', search);
-            const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setActivatedContracts(data.data || []);
@@ -121,7 +121,7 @@ const Activated = () => {
             return;
         }
         try {
-            const res = await fetch(`${API_BASE}/contracts/${item._id}`, {
+            const res = await fetch(`${API_BASE1}/contracts/${item._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: targetStatus })
@@ -145,7 +145,7 @@ const Activated = () => {
         e.preventDefault();
         if (!redeemItem) return;
         try {
-            const res = await fetch(`${API_BASE}/contracts/${redeemItem._id}`, {
+            const res = await fetch(`${API_BASE1}/contracts/${redeemItem._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -171,7 +171,7 @@ const Activated = () => {
 
     const handleQuickDeviceAction = async (item, actionType) => {
         try {
-            const res = await fetch(`${API_BASE}/history/device-actions`, {
+            const res = await fetch(`${API_BASE2}/history/device-actions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -201,7 +201,7 @@ const Activated = () => {
         if (!selectedCommentItem) return;
 
         try {
-            const res = await fetch(`${API_BASE}/contracts/${selectedCommentItem._id}`, {
+            const res = await fetch(`${API_BASE1}/contracts/${selectedCommentItem._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -236,7 +236,7 @@ const Activated = () => {
             description: `Installment payment for ${contract.model}`
         });
         try {
-            const res = await fetch(`${API_BASE}/payments/qr-payload/${contract.contractId}`);
+            const res = await fetch(`${API_BASE1}/payments/qr-payload/${contract.contractId}`);
             if (res.ok) {
                 const data = await res.json();
                 setQrPayload(data.payload);
@@ -252,7 +252,7 @@ const Activated = () => {
         if (!selectedQrContract) return;
         setPaymentSubmitting(true);
         try {
-            const res = await fetch(`${API_BASE}/payments`, {
+            const res = await fetch(`${API_BASE1}/payments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

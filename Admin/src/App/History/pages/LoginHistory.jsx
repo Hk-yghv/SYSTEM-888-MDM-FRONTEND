@@ -11,7 +11,7 @@ const LIMIT = 10;
 
 const LoginHistory = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE2, user } = useAuth();
 
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ const LoginHistory = () => {
             if (role) params.append('role', role);
             if (status) params.append('status', status);
 
-            const res = await fetch(`${API_BASE}/history/login?${params.toString()}`);
+            const res = await fetch(`${API_BASE2}/history/login?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setLogs(data.data || []);
@@ -52,11 +52,11 @@ const LoginHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, page, searchTerm, roleFilter, statusFilter, user]);
+    }, [API_BASE2, page, searchTerm, roleFilter, statusFilter, user]);
 
     const fetchReportSchedule = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/history/report-schedule`);
+            const res = await fetch(`${API_BASE2}/history/report-schedule`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.countdown) {
@@ -66,7 +66,7 @@ const LoginHistory = () => {
         } catch (err) {
             console.error('Fetch report schedule error:', err);
         }
-    }, [API_BASE]);
+    }, [API_BASE2]);
 
     useEffect(() => {
         fetchLoginHistory(page, searchTerm, roleFilter, statusFilter);
@@ -97,7 +97,7 @@ const LoginHistory = () => {
 
         setSendingTelegram(true);
         try {
-            const res = await fetch(`${API_BASE}/history/send-telegram-report`, {
+            const res = await fetch(`${API_BASE2}/history/send-telegram-report`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });

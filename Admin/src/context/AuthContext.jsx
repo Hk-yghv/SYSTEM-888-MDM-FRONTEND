@@ -4,6 +4,8 @@ import { FaBan } from 'react-icons/fa';
 const AuthContext = createContext();
 
 const API_BASE = import.meta.env.VITE_API_BACKEND || 'http://localhost:5000/api';
+const API_BASE1 = import.meta.env.VITE_API_BACKEND1 || (import.meta.env.VITE_API_BACKEND ? import.meta.env.VITE_API_BACKEND : 'http://localhost:5001/api');
+const API_BASE2 = import.meta.env.VITE_API_BACKEND2 || (import.meta.env.VITE_API_BACKEND ? import.meta.env.VITE_API_BACKEND : 'http://localhost:5002/api');
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
@@ -186,7 +188,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, verifyOtp, logout, hasPermission, updateUserState, API_BASE }}>
+        <AuthContext.Provider value={{ user, token, loading, login, verifyOtp, logout, hasPermission, updateUserState, API_BASE, API_BASE1, API_BASE2 }}>
             {/* Fullscreen Blocked Modal — shown immediately when admin blocks the user */}
             {isBlocked && (
                 <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md select-none animate-fade-in">

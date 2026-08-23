@@ -12,7 +12,7 @@ const LIMIT = 10;
 
 const DeviceActionHistory = () => {
     const { t } = useLanguage();
-    const { API_BASE, user, hasPermission } = useAuth();
+    const { API_BASE1, API_BASE2, user, hasPermission } = useAuth();
 
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -49,7 +49,7 @@ const DeviceActionHistory = () => {
             if (st) params.append('status', st);
             if (act) params.append('actionType', act);
 
-            const res = await fetch(`${API_BASE}/history/device-actions?${params.toString()}`);
+            const res = await fetch(`${API_BASE2}/history/device-actions?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setLogs(data.data || []);
@@ -61,12 +61,12 @@ const DeviceActionHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, page, searchTerm, statusFilter, actionFilter, user]);
+    }, [API_BASE2, page, searchTerm, statusFilter, actionFilter, user]);
 
     // Fetch activated contracts list for modal select dropdown
     const fetchActivatedContracts = async () => {
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Activated`);
+            const res = await fetch(`${API_BASE1}/contracts?status=Activated`);
             if (res.ok) {
                 const data = await res.json();
                 setActivatedContracts(data.data || []);
@@ -98,7 +98,7 @@ const DeviceActionHistory = () => {
 
         setSubmittingAction(true);
         try {
-            const res = await fetch(`${API_BASE}/history/device-actions`, {
+            const res = await fetch(`${API_BASE2}/history/device-actions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -126,7 +126,7 @@ const DeviceActionHistory = () => {
         setMarkingDoneId(item._id || item.logId);
         try {
             const targetId = item._id || item.logId;
-            const res = await fetch(`${API_BASE}/history/device-actions/${targetId}/done`, {
+            const res = await fetch(`${API_BASE2}/history/device-actions/${targetId}/done`, {
                 method: 'PUT'
             });
             if (res.ok) {

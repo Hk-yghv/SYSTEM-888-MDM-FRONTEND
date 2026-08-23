@@ -6,7 +6,7 @@ import { FaLock, FaUnlock } from 'react-icons/fa';
 
 const Actions = () => {
     const { t } = useLanguage();
-    const { API_BASE, user, hasPermission } = useAuth();
+    const { API_BASE1, API_BASE2, user, hasPermission } = useAuth();
 
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ const Actions = () => {
     const fetchContracts = async () => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Activated`);
+            const res = await fetch(`${API_BASE1}/contracts?status=Activated`);
 
             if (res.ok) {
                 const result = await res.json();
@@ -37,7 +37,7 @@ const Actions = () => {
     const handleToggleWallpaper = async (contract, newStatus) => {
         setTogglingId(contract._id);
         try {
-            const res = await fetch(`${API_BASE}/wallpaper/toggle-lock`, {
+            const res = await fetch(`${API_BASE2}/wallpaper/toggle-lock`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

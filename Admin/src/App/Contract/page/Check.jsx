@@ -11,7 +11,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Check = () => {
     const { t } = useLanguage();
-    const { API_BASE, hasPermission, user } = useAuth();
+    const { API_BASE1, user, hasPermission } = useAuth();
 
     const [contracts, setContracts] = useState([]);
     const [reloading, setReloading] = useState(false);
@@ -26,7 +26,7 @@ const Check = () => {
         setReloading(true);
         try {
             const brandParam = user?.brand ? `&userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}&username=${encodeURIComponent(user?.username || '')}&isImmutable=${user?.isImmutable ? 'true' : 'false'}` : '';
-            const res = await fetch(`${API_BASE}/contracts?status=Check&page=${pg}&limit=${LIMIT}${brandParam}`);
+            const res = await fetch(`${API_BASE1}/contracts?status=Check&page=${pg}&limit=${LIMIT}${brandParam}`);
             if (res.ok) {
                 const data = await res.json();
                 setContracts(data.data || []);
@@ -44,7 +44,7 @@ const Check = () => {
     const handleMoveToActivated = async (item) => {
         if (!window.confirm(`Move contract "${item.customerNameEn}" back to Activated?`)) return;
         try {
-            const res = await fetch(`${API_BASE}/contracts/${item._id}`, {
+            const res = await fetch(`${API_BASE1}/contracts/${item._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'Activated' })
@@ -60,7 +60,7 @@ const Check = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Delete this contract record?')) return;
         try {
-            const res = await fetch(`${API_BASE}/contracts/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${API_BASE1}/contracts/${id}`, { method: 'DELETE' });
             if (res.ok) fetchCheckContracts();
         } catch (err) { }
     };

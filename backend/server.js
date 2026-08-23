@@ -36,13 +36,8 @@ import {
 
 import createAuthRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
-import contractRoutes from './routes/contractRoutes.js';
-import paymentRoutes from './routes/paymentRoutes.js';
 import controlRoutes from './routes/controlRoutes.js';
-import lostphoneRoutes from './routes/lostphoneRoutes.js';
-import wallpaperRoutes from './routes/wallpaperRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
-import historyRoutes, { createHistoryRoutes } from './routes/historyRoutes.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -84,7 +79,7 @@ app.use(rateLimiterMiddleware);
 app.use(verifySecurityAuth);
 
 // ── Health Check (Public Endpoint) ──
-app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', service: 'backend-primary', timestamp: new Date() }));
 
 // ── DB Status & Firebase Backup Info (Protected Endpoint) ──
 app.get('/api/db-status', (req, res) => res.json({
@@ -107,19 +102,11 @@ app.all(['/api/db-status/backup-firebase', '/api/backup-firebase'], requireAdmin
     }
 });
 
-// ── Mount Modular Routes ──
+// ── Mount Modular Routes (Backend Primary: Auth, Users, Control, Dashboard) ──
 app.use('/api/auth', createAuthRoutes(bot));
 app.use('/api/users', userRoutes);
-app.use('/api/contracts', contractRoutes);
-app.use('/', contractRoutes);
-app.use('/api', paymentRoutes);
-app.use('/', paymentRoutes);
 app.use('/api/controlsystem', controlRoutes);
-app.use('/api', lostphoneRoutes);
-app.use('/api', wallpaperRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/history', historyRoutes);
-app.use('/api/history', createHistoryRoutes(bot));
 
 app.use((err, req, res, next) => {
     console.error('Unhandled System Error:', err);
@@ -132,6 +119,6 @@ app.use((err, req, res, next) => {
 connectDB().then(() => {
     startFirebaseBackupScheduler();
     app.listen(PORT, () => {
-        console.log(`SYSTEM MDM Backend server active on port ${PORT} with Ultimate Security Shield & Firebase Backup`);
+        console.log(`SYSTEM MDM Backend Server 0 (Auth/Users/Control/Dashboard) active on port ${PORT} with Ultimate Security Shield`);
     });
 });

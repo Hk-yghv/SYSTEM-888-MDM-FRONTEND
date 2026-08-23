@@ -11,7 +11,7 @@ const LIMIT = 10;
 
 const SetWallpaperReport = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE2, user } = useAuth();
 
     const [activeTab, setActiveTab] = useState('dashboard');
     const [dataList, setDataList] = useState([]);
@@ -35,7 +35,7 @@ const SetWallpaperReport = () => {
             });
             if (search) params.set('search', search);
 
-            const res = await fetch(`${API_BASE}/wallpaperlogs?${params.toString()}`);
+            const res = await fetch(`${API_BASE2}/wallpaperlogs?${params.toString()}`);
             if (res.ok) {
                 const result = await res.json();
                 setDataList(result.data || []);
@@ -47,7 +47,7 @@ const SetWallpaperReport = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, page, searchTerm, user]);
+    }, [API_BASE2, page, searchTerm, user]);
 
     useEffect(() => {
         fetchData(page, searchTerm);

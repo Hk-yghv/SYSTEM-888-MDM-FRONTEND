@@ -62,7 +62,7 @@ const AutoField = ({ id, label, value, onChange, placeholder, list, onSelect, in
 
 /* ── Main CreateApplication ── */
 const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
-    const { API_BASE, user } = useAuth();
+    const { API_BASE, API_BASE1, user } = useAuth();
 
     const emptyForm = {
         inputDate: new Date().toISOString().split('T')[0],
@@ -104,7 +104,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     useEffect(() => {
         const go = async () => {
             try {
-                const res = await fetch(`${API_BASE}/contracts?limit=500`);
+                const res = await fetch(`${API_BASE1}/contracts?limit=500`);
                 if (res.ok) {
                     const data = await res.json();
                     const list = data.data || data.contracts || data || [];
@@ -312,7 +312,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             lastModifiedBy: isAdmin ? (user?.name || 'Administrator') : (editData?.lastModifiedBy || '')
         };
         try {
-            const url = editData ? `${API_BASE}/contracts/${editData._id}` : `${API_BASE}/contracts`;
+            const url = editData ? `${API_BASE1}/contracts/${editData._id}` : `${API_BASE1}/contracts`;
             const method = editData ? 'PUT' : 'POST';
             const res = await fetch(url, {
                 method,

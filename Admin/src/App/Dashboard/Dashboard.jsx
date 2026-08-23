@@ -11,7 +11,7 @@ import { FaLock, FaChartPie, FaLayerGroup, FaHistory, FaChartLine, FaChartBar, F
 
 const Dashboard = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE, API_BASE1, user } = useAuth();
 
     const [stats, setStats] = useState({
         totalContracts: 0, activatedContracts: 0, applicationContracts: 0,
@@ -77,8 +77,8 @@ const Dashboard = () => {
     const fetchAuditLogs = async () => {
         try {
             const [cRes, pRes] = await Promise.all([
-                fetch(`${API_BASE}/contracts?limit=200`),
-                fetch(`${API_BASE}/payments?limit=200`)
+                fetch(`${API_BASE1}/contracts?limit=200`),
+                fetch(`${API_BASE1}/payments?limit=200`)
             ]);
             // normalize any date string to YYYY-MM-DD
             const toDate = (raw) => {

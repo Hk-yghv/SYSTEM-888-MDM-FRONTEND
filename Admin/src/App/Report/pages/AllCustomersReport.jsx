@@ -11,7 +11,7 @@ const LIMIT = 10;
 
 const AllCustomersReport = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE1, user } = useAuth();
 
     const [activeTab, setActiveTab] = useState('dashboard');
     const [dataList, setDataList] = useState([]);
@@ -34,7 +34,7 @@ const AllCustomersReport = () => {
             });
             if (search) params.set('search', search);
 
-            const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const result = await res.json();
                 setDataList(result.data || []);
@@ -46,7 +46,7 @@ const AllCustomersReport = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, page, searchTerm, user]);
+    }, [API_BASE1, page, searchTerm, user]);
 
     useEffect(() => {
         fetchData(page, searchTerm);

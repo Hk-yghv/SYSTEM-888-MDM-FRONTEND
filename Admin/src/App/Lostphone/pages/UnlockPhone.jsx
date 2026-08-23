@@ -12,7 +12,7 @@ const LIMIT = 10;
 
 const UnlockPhone = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE2, user } = useAuth();
 
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -32,7 +32,7 @@ const UnlockPhone = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
-            const res = await fetch(`${API_BASE}/phonelogs?${params.toString()}`);
+            const res = await fetch(`${API_BASE2}/phonelogs?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setLogs(data.data || []);
@@ -44,7 +44,7 @@ const UnlockPhone = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, user, page]);
+    }, [API_BASE2, user, page]);
 
     useEffect(() => { fetchUnlockLogs(page); }, [page]);
 

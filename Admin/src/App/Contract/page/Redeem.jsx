@@ -11,7 +11,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const Redeem = () => {
     const { t } = useLanguage();
-    const { API_BASE, user, hasPermission } = useAuth();
+    const { API_BASE1, user, hasPermission } = useAuth();
 
     const [contracts, setContracts] = useState([]);
     const [reloading, setReloading] = useState(false);
@@ -26,7 +26,7 @@ const Redeem = () => {
         setReloading(true);
         try {
             const brandParam = user?.brand ? `&userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}&username=${encodeURIComponent(user?.username || '')}&isImmutable=${user?.isImmutable ? 'true' : 'false'}` : '';
-            const res = await fetch(`${API_BASE}/contracts?status=Redeem&page=${pg}&limit=${LIMIT}${brandParam}`);
+            const res = await fetch(`${API_BASE1}/contracts?status=Redeem&page=${pg}&limit=${LIMIT}${brandParam}`);
             if (res.ok) {
                 const data = await res.json();
                 setContracts(data.data || []);
@@ -44,7 +44,7 @@ const Redeem = () => {
     const handleRestoreToActivated = async (item) => {
         if (!window.confirm(`Move contract for "${item.customerNameEn}" back to Activated?`)) return;
         try {
-            const res = await fetch(`${API_BASE}/contracts/${item._id}`, {
+            const res = await fetch(`${API_BASE1}/contracts/${item._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'Activated' })
@@ -61,7 +61,7 @@ const Redeem = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Delete this redeem record?')) return;
         try {
-            const res = await fetch(`${API_BASE}/contracts/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${API_BASE1}/contracts/${id}`, { method: 'DELETE' });
             if (res.ok) fetchRedeemContracts();
         } catch (err) { }
     };

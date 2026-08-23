@@ -6,7 +6,7 @@ import { MdOutlineSync, MdOutlinePhoneIphone } from 'react-icons/md';
 
 const Actions = () => {
     const { t } = useLanguage();
-    const { API_BASE, user, hasPermission } = useAuth();
+    const { API_BASE, API_BASE1, API_BASE2, user, hasPermission } = useAuth();
 
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ const Actions = () => {
     const fetchContracts = async () => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/contracts?status=Activated`);
+            const res = await fetch(`${API_BASE1}/contracts?status=Activated`);
 
             if (res.ok) {
                 const result = await res.json();
@@ -49,7 +49,7 @@ const Actions = () => {
                 }
             } catch (cErr) { }
 
-            const res = await fetch(`${API_BASE}/lostphone/toggle-lock`, {
+            const res = await fetch(`${API_BASE2}/lostphone/toggle-lock`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

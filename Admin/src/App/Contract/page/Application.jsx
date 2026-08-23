@@ -40,7 +40,7 @@ const Application = () => {
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
             if (search) params.set('search', search);
-            const res = await fetch(`${API_BASE}/contracts?${params.toString()}`);
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setContracts(data.data || []);
@@ -52,7 +52,7 @@ const Application = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, currentPage, searchTerm, user]);
+    }, [API_BASE1, currentPage, searchTerm, user]);
 
     useEffect(() => { fetchApplications(currentPage, searchTerm); }, [currentPage]);
     useEffect(() => { fetchApplications(1, searchTerm); setCurrentPage(1); }, [searchTerm]);
@@ -74,7 +74,7 @@ const Application = () => {
             const contract = contracts.find(c => c._id === contractId || c.contractId === contractId);
             if (!contract) return;
 
-            const res = await fetch(`${API_BASE}/contracts/${contract._id}`, {
+            const res = await fetch(`${API_BASE1}/contracts/${contract._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'Activated' })
@@ -93,7 +93,7 @@ const Application = () => {
     const handleDeleteContract = async (id) => {
         if (!window.confirm('Are you sure you want to delete this application contract?')) return;
         try {
-            const res = await fetch(`${API_BASE}/contracts/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${API_BASE1}/contracts/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchApplications();
                 setOpenMenuId(null);

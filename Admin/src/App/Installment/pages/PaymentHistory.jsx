@@ -11,7 +11,7 @@ const LIMIT = 10;
 
 const PaymentHistory = () => {
     const { t } = useLanguage();
-    const { API_BASE } = useAuth();
+    const { API_BASE1, user } = useAuth();
 
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -33,7 +33,7 @@ const PaymentHistory = () => {
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
             if (search) params.set('search', search);
-            const res = await fetch(`${API_BASE}/payments?${params.toString()}`);
+            const res = await fetch(`${API_BASE1}/payments?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setPayments(data.data || []);
@@ -45,7 +45,7 @@ const PaymentHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, searchTerm]);
+    }, [API_BASE1, searchTerm, user]);
 
     useEffect(() => { fetchPayments(page); }, [page]);
     useEffect(() => { fetchPayments(1, searchTerm); setPage(1); }, [searchTerm]);
