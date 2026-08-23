@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaAngleDoubleRight, FaSearch, FaUserCheck } from "react-icons/fa";
+import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
 import DocumentScanner from '../../../components/DocumentScanner';
 
+/* ── Shared style tokens ── */
+const inp = "w-full p-2 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-lg text-gray-100 text-xs outline-none transition-colors";
+const sel = "w-full p-2 bg-gray-800/80 border border-gray-700 rounded-lg text-gray-100 text-xs outline-none";
+
 /* ── Autocomplete field with suggestions dropdown ── */
-const AutoField = ({ id, label, value, onChange, placeholder, list, onSelect, inputClass = '', font = '' }) => {
+const AutoField = ({ id, label, value, onChange, placeholder, list = [], onSelect, font = '' }) => {
     const [open, setOpen] = useState(false);
     const [focused, setFocused] = useState(false);
     const ref = useRef(null);
 
-    const filtered = list.filter(item => {
+    const filtered = (list || []).filter(item => {
         const val = typeof item === 'string' ? item : item[id] || '';
-        return val && String(val).toLowerCase().includes(String(value).toLowerCase()) && String(val).toLowerCase() !== String(value).toLowerCase();
+        return val && String(val).toLowerCase().includes(String(value || '').toLowerCase()) && String(val).toLowerCase() !== String(value || '').toLowerCase();
     }).slice(0, 8);
 
     useEffect(() => {
@@ -21,14 +25,14 @@ const AutoField = ({ id, label, value, onChange, placeholder, list, onSelect, in
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    const show = focused && filtered.length > 0 && value.length >= 1;
+    const show = focused && filtered.length > 0 && (value || '').length >= 1;
 
     return (
         <div ref={ref} className="flex flex-col gap-1 relative">
-            <label htmlFor={id} className="font-semibold text-gray-400 text-xs">{label}</label>
+            <label htmlFor={id} className="font-semibold text-gray-400 text-[11px]">{label}</label>
             <input
-                className={`w-full p-2.5 bg-gray-800 border border-gray-700 focus:border-indigo-500 rounded-xl text-gray-100 outline-none transition-colors text-xs ${font} ${inputClass}`}
-                type="text" id={id} value={value}
+                className={`${inp} ${font}`}
+                type="text" id={id} value={value || ''}
                 onChange={e => { onChange(e); setOpen(true); }}
                 onFocus={() => { setFocused(true); setOpen(true); }}
                 onBlur={() => setTimeout(() => { setFocused(false); setOpen(false); }, 200)}
@@ -40,13 +44,12 @@ const AutoField = ({ id, label, value, onChange, placeholder, list, onSelect, in
                     <div className="px-3 py-1.5 bg-indigo-950/60 border-b border-indigo-800 flex items-center gap-1.5 text-[10px] text-indigo-300 font-bold uppercase">
                         <FaUserCheck className="text-indigo-400" /> ទិន្នន័យដែលមានស្រាប់ ({filtered.length})
                     </div>
-                    <ul className="max-h-44 overflow-y-auto divide-y divide-gray-800/60">
+                    <ul className="max-h-40 overflow-y-auto divide-y divide-gray-800/60">
                         {filtered.map((item, i) => {
                             const displayVal = typeof item === 'string' ? item : item[id] || '';
                             const sub = typeof item === 'object' ? [item.customerNameKh, item.phone].filter(Boolean).join(' • ') : '';
                             return (
-                                <li key={i}
-                                    onMouseDown={() => { onSelect(item); setOpen(false); }}
+                                <li key={i} onMouseDown={() => { onSelect(item); setOpen(false); }}
                                     className="px-3 py-2 hover:bg-indigo-900/50 cursor-pointer transition-colors">
                                     <span className="text-gray-100 font-bold text-xs">{displayVal}</span>
                                     {sub && <span className="text-gray-400 text-[10px] ml-1.5">({sub})</span>}
@@ -60,7 +63,17 @@ const AutoField = ({ id, label, value, onChange, placeholder, list, onSelect, in
     );
 };
 
-/* ── Main CreateApplication ── */
+/* ── Field wrapper ── */
+const Field = ({ label, children, accent = false }) => (
+    <div className="flex flex-col gap-1">
+        <label className={`font-semibold text-[11px] ${accent ? 'text-amber-400' : 'text-gray-400'}`}>{label}</label>
+        {children}
+    </div>
+);
+
+/* ══════════════════════════════════════════
+   Main CreateApplication Component
+══════════════════════════════════════════ */
 const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const { API_BASE, API_BASE1, user } = useAuth();
 
@@ -73,7 +86,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         phone: '', relativePhone: '',
         facebookName: '', telegramName: '', urlFb: '', mosyleUrl: '',
         customerPhoto: '', googleDrivePhotoUrl: '',
-        model: '', serialNumber: '', imei1: '', imei2: '', color: '', version: '',
+        model: '', serialNumber: '', imei1: '', imei2: '', meid: '', color: '', version: '',
         amount: 1000, interest: '14%', adminFee: 20, duration: '12 Months',
         interestType: '14%', monthlyPayment: 100
     };
@@ -82,10 +95,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const [brandsList, setBrandsList] = useState([]);
     const [modelsList, setModelsList] = useState([]);
     const [submitting, setSubmitting] = useState(false);
-    const [allCustomers, setAllCustomers] = useState([]);   // for autocomplete
-    const [autoFilled, setAutoFilled] = useState(false);    // flag: record was auto-filled
+    const [allCustomers, setAllCustomers] = useState([]);
+    const [autoFilled, setAutoFilled] = useState(false);
+    const [activeTab, setActiveTab] = useState('customer');
 
-    // ── Fetch global brands ──
     useEffect(() => {
         const go = async () => {
             try {
@@ -100,7 +113,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         go();
     }, [API_BASE]);
 
-    // ── Fetch existing customers for autocomplete ──
     useEffect(() => {
         const go = async () => {
             try {
@@ -108,7 +120,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 if (res.ok) {
                     const data = await res.json();
                     const list = data.data || data.contracts || data || [];
-                    // deduplicate by idCardNumber or customerNameEn
                     const seen = new Set();
                     const unique = list.filter(c => {
                         const key = c.idCardNumber || c.customerNameEn || c._id;
@@ -120,187 +131,111 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 }
             } catch { }
         };
-        if (open) go();
-    }, [API_BASE, open]);
+        go();
+    }, [API_BASE1]);
 
-    // ── Live Session & Real-time Scan Listener from Mobile App ──
-    useEffect(() => {
-        if (!open) return;
-
-        // Register session start on backend
-        fetch(`${API_BASE}/phone-app/create-session`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ active: true })
-        }).catch(() => {});
-
-        // Poll for real-time document scan pushed from Phone App
-        const interval = setInterval(async () => {
-            try {
-                const res = await fetch(`${API_BASE}/phone-app/status`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.latestScannedDoc) {
-                        const doc = data.latestScannedDoc;
-                        setForm(prev => ({
-                            ...prev,
-                            customerNameEn: doc.customerNameEn || prev.customerNameEn,
-                            customerNameKh: doc.customerNameKh || prev.customerNameKh,
-                            idCardNumber: doc.idCardNumber || prev.idCardNumber,
-                            dob: doc.dob || prev.dob,
-                            gender: doc.gender || prev.gender,
-                            birthAddress: doc.birthAddress || prev.birthAddress,
-                            currentAddress: doc.currentAddress || prev.currentAddress,
-                            deviceModel: doc.modelName || doc.deviceModel || prev.deviceModel,
-                            imei1: doc.imei1 || prev.imei1,
-                            imei2: doc.imei2 || prev.imei2,
-                            brand: doc.brandName || prev.brand
-                        }));
-                        setAutoFilled(true);
-
-                        // Consume scanned data so it doesn't re-trigger
-                        fetch(`${API_BASE}/phone-app/consume-scanned-doc`, { method: 'POST' }).catch(() => {});
-                    }
-                }
-            } catch { }
-        }, 1500);
-
-        return () => {
-            clearInterval(interval);
-            // Notify backend session closed
-            fetch(`${API_BASE}/phone-app/create-session`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ active: false })
-            }).catch(() => {});
-        };
-    }, [open, API_BASE]);
-
-    const handleDocumentParsed = (parsed) => {
-        if (!parsed) return;
-        setForm(prev => ({
-            ...prev,
-            customerNameEn: parsed.customerNameEn || prev.customerNameEn,
-            customerNameKh: parsed.customerNameKh || prev.customerNameKh,
-            idCardNumber: parsed.idCardNumber || prev.idCardNumber,
-            dob: parsed.dob || prev.dob,
-            gender: parsed.gender || prev.gender,
-            birthAddress: parsed.birthAddress || prev.birthAddress,
-            currentAddress: parsed.currentAddress || prev.currentAddress,
-            deviceModel: parsed.modelName || parsed.deviceModel || prev.deviceModel,
-            imei1: parsed.imei1 || prev.imei1,
-            imei2: parsed.imei2 || prev.imei2,
-            brand: parsed.brandName || prev.brand
-        }));
-        setAutoFilled(true);
-    };
-
-    // ── Fetch brand-specific models ──
     useEffect(() => {
         const go = async () => {
-            if (!form.brand) return;
+            if (!form.brand) { setModelsList([]); return; }
             try {
                 const res = await fetch(`${API_BASE}/controlsystem?brand=${form.brand}`);
                 if (res.ok) {
                     const data = await res.json();
-                    const cat = data.droplists?.find(d => d.category === 'Device Models');
-                    setModelsList(cat ? cat.items || [] : []);
+                    const cat = data.droplists?.find(d => d.category === 'Devices');
+                    if (cat) setModelsList(cat.items || []);
                 }
             } catch { }
         };
         go();
     }, [form.brand, API_BASE]);
 
-    // ── Load editData ──
     useEffect(() => {
-        if (editData) {
-            setForm({
-                inputDate: editData.inputDate || editData.input_date || new Date().toISOString().split('T')[0],
-                brand: editData.brand || user?.brand || '',
-                customerNameEn: editData.customerNameEn || editData.name_english || '',
-                customerNameKh: editData.customerNameKh || editData.name_khmer || '',
-                idCardNumber: editData.idCardNumber || editData.id_number || '',
-                dob: editData.dob || '',
-                gender: editData.gender || 'male',
-                birthAddress: editData.birthAddress || editData.birth_address || '',
-                currentAddress: editData.currentAddress || editData.current_address || '',
-                phone: editData.phone || editData.phone_number || '',
-                relativePhone: editData.relativePhone || editData.friend_or_relative_phone_number || '',
-                facebookName: editData.facebookName || editData.facebook_name || '',
-                telegramName: editData.telegramName || editData.telegram_name || '',
-                urlFb: editData.urlFb || editData.url_fb || '',
-                mosyleUrl: editData.mosyleUrl || editData.mosyle_url || editData.urlMosyle || editData.mosyleURL || '',
-                customerPhoto: editData.customerPhoto || '',
-                googleDrivePhotoUrl: editData.googleDrivePhotoUrl || '',
-                model: editData.model || editData.device_model || '',
-                serialNumber: editData.serialNumber || editData.serial_number || '',
-                imei1: editData.imei1 || editData.imei1_number || '',
-                imei2: editData.imei2 || editData.imei2_number || '',
-                color: editData.color || '',
-                version: editData.version || '',
-                amount: editData.amount || editData.totalAmount || 1000,
-                interest: editData.interest || '14%',
-                adminFee: editData.adminFee || 20,
-                duration: editData.duration || '12 Months',
-                interestType: editData.interestType || '14%',
-                monthlyPayment: editData.monthlyPayment || 100
-            });
+        if (!open) return;
+        fetch(`${API_BASE}/phone-app/create-session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ active: true })
+        }).catch(() => { });
+
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`${API_BASE}/phone-app/status`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.scannedDoc && typeof data.scannedDoc === 'object') {
+                        const doc = data.scannedDoc;
+                        if (doc.customerNameEn || doc.idCardNumber) {
+                            setForm(prev => ({ ...prev, ...doc }));
+                            setAutoFilled(true);
+                            fetch(`${API_BASE}/phone-app/consume-scanned-doc`, { method: 'POST' }).catch(() => { });
+                        }
+                    }
+                }
+            } catch { }
+        }, 3000);
+
+        return () => {
+            clearInterval(interval);
+            fetch(`${API_BASE}/phone-app/create-session`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: false })
+            }).catch(() => { });
+        };
+    }, [open, API_BASE]);
+
+    useEffect(() => {
+        if (open) {
+            setForm(editData ? { ...emptyForm, ...editData } : { ...emptyForm, brand: user?.brand || '' });
             setAutoFilled(false);
-        } else {
-            setForm(prev => ({ ...emptyForm, brand: user?.brand || '' }));
-            setAutoFilled(false);
+            setActiveTab('customer');
         }
-    }, [editData, user]);
+    }, [open, editData]);
 
     const handleChange = (e) => {
         const { id, value } = e.target;
         setForm(prev => ({ ...prev, [id]: value }));
-        if (autoFilled) setAutoFilled(false); // clear badge if user manually edits
     };
 
-    // ── Auto-fill ALL fields from selected existing record ──
-    const handleAutoFill = (record) => {
-        if (!record || typeof record !== 'object') return;
-        setForm({
-            inputDate: record.inputDate || record.input_date || new Date().toISOString().split('T')[0],
-            brand: record.brand || user?.brand || '',
-            customerNameEn: record.customerNameEn || record.name_english || '',
-            customerNameKh: record.customerNameKh || record.name_khmer || '',
-            idCardNumber: record.idCardNumber || record.id_number || '',
-            dob: record.dob || '',
-            gender: record.gender || 'male',
-            birthAddress: record.birthAddress || record.birth_address || '',
-            currentAddress: record.currentAddress || record.current_address || '',
-            phone: record.phone || record.phone_number || '',
-            relativePhone: record.relativePhone || record.friend_or_relative_phone_number || '',
-            facebookName: record.facebookName || record.facebook_name || '',
-            telegramName: record.telegramName || record.telegram_name || '',
-            urlFb: record.urlFb || record.url_fb || '',
-            mosyleUrl: record.mosyleUrl || record.mosyle_url || record.urlMosyle || record.mosyleURL || '',
-            customerPhoto: record.customerPhoto || '',
-            googleDrivePhotoUrl: record.googleDrivePhotoUrl || '',
-            // Device info
-            model: record.model || record.device_model || '',
-            serialNumber: record.serialNumber || record.serial_number || '',
-            imei1: record.imei1 || record.imei1_number || '',
-            imei2: record.imei2 || record.imei2_number || '',
-            color: record.color || '',
-            version: record.version || '',
-            // Loan info
-            amount: record.amount || record.totalAmount || 1000,
-            interest: record.interest || '14%',
-            adminFee: record.adminFee || 20,
-            duration: record.duration || '12 Months',
-            interestType: record.interestType || '14%',
-            monthlyPayment: record.monthlyPayment || 100,
-        });
+    const handleAutoFill = (item) => {
+        if (typeof item === 'object') {
+            setForm(prev => ({
+                ...prev,
+                customerNameEn: item.customerNameEn || prev.customerNameEn,
+                customerNameKh: item.customerNameKh || prev.customerNameKh,
+                idCardNumber: item.idCardNumber || prev.idCardNumber,
+                dob: item.dob || prev.dob,
+                gender: item.gender || prev.gender,
+                birthAddress: item.birthAddress || prev.birthAddress,
+                currentAddress: item.currentAddress || prev.currentAddress,
+                phone: item.phone || prev.phone,
+                relativePhone: item.relativePhone || prev.relativePhone,
+                facebookName: item.facebookName || prev.facebookName,
+                telegramName: item.telegramName || prev.telegramName,
+                urlFb: item.urlFb || prev.urlFb,
+                mosyleUrl: item.mosyleUrl || prev.mosyleUrl,
+                googleDrivePhotoUrl: item.googleDrivePhotoUrl || item.customerPhoto || prev.googleDrivePhotoUrl,
+                model: item.model || prev.model,
+                serialNumber: item.serialNumber || prev.serialNumber,
+                imei1: item.imei1 || prev.imei1,
+                imei2: item.imei2 || prev.imei2,
+                meid: item.meid || prev.meid,
+                color: item.color || prev.color,
+                version: item.version || prev.version,
+            }));
+            setAutoFilled(true);
+        }
+    };
+
+    const handleDocumentParsed = (parsedData) => {
+        setForm(prev => ({ ...prev, ...parsedData }));
         setAutoFilled(true);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
-        const isAdmin = user?.role === 'Administrator' || user?.username === '@hakyonghouv';
+        const isAdmin = user?.role === 'Administrator';
         const payload = {
             ...form,
             customerPhoto: form.googleDrivePhotoUrl || form.customerPhoto,
@@ -330,254 +265,189 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
     if (!open) return null;
 
+    const tabs = [
+        { id: 'customer', label: 'Customer Info', icon: <FaUser />, color: 'indigo' },
+        { id: 'device', label: 'Device Info', icon: <FaMobileAlt />, color: 'purple' },
+        { id: 'loan', label: 'Loan Terms', icon: <FaDollarSign />, color: 'emerald' },
+    ];
+    const tabCls = {
+        indigo: { active: 'bg-indigo-600 text-white border-indigo-500', inactive: 'text-indigo-400 border-gray-700 hover:bg-indigo-900/40' },
+        purple: { active: 'bg-purple-600 text-white border-purple-500', inactive: 'text-purple-400 border-gray-700 hover:bg-purple-900/40' },
+        emerald: { active: 'bg-emerald-600 text-white border-emerald-500', inactive: 'text-emerald-400 border-gray-700 hover:bg-emerald-900/40' },
+    };
+
     return (
-        <div className="w-[calc(100%-260px)] h-[88vh] overflow-auto absolute right-0 top-[7vh] bg-gray-900 border border-gray-700 z-[99999] shadow-2xl p-4">
-            <form onSubmit={handleSubmit}>
-                {/* ── Form Header ── */}
-                <div className='flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800 rounded-t-2xl'>
+        <div className="w-[calc(100%-260px)] h-[82vh] overflow-hidden absolute right-0 top-[7vh] bg-gray-900 border border-gray-700 z-[99999] shadow-2xl flex flex-col">
+            <form onSubmit={handleSubmit} className="flex flex-col h-full">
+
+                {/* ━━━ Header ━━━ */}
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-700 bg-gray-800 flex-shrink-0">
                     <div>
-                        <h3 className='text-base font-bold text-gray-100 flex items-center gap-2'>
-                            {editData ? 'Edit Application Contract' : 'Create Application Contract'}
+                        <h3 className="text-sm font-bold text-gray-100 flex items-center gap-2">
+                            {editData ? '✏️ Edit Application Contract' : '📋 Create Application Contract'}
                             {autoFilled && (
-                                <span className="flex items-center gap-1 px-2.5 py-1 bg-indigo-900/60 border border-indigo-600 text-indigo-300 rounded-full text-[10px] font-bold uppercase">
-                                    <FaUserCheck className="text-xs" /> Auto-filled from existing record
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-indigo-900/60 border border-indigo-600 text-indigo-300 rounded-full text-[10px] font-bold uppercase">
+                                    <FaUserCheck className="text-xs" /> Auto-filled
                                 </span>
                             )}
                         </h3>
-                        <p className='text-xs text-gray-400 mt-0.5'>Enter Customer, Device, and Loan Information — ទិន្ន័យត្រូវបានរក្សាទុកក្នុង MongoDB</p>
                     </div>
-                    <div className='flex gap-3'>
+                    <div className="flex gap-2">
                         <button type="button" onClick={() => setOpen(false)}
-                            className='px-4 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-xl text-xs cursor-pointer transition-all flex items-center gap-1.5'>
+                            className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-xs cursor-pointer transition-all flex items-center gap-1.5">
                             <MdClose /> Cancel
                         </button>
                         <button type="submit" disabled={submitting}
-                            className='px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all'>
-                            {submitting ? 'Saving...' : 'Submit Contract'}
+                            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all">
+                            {submitting ? '⏳ Saving...' : '✅ Submit Contract'}
                         </button>
                     </div>
                 </div>
 
-                <div className='p-4 w-full h-[75vh] overflow-y-auto space-y-6 text-xs text-gray-200'>
+                {/* ━━━ Tab Bar ━━━ */}
+                <div className="flex gap-1.5 px-4 pt-2.5 pb-0 border-b border-gray-700/60 flex-shrink-0 bg-gray-900">
+                    {tabs.map(tab => {
+                        const isActive = activeTab === tab.id;
+                        const c = tabCls[tab.color];
+                        return (
+                            <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-t-xl border border-b-0 text-xs font-bold transition-all cursor-pointer ${isActive ? c.active : c.inactive}`}>
+                                {tab.icon} {tab.label}
+                            </button>
+                        );
+                    })}
+                </div>
 
-                    {/* ── Document Scanner (Drag & Drop ID Card / Passport) ── */}
-                    <DocumentScanner onParsedData={handleDocumentParsed} />
+                {/* ━━━ Tab Content ━━━ */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900/50">
 
-                    {/* ── Section 1: Customer Information ── */}
-                    <div>
-                        <h2 className='flex items-center gap-2 text-sm font-bold text-indigo-400 mb-2'>
-                            <FaAngleDoubleRight /> Customer Information
-                            <span className='text-[10px] text-indigo-300 font-normal ml-2 opacity-80'>
-                                (វាយឈ្មោះ/លេខទូរស័ព្ទ/ID — វានឹងបង្ហាញការណែនាំ)
-                            </span>
-                        </h2>
-                        <hr className='border-gray-800 mb-4' />
-
-                        <div className='grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'>
-
-                            {/* Name EN — with autocomplete */}
-                            <AutoField
-                                id="customerNameEn" label="Name English *" value={form.customerNameEn}
-                                placeholder="Name English"
-                                list={allCustomers}
-                                onChange={handleChange}
-                                onSelect={handleAutoFill}
-                            />
-
-                            {/* Name KH — with autocomplete */}
-                            <AutoField
-                                id="customerNameKh" label="Name Khmer *" value={form.customerNameKh}
-                                placeholder="Name Khmer" font="font-khmer"
-                                list={allCustomers}
-                                onChange={handleChange}
-                                onSelect={handleAutoFill}
-                            />
-
-                            {/* ID Card — with autocomplete */}
-                            <AutoField
-                                id="idCardNumber" label="ID Number" value={form.idCardNumber}
-                                placeholder="ID Number" font="font-mono"
-                                list={allCustomers}
-                                onChange={handleChange}
-                                onSelect={handleAutoFill}
-                            />
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="dob" className="font-semibold text-gray-400">Date of Birth</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 font-mono text-xs outline-none focus:border-indigo-500"
-                                    type="date" id="dob" value={form.dob} onChange={handleChange} />
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="gender" className="font-semibold text-gray-400">Gender</label>
-                                <select className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 text-xs outline-none"
-                                    id="gender" value={form.gender} onChange={handleChange}>
+                    {/* ════ TAB 1: Customer Info ════ */}
+                    {activeTab === 'customer' && (<>
+                        <DocumentScanner onParsedData={handleDocumentParsed} />
+                        <div className="grid grid-cols-4 gap-3">
+                            <AutoField id="customerNameEn" label="Name English *" value={form.customerNameEn} placeholder="Name English" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="customerNameKh" label="Name Khmer *" value={form.customerNameKh} placeholder="Name Khmer" font="font-khmer" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="idCardNumber" label="ID Card Number" value={form.idCardNumber} placeholder="ID Number" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="phone" label="Phone Number" value={form.phone} placeholder="Phone" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                        </div>
+                        <div className="grid grid-cols-4 gap-3">
+                            <Field label="Date of Birth"><input className={inp} type="date" id="dob" value={form.dob || ''} onChange={handleChange} /></Field>
+                            <Field label="Gender">
+                                <select className={sel} id="gender" value={form.gender || 'male'} onChange={handleChange}>
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
                                 </select>
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="brand" className="font-semibold text-gray-400">Brand (ម៉ាក)</label>
-                                <select id="brand" value={form.brand} onChange={handleChange}
-                                    disabled={user?.role !== 'Administrator'}
-                                    className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 font-semibold text-xs disabled:opacity-60 outline-none">
+                            </Field>
+                            <Field label="Brand (ម៉ាក)">
+                                <select id="brand" value={form.brand || ''} onChange={handleChange} disabled={user?.role !== 'Administrator'} className={`${sel} font-semibold disabled:opacity-60`}>
                                     <option value="">Select Brand</option>
                                     {brandsList.map((b, idx) => <option key={idx} value={b}>{b}</option>)}
                                 </select>
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="birthAddress" className="font-semibold text-gray-400">Birth Address</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="birthAddress" value={form.birthAddress} onChange={handleChange} placeholder="Birth address" />
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="currentAddress" className="font-semibold text-gray-400">Current Address</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="currentAddress" value={form.currentAddress} onChange={handleChange} placeholder="Current address" />
-                            </div>
-
-                            {/* Phone — with autocomplete */}
-                            <AutoField
-                                id="phone" label="Phone Number" value={form.phone}
-                                placeholder="Phone number" font="font-mono"
-                                list={allCustomers}
-                                onChange={handleChange}
-                                onSelect={handleAutoFill}
-                            />
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="relativePhone" className="font-semibold text-gray-400">Relative Phone</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 font-mono text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="relativePhone" value={form.relativePhone} onChange={handleChange} placeholder="Relative phone" />
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="facebookName" className="font-semibold text-gray-400">Facebook Name</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="facebookName" value={form.facebookName} onChange={handleChange} placeholder="Facebook Name" />
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="telegramName" className="font-semibold text-gray-400">Telegram Name</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="telegramName" value={form.telegramName} onChange={handleChange} placeholder="Telegram Name" />
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="urlFb" className="font-semibold text-gray-400">URL Facebook</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="urlFb" value={form.urlFb} onChange={handleChange} placeholder="URL Facebook" />
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="mosyleUrl" className="font-semibold text-gray-400">URL Mosyle</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 font-mono text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="mosyleUrl" value={form.mosyleUrl} onChange={handleChange} placeholder="https://" />
-                            </div>
-
-                            <div className="flex flex-col gap-1 col-span-2">
-                                <label htmlFor="googleDrivePhotoUrl" className="font-semibold text-amber-400">Photo URL (Google Drive / Image Link)</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-amber-600/50 rounded-xl text-gray-100 font-mono text-xs outline-none focus:border-amber-500"
-                                    type="text" id="googleDrivePhotoUrl" value={form.googleDrivePhotoUrl} onChange={handleChange}
-                                    placeholder="https://drive.google.com/uc?export=view&id=..." />
-                            </div>
+                            </Field>
+                            <Field label="Relative Phone"><input className={`${inp} font-mono`} type="text" id="relativePhone" value={form.relativePhone || ''} onChange={handleChange} placeholder="Relative phone" /></Field>
                         </div>
-                    </div>
+                        <div className="grid grid-cols-4 gap-3">
+                            <Field label="Birth Address"><input className={inp} type="text" id="birthAddress" value={form.birthAddress || ''} onChange={handleChange} placeholder="Birth address" /></Field>
+                            <Field label="Current Address"><input className={inp} type="text" id="currentAddress" value={form.currentAddress || ''} onChange={handleChange} placeholder="Current address" /></Field>
+                            <Field label="Facebook Name"><input className={inp} type="text" id="facebookName" value={form.facebookName || ''} onChange={handleChange} placeholder="Facebook Name" /></Field>
+                            <Field label="Telegram Name"><input className={inp} type="text" id="telegramName" value={form.telegramName || ''} onChange={handleChange} placeholder="Telegram Name" /></Field>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                            <Field label="URL Facebook"><input className={inp} type="text" id="urlFb" value={form.urlFb || ''} onChange={handleChange} placeholder="URL Facebook" /></Field>
+                            <Field label="URL Mosyle"><input className={`${inp} font-mono`} type="text" id="mosyleUrl" value={form.mosyleUrl || ''} onChange={handleChange} placeholder="https://" /></Field>
+                            <Field label="📸 Photo URL (Google Drive)" accent>
+                                <input className="w-full p-2 bg-gray-800/80 border border-amber-600/50 focus:border-amber-500 rounded-lg text-gray-100 font-mono text-xs outline-none transition-colors"
+                                    type="text" id="googleDrivePhotoUrl" value={form.googleDrivePhotoUrl || ''} onChange={handleChange} placeholder="https://drive.google.com/uc?export=view&id=..." />
+                            </Field>
+                        </div>
+                    </>)}
 
-                    {/* ── Section 2: Device Information ── */}
-                    <div>
-                        <h2 className='flex items-center gap-2 text-sm font-bold text-purple-400 mb-2'>
-                            <FaAngleDoubleRight /> Device Information
-                        </h2>
-                        <hr className='border-gray-800 mb-4' />
-                        <div className='grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="model" className="font-semibold text-gray-400">Device Model (ម៉ូដែលទូរស័ព្ទ)</label>
-                                <select id="model" value={form.model} onChange={handleChange} required
-                                    className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 font-semibold text-xs outline-none">
+                    {/* ════ TAB 2: Device Info ════ */}
+                    {activeTab === 'device' && (<>
+                        <div className="grid grid-cols-4 gap-3">
+                            <Field label="Device Model (ម៉ូដែល) *">
+                                <select id="model" value={form.model || ''} onChange={handleChange} required className={`${sel} font-semibold`}>
                                     <option value="">Select Device Model</option>
                                     {modelsList.map((m, idx) => <option key={idx} value={m}>{m}</option>)}
                                     {form.model && !modelsList.includes(form.model) && <option value={form.model}>{form.model}</option>}
                                 </select>
+                            </Field>
+                            <AutoField id="serialNumber" label="Serial Number *" value={form.serialNumber} placeholder="Serial Number" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="imei1" label="IMEI 1 Number" value={form.imei1} placeholder="IMEI 1" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <Field label="IMEI 2 Number"><input className={`${inp} font-mono`} type="text" id="imei2" value={form.imei2 || ''} onChange={handleChange} placeholder="IMEI 2" /></Field>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                            <Field label="MEID Number">
+                                <input className={`${inp} font-mono text-pink-400`} type="text" id="meid" value={form.meid || ''} onChange={handleChange} placeholder="e.g. 35173227736075" />
+                            </Field>
+                            <Field label="Color"><input className={inp} type="text" id="color" value={form.color || ''} onChange={handleChange} placeholder="e.g. Midnight Black" /></Field>
+                            <Field label="Capacity / Storage"><input className={inp} type="text" id="version" value={form.version || ''} onChange={handleChange} placeholder="e.g. 128 GB" /></Field>
+                        </div>
+                        {(form.model || form.serialNumber) && (
+                            <div className="p-3.5 bg-purple-900/20 border border-purple-700/40 rounded-xl flex items-center gap-4">
+                                <FaMobileAlt className="text-purple-400 text-3xl flex-shrink-0" />
+                                <div className="grid grid-cols-4 gap-x-4 gap-y-2 w-full text-xs">
+                                    <div><span className="text-gray-500 block text-[10px]">Model</span><span className="text-purple-300 font-bold">{form.model || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">Serial No.</span><span className="text-gray-100 font-mono font-bold">{form.serialNumber || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">IMEI 1</span><span className="text-gray-100 font-mono">{form.imei1 || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">IMEI 2</span><span className="text-gray-100 font-mono">{form.imei2 || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">MEID</span><span className="text-pink-400 font-mono font-semibold">{form.meid || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">Color</span><span className="text-gray-100">{form.color || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">Capacity</span><span className="text-gray-100">{form.version || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">Brand</span><span className="text-gray-100 font-semibold">{form.brand || '—'}</span></div>
+                                </div>
                             </div>
+                        )}
+                    </>)}
 
-                            {/* Serial Number — with autocomplete */}
-                            <AutoField
-                                id="serialNumber" label="Serial Number *" value={form.serialNumber}
-                                placeholder="Serial Number" font="font-mono"
-                                list={allCustomers}
-                                onChange={handleChange}
-                                onSelect={handleAutoFill}
-                            />
-
-                            {/* IMEI1 — with autocomplete */}
-                            <AutoField
-                                id="imei1" label="IMEI1 Number" value={form.imei1}
-                                placeholder="IMEI1 Number" font="font-mono"
-                                list={allCustomers}
-                                onChange={handleChange}
-                                onSelect={handleAutoFill}
-                            />
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="imei2" className="font-semibold text-gray-400">IMEI2 Number</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 font-mono text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="imei2" value={form.imei2} onChange={handleChange} placeholder="IMEI2 Number" />
+                    {/* ════ TAB 3: Loan Terms ════ */}
+                    {activeTab === 'loan' && (<>
+                        <div className="grid grid-cols-5 gap-3">
+                            <Field label="📅 Loan Date *">
+                                <input className="w-full p-2 bg-gray-800/80 border border-indigo-600/70 rounded-lg text-gray-100 font-mono text-xs outline-none focus:border-indigo-500 font-bold"
+                                    type="date" id="inputDate" value={form.inputDate || ''} onChange={handleChange} required />
+                            </Field>
+                            <Field label="Total Loan Amount ($)">
+                                <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-lg text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
+                                    type="number" id="amount" value={form.amount || ''} onChange={handleChange} placeholder="Amount" />
+                            </Field>
+                            <Field label="Customer Received ($)">
+                                <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-lg text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
+                                    type="number" id="monthlyPayment" value={form.monthlyPayment || ''} onChange={handleChange} placeholder="Monthly Payment" />
+                            </Field>
+                            <Field label="Interest Rate"><input className={`${inp} font-mono`} type="text" id="interest" value={form.interest || ''} onChange={handleChange} placeholder="e.g. 14%" /></Field>
+                            <Field label="Duration"><input className={inp} type="text" id="duration" value={form.duration || ''} onChange={handleChange} placeholder="e.g. 12 Months" /></Field>
+                        </div>
+                        <div className="p-4 bg-emerald-900/20 border border-emerald-700/40 rounded-xl">
+                            <p className="text-[10px] text-emerald-400 font-bold uppercase mb-3">💰 Loan Summary Preview</p>
+                            <div className="grid grid-cols-3 gap-3 text-xs mb-3">
+                                <div className="p-3 bg-gray-900/60 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px] mb-1">Total Loan Amount</span>
+                                    <span className="text-emerald-400 font-mono font-bold text-base">${Number(form.amount || 0).toLocaleString()}</span>
+                                </div>
+                                <div className="p-3 bg-gray-900/60 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px] mb-1">Customer Received</span>
+                                    <span className="text-emerald-400 font-mono font-bold text-base">${Number(form.monthlyPayment || 0).toLocaleString()}</span>
+                                </div>
+                                <div className="p-3 bg-gray-900/60 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px] mb-1">Interest · Duration</span>
+                                    <span className="text-gray-200 font-bold">{form.interest || '14%'} · {form.duration || '12 Mo'}</span>
+                                </div>
                             </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="color" className="font-semibold text-gray-400">Color</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="color" value={form.color} onChange={handleChange} placeholder="Color" />
-                            </div>
-
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="version" className="font-semibold text-gray-400">Version</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="version" value={form.version} onChange={handleChange} placeholder="Version" />
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                                <div className="p-2 bg-gray-900/60 rounded-lg border border-gray-800">
+                                    <span className="text-gray-500 text-[10px] block">Customer</span>
+                                    <span className="text-gray-100 font-semibold">{form.customerNameEn || '—'}{form.customerNameKh ? ` (${form.customerNameKh})` : ''}</span>
+                                </div>
+                                <div className="p-2 bg-gray-900/60 rounded-lg border border-gray-800">
+                                    <span className="text-gray-500 text-[10px] block">Device</span>
+                                    <span className="text-gray-100 font-semibold">{form.model || '—'}{form.serialNumber ? ` · ${form.serialNumber}` : ''}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* ── Section 3: Loan & Financial Terms ── */}
-                    <div>
-                        <h2 className='flex items-center gap-2 text-sm font-bold text-emerald-400 mb-2'>
-                            <FaAngleDoubleRight /> Loan & Financial Terms
-                        </h2>
-                        <hr className='border-gray-800 mb-4' />
-                        <div className='grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5'>
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="inputDate" className="font-semibold text-indigo-300">កាលបរិច្ឆេទស្នើកម្ចី *</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-indigo-600/70 rounded-xl text-gray-100 font-mono text-xs outline-none focus:border-indigo-500 font-bold"
-                                    type="date" id="inputDate" value={form.inputDate} onChange={handleChange} required />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="amount" className="font-semibold text-gray-400">Total Amount</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
-                                    type="number" id="amount" value={form.amount} onChange={handleChange} placeholder="Amount" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="monthlyPayment" className="font-semibold text-gray-400">Customer Received Amount</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
-                                    type="number" id="monthlyPayment" value={form.monthlyPayment} onChange={handleChange} placeholder="Monthly Payment" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="interest" className="font-semibold text-gray-400">Interest Rate</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 font-mono text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="interest" value={form.interest} onChange={handleChange} placeholder="Interest" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <label htmlFor="duration" className="font-semibold text-gray-400">Duration</label>
-                                <input className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-100 text-xs outline-none focus:border-indigo-500"
-                                    type="text" id="duration" value={form.duration} onChange={handleChange} placeholder="Duration" />
-                            </div>
-                        </div>
-                    </div>
-
+                    </>)}
                 </div>
+
             </form>
         </div>
     );

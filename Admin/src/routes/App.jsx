@@ -62,9 +62,10 @@ import AllAccount from "../App/Settings/pages/AllAccount";
 import Profile from "../App/Profile/Profile";
 
 import DesktopOnlyGuard from "../components/DesktopOnlyGuard";
+import AIAssistantDrawer from "../components/AIAssistantDrawer";
 
 const MainLayout = ({ children }) => (
-  <div className="flex flex-col h-screen bg-[#f4f6f8]">
+  <div className="flex flex-col h-screen bg-[#f4f6f8] relative">
     <Header />
     <div className="flex flex-1 overflow-hidden">
       <Left />
@@ -72,8 +73,11 @@ const MainLayout = ({ children }) => (
         {children}
       </div>
     </div>
+    {/* Global Floating AI Assistant with Role & Brand Isolation */}
+    <AIAssistantDrawer />
   </div>
 );
+
 
 const App = () => {
   return (

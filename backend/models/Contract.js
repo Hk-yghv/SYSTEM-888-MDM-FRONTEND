@@ -26,6 +26,7 @@ const contractSchema = new mongoose.Schema({
     serialNumber: { type: String, required: true },
     imei1: { type: String, default: '' },
     imei2: { type: String, default: '' },
+    meid: { type: String, default: '' },
     color: { type: String, default: '' },
     version: { type: String, default: '' },
 

@@ -85,7 +85,7 @@ const Actions = () => {
                 </button>
             </header>
 
-            <div className='w-full overflow-x-auto h-[calc(100vh-180px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -122,30 +122,30 @@ const Actions = () => {
                                             </span>
                                         </td>
                                         <td className='px-4 py-3 text-center'>
-                                             {hasPermission('/wallpaper/actions', 'edit') || hasPermission('/wallpaper/actions', 'create') ? (
-                                                 isLocked ? (
-                                                     <button
-                                                         onClick={() => handleToggleWallpaper(item, 'Unlocked')}
-                                                         disabled={togglingId === item._id}
-                                                         className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-blue-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
-                                                     >
-                                                         <FaUnlock size={11} />
-                                                         <span>Set to Unlock Wallpaper</span>
-                                                     </button>
-                                                 ) : (
-                                                     <button
-                                                         onClick={() => handleToggleWallpaper(item, 'Locked')}
-                                                         disabled={togglingId === item._id}
-                                                         className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-purple-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
-                                                     >
-                                                         <FaLock size={11} />
-                                                         <span>Set to Lock Wallpaper</span>
-                                                     </button>
-                                                 )
-                                             ) : (
-                                                 <span className="text-slate-400 font-semibold text-xs italic">Read Only</span>
-                                             )}
-                                         </td>
+                                            {hasPermission('/wallpaper/actions', 'edit') || hasPermission('/wallpaper/actions', 'create') ? (
+                                                isLocked ? (
+                                                    <button
+                                                        onClick={() => handleToggleWallpaper(item, 'Unlocked')}
+                                                        disabled={togglingId === item._id}
+                                                        className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-blue-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                                                    >
+                                                        <FaUnlock size={11} />
+                                                        <span>Set to Unlock Wallpaper</span>
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleToggleWallpaper(item, 'Locked')}
+                                                        disabled={togglingId === item._id}
+                                                        className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-purple-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                                                    >
+                                                        <FaLock size={11} />
+                                                        <span>Set to Lock Wallpaper</span>
+                                                    </button>
+                                                )
+                                            ) : (
+                                                <span className="text-slate-400 font-semibold text-xs italic">Read Only</span>
+                                            )}
+                                        </td>
                                     </tr>
                                 );
                             })

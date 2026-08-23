@@ -198,20 +198,97 @@ const Device = () => {
             {/* Device Information Modal */}
             {selectedDevice && (
                 <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
-                    <div className="bg-[#0b0f1e] border border-indigo-500/40 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+                    <div className="bg-[#0b0f1e] border border-indigo-500/40 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+                        {/* Header */}
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-                            <h3 className="text-sm font-bold text-indigo-400 flex items-center gap-2">
-                                <FaMobileAlt className="text-lg" />
-                                <span>Device Specifications</span>
-                            </h3>
-                            <button onClick={() => setSelectedDevice(null)} className="w-8 h-8 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs font-bold cursor-pointer">✕</button>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-purple-950/80 border border-purple-700/60 flex items-center justify-center text-purple-400 text-lg">
+                                    <FaMobileAlt />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-gray-100 flex items-center gap-2">
+                                        <span>{selectedDevice.model}</span>
+                                        <span className="px-2 py-0.5 bg-purple-950 text-purple-300 border border-purple-700/60 rounded-full text-[10px] font-bold">
+                                            {selectedDevice.brand || 'Device'}
+                                        </span>
+                                    </h3>
+                                    <p className="text-[11px] text-gray-400 font-mono">Serial: {selectedDevice.serialNumber}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedDevice(null)}
+                                className="w-8 h-8 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-sm font-bold cursor-pointer transition-all"
+                            >
+                                ✕
+                            </button>
                         </div>
 
-                        {/* Device Specs Summary */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                            <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Model</span><span className="font-bold text-white">{selectedDevice.model}</span></div>
-                            <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Serial Number</span><span className="font-mono font-bold text-indigo-300">{selectedDevice.serialNumber}</span></div>
-                            <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 1</span><span className="font-mono text-emerald-400">{selectedDevice.imei1 || '-'}</span></div>
+                        {/* Device Specifications Grid */}
+                        <div>
+                            <h4 className="text-[11px] font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span> Hardware Specifications
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px]">Model Name</span>
+                                    <span className="font-bold text-white truncate block">{selectedDevice.model}</span>
+                                </div>
+                                <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px]">Serial Number</span>
+                                    <span className="font-mono font-bold text-indigo-300 truncate block">{selectedDevice.serialNumber}</span>
+                                </div>
+                                <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px]">IMEI 1</span>
+                                    <span className="font-mono font-bold text-sky-400 truncate block">{selectedDevice.imei1 || '—'}</span>
+                                </div>
+                                <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px]">IMEI 2</span>
+                                    <span className="font-mono font-bold text-sky-300 truncate block">{selectedDevice.imei2 || '—'}</span>
+                                </div>
+                                <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px]">MEID</span>
+                                    <span className="font-mono font-bold text-pink-400 truncate block">{selectedDevice.meid || '—'}</span>
+                                </div>
+                                <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px]">Color</span>
+                                    <span className="font-bold text-gray-200 truncate block">{selectedDevice.color || '—'}</span>
+                                </div>
+                                <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px]">Storage / Version</span>
+                                    <span className="font-bold text-gray-200 truncate block">{selectedDevice.version || '—'}</span>
+                                </div>
+                                <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px]">Brand</span>
+                                    <span className="font-bold text-purple-300 truncate block">{selectedDevice.brand || '—'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Customer & Security Section */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div className="p-3 bg-gray-900/60 rounded-2xl border border-gray-800">
+                                <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">👤 Linked Customer</h4>
+                                <p className="font-bold text-white">{selectedDevice.customerNameEn || '—'} <span className="text-indigo-300 font-khmer text-xs font-normal">({selectedDevice.customerNameKh || '—'})</span></p>
+                                <p className="text-[11px] text-gray-400 font-mono mt-0.5">Phone: {selectedDevice.phone || '—'}</p>
+                                <p className="text-[10px] text-gray-500 font-mono mt-0.5">Contract ID: {selectedDevice.contractId || '—'}</p>
+                            </div>
+                            <div className="p-3 bg-gray-900/60 rounded-2xl border border-gray-800">
+                                <h4 className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-2">🛡️ Security Lock Status</h4>
+                                <div className="flex gap-2">
+                                    <div className="flex-1 p-2 bg-gray-950/70 rounded-xl border border-gray-800 text-center">
+                                        <span className="text-[9px] text-gray-500 block">Phone Lock</span>
+                                        <span className={`text-[10px] font-bold ${selectedDevice.lockPhoneStatus === 'Locked' ? 'text-red-400' : 'text-emerald-400'}`}>
+                                            {selectedDevice.lockPhoneStatus || 'Unlocked'}
+                                        </span>
+                                    </div>
+                                    <div className="flex-1 p-2 bg-gray-950/70 rounded-xl border border-gray-800 text-center">
+                                        <span className="text-[9px] text-gray-500 block">Wallpaper</span>
+                                        <span className={`text-[10px] font-bold ${selectedDevice.lockWallpaperStatus === 'Locked' ? 'text-indigo-400' : 'text-emerald-400'}`}>
+                                            {selectedDevice.lockWallpaperStatus || 'Unlocked'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Interactive 3D Model with Feature Lines */}
@@ -219,8 +296,10 @@ const Device = () => {
                             <Device3DPointers device={selectedDevice} />
                         </div>
 
-                        <div className="text-right">
-                            <button onClick={() => setSelectedDevice(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl cursor-pointer">Close</button>
+                        <div className="flex justify-end gap-2 pt-1 border-t border-gray-800">
+                            <button onClick={() => setSelectedDevice(null)} className="px-5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold text-xs rounded-xl cursor-pointer transition-all">
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>

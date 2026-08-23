@@ -28,6 +28,39 @@ const Customer = () => {
     const [qrDataUrl, setQrDataUrl] = useState('');
     const [qrInfoPageUrl, setQrInfoPageUrl] = useState('');
 
+    // Customer detail payments history state
+    const [customerPayments, setCustomerPayments] = useState([]);
+    const [loadingPayments, setLoadingPayments] = useState(false);
+
+    useEffect(() => {
+        if (!selectedCustomer) {
+            setCustomerPayments([]);
+            return;
+        }
+        const loadPayments = async () => {
+            setLoadingPayments(true);
+            try {
+                const q = selectedCustomer.contractId || selectedCustomer.serialNumber || selectedCustomer.customerNameEn || '';
+                const res = await fetch(`${API_BASE1}/payments?search=${encodeURIComponent(q)}&limit=100`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const all = data.data || [];
+                    const matched = all.filter(p =>
+                        (selectedCustomer.contractId && p.contractId === selectedCustomer.contractId) ||
+                        (selectedCustomer.serialNumber && p.serialNumber === selectedCustomer.serialNumber) ||
+                        (selectedCustomer.customerNameEn && p.customerName === selectedCustomer.customerNameEn)
+                    );
+                    setCustomerPayments(matched.length > 0 ? matched : all);
+                }
+            } catch (err) {
+                console.error('Fetch customer payments error:', err);
+            } finally {
+                setLoadingPayments(false);
+            }
+        };
+        loadPayments();
+    }, [selectedCustomer, API_BASE1]);
+
     const fetchCustomers = async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
         try {
@@ -91,6 +124,7 @@ const Customer = () => {
             'Serial Number': c.serialNumber || '',
             'IMEI 1': c.imei1 || '',
             'IMEI 2': c.imei2 || '',
+            'MEID': c.meid || '',
             'Color': c.color || '',
             'Total Amount ($)': c.amount || c.totalAmount || 0,
             'Monthly Installment ($)': c.monthlyPayment || 0,
@@ -116,6 +150,12 @@ const Customer = () => {
         ];
         exportToPDF('Customer Profile Directory', columns, filteredCustomers);
     };
+
+    // Derived payment totals for selected customer
+    const totalLoan = Number(selectedCustomer?.amount || selectedCustomer?.totalAmount || 0);
+    const totalPaidSum = customerPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+    const remainingBalance = Math.max(0, totalLoan - totalPaidSum);
+    const repaymentPct = totalLoan > 0 ? Math.min(100, Math.round((totalPaidSum / totalLoan) * 100)) : 0;
 
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
@@ -235,7 +275,7 @@ const Customer = () => {
                                             <button
                                                 onClick={() => setSelectedCustomer(item)}
                                                 className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-600 text-sm transition-all cursor-pointer"
-                                                title="View Full Details"
+                                                title="View Full Details & Payment History"
                                             >
                                                 <MdInfo />
                                             </button>
@@ -267,10 +307,10 @@ const Customer = () => {
             {/* Full Customer Detail Modal */}
             {selectedCustomer && (
                 <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
-                    <div className="bg-[#0b0f1e] border border-gray-700 rounded-3xl w-full max-w-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+                    <div className="bg-[#0b0f1e] border border-gray-700 rounded-3xl w-full max-w-4xl shadow-2xl max-h-[92vh] overflow-y-auto">
 
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-800 sticky top-0 bg-[#0b0f1e] rounded-t-3xl z-10">
+                        <div className="flex items-center justify-between p-5 border-b border-gray-800 sticky top-0 bg-[#0b0f1e] rounded-t-3xl z-10">
                             <div className="flex items-center gap-4">
                                 <img
                                     src={selectedCustomer.customerPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
@@ -278,16 +318,18 @@ const Customer = () => {
                                     className="w-14 h-14 rounded-2xl object-cover border-2 border-indigo-500/40"
                                 />
                                 <div>
-                                    <h3 className="text-lg font-black text-white tracking-wide">{selectedCustomer.customerNameEn}</h3>
-                                    <p className="text-sm text-indigo-400 font-khmer">{selectedCustomer.customerNameKh}</p>
+                                    <h3 className="text-base font-black text-white tracking-wide flex items-center gap-2">
+                                        <span>{selectedCustomer.customerNameEn}</span>
+                                        <span className="text-xs text-indigo-400 font-khmer font-normal">({selectedCustomer.customerNameKh})</span>
+                                    </h3>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">✓ Activated</span>
-                                        <span className="text-[10px] text-gray-500 font-mono">ID: {selectedCustomer.contractId}</span>
+                                        <span className="text-[10px] text-gray-400 font-mono">Contract: {selectedCustomer.contractId}</span>
+                                        <span className="text-[10px] text-purple-300 font-bold bg-purple-950 px-2 py-0.5 rounded-full border border-purple-800">{selectedCustomer.brand || 'Device'}</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                {/* Export buttons in modal */}
                                 <button
                                     onClick={() => {
                                         const d = [selectedCustomer];
@@ -297,7 +339,7 @@ const Customer = () => {
                                             'Phone': c.phone, 'Relative Phone': c.relativePhone,
                                             'Current Address': c.currentAddress, 'Facebook': c.facebookName,
                                             'Telegram': c.telegramName, 'Model': c.model,
-                                            'Serial': c.serialNumber, 'IMEI1': c.imei1, 'IMEI2': c.imei2,
+                                            'Serial': c.serialNumber, 'IMEI1': c.imei1, 'IMEI2': c.imei2, 'MEID': c.meid || '',
                                             'Color': c.color, 'Version': c.version,
                                             'Total ($)': c.amount || c.totalAmount, 'Monthly ($)': c.monthlyPayment,
                                             'Interest': c.interest, 'Duration': c.duration,
@@ -326,6 +368,7 @@ const Customer = () => {
                                             { field: 'Device Model', value: c.model },
                                             { field: 'Serial Number', value: c.serialNumber },
                                             { field: 'IMEI1', value: c.imei1 || '-' },
+                                            { field: 'MEID', value: c.meid || '-' },
                                             { field: 'Total Amount', value: `$${c.amount || c.totalAmount || 0}` },
                                             { field: 'Monthly Installment', value: `$${c.monthlyPayment}/mo` },
                                             { field: 'Interest', value: c.interest || '-' },
@@ -347,7 +390,7 @@ const Customer = () => {
                             </div>
                         </div>
 
-                        <div className="p-6 space-y-5 text-xs">
+                        <div className="p-6 space-y-6 text-xs">
                             {/* 3D Interactive ID Card Viewer */}
                             <div className="bg-[#070913] p-3 rounded-2xl border border-indigo-500/30">
                                 <h4 className="text-[11px] font-bold text-indigo-300 uppercase tracking-wider mb-1 text-center font-khmer">
@@ -356,25 +399,25 @@ const Customer = () => {
                                 <IDCard3DViewer customer={selectedCustomer} />
                             </div>
 
-                            {/* Customer Information */}
+                            {/* Section 1: Customer Information */}
                             <div>
                                 <h4 className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span> Customer Information
+                                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span> 👤 Customer Personal Information
                                 </h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                     {[
                                         ['Name English', selectedCustomer.customerNameEn],
                                         ['Name Khmer', selectedCustomer.customerNameKh],
                                         ['ID Card Number', selectedCustomer.idCardNumber || '-'],
                                         ['Date of Birth', selectedCustomer.dob || '-'],
                                         ['Gender', selectedCustomer.gender || '-'],
-                                        ['Birth Address', selectedCustomer.birthAddress || '-'],
-                                        ['Current Address', selectedCustomer.currentAddress || '-'],
+                                        ['Brand', selectedCustomer.brand || '-'],
                                         ['Phone Number', selectedCustomer.phone || '-'],
                                         ['Relative Phone', selectedCustomer.relativePhone || '-'],
+                                        ['Birth Address', selectedCustomer.birthAddress || '-'],
+                                        ['Current Address', selectedCustomer.currentAddress || '-'],
                                         ['Facebook Name', selectedCustomer.facebookName || '-'],
                                         ['Telegram Name', selectedCustomer.telegramName || '-'],
-                                        ['Facebook URL', selectedCustomer.urlFb || '-'],
                                     ].map(([label, value]) => (
                                         <div key={label} className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800">
                                             <span className="text-gray-400 block text-[10px] font-semibold mb-0.5">{label}</span>
@@ -384,37 +427,41 @@ const Customer = () => {
                                 </div>
                             </div>
 
-                            {/* Device Details */}
+                            {/* Section 2: Device Details */}
                             <div className="pt-2 border-t border-gray-800">
                                 <h4 className="text-[11px] font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span> Device Information
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span> 📱 Device Hardware Information
                                 </h4>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                     {[
                                         ['Device Model', selectedCustomer.model],
+                                        ['Brand', selectedCustomer.brand || '-'],
                                         ['Serial Number', selectedCustomer.serialNumber],
                                         ['IMEI 1', selectedCustomer.imei1 || '-'],
                                         ['IMEI 2', selectedCustomer.imei2 || '-'],
+                                        ['MEID', selectedCustomer.meid || '-'],
                                         ['Color', selectedCustomer.color || '-'],
-                                        ['Version', selectedCustomer.version || '-'],
+                                        ['Storage / Version', selectedCustomer.version || '-'],
                                     ].map(([label, value]) => (
                                         <div key={label} className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800">
                                             <span className="text-gray-400 block text-[10px] font-semibold mb-0.5">{label}</span>
-                                            <span className="font-semibold text-gray-100 font-mono">{value}</span>
+                                            <span className={`font-semibold ${label === 'MEID' ? 'text-pink-400 font-mono' : label.includes('IMEI') || label.includes('Serial') ? 'text-indigo-300 font-mono' : 'text-gray-100'}`}>
+                                                {value}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Loan Details */}
+                            {/* Section 3: Loan Terms */}
                             <div className="pt-2 border-t border-gray-800">
                                 <h4 className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span> Loan & Financial Terms
+                                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span> 💰 Loan & Financial Agreement
                                 </h4>
                                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                                     {[
-                                        ['Loan Date (កាលបរិច្ឆេទដាក់ស្នើ)', selectedCustomer.inputDate || '-'],
-                                        ['Total Amount', `$${selectedCustomer.amount || selectedCustomer.totalAmount || 0}`],
+                                        ['Loan Date (កាលបរិច្ឆេទ)', selectedCustomer.inputDate || '-'],
+                                        ['Total Loan Amount', `$${totalLoan.toLocaleString()}`],
                                         ['Monthly Installment', `$${selectedCustomer.monthlyPayment}/mo`],
                                         ['Interest Rate', selectedCustomer.interest || '-'],
                                         ['Duration', selectedCustomer.duration || '-'],
@@ -427,10 +474,106 @@ const Customer = () => {
                                 </div>
                             </div>
 
-                            {/* Lock Status */}
+                            {/* Section 4: Complete Payment History (ប្រវត្តិនៃការបង់ប្រាក់ទាំងអស់) */}
+                            <div className="pt-2 border-t border-gray-800 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-[11px] font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-sky-400 rounded-full"></span> 💳 Complete Payment History (ប្រវត្តិនៃការបង់ប្រាក់ទាំងអស់)
+                                    </h4>
+                                    <span className="px-2.5 py-0.5 bg-sky-950 border border-sky-800 text-sky-300 rounded-full text-[10px] font-bold">
+                                        {customerPayments.length} Payment Transactions
+                                    </span>
+                                </div>
+
+                                {/* Financial Summary Bar */}
+                                <div className="p-3 bg-sky-950/30 border border-sky-800/40 rounded-2xl">
+                                    <div className="grid grid-cols-3 gap-3 mb-2 text-center">
+                                        <div className="p-2 bg-gray-900/80 rounded-xl border border-gray-800">
+                                            <span className="text-gray-500 text-[10px] block">Total Loan</span>
+                                            <span className="text-gray-200 font-mono font-bold text-sm">${totalLoan.toLocaleString()}</span>
+                                        </div>
+                                        <div className="p-2 bg-gray-900/80 rounded-xl border border-gray-800">
+                                            <span className="text-gray-500 text-[10px] block">Total Paid So Far</span>
+                                            <span className="text-emerald-400 font-mono font-bold text-sm">${totalPaidSum.toLocaleString()}</span>
+                                        </div>
+                                        <div className="p-2 bg-gray-900/80 rounded-xl border border-gray-800">
+                                            <span className="text-gray-500 text-[10px] block">Remaining Balance</span>
+                                            <span className="text-amber-400 font-mono font-bold text-sm">${remainingBalance.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                    {/* Progress Bar */}
+                                    <div className="w-full bg-gray-900 rounded-full h-2 overflow-hidden border border-gray-800">
+                                        <div className="bg-gradient-to-r from-emerald-500 via-sky-400 to-indigo-500 h-full transition-all duration-500" style={{ width: `${repaymentPct}%` }}></div>
+                                    </div>
+                                    <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                                        <span>Repayment Progress: <strong className="text-emerald-400">{repaymentPct}%</strong></span>
+                                        <span>{totalPaidSum >= totalLoan && totalLoan > 0 ? '🎉 Fully Paid' : `Remaining: $${remainingBalance.toLocaleString()}`}</span>
+                                    </div>
+                                </div>
+
+                                {/* Payment List Table */}
+                                <div className="overflow-x-auto rounded-xl border border-gray-800 bg-gray-950/60 max-h-56 overflow-y-auto">
+                                    <table className="w-full text-left text-xs">
+                                        <thead className="bg-gray-900 text-gray-400 uppercase text-[10px] border-b border-gray-800 sticky top-0">
+                                            <tr>
+                                                <th className="px-3 py-2 text-center">No</th>
+                                                <th className="px-3 py-2">Payment Date</th>
+                                                <th className="px-3 py-2">Amount Paid</th>
+                                                <th className="px-3 py-2">Month / Cycle</th>
+                                                <th className="px-3 py-2">Paid By</th>
+                                                <th className="px-3 py-2">Method / Note</th>
+                                                <th className="px-3 py-2 text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-900 text-gray-200">
+                                            {loadingPayments ? (
+                                                <tr>
+                                                    <td colSpan={7} className="text-center py-4 text-gray-500 italic">
+                                                        Loading payment transactions...
+                                                    </td>
+                                                </tr>
+                                            ) : customerPayments.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={7} className="text-center py-4 text-gray-500 italic">
+                                                        No payment records recorded yet for this customer.
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                customerPayments.map((p, pIdx) => (
+                                                    <tr key={p._id || pIdx} className="hover:bg-sky-900/20 transition-colors">
+                                                        <td className="px-3 py-2 text-center text-gray-500 font-mono">{pIdx + 1}</td>
+                                                        <td className="px-3 py-2 font-mono text-gray-300">
+                                                            {p.paymentDate || p.createdAt?.split('T')[0] || '—'}
+                                                        </td>
+                                                        <td className="px-3 py-2 font-mono font-bold text-emerald-400">
+                                                            ${Number(p.amount || 0).toLocaleString()}
+                                                        </td>
+                                                        <td className="px-3 py-2 font-medium text-gray-300">
+                                                            {p.month || p.cycle || `Installment #${pIdx + 1}`}
+                                                        </td>
+                                                        <td className="px-3 py-2 text-gray-400">
+                                                            {p.paidBy || p.cashier || 'System'}
+                                                        </td>
+                                                        <td className="px-3 py-2 text-gray-400 truncate max-w-[120px]">
+                                                            {p.paymentMethod || p.note || 'Cash / ABA'}
+                                                        </td>
+                                                        <td className="px-3 py-2 text-center">
+                                                            <span className="px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-700/60 rounded-full text-[9px] font-bold">
+                                                                ✓ Paid
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Section 5: Security Lock Status */}
                             <div className="pt-2 border-t border-gray-800">
                                 <h4 className="text-[11px] font-bold text-red-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 bg-red-400 rounded-full"></span> Security Lock Status
+                                    <span className="w-1.5 h-1.5 bg-red-400 rounded-full"></span> 🛡️ Security Lock Status
                                 </h4>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800 flex items-center justify-between">
