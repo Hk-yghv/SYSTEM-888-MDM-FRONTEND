@@ -44,17 +44,14 @@ const Customer = () => {
         const loadPayments = async () => {
             setLoadingPayments(true);
             try {
-                const q = selectedCustomer.contractId || selectedCustomer.serialNumber || selectedCustomer.customerNameEn || '';
-                const res = await fetch(`${API_BASE1}/payments?search=${encodeURIComponent(q)}&limit=100`);
+                if (!selectedCustomer.contractId) {
+                    setCustomerPayments([]);
+                    return;
+                }
+                const res = await fetch(`${API_BASE1}/payments/contract/${encodeURIComponent(selectedCustomer.contractId)}`);
                 if (res.ok) {
                     const data = await res.json();
-                    const all = data.data || [];
-                    const matched = all.filter(p =>
-                        (selectedCustomer.contractId && p.contractId === selectedCustomer.contractId) ||
-                        (selectedCustomer.serialNumber && p.serialNumber === selectedCustomer.serialNumber) ||
-                        (selectedCustomer.customerNameEn && p.customerName === selectedCustomer.customerNameEn)
-                    );
-                    setCustomerPayments(matched.length > 0 ? matched : all);
+                    setCustomerPayments(data.data || []);
                 }
             } catch (err) {
                 console.error('Fetch customer payments error:', err);

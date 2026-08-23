@@ -47,6 +47,8 @@ const Activated = () => {
     });
     const [paymentSubmitting, setPaymentSubmitting] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
+    const [qrPayments, setQrPayments] = useState([]);
+    const [loadingQrPayments, setLoadingQrPayments] = useState(false);
 
     const fetchActivatedContracts = async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
@@ -229,6 +231,8 @@ const Activated = () => {
     const handleOpenQrModal = async (contract) => {
         setSelectedQrContract(contract);
         setPaymentSuccess(false);
+        setQrPayments([]);
+        setLoadingQrPayments(true);
         setPhoneForm({
             paidDate: new Date().toISOString().split('T')[0],
             paidBy: paymentMethods[0] || 'Cash',
@@ -242,8 +246,15 @@ const Activated = () => {
                 setQrPayload(data.payload);
                 setQrDataUrl(data.qrDataUrl);
             }
+            const paymentsRes = await fetch(`${API_BASE1}/payments/contract/${encodeURIComponent(contract.contractId)}`);
+            if (paymentsRes.ok) {
+                const paymentsData = await paymentsRes.json();
+                setQrPayments(paymentsData.data || []);
+            }
         } catch (err) {
             console.error('Error fetching QR payload:', err);
+        } finally {
+            setLoadingQrPayments(false);
         }
     };
 
@@ -268,6 +279,12 @@ const Activated = () => {
                 })
             });
             if (res.ok) {
+                setQrPayments(current => [{
+                    paidDate: phoneForm.paidDate,
+                    paidBy: phoneForm.paidBy,
+                    amount: Number(phoneForm.amount),
+                    description: phoneForm.description
+                }, ...current]);
                 setPaymentSuccess(true);
                 setTimeout(() => {
                     setSelectedQrContract(null);
@@ -706,7 +723,8 @@ const Activated = () => {
                                 <p className="text-xs text-gray-300">Payment record has been stored in MongoDB and updated in Payment History.</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="p-5 rounded-2xl bg-gray-900/80 border border-gray-800 text-center space-y-4 flex flex-col items-center justify-center">
                                     <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Scan ABA Pay / System QR</h4>
                                     {qrDataUrl ? (
@@ -764,6 +782,33 @@ const Activated = () => {
                                             )}
                                         </button>
                                     </form>
+                                </div>
+                                </div>
+
+                                <div className="p-5 rounded-2xl bg-gray-900/80 border border-sky-500/30 space-y-3">
+                                <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+                                    <h4 className="text-xs font-bold text-sky-300 uppercase tracking-wider">Payment History / ប្រវត្តិបង់ប្រាក់</h4>
+                                    <span className="text-[10px] text-gray-400">{qrPayments.length} Transactions</span>
+                                </div>
+                                <div className="max-h-44 overflow-y-auto divide-y divide-gray-800">
+                                    {loadingQrPayments ? (
+                                        <p className="py-4 text-center text-xs text-gray-500">Loading payment history...</p>
+                                    ) : qrPayments.length === 0 ? (
+                                        <p className="py-4 text-center text-xs text-gray-500">No payment records yet.</p>
+                                    ) : qrPayments.map((payment, index) => (
+                                        <div key={payment._id || `${payment.paidDate}-${index}`} className="flex items-center justify-between gap-3 py-2 text-xs">
+                                            <div className="min-w-0">
+                                                <p className="text-gray-300 font-mono">{payment.paidDate || payment.paymentDate || '—'}</p>
+                                                <p className="text-gray-500 truncate">{payment.paidBy || 'System'} · {payment.description || '—'}</p>
+                                            </div>
+                                            <span className="text-emerald-400 font-bold font-mono whitespace-nowrap">${Number(payment.amount || 0).toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex justify-between pt-2 border-t border-gray-800 text-xs font-bold">
+                                    <span className="text-gray-400">Total Paid</span>
+                                    <span className="text-emerald-400 font-mono">${qrPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0).toLocaleString()}</span>
+                                </div>
                                 </div>
                             </div>
                         )}

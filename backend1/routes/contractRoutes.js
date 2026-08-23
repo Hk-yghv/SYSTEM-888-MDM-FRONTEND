@@ -1,6 +1,7 @@
 import express from 'express';
 import QRCode from 'qrcode';
 import Contract from '../models/Contract.js';
+import Payment from '../models/Payment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
@@ -104,6 +105,15 @@ router.get('/customer-info/:contractId', async (req, res) => {
         }
 
         const photoUrl = contract.customerPhoto || contract.googleDrivePhotoUrl || '';
+        let paymentHistory = [];
+        if (isMongoConnected) {
+            paymentHistory = await queryAllDBs(Payment, (M) => M.find({ contractId }).sort({ createdAt: -1 }));
+        } else {
+            paymentHistory = MEM_DB.payments
+                .filter(payment => payment.contractId === contractId)
+                .sort((a, b) => new Date(b.createdAt || b.paidDate) - new Date(a.createdAt || a.paidDate));
+        }
+        const totalPaid = paymentHistory.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
         const today = new Date().toLocaleDateString('km-KH', { year: 'numeric', month: 'long', day: 'numeric' });
 
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -192,6 +202,22 @@ router.get('/customer-info/:contractId', async (req, res) => {
             <div class="item"><div class="lbl">Customer Received ($)</div><div class="val" style="color:#38bdf8">$${contract.monthlyPayment || 0}</div></div>
             <div class="item"><div class="lbl">Interest Rate</div><div class="val">${contract.interest || '—'}</div></div>
             <div class="item"><div class="lbl">Duration</div><div class="val">${contract.duration || '—'}</div></div>
+        </div>
+    </div>
+
+    <!-- Payment History -->
+    <div class="card">
+        <div class="section-title">💳 Payment History / ប្រវត្តិបង់ប្រាក់</div>
+        ${paymentHistory.length > 0 ? paymentHistory.map(payment => `
+            <div class="row">
+                <span class="label">${payment.paidDate || payment.paymentDate || '—'} · ${payment.paidBy || 'System'}</span>
+                <span class="value" style="color:#34d399">$${Number(payment.amount || 0).toLocaleString()}</span>
+            </div>
+            <div style="font-size:11px;color:#64748b;padding:0 0 7px">${payment.description || '—'}</div>
+        `).join('') : '<div style="font-size:12px;color:#64748b;text-align:center;padding:10px">មិនទាន់មានប្រវត្តិបង់ប្រាក់</div>'}
+        <div class="total-paid" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;margin-top:8px">
+            <span style="font-size:12px;color:#64748b;font-weight:700">សរុបបានបង់ (Total Paid)</span>
+            <span style="font-size:16px;color:#10b981;font-weight:900;font-family:monospace">$${totalPaid.toLocaleString()}</span>
         </div>
     </div>
 

@@ -7,6 +7,24 @@ import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 
+// GET complete payment history for one contract
+router.get('/payments/contract/:contractId', async (req, res) => {
+    try {
+        const { contractId } = req.params;
+        let payments;
+        if (isMongoConnected) {
+            payments = await queryAllDBs(Payment, (M) => M.find({ contractId }).sort({ createdAt: -1 }));
+        } else {
+            payments = MEM_DB.payments
+                .filter(payment => payment.contractId === contractId)
+                .sort((a, b) => new Date(b.createdAt || b.paidDate) - new Date(a.createdAt || a.paidDate));
+        }
+        res.json({ data: payments, total: payments.length });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET payments
 router.get('/payments', async (req, res) => {
     try {
