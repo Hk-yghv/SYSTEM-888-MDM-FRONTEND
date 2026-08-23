@@ -136,18 +136,42 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
     useEffect(() => {
         const go = async () => {
-            if (!form.brand) { setModelsList([]); return; }
             try {
-                const res = await fetch(`${API_BASE}/controlsystem?brand=${form.brand}`);
+                const targetBrand = form.brand || user?.brand || '';
+                const res = await fetch(`${API_BASE}/controlsystem?brand=${targetBrand}`);
                 if (res.ok) {
                     const data = await res.json();
-                    const cat = data.droplists?.find(d => d.category === 'Devices');
-                    if (cat) setModelsList(cat.items || []);
+                    const cat = data.droplists?.find(d => 
+                        d.category === 'Device Models' || 
+                        d.category === 'Devices' || 
+                        d.category === 'Models'
+                    );
+                    if (cat && Array.isArray(cat.items) && cat.items.length > 0) {
+                        setModelsList(cat.items);
+                        return;
+                    }
                 }
-            } catch { }
+
+                // Fallback to Global models if brand has no custom models
+                const globalRes = await fetch(`${API_BASE}/controlsystem?brand=`);
+                if (globalRes.ok) {
+                    const gData = await globalRes.json();
+                    const gCat = gData.droplists?.find(d => 
+                        d.category === 'Device Models' || 
+                        d.category === 'Devices' || 
+                        d.category === 'Models'
+                    );
+                    if (gCat && Array.isArray(gCat.items)) {
+                        setModelsList(gCat.items);
+                    }
+                }
+            } catch (err) {
+                console.error('Fetch device models error:', err);
+            }
         };
         go();
-    }, [form.brand, API_BASE]);
+    }, [form.brand, user?.brand, API_BASE]);
+
 
     useEffect(() => {
         if (!open) return;
