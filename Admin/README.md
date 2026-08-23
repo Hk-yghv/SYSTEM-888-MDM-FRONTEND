@@ -37,7 +37,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 <Home /> in header if you click home it go to home page and in route it show (https://project/.vercel.app)
 <About /> in header if you click about it go to about page and in route it show (https://project/about.vercel.app)
-
+,
 ---------------------------------------------------------------------------------------------
 
 --> [` Creat page new `]

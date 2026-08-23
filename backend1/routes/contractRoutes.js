@@ -72,7 +72,7 @@ router.get('/customer-qr-payload/:contractId', async (req, res) => {
 
         if (!contract) return res.status(404).json({ error: 'Customer contract not found' });
 
-        const infoPageUrl = `${req.protocol}://${req.get('host')}/customer-info/${contract.contractId}`;
+        const infoPageUrl = `${req.protocol}://${req.get('host')}/contracts/customer-info/${encodeURIComponent(contract.contractId)}`;
         const qrDataUrl = await QRCode.toDataURL(infoPageUrl);
 
         res.json({ contract, qrDataUrl, infoPageUrl });

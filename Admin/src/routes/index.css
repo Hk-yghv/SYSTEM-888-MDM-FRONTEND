@@ -157,6 +157,27 @@ body, body.light {
     font-weight: 600 !important;
 }
 
+/* Preserve readable light text inside dark detail modals. */
+.dark-modal .text-gray-100 {
+    color: #f1f5f9 !important;
+}
+
+.dark-modal .text-gray-200 {
+    color: #e2e8f0 !important;
+}
+
+.dark-modal .text-gray-300 {
+    color: #cbd5e1 !important;
+}
+
+.dark-modal .text-gray-400 {
+    color: #94a3b8 !important;
+}
+
+.dark-modal .text-gray-500 {
+    color: #64748b !important;
+}
+
 /* Table Design & Vertical Center Alignment */
 table th, table td {
     vertical-align: middle !important;

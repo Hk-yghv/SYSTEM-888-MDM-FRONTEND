@@ -29,6 +29,8 @@ const Customer = () => {
     const [qrCustomer, setQrCustomer] = useState(null);
     const [qrDataUrl, setQrDataUrl] = useState('');
     const [qrInfoPageUrl, setQrInfoPageUrl] = useState('');
+    const [qrLoading, setQrLoading] = useState(false);
+    const [qrError, setQrError] = useState('');
 
     // Customer detail payments history state
     const [customerPayments, setCustomerPayments] = useState([]);
@@ -97,15 +99,24 @@ const Customer = () => {
 
     const handleOpenQrModal = async (customer) => {
         setQrCustomer(customer);
+        setQrDataUrl('');
+        setQrInfoPageUrl('');
+        setQrError('');
+        setQrLoading(true);
         try {
             const res = await fetch(`${API_BASE1}/contracts/customer-qr-payload/${customer.contractId}`);
             if (res.ok) {
                 const data = await res.json();
                 setQrDataUrl(data.qrDataUrl);
                 setQrInfoPageUrl(data.infoPageUrl);
+            } else {
+                setQrError('Unable to generate customer QR code. Please try again.');
             }
         } catch (err) {
             console.error('Fetch Customer QR payload error:', err);
+            setQrError('Unable to connect to the server. Please try again.');
+        } finally {
+            setQrLoading(false);
         }
     };
 
@@ -309,7 +320,7 @@ const Customer = () => {
             {/* Full Customer Detail Modal */}
             {selectedCustomer && (
                 <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
-                    <div className="bg-[#0b0f1e] border border-gray-700 rounded-3xl w-full max-w-4xl shadow-2xl max-h-[92vh] overflow-y-auto">
+                    <div className="dark-modal bg-[#0b0f1e] border border-gray-700 rounded-3xl w-full max-w-4xl shadow-2xl max-h-[92vh] overflow-y-auto">
 
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-5 border-b border-gray-800 sticky top-0 bg-[#0b0f1e] rounded-t-3xl z-10">
@@ -446,9 +457,9 @@ const Customer = () => {
                                         ['Storage / Version', selectedCustomer.version || '-'],
                                     ].map(([label, value]) => (
 
-                                        <div key={label} className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800">
+                                        <div key={label} className="p-2.5 bg-[#151928] rounded-xl border border-gray-700">
                                             <span className="text-gray-400 block text-[10px] font-semibold mb-0.5">{label}</span>
-                                            <span className={`font-semibold ${label === 'MEID' ? 'text-pink-400 font-mono' : label.includes('IMEI') || label.includes('Serial') ? 'text-indigo-300 font-mono' : 'text-gray-100'}`}>
+                                            <span className={`font-semibold ${label === 'MEID' ? 'text-pink-400 font-mono' : label.includes('IMEI') || label.includes('Serial') ? 'text-sky-300 font-mono' : 'text-gray-100'}`}>
                                                 {value}
                                             </span>
                                         </div>
@@ -614,7 +625,7 @@ const Customer = () => {
             {/* Customer Profile QR Code Modal */}
             {qrCustomer && (
                 <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[999999] p-4">
-                    <div className="bg-[#0b0f1e] border border-indigo-500/40 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden p-6 text-center space-y-4">
+                    <div className="dark-modal bg-[#0b0f1e] border border-indigo-500/40 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden p-6 text-center space-y-4">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider">
                                 <FaQrcode className="text-base" />
@@ -641,9 +652,13 @@ const Customer = () => {
                         <div className="bg-white p-4 rounded-2xl border-4 border-indigo-500/20 inline-block mx-auto shadow-inner">
                             {qrDataUrl ? (
                                 <img src={qrDataUrl} alt="Customer QR Code" className="w-48 h-48 mx-auto" />
+                            ) : qrError ? (
+                                <div className="w-48 h-48 flex items-center justify-center text-red-500 text-xs font-semibold text-center p-4">
+                                    {qrError}
+                                </div>
                             ) : (
-                                <div className="w-48 h-48 flex items-center justify-center text-gray-400 text-xs font-semibold animate-pulse">
-                                    Generating QR Code...
+                                <div className="w-48 h-48 flex items-center justify-center text-gray-600 text-xs font-semibold animate-pulse">
+                                    {qrLoading ? 'Generating QR Code...' : 'QR code unavailable'}
                                 </div>
                             )}
                         </div>
@@ -655,7 +670,8 @@ const Customer = () => {
                         <div className="pt-2 flex gap-2">
                             <button
                                 onClick={() => window.open(qrInfoPageUrl, '_blank')}
-                                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md"
+                                disabled={!qrInfoPageUrl}
+                                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-md"
                             >
                                 Open Profile Link ↗
                             </button>
