@@ -13,30 +13,30 @@ const MarkdownMessage = ({ text = '' }) => {
     let tableRows = [];
 
     const formatInline = (str = '') => {
-        let formatted = str.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#e0e7ff;font-weight:700">$1</strong>');
-        formatted = formatted.replace(/\`([^\`]+)\`/g, '<code style="padding:1px 6px;background:#fff;border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;border-radius:4px;font-family:monospace;font-size:11px">$1</code>');
-        return <span dangerouslySetInnerHTML={{ __html: formatted }} />;
+        let formatted = str.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffffff;font-weight:700">$1</strong>');
+        formatted = formatted.replace(/\`([^\`]+)\`/g, '<code style="padding:2px 6px;background:#242c4a;border:1px solid rgba(99,102,241,0.5);color:#ffffff;border-radius:4px;font-family:monospace;font-size:11px;font-weight:600">$1</code>');
+        return <span style={{ color: '#ffffff' }} dangerouslySetInnerHTML={{ __html: formatted }} />;
     };
 
     const flushTable = (key) => {
         if (tableRows.length > 0 || tableHeader.length > 0) {
             elements.push(
-                <div key={`table-${key}`} className="my-2.5 overflow-x-auto rounded-xl border border-indigo-500/20 bg-gray-950/80 shadow-md">
-                    <table className="w-full text-left text-xs border-collapse">
+                <div key={`table-${key}`} className="my-2.5 overflow-x-auto rounded-xl border border-indigo-500/30 bg-gray-950/90 shadow-md">
+                    <table className="w-full text-left text-xs border-collapse" style={{ color: '#ffffff' }}>
                         {tableHeader.length > 0 && (
-                            <thead className="bg-indigo-950/60 text-indigo-200 font-bold border-b border-indigo-800/40">
+                            <thead className="bg-indigo-950/80 font-bold border-b border-indigo-700/50">
                                 <tr>
                                     {tableHeader.map((th, i) => (
-                                        <th key={i} className="px-3 py-2 whitespace-nowrap text-indigo-300 font-semibold">{formatInline(th.trim())}</th>
+                                        <th key={i} className="px-3 py-2 whitespace-nowrap font-bold" style={{ color: '#ffffff' }}>{formatInline(th.trim())}</th>
                                     ))}
                                 </tr>
                             </thead>
                         )}
-                        <tbody className="divide-y divide-gray-800 text-gray-200 font-medium">
+                        <tbody className="divide-y divide-gray-800 font-medium">
                             {tableRows.map((row, rIdx) => (
-                                <tr key={rIdx} className="hover:bg-indigo-900/20 transition-colors">
+                                <tr key={rIdx} className="hover:bg-indigo-900/30 transition-colors">
                                     {row.map((cell, cIdx) => (
-                                        <td key={cIdx} className="px-3 py-1.5 whitespace-nowrap">{formatInline(cell.trim())}</td>
+                                        <td key={cIdx} className="px-3 py-2 whitespace-nowrap" style={{ color: '#ffffff' }}>{formatInline(cell.trim())}</td>
                                     ))}
                                 </tr>
                             ))}
@@ -71,31 +71,31 @@ const MarkdownMessage = ({ text = '' }) => {
 
         if (trimmed.startsWith('### ')) {
             elements.push(
-                <h3 key={idx} className="text-xs font-black text-indigo-300 mt-2.5 mb-1 pb-1 border-b border-indigo-800/50 flex items-center gap-1.5">
+                <h3 key={idx} className="text-xs font-black mt-3 mb-1.5 pb-1 border-b border-indigo-800/60 flex items-center gap-1.5" style={{ color: '#ffffff' }}>
                     {formatInline(trimmed.replace('### ', ''))}
                 </h3>
             );
         } else if (trimmed.startsWith('## ')) {
             elements.push(
-                <h2 key={idx} className="text-sm font-black text-indigo-200 mt-3 mb-1">
+                <h2 key={idx} className="text-sm font-black mt-3.5 mb-1.5" style={{ color: '#ffffff' }}>
                     {formatInline(trimmed.replace('## ', ''))}
                 </h2>
             );
         } else if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
             elements.push(
-                <div key={idx} className="flex items-start gap-1.5 text-xs text-gray-100 my-0.5 leading-relaxed">
+                <div key={idx} className="flex items-start gap-1.5 text-xs my-1 leading-relaxed" style={{ color: '#ffffff' }}>
                     <span className="text-indigo-400 mt-1 text-[9px]">•</span>
-                    <div className="flex-1">{formatInline(trimmed.substring(2))}</div>
+                    <div className="flex-1" style={{ color: '#ffffff' }}>{formatInline(trimmed.substring(2))}</div>
                 </div>
             );
         } else if (trimmed.startsWith('> ')) {
             elements.push(
-                <blockquote key={idx} className="border-l-2 border-indigo-500 pl-2.5 py-1.5 my-2 bg-indigo-950/40 rounded-r-xl text-indigo-200 text-xs italic">
+                <blockquote key={idx} className="border-l-2 border-indigo-400 pl-2.5 py-1.5 my-2 bg-indigo-950/50 rounded-r-xl text-xs italic" style={{ color: '#ffffff' }}>
                     {formatInline(trimmed.substring(2))}
                 </blockquote>
             );
         } else if (trimmed.length > 0) {
-            elements.push(<p key={idx} className="text-xs text-gray-200 my-1 leading-relaxed font-khmer">{formatInline(trimmed)}</p>);
+            elements.push(<p key={idx} className="text-xs my-1 leading-relaxed font-khmer" style={{ color: '#ffffff' }}>{formatInline(trimmed)}</p>);
         }
     });
 
@@ -103,8 +103,9 @@ const MarkdownMessage = ({ text = '' }) => {
         flushTable('last');
     }
 
-    return <div className="space-y-0.5">{elements}</div>;
+    return <div className="space-y-0.5" style={{ color: '#ffffff' }}>{elements}</div>;
 };
+
 
 const AIAssistantDrawer = () => {
     const { user, API_BASE3 } = useAuth();
@@ -346,15 +347,19 @@ const AIAssistantDrawer = () => {
                                                 <FaRobot />
                                             </div>
                                         )}
-                                        <div className={`max-w-[86%] rounded-2xl p-3.5 text-xs shadow-xl relative group transition-all ${isUser
-                                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-xs border border-indigo-400/20'
-                                                : 'bg-[#1a1f35] border border-indigo-500/30 text-gray-100 rounded-tl-xs'
-                                            }`}>
+                                        <div 
+                                            style={{ color: '#ffffff' }}
+                                            className={`max-w-[86%] rounded-2xl p-3.5 text-xs shadow-xl relative group transition-all text-white ${isUser
+                                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 rounded-tr-xs border border-indigo-400/20'
+                                                : 'bg-[#1a1f35] border border-indigo-500/30 rounded-tl-xs'
+                                            }`}
+                                        >
                                             {isUser ? (
-                                                <p className="whitespace-pre-wrap leading-relaxed font-khmer">{msg.text}</p>
+                                                <p className="whitespace-pre-wrap leading-relaxed font-khmer text-white" style={{ color: '#ffffff' }}>{msg.text}</p>
                                             ) : (
                                                 <MarkdownMessage text={msg.text} />
                                             )}
+
 
                                             <div className={`flex items-center justify-between text-[10px] mt-2 pt-1.5 border-t ${isUser ? 'border-indigo-400/30 text-indigo-200' : 'border-gray-800/80 text-gray-400'}`}>
                                                 <span className="font-mono text-[9px] opacity-75">{msg.timestamp}</span>
