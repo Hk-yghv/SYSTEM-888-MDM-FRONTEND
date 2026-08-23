@@ -14,8 +14,8 @@ const Header = ({ onOpenAI }) => {
     const { user, logout, API_BASE } = useAuth();
     const navigate = useNavigate();
 
-    // Outstanding Balance State
-    const [balance, setBalance] = useState({ totalLoanAmount: 0, totalRevenue: 0, outstandingBalance: 0 });
+    // Financial summary state
+    const [balance, setBalance] = useState({ totalLoanAmount: 0, totalRevenue: 0 });
 
     const fetchBalance = async () => {
         try {
@@ -26,7 +26,8 @@ const Header = ({ onOpenAI }) => {
                 setBalance({
                     totalLoanAmount: data.totalLoanAmount || 0,
                     totalRevenue: data.totalRevenue || 0,
-                    outstandingBalance: data.outstandingBalance || 0
+                    totalLoanAmount: data.totalLoanAmount || 0,
+                    totalRevenue: data.totalRevenue || 0
                 });
             }
         } catch { }
@@ -58,7 +59,7 @@ const Header = ({ onOpenAI }) => {
                     </h1>
                 </Link>
 
-                {/* ─── Outstanding Balance Widget ─── */}
+                {/* ─── Financial Summary Widget ─── */}
                 <div className='hidden lg:flex items-center gap-3 pl-4 border-l border-slate-200'>
                     {/* Loan */}
                     <div className='flex flex-col items-center px-3 py-1 rounded-xl bg-slate-50 border border-slate-200/80'>
@@ -70,10 +71,10 @@ const Header = ({ onOpenAI }) => {
                         <span className='text-[9px] font-bold text-emerald-600 uppercase tracking-wider'>Collected</span>
                         <span className='text-sm font-black text-emerald-700 font-mono leading-tight'>${balance.totalRevenue.toLocaleString()}</span>
                     </div>
-                    {/* Outstanding */}
+                    {/* Total requested */}
                     <div className='flex flex-col items-center px-3 py-1 rounded-xl bg-amber-50 border border-amber-200/80'>
-                        <span className='text-[9px] font-bold text-amber-600 uppercase tracking-wider'>Outstanding</span>
-                        <span className='text-sm font-black text-amber-700 font-mono leading-tight'>${balance.outstandingBalance.toLocaleString()}</span>
+                        <span className='text-[9px] font-bold text-amber-600 uppercase tracking-wider'>Requested</span>
+                        <span className='text-sm font-black text-amber-700 font-mono leading-tight'>${balance.totalLoanAmount.toLocaleString()}</span>
                     </div>
                 </div>
             </div>

@@ -115,7 +115,8 @@ router.get('/payments/qr-payload/:contractId', async (req, res) => {
             suggestedAmount: contract.monthlyPayment
         };
 
-        const paymentPageUrl = `${req.protocol}://${req.get('host')}/pay/${contract.contractId}`;
+        const publicBaseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
+        const paymentPageUrl = `${publicBaseUrl.replace(/\/$/, '')}/pay/${encodeURIComponent(contract.contractId)}`;
         const qrDataUrl = await QRCode.toDataURL(paymentPageUrl);
         res.json({ payload: payloadData, qrDataUrl, paymentPageUrl });
     } catch (err) {
@@ -128,9 +129,13 @@ router.get('/payments/qr-payload/:contractId', async (req, res) => {
 router.get('/pay/:contractId', async (req, res) => {
     try {
         const { contractId } = req.params;
-        let contract = isMongoConnected
-            ? await Contract.findOne({ contractId })
-            : MEM_DB.contracts.find(c => c.contractId === contractId);
+        let contract = null;
+        if (isMongoConnected) {
+            const contracts = await queryAllDBs(Contract, (M) => M.find({ contractId }));
+            contract = contracts[0] || null;
+        } else {
+            contract = MEM_DB.contracts.find(c => c.contractId === contractId);
+        }
 
         if (!contract) {
             return res.status(404).send(`
@@ -356,20 +361,12 @@ router.get('/pay/:contractId', async (req, res) => {
             };
 
             try {
-                // Try /api/payments first, fallback to /payments
-                let res = await fetch('/api/payments', {
+                // This page is public, so use the public payment route directly.
+                const res = await fetch('/payments', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
-                if (!res.ok) {
-                    res = await fetch('/payments', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                }
 
                 closeConfirmModal();
                 confirmBtn.innerText = 'យល់ព្រមបង់';

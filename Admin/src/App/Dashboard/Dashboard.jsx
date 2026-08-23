@@ -237,10 +237,10 @@ const Dashboard = () => {
     const loanOutAmt = stats.totalLoanAmount || 0;                    // ប្រាក់ LOAN ចេញ (amount)
     const weCollectedAmt = stats.totalRevenue || 0;                   // ទឹកប្រាក់ដែលយើងទទួល (payments)
     const totalBorrowers = stats.totalBorrowers || stats.totalContracts || 0; // ចំនួនភ្ញៀវខ្ចី
-    const netProfitLoss = weCollectedAmt - loanOutAmt;                // ចំណេញ/ខាត (collected - loan out)
+    const netProfitLoss = weCollectedAmt - customerReceivedAmt;       // ចំណេញ/ខាត (collected - customer received)
     const outstandingBal = stats.outstandingBalance || 0;             // ប្រាក់ជំពាក់
-    const profitPct = loanOutAmt > 0 ? ((netProfitLoss / loanOutAmt) * 100).toFixed(1) : '0.0';
-    const collectionPct = loanOutAmt > 0 ? Math.round((weCollectedAmt / loanOutAmt) * 100) : 0;
+    const profitPct = customerReceivedAmt > 0 ? ((netProfitLoss / customerReceivedAmt) * 100).toFixed(1) : '0.0';
+    const collectionPct = customerReceivedAmt > 0 ? Math.round((weCollectedAmt / customerReceivedAmt) * 100) : 0;
     const outstandingPct = loanOutAmt > 0 ? Math.round((outstandingBal / loanOutAmt) * 100) : 0;
     const isProfit = netProfitLoss >= 0;
     const isAdmin = user?.role === 'Administrator';
@@ -281,7 +281,7 @@ const Dashboard = () => {
                 const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
                 const key = d.toISOString().split('T')[0];
                 const label = i === 0 ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
-                daysMap[key] = { label, dateKey: key, revenue: 0, loan: 0, profit: 0, entry: 0, exit: 0 };
+                daysMap[key] = { label, dateKey: key, revenue: 0, loan: 0, customerReceived: 0, profit: 0, entry: 0, exit: 0 };
             }
 
             filteredContracts.forEach(c => {
@@ -290,6 +290,7 @@ const Dashboard = () => {
                     if (c.status === 'Activated') {
                         daysMap[dKey].entry += 1;
                         daysMap[dKey].loan += (Number(c.amount) || 0);
+                        daysMap[dKey].customerReceived += (Number(c.monthlyPayment) || 0);
                     } else if (c.status === 'Redeem') {
                         daysMap[dKey].exit += 1;
                     }
@@ -305,7 +306,7 @@ const Dashboard = () => {
 
             return Object.values(daysMap).map(d => ({
                 ...d,
-                profit: d.revenue - d.loan
+                profit: d.revenue - d.customerReceived
             }));
 
         } else if (timeRange === 'monthly') {
@@ -315,7 +316,7 @@ const Dashboard = () => {
                 d.setMonth(d.getMonth() - i);
                 const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                 const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-                monthMap[mKey] = { label, monthKey: mKey, revenue: 0, loan: 0, profit: 0, entry: 0, exit: 0 };
+                monthMap[mKey] = { label, monthKey: mKey, revenue: 0, loan: 0, customerReceived: 0, profit: 0, entry: 0, exit: 0 };
             }
 
             filteredContracts.forEach(c => {
@@ -324,6 +325,7 @@ const Dashboard = () => {
                     if (c.status === 'Activated') {
                         monthMap[dKey].entry += 1;
                         monthMap[dKey].loan += (Number(c.amount) || 0);
+                        monthMap[dKey].customerReceived += (Number(c.monthlyPayment) || 0);
                     } else if (c.status === 'Redeem') {
                         monthMap[dKey].exit += 1;
                     }
@@ -339,7 +341,7 @@ const Dashboard = () => {
 
             return Object.values(monthMap).map(m => ({
                 ...m,
-                profit: m.revenue - m.loan
+                profit: m.revenue - m.customerReceived
             }));
 
         } else if (timeRange === 'yearly') {
@@ -347,7 +349,7 @@ const Dashboard = () => {
             const curYear = new Date().getFullYear();
             [curYear - 2, curYear - 1, curYear].forEach(yr => {
                 const yKey = String(yr);
-                yearMap[yKey] = { label: yKey, yearKey: yKey, revenue: 0, loan: 0, profit: 0, entry: 0, exit: 0 };
+                yearMap[yKey] = { label: yKey, yearKey: yKey, revenue: 0, loan: 0, customerReceived: 0, profit: 0, entry: 0, exit: 0 };
             });
 
             filteredContracts.forEach(c => {
@@ -356,6 +358,7 @@ const Dashboard = () => {
                     if (c.status === 'Activated') {
                         yearMap[yKey].entry += 1;
                         yearMap[yKey].loan += (Number(c.amount) || 0);
+                        yearMap[yKey].customerReceived += (Number(c.monthlyPayment) || 0);
                     } else if (c.status === 'Redeem') {
                         yearMap[yKey].exit += 1;
                     }
@@ -371,22 +374,21 @@ const Dashboard = () => {
 
             return Object.values(yearMap).map(y => ({
                 ...y,
-                profit: y.revenue - y.loan
+                profit: y.revenue - y.customerReceived
             }));
 
         } else {
             const totalLoan = filteredContracts.filter(c => c.status === 'Activated').reduce((s, c) => s + (Number(c.amount) || 0), 0);
+            const totalCustomerReceived = filteredContracts.filter(c => c.status === 'Activated').reduce((s, c) => s + (Number(c.monthlyPayment) || 0), 0);
             const totalRev = filteredPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-            const totalProfit = totalRev - totalLoan;
+            const totalProfit = totalRev - totalCustomerReceived;
             const totalEntry = filteredContracts.filter(c => c.status === 'Activated').length;
             const totalExit = filteredContracts.filter(c => c.status === 'Redeem').length;
-            const totalBal = Math.max(totalLoan - totalRev, 0);
-
             return [
                 { label: 'Loan Disbursed', amount: totalLoan, color: 'bg-blue-600', text: 'text-blue-700', type: 'financial', entry: 0, exit: 0 },
                 { label: 'Revenue Collected', amount: totalRev, color: 'bg-emerald-600', text: 'text-emerald-700', type: 'financial', entry: 0, exit: 0 },
                 { label: totalProfit >= 0 ? 'Net Profit' : 'Net Loss', amount: Math.abs(totalProfit), color: totalProfit >= 0 ? 'bg-teal-600' : 'bg-red-600', text: totalProfit >= 0 ? 'text-teal-700' : 'text-red-700', type: 'financial', entry: 0, exit: 0 },
-                { label: 'Outstanding Balance', amount: totalBal, color: 'bg-amber-500', text: 'text-amber-700', type: 'financial', entry: 0, exit: 0 },
+                { label: 'Total Requested Amount', amount: totalLoan, color: 'bg-amber-500', text: 'text-amber-700', type: 'financial', entry: 0, exit: 0 },
                 { label: 'Entry Customers', amount: totalEntry, color: 'bg-indigo-600', text: 'text-indigo-700', type: 'count', entry: totalEntry, exit: 0 },
                 { label: 'Exit Redeemed', amount: totalExit, color: 'bg-purple-600', text: 'text-purple-700', type: 'count', entry: 0, exit: totalExit }
             ];
@@ -484,7 +486,7 @@ const Dashboard = () => {
                     <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
                         <span className="text-emerald-700 block text-[11px] uppercase font-bold tracking-wide">ទឹកប្រាក់ដែលយើងទទួល</span>
                         <span className="text-2xl font-black font-mono block mt-1 text-emerald-700">${weCollectedAmt.toLocaleString()}</span>
-                        <span className="text-[10px] text-emerald-600 font-semibold mt-1 block">Total Collected ({collectionPct}% of Loan)</span>
+                        <span className="text-[10px] text-emerald-600 font-semibold mt-1 block">Total Collected ({collectionPct}% of Customer Received)</span>
                         <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-emerald-100">
                             <span className="text-[10px] text-emerald-500 font-medium">{stats.paymentCount} Transactions</span>
                             <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">{collectionPct}%</span>
@@ -511,21 +513,21 @@ const Dashboard = () => {
                         }`}>
                             <span className={`text-[10px] font-medium ${
                                 isProfit ? 'text-teal-500' : 'text-red-400'
-                            }`}>{isProfit ? 'Revenue > Loan Out' : 'Loss: Below loan'}</span>
+                            }`}>{isProfit ? 'Collected > Customer Received' : 'Loss: Below customer received'}</span>
                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                                 isProfit ? 'bg-teal-100 text-teal-700' : 'bg-red-100 text-red-700'
                             }`}>{isProfit ? '+' : ''}{profitPct}%</span>
                         </div>
                     </div>
 
-                    {/* Card 4: Outstanding Balance */}
+                    {/* Card 4: Total Requested Amount */}
                     <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
-                        <span className="text-amber-700 block text-[11px] uppercase font-bold tracking-wide">ប្រាក់ជំពាក់នៅសេសសល់</span>
-                        <span className="text-2xl font-black font-mono block mt-1 text-amber-700">${outstandingBal.toLocaleString()}</span>
-                        <span className="text-[10px] text-amber-600 font-semibold mt-1 block">Outstanding Balance</span>
+                        <span className="text-amber-700 block text-[11px] uppercase font-bold tracking-wide">ទឹកប្រាក់សរុបដែលភ្ញៀវដាក់ស្នើ</span>
+                        <span className="text-2xl font-black font-mono block mt-1 text-amber-700">${loanOutAmt.toLocaleString()}</span>
+                        <span className="text-[10px] text-amber-600 font-semibold mt-1 block">Total Requested Amount</span>
                         <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-amber-100">
-                            <span className="text-[10px] text-amber-500 font-medium">Pending collection</span>
-                            <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-full">{outstandingPct}%</span>
+                            <span className="text-[10px] text-amber-500 font-medium">Loan Out</span>
+                            <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-full">{totalBorrowers} Loans</span>
                         </div>
                     </div>
                 </div>
@@ -553,7 +555,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex gap-4 mt-1 text-[10px] text-slate-600 font-semibold">
                             <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500 rounded-sm" />Collected ${weCollectedAmt.toLocaleString()}</span>
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-blue-300 rounded-sm" />Remaining ${outstandingBal.toLocaleString()}</span>
+                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-blue-300 rounded-sm" />Customer Received ${customerReceivedAmt.toLocaleString()}</span>
                         </div>
                     </div>
                     {/* Profit/Loss Bar */}
