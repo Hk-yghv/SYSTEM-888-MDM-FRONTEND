@@ -75,29 +75,93 @@ router.get('/all-brands', async (req, res) => {
     }
 });
 
-// GET control system config
+// Helper to retrieve Global configurations across DBs
+async function getGlobalConfigs() {
+    if (!isMongoConnected) return MEM_DB.controlSystem || {};
+    const globalDocs = await queryAllDBs(ControlSystem, (M) => M.find({ $or: [{ brand: '' }, { brand: 'Global' }, { brand: { $exists: false } }, { brand: null }] }));
+    const mapped = {};
+    globalDocs.forEach(c => {
+        if (c.key && mapped[c.key] === undefined) {
+            mapped[c.key] = c.value;
+        }
+    });
+    return mapped;
+}
+
+// GET control system config (Auto-inherits Global settings if brand has no custom config)
 router.get('/', async (req, res) => {
     try {
-        const brand = req.query.brand || '';
+        const brand = (req.query.brand || '').trim();
+        const globalConfigs = await getGlobalConfigs();
+
         if (isMongoConnected) {
-            const allConfigs = await queryAllDBs(ControlSystem, (M) => M.find({ brand }));
-            let configs = allConfigs;
-            if (configs.length === 0 && brand) {
-                configs = await queryAllDBs(ControlSystem, (M) => M.find({ brand: '' })).then(r => r) || [];
+            if (!brand || brand === 'Global') {
+                return res.json(globalConfigs);
             }
-            const mapped = {};
-            configs.forEach(c => mapped[c.key] = c.value);
-            if (Object.keys(mapped).length > 0) return res.json(mapped);
+
+            // Fetch brand specific configs
+            const brandDocs = await queryAllDBs(ControlSystem, (M) => M.find({ brand }));
+            const brandMapped = {};
+            brandDocs.forEach(c => {
+                if (c.key && brandMapped[c.key] === undefined) {
+                    brandMapped[c.key] = c.value;
+                }
+            });
+
+            // Merge with Global configurations so any missing key inherits from Global
+            const merged = { ...globalConfigs, ...brandMapped };
+
+            // If brand had 0 configs, auto-persist cloned Global configs for this brand in DB
+            if (brandDocs.length === 0 && Object.keys(globalConfigs).length > 0) {
+                const ControlSystemWrite = getWriteModel(ControlSystem) || ControlSystem;
+                for (const [key, value] of Object.entries(globalConfigs)) {
+                    await ControlSystemWrite.findOneAndUpdate(
+                        { key, brand },
+                        { key, brand, value },
+                        { upsert: true, new: true, setDefaultsOnInsert: true }
+                    ).catch(() => {});
+                }
+            }
+
+            return res.json(merged);
         }
 
         if (!MEM_DB.controlSystems) {
             MEM_DB.controlSystems = [{ brand: '', ...MEM_DB.controlSystem }];
         }
         let memConfig = MEM_DB.controlSystems.find(c => c.brand === brand);
-        if (!memConfig) memConfig = MEM_DB.controlSystems.find(c => c.brand === '') || MEM_DB.controlSystem;
+        if (!memConfig) {
+            memConfig = { brand, ...(MEM_DB.controlSystems.find(c => c.brand === '') || MEM_DB.controlSystem) };
+            MEM_DB.controlSystems.push(memConfig);
+        }
         res.json(memConfig);
     } catch (err) {
+        console.error('Error fetching control system config:', err);
         res.json(MEM_DB.controlSystem);
+    }
+});
+
+// POST /clone-global: Clones Global configurations into a target brand
+router.post('/clone-global', async (req, res) => {
+    try {
+        const { brand } = req.body;
+        if (!brand) return res.status(400).json({ error: 'Target brand is required' });
+
+        const globalConfigs = await getGlobalConfigs();
+        if (isMongoConnected) {
+            const ControlSystemWrite = getWriteModel(ControlSystem) || ControlSystem;
+            for (const [key, value] of Object.entries(globalConfigs)) {
+                await ControlSystemWrite.findOneAndUpdate(
+                    { key, brand },
+                    { key, brand, value },
+                    { upsert: true, new: true, setDefaultsOnInsert: true }
+                ).catch(() => {});
+            }
+        }
+        res.json({ success: true, message: `Global settings cloned to brand '${brand}' successfully!` });
+    } catch (err) {
+        console.error('Error cloning global settings to brand:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -105,7 +169,8 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const { key, value, brand, configs } = req.body;
-        const targetBrand = brand || '';
+        const targetBrand = brand === 'Global' ? '' : (brand || '');
+
 
         const updates = Array.isArray(configs)
             ? configs

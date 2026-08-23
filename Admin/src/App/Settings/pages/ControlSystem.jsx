@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { IoIosSettings } from 'react-icons/io';
-import { MdOutlineSync, MdAddCircle, MdDelete, MdSave } from 'react-icons/md';
-import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup } from 'react-icons/fa';
+import { MdOutlineSync, MdAddCircle, MdDelete, MdSave, MdOutlineSettingsBackupRestore } from 'react-icons/md';
+import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup, FaGlobeAmericas } from 'react-icons/fa';
+
+
 
 const ControlSystem = () => {
     const { t } = useLanguage();
@@ -143,7 +145,7 @@ const ControlSystem = () => {
         setBrandsList(updatedBrands);
         setNewBrandInput('');
 
-        // Persist into Global droplists 'Brands' category
+        // Persist into Global droplists 'Brands' category & auto-clone Global config into this new brand
         setSaving(true);
         setMessage('');
         try {
@@ -164,21 +166,51 @@ const ControlSystem = () => {
             } else {
                 globalDroplists.push({ category: 'Brands', items: updatedBrands });
             }
-            const saveRes = await fetch(`${API_BASE}/controlsystem`, {
+            await fetch(`${API_BASE}/controlsystem`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key: 'droplists', value: globalDroplists, brand: '' })
             });
+
+            // Auto-clone all Global configs to the new Brand so it is never empty
+            await fetch(`${API_BASE}/controlsystem/clone-global`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brand: name })
+            });
+
             setSaving(false);
-            if (saveRes.ok) {
-                setMessage(`Brand '${name}' added to Global Config successfully!`);
-                setTimeout(() => setMessage(''), 3000);
-            }
+            setMessage(`Brand '${name}' ត្រូវបានបង្កើត និងចម្លងរាល់ការកំណត់ពី Global ដោយស្វ័យប្រវត្តិកុំឱ្យទទេ! (Created & Auto-populated from Global)`);
+            setTimeout(() => setMessage(''), 4500);
         } catch (err) {
             setSaving(false);
             console.error('Add brand error:', err);
         }
     };
+
+    const handleCloneFromGlobal = async () => {
+        if (!selectedBrand) return;
+        if (!window.confirm(`តើអ្នកពិតជាចង់ចម្លងរាល់ការកំណត់ពី Global មកជំនួសការកំណត់របស់ Brand '${selectedBrand}' ដែរឬទេ?`)) return;
+        setSaving(true);
+        setMessage('');
+        try {
+            const res = await fetch(`${API_BASE}/controlsystem/clone-global`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brand: selectedBrand })
+            });
+            setSaving(false);
+            if (res.ok) {
+                setMessage(`បានចម្លងការកំណត់ពី Global មក Brand '${selectedBrand}' ដោយជោគជ័យ!`);
+                fetchControlSystemConfigs();
+                setTimeout(() => setMessage(''), 4000);
+            }
+        } catch (err) {
+            setSaving(false);
+            console.error('Clone global error:', err);
+        }
+    };
+
 
     const [deleteBrandModal, setDeleteBrandModal] = useState({ open: false, brandName: '' });
 
@@ -287,20 +319,36 @@ const ControlSystem = () => {
 
             {user?.role === 'Administrator' ? (
                 <div className="p-4 bg-[#0f1426]/90 border border-gray-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-md">
-                    <span className="font-bold text-gray-200 flex items-center gap-1.5">
-                        Select Brand Tenant Settings to Configure (កំណត់ការកំណត់តាម Brand):
-                    </span>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <FaGlobeAmericas className="text-indigo-400 text-sm" />
+                        <span className="font-bold text-gray-200">
+                            Select Brand to Configure (កំណត់ការកំណត់តាម Brand):
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2.5 flex-wrap">
                         <select
                             value={selectedBrand}
                             onChange={(e) => setSelectedBrand(e.target.value)}
-                            className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer"
+                            className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer outline-none focus:border-indigo-500"
                         >
-                            <option value="">Global Config (Global / Default)</option>
+                            <option value="">🌐 Global Config (Master Default Template)</option>
                             {brandsList.map((br, idx) => (
-                                <option key={idx} value={br}>{br} Tenant Settings</option>
+                                <option key={idx} value={br}>🏷️ {br} Settings</option>
                             ))}
                         </select>
+
+                        {selectedBrand && (
+                            <button
+                                type="button"
+                                onClick={handleCloneFromGlobal}
+                                disabled={saving}
+                                className="px-3 py-2 bg-indigo-900/60 hover:bg-indigo-700 text-indigo-200 hover:text-white rounded-xl text-xs font-bold transition-all border border-indigo-600/50 flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                title="Copy all current Global configurations into this brand"
+                            >
+                                <MdOutlineSettingsBackupRestore className="text-sm" />
+                                <span>ចម្លងពី Global (Sync from Global)</span>
+                            </button>
+                        )}
                     </div>
                 </div>
             ) : (
@@ -308,6 +356,7 @@ const ControlSystem = () => {
                     <span>Configuring tenant settings for brand: <span className="font-bold text-white">{selectedBrand || 'Global'}</span></span>
                 </div>
             )}
+
 
             {message && (
                 <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs font-semibold animate-fade-in">
