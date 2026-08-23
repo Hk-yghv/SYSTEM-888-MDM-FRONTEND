@@ -8,6 +8,8 @@ import CopyCell from '../../../components/CopyCell';
 import CreateApplication from '../components/CreateApplication';
 import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import { formatIMEI } from '../../../utils/imeiFormatter';
+
 
 const Application = () => {
     const { t } = useLanguage();
@@ -340,12 +342,17 @@ const Application = () => {
                         {/* Device Info */}
                         <div className="space-y-2 pt-2 border-t border-gray-800">
                             <h4 className="text-xs font-bold text-purple-300 uppercase">Device Details</h4>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                                 <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Model</span><span className="font-bold text-gray-100">{infoData.model}</span></div>
                                 <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Serial Number</span><span className="font-mono font-bold text-indigo-300">{infoData.serialNumber}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 1</span><span className="font-mono text-gray-300">{infoData.imei1 || '-'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Color / Ver</span><span className="text-gray-300">{infoData.color || '-'} / {infoData.version || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 1</span><span className="font-mono text-gray-100 font-bold">{formatIMEI(infoData.imei1)}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 2</span><span className="font-mono text-gray-100 font-bold">{formatIMEI(infoData.imei2)}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">MEID</span><span className="font-mono text-pink-400 font-bold">{infoData.meid || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Version / OS</span><span className="text-indigo-300 font-bold">{infoData.version || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Color</span><span className="text-gray-200">{infoData.color || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Brand</span><span className="text-purple-300 font-bold">{infoData.brand || '—'}</span></div>
                             </div>
+
                         </div>
 
                         {/* Loan Info */}

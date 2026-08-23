@@ -1,43 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
-import { MdOutlinePhoneIphone, MdOutlineSync, MdPictureAsPdf } from "react-icons/md";
-import { FaMobileAlt, FaLock, FaUnlock, FaFileExcel } from "react-icons/fa";
-import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import { MdOutlinePhoneIphone, MdOutlineSync, MdPictureAsPdf } from 'react-icons/md';
+import { FaMobileAlt, FaLock, FaUnlock, FaFileExcel } from 'react-icons/fa';
 import Pagination from '../../../components/Pagination';
 import Device3DPointers from '../../../components/Device3DPointers';
+import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import { formatIMEI } from '../../../utils/imeiFormatter';
+
+const LIMIT = 10;
 
 const Device = () => {
     const { t } = useLanguage();
     const { API_BASE1, user } = useAuth();
 
     const [devices, setDevices] = useState([]);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDevice, setSelectedDevice] = useState(null);
-    const [page, setPage] = useState(1);
-    const [total, setTotal] = useState(0);
-    const LIMIT = 10;
 
-    const fetchDevices = async (pg = page, search = searchTerm) => {
+    const fetchDevices = async (p = 1, search = '') => {
         setReloading(true);
         try {
-            const params = new URLSearchParams({
+            const queryParams = new URLSearchParams({
                 status: 'Activated',
-                page: pg,
+                page: p,
                 limit: LIMIT,
-                userBrand: user?.brand || '',
-                userRole: user?.role || '',
-                username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                ...(search && { search })
             });
-            if (search) params.set('search', search);
-            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
+
+            if (user?.brand && user.role !== 'Administrator') {
+                queryParams.append('brand', user.brand);
+            }
+
+            const res = await fetch(`${API_BASE1}/contracts?${queryParams.toString()}`);
             if (res.ok) {
                 const data = await res.json();
-                setDevices(data.data || []);
-                setTotal(data.total || 0);
+                const contractList = data.data || data.contracts || [];
+                setDevices(contractList);
+                setTotal(data.total || contractList.length);
             }
         } catch (err) {
             console.error('Fetch devices error:', err);
@@ -50,15 +54,17 @@ const Device = () => {
     useEffect(() => { fetchDevices(page, searchTerm); }, [page]);
     useEffect(() => { fetchDevices(1, searchTerm); setPage(1); }, [searchTerm]);
 
-    const filteredDevices = devices; // server already filters+paginates
+    const filteredDevices = devices;
 
     const handleExportExcel = () => {
         const data = filteredDevices.map((d, idx) => ({
             'No': idx + 1,
             'Model': d.model || '',
+            'Version / OS': d.version || '',
             'Serial Number': d.serialNumber || '',
-            'IMEI 1': d.imei1 || '',
-            'IMEI 2': d.imei2 || '',
+            'IMEI 1': formatIMEI(d.imei1),
+            'IMEI 2': formatIMEI(d.imei2),
+            'MEID': d.meid || '',
             'Color': d.color || '',
             'Customer Name': d.customerNameEn || '',
             'Phone Lock Status': d.lockPhoneStatus || 'Unlocked',
@@ -71,8 +77,9 @@ const Device = () => {
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Model', accessor: 'model' },
+            { header: 'Version', accessor: 'version' },
             { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'IMEI 1', accessor: 'imei1' },
+            { header: 'IMEI 1', cell: (d) => formatIMEI(d.imei1) },
             { header: 'Customer', accessor: 'customerNameEn' },
             { header: 'Phone Lock', accessor: 'lockPhoneStatus' },
             { header: 'Wallpaper Lock', accessor: 'lockWallpaperStatus' }
@@ -92,7 +99,7 @@ const Device = () => {
                             {t('device')} Inventory Management
                         </h1>
                         <p className='text-xs text-purple-700 font-bold'>
-                            {devices.length} Registered Activated Devices
+                            {total} Registered Activated Devices
                         </p>
                     </div>
                 </div>
@@ -121,7 +128,7 @@ const Device = () => {
                     />
 
                     <button
-                        onClick={fetchDevices}
+                        onClick={() => fetchDevices(page, searchTerm)}
                         disabled={reloading}
                         className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
@@ -131,13 +138,13 @@ const Device = () => {
                 </div>
             </header>
 
-            {/* Device Table */}
             <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
                             <th className='px-4 py-3 text-center'>No</th>
                             <th className='px-4 py-3'>{t('model')}</th>
+                            <th className='px-4 py-3'>Version / OS</th>
                             <th className='px-4 py-3'>Brand</th>
                             <th className='px-4 py-3'>{t('serialNumber')}</th>
                             <th className='px-4 py-3'>IMEI 1</th>
@@ -149,7 +156,7 @@ const Device = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredDevices.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={9} className="text-center py-8 text-slate-500 italic font-medium">
                                     No devices linked to activated contracts.
                                 </td>
                             </tr>
@@ -162,12 +169,17 @@ const Device = () => {
                                         {item.model}
                                     </td>
                                     <td className='px-4 py-3'>
+                                        <span className='px-2.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full font-bold text-[10px]'>
+                                            {item.version || '—'}
+                                        </span>
+                                    </td>
+                                    <td className='px-4 py-3'>
                                         <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
                                             {item.brand || '—'}
                                         </span>
                                     </td>
                                     <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'>{item.serialNumber}</td>
-                                    <td className='px-4 py-3 font-mono text-slate-600'>{item.imei1 || '354890123456789'}</td>
+                                    <td className='px-4 py-3 font-mono text-slate-700 font-bold whitespace-nowrap'>{formatIMEI(item.imei1)}</td>
                                     <td className='px-4 py-3 font-semibold text-slate-800'>
                                         {item.customerNameEn} <span className="text-emerald-700 font-khmer text-xs font-semibold">({item.customerNameKh})</span>
                                     </td>
@@ -195,11 +207,9 @@ const Device = () => {
 
             <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
 
-            {/* Device Information Modal */}
             {selectedDevice && (
                 <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
                     <div className="bg-[#0b0f1e] border border-indigo-500/40 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-                        {/* Header */}
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-2xl bg-purple-950/80 border border-purple-700/60 flex items-center justify-center text-purple-400 text-lg">
@@ -223,7 +233,6 @@ const Device = () => {
                             </button>
                         </div>
 
-                        {/* Device Specifications Grid */}
                         <div>
                             <h4 className="text-[11px] font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span> Hardware Specifications
@@ -234,16 +243,20 @@ const Device = () => {
                                     <span className="font-bold text-white truncate block">{selectedDevice.model}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px]">Version / OS</span>
+                                    <span className="font-bold text-indigo-300 truncate block">{selectedDevice.version || '—'}</span>
+                                </div>
+                                <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
                                     <span className="text-gray-500 block text-[10px]">Serial Number</span>
                                     <span className="font-mono font-bold text-indigo-300 truncate block">{selectedDevice.serialNumber}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
                                     <span className="text-gray-500 block text-[10px]">IMEI 1</span>
-                                    <span className="font-mono font-bold text-sky-400 truncate block">{selectedDevice.imei1 || '—'}</span>
+                                    <span className="font-mono font-bold text-sky-400 truncate block">{formatIMEI(selectedDevice.imei1)}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
                                     <span className="text-gray-500 block text-[10px]">IMEI 2</span>
-                                    <span className="font-mono font-bold text-sky-300 truncate block">{selectedDevice.imei2 || '—'}</span>
+                                    <span className="font-mono font-bold text-sky-300 truncate block">{formatIMEI(selectedDevice.imei2)}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
                                     <span className="text-gray-500 block text-[10px]">MEID</span>
@@ -254,17 +267,12 @@ const Device = () => {
                                     <span className="font-bold text-gray-200 truncate block">{selectedDevice.color || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
-                                    <span className="text-gray-500 block text-[10px]">Storage / Version</span>
-                                    <span className="font-bold text-gray-200 truncate block">{selectedDevice.version || '—'}</span>
-                                </div>
-                                <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
                                     <span className="text-gray-500 block text-[10px]">Brand</span>
                                     <span className="font-bold text-purple-300 truncate block">{selectedDevice.brand || '—'}</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Customer & Security Section */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                             <div className="p-3 bg-gray-900/60 rounded-2xl border border-gray-800">
                                 <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">👤 Linked Customer</h4>

@@ -3,6 +3,8 @@ import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
 import DocumentScanner from '../../../components/DocumentScanner';
+import { formatIMEI } from '../../../utils/imeiFormatter';
+
 
 /* ── Shared style tokens ── */
 const inp = "w-full p-2 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-lg text-gray-100 text-xs outline-none transition-colors";
@@ -397,32 +399,36 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 </select>
                             </Field>
                             <AutoField id="serialNumber" label="Serial Number *" value={form.serialNumber} placeholder="Serial Number" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <AutoField id="imei1" label="IMEI 1 Number" value={form.imei1} placeholder="IMEI 1" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <Field label="IMEI 2 Number"><input className={`${inp} font-mono`} type="text" id="imei2" value={form.imei2 || ''} onChange={handleChange} placeholder="IMEI 2" /></Field>
+                            <AutoField id="imei1" label="IMEI 1 (00 000000 000000 0)" value={form.imei1} placeholder="IMEI 1 (15 digits)" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <Field label="IMEI 2 (00 000000 000000 0)"><input className={`${inp} font-mono`} type="text" id="imei2" value={form.imei2 || ''} onChange={handleChange} placeholder="IMEI 2 (15 digits)" /></Field>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-4 gap-3">
                             <Field label="MEID Number">
                                 <input className={`${inp} font-mono text-pink-400`} type="text" id="meid" value={form.meid || ''} onChange={handleChange} placeholder="e.g. 35173227736075" />
                             </Field>
+                            <Field label="Version (ជំនាន់/OS) *">
+                                <input className={`${inp} text-indigo-300 font-semibold`} type="text" id="version" value={form.version || ''} onChange={handleChange} placeholder="e.g. Android 14 / iOS 18" />
+                            </Field>
                             <Field label="Color"><input className={inp} type="text" id="color" value={form.color || ''} onChange={handleChange} placeholder="e.g. Midnight Black" /></Field>
-                            <Field label="Capacity / Storage"><input className={inp} type="text" id="version" value={form.version || ''} onChange={handleChange} placeholder="e.g. 128 GB" /></Field>
+                            <Field label="Capacity / Storage"><input className={inp} type="text" id="capacity" value={form.capacity || ''} onChange={handleChange} placeholder="e.g. 128 GB / 256 GB" /></Field>
                         </div>
-                        {(form.model || form.serialNumber) && (
+                        {(form.model || form.serialNumber || form.imei1) && (
                             <div className="p-3.5 bg-purple-900/20 border border-purple-700/40 rounded-xl flex items-center gap-4">
                                 <FaMobileAlt className="text-purple-400 text-3xl flex-shrink-0" />
                                 <div className="grid grid-cols-4 gap-x-4 gap-y-2 w-full text-xs">
                                     <div><span className="text-gray-500 block text-[10px]">Model</span><span className="text-purple-300 font-bold">{form.model || '—'}</span></div>
                                     <div><span className="text-gray-500 block text-[10px]">Serial No.</span><span className="text-gray-100 font-mono font-bold">{form.serialNumber || '—'}</span></div>
-                                    <div><span className="text-gray-500 block text-[10px]">IMEI 1</span><span className="text-gray-100 font-mono">{form.imei1 || '—'}</span></div>
-                                    <div><span className="text-gray-500 block text-[10px]">IMEI 2</span><span className="text-gray-100 font-mono">{form.imei2 || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">IMEI 1</span><span className="text-gray-100 font-mono font-bold">{formatIMEI(form.imei1)}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">IMEI 2</span><span className="text-gray-100 font-mono font-bold">{formatIMEI(form.imei2)}</span></div>
                                     <div><span className="text-gray-500 block text-[10px]">MEID</span><span className="text-pink-400 font-mono font-semibold">{form.meid || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">Version / OS</span><span className="text-indigo-300 font-bold">{form.version || '—'}</span></div>
                                     <div><span className="text-gray-500 block text-[10px]">Color</span><span className="text-gray-100">{form.color || '—'}</span></div>
-                                    <div><span className="text-gray-500 block text-[10px]">Capacity</span><span className="text-gray-100">{form.version || '—'}</span></div>
                                     <div><span className="text-gray-500 block text-[10px]">Brand</span><span className="text-gray-100 font-semibold">{form.brand || '—'}</span></div>
                                 </div>
                             </div>
                         )}
                     </>)}
+
 
                     {/* ════ TAB 3: Loan Terms ════ */}
                     {activeTab === 'loan' && (<>

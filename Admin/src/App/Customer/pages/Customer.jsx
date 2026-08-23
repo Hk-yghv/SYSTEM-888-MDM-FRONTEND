@@ -8,6 +8,8 @@ import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import IDCard3DViewer from '../../../components/IDCard3DViewer';
+import { formatIMEI } from '../../../utils/imeiFormatter';
+
 
 const Customer = () => {
     const { t } = useLanguage();
@@ -122,8 +124,8 @@ const Customer = () => {
             'Telegram': c.telegramName || '',
             'Device Model': c.model || '',
             'Serial Number': c.serialNumber || '',
-            'IMEI 1': c.imei1 || '',
-            'IMEI 2': c.imei2 || '',
+            'IMEI 1': formatIMEI(c.imei1),
+            'IMEI 2': formatIMEI(c.imei2),
             'MEID': c.meid || '',
             'Color': c.color || '',
             'Total Amount ($)': c.amount || c.totalAmount || 0,
@@ -140,15 +142,15 @@ const Customer = () => {
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Name EN', accessor: 'customerNameEn' },
-            { header: 'Name KH', accessor: 'customerNameKh' },
             { header: 'ID Card', accessor: 'idCardNumber' },
             { header: 'Phone', accessor: 'phone' },
             { header: 'Model', accessor: 'model' },
             { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Monthly ($)', cell: (r) => `$${r.monthlyPayment}` },
+            { header: 'IMEI 1', cell: (c) => formatIMEI(c.imei1) },
+            { header: 'Total ($)', accessor: 'amount' },
             { header: 'Status', accessor: 'status' },
         ];
-        exportToPDF('Customer Profile Directory', columns, filteredCustomers);
+        exportToPDF('Customer Master Report', columns, customers);
     };
 
     // Derived payment totals for selected customer
@@ -437,12 +439,13 @@ const Customer = () => {
                                         ['Device Model', selectedCustomer.model],
                                         ['Brand', selectedCustomer.brand || '-'],
                                         ['Serial Number', selectedCustomer.serialNumber],
-                                        ['IMEI 1', selectedCustomer.imei1 || '-'],
-                                        ['IMEI 2', selectedCustomer.imei2 || '-'],
+                                        ['IMEI 1', formatIMEI(selectedCustomer.imei1)],
+                                        ['IMEI 2', formatIMEI(selectedCustomer.imei2)],
                                         ['MEID', selectedCustomer.meid || '-'],
                                         ['Color', selectedCustomer.color || '-'],
                                         ['Storage / Version', selectedCustomer.version || '-'],
                                     ].map(([label, value]) => (
+
                                         <div key={label} className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800">
                                             <span className="text-gray-400 block text-[10px] font-semibold mb-0.5">{label}</span>
                                             <span className={`font-semibold ${label === 'MEID' ? 'text-pink-400 font-mono' : label.includes('IMEI') || label.includes('Serial') ? 'text-indigo-300 font-mono' : 'text-gray-100'}`}>
