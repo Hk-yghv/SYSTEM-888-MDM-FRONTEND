@@ -14,7 +14,7 @@ const MarkdownMessage = ({ text = '' }) => {
 
     const formatInline = (str = '') => {
         let formatted = str.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#e0e7ff;font-weight:700">$1</strong>');
-        formatted = formatted.replace(/\`([^\`]+)\`/g, '<code style="padding:1px 6px;background:#0d1117;border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;border-radius:4px;font-family:monospace;font-size:11px">$1</code>');
+        formatted = formatted.replace(/\`([^\`]+)\`/g, '<code style="padding:1px 6px;background:#fff;border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;border-radius:4px;font-family:monospace;font-size:11px">$1</code>');
         return <span dangerouslySetInnerHTML={{ __html: formatted }} />;
     };
 
@@ -346,11 +346,10 @@ const AIAssistantDrawer = () => {
                                                 <FaRobot />
                                             </div>
                                         )}
-                                        <div className={`max-w-[86%] rounded-2xl p-3.5 text-xs shadow-xl relative group transition-all ${
-                                            isUser
+                                        <div className={`max-w-[86%] rounded-2xl p-3.5 text-xs shadow-xl relative group transition-all ${isUser
                                                 ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-xs border border-indigo-400/20'
                                                 : 'bg-[#1a1f35] border border-indigo-500/30 text-gray-100 rounded-tl-xs'
-                                        }`}>
+                                            }`}>
                                             {isUser ? (
                                                 <p className="whitespace-pre-wrap leading-relaxed font-khmer">{msg.text}</p>
                                             ) : (
