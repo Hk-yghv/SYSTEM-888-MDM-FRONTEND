@@ -107,9 +107,8 @@ const MarkdownMessage = ({ text = '' }) => {
 };
 
 
-const AIAssistantDrawer = () => {
+const AIAssistantDrawer = ({ isOpen, onClose }) => {
     const { user, API_BASE3 } = useAuth();
-    const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [copiedIndex, setCopiedIndex] = useState(null);
@@ -250,35 +249,12 @@ const AIAssistantDrawer = () => {
 
     return (
         <>
-            {/* ━━━ Floating AI Action Button (Bottom Right) ━━━ */}
-            <div className="fixed bottom-6 right-6 z-[9990] select-none flex items-center group">
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="relative flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 text-white font-bold text-xs rounded-full shadow-2xl shadow-indigo-600/40 cursor-pointer transform hover:scale-105 active:scale-95 transition-all duration-300 border border-white/20"
-                    title="Open MDM AI Assistant"
-                >
-                    {/* Glowing outer pulse animation ring */}
-                    <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-60 blur-sm group-hover:opacity-100 transition-all duration-500 animate-pulse"></span>
-
-                    <span className="relative flex items-center justify-center">
-                        <FaRobot className="text-base text-white animate-bounce" />
-                    </span>
-                    <span className="relative flex items-center gap-1 font-bold tracking-wide">
-                        <span>MDM AI</span>
-                        <HiSparkles className="text-amber-300 text-sm animate-spin" />
-                    </span>
-                    <span className="relative px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-full text-[9px] font-mono font-bold tracking-tight">
-                        PY 3
-                    </span>
-                </button>
-            </div>
-
             {/* ━━━ Sliding Right Drawer ━━━ */}
             {isOpen && (
                 <div className="fixed inset-0 z-[99999] flex justify-end animate-fade-in">
                     {/* Backdrop */}
                     <div
-                        onClick={() => setIsOpen(false)}
+                        onClick={onClose}
                         className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity duration-300"
                     />
 
@@ -316,7 +292,7 @@ const AIAssistantDrawer = () => {
                                     <MdOutlineCleaningServices />
                                 </button>
                                 <button
-                                    onClick={() => setIsOpen(false)}
+                                    onClick={onClose}
                                     className="p-2 bg-gray-800/80 hover:bg-red-950 text-gray-400 hover:text-red-300 rounded-xl text-xs transition-all cursor-pointer border border-gray-700/50 shadow-xs"
                                     title="Close AI Assistant"
                                 >
@@ -347,12 +323,12 @@ const AIAssistantDrawer = () => {
                                                 <FaRobot />
                                             </div>
                                         )}
-                                        <div 
+                                        <div
                                             style={{ color: '#ffffff' }}
                                             className={`max-w-[86%] rounded-2xl p-3.5 text-xs shadow-xl relative group transition-all text-white ${isUser
                                                 ? 'bg-gradient-to-r from-indigo-600 to-purple-600 rounded-tr-xs border border-indigo-400/20'
                                                 : 'bg-[#1a1f35] border border-indigo-500/30 rounded-tl-xs'
-                                            }`}
+                                                }`}
                                         >
                                             {isUser ? (
                                                 <p className="whitespace-pre-wrap leading-relaxed font-khmer text-white" style={{ color: '#ffffff' }}>{msg.text}</p>

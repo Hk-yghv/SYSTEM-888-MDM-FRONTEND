@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaShieldAlt } from 'react-icons/fa';
+import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaShieldAlt, FaRobot } from 'react-icons/fa';
+import { HiSparkles } from 'react-icons/hi2';
 
-const Header = () => {
+const Header = ({ onOpenAI }) => {
     const [accountOpen, setAccountOpen] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
 
@@ -51,8 +52,8 @@ const Header = () => {
                 <Link to="/dashboard" className='flex items-center gap-2.5 group'>
                     <img src="/mdm_logo.svg" alt="MDM System Logo" className="w-8 h-8 object-contain transition-transform group-hover:scale-105" />
                     <h1 className="text-xl font-extrabold tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors">
-                        {(!user || user.isImmutable || user.username === '@hakyonghouv' || !user.brand) 
-                            ? 'SYSTEM' 
+                        {(!user || user.isImmutable || user.username === '@hakyonghouv' || !user.brand)
+                            ? 'SYSTEM'
                             : `SYSTEM ${user.brand.toUpperCase()}`}
                     </h1>
                 </Link>
@@ -78,6 +79,17 @@ const Header = () => {
             </div>
 
             <div className='flex items-center gap-3'>
+                {/* AI Assistant */}
+                <button
+                    onClick={onOpenAI}
+                    className='flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-sm shadow-indigo-600/25 transition-all cursor-pointer border border-indigo-500'
+                    title='Open MDM AI Assistant'
+                >
+                    <FaRobot className='text-sm' />
+                    <span className='hidden sm:inline'>MDM AI</span>
+                    <HiSparkles className='text-amber-300 text-sm' />
+                </button>
+
                 {/* Multi-Language Selector */}
                 <div className='relative'>
                     <button

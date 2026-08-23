@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./index.css";
 
@@ -64,19 +64,22 @@ import Profile from "../App/Profile/Profile";
 import DesktopOnlyGuard from "../components/DesktopOnlyGuard";
 import AIAssistantDrawer from "../components/AIAssistantDrawer";
 
-const MainLayout = ({ children }) => (
-  <div className="flex flex-col h-screen bg-[#f4f6f8] relative">
-    <Header />
-    <div className="flex flex-1 overflow-hidden">
-      <Left />
-      <div className="flex-1 overflow-y-auto">
-        {children}
+const MainLayout = ({ children }) => {
+  const [isAIOpen, setIsAIOpen] = useState(false);
+
+  return (
+    <div className="flex flex-col h-screen bg-[#f4f6f8] relative">
+      <Header onOpenAI={() => setIsAIOpen(true)} />
+      <div className="flex flex-1 overflow-hidden">
+        <Left />
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
       </div>
+      <AIAssistantDrawer isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
     </div>
-    {/* Global Floating AI Assistant with Role & Brand Isolation */}
-    <AIAssistantDrawer />
-  </div>
-);
+  );
+};
 
 
 const App = () => {
