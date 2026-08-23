@@ -3,6 +3,7 @@ import re
 from typing import Dict, Any, List, Optional
 from pymongo import MongoClient
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
 
@@ -25,20 +26,21 @@ def get_databases():
     dbs = []
     for c in _mongo_clients:
         try:
-            dbs.append(c.get_default_database() or c["system_mdm"])
+            db = c["system_mdm"]
+            dbs.append(db)
         except Exception:
             pass
     return dbs
 
-def query_collection(collection_name: str, filter_query: Dict[str, Any], limit: int = 50) -> List[Dict[str, Any]]:
+def query_collection(collection_name: str, filter_query: Dict[str, Any], projection: Optional[Dict[str, Any]] = None, limit: int = 50) -> List[Dict[str, Any]]:
     results = []
     seen = set()
     for db in get_databases():
         try:
             col = db[collection_name]
-            docs = list(col.find(filter_query).limit(limit))
-            for d in docs:
-                uid = str(d.get("contractId") or d.get("_id"))
+            cursor = col.find(filter_query, projection).limit(limit) if projection else col.find(filter_query).limit(limit)
+            for d in cursor:
+                uid = str(d.get("contractId") or d.get("userId") or d.get("_id"))
                 if uid not in seen:
                     seen.add(uid)
                     d["_id"] = str(d["_id"])
@@ -62,20 +64,22 @@ class SystemMDAIEngine:
     @staticmethod
     def is_master_admin(user: Dict[str, Any]) -> bool:
         username = str(user.get("username", "")).lower().strip()
-        role = str(user.get("role", "")).strip()
+        role = str(user.get("role", "")).lower().strip()
         is_imm = user.get("isImmutable", False)
         return (
             username in ["@hakyonghouv", "hakyonghouv"] or
+            "888mdm" in username or
             is_imm is True or
-            role == "Administrator"
+            role == "administrator" or
+            role == "superadmin"
         )
 
     @classmethod
     def build_security_filter(cls, user: Dict[str, Any], extra_filter: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         query: Dict[str, Any] = extra_filter.copy() if extra_filter else {}
         is_master = cls.is_master_admin(user)
-        user_brand = user.get("brand", "").strip()
-        allowed_status = user.get("allowedStatus", "").strip()
+        user_brand = str(user.get("brand", "")).strip()
+        allowed_status = str(user.get("allowedStatus", "")).strip()
 
         # Non-master users are strictly limited to their assigned brand
         if not is_master and user_brand:
@@ -93,9 +97,11 @@ class SystemMDAIEngine:
         user_brand = user.get("brand", "").strip()
         q_lower = question.lower()
 
-        if any(w in q_lower for w in ["password", "jwt_secret", "encryption_key", "mongo_uri", "ពាក្យសម្ងាត់", "security key"]):
-            return "⚠️ **សុំទោស!** ព័ត៌មានសម្ងាត់ប្រព័ន្ធ (System Security Keys & Passwords) មិនត្រូវបានអនុញ្ញាតឱ្យបង្ហាញ ឬទាញយកឡើយ។"
+        # Password or secret keys security block
+        if any(w in q_lower for w in ["password", "jwt_secret", "encryption_key", "mongo_uri", "ពាក្យសម្ងាត់", "security key", "secondpassword"]):
+            return "⚠️ **សុំទោស!** ព័ត៌មានសម្ងាត់ប្រព័ន្ធ (System Passwords & Security Keys) មិនត្រូវបានអនុញ្ញាតឱ្យបង្ហាញ ឬទាញយកឡើយ។"
 
+        # Cross-brand leak block for brand-restricted users
         if not is_master and user_brand:
             other_brand_patterns = ["all brands", "brand ផ្សេង", "គ្រប់ brand", "other brand"]
             if any(p in q_lower for p in other_brand_patterns):
@@ -115,22 +121,49 @@ class SystemMDAIEngine:
         username = user.get("username", "User")
         name = user.get("name") or username
         is_master = cls.is_master_admin(user)
-        permissions = user.get("permissions", [])
         
         q = question.strip()
         q_lower = q.lower()
 
-        # ── 1. User Profile & Account Info Query ──
-        if any(w in q_lower for w in ["account ខ្ញុំ", "information account", "account info", "profile", "my account", "user info", "តួនាទីខ្ញុំ", "សិទ្ធិខ្ញុំ", "who am i", "គណនីខ្ញុំ", "ព័ត៌មានគណនី"]):
-            db_users = query_collection("users", {"username": username}, limit=1)
+        # ══════════════════════════════════════════════════════════════
+        # 1. USERS & ACCOUNTS QUERIES (គ្រប់ Account, បញ្ជី Users, Profile)
+        # ══════════════════════════════════════════════════════════════
+        # Case A: Querying ALL accounts / list of accounts
+        if any(w in q_lower for w in ["គ្រប់ account", "គ្រប់ គណនី", "all accounts", "list accounts", "list users", "បញ្ជី account", "បញ្ជី users", "បញ្ជីគណនី", "account ទាំងអស់", "users ទាំងអស់", "មាន account អីខ្លះ", "មាន account ណាខ្លះ", "មើល account", "information គ្រប់ account"]):
+            user_filter = {} if is_master else {"brand": user_brand}
+            users_list = query_collection("users", user_filter, {"password": 0, "secondPassword": 0}, limit=30)
+            
+            if not users_list:
+                return f"ℹ️ មិនទាន់មានគណនី (Accounts) ក្នុង Brand **{user_brand if user_brand else 'ប្រព័ន្ធ'}** នៅឡើយទេ។"
+
+            scope_title = "ទូទាំងប្រព័ន្ធ (All Brands)" if is_master else f"សម្រាប់ Brand **{user_brand}**"
+            res = f"### 👥 បញ្ជីគណនីអ្នកប្រើប្រាស់ {scope_title} (សរុប `{len(users_list)}` គណនី):\n\n"
+            res += "| ល.រ | ឈ្មោះពេញ (Name) | Username | តួនាទី (Role) | ម៉ាក (Brand) | ស្ថានភាព |\n"
+            res += "| :---: | :--- | :--- | :--- | :--- | :--- |\n"
+            for idx, u in enumerate(users_list, 1):
+                u_name = u.get("name", "—")
+                u_user = u.get("username", "—")
+                u_role = u.get("role", "Staff")
+                u_brand = u.get("brand") or "Global"
+                u_status = u.get("status", "Offline")
+                status_badge = "🟢 Online" if u_status == "Online" else "⚪ Offline"
+                res += f"| {idx} | **{u_name}** | `{u_user}` | {u_role} | **{u_brand}** | {status_badge} |\n"
+            
+            res += "\n> 💡 *លោកអ្នកអាចសួរឈ្មោះ Username ជាក់លាក់ ដើម្បីមើលព័ត៌មានលម្អិតបន្ថែម!*"
+            return res
+
+        # Case B: Querying MY account info / profile
+        if any(w in q_lower for w in ["account ខ្ញុំ", "information account ខ្ញុំ", "account info", "profile", "my account", "user info", "តួនាទីខ្ញុំ", "សិទ្ធិខ្ញុំ", "who am i", "គណនីខ្ញុំ", "ព័ត៌មានគណនី"]):
+            db_users = query_collection("users", {"username": username}, {"password": 0, "secondPassword": 0}, limit=1)
             created_at = "—"
             user_phone = "—"
+            user_email = "—"
             if db_users:
                 u = db_users[0]
                 created_at = str(u.get("createdAt", "—"))[:10]
                 user_phone = u.get("phone", "—")
+                user_email = u.get("email", "—")
 
-            perm_count = len(permissions) if isinstance(permissions, list) else "Full"
             scope_desc = "ចូលមើលបានគ្រប់ Brands និងទិន្នន័យទូទាំងប្រព័ន្ធ (Full Master Access)" if is_master else f"គ្រប់គ្រងទិន្នន័យសម្រាប់តែ Brand **{user_brand}** ប៉ុណ្ណោះ"
 
             res = f"### 👤 ព័ត៌មានលម្អិតអំពីគណនីរបស់អ្នក (Account Information)\n\n"
@@ -138,35 +171,39 @@ class SystemMDAIEngine:
             res += f"* **Username**: `{username}`\n"
             res += f"* **តួនាទី (Role)**: **{user_role}**\n"
             res += f"* **ម៉ាកដែលគ្រប់គ្រង (Brand)**: **{user_brand if user_brand else 'ទូទាំងប្រព័ន្ធ (Global)'}**\n"
+            res += f"* **Email**: `{user_email}`\n"
             res += f"* **លេខទូរស័ព្ទ (Phone)**: `{user_phone}`\n"
-            res += f"* **ថ្ងៃបង្កើតគណនី (Created At)**: `{created_at}`\n"
+            res += f"* **ថ្ងៃបង្កើត (Created At)**: `{created_at}`\n"
             res += f"* **ស្ថានភាព (Status)**: `Active / Verified` 🟢\n"
-            res += f"* **ដែនកំណត់ទិន្នន័យ (Access Scope)**: {scope_desc}\n"
-            if permissions and not is_master:
-                res += f"* **ទំព័រដែលទទួលបានសិទ្ធិ (Allowed Pages)**: `{perm_count}` ផ្នែក\n"
-            res += "\n> 🔒 *គណនីរបស់អ្នកមានសុវត្ថិភាពខ្ពស់ និងភ្ជាប់ជាមួយប្រព័ន្ធ MDM Control System រួចរាល់!*"
+            res += f"* **ដែនកំណត់ទិន្នន័យ (Access Scope)**: {scope_desc}\n\n"
+            res += "> 🔒 *គណនីរបស់អ្នកមានសុវត្ថិភាពខ្ពស់ និងភ្ជាប់ជាមួយប្រព័ន្ធ MDM Control System រួចរាល់!*"
             return res
 
-        # ── 2. Greetings & System Capabilities ──
-        if any(w in q_lower for w in ["សួស្តី", "hello", "hi", "ជម្រាបសួរ", "good morning", "good afternoon", "តើឯងជាអ្វី", "ជួយអ្វីបានខ្លះ", "help", "មុខងារ"]):
+        # ══════════════════════════════════════════════════════════════
+        # 2. GREETINGS & CAPABILITIES
+        # ══════════════════════════════════════════════════════════════
+        if any(w in q_lower for w in ["សួស្តី", "hello", "hi", "ជម្រាបសួរ", "good morning", "good afternoon", "តើឯងជាអ្វី", "ជួយអ្វីបានខ្លះ", "help", "មុខងារ", "how to use"]):
             brand_text = f"សម្រាប់ Brand **{user_brand}**" if user_brand and not is_master else "ទូទាំងប្រព័ន្ធ"
             res = f"👋 **សួស្តី {name}!** ខ្ញុំជា **MDM Smart AI Assistant** ជំនួយការឆ្លាតវៃប្រព័ន្ធ MDM។\n\n"
             res += f"ខ្ញុំត្រូវបានភ្ជាប់ផ្ទាល់ជាមួយ MongoDB {brand_text} ដើម្បីជួយលោកអ្នកក្នុងការ៖\n\n"
+            res += f"* 👥 **គ្រប់គ្រងគណនី**: សួរ `គ្រប់ account`, `account ខ្ញុំ`, ឬ `បញ្ជី users`\n"
             res += f"* 🔍 **ស្វែងរកកិច្ចសន្យា & អតិថិជន**: សួរឈ្មោះ, លេខទូរស័ព្ទ, ឬ ID Card\n"
             res += f"* 📱 **ស្វែងរកទូរស័ព្ទ**: សួរតាម Model, IMEI, MEID, ឬ Serial Number\n"
             res += f"* 💳 **ពិនិត្យការបង់ប្រាក់**: មើលប្រវត្តិបង់ប្រាក់, ចំនួនលុយបានបង់, និងប្រាក់នៅសល់\n"
-            res += f"* 🔒 **ពិនិត្យ Security Lock**: មើលស្ថានភាពទូរស័ព្ទជាប់ Phone Lock ឬ Wallpaper Lock\n"
+            res += f"* 🔒 **ពិនិត្យ Security Lock**: មើលទូរស័ព្ទជាប់ Phone Lock ឬ Wallpaper Lock\n"
             res += f"* 📊 **សង្ខេបទិន្នន័យ**: ធ្វើរបាយការណ៍សរុបកិច្ចសន្យា ឧបករណ៍សកម្ម និងចំនួនលុយប្រមូលបាន\n\n"
-            res += f"> 💡 *លោកអ្នកអាចសាកល្បងសួរដោយផ្ទាល់ ឧទាហរណ៍៖ `សង្ខេបទិន្នន័យ` ឬ `រកឈ្មោះ Chet Vandeth`!*"
+            res += f"> 💡 *លោកអ្នកអាចសាកល្បងសួរដោយផ្ទាល់ ឧទាហរណ៍៖ `គ្រប់ account` ឬ `សង្ខេបទិន្នន័យ`!*"
             return res
 
-        # ── 3. List All Customers / Contracts Query ──
-        if any(w in q_lower for w in ["customer ទាំងអស់", "បញ្ជីអតិថិជន", "កិច្ចសន្យាទាំងអស់", "all customers", "list customers", "list contracts", "កិច្ចសន្យា", "បង្ហាញអតិថិជន"]):
+        # ══════════════════════════════════════════════════════════════
+        # 3. LIST ALL CUSTOMERS / CONTRACTS
+        # ══════════════════════════════════════════════════════════════
+        if any(w in q_lower for w in ["customer ទាំងអស់", "បញ្ជីអតិថិជន", "កិច្ចសន្យាទាំងអស់", "all customers", "list customers", "list contracts", "បង្ហាញអតិថិជន", "កិច្ចសន្យា"]):
             contracts = query_collection("contracts", base_filter, limit=15)
             if not contracts:
                 return f"ℹ️ មិនទាន់មានកិច្ចសន្យាណាមួយក្នុងទិន្នន័យ {user_brand if user_brand else 'ប្រព័ន្ធ'} នៅឡើយទេ។"
             
-            res = f"### 📋 បញ្ជីកិច្ចសន្យាអតិថិជនចុងក្រោយ ({len(contracts)} ឯកសារ):\n\n"
+            res = f"### 📋 បញ្ជីកិច្ចសន្យាអតិថិជន ({len(contracts)} ឯកសារ):\n\n"
             res += "| ល.រ | ឈ្មោះអតិថិជន | ម៉ូឌែលទូរស័ព្ទ | Serial Number | លេខទូរស័ព្ទ | ស្ថានភាព |\n"
             res += "| :---: | :--- | :--- | :--- | :--- | :--- |\n"
             for idx, c in enumerate(contracts, 1):
@@ -179,7 +216,9 @@ class SystemMDAIEngine:
             res += "\n> 💡 *លោកអ្នកអាចសួរឈ្មោះ ឬ Serial Number ជាក់លាក់ ដើម្បីមើលព័ត៌មានលម្អិត!*"
             return res
 
-        # ── 4. List All Devices Query ──
+        # ══════════════════════════════════════════════════════════════
+        # 4. LIST ALL DEVICES
+        # ══════════════════════════════════════════════════════════════
         if any(w in q_lower for w in ["ទូរស័ព្ទទាំងអស់", "បញ្ជីទូរស័ព្ទ", "ឧបករណ៍ទាំងអស់", "all devices", "list devices", "device ទាំងអស់"]):
             contracts = query_collection("contracts", base_filter, limit=15)
             if not contracts:
@@ -197,7 +236,9 @@ class SystemMDAIEngine:
                 res += f"| {idx} | **{m}** | `{s}` | `{imei}` | `{meid}` | `{l}` |\n"
             return res
 
-        # ── 5. Summary / Statistics Query ──
+        # ══════════════════════════════════════════════════════════════
+        # 5. SUMMARY / STATISTICS OVERVIEW
+        # ══════════════════════════════════════════════════════════════
         if any(w in q_lower for w in ["statistic", "summary", "សង្ខេប", "ប៉ុន្មាន", "ចំនួនសរុប", "របាយការណ៍", "total", "overview", "how many"]) and not any(k in q_lower for k in ["imei", "serial", "meid"]) and len(q) < 80:
             total_contracts = count_collection("contracts", base_filter)
             activated_filter = {**base_filter, "status": "Activated"}
@@ -226,8 +267,9 @@ class SystemMDAIEngine:
             response += "> 💡 *លោកអ្នកអាចសួរលម្អិតអំពីអតិថិជនជាក់លាក់ តាមរយៈឈ្មោះ, លេខទូរស័ព្ទ, Serial Number ឬ IMEI!*"
             return response
 
-        # ── 6. Search by Keyword (Name, Phone, ID card, Serial, IMEI, MEID, Model) ──
-        # Strip conversational filler words in Khmer & English
+        # ══════════════════════════════════════════════════════════════
+        # 6. SEARCH CONTRACTS / USERS / PAYMENTS BY KEYWORD
+        # ══════════════════════════════════════════════════════════════
         clean_kw = re.sub(
             r"(ជួយបង្ហាញពី|ជួយបង្ហាញ|បង្ហាញពី|បង្ហាញ|ស្វែងរក|រកមើល|រក|មើល|តើ|មាន|ឈ្មោះ|លេខ|ទូរស័ព្ទ|តិចមក|បន្តិចមក|មក|ផង|ព័ត៌មាន|serial|imei|meid|search|find|show|info|details|about|customer|device|please|give me)",
             "",
@@ -238,6 +280,30 @@ class SystemMDAIEngine:
         search_kw = clean_kw if len(clean_kw) >= 2 else q
 
         regex_pattern = {"$regex": re.escape(search_kw), "$options": "i"}
+
+        # Check users collection for specific username or name query
+        matched_users = query_collection("users", {
+            "$or": [
+                {"username": regex_pattern},
+                {"name": regex_pattern},
+                {"email": regex_pattern}
+            ]
+        }, {"password": 0, "secondPassword": 0}, limit=5)
+
+        if matched_users:
+            if not is_master and user_brand:
+                matched_users = [u for u in matched_users if u.get("brand") == user_brand]
+
+            if matched_users:
+                res = f"### 👤 រកឃើញគណនីចំនួន `{len(matched_users)}` ដែលត្រូវនឹង **\"{search_kw}\"**:\n\n"
+                res += "| ឈ្មោះ (Name) | Username | តួនាទី (Role) | Brand | Status |\n"
+                res += "| :--- | :--- | :--- | :--- | :--- |\n"
+                for u in matched_users:
+                    st = "🟢 Online" if u.get("status") == "Online" else "⚪ Offline"
+                    res += f"| **{u.get('name', '—')}** | `{u.get('username', '—')}` | {u.get('role', '—')} | **{u.get('brand', 'Global')}** | {st} |\n"
+                return res
+
+        # Search Contracts
         or_conditions = [
             {"customerNameEn": regex_pattern},
             {"customerNameKh": regex_pattern},
@@ -356,16 +422,16 @@ class SystemMDAIEngine:
                 res += f"| {dt} | **{cn}** | `{sn}` | `{amt}` | {mth} |\n"
             return res
 
-        # ── 9. General Natural Guidance Response ──
+        # ── 9. Smart Fallback with Actionable Prompts ──
         brand_info = f"Brand **{user_brand}**" if user_brand and not is_master else "ទូទាំងប្រព័ន្ធ"
         return (
             f"🤖 **MDM AI Assistant**:\n\n"
             f"ខ្ញុំបានស្វែងរកក្នុងទិន្នន័យ {brand_info} ប៉ុន្តែមិនទាន់រកឃើញទិន្នន័យដែលត្រូវនឹង **\"{q}\"** នោះទេ។\n\n"
             f"លោកអ្នកអាចសាកល្បងសួរខ្ញុំអំពី៖\n"
-            f"* 👤 **ព័ត៌មានគណនី**: ឧទាហរណ៍ `account ខ្ញុំ` ឬ `តួនាទីរបស់ខ្ញុំ`\n"
-            f"* 📋 **បញ្ជីអតិថិជន**: ឧទាហរណ៍ `បង្ហាញបញ្ជីអតិថិជន` ឬ `កិច្ចសន្យាទាំងអស់`\n"
-            f"* 🔍 **ស្វែងរកតាមឈ្មោះ**: ឧទាហរណ៍ `រកឈ្មោះ Chet Vandeth`\n"
-            f"* 📱 **ស្វែងរកតាមលេខទូរស័ព្ទ / IMEI / MEID / Serial**: ឧទាហរណ៍ `IMEI 351732277360759`\n"
-            f"* 📊 **សង្ខេបទិន្នន័យ & របាយការណ៍**: ឧទាហរណ៍ `សង្ខេបទិន្នន័យ` ឬ `របាយការណ៍`\n"
-            f"* 🔒 **ពិនិត្យ Lock**: ឧទាហរណ៍ `តើមានទូរស័ព្ទប៉ុន្មានគ្រឿងដែលជាប់ Lock?`\n"
+            f"* 👥 **គណនីអ្នកប្រើប្រាស់**: សួរ `គ្រប់ account`, `បញ្ជី users`, ឬ `account ខ្ញុំ`\n"
+            f"* 📋 **បញ្ជីអតិថិជន**: សួរ `បង្ហាញបញ្ជីអតិថិជន` ឬ `កិច្ចសន្យាទាំងអស់`\n"
+            f"* 🔍 **ស្វែងរកតាមឈ្មោះ**: សួរ `រកឈ្មោះ Chet Vandeth`\n"
+            f"* 📱 **ស្វែងរកតាម IMEI / MEID / Serial**: សួរ `IMEI 351732277360759`\n"
+            f"* 📊 **សង្ខេបទិន្នន័យ**: សួរ `សង្ខេបទិន្នន័យ` ឬ `របាយការណ៍`\n"
+            f"* 🔒 **ពិនិត្យ Lock**: សួរ `តើមានទូរស័ព្ទប៉ុន្មានគ្រឿងដែលជាប់ Lock?`\n"
         )
