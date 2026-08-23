@@ -88,7 +88,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         phone: '', relativePhone: '',
         facebookName: '', telegramName: '', urlFb: '', mosyleUrl: '',
         customerPhoto: '', googleDrivePhotoUrl: '',
-        model: '', serialNumber: '', imei1: '', imei2: '', meid: '', color: '', version: '',
+        model: '', serialNumber: '', imei1: '', imei2: '', meid: '', color: '', version: '', deviceProblem: '',
         amount: 1000, interest: '14%', adminFee: 20, duration: '12 Months',
         interestType: '14%', monthlyPayment: 100
     };
@@ -412,6 +412,18 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             <Field label="Color"><input className={inp} type="text" id="color" value={form.color || ''} onChange={handleChange} placeholder="e.g. Midnight Black" /></Field>
                             <Field label="Capacity / Storage"><input className={inp} type="text" id="capacity" value={form.capacity || ''} onChange={handleChange} placeholder="e.g. 128 GB / 256 GB" /></Field>
                         </div>
+                        <div className="grid grid-cols-1 gap-3">
+                            <Field label="🔧 Device Problem / បញ្ហាឧបករណ៍">
+                                <textarea
+                                    id="deviceProblem"
+                                    value={form.deviceProblem || ''}
+                                    onChange={handleChange}
+                                    rows={3}
+                                    placeholder="Describe any device issues, damages, or notes... (e.g. Screen cracked, battery weak, speaker not working)"
+                                    className={`${inp} resize-none text-amber-300 font-medium`}
+                                />
+                            </Field>
+                        </div>
                         {(form.model || form.serialNumber || form.imei1) && (
                             <div className="p-3.5 bg-purple-900/20 border border-purple-700/40 rounded-xl flex items-center gap-4">
                                 <FaMobileAlt className="text-purple-400 text-3xl flex-shrink-0" />
@@ -424,6 +436,12 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                     <div><span className="text-gray-500 block text-[10px]">Version / OS</span><span className="text-indigo-300 font-bold">{form.version || '—'}</span></div>
                                     <div><span className="text-gray-500 block text-[10px]">Color</span><span className="text-gray-100">{form.color || '—'}</span></div>
                                     <div><span className="text-gray-500 block text-[10px]">Brand</span><span className="text-gray-100 font-semibold">{form.brand || '—'}</span></div>
+                                    {form.deviceProblem && (
+                                        <div className="col-span-4 p-2 bg-amber-900/20 border border-amber-700/40 rounded-lg">
+                                            <span className="text-amber-400 block text-[10px] font-bold mb-0.5">🔧 Device Problem</span>
+                                            <span className="text-amber-300 text-[11px] font-medium">{form.deviceProblem}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

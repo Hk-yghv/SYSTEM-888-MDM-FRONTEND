@@ -299,7 +299,16 @@ const Device = () => {
                             </div>
                         </div>
 
+                        {/* Device Problem */}
+                        {selectedDevice.deviceProblem && (
+                            <div className="p-3 bg-amber-900/15 border border-amber-700/40 rounded-2xl">
+                                <h4 className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1.5">🔧 Device Problem / បញ្ហាឧបករណ៍</h4>
+                                <p className="text-xs text-amber-300 font-medium leading-relaxed whitespace-pre-wrap">{selectedDevice.deviceProblem}</p>
+                            </div>
+                        )}
+
                         {/* Interactive 3D Model with Feature Lines */}
+
                         <div className="bg-[#070913] p-4 rounded-2xl border border-indigo-500/30">
                             <Device3DPointers device={selectedDevice} />
                         </div>

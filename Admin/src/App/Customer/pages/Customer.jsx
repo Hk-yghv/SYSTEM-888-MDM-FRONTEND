@@ -456,7 +456,20 @@ const Customer = () => {
                                 </div>
                             </div>
 
+                            {/* Device Problem */}
+                            {selectedCustomer.deviceProblem && (
+                                <div className="pt-2 border-t border-gray-800">
+                                    <h4 className="text-[11px] font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-amber-400 rounded-full"></span> 🔧 Device Problem / បញ្ហាឧបករណ៍
+                                    </h4>
+                                    <div className="p-3 bg-amber-900/15 border border-amber-700/40 rounded-xl text-xs text-amber-300 font-medium leading-relaxed whitespace-pre-wrap">
+                                        {selectedCustomer.deviceProblem}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Section 3: Loan Terms */}
+
                             <div className="pt-2 border-t border-gray-800">
                                 <h4 className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span> 💰 Loan & Financial Agreement

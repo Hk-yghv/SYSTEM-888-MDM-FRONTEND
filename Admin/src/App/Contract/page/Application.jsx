@@ -355,7 +355,18 @@ const Application = () => {
 
                         </div>
 
+                        {/* Device Problem */}
+                        {infoData.deviceProblem && (
+                            <div className="space-y-1 pt-2 border-t border-gray-800">
+                                <h4 className="text-xs font-bold text-amber-400 uppercase flex items-center gap-1.5">🔧 Device Problem / បញ្ហាឧបករណ៍</h4>
+                                <div className="p-3 bg-amber-900/15 border border-amber-700/40 rounded-xl text-xs text-amber-300 font-medium leading-relaxed whitespace-pre-wrap">
+                                    {infoData.deviceProblem}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Loan Info */}
+
                         <div className="space-y-2 pt-2 border-t border-gray-800">
                             <h4 className="text-xs font-bold text-emerald-300 uppercase">Loan & Financial Details</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
