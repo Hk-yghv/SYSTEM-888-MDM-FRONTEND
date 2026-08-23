@@ -108,13 +108,31 @@ router.get('/', async (req, res) => {
                 }
             });
 
-            // Merge with Global configurations so any missing key inherits from Global
+            // Deep merge with Global configurations so any missing key or empty droplist category inherits from Global
             const merged = { ...globalConfigs, ...brandMapped };
 
+            if (globalConfigs.droplists && Array.isArray(globalConfigs.droplists)) {
+                let brandDroplists = Array.isArray(brandMapped.droplists) ? brandMapped.droplists : [];
+                const mergedDroplists = globalConfigs.droplists.map(gCat => {
+                    const bCat = brandDroplists.find(d => d.category === gCat.category);
+                    if (bCat && Array.isArray(bCat.items) && bCat.items.length > 0) {
+                        return bCat;
+                    }
+                    // Inherit items from Global if empty
+                    return gCat;
+                });
+                brandDroplists.forEach(bCat => {
+                    if (!mergedDroplists.some(d => d.category === bCat.category)) {
+                        mergedDroplists.push(bCat);
+                    }
+                });
+                merged.droplists = mergedDroplists;
+            }
+
             // If brand had 0 configs, auto-persist cloned Global configs for this brand in DB
-            if (brandDocs.length === 0 && Object.keys(globalConfigs).length > 0) {
+            if (brandDocs.length === 0 && Object.keys(merged).length > 0) {
                 const ControlSystemWrite = getWriteModel(ControlSystem) || ControlSystem;
-                for (const [key, value] of Object.entries(globalConfigs)) {
+                for (const [key, value] of Object.entries(merged)) {
                     await ControlSystemWrite.findOneAndUpdate(
                         { key, brand },
                         { key, brand, value },
@@ -124,6 +142,7 @@ router.get('/', async (req, res) => {
             }
 
             return res.json(merged);
+
         }
 
         if (!MEM_DB.controlSystems) {

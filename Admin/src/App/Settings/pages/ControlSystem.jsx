@@ -44,22 +44,70 @@ const ControlSystem = () => {
     const fetchControlSystemConfigs = async () => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE}/controlsystem?brand=${selectedBrand}`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.droplists) setDroplists(data.droplists);
-                if (data.call_phone_display) setCallPhoneDisplay(data.call_phone_display);
-                if (data.roles) setRoles(data.roles);
-                if (data.lockphone_display_text) setLockphoneDisplayText(data.lockphone_display_text);
-                if (data.lockphone_phone_number) setLockphonePhoneNumber(data.lockphone_phone_number);
-            }
-
-            // Always fetch the Global Brand list from the global config
+            // 1. Always fetch the Master Global Config first
+            let globalData = {};
+            let globalDroplists = [
+                { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
+                { category: 'Contract Types', items: ['Standard Installment', 'VIP Premium', 'Corporate Plan'] },
+                { category: 'Payment Methods', items: ['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer'] },
+                { category: 'Brands', items: ['888MDM', 'ECloud'] }
+            ];
             const globalRes = await fetch(`${API_BASE}/controlsystem?brand=`);
             if (globalRes.ok) {
-                const globalData = await globalRes.json();
-                const brandCat = globalData.droplists?.find(d => d.category === 'Brands');
-                if (brandCat) setBrandsList(brandCat.items);
+                globalData = await globalRes.json();
+                if (globalData.droplists && Array.isArray(globalData.droplists) && globalData.droplists.length > 0) {
+                    globalDroplists = globalData.droplists;
+                }
+                const brandCat = globalDroplists.find(d => d.category === 'Brands');
+                if (brandCat && Array.isArray(brandCat.items)) {
+                    setBrandsList(brandCat.items);
+                }
+            }
+
+            // 2. Fetch the selected brand config
+            if (selectedBrand) {
+                const res = await fetch(`${API_BASE}/controlsystem?brand=${selectedBrand}`);
+                if (res.ok) {
+                    const data = await res.json();
+
+                    // Smart auto-inherit droplists: If any category in the brand is empty or missing, auto-fill from Global!
+                    if (data.droplists && Array.isArray(data.droplists)) {
+                        const mergedDroplists = globalDroplists.map(gCat => {
+                            const bCat = data.droplists.find(d => d.category === gCat.category);
+                            if (bCat && Array.isArray(bCat.items) && bCat.items.length > 0) {
+                                return bCat;
+                            }
+                            return gCat; // Auto-inherit from Global
+                        });
+                        data.droplists.forEach(bCat => {
+                            if (!mergedDroplists.some(d => d.category === bCat.category)) {
+                                mergedDroplists.push(bCat);
+                            }
+                        });
+                        setDroplists(mergedDroplists);
+                    } else {
+                        setDroplists(globalDroplists);
+                    }
+
+                    if (data.call_phone_display) setCallPhoneDisplay(data.call_phone_display);
+                    else if (globalData.call_phone_display) setCallPhoneDisplay(globalData.call_phone_display);
+
+                    if (data.roles && Array.isArray(data.roles) && data.roles.length > 0) setRoles(data.roles);
+                    else if (globalData.roles) setRoles(globalData.roles);
+
+                    if (data.lockphone_display_text) setLockphoneDisplayText(data.lockphone_display_text);
+                    else if (globalData.lockphone_display_text) setLockphoneDisplayText(globalData.lockphone_display_text);
+
+                    if (data.lockphone_phone_number) setLockphonePhoneNumber(data.lockphone_phone_number);
+                    else if (globalData.lockphone_phone_number) setLockphonePhoneNumber(globalData.lockphone_phone_number);
+                }
+            } else {
+                // Global brand selected
+                if (globalDroplists) setDroplists(globalDroplists);
+                if (globalData.call_phone_display) setCallPhoneDisplay(globalData.call_phone_display);
+                if (globalData.roles) setRoles(globalData.roles);
+                if (globalData.lockphone_display_text) setLockphoneDisplayText(globalData.lockphone_display_text);
+                if (globalData.lockphone_phone_number) setLockphonePhoneNumber(globalData.lockphone_phone_number);
             }
         } catch (err) {
             console.error('Fetch control system configs error:', err);
@@ -68,6 +116,7 @@ const ControlSystem = () => {
             setTimeout(() => setReloading(false), 500);
         }
     };
+
 
     useEffect(() => {
         fetchControlSystemConfigs();
