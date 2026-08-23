@@ -38,6 +38,8 @@ import createAuthRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import controlRoutes from './routes/controlRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import phoneAppRoutes from './routes/phoneAppRoutes.js';
+
 
 const app = express();
 app.disable('x-powered-by');
@@ -102,11 +104,13 @@ app.all(['/api/db-status/backup-firebase', '/api/backup-firebase'], requireAdmin
     }
 });
 
-// ── Mount Modular Routes (Backend Primary: Auth, Users, Control, Dashboard) ──
+// ── Mount Modular Routes (Backend Primary: Auth, Users, Control, Dashboard, Phone-App) ──
 app.use('/api/auth', createAuthRoutes(bot));
 app.use('/api/users', userRoutes);
 app.use('/api/controlsystem', controlRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/phone-app', phoneAppRoutes);
+
 
 app.use((err, req, res, next) => {
     console.error('Unhandled System Error:', err);
