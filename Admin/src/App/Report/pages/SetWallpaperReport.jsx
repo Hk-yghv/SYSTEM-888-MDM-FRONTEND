@@ -136,7 +136,7 @@ const SetWallpaperReport = () => {
             )}
 
             {activeTab === 'detail' && (
-                <div className='w-full overflow-x-auto h-[calc(100vh-300px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+                <div className='w-full overflow-x-auto h-[calc(100vh-350px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                             <tr>

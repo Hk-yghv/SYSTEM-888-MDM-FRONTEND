@@ -460,16 +460,12 @@ const DeviceActionHistory = () => {
             )}
 
             {/* Pagination */}
-            {total > LIMIT && (
-                <div className='flex justify-end pt-2'>
-                    <Pagination
-                        currentPage={page}
-                        totalItems={total}
-                        itemsPerPage={LIMIT}
-                        onPageChange={(p) => setPage(p)}
-                    />
-                </div>
-            )}
+            <Pagination
+                currentPage={page}
+                totalItems={total}
+                itemsPerPage={LIMIT}
+                onPageChange={setPage}
+            />
         </div>
     );
 };
