@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from typing import Dict, Any, List, Optional
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -22,6 +23,10 @@ for uri in MONGO_URIS:
     except Exception as e:
         print(f"Warning: Failed to connect to MongoDB: {e}")
 
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+
 def get_databases():
     dbs = []
     for c in _mongo_clients:
@@ -32,7 +37,7 @@ def get_databases():
             pass
     return dbs
 
-def query_collection(collection_name: str, filter_query: Dict[str, Any], projection: Optional[Dict[str, Any]] = None, limit: int = 50) -> List[Dict[str, Any]]:
+def query_collection(collection_name: str, filter_query: Dict[str, Any], projection: Optional[Dict[str, Any]] = None, limit: int = 50, deduplicate: bool = True) -> List[Dict[str, Any]]:
     results = []
     seen = set()
     for db in get_databases():
@@ -41,7 +46,7 @@ def query_collection(collection_name: str, filter_query: Dict[str, Any], project
             cursor = col.find(filter_query, projection).limit(limit) if projection else col.find(filter_query).limit(limit)
             for d in cursor:
                 uid = str(d.get("contractId") or d.get("userId") or d.get("_id"))
-                if uid not in seen:
+                if not deduplicate or uid not in seen:
                     seen.add(uid)
                     d["_id"] = str(d["_id"])
                     results.append(d)
@@ -61,6 +66,72 @@ def count_collection(collection_name: str, filter_query: Dict[str, Any]) -> int:
     return total
 
 class SystemMDAIEngine:
+    @classmethod
+    def build_gemini_context(cls, user: Dict[str, Any]) -> Dict[str, Any]:
+        contract_filter = cls.build_security_filter(user)
+        contracts = query_collection("contracts", contract_filter, limit=100)
+        contract_ids = {c.get("contractId") for c in contracts if c.get("contractId")}
+        payments = query_collection("payments", {}, limit=500, deduplicate=False)
+        if not cls.is_master_admin(user) and user.get("brand"):
+            payments = [p for p in payments if p.get("contractId") in contract_ids]
+
+        safe_contracts = [{
+            "brand": c.get("brand", ""),
+            "status": c.get("status", ""),
+            "model": c.get("model", ""),
+            "amount": c.get("amount", c.get("totalAmount", 0)),
+            "monthlyPayment": c.get("monthlyPayment", 0),
+            "lockPhoneStatus": c.get("lockPhoneStatus", "Unlocked"),
+            "lockWallpaperStatus": c.get("lockWallpaperStatus", "Unlocked"),
+            "inputDate": c.get("inputDate", "")
+        } for c in contracts]
+        safe_payments = [{
+            "amount": p.get("amount", 0),
+            "paidDate": p.get("paidDate", p.get("paymentDate", "")),
+            "paidBy": p.get("paidBy", p.get("paymentMethod", ""))
+        } for p in payments]
+        return {
+            "scope": "all brands" if cls.is_master_admin(user) else f"brand {user.get('brand', 'restricted')}",
+            "contracts": safe_contracts,
+            "payments": safe_payments
+        }
+
+    @classmethod
+    def ask_gemini(cls, question: str, user: Dict[str, Any], conversation_history: Optional[List[Dict[str, str]]] = None) -> Optional[str]:
+        if not GEMINI_API_KEY:
+            return None
+        context = cls.build_gemini_context(user)
+        history = (conversation_history or [])[-6:]
+        prompt = (
+            "You are the analytical assistant for SYSTEM MDM. Answer in the user's language, "
+            "especially Khmer for Khmer questions. Use only the supplied MDM context; never invent values. "
+            "Explain calculations briefly and say when the context is insufficient. Never reveal passwords, "
+            "secrets, direct customer identifiers, phone numbers, ID cards, IMEI, serial numbers, or database details. "
+            f"\nUser role: {user.get('role', 'Staff')}\nQuestion: {question}"
+            f"\nRecent conversation: {json.dumps(history, ensure_ascii=False)}"
+            f"\nMDM context: {json.dumps(context, ensure_ascii=False, default=str)}"
+        )
+        try:
+            response = requests.post(
+                GEMINI_URL,
+                params={"key": GEMINI_API_KEY},
+                json={
+                    "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 700}
+                },
+                timeout=20
+            )
+            if not response.ok:
+                print(f"Gemini request failed: {response.status_code}")
+                return None
+            candidates = response.json().get("candidates", [])
+            parts = candidates[0].get("content", {}).get("parts", []) if candidates else []
+            answer = "".join(part.get("text", "") for part in parts).strip()
+            return answer or None
+        except (requests.RequestException, ValueError, KeyError, IndexError) as err:
+            print(f"Gemini request error: {err}")
+            return None
+
     @staticmethod
     def is_master_admin(user: Dict[str, Any]) -> bool:
         username = str(user.get("username", "")).lower().strip()
@@ -421,6 +492,10 @@ class SystemMDAIEngine:
                 mth = p.get("month", "Installment")
                 res += f"| {dt} | **{cn}** | `{sn}` | `{amt}` | {mth} |\n"
             return res
+
+        gemini_response = cls.ask_gemini(q, user, conversation_history)
+        if gemini_response:
+            return gemini_response
 
         # ── 9. Smart Fallback with Actionable Prompts ──
         brand_info = f"Brand **{user_brand}**" if user_brand and not is_master else "ទូទាំងប្រព័ន្ធ"

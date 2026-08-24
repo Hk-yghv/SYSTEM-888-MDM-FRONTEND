@@ -23,16 +23,26 @@ router.get('/', async (req, res) => {
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true);
         
         let query = {};
-        if (status) query.status = status;
+        if (status === 'Comments') {
+            query.$and = [{
+                $or: [
+                    { status: 'Comments' },
+                    { status: 'Activated', notes: { $exists: true, $nin: ['', null] } }
+                ]
+            }];
+        } else if (status) {
+            query.status = status;
+        }
         if (userBrand && !isMasterAdmin) query.brand = userBrand;
         if (search) {
-            query.$or = [
+            const searchQuery = [
                 { customerNameEn: { $regex: search, $options: 'i' } },
                 { customerNameKh: { $regex: search, $options: 'i' } },
                 { serialNumber: { $regex: search, $options: 'i' } },
                 { contractId: { $regex: search, $options: 'i' } },
                 { model: { $regex: search, $options: 'i' } }
             ];
+            query.$and = [...(query.$and || []), { $or: searchQuery }];
         }
 
         if (isMongoConnected) {
@@ -43,7 +53,11 @@ router.get('/', async (req, res) => {
             return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
         let filtered = MEM_DB.contracts;
-        if (status) filtered = filtered.filter(c => c.status === status);
+        if (status === 'Comments') {
+            filtered = filtered.filter(c => c.status === 'Comments' || (c.status === 'Activated' && c.notes));
+        } else if (status) {
+            filtered = filtered.filter(c => c.status === status);
+        }
         if (userBrand && !isMasterAdmin) filtered = filtered.filter(c => c.brand === userBrand);
         if (search) filtered = filtered.filter(c =>
             (c.customerNameEn || '').toLowerCase().includes(search.toLowerCase()) ||

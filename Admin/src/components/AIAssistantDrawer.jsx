@@ -203,9 +203,12 @@ const AIAssistantDrawer = ({ isOpen, onClose }) => {
                 };
                 setMessages(prev => [...prev, aiMsg]);
             } else {
+                const errorData = await res.json().catch(() => ({}));
                 setMessages(prev => [...prev, {
                     sender: 'ai',
-                    text: '⚠️ មានបញ្ហាក្នុងការទាក់ទងទៅកាន់ Python AI Backend Service (Port 5003)។ សូមពិនិត្យមើលសេវាកម្ម backend3។',
+                    text: res.status === 429
+                        ? `⚠️ ${errorData.detail || 'AI daily limit reached. Please try again tomorrow.'}`
+                        : '⚠️ មានបញ្ហាក្នុងការទាក់ទងទៅកាន់ Python AI Backend Service (Port 5003)។ សូមពិនិត្យមើលសេវាកម្ម backend3។',
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 }]);
             }

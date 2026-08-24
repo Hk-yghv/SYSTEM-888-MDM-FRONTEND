@@ -207,7 +207,6 @@ const Activated = () => {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    status: 'Comments',
                     notes: commentInput
                 })
             });
@@ -216,7 +215,7 @@ const Activated = () => {
                 setUiModal({
                     open: true,
                     title: 'Comment Saved',
-                    message: `Comment added for "${selectedCommentItem.customerNameEn}". Moved to Comments page!`,
+                    message: `Comment added for "${selectedCommentItem.customerNameEn}". The contract remains Activated and is also visible in Comments.`,
                     type: 'success'
                 });
                 setSelectedCommentItem(null);
@@ -652,7 +651,7 @@ const Activated = () => {
                                 type="submit"
                                 className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-600/30"
                             >
-                                Submit & Move to Comments
+                                Submit Comment
                             </button>
                         </div>
                     </form>

@@ -1,4 +1,6 @@
 import os
+from datetime import date
+from threading import Lock
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +12,30 @@ from ai_engine import SystemMDAIEngine
 load_dotenv()
 
 app = FastAPI(title="System MDM AI Service", version="1.0.0")
+
+_ai_usage = {}
+_ai_usage_lock = Lock()
+
+def get_ai_daily_limit(user: Dict[str, Any]) -> int:
+    role = str(user.get("role", "Staff")).lower()
+    if user.get("isImmutable") or role in {"superadmin", "administrator"}:
+        return int(os.getenv("AI_DAILY_LIMIT_ADMIN", "50"))
+    return int(os.getenv("AI_DAILY_LIMIT_USER", "20"))
+
+def consume_ai_quota(user: Dict[str, Any]) -> tuple[bool, int, int]:
+    account = str(user.get("username", "anonymous")).strip() or "anonymous"
+    today = date.today().isoformat()
+    limit = get_ai_daily_limit(user)
+    with _ai_usage_lock:
+        record = _ai_usage.get(account)
+        if not record or record["date"] != today:
+            record = {"date": today, "count": 0}
+        if record["count"] >= limit:
+            _ai_usage[account] = record
+            return False, 0, limit
+        record["count"] += 1
+        _ai_usage[account] = record
+        return True, limit - record["count"], limit
 
 # Enable CORS for Frontend Admin
 app.add_middleware(
@@ -37,6 +63,9 @@ def health_check():
 async def chat_endpoint(payload: ChatRequest):
     if not payload.question or not payload.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
+    allowed, remaining, limit = consume_ai_quota(payload.user or {})
+    if not allowed:
+        raise HTTPException(status_code=429, detail=f"AI daily limit reached ({limit} questions). Try again tomorrow.")
     try:
         reply = SystemMDAIEngine.process_chat(
             question=payload.question,
@@ -47,7 +76,8 @@ async def chat_endpoint(payload: ChatRequest):
             "success": True,
             "answer": reply,
             "userBrand": payload.user.get("brand", ""),
-            "userRole": payload.user.get("role", "")
+            "userRole": payload.user.get("role", ""),
+            "quotaRemaining": remaining
         }
     except Exception as e:
         print(f"Chat processing error: {e}")
