@@ -3,6 +3,9 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { FaLock, FaUnlock } from 'react-icons/fa';
 import { MdOutlineSync, MdOutlinePhoneIphone } from 'react-icons/md';
+import Pagination from '../../../components/Pagination';
+
+const LIMIT = 10;
 
 const Actions = () => {
     const { t } = useLanguage();
@@ -12,15 +15,27 @@ const Actions = () => {
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [togglingId, setTogglingId] = useState(null);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
 
-    const fetchContracts = async () => {
+    const fetchContracts = async (pg = page) => {
         setReloading(true);
         try {
-            const res = await fetch(`${API_BASE1}/contracts?status=Activated`);
+            const params = new URLSearchParams({
+                status: 'Activated',
+                page: pg,
+                limit: LIMIT,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
 
             if (res.ok) {
                 const result = await res.json();
                 setContracts(Array.isArray(result.data) ? result.data : []);
+                setTotal(result.total || 0);
             }
         } catch (err) {
             console.error('Fetch lostphone action contracts error:', err);
@@ -31,8 +46,8 @@ const Actions = () => {
     };
 
     useEffect(() => {
-        fetchContracts();
-    }, []);
+        fetchContracts(page);
+    }, [page]);
 
     const handleToggleLock = async (contract, newStatus) => {
         setTogglingId(contract._id);
@@ -64,7 +79,7 @@ const Actions = () => {
             });
 
             if (res.ok) {
-                await fetchContracts();
+                await fetchContracts(page);
             }
         } catch (err) {
             console.error('Toggle lock error:', err);
@@ -168,6 +183,8 @@ const Actions = () => {
                     </tbody>
                 </table>
             </div>
+
+            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
         </div>
     );
 };
