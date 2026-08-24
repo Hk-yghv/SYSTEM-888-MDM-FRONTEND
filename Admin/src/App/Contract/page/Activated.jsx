@@ -348,7 +348,7 @@ const Activated = () => {
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                                 <MdSwapHoriz className="text-purple-600 text-lg" />
-                                ជ្រើសរើសកាលបរិច្ឆេទ Redeem (Move to Redeem)
+                                ជ្រើសរើសកាលបរិច្ឆេទ Redeem
                             </h3>
                             <button onClick={() => setRedeemItem(null)} className="text-slate-400 hover:text-slate-600 font-bold text-sm cursor-pointer">✕</button>
                         </div>
@@ -361,7 +361,7 @@ const Activated = () => {
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                                    កាលបរិច្ឆេទ Redeem (Redeem Date)
+                                    កាលបរិច្ឆេទ Redeem
                                 </label>
                                 <input
                                     type="date"
@@ -573,21 +573,21 @@ const Activated = () => {
                                                                     className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-xl flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdSwapHoriz className="text-blue-600 text-base" />
-                                                                    <span>Move to Check</span>
+                                                                    <span>Check</span>
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleChangeStatus(item, 'Redeem')}
                                                                     className="w-full text-left px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-50 rounded-xl flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdSwapHoriz className="text-purple-600 text-base" />
-                                                                    <span>Move to Redeem</span>
+                                                                    <span>Redeem</span>
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleChangeStatus(item, 'Blacklist')}
                                                                     className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdSwapHoriz className="text-red-600 text-base" />
-                                                                    <span>Move to Blacklist</span>
+                                                                    <span>Blacklist</span>
                                                                 </button>
                                                             </>
                                                         )}
