@@ -24,7 +24,7 @@ for uri in MONGO_URIS:
         print(f"Warning: Failed to connect to MongoDB: {e}")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 def get_databases():
@@ -66,6 +66,16 @@ def count_collection(collection_name: str, filter_query: Dict[str, Any]) -> int:
     return total
 
 class SystemMDAIEngine:
+    @staticmethod
+    def is_analytical_question(question: str) -> bool:
+        analytical_terms = [
+            "វិភាគ", "វិភាគឲ្យ", "ប្រៀបធៀប", "និន្នាការ", "ព្យាករណ៍", "ហេតុអ្វី",
+            "ណែនាំ", "សង្កេត", "បញ្ហា", "analyze", "analysis", "compare", "trend",
+            "forecast", "why", "recommend", "insight", "performance", "anomaly"
+        ]
+        normalized = question.lower()
+        return any(term in normalized for term in analytical_terms)
+
     @classmethod
     def build_gemini_context(cls, user: Dict[str, Any]) -> Dict[str, Any]:
         contract_filter = cls.build_security_filter(user)
@@ -99,6 +109,7 @@ class SystemMDAIEngine:
     @classmethod
     def ask_gemini(cls, question: str, user: Dict[str, Any], conversation_history: Optional[List[Dict[str, str]]] = None) -> Optional[str]:
         if not GEMINI_API_KEY:
+            print("Gemini is not configured: GEMINI_API_KEY is missing")
             return None
         context = cls.build_gemini_context(user)
         history = (conversation_history or [])[-6:]
@@ -122,7 +133,7 @@ class SystemMDAIEngine:
                 timeout=20
             )
             if not response.ok:
-                print(f"Gemini request failed: {response.status_code}")
+                print(f"Gemini request failed: {response.status_code}: {response.text[:300]}")
                 return None
             candidates = response.json().get("candidates", [])
             parts = candidates[0].get("content", {}).get("parts", []) if candidates else []
@@ -195,6 +206,11 @@ class SystemMDAIEngine:
         
         q = question.strip()
         q_lower = q.lower()
+
+        if cls.is_analytical_question(q):
+            gemini_response = cls.ask_gemini(q, user, conversation_history)
+            if gemini_response:
+                return gemini_response
 
         # ══════════════════════════════════════════════════════════════
         # 1. USERS & ACCOUNTS QUERIES (គ្រប់ Account, បញ្ជី Users, Profile)
