@@ -36,7 +36,7 @@ router.post('/lostphone/toggle-lock', async (req, res) => {
         if (isMongoConnected) await contract.save();
 
         const now = new Date();
-        const resolvedDisplayText = (displayText && !displayText.includes('ប្រព័ន្ធ SYSTEM MDM — ទូរស័ព្ទនេះត្រូវបានចាក់សោ')) ? displayText : '';
+        const resolvedDisplayText = displayText || '';
 
         const logData = {
             logId: `LOG-${Date.now()}`,

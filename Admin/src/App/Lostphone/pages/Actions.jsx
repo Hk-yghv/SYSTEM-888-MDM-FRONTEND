@@ -52,11 +52,12 @@ const Actions = () => {
     const handleToggleLock = async (contract, newStatus) => {
         setTogglingId(contract._id);
         try {
-            // Fetch current lockphone display configs from MongoDB ControlSystem
+            // Fetch current lockphone display configs from MongoDB ControlSystem (brand-specific first, fallback to Global)
             let displayText = 'ប្រព័ន្ធ SYSTEM MDM — ទូរស័ព្ទនេះត្រូវបានចាក់សោ ហេតុថាមានបំណុលជំពាក់';
             let phoneNumber = '+855 12 903 120';
             try {
-                const configRes = await fetch(`${API_BASE}/controlsystem`);
+                const brandParam = user?.brand ? `?brand=${encodeURIComponent(user.brand)}` : '';
+                const configRes = await fetch(`${API_BASE}/controlsystem${brandParam}`);
                 if (configRes.ok) {
                     const cfg = await configRes.json();
                     if (cfg.lockphone_display_text) displayText = cfg.lockphone_display_text;
