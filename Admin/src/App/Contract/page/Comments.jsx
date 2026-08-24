@@ -199,7 +199,7 @@ const Comments = () => {
                             <p className="text-gray-400">Serial Number: <span className="text-indigo-300 font-mono">{selectedInfo.serialNumber}</span></p>
                             <div className="pt-2 border-t border-gray-800">
                                 <span className="text-cyan-400 font-bold block mb-1">Comment Note:</span>
-                                <p className="text-gray-100 bg-gray-950 p-3 rounded-xl border border-gray-800 font-sans leading-relaxed">{selectedInfo.notes || 'No notes'}</p>
+                                <p className="text-white bg-gray-950 p-3 rounded-xl border border-gray-800 font-sans leading-relaxed">{selectedInfo.notes || 'No notes'}</p>
                             </div>
                         </div>
                         <div className="text-right">
