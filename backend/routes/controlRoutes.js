@@ -109,6 +109,7 @@ router.get('/', async (req, res) => {
             });
 
             // Deep merge with Global configurations so any missing key or empty droplist category inherits from Global
+            // NOTE: We do NOT persist/clone this merge to DB — Private brand stays empty until admin explicitly saves.
             const merged = { ...globalConfigs, ...brandMapped };
 
             if (globalConfigs.droplists && Array.isArray(globalConfigs.droplists)) {
@@ -118,7 +119,7 @@ router.get('/', async (req, res) => {
                     if (bCat && Array.isArray(bCat.items) && bCat.items.length > 0) {
                         return bCat;
                     }
-                    // Inherit items from Global if empty
+                    // Inherit items from Global if brand has none for this category
                     return gCat;
                 });
                 brandDroplists.forEach(bCat => {
@@ -127,18 +128,6 @@ router.get('/', async (req, res) => {
                     }
                 });
                 merged.droplists = mergedDroplists;
-            }
-
-            // If brand had 0 configs, auto-persist cloned Global configs for this brand in DB
-            if (brandDocs.length === 0 && Object.keys(merged).length > 0) {
-                const ControlSystemWrite = getWriteModel(ControlSystem) || ControlSystem;
-                for (const [key, value] of Object.entries(merged)) {
-                    await ControlSystemWrite.findOneAndUpdate(
-                        { key, brand },
-                        { key, brand, value },
-                        { upsert: true, new: true, setDefaultsOnInsert: true }
-                    ).catch(() => {});
-                }
             }
 
             return res.json(merged);
@@ -157,6 +146,40 @@ router.get('/', async (req, res) => {
     } catch (err) {
         console.error('Error fetching control system config:', err);
         res.json(MEM_DB.controlSystem);
+    }
+});
+
+// GET /field-origins: Returns per-field origin { fieldName: 'global' | 'private' } for a brand
+// This allows the frontend to display 🌐 Inherited or 🏷️ Private Override badges per field
+router.get('/field-origins', async (req, res) => {
+    try {
+        const brand = (req.query.brand || '').trim();
+        if (!brand || brand === 'Global') {
+            // Everything is "global" when viewing Global config
+            return res.json({ origins: {}, brand: '' });
+        }
+
+        const TRACKED_KEYS = ['call_phone_display', 'lockphone_display_text', 'lockphone_phone_number', 'roles', 'droplists'];
+        const origins = {};
+
+        if (isMongoConnected) {
+            const brandDocs = await queryAllDBs(ControlSystem, (M) => M.find({ brand, key: { $in: TRACKED_KEYS } }));
+            const privateKeys = new Set(brandDocs.map(d => d.key));
+            TRACKED_KEYS.forEach(key => {
+                origins[key] = privateKeys.has(key) ? 'private' : 'global';
+            });
+        } else {
+            // MEM_DB fallback
+            const memConfig = MEM_DB.controlSystems?.find(c => c.brand === brand);
+            TRACKED_KEYS.forEach(key => {
+                origins[key] = (memConfig && memConfig[key] !== undefined) ? 'private' : 'global';
+            });
+        }
+
+        res.json({ origins, brand });
+    } catch (err) {
+        console.error('Error fetching field origins:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 

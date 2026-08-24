@@ -35,11 +35,26 @@ const ControlSystem = () => {
     const [reloading, setReloading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
+    const [fieldOrigins, setFieldOrigins] = useState({});
 
     const [newRoleInput, setNewRoleInput] = useState('');
     const [newItemInput, setNewItemInput] = useState('');
     const [selectedCategoryIdx, setSelectedCategoryIdx] = useState(0);
     const [newBrandInput, setNewBrandInput] = useState('');
+
+    // Fetch which fields are private overrides vs inherited from Global
+    const fetchFieldOrigins = async (brand) => {
+        try {
+            if (!brand || brand === '') { setFieldOrigins({}); return; }
+            const res = await fetch(`${API_BASE}/controlsystem/field-origins?brand=${encodeURIComponent(brand)}`);
+            if (res.ok) {
+                const data = await res.json();
+                setFieldOrigins(data.origins || {});
+            }
+        } catch (err) {
+            console.error('fetchFieldOrigins error:', err);
+        }
+    };
 
     const fetchControlSystemConfigs = async () => {
         setReloading(true);
@@ -120,6 +135,7 @@ const ControlSystem = () => {
 
     useEffect(() => {
         fetchControlSystemConfigs();
+        fetchFieldOrigins(selectedBrand);
     }, [selectedBrand]);
 
     const saveConfigToMongoDB = async (key, value) => {
@@ -137,6 +153,10 @@ const ControlSystem = () => {
             if (res.ok) {
                 setMessage(`Control System '${key}' configuration updated for brand '${selectedBrand || 'Global'}' in MongoDB successfully!`);
                 setTimeout(() => setMessage(''), 3000);
+                // Mark this field as private after successful save (only for brand-specific saves)
+                if (selectedBrand) {
+                    setFieldOrigins(prev => ({ ...prev, [key]: 'private' }));
+                }
             } else {
                 alert(`រក្សាទុកបរាជ័យ (Failed to save configuration): ${data.error || res.statusText || 'Server Error'}`);
             }
@@ -319,6 +339,17 @@ const ControlSystem = () => {
             if (res.ok) {
                 setMessage(`ការកំណត់ទាំងអស់សម្រាប់ Brand '${selectedBrand || 'Global'}' ត្រូវបានរក្សាទុកដោយជោគជ័យ! (All configurations saved successfully!)`);
                 setTimeout(() => setMessage(''), 4000);
+                // Mark all saved keys as private after bulk save
+                if (selectedBrand) {
+                    setFieldOrigins(prev => ({
+                        ...prev,
+                        call_phone_display: 'private',
+                        lockphone_display_text: 'private',
+                        lockphone_phone_number: 'private',
+                        roles: 'private',
+                        droplists: 'private',
+                    }));
+                }
             } else {
                 alert(`រក្សាទុកបរាជ័យ (Failed to save configurations): ${data.error || res.statusText || 'Server Error'}`);
             }
@@ -327,6 +358,24 @@ const ControlSystem = () => {
             console.error('Save all configs error:', err);
             alert(`រក្សាទុកបរាជ័យ: Network Error (${err.message})`);
         }
+    };
+
+    // Helper component: badge showing 🌐 Global inherited vs 🏷️ Private override
+    const OriginBadge = ({ fieldKey }) => {
+        if (!selectedBrand) return null; // Don't show badge when viewing Global
+        const origin = fieldOrigins[fieldKey];
+        if (origin === 'private') {
+            return (
+                <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[9px] font-bold uppercase tracking-wide">
+                    🏷️ Private Override
+                </span>
+            );
+        }
+        return (
+            <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-[9px] font-bold uppercase tracking-wide">
+                🌐 Inherited Global
+            </span>
+        );
     };
 
     return (
@@ -419,6 +468,7 @@ const ControlSystem = () => {
                 <div className="p-6 rounded-3xl glass-card border border-red-500/30 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-red-400 text-xs font-bold uppercase">
                         <FaPhoneAlt /> Lost Phone Lock Display Text & Hotline Number
+                        <OriginBadge fieldKey="lockphone_display_text" />
                     </div>
 
                     <div className="space-y-3 text-xs">
@@ -464,6 +514,7 @@ const ControlSystem = () => {
                 <div className="p-6 rounded-3xl glass-card border border-gray-800 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-purple-300 text-xs font-bold uppercase">
                         <FaUserShield /> System User Roles Configurator
+                        <OriginBadge fieldKey="roles" />
                     </div>
 
                     <div className="space-y-3 text-xs">
@@ -500,6 +551,7 @@ const ControlSystem = () => {
                 <div className="lg:col-span-2 p-6 rounded-3xl glass-card border border-gray-800 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-emerald-300 text-xs font-bold uppercase">
                         <FaList /> System Dropdown Lists & Dynamic Options (Droplists)
+                        <OriginBadge fieldKey="droplists" />
                     </div>
 
                     <div className="space-y-4 text-xs">
