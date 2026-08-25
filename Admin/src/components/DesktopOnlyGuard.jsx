@@ -10,7 +10,7 @@ const DesktopOnlyGuard = ({ children }) => {
             // Check window width (Desktop threshold: >= 1024px)
             const width = window.innerWidth;
             const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
+
             if (width < 1024 || isMobileUA) {
                 setIsDesktop(false);
             } else {
@@ -39,20 +39,20 @@ const DesktopOnlyGuard = ({ children }) => {
                             <FaExclamationTriangle />
                             <span>Desktop Computer Screen Required</span>
                         </div>
-                        <h1 className="text-xl font-black text-gray-100 font-khmer">
+                        <h1 className="text-xl font-white text-white font-khmer">
                             អនុញ្ញាតតែលើកុំព្យូទ័រ / Computer Only
                         </h1>
-                        <p className="text-xs text-gray-300 leading-relaxed font-khmer pt-2">
+                        <p className="text-xs text-white leading-relaxed font-khmer pt-2">
                             ប្រព័ន្ធ **SYSTEM MDM** ត្រូវបានទាមទារឱ្យប្រើប្រាស់នៅលើអេក្រង់កុំព្យូទ័រ (Desktop / Laptop) ធំជាង 1024px ប៉ុណ្ណោះ។ ឧបករណ៍ Tablet ឬ ទូរស័ព្ទដៃមិនត្រូវបានអនុញ្ញាតឱ្យបើកចូលប្រើប្រាស់ឡើយ។
                         </p>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-gray-900/80 border border-gray-800 text-left text-xs space-y-2">
+                    <div className="p-4 rounded-2xl bg-white/80 border border-white text-left text-xs space-y-2">
                         <div className="flex items-center gap-3 text-red-400 font-semibold">
                             <FaMobileAlt className="text-lg" />
                             <span>Mobile & Tablet Access Restricted</span>
                         </div>
-                        <p className="text-[11px] text-gray-400">
+                        <p className="text-[11px] text-white-400">
                             Please open this website on a desktop computer browser to continue.
                         </p>
                     </div>
