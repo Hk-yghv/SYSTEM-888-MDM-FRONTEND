@@ -180,11 +180,11 @@ const PaymentHistory = () => {
                                     <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'>{item.paidDate}</td>
                                     <td className='px-4 py-3'>
                                         <div className="flex items-center gap-2.5">
-                                            {item.photo ? (
+                                            {/* {item.photo ? (
                                                 <img src={item.photo} alt="avatar" className="w-7 h-7 rounded-full object-cover border border-slate-200" />
                                             ) : (
                                                 <div className="w-7 h-7 rounded-full bg-emerald-50 border border-emerald-300 flex items-center justify-center text-[10px] font-bold text-emerald-700">PAY</div>
-                                            )}
+                                            )} */}
                                             <span className='font-bold text-slate-900'>{item.customerName}</span>
                                         </div>
                                     </td>

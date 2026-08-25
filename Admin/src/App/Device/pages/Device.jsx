@@ -195,7 +195,7 @@ const Device = () => {
                                             className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 mx-auto cursor-pointer"
                                         >
                                             <FaMobileAlt />
-                                            <span>View Info</span>
+                                            <span>Info</span>
                                         </button>
                                     </td>
                                 </tr>

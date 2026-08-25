@@ -475,11 +475,11 @@ const Activated = () => {
                                     <td className='px-4 py-3 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
                                     <td className='px-4 py-3'>
                                         <div className="flex items-center gap-2">
-                                            <img
+                                            {/* <img
                                                 src={item.customerPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                                                 alt="avatar"
                                                 className="w-7 h-7 rounded-full object-cover border border-slate-300"
-                                            />
+                                            /> */}
                                             <div>
                                                 <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
                                                 <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' />
@@ -724,90 +724,90 @@ const Activated = () => {
                         ) : (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="p-5 rounded-2xl bg-gray-900/80 border border-gray-800 text-center space-y-4 flex flex-col items-center justify-center">
-                                    <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Scan ABA Pay / System QR</h4>
-                                    {qrDataUrl ? (
-                                        <div className="p-3 bg-white rounded-2xl shadow-xl inline-block">
-                                            <img src={qrDataUrl} alt="QR Code" className="w-44 h-44 object-contain" />
-                                        </div>
-                                    ) : (
-                                        <div className="w-44 h-44 bg-gray-800 rounded-2xl flex items-center justify-center text-gray-500 animate-pulse">
-                                            Generating QR...
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="p-5 rounded-2xl bg-[#090c17] border border-indigo-500/30 text-left space-y-4 relative shadow-inner">
-                                    <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-xs font-bold text-emerald-400">
-                                        <FaMobileAlt className="text-base" />
-                                        <span>Mobile Phone Entry Simulator</span>
+                                    <div className="p-5 rounded-2xl bg-gray-900/80 border border-gray-800 text-center space-y-4 flex flex-col items-center justify-center">
+                                        <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Scan ABA Pay / System QR</h4>
+                                        {qrDataUrl ? (
+                                            <div className="p-3 bg-white rounded-2xl shadow-xl inline-block">
+                                                <img src={qrDataUrl} alt="QR Code" className="w-44 h-44 object-contain" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-44 h-44 bg-gray-800 rounded-2xl flex items-center justify-center text-gray-500 animate-pulse">
+                                                Generating QR...
+                                            </div>
+                                        )}
                                     </div>
-                                    <form onSubmit={handleMobilePaymentSubmit} className="space-y-3 text-xs">
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('paidDate')}</label>
-                                            <input type="date" required value={phoneForm.paidDate} onChange={(e) => setPhoneForm({ ...phoneForm, paidDate: e.target.value })} className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono" />
+
+                                    <div className="p-5 rounded-2xl bg-[#090c17] border border-indigo-500/30 text-left space-y-4 relative shadow-inner">
+                                        <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-xs font-bold text-emerald-400">
+                                            <FaMobileAlt className="text-base" />
+                                            <span>Mobile Phone Entry Simulator</span>
                                         </div>
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('paidBy')} / Payment Method</label>
-                                            <select
-                                                required
-                                                value={phoneForm.paidBy}
-                                                onChange={(e) => setPhoneForm({ ...phoneForm, paidBy: e.target.value })}
-                                                className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer"
+                                        <form onSubmit={handleMobilePaymentSubmit} className="space-y-3 text-xs">
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('paidDate')}</label>
+                                                <input type="date" required value={phoneForm.paidDate} onChange={(e) => setPhoneForm({ ...phoneForm, paidDate: e.target.value })} className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('paidBy')} / Payment Method</label>
+                                                <select
+                                                    required
+                                                    value={phoneForm.paidBy}
+                                                    onChange={(e) => setPhoneForm({ ...phoneForm, paidBy: e.target.value })}
+                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer"
+                                                >
+                                                    <option value="">-- Select Payment Method --</option>
+                                                    {paymentMethods.map(m => (
+                                                        <option key={m} value={m}>{m}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('amount')} ($ USD)</label>
+                                                <input type="number" required value={phoneForm.amount} onChange={(e) => setPhoneForm({ ...phoneForm, amount: e.target.value })} className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('description')}</label>
+                                                <input type="text" value={phoneForm.description} onChange={(e) => setPhoneForm({ ...phoneForm, description: e.target.value })} placeholder="Note or transaction ref" className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100" />
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={paymentSubmitting}
+                                                className="w-full h-10 mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
                                             >
-                                                <option value="">-- Select Payment Method --</option>
-                                                {paymentMethods.map(m => (
-                                                    <option key={m} value={m}>{m}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('amount')} ($ USD)</label>
-                                            <input type="number" required value={phoneForm.amount} onChange={(e) => setPhoneForm({ ...phoneForm, amount: e.target.value })} className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('description')}</label>
-                                            <input type="text" value={phoneForm.description} onChange={(e) => setPhoneForm({ ...phoneForm, description: e.target.value })} placeholder="Note or transaction ref" className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100" />
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            disabled={paymentSubmitting}
-                                            className="w-full h-10 mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
-                                        >
-                                            {paymentSubmitting ? (
-                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            ) : (
-                                                <span>Submit Payment to MongoDB</span>
-                                            )}
-                                        </button>
-                                    </form>
-                                </div>
+                                                {paymentSubmitting ? (
+                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                ) : (
+                                                    <span>Submit Payment to MongoDB</span>
+                                                )}
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
 
                                 <div className="p-5 rounded-2xl bg-gray-900/80 border border-sky-500/30 space-y-3">
-                                <div className="flex items-center justify-between border-b border-gray-800 pb-2">
-                                    <h4 className="text-xs font-bold text-sky-300 uppercase tracking-wider">Payment History / ប្រវត្តិបង់ប្រាក់</h4>
-                                    <span className="text-[10px] text-gray-400">{qrPayments.length} Transactions</span>
-                                </div>
-                                <div className="max-h-44 overflow-y-auto divide-y divide-gray-800">
-                                    {loadingQrPayments ? (
-                                        <p className="py-4 text-center text-xs text-gray-500">Loading payment history...</p>
-                                    ) : qrPayments.length === 0 ? (
-                                        <p className="py-4 text-center text-xs text-gray-500">No payment records yet.</p>
-                                    ) : qrPayments.map((payment, index) => (
-                                        <div key={payment._id || `${payment.paidDate}-${index}`} className="flex items-center justify-between gap-3 py-2 text-xs">
-                                            <div className="min-w-0">
-                                                <p className="text-gray-300 font-mono">{payment.paidDate || payment.paymentDate || '—'}</p>
-                                                <p className="text-gray-500 truncate">{payment.paidBy || 'System'} · {payment.description || '—'}</p>
+                                    <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+                                        <h4 className="text-xs font-bold text-sky-300 uppercase tracking-wider">Payment History / ប្រវត្តិបង់ប្រាក់</h4>
+                                        <span className="text-[10px] text-gray-400">{qrPayments.length} Transactions</span>
+                                    </div>
+                                    <div className="max-h-44 overflow-y-auto divide-y divide-gray-800">
+                                        {loadingQrPayments ? (
+                                            <p className="py-4 text-center text-xs text-gray-500">Loading payment history...</p>
+                                        ) : qrPayments.length === 0 ? (
+                                            <p className="py-4 text-center text-xs text-gray-500">No payment records yet.</p>
+                                        ) : qrPayments.map((payment, index) => (
+                                            <div key={payment._id || `${payment.paidDate}-${index}`} className="flex items-center justify-between gap-3 py-2 text-xs">
+                                                <div className="min-w-0">
+                                                    <p className="text-gray-300 font-mono">{payment.paidDate || payment.paymentDate || '—'}</p>
+                                                    <p className="text-gray-500 truncate">{payment.paidBy || 'System'} · {payment.description || '—'}</p>
+                                                </div>
+                                                <span className="text-emerald-400 font-bold font-mono whitespace-nowrap">${Number(payment.amount || 0).toLocaleString()}</span>
                                             </div>
-                                            <span className="text-emerald-400 font-bold font-mono whitespace-nowrap">${Number(payment.amount || 0).toLocaleString()}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="flex justify-between pt-2 border-t border-gray-800 text-xs font-bold">
-                                    <span className="text-gray-400">Total Paid</span>
-                                    <span className="text-emerald-400 font-mono">${qrPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0).toLocaleString()}</span>
-                                </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex justify-between pt-2 border-t border-gray-800 text-xs font-bold">
+                                        <span className="text-gray-400">Total Paid</span>
+                                        <span className="text-emerald-400 font-mono">${qrPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0).toLocaleString()}</span>
+                                    </div>
                                 </div>
                             </div>
                         )}

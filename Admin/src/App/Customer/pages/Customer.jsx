@@ -255,11 +255,11 @@ const Customer = () => {
                                     <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                                     <td className='px-4 py-3'>
                                         <div className="flex items-center gap-2">
-                                            <img
+                                            {/* <img
                                                 src={item.customerPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                                                 alt="avatar"
                                                 className="w-8 h-8 rounded-full object-cover border border-slate-200"
-                                            />
+                                            /> */}
                                             <div>
                                                 <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
                                                 <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-[11px] font-semibold' />
