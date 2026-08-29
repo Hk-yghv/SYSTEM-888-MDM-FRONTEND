@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { AiOutlineMenu } from "react-icons/ai";
-import { MdOutlineSync, MdEdit, MdDelete, MdPictureAsPdf, MdSwapHoriz } from "react-icons/md";
+import { MdOutlineSync, MdEdit, MdDelete, MdPictureAsPdf, MdSwapHoriz, MdSearch } from "react-icons/md";
 import { FaFileExcel } from 'react-icons/fa';
 import CreateApplication from '../components/CreateApplication';
 import Pagination from '../../../components/Pagination';
@@ -21,6 +21,20 @@ const BlackList = () => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [editData, setEditData] = useState(null);
     const [openEditModal, setOpenEditModal] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredContracts = contracts.filter(c => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (
+            (c.customerNameEn && c.customerNameEn.toLowerCase().includes(term)) ||
+            (c.customerNameKh && c.customerNameKh.toLowerCase().includes(term)) ||
+            (c.model && c.model.toLowerCase().includes(term)) ||
+            (c.serialNumber && c.serialNumber.toLowerCase().includes(term)) ||
+            (c.phone && c.phone.toLowerCase().includes(term)) ||
+            (c.idCardNumber && c.idCardNumber.toLowerCase().includes(term))
+        );
+    });
 
     const fetchBlackListContracts = async (pg = page) => {
         setReloading(true);
@@ -108,6 +122,16 @@ const BlackList = () => {
                     </h1>
                 </div>
                 <div className="flex items-center gap-3">
+                    <div className="relative">
+                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search customer, model, serial..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-red-500 focus:bg-white transition-all w-64 shadow-2xs"
+                        />
+                    </div>
                     <button
                         onClick={handleExportExcel}
                         className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
@@ -146,12 +170,12 @@ const BlackList = () => {
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
-                        {contracts.length === 0 ? (
+                        {filteredContracts.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="text-center py-8 text-slate-500 italic font-medium">No blacklist contracts found.</td>
                             </tr>
                         ) : (
-                            contracts.map((item, idx) => (
+                            filteredContracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-red-50/50 transition-colors'>
                                     <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
                                     <td className='px-4 py-3 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
