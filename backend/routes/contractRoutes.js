@@ -350,6 +350,38 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// Helper to robustly parse any date string
+const parseAnyDate = (dateStr) => {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date && !isNaN(dateStr.getTime())) return dateStr;
+    const str = String(dateStr).trim();
+    if (!str) return null;
+
+    // ISO or YYYY-MM-DD or YYYY-MM-DD HH:mm:ss
+    let match = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (match) {
+        const y = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10) - 1;
+        const d = parseInt(match[3], 10);
+        const dt = new Date(y, m, d);
+        if (!isNaN(dt.getTime())) return dt;
+    }
+
+    // DD-MM-YYYY or DD/MM/YYYY
+    match = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+    if (match) {
+        const d = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10) - 1;
+        const y = parseInt(match[3], 10);
+        const dt = new Date(y, m, d);
+        if (!isNaN(dt.getTime())) return dt;
+    }
+
+    const fallback = new Date(str);
+    if (!isNaN(fallback.getTime())) return fallback;
+    return null;
+};
+
 // GET payment alerts (Due Today & Overdue Payments with Brand Scoping)
 router.get('/payment-alerts', async (req, res) => {
     try {
@@ -358,7 +390,12 @@ router.get('/payment-alerts', async (req, res) => {
 
         let contractQuery = { status: { $ne: 'Redeem' } };
         if (userBrand && !isMasterAdmin) {
-            contractQuery.brand = userBrand;
+            const escaped = userBrand.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const cleanBrand = escaped.replace(/^system\s*/i, '');
+            contractQuery.$or = [
+                { brand: { $regex: escaped, $options: 'i' } },
+                { brand: { $regex: cleanBrand, $options: 'i' } }
+            ];
         }
 
         let contracts = [];
@@ -370,7 +407,8 @@ router.get('/payment-alerts', async (req, res) => {
         } else {
             contracts = MEM_DB.contracts.filter(c => c.status !== 'Redeem');
             if (userBrand && !isMasterAdmin) {
-                contracts = contracts.filter(c => c.brand === userBrand);
+                const bLower = userBrand.toLowerCase();
+                contracts = contracts.filter(c => (c.brand || '').toLowerCase().includes(bLower));
             }
             payments = MEM_DB.payments;
         }
@@ -388,8 +426,8 @@ router.get('/payment-alerts', async (req, res) => {
             paymentMap[cid].count += 1;
             const pDate = p.paidDate || p.createdAt || p.paymentDate;
             if (pDate) {
-                const parsed = new Date(pDate);
-                if (!isNaN(parsed.getTime())) {
+                const parsed = parseAnyDate(pDate);
+                if (parsed) {
                     if (!paymentMap[cid].lastPaidDate || parsed > paymentMap[cid].lastPaidDate) {
                         paymentMap[cid].lastPaidDate = parsed;
                     }
@@ -398,11 +436,6 @@ router.get('/payment-alerts', async (req, res) => {
         }
 
         const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth();
-        const currentDay = now.getDate();
-
         const dueTodayList = [];
         const overdueList = [];
 
@@ -419,19 +452,14 @@ router.get('/payment-alerts', async (req, res) => {
             // Skip if loan is fully paid off
             if (totalAmount > 0 && remainingBalance <= 0) continue;
 
-            // Parse input date / due day
-            let dueDay = 1;
-            let startDate = new Date(sanitized.inputDate || sanitized.createdAt || now);
-            if (isNaN(startDate.getTime())) startDate = now;
-            dueDay = startDate.getDate();
+            // Parse start date
+            let startDate = parseAnyDate(sanitized.inputDate) || parseAnyDate(sanitized.createdAt) || now;
 
-            // Calculate expected next due date
-            // Months paid so far
+            // Calculate months paid so far
             const monthsPaid = Math.floor(totalPaid / (monthlyPayment || 1));
 
-            // Target due date for current unpaid cycle
-            let targetDueDate = new Date(startDate);
-            targetDueDate.setMonth(startDate.getMonth() + monthsPaid + 1);
+            // Target due date calculation
+            let targetDueDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthsPaid + 1, startDate.getDate());
 
             // Calculate difference in days between targetDueDate and Today
             const diffTime = now.getTime() - targetDueDate.getTime();
@@ -476,7 +504,7 @@ router.get('/payment-alerts', async (req, res) => {
             // Categorize into Due Today vs Overdue
             if (diffDays > 0) {
                 overdueList.push(alertItem);
-            } else if (diffDays >= -3) { // Due within 3 days or today
+            } else if (diffDays >= -7) { // Due within 7 days or today
                 dueTodayList.push(alertItem);
             }
         }
