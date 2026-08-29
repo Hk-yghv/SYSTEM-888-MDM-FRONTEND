@@ -53,7 +53,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                 const sum = data.summary || { dueTodayCount: dueList.length, overdueCount: ovList.length, totalAlerts: dueList.length + ovList.length };
                 setSummary(sum);
 
-                // Auto switch to overdue if overdue list is populated
+                // Auto switch tab if needed
                 if (ovList.length > 0) {
                     setActiveTab('overdue');
                 } else if (dueList.length > 0) {
@@ -69,7 +69,6 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         }
     }, [API_BASE, API_BASE1, user, seenAlertKeys, updateUnreadCount]);
 
-    // Initial silent poll to populate badge count even when drawer is closed
     useEffect(() => {
         fetchAlerts();
     }, []);
@@ -131,20 +130,20 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     const unreadCountOverdue = overdueList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
 
     return (
-        <div className="fixed inset-0 z-[999] flex justify-end bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 select-none">
-            <div className="w-full max-w-5xl bg-slate-900 text-white h-full shadow-2xl flex flex-col border-l border-slate-800 animate-in slide-in-from-right duration-300">
-                {/* ── Header ── */}
-                <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-3">
+        <div className="fixed inset-0 z-[999] flex justify-end bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 select-none">
+            <div className="w-full max-w-5xl bg-[#f8fafc] text-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-300 animate-in slide-in-from-right duration-300">
+                {/* ── Header (Clean Light Theme) ── */}
+                <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between gap-3 shadow-xs">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-lg shadow-inner">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600 text-xl shadow-xs">
                             <FaBell className="animate-bounce" />
                         </div>
                         <div>
-                            <h2 className="text-base font-black tracking-wide text-white flex items-center gap-2">
+                            <h2 className="text-base font-black tracking-wide text-slate-900 flex items-center gap-2 font-khmer">
                                 🔔 ជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)
                             </h2>
-                            <p className="text-xs text-amber-400 font-medium">
-                                ម៉ាកសកម្ម (Brand): <strong className="text-white underline">{userBrandName}</strong>
+                            <p className="text-xs text-slate-600 font-bold">
+                                ម៉ាកសកម្ម (Brand): <strong className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">{userBrandName}</strong>
                             </p>
                         </div>
                     </div>
@@ -152,16 +151,16 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleMarkAllAsRead}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600 border border-emerald-500/50 text-emerald-300 hover:text-white transition-all cursor-pointer text-xs flex items-center gap-1.5 font-bold"
+                            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer text-xs flex items-center gap-1.5 font-bold shadow-sm"
                             title="សញ្ញាសម្គាល់បានមើលទាំងអស់"
                         >
                             <FaCheckDouble className="text-xs" />
-                            <span>មើលរួចទាំងអស់ (Mark All Read)</span>
+                            <span>មើលរួចទាំងអស់</span>
                         </button>
                         <button
                             onClick={fetchAlerts}
                             disabled={loading}
-                            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs flex items-center gap-1 font-semibold"
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer text-xs flex items-center gap-1 font-bold border border-slate-300"
                             title="ធ្វើបច្ចុប្បន្នភាពទិន្នន័យ"
                         >
                             <FaSync className={`text-xs ${loading ? 'animate-spin' : ''}`} />
@@ -169,7 +168,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         </button>
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-lg bg-slate-800 hover:bg-rose-600/30 text-slate-300 hover:text-rose-400 transition-colors cursor-pointer text-sm"
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 transition-colors cursor-pointer text-sm border border-slate-300"
                             title="បិទ"
                         >
                             <FaTimes />
@@ -178,21 +177,21 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                 </div>
 
                 {/* ── Summary Counters & Filter Bar ── */}
-                <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="p-3 bg-slate-100 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
                     {/* Tabs */}
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <button
                             onClick={() => setActiveTab('overdue')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${
                                 activeTab === 'overdue'
-                                    ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 border border-rose-500'
-                                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                                    ? 'bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-600/25'
+                                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
                             }`}
                         >
-                            <FaExclamationTriangle className="text-amber-300 animate-pulse" />
+                            <FaExclamationTriangle className={activeTab === 'overdue' ? 'text-white' : 'text-rose-600'} />
                             <span>លើសថ្ងៃបង់ប្រាក់ ({summary.overdueCount})</span>
                             {unreadCountOverdue > 0 && (
-                                <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-bounce shadow-sm">
+                                <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-pulse shadow-xs">
                                     {unreadCountOverdue} ថ្មី
                                 </span>
                             )}
@@ -200,16 +199,16 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
 
                         <button
                             onClick={() => setActiveTab('dueToday')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${
                                 activeTab === 'dueToday'
-                                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 border border-amber-400'
-                                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                                    ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md shadow-amber-500/25'
+                                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
                             }`}
                         >
-                            <FaCalendarCheck />
+                            <FaCalendarCheck className={activeTab === 'dueToday' ? 'text-slate-950' : 'text-amber-600'} />
                             <span>ដល់ថ្ងៃបង់ប្រាក់ ({summary.dueTodayCount})</span>
                             {unreadCountDue > 0 && (
-                                <span className="px-2 py-0.5 rounded-full bg-slate-950 text-amber-400 text-[10px] font-black border border-amber-400">
+                                <span className="px-2 py-0.5 rounded-full bg-slate-900 text-amber-300 text-[10px] font-black">
                                     {unreadCountDue} ថ្មី
                                 </span>
                             )}
@@ -217,57 +216,57 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     </div>
 
                     {/* Search box */}
-                    <div className="relative w-full sm:w-64">
-                        <FaSearch className="absolute left-3 top-2.5 text-slate-500 text-xs" />
+                    <div className="relative w-full sm:w-72">
+                        <FaSearch className="absolute left-3 top-2.5 text-slate-400 text-xs" />
                         <input
                             type="text"
                             placeholder="ស្វែងរកឈ្មោះ, លេខទូរស័ព្ទ, Serial..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/60"
+                            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
                         />
                     </div>
                 </div>
 
-                {/* ── Main Content Area ── */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* ── Main Content Area (High Contrast Text & Clean Panels) ── */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f8fafc]">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
-                            <FaSync className="animate-spin text-2xl text-amber-500" />
-                            <p className="text-xs font-medium">កំពុងទាញយកទិន្នន័យជូនដំណឹងបង់ប្រាក់...</p>
+                        <div className="flex flex-col items-center justify-center py-20 text-slate-600 gap-3">
+                            <FaSync className="animate-spin text-3xl text-amber-500" />
+                            <p className="text-xs font-bold">កំពុងទាញយកទិន្នន័យជូនដំណឹងបង់ប្រាក់...</p>
                         </div>
                     ) : activeTab === 'overdue' ? (
-                        /* ── Section 1: Overdue List (Detailed Data Table) ── */
+                        /* ── Section 1: Overdue List (High Contrast Clear Table) ── */
                         <div>
                             <div className="mb-3 flex items-center justify-between">
-                                <h3 className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-                                    <FaExclamationTriangle /> តារាងអតិថិជនលើសថ្ងៃបង់ប្រាក់ (Overdue Customers Table - {filteredOverdueList.length})
+                                <h3 className="text-xs font-black text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <FaExclamationTriangle className="text-rose-600" /> តារាងអតិថិជនលើសថ្ងៃបង់ប្រាក់ (OVERDUE CUSTOMERS TABLE - {filteredOverdueList.length})
                                 </h3>
-                                <span className="text-[11px] text-slate-400">បង្ហាញគ្រប់អតិថិជនដែលយឺតយ៉ាវ (លើសថ្ងៃ/ខែ)</span>
+                                <span className="text-[11px] text-slate-600 font-bold">បង្ហាញគ្រប់អតិថិជនដែលយឺតយ៉ាវ (លើសថ្ងៃ/ខែ)</span>
                             </div>
 
                             {filteredOverdueList.length === 0 ? (
-                                <div className="py-16 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-950/40">
-                                    <p className="text-slate-400 text-xs font-medium">✨ មិនមានអតិថិជនយឺតយ៉ាវ ឬលើសថ្ងៃបង់ប្រាក់ឡើយ!</p>
+                                <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
+                                    <p className="text-slate-600 text-xs font-bold">✨ មិនមានអតិថិជនយឺតយ៉ាវ ឬលើសថ្ងៃបង់ប្រាក់ឡើយ!</p>
                                 </div>
                             ) : (
-                                <div className="overflow-x-auto rounded-2xl border border-rose-900/40 bg-slate-950 shadow-xl">
+                                <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-md">
                                     <table className="w-full text-left text-xs border-collapse">
-                                        <thead className="bg-rose-950/80 text-rose-200 border-b border-rose-800/60 font-bold uppercase tracking-wider text-[11px]">
+                                        <thead className="bg-slate-100 text-slate-900 border-b border-slate-300 font-black uppercase tracking-wider text-[11px]">
                                             <tr>
-                                                <th className="px-3 py-3 text-center">ល.រ</th>
-                                                <th className="px-3 py-3">ស្ថានភាព Alert</th>
-                                                <th className="px-3 py-3">ឈ្មោះអតិថិជន</th>
-                                                <th className="px-3 py-3">លេខទូរស័ព្ទ</th>
-                                                <th className="px-3 py-3">ម៉ាក (Brand)</th>
-                                                <th className="px-3 py-3">ម៉ូឌែល / Serial</th>
-                                                <th className="px-3 py-3 text-right">ប្រាក់ត្រូវបង់</th>
-                                                <th className="px-3 py-3 text-center">ថ្ងៃត្រូវបង់</th>
-                                                <th className="px-3 py-3 text-center">រយៈពេលលើសថ្ងៃ</th>
-                                                <th className="px-3 py-3 text-center">Lock Status</th>
+                                                <th className="px-3.5 py-3.5 text-center">ល.រ</th>
+                                                <th className="px-3.5 py-3.5 text-center">ស្ថានភាព ALERT</th>
+                                                <th className="px-3.5 py-3.5">ឈ្មោះអតិថិជន</th>
+                                                <th className="px-3.5 py-3.5">លេខទូរស័ព្ទ</th>
+                                                <th className="px-3.5 py-3.5">ម៉ាក (BRAND)</th>
+                                                <th className="px-3.5 py-3.5">ម៉ូឌែល / SERIAL</th>
+                                                <th className="px-3.5 py-3.5 text-right">ប្រាក់ត្រូវបង់</th>
+                                                <th className="px-3.5 py-3.5 text-center">ថ្ងៃត្រូវបង់</th>
+                                                <th className="px-3.5 py-3.5 text-center">រយៈពេលលើសថ្ងៃ</th>
+                                                <th className="px-3.5 py-3.5 text-center">LOCK STATUS</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-800/80 font-medium">
+                                        <tbody className="divide-y divide-slate-200 font-semibold">
                                             {filteredOverdueList.map((item, idx) => {
                                                 const isUnread = !seenAlertKeys.has(getItemKey(item));
                                                 return (
@@ -275,54 +274,54 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                         key={idx}
                                                         onClick={() => handleMarkSingleAsRead(item)}
                                                         className={`transition-colors cursor-pointer ${
-                                                            isUnread ? 'bg-rose-950/40 hover:bg-rose-900/50' : 'hover:bg-slate-900/60 text-slate-300'
+                                                            isUnread ? 'bg-amber-50/70 hover:bg-amber-100/70' : 'hover:bg-slate-50 text-slate-900'
                                                         }`}
                                                     >
-                                                        <td className="px-3 py-2.5 text-center font-bold text-slate-400">{idx + 1}</td>
-                                                        <td className="px-3 py-2.5 whitespace-nowrap text-center">
+                                                        <td className="px-3.5 py-3 text-center font-bold text-slate-700">{idx + 1}</td>
+                                                        <td className="px-3.5 py-3 whitespace-nowrap text-center">
                                                             {isUnread ? (
-                                                                <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black border border-rose-400 shadow-sm animate-pulse">
+                                                                <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black shadow-xs animate-pulse border border-rose-500">
                                                                     🔴 មិនទាន់មើល (NEW)
                                                                 </span>
                                                             ) : (
-                                                                <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-semibold">
+                                                                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-300 text-[10px] font-bold">
                                                                     ✓ មើលរួច
                                                                 </span>
                                                             )}
                                                         </td>
-                                                        <td className="px-3 py-2.5 font-bold text-white whitespace-nowrap">
+                                                        <td className="px-3.5 py-3 font-black text-slate-900 whitespace-nowrap text-sm">
                                                             {item.customerNameKh || item.customerNameEn}
                                                         </td>
-                                                        <td className="px-3 py-2.5 whitespace-nowrap font-mono text-amber-300">
+                                                        <td className="px-3.5 py-3 whitespace-nowrap font-mono text-indigo-700 font-bold">
                                                             <CopyCell value={item.phone} label={item.phone} />
                                                         </td>
-                                                        <td className="px-3 py-2.5 whitespace-nowrap">
-                                                            <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-bold text-[10px]">
+                                                        <td className="px-3.5 py-3 whitespace-nowrap">
+                                                            <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 border border-slate-300 font-black text-[11px]">
                                                                 {item.brand}
                                                             </span>
                                                         </td>
-                                                        <td className="px-3 py-2.5 whitespace-nowrap">
-                                                            <div className="text-slate-200 font-bold">{item.model}</div>
-                                                            <div className="text-[10px] text-slate-500 font-mono">{item.serialNumber}</div>
+                                                        <td className="px-3.5 py-3 whitespace-nowrap">
+                                                            <div className="text-slate-900 font-black">{item.model}</div>
+                                                            <div className="text-[11px] text-slate-500 font-mono font-medium">{item.serialNumber}</div>
                                                         </td>
-                                                        <td className="px-3 py-2.5 text-right whitespace-nowrap font-mono font-bold text-emerald-400">
+                                                        <td className="px-3.5 py-3 text-right whitespace-nowrap font-mono font-black text-emerald-700 text-sm">
                                                             ${Number(item.monthlyPayment).toFixed(2)}
                                                         </td>
-                                                        <td className="px-3 py-2.5 text-center whitespace-nowrap text-slate-300">
+                                                        <td className="px-3.5 py-3 text-center whitespace-nowrap text-slate-800 font-bold font-mono">
                                                             {item.dueDate}
                                                         </td>
-                                                        <td className="px-3 py-2.5 text-center whitespace-nowrap">
-                                                            <span className="px-2.5 py-1 rounded-full bg-rose-600/20 text-rose-300 border border-rose-500/40 text-xs font-black">
+                                                        <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                                                            <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300 text-xs font-black shadow-xs">
                                                                 ⚠️ {item.overdueText || `លើស ${item.overdueDays} ថ្ងៃ`}
                                                             </span>
                                                         </td>
-                                                        <td className="px-3 py-2.5 text-center whitespace-nowrap">
+                                                        <td className="px-3.5 py-3 text-center whitespace-nowrap">
                                                             {item.lockPhoneStatus === 'Locked' ? (
-                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 border border-rose-800 text-[10px] font-bold">
+                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold">
                                                                     <FaLock /> Locked
                                                                 </span>
                                                             ) : (
-                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold">
+                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
                                                                     <FaUnlock /> Unlocked
                                                                 </span>
                                                             )}
@@ -336,82 +335,82 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             )}
                         </div>
                     ) : (
-                        /* ── Section 2: Due Today / Upcoming List (Cards) ── */
+                        /* ── Section 2: Due Today / Upcoming List (High Contrast Light Cards) ── */
                         <div>
                             <div className="mb-3 flex items-center justify-between">
-                                <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                                    <FaCalendarCheck /> បញ្ជីអតិថិជនដល់ថ្ងៃបង់ប្រាក់ ({filteredDueList.length})
+                                <h3 className="text-xs font-black text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <FaCalendarCheck className="text-amber-600" /> បញ្ជីអតិថិជនដល់ថ្ងៃបង់ប្រាក់ ({filteredDueList.length})
                                 </h3>
-                                <span className="text-[11px] text-slate-400">បង្ហាញជា Card ព័ត៌មានលម្អិត</span>
+                                <span className="text-[11px] text-slate-600 font-bold">បង្ហាញជា Card ព័ត៌មានលម្អិត</span>
                             </div>
 
                             {filteredDueList.length === 0 ? (
-                                <div className="py-16 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-950/40">
-                                    <p className="text-slate-400 text-xs font-medium">🎉 មិនមានអតិថិជនត្រូវបង់ប្រាក់ក្នុងថ្ងៃនេះទេ!</p>
+                                <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
+                                    <p className="text-slate-600 text-xs font-bold">🎉 មិនមានអតិថិជនត្រូវបង់ប្រាក់ក្នុងថ្ងៃនេះទេ!</p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                                     {filteredDueList.map((item, idx) => {
                                         const isUnread = !seenAlertKeys.has(getItemKey(item));
                                         return (
                                             <div
                                                 key={idx}
                                                 onClick={() => handleMarkSingleAsRead(item)}
-                                                className={`p-3.5 bg-slate-950 border rounded-2xl shadow-lg transition-all flex flex-col justify-between gap-2.5 cursor-pointer ${
-                                                    isUnread ? 'border-amber-500/60 ring-1 ring-amber-500/40' : 'border-slate-800 opacity-90'
+                                                className={`p-4 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3 cursor-pointer ${
+                                                    isUnread ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-slate-200'
                                                 }`}
                                             >
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div>
                                                         <div className="flex items-center gap-2 mb-1">
                                                             {isUnread && (
-                                                                <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black">
+                                                                <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">
                                                                     🔴 មិនទាន់មើល (NEW)
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <h4 className="text-sm font-black text-white flex items-center gap-1.5">
+                                                        <h4 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
                                                             {item.customerNameKh || item.customerNameEn}
                                                         </h4>
-                                                        <p className="text-xs text-amber-400 font-mono mt-0.5 flex items-center gap-1">
+                                                        <p className="text-xs text-indigo-700 font-mono font-bold mt-0.5 flex items-center gap-1">
                                                             <FaPhone className="text-[10px]" />
                                                             <CopyCell value={item.phone} label={item.phone} />
                                                         </p>
                                                     </div>
-                                                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
+                                                    <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-black">
                                                         {item.brand}
                                                     </span>
                                                 </div>
 
-                                                <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-xs space-y-1">
-                                                    <div className="flex justify-between text-slate-300">
-                                                        <span>ម៉ូឌែលទូរស័ព្ទ:</span>
-                                                        <span className="font-bold text-white">{item.model}</span>
+                                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1.5 font-semibold text-slate-800">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-slate-600">ម៉ូឌែលទូរស័ព្ទ:</span>
+                                                        <span className="font-black text-slate-900">{item.model}</span>
                                                     </div>
-                                                    <div className="flex justify-between text-slate-300">
-                                                        <span>Serial Number:</span>
-                                                        <code className="text-indigo-300 font-mono text-[11px]">{item.serialNumber}</code>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-slate-600">Serial Number:</span>
+                                                        <code className="text-slate-900 font-mono text-[11px] font-bold">{item.serialNumber}</code>
                                                     </div>
-                                                    <div className="flex justify-between text-slate-300">
-                                                        <span>ថ្ងៃត្រូវបង់ប្រាក់:</span>
-                                                        <span className="font-bold text-amber-400">{item.dueDate}</span>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-slate-600">ថ្ងៃត្រូវបង់ប្រាក់:</span>
+                                                        <span className="font-black text-amber-700 font-mono">{item.dueDate}</span>
                                                     </div>
-                                                    <div className="flex justify-between pt-1 border-t border-slate-800 font-bold text-sm">
-                                                        <span className="text-slate-300">ប្រាក់ត្រូវបង់រាល់ខែ:</span>
-                                                        <span className="text-emerald-400 font-mono">${Number(item.monthlyPayment).toFixed(2)}</span>
+                                                    <div className="flex justify-between pt-1.5 border-t border-slate-200 font-black text-sm">
+                                                        <span className="text-slate-700">ប្រាក់ត្រូវបង់រាល់ខែ:</span>
+                                                        <span className="text-emerald-700 font-mono">${Number(item.monthlyPayment).toFixed(2)}</span>
                                                     </div>
                                                 </div>
 
                                                 <div className="flex items-center justify-between text-[11px] pt-1">
-                                                    <span className="text-slate-400 flex items-center gap-1">
-                                                        <FaShieldAlt className="text-slate-500" /> Contract ID: <code className="text-slate-300">{item.contractId}</code>
+                                                    <span className="text-slate-500 font-medium flex items-center gap-1">
+                                                        <FaShieldAlt className="text-slate-400" /> Contract ID: <code className="text-slate-800 font-bold">{item.contractId}</code>
                                                     </span>
                                                     {item.phone && (
                                                         <a
                                                             href={`tel:${item.phone}`}
-                                                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1 transition-colors"
+                                                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1 transition-colors shadow-xs"
                                                         >
-                                                            <FaPhone className="text-[9px]" /> Call Now
+                                                            <FaPhone className="text-[10px]" /> Call Now
                                                         </a>
                                                     )}
                                                 </div>
@@ -424,12 +423,12 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     )}
                 </div>
 
-                {/* ── Footer ── */}
-                <div className="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                    <span>សរុបការជូនដំណឹង: <strong className="text-white">{summary.totalAlerts}</strong> ករណី ({unreadCountDue + unreadCountOverdue} មិនទាន់មើល)</span>
+                {/* ── Footer (Clean Light Panel) ── */}
+                <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 font-bold shadow-xs">
+                    <span>សរុបការជូនដំណឹង: <strong className="text-slate-900">{summary.totalAlerts}</strong> ករណី ({unreadCountDue + unreadCountOverdue} មិនទាន់មើល)</span>
                     <button
                         onClick={onClose}
-                        className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold cursor-pointer transition-colors"
+                        className="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition-colors border border-slate-300"
                     >
                         បិទ (Close)
                     </button>

@@ -82,11 +82,10 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                 {/* Payment Alerts Button */}
                 <button
                     onClick={onOpenAlerts}
-                    className='relative flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 transition-all cursor-pointer border border-amber-400'
+                    className='relative flex items-center gap-2 px-3 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
                     title='ការជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)'
                 >
                     <FaBell className='text-sm animate-pulse text-slate-950' />
-                    <span className='hidden sm:inline font-khmer font-bold'>ជូនដំណឹងបង់ប្រាក់</span>
                     {alertCount > 0 && (
                         <span className='absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black shadow-md shadow-rose-600/40 border border-white flex items-center justify-center min-w-[18px]'>
                             {alertCount}
