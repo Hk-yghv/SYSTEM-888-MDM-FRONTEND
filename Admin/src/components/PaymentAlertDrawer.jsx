@@ -142,6 +142,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <h2 className="text-base font-black tracking-wide text-slate-900 flex items-center gap-2 font-khmer">
                                 🔔 ជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)
                             </h2>
+                            <br />
                             <p className="text-xs text-slate-600 font-bold">
                                 ម៉ាកសកម្ម (Brand): <strong className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">{userBrandName}</strong>
                             </p>
@@ -183,8 +184,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         <button
                             onClick={() => setActiveTab('overdue')}
                             className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'overdue'
-                                    ? 'bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-600/25'
-                                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
+                                ? 'bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-600/25'
+                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
                                 }`}
                         >
                             <FaExclamationTriangle className={activeTab === 'overdue' ? 'text-white' : 'text-rose-600'} />
@@ -199,8 +200,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         <button
                             onClick={() => setActiveTab('dueToday')}
                             className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'dueToday'
-                                    ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md shadow-amber-500/25'
-                                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
+                                ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md shadow-amber-500/25'
+                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
                                 }`}
                         >
                             <FaCalendarCheck className={activeTab === 'dueToday' ? 'text-slate-950' : 'text-amber-600'} />
