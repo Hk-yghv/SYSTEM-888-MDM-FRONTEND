@@ -138,7 +138,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
             updated[idx] = {
                 ...current,
                 paidAmount: paidVal,
-                paidDate: todayStr,
+                paidDate: current.paidDate || todayStr,
                 status: 'Paid'
             };
             return updated;
@@ -155,7 +155,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                     return {
                         ...r,
                         paidAmount: paidVal,
-                        paidDate: todayStr,
+                        paidDate: r.paidDate || todayStr,
                         status: 'PayOff'
                     };
                 }
@@ -376,8 +376,17 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                                         </td>
 
                                         {/* Paid Date */}
-                                        <td className="px-3 py-2 font-mono text-purple-300 font-bold">
-                                            {row.paidDate ? row.paidDate : '—'}
+                                        <td className="px-3 py-2 font-mono">
+                                            {isReadOnly ? (
+                                                <span className="font-bold text-purple-300">{row.paidDate || '—'}</span>
+                                            ) : (
+                                                <input
+                                                    type="date"
+                                                    value={row.paidDate || ''}
+                                                    onChange={(e) => handleRowChange(idx, 'paidDate', e.target.value)}
+                                                    className="px-2 py-1 bg-gray-900 border border-gray-700 focus:border-purple-500 rounded-lg text-purple-300 font-bold font-mono text-xs outline-none"
+                                                />
+                                            )}
                                         </td>
 
                                         {/* Action ($ Dropdown) */}
