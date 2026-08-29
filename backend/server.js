@@ -120,10 +120,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api', paymentRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/pay', paymentRoutes);
-app.use('/', paymentRoutes);
 app.use('/api', lostphoneRoutes);
 app.use('/api', wallpaperRoutes);
-app.use('/api/history', historyRoutes);
 app.use('/api/history', createHistoryRoutes(bot));
 
 

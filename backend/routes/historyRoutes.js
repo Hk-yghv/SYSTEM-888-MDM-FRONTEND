@@ -39,22 +39,40 @@ const saveReportSchedule = (nextTime) => {
 const getNextReportTime = () => {
     try {
         if (fs.existsSync(REPORT_SCHEDULE_FILE)) {
-            const raw = fs.readFileSync(REPORT_SCHEDULE_FILE, 'utf8');
-            const data = JSON.parse(raw);
-            if (data.nextReportTime) {
+            const data = JSON.parse(fs.readFileSync(REPORT_SCHEDULE_FILE, 'utf8'));
+            if (data.nextReportTime && data.nextReportTime > Date.now()) {
                 return data.nextReportTime;
             }
         }
-    } catch (e) { }
+    } catch (e) {}
+
     const defaultNext = Date.now() + SCHEDULE_INTERVAL_MS;
     saveReportSchedule(defaultNext);
     return defaultNext;
 };
 
 let nextReportTargetTime = getNextReportTime();
+let isExecutingReport = false; // Atomic execution lock to prevent sending duplicate report files
 
 export function createHistoryRoutes(bot) {
     const runWeeklyReport = async () => {
+        if (isExecutingReport) {
+            console.log('[WeeklyReport] Report generation is already running. Skipping duplicate trigger.');
+            return {
+                success: true,
+                sentToTelegram: false,
+                sheetExported: false,
+                skipped: true,
+                message: 'Report send is already in progress.',
+                nextReportTime: nextReportTargetTime
+            };
+        }
+
+        isExecutingReport = true;
+        // Lock out future interval triggers immediately by setting target time 7 days into future
+        nextReportTargetTime = Date.now() + SCHEDULE_INTERVAL_MS;
+        saveReportSchedule(nextReportTargetTime);
+
         let sentToTelegram = false;
         let telegramError = null;
         let sheetExported = false;
@@ -100,23 +118,25 @@ export function createHistoryRoutes(bot) {
             const cleanRes = await cleanupLoginHistory();
             if (cleanRes && cleanRes.success) console.log('Cleared loginHistory from all user records.');
 
-            nextReportTargetTime = Date.now() + SCHEDULE_INTERVAL_MS;
-            saveReportSchedule(nextReportTargetTime);
-
             return { success: true, sentToTelegram, sheetExported, telegramError, nextReportTime: nextReportTargetTime };
         } catch (err) {
             console.error('runWeeklyReport error:', err.message);
             throw err;
+        } finally {
+            isExecutingReport = false;
         }
     };
 
-    // Continuous background schedule check every 10 seconds (24/7 background process)
-    setInterval(() => {
-        if (Date.now() >= nextReportTargetTime) {
-            console.log('Report schedule target time reached, triggering auto report...');
-            runWeeklyReport().catch(err => console.error(err));
-        }
-    }, 10 * 1000);
+    // Singleton background schedule check (runs once per process)
+    if (!global._historyReportIntervalStarted) {
+        global._historyReportIntervalStarted = true;
+        setInterval(() => {
+            if (Date.now() >= nextReportTargetTime && !isExecutingReport) {
+                console.log('Report schedule target time reached, triggering auto report...');
+                runWeeklyReport().catch(err => console.error(err));
+            }
+        }, 30 * 1000);
+    }
 
     router.get('/report-schedule', (req, res) => {
         const remainingMs = Math.max(0, nextReportTargetTime - Date.now());
@@ -138,7 +158,7 @@ export function createHistoryRoutes(bot) {
             const result = await runWeeklyReport();
             res.json({
                 success: true,
-                message: 'Report sent to Telegram bot and login history cleared successfully.',
+                message: result.skipped ? 'Report send is already in progress.' : 'Report sent to Telegram bot and login history cleared successfully.',
                 sentToTelegram: result.sentToTelegram,
                 telegramError: result.telegramError,
                 nextReportTime: result.nextReportTime
@@ -173,43 +193,69 @@ export function createHistoryRoutes(bot) {
                                 ip: log.ip || '127.0.0.1',
                                 deviceInfo: log.deviceInfo || 'Web Browser',
                                 timestamp: log.timestamp,
-                                status: log.status || 'Failed',
-                                reason: log.reason || ''
-                            });
-                        }
-                    });
-                } catch (lErr) {
-                    console.error('Fetch standalone LoginLog error:', lErr.message);
-                }
-            }
-
-            let usersList = isMongoConnected ? await queryAllDBs(User, (M) => M.find({})) : MEM_DB.users;
-
-            usersList.forEach(u => {
-                // If not master admin, skip other users
-                if (!isMasterAdmin && userUsername && u.username !== userUsername) return;
-
-                if (u.loginHistory && Array.isArray(u.loginHistory)) {
-                    u.loginHistory.forEach(log => {
-                        const idStr = log._id ? log._id.toString() : `${u.username}-${log.timestamp}`;
-                        if (!seenIds.has(idStr)) {
-                            seenIds.add(idStr);
-                            allLogs.push({
-                                id: idStr,
-                                userId: u.userId,
-                                username: u.username,
-                                name: u.name,
-                                role: u.role,
-                                brand: u.brand || 'SYSTEM',
-                                ip: log.ip || '127.0.0.1',
-                                deviceInfo: log.deviceInfo || 'Web Browser',
-                                timestamp: log.timestamp,
                                 status: log.status || 'Success'
                             });
                         }
                     });
+                } catch (e) {
+                    console.error('Fetch LoginLog error:', e.message);
                 }
-            });
+
+                try {
+                    const users = await queryAllDBs(User, (M) => M.find({}));
+                    users.forEach(u => {
+                        if (!isMasterAdmin && userUsername && u.username !== userUsername) return;
+                        if (Array.isArray(u.loginHistory)) {
+                            u.loginHistory.forEach((log, idx) => {
+                                const idStr = `u-${u._id}-${idx}`;
+                                if (!seenIds.has(idStr)) {
+                                    seenIds.add(idStr);
+                                    allLogs.push({
+                                        id: idStr,
+                                        userId: u.userId || '-',
+                                        username: u.username,
+                                        name: u.name,
+                                        role: u.role,
+                                        brand: u.brand || 'SYSTEM',
+                                        ip: log.ip || '127.0.0.1',
+                                        deviceInfo: log.deviceInfo || 'Web Browser',
+                                        timestamp: log.timestamp,
+                                        status: log.status || 'Success'
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } catch (e) {
+                    console.error('Fetch User.loginHistory error:', e.message);
+                }
+            }
+
+            if (MEM_DB && Array.isArray(MEM_DB.users)) {
+                MEM_DB.users.forEach(u => {
+                    if (!isMasterAdmin && userUsername && u.username !== userUsername) return;
+                    if (Array.isArray(u.loginHistory)) {
+                        u.loginHistory.forEach((log, idx) => {
+                            const idStr = `mem-${u._id || u.username}-${idx}`;
+                            if (!seenIds.has(idStr)) {
+                                seenIds.add(idStr);
+                                allLogs.push({
+                                    id: idStr,
+                                    userId: u.userId || '-',
+                                    username: u.username,
+                                    name: u.name,
+                                    role: u.role,
+                                    brand: u.brand || 'SYSTEM',
+                                    ip: log.ip || '127.0.0.1',
+                                    deviceInfo: log.deviceInfo || 'Web Browser',
+                                    timestamp: log.timestamp,
+                                    status: log.status || 'Success'
+                                });
+                            }
+                        });
+                    }
+                });
+            }
 
             allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
