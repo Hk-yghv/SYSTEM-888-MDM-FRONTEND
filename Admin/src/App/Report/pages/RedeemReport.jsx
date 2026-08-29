@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { MdOutlineBarChart, MdPictureAsPdf, MdOutlineSync, MdTableChart, MdPieChart } from 'react-icons/md';
-import { FaFileExcel, FaExchangeAlt } from 'react-icons/fa';
+import { FaFileExcel, FaUsers, FaDollarSign, FaMoneyBillWave, FaLock, FaImage, FaUndoAlt } from 'react-icons/fa';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
@@ -15,6 +15,7 @@ const RedeemReport = () => {
 
     const [activeTab, setActiveTab] = useState('dashboard');
     const [dataList, setDataList] = useState([]);
+    const [allContracts, setAllContracts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [page, setPage] = useState(1);
@@ -49,11 +50,34 @@ const RedeemReport = () => {
         }
     }, [API_BASE1, page, searchTerm, user]);
 
+    const fetchFullData = useCallback(async () => {
+        try {
+            const params = new URLSearchParams({
+                status: 'Redeem',
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                page: 1,
+                limit: 999999
+            });
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
+            if (res.ok) {
+                const result = await res.json();
+                setAllContracts(result.data || []);
+            }
+        } catch (err) {
+            console.error('Fetch full redeem report error:', err);
+        }
+    }, [API_BASE1, user]);
+
     useEffect(() => {
         fetchData(page, searchTerm);
-    }, [page]);
+        fetchFullData();
+    }, [page, fetchData, fetchFullData]);
 
     const fetchAllForExport = async () => {
+        if (allContracts.length > 0) return allContracts;
         try {
             const params = new URLSearchParams({
                 status: 'Redeem',
@@ -71,7 +95,7 @@ const RedeemReport = () => {
                 return result.data || [];
             }
         } catch (err) {
-            console.error('Fetch all redeem report for export error:', err);
+            console.error('Fetch redeem report for export error:', err);
         }
         return dataList;
     };
@@ -84,6 +108,7 @@ const RedeemReport = () => {
             'Model': item.model || '',
             'Serial Number': item.serialNumber || '',
             'Brand': item.brand || user?.brand || 'SYSTEM',
+            'Redeemed Value ($)': item.amount || item.totalAmount || 0,
             'Status': 'Redeem'
         }));
         exportToExcel(exported, 'Redeem_Contracts_Report');
@@ -102,12 +127,57 @@ const RedeemReport = () => {
         exportToPDF('Redeem Contracts Report', columns, allData, user?.brand || '');
     };
 
+    // Calculate Brand Summary Grouping
+    const summaryBreakdown = useMemo(() => {
+        const sourceContracts = allContracts.length > 0 ? allContracts : dataList;
+        const brandMap = {};
+
+        sourceContracts.forEach(c => {
+            const b = c.brand || user?.brand || 'SYSTEM';
+            if (!brandMap[b]) {
+                brandMap[b] = {
+                    brand: b,
+                    totalRedeem: 0,
+                    totalLoanValue: 0
+                };
+            }
+            const bObj = brandMap[b];
+            bObj.totalRedeem += 1;
+            bObj.totalLoanValue += Number(c.amount || c.totalAmount || 0);
+        });
+
+        const rows = Object.values(brandMap);
+
+        const grandTotal = rows.reduce((acc, r) => ({
+            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            isTotalRow: true,
+            totalRedeem: acc.totalRedeem + r.totalRedeem,
+            totalLoanValue: acc.totalLoanValue + r.totalLoanValue
+        }), {
+            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            isTotalRow: true,
+            totalRedeem: 0,
+            totalLoanValue: 0
+        });
+
+        return { rows, grandTotal };
+    }, [allContracts, dataList, user]);
+
+    // KPI Cards calculation
+    const kpi = useMemo(() => {
+        const sourceContracts = allContracts.length > 0 ? allContracts : dataList;
+        const totalRedeem = sourceContracts.length;
+        const totalLoanValue = sourceContracts.reduce((sum, c) => sum + (Number(c.amount || c.totalAmount) || 0), 0);
+
+        return { totalRedeem, totalLoanValue };
+    }, [allContracts, dataList]);
+
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             <header className='p-4 w-full border border-slate-200 bg-white rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-12 h-12 rounded-2xl bg-amber-500 border border-amber-400 flex items-center justify-center text-white text-2xl shadow-lg shadow-amber-500/30'>
-                        <FaExchangeAlt />
+                    <div className='w-12 h-12 rounded-2xl bg-amber-600 border border-amber-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-amber-600/30'>
+                        <FaUndoAlt />
                     </div>
                     <div>
                         <h1 className='text-xl font-black text-slate-900 flex items-center gap-2 tracking-wide'>
@@ -126,8 +196,8 @@ const RedeemReport = () => {
                     <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <MdPictureAsPdf className="text-red-600 text-sm" /><span>{t('exportPDF')}</span>
                     </button>
-                    <button onClick={() => fetchData(page, searchTerm)} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} /><span>{t('reload')}</span>
+                    <button onClick={() => { fetchData(page, searchTerm); fetchFullData(); }} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
+                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-amber-600' : ''} /><span>{t('reload')}</span>
                     </button>
                 </div>
             </header>
@@ -144,21 +214,53 @@ const RedeemReport = () => {
                 </button>
             </div>
 
+            {/* Tab 1: Dashboard Analytics */}
             {activeTab === 'dashboard' && (
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
-                            <p className="text-xs text-slate-500 font-bold uppercase">Total Redeemed Devices</p>
-                            <h3 className="text-2xl font-black text-slate-900 mt-1">{total}</h3>
+                        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-xl font-bold">
+                                <FaUndoAlt />
+                            </div>
+                            <div>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Redeemed Devices</p>
+                                <h3 className="text-2xl font-black text-slate-900 mt-0.5">{kpi.totalRedeem.toLocaleString()}</h3>
+                            </div>
                         </div>
-                        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs">
-                            <p className="text-xs text-slate-500 font-bold uppercase">Brand Scope</p>
-                            <h3 className="text-xl font-black text-amber-600 mt-1">{user?.brand || 'GLOBAL ALL'}</h3>
+
+                        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-xl font-bold">
+                                <FaDollarSign />
+                            </div>
+                            <div>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Redeemed Loan Value ($)</p>
+                                <h3 className="text-2xl font-black text-blue-700 mt-0.5">${kpi.totalLoanValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <MdPieChart className="text-amber-600 text-lg" />
+                            <span>Redeemed Devices Breakdown by Brand (ក្រាបឧបករណ៍លោះយកតាម Brand)</span>
+                        </h3>
+                        <div className="h-56 w-full bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-end justify-around gap-4">
+                            {summaryBreakdown.rows.map((r) => {
+                                const maxVal = Math.max(...summaryBreakdown.rows.map(x => x.totalRedeem), 1);
+                                const pct = Math.min(100, Math.max(15, (r.totalRedeem / maxVal) * 100));
+                                return (
+                                    <div key={r.brand} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+                                        <span className="text-[10px] font-bold text-slate-700 truncate max-w-[80px]">{r.brand} ({r.totalRedeem})</span>
+                                        <div style={{ height: `${pct}%` }} className="w-full bg-gradient-to-t from-amber-600 to-amber-400 rounded-t-xl shadow-md transition-all"></div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* Tab 2: Detailed Info */}
             {activeTab === 'detail' && (
                 <div className='w-full overflow-x-auto h-[calc(100vh-350px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                     <table className='w-full text-left text-xs whitespace-nowrap'>
@@ -194,25 +296,54 @@ const RedeemReport = () => {
                 </div>
             )}
 
+            {/* Tab 3: Summary Table */}
             {activeTab === 'summary' && (
                 <div className='w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-md p-4 space-y-4'>
-                    <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">Redeem Contracts Summary Table</h3>
-                    <table className='w-full text-left text-xs'>
-                        <thead className='bg-slate-100 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
-                            <tr>
-                                <th className='px-4 py-3'>Brand Domain</th>
-                                <th className='px-4 py-3 text-center'>Total Redeemed Devices</th>
-                                <th className='px-4 py-3 text-center'>System Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
-                            <tr>
-                                <td className='px-4 py-3 font-bold text-amber-700'>{user?.brand || '888MDM'}</td>
-                                <td className='px-4 py-3 text-center font-mono font-bold text-slate-900'>{total} Devices</td>
-                                <td className='px-4 py-3 text-center'><span className="px-3 py-1 bg-amber-50 border border-amber-300 text-amber-800 rounded-full font-bold text-[10px]">✓ REDEEMED</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div className="border-b border-slate-200 pb-2">
+                        <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                            <MdTableChart className="text-amber-600 text-xl" />
+                            <span>តារាងសរុបកិច្ចសន្យាដោះបង់រំលស់តាម Brand (Redeem Contracts Master Summary Table)</span>
+                        </h3>
+                    </div>
+                    <div className='w-full overflow-x-auto rounded-xl border border-slate-200 table-container'>
+                        <table className='w-full text-left text-xs whitespace-nowrap'>
+                            <thead className='bg-amber-900 text-white uppercase tracking-wider font-bold text-[11px]'>
+                                <tr>
+                                    <th className='px-3.5 py-3 text-center'>No</th>
+                                    <th className='px-3.5 py-3'>Brand Domain</th>
+                                    <th className='px-3.5 py-3 text-center'>Total Redeemed Count</th>
+                                    <th className='px-3.5 py-3 text-right'>Total Redeemed Loan Value ($)</th>
+                                    <th className='px-3.5 py-3 text-center'>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
+                                {summaryBreakdown.rows.map((row, idx) => (
+                                    <tr key={row.brand} className="hover:bg-amber-50/50 transition-colors">
+                                        <td className="px-3.5 py-3 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
+                                        <td className="px-3.5 py-3 font-black text-amber-900">
+                                            <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 font-bold">
+                                                {row.brand}
+                                            </span>
+                                        </td>
+                                        <td className="px-3.5 py-3 text-center font-bold text-slate-900">{row.totalRedeem.toLocaleString()}</td>
+                                        <td className="px-3.5 py-3 text-right font-mono font-bold text-blue-700">${row.totalLoanValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="px-3.5 py-3 text-center font-bold text-amber-700">Redeem</td>
+                                    </tr>
+                                ))}
+
+                                {/* Grand Total Row */}
+                                <tr className="bg-amber-100/80 border-t-2 border-amber-400 font-black text-amber-950">
+                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">TOTAL</td>
+                                    <td className="px-3.5 py-3.5 uppercase tracking-wide font-black text-amber-950">
+                                        {summaryBreakdown.grandTotal.brand}
+                                    </td>
+                                    <td className="px-3.5 py-3.5 text-center text-slate-900 font-black">{summaryBreakdown.grandTotal.totalRedeem.toLocaleString()}</td>
+                                    <td className="px-3.5 py-3.5 text-right font-mono text-blue-900 font-black">${summaryBreakdown.grandTotal.totalLoanValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    <td className="px-3.5 py-3.5 text-center font-black text-amber-950">Redeem</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 
