@@ -17,40 +17,67 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
     const [submitting, setSubmitting] = useState(false);
     const [activeDropdownIdx, setActiveDropdownIdx] = useState(null);
 
-    // Calculate number of months from duration string (e.g. "3 Months" -> 3)
-    const getMonthCount = (durationStr) => {
-        if (!durationStr) return 3;
-        const matched = String(durationStr).match(/\d+/);
-        return matched ? Math.max(1, parseInt(matched[0], 10)) : 3;
+    // Parse duration string (e.g. "15 Days" -> { isDays: true, count: 15 }, "3 Months" -> { isDays: false, count: 3 })
+    const parseDuration = (durationStr) => {
+        if (!durationStr) return { isDays: false, count: 3 };
+        const str = String(durationStr).toLowerCase().trim();
+        const matched = str.match(/\d+/);
+        const count = matched ? Math.max(1, parseInt(matched[0], 10)) : 3;
+
+        const isDays = str.includes('day') || str.includes('ថ្ងៃ') || str.includes('d');
+        return { isDays, count };
     };
 
     // Helper to generate default schedule rows
     const generateDefaultRows = (ctr) => {
-        const count = getMonthCount(ctr?.duration);
-        const totalLoan = Number(ctr?.amount) || 0;
-        const monthlyBase = Number(ctr?.monthlyPayment) || (totalLoan / count);
+        const { isDays, count } = parseDuration(ctr?.duration);
+        const totalLoan = Number(ctr?.amount) || Number(ctr?.totalAmount) || 0;
         const startDate = ctr?.inputDate ? new Date(ctr.inputDate) : new Date();
 
-        const generated = [];
-        for (let i = 0; i < count; i++) {
+        if (isDays) {
+            // For DAYS (e.g. 15 Days): generate ONLY 1 ROW with due date N days later!
             const d = new Date(startDate);
-            d.setMonth(d.getMonth() + i + 1);
+            d.setDate(d.getDate() + count);
             const dateStr = d.toISOString().split('T')[0];
 
-            generated.push({
-                monthIndex: i + 1,
+            return [{
+                monthIndex: 1,
+                labelName: `${count} ថ្ងៃ (${count} Days)`,
                 dueDate: dateStr,
                 loanAmount: totalLoan,
                 penalty: 0,
-                scheduledAmount: Math.round(monthlyBase),
-                totalAmount: Math.round(monthlyBase),
+                scheduledAmount: totalLoan,
+                totalAmount: totalLoan,
                 paidAmount: 0,
                 comment: '',
                 paidDate: '',
-                status: 'Pending' // 'Pending' | 'Saved' | 'Paid' | 'PayOff'
-            });
+                status: 'Pending'
+            }];
+        } else {
+            // For MONTHS (e.g. 3 Months): generate count rows (1 row per month)
+            const monthlyBase = Number(ctr?.monthlyPayment) || (totalLoan / count);
+            const generated = [];
+            for (let i = 0; i < count; i++) {
+                const d = new Date(startDate);
+                d.setMonth(d.getMonth() + i + 1);
+                const dateStr = d.toISOString().split('T')[0];
+
+                generated.push({
+                    monthIndex: i + 1,
+                    labelName: `ខែទី ${i + 1} (Month ${i + 1})`,
+                    dueDate: dateStr,
+                    loanAmount: totalLoan,
+                    penalty: 0,
+                    scheduledAmount: Math.round(monthlyBase),
+                    totalAmount: Math.round(monthlyBase),
+                    paidAmount: 0,
+                    comment: '',
+                    paidDate: '',
+                    status: 'Pending'
+                });
+            }
+            return generated;
         }
-        return generated;
     };
 
     useEffect(() => {
@@ -240,7 +267,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                     <table className="w-full text-left text-xs whitespace-nowrap">
                         <thead className="bg-[#0f1426] text-gray-300 uppercase tracking-wider border-b border-gray-800">
                             <tr>
-                                <th className="px-3 py-2.5 text-center">ខែទី (Month)</th>
+                                <th className="px-3 py-2.5 text-center">ខែ/ថ្ងៃ (Term)</th>
                                 <th className="px-3 py-2.5">ថ្ងៃខែត្រូវបង់ (Due Date)</th>
                                 <th className="px-3 py-2.5 font-mono text-emerald-400">Total loan amount</th>
                                 <th className="px-3 py-2.5 text-amber-400 font-bold">ពិន័យ (Penalty)</th>
@@ -261,7 +288,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                                 return (
                                     <tr key={idx} className={`transition-colors ${row.status === 'Paid' ? 'bg-emerald-950/20' : row.status === 'PayOff' ? 'bg-indigo-950/30' : isCurrentActive ? 'bg-amber-950/30 border-l-4 border-amber-500' : 'hover:bg-gray-900/50'}`}>
                                         <td className="px-3 py-2 text-center font-bold text-gray-300 font-mono">
-                                            Month {row.monthIndex}
+                                            {row.labelName || `Month ${row.monthIndex}`}
                                         </td>
 
                                         {/* Due Date */}
