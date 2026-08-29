@@ -5,10 +5,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <base href="/">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
     integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script>
+    window.addEventListener('error', function (e) {
+      if (e && (e.message && (e.message.indexOf('Failed to load module script') !== -1 || e.message.indexOf('Importing a module script failed') !== -1))) {
+        var hasReloaded = sessionStorage.getItem('auto_reloaded_for_new_version');
+        if (!hasReloaded) {
+          sessionStorage.setItem('auto_reloaded_for_new_version', 'true');
+          window.location.reload(true);
+        }
+      }
+    }, true);
+  </script>
 </head>
 
 <body>
