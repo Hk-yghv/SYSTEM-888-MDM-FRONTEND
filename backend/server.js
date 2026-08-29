@@ -124,7 +124,40 @@ app.use('/api', lostphoneRoutes);
 app.use('/api', wallpaperRoutes);
 app.use('/api/history', createHistoryRoutes(bot));
 
+// ── Smart AI Service Proxy (Port 5003 <-> Online Render Backend 3) ──
+app.all(['/api/ai/*', '/ai/*'], async (req, res) => {
+    const aiEndpoints = [
+        process.env.VITE_API_BACKEND3 || 'http://localhost:5003/api',
+        'https://system-mdm-3.onrender.com/api',
+        'http://localhost:5003/api'
+    ];
+    const targetPath = req.path.replace(/^\/(api\/ai|ai)/, '/api/ai');
 
+    for (const base of aiEndpoints) {
+        try {
+            const cleanBase = base.replace(/\/+$/, '');
+            const targetUrl = `${cleanBase}${targetPath}`;
+            const options = {
+                method: req.method,
+                headers: { 'Content-Type': 'application/json' }
+            };
+            if (req.method !== 'GET' && req.method !== 'HEAD') {
+                options.body = JSON.stringify(req.body);
+            }
+            const proxyRes = await fetch(targetUrl, options);
+            if (proxyRes.ok) {
+                const data = await proxyRes.json();
+                return res.status(proxyRes.status).json(data);
+            }
+        } catch (err) {
+            console.warn(`[AI Proxy Failover] Target ${base} unreachable: ${err.message}`);
+        }
+    }
+    return res.status(503).json({
+        success: false,
+        detail: 'Python AI Backend Service is currently unreachable.'
+    });
+});
 app.use((err, req, res, next) => {
     console.error('Unhandled System Error:', err);
     res.status(err.status || 500).json({

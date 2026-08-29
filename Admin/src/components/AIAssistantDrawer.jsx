@@ -124,24 +124,44 @@ const AIAssistantDrawer = ({ isOpen, onClose }) => {
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
-    useEffect(() => {
-        if (!isOpen) return;
-        const fetchPrompts = async () => {
+    const fetchAIFailover = async (endpoint, body) => {
+        const aiPool = Array.from(new Set([
+            API_BASE3 ? `${API_BASE3}${endpoint}` : null,
+            `https://system-mdm-3.onrender.com/api${endpoint}`,
+            `http://localhost:5003/api${endpoint}`
+        ].filter(Boolean)));
+
+        let lastStatus = 500;
+        let lastError = null;
+
+        for (const targetUrl of aiPool) {
             try {
-                const res = await fetch(`${API_BASE3}/ai/quick-prompts`, {
+                const res = await fetch(targetUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user: user || {} })
+                    body: JSON.stringify(body)
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.prompts && data.prompts.length > 0) {
-                        setQuickPrompts(data.prompts);
-                        return;
-                    }
+                    return { ok: true, data };
                 }
-            } catch {
-                // Ignore network error and use fallback
+                lastStatus = res.status;
+                const errorData = await res.json().catch(() => ({}));
+                lastError = errorData.detail || errorData.error || `HTTP ${res.status}`;
+            } catch (err) {
+                lastError = err.message;
+            }
+        }
+        return { ok: false, status: lastStatus, error: lastError };
+    };
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const fetchPrompts = async () => {
+            const result = await fetchAIFailover('/ai/quick-prompts', { user: user || {} });
+            if (result.ok && result.data?.prompts?.length > 0) {
+                setQuickPrompts(result.data.prompts);
+                return;
             }
 
             // Fallback prompts
@@ -184,31 +204,25 @@ const AIAssistantDrawer = ({ isOpen, onClose }) => {
         setLoading(true);
 
         try {
-            const res = await fetch(`${API_BASE3}/ai/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    question: queryText,
-                    user: user || {},
-                    history: messages.slice(-6).map(m => ({ sender: m.sender, text: m.text }))
-                })
+            const result = await fetchAIFailover('/ai/chat', {
+                question: queryText,
+                user: user || {},
+                history: messages.slice(-6).map(m => ({ sender: m.sender, text: m.text }))
             });
 
-            if (res.ok) {
-                const data = await res.json();
+            if (result.ok) {
                 const aiMsg = {
                     sender: 'ai',
-                    text: data.answer || 'មិនមានទិន្នន័យឆ្លើយតប។',
+                    text: result.data.answer || 'មិនមានទិន្នន័យឆ្លើយតប។',
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 };
                 setMessages(prev => [...prev, aiMsg]);
             } else {
-                const errorData = await res.json().catch(() => ({}));
                 setMessages(prev => [...prev, {
                     sender: 'ai',
-                    text: res.status === 429
-                        ? `⚠️ ${errorData.detail || 'AI daily limit reached. Please try again tomorrow.'}`
-                        : '⚠️ មានបញ្ហាក្នុងការទាក់ទងទៅកាន់ Python AI Backend Service (Port 5003)។ សូមពិនិត្យមើលសេវាកម្ម backend3។',
+                    text: result.status === 429
+                        ? `⚠️ ${result.error || 'AI daily limit reached. Please try again tomorrow.'}`
+                        : '⚠️ មានបញ្ហាក្នុងការទាក់ទងទៅកាន់ Python AI Backend Service។ សូមពិនិត្យមើលសេវាកម្ម backend3។',
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 }]);
             }
