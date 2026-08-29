@@ -140,10 +140,9 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         </div>
                         <div>
                             <h2 className="text-base font-black tracking-wide text-slate-900 flex items-center gap-2 font-khmer">
-                                🔔 ជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)
+                                ជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)
                             </h2>
-                            <br />
-                            <p className="text-xs text-slate-600 font-bold">
+                            <p className="text-xs text-slate-600 font-bold mt-2">
                                 ម៉ាកសកម្ម (Brand): <strong className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">{userBrandName}</strong>
                             </p>
                         </div>
