@@ -8,7 +8,6 @@ const AuthContext = createContext();
 const API_BASE = import.meta.env.VITE_API_BACKEND || 'http://localhost:5000/api';
 const API_BASE1 = import.meta.env.VITE_API_BACKEND1 || API_BASE;
 const API_BASE2 = import.meta.env.VITE_API_BACKEND2 || API_BASE;
-const API_BASE3 = import.meta.env.VITE_API_BACKEND3 || API_BASE;
 
 
 export const AuthProvider = ({ children }) => {
@@ -192,7 +191,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, verifyOtp, logout, hasPermission, updateUserState, API_BASE, API_BASE1, API_BASE2, API_BASE3, smartFetch, getActiveApiBase, API_POOL }}>
+        <AuthContext.Provider value={{ user, token, loading, login, verifyOtp, logout, hasPermission, updateUserState, API_BASE, API_BASE1, API_BASE2, smartFetch, getActiveApiBase, API_POOL }}>
             {/* Fullscreen Blocked Modal — shown immediately when admin blocks the user */}
             {isBlocked && (
                 <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md select-none animate-fade-in">

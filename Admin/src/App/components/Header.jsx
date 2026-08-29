@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaShieldAlt, FaRobot } from 'react-icons/fa';
+import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaShieldAlt, FaBell } from 'react-icons/fa';
 import { HiSparkles } from 'react-icons/hi2';
 
-const Header = ({ onOpenAI }) => {
+const Header = ({ onOpenAlerts, alertCount = 0 }) => {
     const [accountOpen, setAccountOpen] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
 
@@ -79,14 +79,19 @@ const Header = ({ onOpenAI }) => {
             </div>
 
             <div className='flex items-center gap-3'>
-                {/* AI Assistant */}
+                {/* Payment Alerts Button */}
                 <button
-                    onClick={onOpenAI}
-                    className='flex items-center gap-2 px-3 py-2.5 rounded-[5px] bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-sm shadow-indigo-600/25 transition-all cursor-pointer border border-indigo-500'
-                    title='Open MDM AI Assistant'
+                    onClick={onOpenAlerts}
+                    className='relative flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 transition-all cursor-pointer border border-amber-400'
+                    title='ការជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)'
                 >
-                    <FaRobot className='text-sm' />
-                    <span className='hidden sm:inline'>MDM AI</span>
+                    <FaBell className='text-sm animate-pulse text-slate-950' />
+                    <span className='hidden sm:inline font-khmer font-bold'>ជូនដំណឹងបង់ប្រាក់</span>
+                    {alertCount > 0 && (
+                        <span className='absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black shadow-md shadow-rose-600/40 border border-white flex items-center justify-center min-w-[18px]'>
+                            {alertCount}
+                        </span>
+                    )}
                 </button>
 
                 {/* Multi-Language Selector */}

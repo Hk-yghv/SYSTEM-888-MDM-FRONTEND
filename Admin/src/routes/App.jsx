@@ -62,21 +62,27 @@ import AllAccount from "../App/Settings/pages/AllAccount";
 import Profile from "../App/Profile/Profile";
 
 import DesktopOnlyGuard from "../components/DesktopOnlyGuard";
-import AIAssistantDrawer from "../components/AIAssistantDrawer";
+import PaymentAlertDrawer from "../components/PaymentAlertDrawer";
 
 const MainLayout = ({ children }) => {
-  const [isAIOpen, setIsAIOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [alertCount, setAlertCount] = useState(0);
 
   return (
     <div className="flex flex-col h-screen bg-[#f4f6f8] relative">
-      <Header onOpenAI={() => setIsAIOpen(true)} />
+      <Header onOpenAlerts={() => setIsAlertOpen(true)} alertCount={alertCount} />
       <div className="flex flex-1 overflow-hidden">
         <Left />
         <div className="flex-1 overflow-y-auto">
           {children}
         </div>
       </div>
-      <AIAssistantDrawer isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
+      <PaymentAlertDrawer
+        isOpen={isAlertOpen}
+        onClose={() => setIsAlertOpen(false)}
+        alertCount={alertCount}
+        setAlertCount={setAlertCount}
+      />
     </div>
   );
 };

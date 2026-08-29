@@ -350,4 +350,156 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// GET payment alerts (Due Today & Overdue Payments with Brand Scoping)
+router.get('/payment-alerts', async (req, res) => {
+    try {
+        const { userBrand, username, isImmutable } = req.query;
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true);
+
+        let contractQuery = { status: { $ne: 'Redeem' } };
+        if (userBrand && !isMasterAdmin) {
+            contractQuery.brand = userBrand;
+        }
+
+        let contracts = [];
+        let payments = [];
+
+        if (isMongoConnected) {
+            contracts = await queryAllDBs(Contract, (M) => M.find(contractQuery).sort({ createdAt: -1 }));
+            payments = await queryAllDBs(Payment, (M) => M.find({}).sort({ createdAt: -1 }));
+        } else {
+            contracts = MEM_DB.contracts.filter(c => c.status !== 'Redeem');
+            if (userBrand && !isMasterAdmin) {
+                contracts = contracts.filter(c => c.brand === userBrand);
+            }
+            payments = MEM_DB.payments;
+        }
+
+        // Map payments by contractId
+        const paymentMap = {};
+        for (const p of payments) {
+            const cid = p.contractId;
+            if (!cid) continue;
+            if (!paymentMap[cid]) {
+                paymentMap[cid] = { totalPaid: 0, count: 0, lastPaidDate: null };
+            }
+            const amt = Number(p.amount) || 0;
+            paymentMap[cid].totalPaid += amt;
+            paymentMap[cid].count += 1;
+            const pDate = p.paidDate || p.createdAt || p.paymentDate;
+            if (pDate) {
+                const parsed = new Date(pDate);
+                if (!isNaN(parsed.getTime())) {
+                    if (!paymentMap[cid].lastPaidDate || parsed > paymentMap[cid].lastPaidDate) {
+                        paymentMap[cid].lastPaidDate = parsed;
+                    }
+                }
+            }
+        }
+
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        const currentDay = now.getDate();
+
+        const dueTodayList = [];
+        const overdueList = [];
+
+        for (const c of contracts) {
+            const sanitized = sanitizeAndDecryptContract(c);
+            const cid = sanitized.contractId;
+            const pInfo = paymentMap[cid] || { totalPaid: 0, count: 0, lastPaidDate: null };
+
+            const totalAmount = Number(sanitized.totalAmount || sanitized.amount) || 0;
+            const monthlyPayment = Number(sanitized.monthlyPayment) || (totalAmount / 12) || 50;
+            const totalPaid = pInfo.totalPaid;
+            const remainingBalance = Math.max(0, totalAmount - totalPaid);
+
+            // Skip if loan is fully paid off
+            if (totalAmount > 0 && remainingBalance <= 0) continue;
+
+            // Parse input date / due day
+            let dueDay = 1;
+            let startDate = new Date(sanitized.inputDate || sanitized.createdAt || now);
+            if (isNaN(startDate.getTime())) startDate = now;
+            dueDay = startDate.getDate();
+
+            // Calculate expected next due date
+            // Months paid so far
+            const monthsPaid = Math.floor(totalPaid / (monthlyPayment || 1));
+
+            // Target due date for current unpaid cycle
+            let targetDueDate = new Date(startDate);
+            targetDueDate.setMonth(startDate.getMonth() + monthsPaid + 1);
+
+            // Calculate difference in days between targetDueDate and Today
+            const diffTime = now.getTime() - targetDueDate.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
+
+            const formattedDueDate = `${targetDueDate.getFullYear()}-${String(targetDueDate.getMonth() + 1).padStart(2, '0')}-${String(targetDueDate.getDate()).padStart(2, '0')}`;
+
+            // Helper to format Khmer duration
+            let overdueText = '';
+            if (diffDays > 0) {
+                const months = Math.floor(diffDays / 30);
+                const days = diffDays % 30;
+                if (months > 0 && days > 0) {
+                    overdueText = `លើស ${months} ខែ ${days} ថ្ងៃ`;
+                } else if (months > 0) {
+                    overdueText = `លើស ${months} ខែ`;
+                } else {
+                    overdueText = `លើស ${days} ថ្ងៃ`;
+                }
+            }
+
+            const alertItem = {
+                contractId: cid,
+                customerNameEn: sanitized.customerNameEn || '',
+                customerNameKh: sanitized.customerNameKh || '',
+                phone: sanitized.phone || '',
+                brand: sanitized.brand || 'SYSTEM MDM',
+                model: sanitized.model || '',
+                serialNumber: sanitized.serialNumber || '',
+                monthlyPayment,
+                totalAmount,
+                totalPaid,
+                remainingBalance,
+                dueDate: formattedDueDate,
+                overdueDays: Math.max(0, diffDays),
+                overdueText,
+                lockPhoneStatus: sanitized.lockPhoneStatus || 'Unlocked',
+                lockWallpaperStatus: sanitized.lockWallpaperStatus || 'Unlocked',
+                status: sanitized.status || 'Activated'
+            };
+
+            // Categorize into Due Today vs Overdue
+            if (diffDays > 0) {
+                overdueList.push(alertItem);
+            } else if (diffDays >= -3) { // Due within 3 days or today
+                dueTodayList.push(alertItem);
+            }
+        }
+
+        // Sort overdue list by overdue days descending (most overdue first)
+        overdueList.sort((a, b) => b.overdueDays - a.overdueDays);
+        dueTodayList.sort((a, b) => a.overdueDays - b.overdueDays);
+
+        res.json({
+            success: true,
+            brand: userBrand || 'ALL',
+            summary: {
+                dueTodayCount: dueTodayList.length,
+                overdueCount: overdueList.length,
+                totalAlerts: dueTodayList.length + overdueList.length
+            },
+            dueTodayList,
+            overdueList
+        });
+    } catch (err) {
+        console.error('Payment alerts calculation error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 export default router;
