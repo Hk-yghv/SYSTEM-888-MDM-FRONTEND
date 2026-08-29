@@ -195,3 +195,170 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
 };
+
+export const exportToPDFLandscape = (title, columns, data, brandName = '') => {
+    if (!data || !data.length) {
+        alert('No data available to export');
+        return;
+    }
+
+    const bName = (brandName || '').trim();
+    const systemTitle = bName ? (bName.toUpperCase().startsWith('SYSTEM') ? bName.toUpperCase() : `SYSTEM ${bName.toUpperCase()}`) : 'MDM SYSTEM';
+
+    const printWindow = window.open('', '_blank');
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${title} - ${systemTitle}</title>
+            <style>
+                @page {
+                    size: A4 landscape;
+                    margin: 8mm 10mm;
+                }
+                * { box-sizing: border-box; }
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    color: #0f172a;
+                    background: #fff;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                .pdf-container {
+                    width: 100%;
+                    box-sizing: border-box;
+                    padding: 6px 0;
+                }
+                .header-brand {
+                    border-bottom: 2px solid #4f46e5;
+                    padding-bottom: 6px;
+                    margin-bottom: 10px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-end;
+                }
+                .header-left h1 {
+                    font-size: 16px;
+                    color: #3730a3;
+                    text-transform: uppercase;
+                    margin: 0;
+                    font-weight: 800;
+                    letter-spacing: 0.5px;
+                }
+                .header-left p {
+                    font-size: 10px;
+                    color: #64748b;
+                    margin-top: 2px;
+                    margin-bottom: 0;
+                }
+                .header-right {
+                    font-size: 10px;
+                    font-weight: 700;
+                    color: #4f46e5;
+                    background: #eef2ff;
+                    padding: 3px 8px;
+                    border-radius: 6px;
+                    border: 1px solid #c7d2fe;
+                }
+                .table-container {
+                    width: 100%;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 10px;
+                    page-break-inside: auto;
+                }
+                thead {
+                    display: table-header-group;
+                }
+                tr {
+                    page-break-inside: avoid;
+                    page-break-after: auto;
+                }
+                th, td {
+                    border: 1px solid #cbd5e1;
+                    padding: 6px 8px;
+                    text-align: left;
+                }
+                th {
+                    background-color: #3730a3 !important;
+                    color: white !important;
+                    text-transform: uppercase;
+                    font-weight: 700;
+                    font-size: 9px;
+                    letter-spacing: 0.4px;
+                }
+                tr:nth-child(even) {
+                    background-color: #f8fafc;
+                }
+                .summary-row {
+                    background-color: #eef2ff !important;
+                    font-weight: bold;
+                }
+                .footer-page {
+                    border-top: 1px solid #cbd5e1;
+                    padding-top: 6px;
+                    margin-top: 10px;
+                    font-size: 9px;
+                    color: #64748b;
+                    display: flex;
+                    justify-content: space-between;
+                    font-weight: 600;
+                }
+                @media screen {
+                    body { padding: 20px; background: #f1f5f9; }
+                    .pdf-container {
+                        background: white;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="pdf-container">
+                <div class="header-brand">
+                    <div class="header-left">
+                        <h1>${systemTitle} — ${title}</h1>
+                        <p>Master Executive Summary &bull; Generated: ${new Date().toLocaleString()}</p>
+                    </div>
+                    <div class="header-right">
+                        Total Items: ${data.length}
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                ${columns.map(col => `<th style="${col.style || ''}">${col.header}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map((row, idx) => `
+                                <tr class="${row.isTotalRow ? 'summary-row' : ''}">
+                                    ${columns.map(col => `<td style="${col.style || ''}">${col.cell ? col.cell(row, idx) : (row[col.accessor] !== undefined && row[col.accessor] !== null ? row[col.accessor] : '')}</td>`).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="footer-page">
+                    <span>SYSTEM MDM &bull; ${title} (Landscape)</span>
+                    <span>Total Items: ${data.length}</span>
+                </div>
+            </div>
+            <script>
+                window.onload = function() { window.print(); }
+            </script>
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+};

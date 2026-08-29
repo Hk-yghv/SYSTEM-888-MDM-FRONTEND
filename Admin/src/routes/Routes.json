@@ -7,6 +7,7 @@
     "report": {
         "report": "/report",
         "allCustomers": "/report/all-customers",
+        "reportAll": "/report/all",
         "activated": "/report/activated",
         "redeem": "/report/redeem",
         "lockPhone": "/report/lock-phone",

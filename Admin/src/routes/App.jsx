@@ -24,6 +24,7 @@ import Device from "../App/Device/pages/Device";
 
 // Report Pages (each sub-route has its own dedicated component)
 import AllCustomersReport from "../App/Report/pages/AllCustomersReport";
+import ReportAll from "../App/Report/pages/ReportAll";
 import ActivatedReport from "../App/Report/pages/ActivatedReport";
 import RedeemReport from "../App/Report/pages/RedeemReport";
 import LockPhoneReport from "../App/Report/pages/LockPhoneReport";
@@ -109,6 +110,7 @@ const App = () => {
                   {/* Report Droplist Sub-Routes — each page is its own dedicated component */}
                   <Route path={json.report.report} element={<Navigate to={json.report.allCustomers} replace />} />
                   <Route path={json.report?.allCustomers} element={<ProtectRoute pagePath={json.report?.allCustomers}> <MainLayout><AllCustomersReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.reportAll} element={<ProtectRoute pagePath={json.report?.reportAll}> <MainLayout><ReportAll /></MainLayout> </ProtectRoute>} />
                   <Route path={json.report?.activated} element={<ProtectRoute pagePath={json.report?.activated}> <MainLayout><ActivatedReport /></MainLayout> </ProtectRoute>} />
                   <Route path={json.report?.redeem} element={<ProtectRoute pagePath={json.report?.redeem}> <MainLayout><RedeemReport /></MainLayout> </ProtectRoute>} />
                   <Route path={json.report?.lockPhone} element={<ProtectRoute pagePath={json.report?.lockPhone}> <MainLayout><LockPhoneReport /></MainLayout> </ProtectRoute>} />

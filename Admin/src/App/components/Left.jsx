@@ -65,6 +65,7 @@ const Left = () => {
 
             {/* Report Droplist Menu */}
             {(hasPermission(json.report.allCustomers, 'read') ||
+                hasPermission(json.report.reportAll, 'read') ||
                 hasPermission(json.report.activated, 'read') ||
                 hasPermission(json.report.redeem, 'read') ||
                 hasPermission(json.report.lockPhone, 'read') ||
@@ -82,6 +83,9 @@ const Left = () => {
                         <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.report.allCustomers, 'read') && (
                                 <Link to={json.report.allCustomers} className={subItemClass(json.report.allCustomers)}>{t('allCustomerReport')}</Link>
+                            )}
+                            {hasPermission(json.report.reportAll, 'read') && (
+                                <Link to={json.report.reportAll} className={subItemClass(json.report.reportAll)}>{t('reportAll')}</Link>
                             )}
                             {hasPermission(json.report.activated, 'read') && (
                                 <Link to={json.report.activated} className={subItemClass(json.report.activated)}>{t('activatedReport')}</Link>
