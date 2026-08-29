@@ -97,10 +97,23 @@ export const runFirebaseBackup = async () => {
         const cleanUrl = firebaseUrl.endsWith('/') ? firebaseUrl.slice(0, -1) : firebaseUrl;
         const targetUrl = `${cleanUrl}/SYSTEM_MDM_BACKUP.json` + (authSecret ? `?auth=${authSecret}` : '');
 
-        await axios.put(targetUrl, backupData, {
-            headers: { 'Content-Type': 'application/json' },
-            timeout: 30000
-        });
+        let response = null;
+        let lastErr = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                console.log(`[Firebase Backup] Sending sync to Firebase (Attempt ${attempt}/3)...`);
+                response = await axios.put(targetUrl, backupData, {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 30000
+                });
+                break;
+            } catch (err) {
+                lastErr = err;
+                console.warn(`[Firebase Backup] Attempt ${attempt} failed: ${err.message}`);
+                if (attempt < 3) await new Promise(r => setTimeout(r, 3000 * attempt));
+            }
+        }
+        if (!response) throw lastErr;
 
         firebaseBackupStatus.lastBackupTime = new Date().toISOString();
         firebaseBackupStatus.lastBackupStatus = 'Success';
@@ -128,12 +141,10 @@ export const runFirebaseBackup = async () => {
 
 // Automatic Hourly Backup Sync Scheduler
 export const startFirebaseBackupScheduler = () => {
-    // Initial sync attempt 10 seconds after server startup
     setTimeout(() => {
         runFirebaseBackup().catch(() => {});
     }, 10000);
 
-    // Hourly sync schedule
     setInterval(() => {
         runFirebaseBackup().catch(() => {});
     }, 60 * 60 * 1000);

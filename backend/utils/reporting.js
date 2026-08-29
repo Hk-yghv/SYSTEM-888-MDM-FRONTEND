@@ -8,6 +8,29 @@ import { queryAllDBs, isAnyDBConnected } from '../config/multiDB.js';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
+// Universal Auto-Retry Helper Function
+export const withAutoRetry = async (fn, options = {}) => {
+    const retries = options.retries || 3;
+    const initialDelay = options.delayMs || 2000;
+    const label = options.label || 'Operation';
+
+    let lastErr = null;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            return await fn(attempt);
+        } catch (err) {
+            lastErr = err;
+            console.warn(`[AutoRetry] ${label} failed on attempt ${attempt}/${retries}: ${err.message}`);
+            if (attempt < retries) {
+                const waitMs = initialDelay * Math.pow(2, attempt - 1);
+                console.log(`[AutoRetry] Retrying ${label} in ${waitMs}ms...`);
+                await new Promise(r => setTimeout(r, waitMs));
+            }
+        }
+    }
+    throw lastErr;
+};
+
 // ==================== collectLoginHistory ====================
 const collectLoginHistory = async () => {
     const result = [];
@@ -141,22 +164,12 @@ const sendToTelegramWithRetry = async (bot, chatId, filePath, caption = '') => {
     }
     console.log(`sendToTelegramWithRetry: Sending file ${filePath} (${stat.size} bytes) to chat ${chatId}`);
 
-    let attempt = 0;
-    const delays = [2000, 5000, 10000];
-    while (attempt < 3) {
-        try {
-            attempt++;
-            const stream = fs.createReadStream(filePath);
-            await botInstance.sendDocument(chatId, stream, { caption });
-            console.log(`sendToTelegramWithRetry: Success on attempt ${attempt}`);
-            return { success: true, attempts: attempt };
-        } catch (err) {
-            console.error(`Telegram send attempt ${attempt} failed:`, err.message);
-            if (attempt >= 3) throw err;
-            const delay = delays[attempt - 1] || 2000;
-            await new Promise(r => setTimeout(r, delay));
-        }
-    }
+    return withAutoRetry(async (attempt) => {
+        const stream = fs.createReadStream(filePath);
+        await botInstance.sendDocument(chatId, stream, { caption });
+        console.log(`sendToTelegramWithRetry: Success on attempt ${attempt}`);
+        return { success: true, attempts: attempt };
+    }, { retries: 3, delayMs: 2000, label: 'Send Telegram Document Report' });
 };
 
 // ==================== appendToGoogleSheet ====================
@@ -183,33 +196,35 @@ const appendToGoogleSheet = async (serviceAccountJsonOrPath, sheetId, rows) => {
             console.error('appendToGoogleSheet: CSV backup error:', e.message);
         }
 
-        // Step 2: Google Sheet via Webhook URL
+        // Step 2: Google Sheet via Webhook URL (with automatic retry)
         const webhookUrl = process.env.GOOGLE_SHEET_WEBHOOK_URL;
         if (webhookUrl) {
             try {
-                console.log('appendToGoogleSheet: Sending to Webhook:', webhookUrl);
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sheetId, rows }),
-                    redirect: 'follow',
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                const resText = await response.text();
-                console.log(`appendToGoogleSheet: Webhook response ${response.status}:`, resText);
-                if (response.ok) {
-                    return { success: true, via: 'webhook' };
-                }
-                console.warn('appendToGoogleSheet: Webhook returned non-OK, falling back to Google API...');
+                return await withAutoRetry(async (attempt) => {
+                    console.log(`appendToGoogleSheet: Sending to Webhook (Attempt ${attempt}/3):`, webhookUrl);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 30000);
+                    const response = await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sheetId, rows }),
+                        redirect: 'follow',
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    const resText = await response.text();
+                    console.log(`appendToGoogleSheet: Webhook response ${response.status}:`, resText);
+                    if (response.ok) {
+                        return { success: true, via: 'webhook', attempts: attempt };
+                    }
+                    throw new Error(`Webhook returned status ${response.status}: ${resText}`);
+                }, { retries: 3, delayMs: 2500, label: 'Google Sheet Webhook Append' });
             } catch (webErr) {
-                console.error('appendToGoogleSheet: Webhook error:', webErr.message, '— falling back to Google API...');
+                console.error('appendToGoogleSheet: Webhook retries failed, trying Google API fallback...', webErr.message);
             }
         }
 
-        // Step 3: Fallback — Google API via Service Account
+        // Step 3: Fallback — Google API via Service Account (with automatic retry)
         if (!serviceAccountJsonOrPath || !sheetId) {
             console.warn('appendToGoogleSheet: No service account or sheetId configured, skipping Google API.');
             return { skipped: true };
@@ -239,21 +254,23 @@ const appendToGoogleSheet = async (serviceAccountJsonOrPath, sheetId, rows) => {
             return { skipped: true };
         }
 
-        const { google } = await import('googleapis');
-        const auth = new google.auth.GoogleAuth({
-            credentials: credentialsObj,
-            scopes: ['https://www.googleapis.com/auth/spreadsheets']
-        });
-        const client = await auth.getClient();
-        const sheets = google.sheets({ version: 'v4', auth: client });
-        await sheets.spreadsheets.values.append({
-            spreadsheetId: sheetId,
-            range: 'Sheet1!A1',
-            valueInputOption: 'RAW',
-            resource: { values: rows }
-        });
-        console.log('appendToGoogleSheet: Appended via Google API successfully.');
-        return { success: true, via: 'google_api' };
+        return await withAutoRetry(async (attempt) => {
+            const { google } = await import('googleapis');
+            const auth = new google.auth.GoogleAuth({
+                credentials: credentialsObj,
+                scopes: ['https://www.googleapis.com/auth/spreadsheets']
+            });
+            const client = await auth.getClient();
+            const sheets = google.sheets({ version: 'v4', auth: client });
+            await sheets.spreadsheets.values.append({
+                spreadsheetId: sheetId,
+                range: 'Sheet1!A1',
+                valueInputOption: 'RAW',
+                resource: { values: rows }
+            });
+            console.log(`appendToGoogleSheet: Appended via Google API successfully on attempt ${attempt}.`);
+            return { success: true, via: 'google_api', attempts: attempt };
+        }, { retries: 3, delayMs: 3000, label: 'Google Sheet API Append' });
 
     } catch (err) {
         console.error('appendToGoogleSheet error:', err.message);
