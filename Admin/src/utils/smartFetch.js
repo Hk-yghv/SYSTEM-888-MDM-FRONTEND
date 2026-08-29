@@ -1,4 +1,4 @@
-// High-Availability Multi-API Automatic Real-Time Failover Engine for SYSTEM MDM
+// High-Availability Multi-API Real-Time Failover & Smart Cache Engine for SYSTEM MDM
 
 const normalizeUrl = (url) => (url ? url.replace(/\/$/, '') : '');
 
@@ -19,8 +19,37 @@ export const API_POOL = rawApiPool.length > 0 ? rawApiPool : [
 let activeApiIndex = 0;
 
 export const getActiveApiBase = () => API_POOL[activeApiIndex] || API_POOL[0];
-
 export const getApiPool = () => API_POOL;
+
+// ── Smart API In-Memory & Cache Layer ──
+const apiCache = new Map(); // key: relativePath -> { data: string, headers: object, status: number, timestamp: number }
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes default TTL for GET requests
+
+// Endpoints that should NOT be cached (lightweight polling / realtime status checks / auth verification)
+const NON_CACHEABLE_PATHS = [
+    '/auth/login',
+    '/auth/verify-otp',
+    '/users/status-check',
+    '/phone-app/status',
+    '/phone-app/consume-scanned-doc',
+    '/history/report-schedule'
+];
+
+export const invalidateApiCache = (pathPrefix = '') => {
+    if (!pathPrefix) {
+        apiCache.clear();
+        console.log('[SmartFetch Cache] Cleared all API response cache.');
+        return;
+    }
+    let count = 0;
+    for (const key of apiCache.keys()) {
+        if (key.includes(pathPrefix)) {
+            apiCache.delete(key);
+            count++;
+        }
+    }
+    console.log(`[SmartFetch Cache] Invalidated ${count} cache entries for prefix '${pathPrefix}'.`);
+};
 
 export const smartFetch = async (inputUrlOrPath, options = {}) => {
     let relativePath = typeof inputUrlOrPath === 'string' ? inputUrlOrPath : (inputUrlOrPath?.url || String(inputUrlOrPath));
@@ -35,6 +64,32 @@ export const smartFetch = async (inputUrlOrPath, options = {}) => {
 
     if (!relativePath.startsWith('/')) {
         relativePath = '/' + relativePath;
+    }
+
+    const method = (options.method || 'GET').toUpperCase();
+    const bypassCache = options.bypassCache || options.headers?.['x-bypass-cache'] || false;
+
+    // ── If method is mutation (POST, PUT, DELETE, PATCH), invalidate related cache immediately ──
+    if (method !== 'GET') {
+        const rootCategory = relativePath.split('/')[1] || '';
+        invalidateApiCache(rootCategory ? `/${rootCategory}` : '');
+    }
+
+    // ── Check Cache for GET Requests ──
+    const isCacheableGet = (method === 'GET') && !bypassCache && !NON_CACHEABLE_PATHS.some(p => relativePath.startsWith(p));
+    if (isCacheableGet) {
+        const cached = apiCache.get(relativePath);
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+            return new Response(cached.data, {
+                status: cached.status,
+                statusText: 'OK (From SmartCache)',
+                headers: new Headers({
+                    'Content-Type': 'application/json',
+                    'X-Smart-Cache': 'HIT',
+                    ...(cached.headers || {})
+                })
+            });
+        }
     }
 
     const startIndex = activeApiIndex;
@@ -70,6 +125,22 @@ export const smartFetch = async (inputUrlOrPath, options = {}) => {
             if (activeApiIndex !== tryIndex) {
                 console.log(`[SmartFetch Real-Time Failover] Promoted active API server to: ${currentBase}`);
                 activeApiIndex = tryIndex;
+            }
+
+            // Store successful GET response in Cache Layer
+            if (isCacheableGet && response.ok) {
+                try {
+                    const clonedResponse = response.clone();
+                    const textData = await clonedResponse.text();
+                    apiCache.set(relativePath, {
+                        data: textData,
+                        status: response.status,
+                        headers: Object.fromEntries(response.headers.entries()),
+                        timestamp: Date.now()
+                    });
+                } catch (cErr) {
+                    console.warn('[SmartFetch Cache] Clone caching warning:', cErr.message);
+                }
             }
 
             return response;

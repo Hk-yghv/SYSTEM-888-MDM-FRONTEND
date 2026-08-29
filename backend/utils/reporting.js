@@ -1,36 +1,76 @@
 import fs from 'fs';
 import path from 'path';
+import TelegramBot from 'node-telegram-bot-api';
 import User from '../models/User.js';
-import { queryAllDBs, getWriteModel, isAnyDBConnected } from '../config/multiDB.js';
+import LoginLog from '../models/LoginLog.js';
+import { queryAllDBs, MEM_DB, isAnyDBConnected } from '../config/multiDB.js';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 // ==================== collectLoginHistory ====================
 const collectLoginHistory = async () => {
     const result = [];
+    const userMap = new Map();
+
     try {
-        if (!isAnyDBConnected()) {
-            console.warn('collectLoginHistory: No MongoDB connected (multiDB), skipping.');
-            return result;
-        }
-        // Use queryAllDBs — same pattern as historyRoutes.js to work with multi-DB
-        const users = await queryAllDBs(User, (M) => M.find({}).select('username userId loginHistory'));
-        console.log(`collectLoginHistory: Found ${users.length} users across all DBs`);
-        users.forEach(u => {
-            if (Array.isArray(u.loginHistory) && u.loginHistory.length) {
-                result.push({
-                    username: u.username,
-                    userId: u.userId,
-                    history: u.loginHistory.map(h => ({
-                        timestamp: h.timestamp,
-                        ip: h.ip || 'N/A',
-                        deviceInfo: h.deviceInfo || 'Unknown',
-                        status: h.status || 'Success'
-                    }))
+        if (isAnyDBConnected()) {
+            // 1. Collect from User.loginHistory across all DBs
+            const users = await queryAllDBs(User, (M) => M.find({}).select('username userId loginHistory'));
+            users.forEach(u => {
+                if (u.username && Array.isArray(u.loginHistory) && u.loginHistory.length) {
+                    if (!userMap.has(u.username)) {
+                        userMap.set(u.username, { username: u.username, userId: u.userId || '-', history: [] });
+                    }
+                    const target = userMap.get(u.username);
+                    u.loginHistory.forEach(h => {
+                        target.history.push({
+                            timestamp: h.timestamp || new Date(),
+                            ip: h.ip || 'N/A',
+                            deviceInfo: h.deviceInfo || 'Unknown',
+                            status: h.status || 'Success'
+                        });
+                    });
+                }
+            });
+
+            // 2. Collect from LoginLog collection across all DBs
+            const logs = await queryAllDBs(LoginLog, (M) => M.find({}).sort({ timestamp: -1 }));
+            logs.forEach(l => {
+                const uname = l.username || 'System/Guest';
+                if (!userMap.has(uname)) {
+                    userMap.set(uname, { username: uname, userId: l.userId || '-', history: [] });
+                }
+                const target = userMap.get(uname);
+                target.history.push({
+                    timestamp: l.timestamp || l.createdAt || new Date(),
+                    ip: l.ip || 'N/A',
+                    deviceInfo: l.deviceInfo || 'Unknown',
+                    status: l.status || 'Success'
                 });
-            }
-        });
-        console.log(`collectLoginHistory: Collected history for ${result.length} users with login records`);
+            });
+        }
+
+        // 3. Fallback / add MEM_DB users
+        if (MEM_DB && Array.isArray(MEM_DB.users)) {
+            MEM_DB.users.forEach(u => {
+                if (u.username && Array.isArray(u.loginHistory) && u.loginHistory.length) {
+                    if (!userMap.has(u.username)) {
+                        userMap.set(u.username, { username: u.username, userId: u.userId || '-', history: [] });
+                    }
+                    const target = userMap.get(u.username);
+                    u.loginHistory.forEach(h => {
+                        target.history.push({
+                            timestamp: h.timestamp || new Date(),
+                            ip: h.ip || 'N/A',
+                            deviceInfo: h.deviceInfo || 'Unknown',
+                            status: h.status || 'Success'
+                        });
+                    });
+                }
+            });
+        }
+
+        userMap.forEach(v => result.push(v));
     } catch (err) {
         console.error('collectLoginHistory error:', err.message);
     }
@@ -80,9 +120,17 @@ const writeTempReportFile = async (text) => {
 
 // ==================== sendToTelegramWithRetry ====================
 const sendToTelegramWithRetry = async (bot, chatId, filePath, caption = '') => {
-    if (!bot) throw new Error('Telegram bot instance not provided');
+    let botInstance = bot;
+    if (!botInstance && process.env.TELEGRAM_BOT_TOKEN) {
+        try {
+            botInstance = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
+        } catch (e) {
+            console.error('Failed to create fallback TelegramBot instance:', e.message);
+        }
+    }
 
-    // Validate file exists and has content before sending
+    if (!botInstance) throw new Error('Telegram bot instance not configured in system or .env');
+
     if (!fs.existsSync(filePath)) {
         throw new Error(`Report file not found: ${filePath}`);
     }
@@ -97,9 +145,8 @@ const sendToTelegramWithRetry = async (bot, chatId, filePath, caption = '') => {
     while (attempt < 3) {
         try {
             attempt++;
-            // Create a fresh stream for each attempt
             const stream = fs.createReadStream(filePath);
-            await bot.sendDocument(chatId, stream, { caption });
+            await botInstance.sendDocument(chatId, stream, { caption });
             console.log(`sendToTelegramWithRetry: Success on attempt ${attempt}`);
             return { success: true, attempts: attempt };
         } catch (err) {
@@ -125,7 +172,6 @@ const appendToGoogleSheet = async (serviceAccountJsonOrPath, sheetId, rows) => {
             const dir = path.join(process.cwd(), 'tmp');
             if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
             const csvPath = path.join(dir, 'login-history-backup.csv');
-            // Add header if file doesn't exist yet
             if (!fs.existsSync(csvPath)) {
                 fs.writeFileSync(csvPath, '"Username","UserID","Timestamp","Status","IP","Device"\n', 'utf8');
             }
@@ -142,7 +188,7 @@ const appendToGoogleSheet = async (serviceAccountJsonOrPath, sheetId, rows) => {
             try {
                 console.log('appendToGoogleSheet: Sending to Webhook:', webhookUrl);
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -174,10 +220,8 @@ const appendToGoogleSheet = async (serviceAccountJsonOrPath, sheetId, rows) => {
                 if (fs.existsSync(serviceAccountJsonOrPath)) {
                     const raw = fs.readFileSync(serviceAccountJsonOrPath, 'utf8');
                     credentialsObj = JSON.parse(raw);
-                    console.log('appendToGoogleSheet: Loaded service account from file.');
                 } else if (serviceAccountJsonOrPath.trim().startsWith('{')) {
                     credentialsObj = JSON.parse(serviceAccountJsonOrPath);
-                    console.log('appendToGoogleSheet: Loaded service account from JSON string.');
                 } else {
                     console.error('appendToGoogleSheet: Service account file not found at:', serviceAccountJsonOrPath);
                 }
@@ -219,15 +263,34 @@ const appendToGoogleSheet = async (serviceAccountJsonOrPath, sheetId, rows) => {
 // ==================== cleanupLoginHistory ====================
 const cleanupLoginHistory = async () => {
     try {
-        if (!isAnyDBConnected()) {
-            console.warn('cleanupLoginHistory: No MongoDB connected (multiDB), skipping.');
-            return { skipped: true };
+        let clearedUsersCount = 0;
+        let clearedLogsCount = 0;
+
+        if (isAnyDBConnected()) {
+            // 1. Clear loginHistory on all User documents across ALL DBs
+            await queryAllDBs(User, async (BoundM) => {
+                const res = await BoundM.updateMany({}, { $set: { loginHistory: [] } }).catch(() => ({ modifiedCount: 0 }));
+                clearedUsersCount += res.modifiedCount || 0;
+                return [];
+            });
+
+            // 2. Delete all LoginLog records across ALL DBs
+            await queryAllDBs(LoginLog, async (BoundM) => {
+                const res = await BoundM.deleteMany({}).catch(() => ({ deletedCount: 0 }));
+                clearedLogsCount += res.deletedCount || 0;
+                return [];
+            });
         }
-        // Use getWriteModel — writes to active DB (DB1 → DB2 → DB3 fallback)
-        const UserWrite = getWriteModel(User) || User;
-        const res = await UserWrite.updateMany({}, { $set: { loginHistory: [] } });
-        console.log(`cleanupLoginHistory: Cleared loginHistory for ${res.modifiedCount} users.`);
-        return { success: true, modifiedCount: res.modifiedCount };
+
+        // 3. Clear MEM_DB users login history
+        if (MEM_DB && Array.isArray(MEM_DB.users)) {
+            MEM_DB.users.forEach(u => {
+                u.loginHistory = [];
+            });
+        }
+
+        console.log(`cleanupLoginHistory: Cleared loginHistory for ${clearedUsersCount} users and purged ${clearedLogsCount} LoginLog records.`);
+        return { success: true, clearedUsersCount, clearedLogsCount };
     } catch (err) {
         console.error('cleanupLoginHistory error:', err.message);
         return { success: false, error: err.message };
