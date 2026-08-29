@@ -16,12 +16,11 @@ const Device3DPointers = ({ device }) => {
                         <p className="text-[11px] text-slate-400 font-mono">Serial: {device.serialNumber || 'SN-MDM-9912'}</p>
                     </div>
                 </div>
-                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                    device.lockPhoneStatus === 'Locked'
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${device.lockPhoneStatus === 'Locked'
                         ? 'bg-red-950/90 border-red-700 text-red-300'
                         : 'bg-emerald-950/90 border-emerald-700 text-emerald-300'
-                }`}>
-                    {device.lockPhoneStatus === 'Locked' ? '🔒 Locked' : '🟢 Active'}
+                    }`}>
+                    {device.lockPhoneStatus === 'Locked' ? 'Locked' : 'Active'}
                 </span>
             </div>
 

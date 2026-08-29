@@ -9,6 +9,7 @@ import CreateApplication from '../components/CreateApplication';
 import CustomModal from '../../../components/CustomModal';
 import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import RepaymentScheduleModal from '../components/RepaymentScheduleModal';
 
 const Activated = () => {
     const { t } = useLanguage();
@@ -26,6 +27,10 @@ const Activated = () => {
     const [selectedInfo, setSelectedInfo] = useState(null);
     const [editData, setEditData] = useState(null);
     const [openEditModal, setOpenEditModal] = useState(false);
+
+    // Repayment Schedule Modal State
+    const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+    const [scheduleModalContract, setScheduleModalContract] = useState(null);
 
     // Comment Modal State
     const [selectedCommentItem, setSelectedCommentItem] = useState(null);
@@ -421,14 +426,14 @@ const Activated = () => {
 
                     <button
                         onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <FaFileExcel className="text-emerald-600 text-sm" />
                         <span>Excel</span>
                     </button>
                     <button
                         onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <MdPictureAsPdf className="text-red-600 text-sm" />
                         <span>PDF</span>
@@ -437,7 +442,7 @@ const Activated = () => {
                     <button
                         onClick={() => fetchActivatedContracts(currentPage, searchTerm)}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
@@ -512,7 +517,7 @@ const Activated = () => {
                                             <div className="relative inline-block text-left">
                                                 <button
                                                     onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
-                                                    className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs"
+                                                    className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs"
                                                 >
                                                     <AiOutlineMenu size={16} />
                                                 </button>
@@ -521,7 +526,7 @@ const Activated = () => {
                                                     <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
                                                         <button
                                                             onClick={() => { setSelectedInfo(item); setOpenMenuId(null); }}
-                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                         >
                                                             <MdInfo className="text-indigo-600 text-sm" />
                                                             <span>{t('information')}</span>
@@ -535,8 +540,15 @@ const Activated = () => {
                                                             </button>
                                                         )}
                                                         <button
+                                                            onClick={() => { setScheduleModalContract(item); setScheduleModalOpen(true); setOpenMenuId(null); }}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <FaDollarSign className="text-amber-600 text-sm" />
+                                                            <span>Repayment Schedule ($)</span>
+                                                        </button>
+                                                        <button
                                                             onClick={() => { handleOpenQrModal(item); setOpenMenuId(null); }}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                         >
                                                             <MdQrCode2 className="text-emerald-600 text-base" />
                                                             <span>{t('qrCode')} Payment</span>
@@ -549,42 +561,42 @@ const Activated = () => {
                                                                         setCommentInput(item.notes || '');
                                                                         setOpenMenuId(null);
                                                                     }}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rended-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdComment className="text-cyan-600 text-base" />
                                                                     <span>Comment</span>
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleQuickDeviceAction(item, 'Lock Phone')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rended-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <FaLock className="text-red-600 text-sm" />
                                                                     <span>Lock Device</span>
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleQuickDeviceAction(item, 'Set Wallpaper')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rended-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdOutlineWallpaper className="text-amber-600 text-sm" />
                                                                     <span>Set Wallpaper</span>
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleChangeStatus(item, 'Check')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rended-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdSwapHoriz className="text-blue-600 text-base" />
                                                                     <span>Check</span>
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleChangeStatus(item, 'Redeem')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-purple-700 hover:bg-purple-50 rended-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdSwapHoriz className="text-purple-600 text-base" />
                                                                     <span>Redeem</span>
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleChangeStatus(item, 'Blacklist')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdSwapHoriz className="text-red-600 text-base" />
                                                                     <span>Blacklist</span>
@@ -814,6 +826,14 @@ const Activated = () => {
                     </div>
                 </div>
             )}
+
+            <RepaymentScheduleModal
+                open={scheduleModalOpen}
+                setOpen={setScheduleModalOpen}
+                contract={scheduleModalContract}
+                mode="view_edit"
+                onSaved={fetchActivatedContracts}
+            />
         </div>
     );
 };

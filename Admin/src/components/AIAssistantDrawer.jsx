@@ -273,7 +273,6 @@ const AIAssistantDrawer = ({ isOpen, onClose }) => {
                                 <div>
                                     <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5 tracking-wide">
                                         <span>MDM AI Assistant</span>
-                                        <HiSparkles className="text-amber-400 text-sm animate-pulse" />
                                     </h3>
                                     <div className="flex items-center gap-2 mt-0.5 text-[10px]">
                                         <span className="flex items-center gap-1 text-emerald-400 font-bold font-mono">

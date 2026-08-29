@@ -83,7 +83,7 @@ async def chat_endpoint(payload: ChatRequest):
         print(f"Chat processing error: {e}")
         return {
             "success": False,
-            "answer": f"⚠️ មានបញ្ហាក្នុងការដំណើរការ AI Assistant: {str(e)}"
+            "answer": f"មានបញ្ហាក្នុងការដំណើរការ AI Assistant: {str(e)}"
         }
 
 @app.post("/api/ai/quick-prompts")
@@ -94,19 +94,19 @@ async def quick_prompts_endpoint(payload: QuickPromptsRequest):
 
     if role == "Administrator" or not brand:
         prompts = [
-            "📊 សង្ខេបទិន្នន័យកិច្ចសន្យា និងទូរស័ព្ទសរុប",
-            "💳 សង្ខេបប្រាក់ទទួលបានសរុបពីការបង់",
-            "🔒 តើមានទូរស័ព្ទប៉ុន្មានគ្រឿងជាប់ Lock?",
-            "🔍 ស្វែងរកអតិថិជនតាមឈ្មោះ ឬលេខទូរស័ព្ទ",
-            "📱 ពិនិត្យឧបករណ៍ដែលបាន Activate ចុងក្រោយ"
+            "សង្ខេបទិន្នន័យកិច្ចសន្យា និងទូរស័ព្ទសរុប",
+            "សង្ខេបប្រាក់ទទួលបានសរុបពីការបង់",
+            "តើមានទូរស័ព្ទប៉ុន្មានគ្រឿងជាប់ Lock?",
+            "ស្វែងរកអតិថិជនតាមឈ្មោះ ឬលេខទូរស័ព្ទ",
+            "ពិនិត្យឧបករណ៍ដែលបាន Activate ចុងក្រោយ"
         ]
     else:
         prompts = [
-            f"📊 សង្ខេបទិន្នន័យ Brand {brand}",
-            f"📱 ចំនួនទូរស័ព្ទសកម្មក្នុង Brand {brand}",
-            "💳 ប្រវត្តិបង់ប្រាក់ក្នុង Brand ខ្ញុំ",
-            "🔒 ពិនិត្យទូរស័ព្ទជាប់ Lock ក្នុង Brand ខ្ញុំ",
-            "🔍 ស្វែងរកកិច្ចសន្យាអតិថិជន"
+            f"សង្ខេបទិន្នន័យ Brand {brand}",
+            f"ចំនួនទូរស័ព្ទសកម្មក្នុង Brand {brand}",
+            "ប្រវត្តិបង់ប្រាក់ក្នុង Brand ខ្ញុំ",
+            "ពិនិត្យទូរស័ព្ទជាប់ Lock ក្នុង Brand ខ្ញុំ",
+            "ស្វែងរកកិច្ចសន្យាអតិថិជន"
         ]
     return {"prompts": prompts}
 

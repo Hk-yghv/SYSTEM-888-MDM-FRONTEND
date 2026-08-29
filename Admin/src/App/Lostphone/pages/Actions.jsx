@@ -56,7 +56,8 @@ const Actions = () => {
             let displayText = 'ប្រព័ន្ធ SYSTEM MDM — ទូរស័ព្ទនេះត្រូវបានចាក់សោ ហេតុថាមានបំណុលជំពាក់';
             let phoneNumber = '+855 12 903 120';
             try {
-                const brandParam = user?.brand ? `?brand=${encodeURIComponent(user.brand)}` : '';
+                const targetBrand = contract.brand || user?.brand || '';
+                const brandParam = targetBrand ? `?brand=${encodeURIComponent(targetBrand)}` : '';
                 const configRes = await fetch(`${API_BASE}/controlsystem${brandParam}`);
                 if (configRes.ok) {
                     const cfg = await configRes.json();

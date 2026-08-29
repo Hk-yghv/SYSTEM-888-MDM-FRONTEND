@@ -9,6 +9,8 @@ import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
+import RepaymentScheduleModal from '../components/RepaymentScheduleModal';
+
 const Redeem = () => {
     const { t } = useLanguage();
     const { API_BASE1, user, hasPermission } = useAuth();
@@ -21,6 +23,10 @@ const Redeem = () => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [editData, setEditData] = useState(null);
     const [openEditModal, setOpenEditModal] = useState(false);
+
+    // Repayment Schedule Modal State
+    const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+    const [scheduleModalContract, setScheduleModalContract] = useState(null);
 
     const fetchRedeemContracts = async (pg = page) => {
         setReloading(true);
@@ -172,6 +178,12 @@ const Redeem = () => {
 
                                             {openMenuId === item._id && (
                                                 <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                    <button
+                                                        onClick={() => { setScheduleModalContract(item); setScheduleModalOpen(true); setOpenMenuId(null); }}
+                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                    >
+                                                        <FaFileExcel className="text-indigo-600 text-sm" /> View Schedule ($)
+                                                    </button>
                                                     {(user?.isImmutable || user?.username === '@hakyonghouv') && (
                                                         <button
                                                             onClick={() => handleRestoreToActivated(item)}
@@ -205,6 +217,13 @@ const Redeem = () => {
             <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
 
             <CreateApplication open={openEditModal} setOpen={setOpenEditModal} editData={editData} onSaved={fetchRedeemContracts} />
+
+            <RepaymentScheduleModal
+                open={scheduleModalOpen}
+                setOpen={setScheduleModalOpen}
+                contract={scheduleModalContract}
+                mode="read_only"
+            />
         </div>
     );
 };

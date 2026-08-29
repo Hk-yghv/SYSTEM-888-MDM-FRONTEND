@@ -457,11 +457,10 @@ const Dashboard = () => {
                     <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                         <MdTrendingUp className="text-xl text-emerald-600" /> Profit &amp; Loss Financial Analytics
                     </h2>
-                    <span className={`px-3 py-1 border rounded-full font-mono text-xs font-bold ${
-                        isProfit
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                            : 'bg-red-50 text-red-800 border-red-300'
-                    }`}>
+                    <span className={`px-3 py-1 border rounded-full font-mono text-xs font-bold ${isProfit
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        : 'bg-red-50 text-red-800 border-red-300'
+                        }`}>
                         {isProfit ? '▲' : '▼'} Net {isProfit ? 'Profit' : 'Loss'}: {Math.abs(Number(profitPct))}%
                     </span>
                 </div>
@@ -471,7 +470,7 @@ const Dashboard = () => {
 
                     {/* Card 1: Customer Received Amount */}
                     <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200">
-                        <span className="text-blue-600 block text-[11px] uppercase font-bold tracking-wide">ទឹកប្រាក់ភ្ញៀវទទួល</span>
+                        <span className="text-blue-600 block text-[11px] uppercase font-bold tracking-wide">{t('ctmReceived')}</span>
                         <span className="text-2xl font-black font-mono block mt-1 text-blue-700">
                             ${customerReceivedAmt.toLocaleString()}
                         </span>
@@ -494,29 +493,22 @@ const Dashboard = () => {
                     </div>
 
                     {/* Card 3: Net Profit / Loss */}
-                    <div className={`p-4 rounded-2xl border ${
-                        isProfit ? 'bg-teal-50 border-teal-200' : 'bg-red-50 border-red-200'
-                    }`}>
-                        <span className={`block text-[11px] uppercase font-bold tracking-wide ${
-                            isProfit ? 'text-teal-700' : 'text-red-700'
-                        }`}>ចំណេញ / ខាត</span>
-                        <span className={`text-2xl font-black font-mono block mt-1 ${
-                            isProfit ? 'text-teal-700' : 'text-red-700'
+                    <div className={`p-4 rounded-2xl border ${isProfit ? 'bg-teal-50 border-teal-200' : 'bg-red-50 border-red-200'
                         }`}>
+                        <span className={`block text-[11px] uppercase font-bold tracking-wide ${isProfit ? 'text-teal-700' : 'text-red-700'
+                            }`}>ចំណេញ / ខាត</span>
+                        <span className={`text-2xl font-black font-mono block mt-1 ${isProfit ? 'text-teal-700' : 'text-red-700'
+                            }`}>
                             {isProfit ? '+' : '-'}${Math.abs(netProfitLoss).toLocaleString()}
                         </span>
-                        <span className={`text-[10px] font-semibold mt-1 block ${
-                            isProfit ? 'text-teal-600' : 'text-red-600'
-                        }`}>Net {isProfit ? 'Profit' : 'Loss'} ({profitPct}%)</span>
-                        <div className={`flex items-center justify-between mt-1.5 pt-1.5 border-t ${
-                            isProfit ? 'border-teal-100' : 'border-red-100'
-                        }`}>
-                            <span className={`text-[10px] font-medium ${
-                                isProfit ? 'text-teal-500' : 'text-red-400'
-                            }`}>{isProfit ? 'Collected > Customer Received' : 'Loss: Below customer received'}</span>
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                isProfit ? 'bg-teal-100 text-teal-700' : 'bg-red-100 text-red-700'
-                            }`}>{isProfit ? '+' : ''}{profitPct}%</span>
+                        <span className={`text-[10px] font-semibold mt-1 block ${isProfit ? 'text-teal-600' : 'text-red-600'
+                            }`}>Net {isProfit ? 'Profit' : 'Loss'} ({profitPct}%)</span>
+                        <div className={`flex items-center justify-between mt-1.5 pt-1.5 border-t ${isProfit ? 'border-teal-100' : 'border-red-100'
+                            }`}>
+                            <span className={`text-[10px] font-medium ${isProfit ? 'text-teal-500' : 'text-red-400'
+                                }`}>{isProfit ? 'Collected > Customer Received' : 'Loss: Below customer received'}</span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isProfit ? 'bg-teal-100 text-teal-700' : 'bg-red-100 text-red-700'
+                                }`}>{isProfit ? '+' : ''}{profitPct}%</span>
                         </div>
                     </div>
 
@@ -568,9 +560,8 @@ const Dashboard = () => {
                         </div>
                         <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
                             <div
-                                className={`h-full transition-all duration-700 flex items-center justify-center ${
-                                    isProfit ? 'bg-teal-500' : 'bg-red-500'
-                                }`}
+                                className={`h-full transition-all duration-700 flex items-center justify-center ${isProfit ? 'bg-teal-500' : 'bg-red-500'
+                                    }`}
                                 style={{ width: `${Math.min(Math.abs(Number(profitPct)), 100)}%` }}
                             >
                                 {Math.abs(Number(profitPct)) > 5 && (
@@ -593,7 +584,7 @@ const Dashboard = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
                     <div>
                         <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                            <FaChartBar className="text-xl text-emerald-600" /> 
+                            <FaChartBar className="text-xl text-emerald-600" />
                             ក្រាបសសរវិភាគព័ត៌មាន (Bar Chart Analytics — {timeRange.toUpperCase()})
                         </h2>
                         <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -612,11 +603,10 @@ const Dashboard = () => {
                             <button
                                 key={val}
                                 onClick={() => setTimeRange(val)}
-                                className={`px-3.5 py-1.5 rounded-xl cursor-pointer font-bold transition-all ${
-                                    timeRange === val
-                                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                                }`}
+                                className={`px-3.5 py-1.5 rounded-xl cursor-pointer font-bold transition-all ${timeRange === val
+                                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                                    }`}
                             >
                                 {label}
                             </button>
@@ -715,7 +705,7 @@ const Dashboard = () => {
 
                                     {/* Numbers on Top of Bars */}
                                     <div className="flex items-center gap-1 text-[10px] font-bold font-mono">
-                                        {item.revenue > 0 && <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 rounded">${item.revenue > 1000 ? `${(item.revenue/1000).toFixed(1)}k` : item.revenue}</span>}
+                                        {item.revenue > 0 && <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 rounded">${item.revenue > 1000 ? `${(item.revenue / 1000).toFixed(1)}k` : item.revenue}</span>}
                                         {item.entry > 0 && <span className="text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 rounded">{item.entry} នាក់</span>}
                                     </div>
 
@@ -1051,13 +1041,13 @@ const Dashboard = () => {
                 {/* ── Per-Type Audit Cards + Mini Line Charts ── */}
                 {(() => {
                     const TYPE_META = [
-                        { type: 'Activated',     label: 'Activated',     stroke: '#059669', bg: 'bg-emerald-50',  border: 'border-emerald-300', badge: 'bg-emerald-50 text-emerald-800 border-emerald-300', dot: 'bg-emerald-600' },
-                        { type: 'Application',   label: 'Application',   stroke: '#f59e0b', bg: 'bg-amber-50',    border: 'border-amber-300',   badge: 'bg-amber-50 text-amber-800 border-amber-300',   dot: 'bg-amber-500'  },
-                        { type: 'Check',         label: 'Check',         stroke: '#0284c7', bg: 'bg-sky-50',      border: 'border-sky-300',     badge: 'bg-sky-50 text-sky-800 border-sky-300',         dot: 'bg-sky-500'    },
-                        { type: 'Lock Device',   label: 'Lock Device',   stroke: '#dc2626', bg: 'bg-red-50',      border: 'border-red-300',     badge: 'bg-red-50 text-red-700 border-red-300',         dot: 'bg-red-600'    },
-                        { type: 'Wallpaper Lock',label: 'Wallpaper Lock',stroke: '#7c3aed', bg: 'bg-purple-50',  border: 'border-purple-300',  badge: 'bg-purple-50 text-purple-700 border-purple-300',dot: 'bg-purple-600' },
-                        { type: 'Payment',       label: 'Payment',       stroke: '#0d9488', bg: 'bg-teal-50',     border: 'border-teal-300',    badge: 'bg-teal-50 text-teal-800 border-teal-300',      dot: 'bg-teal-600'   },
-                        { type: 'Redeem',        label: 'Redeem',        stroke: '#9333ea', bg: 'bg-violet-50',  border: 'border-violet-300',  badge: 'bg-violet-50 text-violet-700 border-violet-300',dot: 'bg-violet-600' },
+                        { type: 'Activated', label: 'Activated', stroke: '#059669', bg: 'bg-emerald-50', border: 'border-emerald-300', badge: 'bg-emerald-50 text-emerald-800 border-emerald-300', dot: 'bg-emerald-600' },
+                        { type: 'Application', label: 'Application', stroke: '#f59e0b', bg: 'bg-amber-50', border: 'border-amber-300', badge: 'bg-amber-50 text-amber-800 border-amber-300', dot: 'bg-amber-500' },
+                        { type: 'Check', label: 'Check', stroke: '#0284c7', bg: 'bg-sky-50', border: 'border-sky-300', badge: 'bg-sky-50 text-sky-800 border-sky-300', dot: 'bg-sky-500' },
+                        { type: 'Lock Device', label: 'Lock Device', stroke: '#dc2626', bg: 'bg-red-50', border: 'border-red-300', badge: 'bg-red-50 text-red-700 border-red-300', dot: 'bg-red-600' },
+                        { type: 'Wallpaper Lock', label: 'Wallpaper Lock', stroke: '#7c3aed', bg: 'bg-purple-50', border: 'border-purple-300', badge: 'bg-purple-50 text-purple-700 border-purple-300', dot: 'bg-purple-600' },
+                        { type: 'Payment', label: 'Payment', stroke: '#0d9488', bg: 'bg-teal-50', border: 'border-teal-300', badge: 'bg-teal-50 text-teal-800 border-teal-300', dot: 'bg-teal-600' },
+                        { type: 'Redeem', label: 'Redeem', stroke: '#9333ea', bg: 'bg-violet-50', border: 'border-violet-300', badge: 'bg-violet-50 text-violet-700 border-violet-300', dot: 'bg-violet-600' },
                     ];
 
                     // Build date-keyed trend for each type
@@ -1105,7 +1095,7 @@ const Dashboard = () => {
                             <div className="relative h-16 w-full">
                                 <svg className="w-full h-full overflow-visible">
                                     <defs>
-                                        <linearGradient id={`grad-${stroke.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
+                                        <linearGradient id={`grad-${stroke.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="0%" stopColor={stroke} stopOpacity="0.18" />
                                             <stop offset="100%" stopColor={stroke} stopOpacity="0" />
                                         </linearGradient>

@@ -87,8 +87,8 @@ const DocumentScanner = ({ onParsedData }) => {
         // ── 1. iOS "About" screen parsing (Key: Value structures) ──
         // Model Name (e.g. Model Name: iPhone 12 Pro Max)
         const modelNameMatch = normalizedText.match(/Model\s*Name[\s:\t]+([^\n\r]+)/i) ||
-                               normalizedText.match(/\b(iPhone\s+[0-9]{1,2}(?:\s*(?:Pro\s*Max|Pro|Plus|Mini))?)\b/i) ||
-                               normalizedText.match(/\b(Samsung\s+Galaxy\s+[^\n\r]+)/i);
+            normalizedText.match(/\b(iPhone\s+[0-9]{1,2}(?:\s*(?:Pro\s*Max|Pro|Plus|Mini))?)\b/i) ||
+            normalizedText.match(/\b(Samsung\s+Galaxy\s+[^\n\r]+)/i);
         if (modelNameMatch) {
             parsed.model = (modelNameMatch[1] || modelNameMatch[0]).replace(/[\>\:\;]/g, '').trim();
             if (/iphone/i.test(parsed.model)) parsed.brand = 'Apple';
@@ -97,7 +97,7 @@ const DocumentScanner = ({ onParsedData }) => {
 
         // Serial Number (e.g. Serial Number: F2LF96PN0D42 or G6TY82...)
         const serialMatch = normalizedText.match(/Serial\s*Number[\s:\t]+([A-Z0-9]{8,14})/i) ||
-                            normalizedText.match(/\b([A-Z0-9]{10,12})\b/);
+            normalizedText.match(/\b([A-Z0-9]{10,12})\b/);
         if (serialMatch && !/AVAILABLE|CAPACITY|BLUETOOTH/i.test(serialMatch[1])) {
             parsed.serialNumber = serialMatch[1].trim();
         }
@@ -131,7 +131,7 @@ const DocumentScanner = ({ onParsedData }) => {
 
         // Capacity / Storage (e.g. Capacity: 128 GB)
         const capacityMatch = normalizedText.match(/Capacity[\s:\t]+([0-9]{1,4}\s*(?:GB|TB))/i) ||
-                              normalizedText.match(/\b([0-9]{2,4}\s*(?:GB|TB))\b/i);
+            normalizedText.match(/\b([0-9]{2,4}\s*(?:GB|TB))\b/i);
         if (capacityMatch) {
             parsed.version = capacityMatch[1].trim();
         }
@@ -149,9 +149,9 @@ const DocumentScanner = ({ onParsedData }) => {
         }
 
         // ── 2. Customer Document Parsing (ID Cards / Passports) ──
-        const idMatches = normalizedText.match(/\b\d{3}\s?\d{3}\s?\d{3}\b/) || 
-                          normalizedText.match(/\b(ID|NO|NUM|PASSPORT|លេខ)[:\s]*([A-Z0-9]{7,12})\b/i) ||
-                          normalizedText.match(/\b([A-Z]\d{7,8}|\d{9,10})\b/);
+        const idMatches = normalizedText.match(/\b\d{3}\s?\d{3}\s?\d{3}\b/) ||
+            normalizedText.match(/\b(ID|NO|NUM|PASSPORT|លេខ)[:\s]*([A-Z0-9]{7,12})\b/i) ||
+            normalizedText.match(/\b([A-Z]\d{7,8}|\d{9,10})\b/);
         if (idMatches && !/IMEI|MEID|ICCID/i.test(idMatches[0])) {
             const rawId = (idMatches[2] || idMatches[1] || idMatches[0]).replace(/\s+/g, '');
             if (rawId.length >= 7 && rawId.length <= 12) {
@@ -291,14 +291,8 @@ const DocumentScanner = ({ onParsedData }) => {
                     </div>
                     <div>
                         <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
-                            <span>Smart Multi-Image OCR Scanner</span>
-                            <span className="px-2 py-0.5 bg-emerald-950/80 border border-emerald-600 text-emerald-400 text-[9px] rounded-full font-khmer">
-                                🪪 ID Card / Passport + 📱 iOS/Android Specs & MEID/IMEI
-                            </span>
+                            <span>Scan Image File</span>
                         </h4>
-                        <p className="text-[10px] text-slate-400 font-khmer">
-                            អាចទម្លាក់រូបភាពច្រើនក្នុងពេលតែមួយ (រូប ID Card + Screenshot About Part 1 & Part 2) ដើម្បីអានបំពេញម្តងទាំងអស់
-                        </p>
                     </div>
                 </div>
 
@@ -319,13 +313,12 @@ const DocumentScanner = ({ onParsedData }) => {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onClick={() => !processing && fileInputRef.current?.click()}
-                className={`w-full min-h-[90px] rounded-xl border-2 border-dashed transition-all flex flex-col items-center justify-center p-3 cursor-pointer relative overflow-hidden ${
-                    isDragging
-                        ? 'border-indigo-400 bg-indigo-950/50 scale-[1.01]'
-                        : imagePreviews.length > 0
+                className={`w-full min-h-[90px] rounded-xl border-2 border-dashed transition-all flex flex-col items-center justify-center p-3 cursor-pointer relative overflow-hidden ${isDragging
+                    ? 'border-indigo-400 bg-indigo-950/50 scale-[1.01]'
+                    : imagePreviews.length > 0
                         ? 'border-indigo-600/50 bg-slate-950/70'
                         : 'border-slate-700 hover:border-indigo-500 bg-slate-950/40 hover:bg-slate-900/60'
-                }`}
+                    }`}
             >
                 <input
                     ref={fileInputRef}

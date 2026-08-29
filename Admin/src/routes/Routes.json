@@ -5,6 +5,7 @@
     "customer": "/customer",
     "device": "/device",
     "report": {
+        "report": "/report",
         "allCustomers": "/report/all-customers",
         "activated": "/report/activated",
         "redeem": "/report/redeem",

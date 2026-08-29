@@ -9,6 +9,7 @@ import CreateApplication from '../components/CreateApplication';
 import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import { formatIMEI } from '../../../utils/imeiFormatter';
+import RepaymentScheduleModal from '../components/RepaymentScheduleModal';
 
 
 const Application = () => {
@@ -28,6 +29,10 @@ const Application = () => {
     const [editData, setEditData] = useState(null);
     const [infoData, setInfoData] = useState(null);
     const [openMenuId, setOpenMenuId] = useState(null);
+
+    // Repayment Schedule Modal state for Activation Setup
+    const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+    const [scheduleModalContract, setScheduleModalContract] = useState(null);
 
     const fetchApplications = useCallback(async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
@@ -71,25 +76,12 @@ const Application = () => {
         setOpenMenuId(null);
     };
 
-    const handleActivateContract = async (contractId) => {
-        try {
-            const contract = contracts.find(c => c._id === contractId || c.contractId === contractId);
-            if (!contract) return;
-
-            const res = await fetch(`${API_BASE1}/contracts/${contract._id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'Activated' })
-            });
-
-            if (res.ok) {
-                alert(`Contract ${contract.contractId} has been successfully Activated! Data will now populate to Customer, Device, and Payment History pages.`);
-                fetchApplications();
-                setOpenMenuId(null);
-            }
-        } catch (err) {
-            console.error('Activate contract error:', err);
-        }
+    const handleActivateContract = (contractId) => {
+        const contract = contracts.find(c => c._id === contractId || c.contractId === contractId);
+        if (!contract) return;
+        setScheduleModalContract(contract);
+        setScheduleModalOpen(true);
+        setOpenMenuId(null);
     };
 
     const handleDeleteContract = async (id) => {
@@ -144,22 +136,19 @@ const Application = () => {
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('application')} List</span>
-                        <span className="text-xs text-amber-400 bg-amber-950/60 border border-amber-800 px-2 py-0.5 rounded-full font-normal">
-                            Unactivated Contracts
-                        </span>
                     </h1>
                 </div>
                 <div className='flex items-center gap-3'>
                     <button
                         onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <FaFileExcel className="text-emerald-600 text-sm" />
                         <span>Excel</span>
                     </button>
                     <button
                         onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <MdPictureAsPdf className="text-red-600 text-sm" />
                         <span>PDF</span>
@@ -167,7 +156,7 @@ const Application = () => {
                     {hasPermission('/contract/application', 'create') && (
                         <button
                             onClick={handleOpenCreate}
-                            className='flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all'
+                            className='flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all'
                         >
                             <AiOutlinePlus size={16} />
                             <p>{t('create')}</p>
@@ -176,7 +165,7 @@ const Application = () => {
                     <button
                         onClick={() => fetchApplications(currentPage, searchTerm)}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
@@ -382,6 +371,14 @@ const Application = () => {
                     </div>
                 </div>
             )}
+
+            <RepaymentScheduleModal
+                open={scheduleModalOpen}
+                setOpen={setScheduleModalOpen}
+                contract={scheduleModalContract}
+                mode="setup_activate"
+                onSaved={fetchApplications}
+            />
         </div>
     );
 };

@@ -12,7 +12,7 @@ const LIMIT = 10;
 
 const Device = () => {
     const { t } = useLanguage();
-    const { API_BASE1, user } = useAuth();
+    const { API_BASE, API_BASE1, user } = useAuth();
 
     const [devices, setDevices] = useState([]);
     const [page, setPage] = useState(1);
@@ -21,8 +21,22 @@ const Device = () => {
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDevice, setSelectedDevice] = useState(null);
+    const [brandFilter, setBrandFilter] = useState(''); // Admin only brand filter
+    const [brandsList, setBrandsList] = useState([]);
 
-    const fetchDevices = async (p = 1, search = '') => {
+    // Fetch brands list for admin filter
+    const fetchBrandsList = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/controlsystem?brand=`);
+            if (res.ok) {
+                const data = await res.json();
+                const brandCat = data.droplists?.find(d => d.category === 'Brands');
+                if (brandCat?.items) setBrandsList(brandCat.items);
+            }
+        } catch { }
+    };
+
+    const fetchDevices = async (p = 1, search = '', brand = brandFilter) => {
         setReloading(true);
         try {
             const queryParams = new URLSearchParams({
@@ -32,7 +46,11 @@ const Device = () => {
                 ...(search && { search })
             });
 
-            if (user?.brand && user.role !== 'Administrator') {
+            if (user?.role === 'Administrator') {
+                // Admin can filter by selected brand or see all
+                if (brand) queryParams.append('brand', brand);
+            } else if (user?.brand) {
+                // Non-admin: always filter by own brand
                 queryParams.append('brand', user.brand);
             }
 
@@ -51,8 +69,25 @@ const Device = () => {
         }
     };
 
-    useEffect(() => { fetchDevices(page, searchTerm); }, [page]);
-    useEffect(() => { fetchDevices(1, searchTerm); setPage(1); }, [searchTerm]);
+    useEffect(() => { fetchDevices(page, searchTerm, brandFilter); }, [page]);
+    useEffect(() => { fetchDevices(1, searchTerm, brandFilter); setPage(1); }, [searchTerm]);
+    useEffect(() => { fetchDevices(1, searchTerm, brandFilter); setPage(1); }, [brandFilter]);
+
+    // Fetch brands list from ControlSystem for admin brand filter
+    useEffect(() => {
+        if (user?.role !== 'Administrator') return;
+        const go = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/controlsystem?brand=`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const brandCat = data.droplists?.find(d => d.category === 'Brands');
+                    if (brandCat?.items) setBrandsList(brandCat.items);
+                }
+            } catch { }
+        };
+        go();
+    }, [user?.role, API_BASE]);
 
     const filteredDevices = devices;
 
@@ -104,33 +139,48 @@ const Device = () => {
                     </div>
                 </div>
 
-                <div className='flex items-center gap-3'>
+                <div className='flex items-center gap-3 flex-wrap'>
                     <button
                         onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <FaFileExcel className="text-emerald-600 text-sm" />
                         <span>Excel</span>
                     </button>
                     <button
                         onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <MdPictureAsPdf className="text-red-600 text-sm" />
                         <span>PDF</span>
                     </button>
+
+                    {/* Brand Filter Dropdown — Administrator only */}
+                    {user?.role === 'Administrator' && (
+                        <select
+                            value={brandFilter}
+                            onChange={(e) => setBrandFilter(e.target.value)}
+                            className="px-3 py-2 bg-white border border-purple-300 rounded-[5px] text-xs text-purple-900 font-semibold focus:border-purple-500 outline-none shadow-xs cursor-pointer"
+                        >
+                            <option value="">All Brands</option>
+                            {brandsList.map((b, i) => (
+                                <option key={i} value={b}>🏷️ {b}</option>
+                            ))}
+                        </select>
+                    )}
+
                     <input
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder={t('search')}
-                        className="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-48 font-medium outline-none shadow-xs"
+                        className="px-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-48 font-medium outline-none shadow-xs"
                     />
 
                     <button
-                        onClick={() => fetchDevices(page, searchTerm)}
+                        onClick={() => fetchDevices(page, searchTerm, brandFilter)}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
@@ -275,13 +325,13 @@ const Device = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                             <div className="p-3 bg-[#151928] rounded-2xl border border-gray-700">
-                                <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">👤 Linked Customer</h4>
+                                <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Linked Customer</h4>
                                 <p className="font-bold text-white">{selectedDevice.customerNameEn || '—'} <span className="text-indigo-300 font-khmer text-xs font-normal">({selectedDevice.customerNameKh || '—'})</span></p>
                                 <p className="text-[11px] text-gray-400 font-mono mt-0.5">Phone: {selectedDevice.phone || '—'}</p>
                                 <p className="text-[10px] text-gray-500 font-mono mt-0.5">Contract ID: {selectedDevice.contractId || '—'}</p>
                             </div>
                             <div className="p-3 bg-[#151928] rounded-2xl border border-gray-700">
-                                <h4 className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-2">🛡️ Security Lock Status</h4>
+                                <h4 className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-2">Security Lock Status</h4>
                                 <div className="flex gap-2">
                                     <div className="flex-1 p-2.5 bg-[#0b0f1e] rounded-xl border border-gray-700 text-center">
                                         <span className="text-[9px] text-gray-400 block mb-0.5">Phone Lock</span>
@@ -301,12 +351,14 @@ const Device = () => {
 
 
                         {/* Device Problem */}
-                        {selectedDevice.deviceProblem && (
-                            <div className="p-3 bg-amber-900/15 border border-amber-700/40 rounded-2xl">
-                                <h4 className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1.5">🔧 Device Problem / បញ្ហាឧបករណ៍</h4>
-                                <p className="text-xs text-amber-300 font-medium leading-relaxed whitespace-pre-wrap">{selectedDevice.deviceProblem}</p>
-                            </div>
-                        )}
+                        <div className="p-3 bg-amber-950/30 border border-amber-600/40 rounded-2xl">
+                            <h4 className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                                ⚠️ {t('deviceProblem') || 'Device Problem / Notes'}
+                            </h4>
+                            <p className="text-xs text-amber-200 font-medium leading-relaxed whitespace-pre-wrap">
+                                {selectedDevice.deviceProblem || selectedDevice.device_problem || '— គ្មានបញ្ហាឧបករណ៍ (No recorded device problem)'}
+                            </p>
+                        </div>
 
                         {/* Interactive 3D Model with Feature Lines */}
 

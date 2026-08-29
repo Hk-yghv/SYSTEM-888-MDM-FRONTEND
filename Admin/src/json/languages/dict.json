@@ -86,7 +86,9 @@
     "performedBy": "Performed By",
     "reason": "Reason",
     "accessDenied": "Access Denied",
-    "accessDeniedMsg": "Your user account does not have permission to view this page."
+    "accessDeniedMsg": "Your user account does not have permission to view this page.",
+    "ctmReceived": "Customer Received",
+    "deviceProblem": "Device Problem"
   },
   "km": {
     "systemTitle": "ប្រព័ន្ធ SYSTEM MDM",
@@ -175,7 +177,9 @@
     "performedBy": "អនុវត្តដោយ",
     "reason": "មូលហេតុ",
     "accessDenied": "គ្មានសិទ្ធិចូលប្រើប្រាស់",
-    "accessDeniedMsg": "គណនីរបស់អ្នកមិនមានសិទ្ធិចូលមើលទំព័រនេះឡើយ។"
+    "accessDeniedMsg": "គណនីរបស់អ្នកមិនមានសិទ្ធិចូលមើលទំព័រនេះឡើយ។",
+    "ctmReceived": "ប្រាក់អតិថិជនទទួលបាន",
+    "deviceProblem": "បញ្ហាឧបករណ៍"
   },
   "ja": {
     "systemTitle": "SYSTEM MDM",
@@ -230,7 +234,9 @@
     "role": "権限",
     "telegram2FA": "Telegram 2段階認証",
     "otpCode": "OTPコード",
-    "verify": "認証する"
+    "verify": "認証する",
+    "ctmReceived": "顧客から受け取った金額",
+    "deviceProblem": "デバイスの問題"
   },
   "th": {
     "systemTitle": "ระบบ SYSTEM MDM",
@@ -285,7 +291,9 @@
     "role": "สิทธิ์ใช้งาน",
     "telegram2FA": "ยืนยันตัวตน Telegram 2 ขั้นตอน",
     "otpCode": "รหัส OTP",
-    "verify": "ยืนยัน OTP"
+    "verify": "ยืนยัน OTP",
+    "ctmReceived": "รับเงินจากลูกค้า",
+    "deviceProblem": "ปัญหาอุปกรณ์"
   },
   "vi": {
     "systemTitle": "SYSTEM MDM",
@@ -340,7 +348,9 @@
     "role": "Vai trò",
     "telegram2FA": "Xác thực Telegram 2 bước",
     "otpCode": "Mã OTP",
-    "verify": "Xác nhận OTP"
+    "verify": "Xác nhận OTP",
+    "ctmReceived": "nhận tiền từ khách hàng",
+    "deviceProblem": "vấn đề thiết bị"
   },
   "zh": {
     "systemTitle": "SYSTEM MDM 系统",
@@ -395,7 +405,9 @@
     "role": "角色权限",
     "telegram2FA": "Telegram 双重身份验证",
     "otpCode": "验证码",
-    "verify": "验证 OTP"
+    "verify": "验证 OTP",
+    "ctmReceived": "收到客户的钱",
+    "deviceProblem": "设备问题"
   },
   "ko": {
     "systemTitle": "SYSTEM MDM",
@@ -450,7 +462,9 @@
     "role": "권한 그룹",
     "telegram2FA": "Telegram 2단계 인증",
     "otpCode": "OTP 코드",
-    "verify": "OTP 인증"
+    "verify": "OTP 인증",
+    "ctmReceived": "고객이 받은 돈",
+    "deviceProblem": "기기 문제"
   },
   "ru": {
     "systemTitle": "SYSTEM MDM",
@@ -505,7 +519,9 @@
     "role": "Роль",
     "telegram2FA": "Двухфакторная аутентификация Telegram",
     "otpCode": "Код OTP",
-    "verify": "Подтвердить OTP"
+    "verify": "Подтвердить OTP",
+    "ctmReceived": "Полученные деньги от клиентов",
+    "deviceProblem": "Проблема с устройством"
   },
   "la": {
     "systemTitle": "ລະບົບ SYSTEM MDM",
@@ -560,6 +576,8 @@
     "role": "ສິດທິ",
     "telegram2FA": "ຢືນຢັນຕົວຕົນ 2 ຂັ້ນຕອນ Telegram",
     "otpCode": "ລະຫັດ OTP",
-    "verify": "ຢືນຢັນ OTP"
+    "verify": "ຢືນຢັນ OTP",
+    "ctmReceived": "ເງິນທີ່ໄດ້ຮັບຈາກລູກຄ້າ",
+    "deviceProblem": "ບັນຫາອຸປະກອນ"
   }
 }

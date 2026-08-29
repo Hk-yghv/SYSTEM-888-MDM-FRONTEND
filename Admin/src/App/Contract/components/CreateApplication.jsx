@@ -7,8 +7,8 @@ import { formatIMEI } from '../../../utils/imeiFormatter';
 
 
 /* ── Shared style tokens ── */
-const inp = "w-full p-2 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-lg text-gray-100 text-xs outline-none transition-colors";
-const sel = "w-full p-2 bg-gray-800/80 border border-gray-700 rounded-lg text-gray-100 text-xs outline-none";
+const inp = "w-full p-2 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-100 text-xs outline-none transition-colors";
+const sel = "w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-gray-100 text-xs outline-none";
 
 /* ── Autocomplete field with suggestions dropdown ── */
 const AutoField = ({ id, label, value, onChange, placeholder, list = [], onSelect, font = '' }) => {
@@ -88,7 +88,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         phone: '', relativePhone: '',
         facebookName: '', telegramName: '', urlFb: '', mosyleUrl: '',
         customerPhoto: '', googleDrivePhotoUrl: '',
-        model: '', serialNumber: '', imei1: '', imei2: '', meid: '', color: '', version: '', deviceProblem: '',
+        model: '', serialNumber: '', imei1: '', imei2: '', meid: '', color: '', version: '',
+        deviceProblem: '', capacity: '',
         amount: 1000, interest: '14%', adminFee: 20, duration: '12 Months',
         interestType: '14%', monthlyPayment: 100
     };
@@ -100,6 +101,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const [allCustomers, setAllCustomers] = useState([]);
     const [autoFilled, setAutoFilled] = useState(false);
     const [activeTab, setActiveTab] = useState('customer');
+    const [photoUploading, setPhotoUploading] = useState(false);
+    const photoFileRef = useRef(null);
 
     useEffect(() => {
         const go = async () => {
@@ -143,9 +146,9 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 const res = await fetch(`${API_BASE}/controlsystem?brand=${targetBrand}`);
                 if (res.ok) {
                     const data = await res.json();
-                    const cat = data.droplists?.find(d => 
-                        d.category === 'Device Models' || 
-                        d.category === 'Devices' || 
+                    const cat = data.droplists?.find(d =>
+                        d.category === 'Device Models' ||
+                        d.category === 'Devices' ||
                         d.category === 'Models'
                     );
                     if (cat && Array.isArray(cat.items) && cat.items.length > 0) {
@@ -158,9 +161,9 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 const globalRes = await fetch(`${API_BASE}/controlsystem?brand=`);
                 if (globalRes.ok) {
                     const gData = await globalRes.json();
-                    const gCat = gData.droplists?.find(d => 
-                        d.category === 'Device Models' || 
-                        d.category === 'Devices' || 
+                    const gCat = gData.droplists?.find(d =>
+                        d.category === 'Device Models' ||
+                        d.category === 'Devices' ||
                         d.category === 'Models'
                     );
                     if (gCat && Array.isArray(gCat.items)) {
@@ -212,7 +215,23 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
     useEffect(() => {
         if (open) {
-            setForm(editData ? { ...emptyForm, ...editData } : { ...emptyForm, brand: user?.brand || '' });
+            if (editData) {
+                setForm({
+                    ...emptyForm,
+                    ...editData,
+                    deviceProblem: editData.deviceProblem || editData.device_problem || editData.Device_Problem || '',
+                    capacity: editData.capacity || editData.storage || editData.Storage || '',
+                    urlFb: editData.urlFb || editData.url_fb || editData.facebookUrl || '',
+                    mosyleUrl: editData.mosyleUrl || editData.mosyle_url || editData.urlMosyle || '',
+                    googleDrivePhotoUrl: editData.googleDrivePhotoUrl || editData.customerPhoto || editData.photoUrl || editData.photo_url || '',
+                    customerPhoto: editData.customerPhoto || editData.googleDrivePhotoUrl || editData.photoUrl || '',
+                    color: editData.color || '',
+                    version: editData.version || '',
+                    meid: editData.meid || '',
+                });
+            } else {
+                setForm({ ...emptyForm, brand: user?.brand || '' });
+            }
             setAutoFilled(false);
             setActiveTab('customer');
         }
@@ -238,9 +257,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 relativePhone: item.relativePhone || prev.relativePhone,
                 facebookName: item.facebookName || prev.facebookName,
                 telegramName: item.telegramName || prev.telegramName,
-                urlFb: item.urlFb || prev.urlFb,
-                mosyleUrl: item.mosyleUrl || prev.mosyleUrl,
+                urlFb: item.urlFb || item.url_fb || prev.urlFb,
+                mosyleUrl: item.mosyleUrl || item.mosyle_url || prev.mosyleUrl,
                 googleDrivePhotoUrl: item.googleDrivePhotoUrl || item.customerPhoto || prev.googleDrivePhotoUrl,
+                customerPhoto: item.customerPhoto || item.googleDrivePhotoUrl || prev.customerPhoto,
                 model: item.model || prev.model,
                 serialNumber: item.serialNumber || prev.serialNumber,
                 imei1: item.imei1 || prev.imei1,
@@ -248,8 +268,48 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 meid: item.meid || prev.meid,
                 color: item.color || prev.color,
                 version: item.version || prev.version,
+                deviceProblem: item.deviceProblem || item.device_problem || prev.deviceProblem,
+                capacity: item.capacity || item.storage || prev.capacity,
             }));
             setAutoFilled(true);
+        }
+    };
+
+    // Cloudinary photo upload with Base64 fallback
+    const handlePhotoFileUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setPhotoUploading(true);
+        try {
+            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_PRESET);
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setForm(prev => ({ ...prev, googleDrivePhotoUrl: data.secure_url, customerPhoto: data.secure_url }));
+            } else {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setForm(prev => ({ ...prev, googleDrivePhotoUrl: reader.result, customerPhoto: reader.result }));
+                };
+                reader.readAsDataURL(file);
+            }
+        } catch (err) {
+            console.error('Cloudinary upload error:', err);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setForm(prev => ({ ...prev, googleDrivePhotoUrl: reader.result, customerPhoto: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        } finally {
+            setPhotoUploading(false);
+            if (photoFileRef.current) photoFileRef.current.value = '';
         }
     };
 
@@ -262,10 +322,15 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         e.preventDefault();
         setSubmitting(true);
         const isAdmin = user?.role === 'Administrator';
+        const photo = form.googleDrivePhotoUrl || form.customerPhoto || '';
         const payload = {
             ...form,
-            customerPhoto: form.googleDrivePhotoUrl || form.customerPhoto,
+            deviceProblem: form.deviceProblem || '',
+            capacity: form.capacity || '',
+            customerPhoto: photo,
+            googleDrivePhotoUrl: photo,
             mosyleUrl: form.mosyleUrl || '',
+            urlFb: form.urlFb || '',
             inputDate: form.inputDate || editData?.inputDate || new Date().toISOString().split('T')[0],
             status: editData?.status || 'Application',
             monthlyPayment: Number(form.monthlyPayment) || (Number(form.amount) / 10),
@@ -303,14 +368,14 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     };
 
     return (
-        <div className="w-[calc(100%-260px)] h-[82vh] overflow-hidden absolute right-0 top-[7vh] bg-gray-900 border border-gray-700 z-[99999] shadow-2xl flex flex-col">
+        <div className="w-[calc(100%-260px)] h-[82vh] overflow-hidden absolute right-0 top-[8vh] bg-gray-900 border border-gray-700 z-[99999] shadow-2xl flex flex-col rounded-xl">
             <form onSubmit={handleSubmit} className="flex flex-col h-full">
 
-                {/* ━━━ Header ━━━ */}
+                {/* Header */}
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-700 bg-gray-800 flex-shrink-0">
                     <div>
                         <h3 className="text-sm font-bold text-gray-100 flex items-center gap-2">
-                            {editData ? '✏️ Edit Application Contract' : '📋 Create Application Contract'}
+                            {editData ? 'Edit Application Contract' : 'Create Application Contract'}
                             {autoFilled && (
                                 <span className="flex items-center gap-1 px-2 py-0.5 bg-indigo-900/60 border border-indigo-600 text-indigo-300 rounded-full text-[10px] font-bold uppercase">
                                     <FaUserCheck className="text-xs" /> Auto-filled
@@ -320,17 +385,17 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     </div>
                     <div className="flex gap-2">
                         <button type="button" onClick={() => setOpen(false)}
-                            className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-xs cursor-pointer transition-all flex items-center gap-1.5">
+                            className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-[5px] text-xs cursor-pointer transition-all flex items-center gap-1.5">
                             <MdClose /> Cancel
                         </button>
                         <button type="submit" disabled={submitting}
-                            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all">
-                            {submitting ? '⏳ Saving...' : '✅ Submit Contract'}
+                            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all">
+                            {submitting ? 'Saving...' : 'Submit Contract'}
                         </button>
                     </div>
                 </div>
 
-                {/* ━━━ Tab Bar ━━━ */}
+                {/* Tab Bar */}
                 <div className="flex gap-1.5 px-4 pt-2.5 pb-0 border-b border-gray-700/60 flex-shrink-0 bg-gray-900">
                     {tabs.map(tab => {
                         const isActive = activeTab === tab.id;
@@ -344,15 +409,15 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     })}
                 </div>
 
-                {/* ━━━ Tab Content ━━━ */}
+                {/* Tab Content */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900/50">
 
-                    {/* ════ TAB 1: Customer Info ════ */}
+                    {/* TAB 1: Customer Info */}
                     {activeTab === 'customer' && (<>
                         <DocumentScanner onParsedData={handleDocumentParsed} />
                         <div className="grid grid-cols-4 gap-3">
-                            <AutoField id="customerNameEn" label="Name English *" value={form.customerNameEn} placeholder="Name English" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <AutoField id="customerNameKh" label="Name Khmer *" value={form.customerNameKh} placeholder="Name Khmer" font="font-khmer" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="customerNameEn" label="Name English" value={form.customerNameEn} placeholder="Name English" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="customerNameKh" label="Name Khmer" value={form.customerNameKh} placeholder="Name Khmer" font="font-khmer" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                             <AutoField id="idCardNumber" label="ID Card Number" value={form.idCardNumber} placeholder="ID Number" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                             <AutoField id="phone" label="Phone Number" value={form.phone} placeholder="Phone" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                         </div>
@@ -381,39 +446,67 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                         <div className="grid grid-cols-3 gap-3">
                             <Field label="URL Facebook"><input className={inp} type="text" id="urlFb" value={form.urlFb || ''} onChange={handleChange} placeholder="URL Facebook" /></Field>
                             <Field label="URL Mosyle"><input className={`${inp} font-mono`} type="text" id="mosyleUrl" value={form.mosyleUrl || ''} onChange={handleChange} placeholder="https://" /></Field>
-                            <Field label="📸 Photo URL (Google Drive)" accent>
-                                <input className="w-full p-2 bg-gray-800/80 border border-amber-600/50 focus:border-amber-500 rounded-lg text-gray-100 font-mono text-xs outline-none transition-colors"
-                                    type="text" id="googleDrivePhotoUrl" value={form.googleDrivePhotoUrl || ''} onChange={handleChange} placeholder="https://drive.google.com/uc?export=view&id=..." />
+                            <Field label="Photo" accent>
+                                <div className="flex flex-col gap-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <input
+                                            className="flex-1 p-2 bg-gray-800/80 border border-amber-600/50 focus:border-amber-500 rounded-[5px] text-gray-100 font-mono text-xs outline-none transition-colors"
+                                            type="text" id="googleDrivePhotoUrl" value={form.googleDrivePhotoUrl || ''} onChange={handleChange} placeholder="https://... or upload file" />
+                                        <button
+                                            type="button"
+                                            onClick={() => photoFileRef.current?.click()}
+                                            disabled={photoUploading}
+                                            className="px-2.5 py-2 bg-amber-600/80 hover:bg-amber-500 disabled:opacity-50 text-white rounded-[5px] text-[10px] font-bold flex items-center gap-1 cursor-pointer whitespace-nowrap transition-all"
+                                        >
+                                            {photoUploading ? 'Uploading...' : 'Upload'}
+                                        </button>
+                                        <input
+                                            ref={photoFileRef}
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={handlePhotoFileUpload}
+                                        />
+                                    </div>
+                                    {form.googleDrivePhotoUrl && (
+                                        <img
+                                            src={form.googleDrivePhotoUrl}
+                                            alt="Preview"
+                                            className="w-16 h-16 object-cover rounded-xl border border-amber-600/40"
+                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                        />
+                                    )}
+                                </div>
                             </Field>
                         </div>
                     </>)}
 
-                    {/* ════ TAB 2: Device Info ════ */}
+                    {/* TAB 2: Device Info */}
                     {activeTab === 'device' && (<>
                         <div className="grid grid-cols-4 gap-3">
-                            <Field label="Device Model (ម៉ូដែល) *">
+                            <Field label="Device Model">
                                 <select id="model" value={form.model || ''} onChange={handleChange} required className={`${sel} font-semibold`}>
                                     <option value="">Select Device Model</option>
                                     {modelsList.map((m, idx) => <option key={idx} value={m}>{m}</option>)}
                                     {form.model && !modelsList.includes(form.model) && <option value={form.model}>{form.model}</option>}
                                 </select>
                             </Field>
-                            <AutoField id="serialNumber" label="Serial Number *" value={form.serialNumber} placeholder="Serial Number" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <AutoField id="imei1" label="IMEI 1 (00 000000 000000 0)" value={form.imei1} placeholder="IMEI 1 (15 digits)" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <Field label="IMEI 2 (00 000000 000000 0)"><input className={`${inp} font-mono`} type="text" id="imei2" value={form.imei2 || ''} onChange={handleChange} placeholder="IMEI 2 (15 digits)" /></Field>
+                            <AutoField id="serialNumber" label="Serial Number" value={form.serialNumber} placeholder="Serial Number" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="imei1" label="IMEI 1" value={form.imei1} placeholder="IMEI 1" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <Field label="IMEI 2"><input className={`${inp} font-mono`} type="text" id="imei2" value={form.imei2 || ''} onChange={handleChange} placeholder="IMEI 2" /></Field>
                         </div>
                         <div className="grid grid-cols-4 gap-3">
                             <Field label="MEID Number">
                                 <input className={`${inp} font-mono text-pink-400`} type="text" id="meid" value={form.meid || ''} onChange={handleChange} placeholder="e.g. 35173227736075" />
                             </Field>
-                            <Field label="Version (ជំនាន់/OS) *">
+                            <Field label="Version">
                                 <input className={`${inp} text-indigo-300 font-semibold`} type="text" id="version" value={form.version || ''} onChange={handleChange} placeholder="e.g. Android 14 / iOS 18" />
                             </Field>
                             <Field label="Color"><input className={inp} type="text" id="color" value={form.color || ''} onChange={handleChange} placeholder="e.g. Midnight Black" /></Field>
                             <Field label="Capacity / Storage"><input className={inp} type="text" id="capacity" value={form.capacity || ''} onChange={handleChange} placeholder="e.g. 128 GB / 256 GB" /></Field>
                         </div>
                         <div className="grid grid-cols-1 gap-3">
-                            <Field label="🔧 Device Problem / បញ្ហាឧបករណ៍">
+                            <Field label="Device Problem">
                                 <textarea
                                     id="deviceProblem"
                                     value={form.deviceProblem || ''}
@@ -437,8 +530,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                     <div><span className="text-gray-500 block text-[10px]">Color</span><span className="text-gray-100">{form.color || '—'}</span></div>
                                     <div><span className="text-gray-500 block text-[10px]">Brand</span><span className="text-gray-100 font-semibold">{form.brand || '—'}</span></div>
                                     {form.deviceProblem && (
-                                        <div className="col-span-4 p-2 bg-amber-900/20 border border-amber-700/40 rounded-lg">
-                                            <span className="text-amber-400 block text-[10px] font-bold mb-0.5">🔧 Device Problem</span>
+                                        <div className="col-span-4 p-2 bg-amber-900/20 border border-amber-700/40 rounded-[5px]">
+                                            <span className="text-amber-400 block text-[10px] font-bold mb-0.5">Device Problem</span>
                                             <span className="text-amber-300 text-[11px] font-medium">{form.deviceProblem}</span>
                                         </div>
                                     )}
@@ -448,26 +541,26 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     </>)}
 
 
-                    {/* ════ TAB 3: Loan Terms ════ */}
+                    {/* TAB 3: Loan Terms */}
                     {activeTab === 'loan' && (<>
                         <div className="grid grid-cols-5 gap-3">
-                            <Field label="📅 Loan Date *">
-                                <input className="w-full p-2 bg-gray-800/80 border border-indigo-600/70 rounded-lg text-gray-100 font-mono text-xs outline-none focus:border-indigo-500 font-bold"
+                            <Field label="Loan Date">
+                                <input className="w-full p-2 bg-gray-800/80 border border-indigo-600/70 rounded-[5px] text-gray-100 font-mono text-xs outline-none focus:border-indigo-500 font-bold"
                                     type="date" id="inputDate" value={form.inputDate || ''} onChange={handleChange} required />
                             </Field>
                             <Field label="Total Loan Amount ($)">
-                                <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-lg text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
+                                <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
                                     type="number" id="amount" value={form.amount || ''} onChange={handleChange} placeholder="Amount" />
                             </Field>
                             <Field label="Customer Received ($)">
-                                <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-lg text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
+                                <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
                                     type="number" id="monthlyPayment" value={form.monthlyPayment || ''} onChange={handleChange} placeholder="Monthly Payment" />
                             </Field>
                             <Field label="Interest Rate"><input className={`${inp} font-mono`} type="text" id="interest" value={form.interest || ''} onChange={handleChange} placeholder="e.g. 14%" /></Field>
                             <Field label="Duration"><input className={inp} type="text" id="duration" value={form.duration || ''} onChange={handleChange} placeholder="e.g. 12 Months" /></Field>
                         </div>
                         <div className="p-4 bg-emerald-900/20 border border-emerald-700/40 rounded-xl">
-                            <p className="text-[10px] text-emerald-400 font-bold uppercase mb-3">💰 Loan Summary Preview</p>
+                            <p className="text-[10px] text-emerald-400 font-bold uppercase mb-3">Loan Summary Preview</p>
                             <div className="grid grid-cols-3 gap-3 text-xs mb-3">
                                 <div className="p-3 bg-gray-900/60 rounded-xl border border-gray-800">
                                     <span className="text-gray-500 block text-[10px] mb-1">Total Loan Amount</span>
@@ -483,11 +576,11 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 text-xs">
-                                <div className="p-2 bg-gray-900/60 rounded-lg border border-gray-800">
+                                <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
                                     <span className="text-gray-500 text-[10px] block">Customer</span>
                                     <span className="text-gray-100 font-semibold">{form.customerNameEn || '—'}{form.customerNameKh ? ` (${form.customerNameKh})` : ''}</span>
                                 </div>
-                                <div className="p-2 bg-gray-900/60 rounded-lg border border-gray-800">
+                                <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
                                     <span className="text-gray-500 text-[10px] block">Device</span>
                                     <span className="text-gray-100 font-semibold">{form.model || '—'}{form.serialNumber ? ` · ${form.serialNumber}` : ''}</span>
                                 </div>

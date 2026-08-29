@@ -41,7 +41,7 @@ const getNextReportTime = () => {
         if (fs.existsSync(REPORT_SCHEDULE_FILE)) {
             const raw = fs.readFileSync(REPORT_SCHEDULE_FILE, 'utf8');
             const data = JSON.parse(raw);
-            if (data.nextReportTime && data.nextReportTime > Date.now()) {
+            if (data.nextReportTime) {
                 return data.nextReportTime;
             }
         }
@@ -110,13 +110,13 @@ export function createHistoryRoutes(bot) {
         }
     };
 
-    // Auto-schedule check every minute
+    // Continuous background schedule check every 10 seconds (24/7 background process)
     setInterval(() => {
         if (Date.now() >= nextReportTargetTime) {
             console.log('Report schedule target time reached, triggering auto report...');
             runWeeklyReport().catch(err => console.error(err));
         }
-    }, 60 * 1000);
+    }, 10 * 1000);
 
     router.get('/report-schedule', (req, res) => {
         const remainingMs = Math.max(0, nextReportTargetTime - Date.now());

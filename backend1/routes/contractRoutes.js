@@ -33,7 +33,10 @@ router.get('/', async (req, res) => {
         } else if (status) {
             query.status = status;
         }
-        if (userBrand && !isMasterAdmin) query.brand = userBrand;
+        const brandFilter = req.query.brand || userBrand;
+        if (brandFilter && (!isMasterAdmin || req.query.brand)) {
+            query.brand = brandFilter;
+        }
         if (search) {
             const searchQuery = [
                 { customerNameEn: { $regex: search, $options: 'i' } },
@@ -58,7 +61,7 @@ router.get('/', async (req, res) => {
         } else if (status) {
             filtered = filtered.filter(c => c.status === status);
         }
-        if (userBrand && !isMasterAdmin) filtered = filtered.filter(c => c.brand === userBrand);
+        if (brandFilter && (!isMasterAdmin || req.query.brand)) filtered = filtered.filter(c => c.brand === brandFilter);
         if (search) filtered = filtered.filter(c =>
             (c.customerNameEn || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.customerNameKh || '').toLowerCase().includes(search.toLowerCase()) ||

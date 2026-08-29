@@ -36,12 +36,21 @@ router.post('/lostphone/toggle-lock', async (req, res) => {
         if (isMongoConnected) await contract.save();
 
         const now = new Date();
-        const resolvedDisplayText = displayText || '';
+
+        // Replace {{customerName}} template with actual customer name (Khmer + English)
+        let resolvedDisplayText = displayText || '';
+        const fullName = contract.customerNameKh
+            ? (contract.customerNameEn ? `${contract.customerNameKh} (${contract.customerNameEn})` : contract.customerNameKh)
+            : contract.customerNameEn || '';
+
+        if (resolvedDisplayText.includes('{{customerName}}')) {
+            resolvedDisplayText = resolvedDisplayText.replace(/\{\{customerName\}\}/g, fullName);
+        }
 
         const logData = {
             logId: `LOG-${Date.now()}`,
             contractId: contract.contractId,
-            customerName: `${contract.customerNameEn} (${contract.customerNameKh || ''})`,
+            customerName: fullName || contract.customerNameEn || '',
             model: contract.model,
             serialNumber: contract.serialNumber,
             brand: contract.brand || '',

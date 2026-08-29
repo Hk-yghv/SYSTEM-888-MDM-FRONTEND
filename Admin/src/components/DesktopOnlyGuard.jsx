@@ -7,7 +7,7 @@ const DesktopOnlyGuard = ({ children }) => {
 
     useEffect(() => {
         const checkDevice = () => {
-            // Check window width (Desktop threshold: >= 1024px)
+
             const width = window.innerWidth;
             const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -43,7 +43,7 @@ const DesktopOnlyGuard = ({ children }) => {
                             អនុញ្ញាតតែលើកុំព្យូទ័រ / Computer Only
                         </h1>
                         <p className="text-xs text-white leading-relaxed font-khmer pt-2">
-                            ប្រព័ន្ធ **SYSTEM MDM** ត្រូវបានទាមទារឱ្យប្រើប្រាស់នៅលើអេក្រង់កុំព្យូទ័រ (Desktop / Laptop) ធំជាង 1024px ប៉ុណ្ណោះ។ ឧបករណ៍ Tablet ឬ ទូរស័ព្ទដៃមិនត្រូវបានអនុញ្ញាតឱ្យបើកចូលប្រើប្រាស់ឡើយ។
+                            ប្រព័ន្ធ SYSTEM MDM ត្រូវបានទាមទារឱ្យប្រើប្រាស់នៅលើអេក្រង់កុំព្យូទ័រ (Desktop / Laptop) ធំជាង 1024px ប៉ុណ្ណោះ។ ឧបករណ៍ Tablet ឬ ទូរស័ព្ទដៃមិនត្រូវបានអនុញ្ញាតឱ្យបើកចូលប្រើប្រាស់ឡើយ។
                         </p>
                     </div>
 

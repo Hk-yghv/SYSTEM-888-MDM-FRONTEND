@@ -181,13 +181,13 @@ class SystemMDAIEngine:
 
         # Password or secret keys security block
         if any(w in q_lower for w in ["password", "jwt_secret", "encryption_key", "mongo_uri", "ពាក្យសម្ងាត់", "security key", "secondpassword"]):
-            return "⚠️ **សុំទោស!** ព័ត៌មានសម្ងាត់ប្រព័ន្ធ (System Passwords & Security Keys) មិនត្រូវបានអនុញ្ញាតឱ្យបង្ហាញ ឬទាញយកឡើយ។"
+            return "**សុំទោស!** ព័ត៌មានសម្ងាត់ប្រព័ន្ធ (System Passwords & Security Keys) មិនត្រូវបានអនុញ្ញាតឱ្យបង្ហាញ ឬទាញយកឡើយ។"
 
         # Cross-brand leak block for brand-restricted users
         if not is_master and user_brand:
             other_brand_patterns = ["all brands", "brand ផ្សេង", "គ្រប់ brand", "other brand"]
             if any(p in q_lower for p in other_brand_patterns):
-                return f"⚠️ **សុំទោស!** គណនីរបស់អ្នកត្រូវបានកំណត់ឱ្យមើលឃើញតែទិន្នន័យសម្រាប់ Brand **{user_brand}** តែប៉ុណ្ណោះ។ មិនអាចទាញយកទិន្នន័យ Brand ផ្សេងបានទេ។"
+                return f"**សុំទោស!** គណនីរបស់អ្នកត្រូវបានកំណត់ឱ្យមើលឃើញតែទិន្នន័យសម្រាប់ Brand **{user_brand}** តែប៉ុណ្ណោះ។ មិនអាចទាញយកទិន្នន័យ Brand ផ្សេងបានទេ។"
 
         return None
 
@@ -221,10 +221,10 @@ class SystemMDAIEngine:
             users_list = query_collection("users", user_filter, {"password": 0, "secondPassword": 0}, limit=30)
             
             if not users_list:
-                return f"ℹ️ មិនទាន់មានគណនី (Accounts) ក្នុង Brand **{user_brand if user_brand else 'ប្រព័ន្ធ'}** នៅឡើយទេ។"
+                return f"ℹមិនទាន់មានគណនី (Accounts) ក្នុង Brand **{user_brand if user_brand else 'ប្រព័ន្ធ'}** នៅឡើយទេ។"
 
             scope_title = "ទូទាំងប្រព័ន្ធ (All Brands)" if is_master else f"សម្រាប់ Brand **{user_brand}**"
-            res = f"### 👥 បញ្ជីគណនីអ្នកប្រើប្រាស់ {scope_title} (សរុប `{len(users_list)}` គណនី):\n\n"
+            res = f"### បញ្ជីគណនីអ្នកប្រើប្រាស់ {scope_title} (សរុប `{len(users_list)}` គណនី):\n\n"
             res += "| ល.រ | ឈ្មោះពេញ (Name) | Username | តួនាទី (Role) | ម៉ាក (Brand) | ស្ថានភាព |\n"
             res += "| :---: | :--- | :--- | :--- | :--- | :--- |\n"
             for idx, u in enumerate(users_list, 1):
@@ -233,10 +233,10 @@ class SystemMDAIEngine:
                 u_role = u.get("role", "Staff")
                 u_brand = u.get("brand") or "Global"
                 u_status = u.get("status", "Offline")
-                status_badge = "🟢 Online" if u_status == "Online" else "⚪ Offline"
+                status_badge = "Online" if u_status == "Online" else "Offline"
                 res += f"| {idx} | **{u_name}** | `{u_user}` | {u_role} | **{u_brand}** | {status_badge} |\n"
             
-            res += "\n> 💡 *លោកអ្នកអាចសួរឈ្មោះ Username ជាក់លាក់ ដើម្បីមើលព័ត៌មានលម្អិតបន្ថែម!*"
+            res += "\n> *លោកអ្នកអាចសួរឈ្មោះ Username ជាក់លាក់ ដើម្បីមើលព័ត៌មានលម្អិតបន្ថែម!*"
             return res
 
         # Case B: Querying MY account info / profile
@@ -253,7 +253,7 @@ class SystemMDAIEngine:
 
             scope_desc = "ចូលមើលបានគ្រប់ Brands និងទិន្នន័យទូទាំងប្រព័ន្ធ (Full Master Access)" if is_master else f"គ្រប់គ្រងទិន្នន័យសម្រាប់តែ Brand **{user_brand}** ប៉ុណ្ណោះ"
 
-            res = f"### 👤 ព័ត៌មានលម្អិតអំពីគណនីរបស់អ្នក (Account Information)\n\n"
+            res = f"### ព័ត៌មានលម្អិតអំពីគណនីរបស់អ្នក (Account Information)\n\n"
             res += f"* **ឈ្មោះពេញ (Full Name)**: **{name}**\n"
             res += f"* **Username**: `{username}`\n"
             res += f"* **តួនាទី (Role)**: **{user_role}**\n"
@@ -263,7 +263,7 @@ class SystemMDAIEngine:
             res += f"* **ថ្ងៃបង្កើត (Created At)**: `{created_at}`\n"
             res += f"* **ស្ថានភាព (Status)**: `Active / Verified` 🟢\n"
             res += f"* **ដែនកំណត់ទិន្នន័យ (Access Scope)**: {scope_desc}\n\n"
-            res += "> 🔒 *គណនីរបស់អ្នកមានសុវត្ថិភាពខ្ពស់ និងភ្ជាប់ជាមួយប្រព័ន្ធ MDM Control System រួចរាល់!*"
+            res += "> *គណនីរបស់អ្នកមានសុវត្ថិភាពខ្ពស់ និងភ្ជាប់ជាមួយប្រព័ន្ធ MDM Control System រួចរាល់!*"
             return res
 
         # ══════════════════════════════════════════════════════════════
@@ -271,15 +271,15 @@ class SystemMDAIEngine:
         # ══════════════════════════════════════════════════════════════
         if any(w in q_lower for w in ["សួស្តី", "hello", "hi", "ជម្រាបសួរ", "good morning", "good afternoon", "តើឯងជាអ្វី", "ជួយអ្វីបានខ្លះ", "help", "មុខងារ", "how to use"]):
             brand_text = f"សម្រាប់ Brand **{user_brand}**" if user_brand and not is_master else "ទូទាំងប្រព័ន្ធ"
-            res = f"👋 **សួស្តី {name}!** ខ្ញុំជា **MDM Smart AI Assistant** ជំនួយការឆ្លាតវៃប្រព័ន្ធ MDM។\n\n"
+            res = f"**សួស្តី {name}!** ខ្ញុំជា **MDM Smart AI Assistant** ជំនួយការឆ្លាតវៃប្រព័ន្ធ MDM។\n\n"
             res += f"ខ្ញុំត្រូវបានភ្ជាប់ផ្ទាល់ជាមួយ MongoDB {brand_text} ដើម្បីជួយលោកអ្នកក្នុងការ៖\n\n"
-            res += f"* 👥 **គ្រប់គ្រងគណនី**: សួរ `គ្រប់ account`, `account ខ្ញុំ`, ឬ `បញ្ជី users`\n"
-            res += f"* 🔍 **ស្វែងរកកិច្ចសន្យា & អតិថិជន**: សួរឈ្មោះ, លេខទូរស័ព្ទ, ឬ ID Card\n"
-            res += f"* 📱 **ស្វែងរកទូរស័ព្ទ**: សួរតាម Model, IMEI, MEID, ឬ Serial Number\n"
-            res += f"* 💳 **ពិនិត្យការបង់ប្រាក់**: មើលប្រវត្តិបង់ប្រាក់, ចំនួនលុយបានបង់, និងប្រាក់នៅសល់\n"
-            res += f"* 🔒 **ពិនិត្យ Security Lock**: មើលទូរស័ព្ទជាប់ Phone Lock ឬ Wallpaper Lock\n"
-            res += f"* 📊 **សង្ខេបទិន្នន័យ**: ធ្វើរបាយការណ៍សរុបកិច្ចសន្យា ឧបករណ៍សកម្ម និងចំនួនលុយប្រមូលបាន\n\n"
-            res += f"> 💡 *លោកអ្នកអាចសាកល្បងសួរដោយផ្ទាល់ ឧទាហរណ៍៖ `គ្រប់ account` ឬ `សង្ខេបទិន្នន័យ`!*"
+            res += f"* **គ្រប់គ្រងគណនី**: សួរ `គ្រប់ account`, `account ខ្ញុំ`, ឬ `បញ្ជី users`\n"
+            res += f"* **ស្វែងរកកិច្ចសន្យា & អតិថិជន**: សួរឈ្មោះ, លេខទូរស័ព្ទ, ឬ ID Card\n"
+            res += f"* **ស្វែងរកទូរស័ព្ទ**: សួរតាម Model, IMEI, MEID, ឬ Serial Number\n"
+            res += f"* **ពិនិត្យការបង់ប្រាក់**: មើលប្រវត្តិបង់ប្រាក់, ចំនួនលុយបានបង់, និងប្រាក់នៅសល់\n"
+            res += f"* **ពិនិត្យ Security Lock**: មើលទូរស័ព្ទជាប់ Phone Lock ឬ Wallpaper Lock\n"
+            res += f"* **សង្ខេបទិន្នន័យ**: ធ្វើរបាយការណ៍សរុបកិច្ចសន្យា ឧបករណ៍សកម្ម និងចំនួនលុយប្រមូលបាន\n\n"
+            res += f"> *លោកអ្នកអាចសាកល្បងសួរដោយផ្ទាល់ ឧទាហរណ៍៖ `គ្រប់ account` ឬ `សង្ខេបទិន្នន័យ`!*"
             return res
 
         # ══════════════════════════════════════════════════════════════
@@ -288,9 +288,9 @@ class SystemMDAIEngine:
         if any(w in q_lower for w in ["customer ទាំងអស់", "បញ្ជីអតិថិជន", "កិច្ចសន្យាទាំងអស់", "all customers", "list customers", "list contracts", "បង្ហាញអតិថិជន", "កិច្ចសន្យា"]):
             contracts = query_collection("contracts", base_filter, limit=15)
             if not contracts:
-                return f"ℹ️ មិនទាន់មានកិច្ចសន្យាណាមួយក្នុងទិន្នន័យ {user_brand if user_brand else 'ប្រព័ន្ធ'} នៅឡើយទេ។"
+                return f"មិនទាន់មានកិច្ចសន្យាណាមួយក្នុងទិន្នន័យ {user_brand if user_brand else 'ប្រព័ន្ធ'} នៅឡើយទេ។"
             
-            res = f"### 📋 បញ្ជីកិច្ចសន្យាអតិថិជន ({len(contracts)} ឯកសារ):\n\n"
+            res = f"### បញ្ជីកិច្ចសន្យាអតិថិជន ({len(contracts)} ឯកសារ):\n\n"
             res += "| ល.រ | ឈ្មោះអតិថិជន | ម៉ូឌែលទូរស័ព្ទ | Serial Number | លេខទូរស័ព្ទ | ស្ថានភាព |\n"
             res += "| :---: | :--- | :--- | :--- | :--- | :--- |\n"
             for idx, c in enumerate(contracts, 1):
@@ -300,7 +300,7 @@ class SystemMDAIEngine:
                 p = c.get("phone", "—")
                 st = c.get("status", "—")
                 res += f"| {idx} | **{n}** | {m} | `{s}` | `{p}` | `{st}` |\n"
-            res += "\n> 💡 *លោកអ្នកអាចសួរឈ្មោះ ឬ Serial Number ជាក់លាក់ ដើម្បីមើលព័ត៌មានលម្អិត!*"
+            res += "\n> *លោកអ្នកអាចសួរឈ្មោះ ឬ Serial Number ជាក់លាក់ ដើម្បីមើលព័ត៌មានលម្អិត!*"
             return res
 
         # ══════════════════════════════════════════════════════════════
@@ -309,9 +309,9 @@ class SystemMDAIEngine:
         if any(w in q_lower for w in ["ទូរស័ព្ទទាំងអស់", "បញ្ជីទូរស័ព្ទ", "ឧបករណ៍ទាំងអស់", "all devices", "list devices", "device ទាំងអស់"]):
             contracts = query_collection("contracts", base_filter, limit=15)
             if not contracts:
-                return f"ℹ️ មិនទាន់មានឧបករណ៍ទូរស័ព្ទណាមួយក្នុងទិន្នន័យ {user_brand if user_brand else 'ប្រព័ន្ធ'} នៅឡើយទេ។"
+                return f"មិនទាន់មានឧបករណ៍ទូរស័ព្ទណាមួយក្នុងទិន្នន័យ {user_brand if user_brand else 'ប្រព័ន្ធ'} នៅឡើយទេ។"
             
-            res = f"### 📱 បញ្ជីឧបករណ៍ទូរស័ព្ទក្នុងប្រព័ន្ធ ({len(contracts)} គ្រឿង):\n\n"
+            res = f"### បញ្ជីឧបករណ៍ទូរស័ព្ទក្នុងប្រព័ន្ធ ({len(contracts)} គ្រឿង):\n\n"
             res += "| ល.រ | ម៉ូឌែល (Model) | Serial Number | IMEI 1 | MEID | Phone Lock |\n"
             res += "| :---: | :--- | :--- | :--- | :--- | :--- |\n"
             for idx, c in enumerate(contracts, 1):
@@ -345,13 +345,13 @@ class SystemMDAIEngine:
 
             brand_label = f"សម្រាប់ Brand **{user_brand}**" if user_brand and not is_master else "ទូទាំងប្រព័ន្ធ (All Brands)"
 
-            response = f"### 📊 របាយការណ៍សង្ខេបទិន្នន័យ {brand_label}\n\n"
+            response = f"### របាយការណ៍សង្ខេបទិន្នន័យ {brand_label}\n\n"
             response += f"* **កិច្ចសន្យាសរុប (Total Contracts)**: `{total_contracts}` ឯកសារ\n"
             response += f"* **ឧបករណ៍សកម្ម (Activated Devices)**: `{total_activated}` គ្រឿង\n"
             response += f"* **ទូរស័ព្ទជាប់ Phone Lock**: `{total_locked}` គ្រឿង\n"
             response += f"* **ទូរស័ព្ទជាប់ Wallpaper Lock**: `{total_wp_locked}` គ្រឿង\n"
             response += f"* **ប្រាក់ទទួលបានសរុបពីការបង់ (Total Collected)**: `${total_paid_amount:,.2f}`\n\n"
-            response += "> 💡 *លោកអ្នកអាចសួរលម្អិតអំពីអតិថិជនជាក់លាក់ តាមរយៈឈ្មោះ, លេខទូរស័ព្ទ, Serial Number ឬ IMEI!*"
+            response += "> *លោកអ្នកអាចសួរលម្អិតអំពីអតិថិជនជាក់លាក់ តាមរយៈឈ្មោះ, លេខទូរស័ព្ទ, Serial Number ឬ IMEI!*"
             return response
 
         # ══════════════════════════════════════════════════════════════
@@ -386,7 +386,7 @@ class SystemMDAIEngine:
                 res += "| ឈ្មោះ (Name) | Username | តួនាទី (Role) | Brand | Status |\n"
                 res += "| :--- | :--- | :--- | :--- | :--- |\n"
                 for u in matched_users:
-                    st = "🟢 Online" if u.get("status") == "Online" else "⚪ Offline"
+                    st = "Online" if u.get("status") == "Online" else "Offline"
                     res += f"| **{u.get('name', '—')}** | `{u.get('username', '—')}` | {u.get('role', '—')} | **{u.get('brand', 'Global')}** | {st} |\n"
                 return res
 
@@ -447,14 +447,14 @@ class SystemMDAIEngine:
                 total_paid = sum(float(p.get("amount", 0) or 0) for p in payments)
                 remaining = max(0, total_amt - total_paid)
 
-                res = f"### 👤 ព័ត៌មានលម្អិតអតិថិជន: **{c_name_en}** ({c_name_kh})\n\n"
-                res += f"**🪪 ព័ត៌មានផ្ទាល់ខ្លួន (Personal Info)**:\n"
+                res = f"###  ព័ត៌មានលម្អិតអតិថិជន: **{c_name_en}** ({c_name_kh})\n\n"
+                res += f"**ព័ត៌មានផ្ទាល់ខ្លួន (Personal Info)**:\n"
                 res += f"* **លេខអត្តសញ្ញាណប័ណ្ណ (ID Card)**: `{id_card}`\n"
                 res += f"* **លេខទូរស័ព្ទ (Phone)**: `{phone}`\n"
                 res += f"* **អាសយដ្ឋានបច្ចុប្បន្ន (Address)**: {cur_addr}\n"
                 res += f"* **កិច្ចសន្យា (Contract ID)**: `{contract_id}` | ម៉ាក (Brand): **{brand}** | ស្ថានភាព: **{status}**\n\n"
 
-                res += f"**📱 ព័ត៌មានទូរស័ព្ទ (Device Info)**:\n"
+                res += f"**ព័ត៌មានទូរស័ព្ទ (Device Info)**:\n"
                 res += f"* **ម៉ូឌែល (Model)**: **{model}**\n"
                 res += f"* **Serial Number**: `{serial}`\n"
                 res += f"* **IMEI 1**: `{imei1}` | **IMEI 2**: `{imei2}`\n"
@@ -462,14 +462,14 @@ class SystemMDAIEngine:
                     res += f"* **MEID**: `{meid}`\n"
                 res += f"* **ស្ថានភាព Lock**: Phone Lock: `{phone_lock}` | Wallpaper Lock: `{wp_lock}`\n\n"
 
-                res += f"**💰 ព័ត៌មានហិរញ្ញវត្ថុ និងការបង់ប្រាក់ (Payment Overview)**:\n"
+                res += f"**ព័ត៌មានហិរញ្ញវត្ថុ និងការបង់ប្រាក់ (Payment Overview)**:\n"
                 res += f"* **តម្លៃកម្ចីសរុប (Total Loan)**: `${total_amt:,.2f}`\n"
                 res += f"* **បង់ប្រចាំខែ (Monthly)**: `${monthly:,.2f}/ខែ`\n"
                 res += f"* **បានបង់សរុប (Total Paid)**: `${total_paid:,.2f}` ({len(payments)} លើក)\n"
                 res += f"* **ប្រាក់នៅសល់ (Remaining)**: `${remaining:,.2f}`\n"
 
                 if payments:
-                    res += "\n**🧾 ប្រវត្តិបង់ប្រាក់ចុងក្រោយ (Recent Payments)**:\n"
+                    res += "\n** ប្រវត្តិបង់ប្រាក់ចុងក្រោយ (Recent Payments)**:\n"
                     res += "| កាលបរិច្ឆេទ | ចំនួនទឹកប្រាក់ | វគ្គខែ | វិធីសាស្ត្រ |\n"
                     res += "| :--- | :--- | :--- | :--- |\n"
                     for p in payments[:5]:
@@ -482,7 +482,7 @@ class SystemMDAIEngine:
                 return res
 
             else:
-                res = f"### 🔍 រកឃើញកិច្ចសន្យាចំនួន `{len(matched_contracts)}` ដែលត្រូវនឹងសំណួររបស់អ្នក:\n\n"
+                res = f"### រកឃើញកិច្ចសន្យាចំនួន `{len(matched_contracts)}` ដែលត្រូវនឹងសំណួររបស់អ្នក:\n\n"
                 res += "| ល.រ | ឈ្មោះអតិថិជន | ម៉ូឌែលទូរស័ព្ទ | Serial Number | លេខទូរស័ព្ទ | ស្ថានភាព |\n"
                 res += "| :---: | :--- | :--- | :--- | :--- | :--- |\n"
                 for idx, c in enumerate(matched_contracts, 1):
@@ -492,12 +492,12 @@ class SystemMDAIEngine:
                     p = c.get("phone", "—")
                     st = c.get("status", "—")
                     res += f"| {idx} | **{n}** | {m} | `{s}` | `{p}` | `{st}` |\n"
-                res += "\n> 💡 *សូមបញ្ជាក់ឈ្មោះ ឬ Serial Number ឱ្យកាន់តែច្បាស់ ប្រសិនបើចង់មើលព័ត៌មានលម្អិតជាក់លាក់ណាមួយ!*"
+                res += "\n> *សូមបញ្ជាក់ឈ្មោះ ឬ Serial Number ឱ្យកាន់តែច្បាស់ ប្រសិនបើចង់មើលព័ត៌មានលម្អិតជាក់លាក់ណាមួយ!*"
                 return res
 
         # ── 8. Format Matched Payments ──
         if matched_payments:
-            res = f"### 💳 រកឃើញប្រវត្តិប្រតិបត្តិការបង់ប្រាក់ចំនួន `{len(matched_payments)}` លើក:\n\n"
+            res = f"### រកឃើញប្រវត្តិប្រតិបត្តិការបង់ប្រាក់ចំនួន `{len(matched_payments)}` លើក:\n\n"
             res += "| កាលបរិច្ឆេទ | អតិថិជន | Serial Number | ចំនួនទឹកប្រាក់ | វគ្គខែ |\n"
             res += "| :--- | :--- | :--- | :--- | :--- |\n"
             for p in matched_payments:

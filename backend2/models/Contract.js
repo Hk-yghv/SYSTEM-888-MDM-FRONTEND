@@ -29,6 +29,9 @@ const contractSchema = new mongoose.Schema({
     meid: { type: String, default: '' },
     color: { type: String, default: '' },
     version: { type: String, default: '' },
+    deviceProblem: { type: String, default: '' },
+    capacity: { type: String, default: '' },
+    repaymentSchedule: { type: Array, default: [] },
 
     // Loan Information
     amount: { type: Number, default: 0 },

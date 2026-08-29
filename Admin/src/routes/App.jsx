@@ -101,13 +101,13 @@ const App = () => {
                   {/* Device */}
                   <Route path={json.device} element={<ProtectRoute pagePath={json.device}> <MainLayout><Device /></MainLayout> </ProtectRoute>} />
                   {/* Report Droplist Sub-Routes — each page is its own dedicated component */}
-                  <Route path="/report" element={<Navigate to="/report/all-customers" replace />} />
-                  <Route path={json.report?.allCustomers || '/report/all-customers'} element={<ProtectRoute pagePath={json.report?.allCustomers || '/report/all-customers'}> <MainLayout><AllCustomersReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.activated || '/report/activated'} element={<ProtectRoute pagePath={json.report?.activated || '/report/activated'}> <MainLayout><ActivatedReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.redeem || '/report/redeem'} element={<ProtectRoute pagePath={json.report?.redeem || '/report/redeem'}> <MainLayout><RedeemReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.lockPhone || '/report/lock-phone'} element={<ProtectRoute pagePath={json.report?.lockPhone || '/report/lock-phone'}> <MainLayout><LockPhoneReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.setWallpaper || '/report/set-wallpaper'} element={<ProtectRoute pagePath={json.report?.setWallpaper || '/report/set-wallpaper'}> <MainLayout><SetWallpaperReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.installment || '/report/installment'} element={<ProtectRoute pagePath={json.report?.installment || '/report/installment'}> <MainLayout><InstallmentReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report.report} element={<Navigate to={json.report.allCustomers} replace />} />
+                  <Route path={json.report?.allCustomers} element={<ProtectRoute pagePath={json.report?.allCustomers}> <MainLayout><AllCustomersReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.activated} element={<ProtectRoute pagePath={json.report?.activated}> <MainLayout><ActivatedReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.redeem} element={<ProtectRoute pagePath={json.report?.redeem}> <MainLayout><RedeemReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.lockPhone} element={<ProtectRoute pagePath={json.report?.lockPhone}> <MainLayout><LockPhoneReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.setWallpaper} element={<ProtectRoute pagePath={json.report?.setWallpaper}> <MainLayout><SetWallpaperReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.installment} element={<ProtectRoute pagePath={json.report?.installment}> <MainLayout><InstallmentReport /></MainLayout> </ProtectRoute>} />
                   {/* Contract */}
                   <Route path={json.contract.application} element={<ProtectRoute pagePath={json.contract.application}> <MainLayout><Application /></MainLayout> </ProtectRoute>} />
                   <Route path={json.contract.activated} element={<ProtectRoute pagePath={json.contract.activated}> <MainLayout><Activated /></MainLayout> </ProtectRoute>} />
@@ -126,8 +126,8 @@ const App = () => {
                   <Route path={json.wallpaper.lockWallpaper} element={<ProtectRoute pagePath={json.wallpaper.lockWallpaper}> <MainLayout><LockWallpaper /></MainLayout> </ProtectRoute>} />
                   <Route path={json.wallpaper.unlockWallpaper} element={<ProtectRoute pagePath={json.wallpaper.unlockWallpaper}> <MainLayout><UnlockWallpaper /></MainLayout> </ProtectRoute>} />
                   {/* History */}
-                  <Route path={json.history?.loginHistory || '/history/login-history'} element={<ProtectRoute pagePath={json.history?.loginHistory || '/history/login-history'}> <MainLayout><LoginHistory /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.history?.deviceHistory || '/history/device-history'} element={<ProtectRoute pagePath={json.history?.deviceHistory || '/history/device-history'}> <MainLayout><DeviceActionHistory /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.history?.loginHistory} element={<ProtectRoute pagePath={json.history?.loginHistory}> <MainLayout><LoginHistory /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.history?.deviceHistory} element={<ProtectRoute pagePath={json.history?.deviceHistory}> <MainLayout><DeviceActionHistory /></MainLayout> </ProtectRoute>} />
 
                   {/* Settings */}
                   <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />
