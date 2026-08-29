@@ -254,7 +254,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                 </div>
 
                 {/* Schedule Table Container */}
-                <div className="flex-1 overflow-x-auto overflow-y-auto p-4 space-y-3 bg-[#070913]">
+                <div className="flex-1 overflow-x-auto overflow-y-auto p-4 pb-32 min-h-[350px] space-y-3 bg-[#070913]">
                     {isSetupActivate && (
                         <div className="p-3 rounded-2xl bg-indigo-950/60 border border-indigo-600/40 text-indigo-200 text-xs font-medium flex items-center gap-2">
                             <FaCalendarAlt className="text-indigo-400 text-base flex-shrink-0" />
@@ -382,7 +382,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
 
                                         {/* Action ($ Dropdown) */}
                                         {!isReadOnly && (
-                                            <td className="px-3 py-2 text-center relative">
+                                            <td className={`px-3 py-2 text-center relative ${activeDropdownIdx === idx ? 'z-[999]' : ''}`}>
                                                 {row.status === 'Settled' ? (
                                                     <span className="text-gray-600 italic text-[10px]">Settled</span>
                                                 ) : isCurrentActive || isMasterAdmin ? (
@@ -396,7 +396,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                                                         </button>
 
                                                         {activeDropdownIdx === idx && (
-                                                            <div className="absolute right-0 bottom-full mb-1 w-36 bg-gray-900 border border-indigo-500/80 rounded-xl shadow-2xl z-[99999] overflow-hidden animate-in zoom-in-95 duration-100">
+                                                            <div className={`absolute right-0 ${idx === rows.length - 1 && rows.length > 2 ? 'bottom-full mb-1' : 'top-full mt-1'} w-36 bg-gray-900 border border-indigo-500/80 rounded-xl shadow-2xl z-[99999] overflow-hidden animate-in zoom-in-95 duration-100`}>
                                                                 <div className="px-2.5 py-1 bg-indigo-950/80 border-b border-indigo-800 text-[9px] font-bold text-indigo-300 uppercase">
                                                                     Payment Options
                                                                 </div>
