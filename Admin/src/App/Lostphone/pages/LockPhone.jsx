@@ -66,8 +66,31 @@ const LockPhone = () => {
 
     useEffect(() => { fetchLockLogs(page); }, [page]);
 
-    const handleExportExcel = () => {
-        const data = logs.map((item, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                action: 'Locked',
+                page: 1,
+                limit: 999999,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            const res = await fetch(`${API_BASE2}/phonelogs?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all lock logs for export error:', err);
+        }
+        return logs;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const data = allData.map((item, idx) => ({
             'No': idx + 1,
             'Locked Date': item.date || '',
             'Time': item.time || '',
@@ -83,7 +106,8 @@ const LockPhone = () => {
         exportToExcel(data, 'Phone_Lock_Audit_Logs');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Customer', accessor: 'customerName' },
@@ -93,7 +117,7 @@ const LockPhone = () => {
             { header: 'Performed By', accessor: 'performedBy' },
             { header: 'Reason', accessor: 'reason' }
         ];
-        exportToPDF('Lock Phone Audit Logs', columns, logs, user?.brand || '');
+        exportToPDF('Lock Phone Audit Logs', columns, allData, user?.brand || '');
     };
 
     return (

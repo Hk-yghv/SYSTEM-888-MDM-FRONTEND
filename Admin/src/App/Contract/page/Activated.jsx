@@ -305,8 +305,32 @@ const Activated = () => {
         }
     };
 
-    const handleExportExcel = () => {
-        const data = filteredContracts.map((c, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                status: 'Activated',
+                page: 1,
+                limit: 999999,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            if (searchTerm) params.set('search', searchTerm);
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all for export error:', err);
+        }
+        return activatedContracts;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const data = allData.map((c, idx) => ({
             'No': idx + 1,
             'Name (EN)': c.customerNameEn || '',
             'Name (KH)': c.customerNameKh || '',
@@ -324,7 +348,8 @@ const Activated = () => {
         exportToExcel(data, 'Activated_Contracts');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Name EN', accessor: 'customerNameEn' },
@@ -334,7 +359,7 @@ const Activated = () => {
             { header: 'Serial No.', accessor: 'serialNumber' },
             { header: 'Monthly ($)', cell: (r) => `$${r.monthlyPayment}` },
         ];
-        exportToPDF('Activated Contracts Directory', columns, filteredContracts);
+        exportToPDF('Activated Contracts Directory', columns, allData);
     };
 
     return (

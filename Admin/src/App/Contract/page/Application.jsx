@@ -97,8 +97,32 @@ const Application = () => {
         }
     };
 
-    const handleExportExcel = () => {
-        const data = contracts.map((c, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                status: 'Application',
+                page: 1,
+                limit: 999999,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            if (searchTerm) params.set('search', searchTerm);
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all for export error:', err);
+        }
+        return contracts;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const data = allData.map((c, idx) => ({
             'No': idx + 1,
             'Name (EN)': c.customerNameEn || '',
             'Name (KH)': c.customerNameKh || '',
@@ -116,7 +140,8 @@ const Application = () => {
         exportToExcel(data, 'Application_Contracts');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Name EN', accessor: 'customerNameEn' },
@@ -126,7 +151,7 @@ const Application = () => {
             { header: 'Serial No.', accessor: 'serialNumber' },
             { header: 'Monthly ($)', cell: (r) => `$${r.monthlyPayment}` },
         ];
-        exportToPDF('Application Contracts Directory', columns, contracts);
+        exportToPDF('Application Contracts Directory', columns, allData);
     };
 
     return (

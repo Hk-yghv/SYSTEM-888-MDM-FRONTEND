@@ -48,8 +48,31 @@ const UnlockPhone = () => {
 
     useEffect(() => { fetchUnlockLogs(page); }, [page]);
 
-    const handleExportExcel = () => {
-        const data = logs.map((item, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                action: 'Unlocked',
+                page: 1,
+                limit: 999999,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            const res = await fetch(`${API_BASE2}/phonelogs?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all unlock logs for export error:', err);
+        }
+        return logs;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const data = allData.map((item, idx) => ({
             'No': idx + 1,
             'Unlocked Date': item.date || '',
             'Time': item.time || '',
@@ -63,7 +86,8 @@ const UnlockPhone = () => {
         exportToExcel(data, 'Phone_Unlock_Audit_Logs');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Date & Time', cell: (r) => `${r.date} ${r.time}` },
@@ -72,7 +96,7 @@ const UnlockPhone = () => {
             { header: 'User Name', accessor: 'userName' },
             { header: 'Reason', accessor: 'reason' },
         ];
-        exportToPDF('Phone Unlock Audit History Report', columns, logs);
+        exportToPDF('Phone Unlock Audit History Report', columns, allData);
     };
 
     return (

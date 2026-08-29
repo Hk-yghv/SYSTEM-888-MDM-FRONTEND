@@ -53,8 +53,32 @@ const SetWallpaperReport = () => {
         fetchData(page, searchTerm);
     }, [page]);
 
-    const handleExportExcel = () => {
-        const exported = dataList.map((item, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                action: 'Locked',
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                page: 1,
+                limit: 999999
+            });
+            if (searchTerm) params.set('search', searchTerm);
+            const res = await fetch(`${API_BASE2}/wallpaperlogs?${params.toString()}`);
+            if (res.ok) {
+                const result = await res.json();
+                return result.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all set wallpaper report for export error:', err);
+        }
+        return dataList;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const exported = allData.map((item, idx) => ({
             'No': idx + 1,
             'Customer Name': item.customerName || '',
             'Model': item.model || '',
@@ -66,7 +90,8 @@ const SetWallpaperReport = () => {
         exportToExcel(exported, 'Set_Wallpaper_Report');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Customer', accessor: 'customerName' },
@@ -75,7 +100,7 @@ const SetWallpaperReport = () => {
             { header: 'Last Set', cell: (r) => r.lastSetTime || `${r.date} ${r.time}` },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
-        exportToPDF('Set Wallpaper Report', columns, dataList, user?.brand || '');
+        exportToPDF('Set Wallpaper Report', columns, allData, user?.brand || '');
     };
 
     return (

@@ -48,8 +48,31 @@ const LockWallpaper = () => {
 
     useEffect(() => { fetchLogs(page); }, [page]);
 
-    const handleExportExcel = () => {
-        const data = logs.map((l, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                action: 'Locked',
+                page: 1,
+                limit: 999999,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            const res = await fetch(`${API_BASE2}/wallpaperlogs?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all wallpaper lock logs for export error:', err);
+        }
+        return logs;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const data = allData.map((l, idx) => ({
             'No': idx + 1,
             'Locked Date & Time': `${l.date} ${l.time}`,
             'Last Set': l.lastSetTime || `${l.date} ${l.time}`,
@@ -62,7 +85,8 @@ const LockWallpaper = () => {
         exportToExcel(data, 'Lock_Wallpaper_Audit_Logs');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Customer', accessor: 'customerName' },
@@ -71,7 +95,7 @@ const LockWallpaper = () => {
             { header: 'Last Set', cell: (r) => r.lastSetTime || `${r.date} ${r.time}` },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
-        exportToPDF('Lock Wallpaper Audit Logs', columns, logs, user?.brand || '');
+        exportToPDF('Lock Wallpaper Audit Logs', columns, allData, user?.brand || '');
     };
 
     return (

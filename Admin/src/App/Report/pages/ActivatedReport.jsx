@@ -53,8 +53,32 @@ const ActivatedReport = () => {
         fetchData(page, searchTerm);
     }, [page]);
 
-    const handleExportExcel = () => {
-        const exported = dataList.map((item, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                status: 'Activated',
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                page: 1,
+                limit: 999999
+            });
+            if (searchTerm) params.set('search', searchTerm);
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
+            if (res.ok) {
+                const result = await res.json();
+                return result.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all for export error:', err);
+        }
+        return dataList;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const exported = allData.map((item, idx) => ({
             'No': idx + 1,
             'Customer Name': item.customerNameEn || '',
             'Model': item.model || '',
@@ -66,7 +90,8 @@ const ActivatedReport = () => {
         exportToExcel(exported, 'Activated_Contracts_Report');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Customer', accessor: 'customerNameEn' },
@@ -75,7 +100,7 @@ const ActivatedReport = () => {
             { header: 'Brand', accessor: 'brand' },
             { header: 'Status', cell: () => 'Activated' }
         ];
-        exportToPDF('Activated Contracts Report', columns, dataList, user?.brand || '');
+        exportToPDF('Activated Contracts Report', columns, allData, user?.brand || '');
     };
 
     return (

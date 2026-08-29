@@ -65,8 +65,23 @@ const Check = () => {
         } catch (err) { }
     };
 
-    const handleExportExcel = () => {
-        const data = contracts.map((c, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const brandParam = user?.brand ? `&userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}&username=${encodeURIComponent(user?.username || '')}&isImmutable=${user?.isImmutable ? 'true' : 'false'}` : '';
+            const res = await fetch(`${API_BASE1}/contracts?status=Check&page=1&limit=999999${brandParam}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all check for export error:', err);
+        }
+        return contracts;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const data = allData.map((c, idx) => ({
             'No': idx + 1,
             'Name (EN)': c.customerNameEn || '',
             'Name (KH)': c.customerNameKh || '',
@@ -84,7 +99,8 @@ const Check = () => {
         exportToExcel(data, 'Check_Contracts');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Name EN', accessor: 'customerNameEn' },
@@ -94,7 +110,7 @@ const Check = () => {
             { header: 'Serial No.', accessor: 'serialNumber' },
             { header: 'Monthly ($)', cell: (r) => `$${r.monthlyPayment}` },
         ];
-        exportToPDF('Check Contracts Directory', columns, contracts);
+        exportToPDF('Check Contracts Directory', columns, allData);
     };
 
     return (

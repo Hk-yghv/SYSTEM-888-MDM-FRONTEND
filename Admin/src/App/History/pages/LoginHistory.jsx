@@ -120,8 +120,32 @@ const LoginHistory = () => {
         }
     };
 
-    const handleExportExcel = () => {
-        const dataToExport = logs.map((l, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                page: 1,
+                limit: 999999,
+                userUsername: user?.username || '',
+                userRole: user?.role || ''
+            });
+            if (searchTerm) params.append('search', searchTerm);
+            if (roleFilter) params.append('role', roleFilter);
+            if (statusFilter) params.append('status', statusFilter);
+
+            const res = await fetch(`${API_BASE2}/history/login?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all login logs for export error:', err);
+        }
+        return logs;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const dataToExport = allData.map((l, idx) => ({
             No: idx + 1,
             Username: l.username,
             Name: l.name,
@@ -134,7 +158,8 @@ const LoginHistory = () => {
         exportToExcel(dataToExport, 'User_Login_History');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Username', accessor: 'username' },
@@ -145,7 +170,7 @@ const LoginHistory = () => {
             { header: 'Time', cell: (r) => r.timestamp ? new Date(r.timestamp).toLocaleString() : '' },
             { header: 'Status', cell: (r) => r.status || 'Success' }
         ];
-        exportToPDF('User Login Audit History Report', columns, logs);
+        exportToPDF('User Login Audit History Report', columns, allData);
     };
 
     return (

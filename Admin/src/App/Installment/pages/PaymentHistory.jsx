@@ -57,8 +57,31 @@ const PaymentHistory = () => {
         setSearchTerm(searchInput);
     };
 
-    const handleExportExcel = () => {
-        const data = payments.map((p, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                page: 1,
+                limit: 999999,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            if (searchTerm) params.set('search', searchTerm);
+            const res = await fetch(`${API_BASE1}/payments?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all payments for export error:', err);
+        }
+        return payments;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const data = allData.map((p, idx) => ({
             'No': idx + 1,
             'Payment ID': p.paymentId || '',
             'Contract ID': p.contractId || '',
@@ -74,7 +97,8 @@ const PaymentHistory = () => {
         exportToExcel(data, 'Payment_History_Report');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Payment ID', accessor: 'paymentId' },
@@ -84,7 +108,7 @@ const PaymentHistory = () => {
             { header: 'Paid By', accessor: 'paidBy' },
             { header: 'Amount ($)', cell: (r) => `$${r.amount}` }
         ];
-        exportToPDF('Payment History Audit Report', columns, payments);
+        exportToPDF('Payment History Audit Report', columns, allData);
     };
 
     return (

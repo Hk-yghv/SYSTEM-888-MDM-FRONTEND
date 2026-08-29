@@ -132,7 +132,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     return (
         <div className="fixed inset-0 z-[999] flex justify-end bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 select-none">
             <div className="w-full max-w-5xl bg-[#f8fafc] text-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-300 animate-in slide-in-from-right duration-300">
-                {/* ── Header (Clean Light Theme) ── */}
+                {/* Header (Clean Light Theme) */}
                 <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between gap-3 shadow-xs">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600 text-xl shadow-xs">
@@ -176,7 +176,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     </div>
                 </div>
 
-                {/* ── Summary Counters & Filter Bar ── */}
+                {/* Summary Counters & Filter Bar */}
                 <div className="p-3 bg-slate-100 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
                     {/* Tabs */}
                     <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -226,7 +226,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     </div>
                 </div>
 
-                {/* ── Main Content Area (High Contrast Text & Clean Panels) ── */}
+                {/* Main Content Area (High Contrast Text & Clean Panels) */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f8fafc]">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 text-slate-600 gap-3">
@@ -234,7 +234,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <p className="text-xs font-bold">កំពុងទាញយកទិន្នន័យជូនដំណឹងបង់ប្រាក់...</p>
                         </div>
                     ) : activeTab === 'overdue' ? (
-                        /* ── Section 1: Overdue List (High Contrast Clear Table) ── */
+                        /* Section 1: Overdue List (High Contrast Clear Table) */
                         <div>
                             <div className="mb-3 flex items-center justify-between">
                                 <h3 className="text-xs font-black text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -245,7 +245,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
 
                             {filteredOverdueList.length === 0 ? (
                                 <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
-                                    <p className="text-slate-600 text-xs font-bold">✨ មិនមានអតិថិជនយឺតយ៉ាវ ឬលើសថ្ងៃបង់ប្រាក់ឡើយ!</p>
+                                    <p className="text-slate-600 text-xs font-bold">មិនមានអតិថិជនយឺតយ៉ាវ ឬលើសថ្ងៃបង់ប្រាក់ឡើយ!</p>
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-md">
@@ -277,11 +277,11 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                         <td className="px-3.5 py-3 whitespace-nowrap text-center">
                                                             {isUnread ? (
                                                                 <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black shadow-xs animate-pulse border border-rose-500">
-                                                                    🔴 មិនទាន់មើល (NEW)
+                                                                    NEW
                                                                 </span>
                                                             ) : (
                                                                 <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-300 text-[10px] font-bold">
-                                                                    ✓ មើលរួច
+                                                                    SEEN
                                                                 </span>
                                                             )}
                                                         </td>
@@ -305,7 +305,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                         </td>
                                                         <td className="px-3.5 py-3 text-center whitespace-nowrap">
                                                             <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300 text-xs font-black shadow-xs">
-                                                                ⚠️ {item.overdueText || `លើស ${item.overdueDays} ថ្ងៃ`}
+                                                                {item.overdueText || `លើស ${item.overdueDays} ថ្ងៃ`}
                                                             </span>
                                                         </td>
                                                         <td className="px-3.5 py-3 text-center whitespace-nowrap">
@@ -328,7 +328,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             )}
                         </div>
                     ) : (
-                        /* ── Section 2: Due Today / Upcoming List (High Contrast Light Cards) ── */
+                        /* Section 2: Due Today / Upcoming List (High Contrast Light Cards) */
                         <div>
                             <div className="mb-3 flex items-center justify-between">
                                 <h3 className="text-xs font-black text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -339,7 +339,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
 
                             {filteredDueList.length === 0 ? (
                                 <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
-                                    <p className="text-slate-600 text-xs font-bold">🎉 មិនមានអតិថិជនត្រូវបង់ប្រាក់ក្នុងថ្ងៃនេះទេ!</p>
+                                    <p className="text-slate-600 text-xs font-bold"> មិនមានអតិថិជនត្រូវបង់ប្រាក់ក្នុងថ្ងៃនេះទេ!</p>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -357,7 +357,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                         <div className="flex items-center gap-2 mb-1">
                                                             {isUnread && (
                                                                 <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">
-                                                                    🔴 មិនទាន់មើល (NEW)
+                                                                    NEW
                                                                 </span>
                                                             )}
                                                         </div>
@@ -415,7 +415,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     )}
                 </div>
 
-                {/* ── Footer (Clean Light Panel) ── */}
+                {/* Footer (Clean Light Panel) */}
                 <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 font-bold shadow-xs">
                     <span>សរុបការជូនដំណឹង: <strong className="text-slate-900">{summary.totalAlerts}</strong> ករណី ({unreadCountDue + unreadCountOverdue} មិនទាន់មើល)</span>
                     <button

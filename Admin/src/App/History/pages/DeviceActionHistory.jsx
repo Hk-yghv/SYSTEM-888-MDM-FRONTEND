@@ -139,8 +139,34 @@ const DeviceActionHistory = () => {
         }
     };
 
-    const handleExportExcel = () => {
-        const data = logs.map((item, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                page: 1,
+                limit: 999999,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            if (searchTerm) params.append('search', searchTerm);
+            if (statusFilter) params.append('status', statusFilter);
+            if (actionFilter) params.append('actionType', actionFilter);
+
+            const res = await fetch(`${API_BASE2}/history/device-actions?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all device action logs for export error:', err);
+        }
+        return logs;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const data = allData.map((item, idx) => ({
             'No': idx + 1,
             'Date': item.date || '',
             'Time': item.time || '',
@@ -155,7 +181,8 @@ const DeviceActionHistory = () => {
         exportToExcel(data, 'Device_Action_History');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Date & Time', cell: (r) => `${r.date} ${r.time}` },
@@ -165,7 +192,7 @@ const DeviceActionHistory = () => {
             { header: 'Status', accessor: 'status' },
             { header: 'User', accessor: 'performedBy' }
         ];
-        exportToPDF('Activated Device History Audit Report', columns, logs);
+        exportToPDF('Activated Device History Audit Report', columns, allData);
     };
 
     return (

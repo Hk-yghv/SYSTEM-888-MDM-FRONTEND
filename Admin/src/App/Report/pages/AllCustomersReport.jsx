@@ -52,8 +52,31 @@ const AllCustomersReport = () => {
         fetchData(page, searchTerm);
     }, [page]);
 
-    const handleExportExcel = () => {
-        const exported = dataList.map((item, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                page: 1,
+                limit: 999999
+            });
+            if (searchTerm) params.set('search', searchTerm);
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
+            if (res.ok) {
+                const result = await res.json();
+                return result.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all customers report for export error:', err);
+        }
+        return dataList;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const exported = allData.map((item, idx) => ({
             'No': idx + 1,
             'Customer Name (EN)': item.customerNameEn || '',
             'Customer Name (KH)': item.customerNameKh || '',
@@ -67,7 +90,8 @@ const AllCustomersReport = () => {
         exportToExcel(exported, 'All_Customers_Report');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Customer (EN)', accessor: 'customerNameEn' },
@@ -77,7 +101,7 @@ const AllCustomersReport = () => {
             { header: 'Phone Lock', accessor: 'lockPhoneStatus' },
             { header: 'Status', accessor: 'status' }
         ];
-        exportToPDF('All Customers Report', columns, dataList, user?.brand || '');
+        exportToPDF('All Customers Report', columns, allData, user?.brand || '');
     };
 
     return (

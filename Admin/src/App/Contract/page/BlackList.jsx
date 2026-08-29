@@ -81,8 +81,24 @@ const BlackList = () => {
         } catch (err) { }
     };
 
-    const handleExportExcel = () => {
-        const data = contracts.map((c, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const brandParam = user?.brand ? `&userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}&username=${encodeURIComponent(user?.username || '')}&isImmutable=${user?.isImmutable ? 'true' : 'false'}` : '';
+            const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : '';
+            const res = await fetch(`${API_BASE1}/contracts?status=Blacklist&page=1&limit=999999${brandParam}${searchParam}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || [];
+            }
+        } catch (err) {
+            console.error('Fetch all blacklist for export error:', err);
+        }
+        return contracts;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const data = allData.map((c, idx) => ({
             'No': idx + 1,
             'Name (EN)': c.customerNameEn || '',
             'Name (KH)': c.customerNameKh || '',
@@ -100,7 +116,8 @@ const BlackList = () => {
         exportToExcel(data, 'Blacklist_Contracts');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Name EN', accessor: 'customerNameEn' },
@@ -110,7 +127,7 @@ const BlackList = () => {
             { header: 'Serial No.', accessor: 'serialNumber' },
             { header: 'Monthly ($)', cell: (r) => `$${r.monthlyPayment}` },
         ];
-        exportToPDF('Blacklist Contracts Directory', columns, contracts);
+        exportToPDF('Blacklist Contracts Directory', columns, allData);
     };
 
     return (

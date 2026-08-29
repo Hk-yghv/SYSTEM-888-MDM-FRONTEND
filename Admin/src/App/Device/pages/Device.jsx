@@ -91,8 +91,33 @@ const Device = () => {
 
     const filteredDevices = devices;
 
-    const handleExportExcel = () => {
-        const data = filteredDevices.map((d, idx) => ({
+    const fetchAllForExport = async () => {
+        try {
+            const queryParams = new URLSearchParams({
+                status: 'Activated',
+                page: 1,
+                limit: 999999,
+                ...(searchTerm && { search: searchTerm })
+            });
+            if (user?.role === 'Administrator') {
+                if (brandFilter) queryParams.append('brand', brandFilter);
+            } else if (user?.brand) {
+                queryParams.append('brand', user.brand);
+            }
+            const res = await fetch(`${API_BASE1}/contracts?${queryParams.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                return data.data || data.contracts || [];
+            }
+        } catch (err) {
+            console.error('Fetch all devices for export error:', err);
+        }
+        return devices;
+    };
+
+    const handleExportExcel = async () => {
+        const allData = await fetchAllForExport();
+        const data = allData.map((d, idx) => ({
             'No': idx + 1,
             'Model': d.model || '',
             'Version / OS': d.version || '',
@@ -108,7 +133,8 @@ const Device = () => {
         exportToExcel(data, 'Device_Inventory_Report');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
+        const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Model', accessor: 'model' },
@@ -119,7 +145,7 @@ const Device = () => {
             { header: 'Phone Lock', accessor: 'lockPhoneStatus' },
             { header: 'Wallpaper Lock', accessor: 'lockWallpaperStatus' }
         ];
-        exportToPDF('Device Inventory Report', columns, filteredDevices);
+        exportToPDF('Device Inventory Report', columns, allData);
     };
 
     return (
