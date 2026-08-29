@@ -3,7 +3,8 @@ import path from 'path';
 import TelegramBot from 'node-telegram-bot-api';
 import User from '../models/User.js';
 import LoginLog from '../models/LoginLog.js';
-import { queryAllDBs, MEM_DB, isAnyDBConnected } from '../config/multiDB.js';
+import { MEM_DB } from '../config/db.js';
+import { queryAllDBs, isAnyDBConnected } from '../config/multiDB.js';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
