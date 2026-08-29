@@ -89,7 +89,7 @@ if (!window._nativeFetch) {
     window.fetch = async (input, init) => {
         const urlStr = typeof input === 'string' ? input : (input?.url || String(input));
 
-        const isTargetApi = API_POOL.some(b => urlStr.startsWith(b)) || 
+        const isTargetApi = API_POOL.some(b => urlStr.startsWith(b)) ||
             (urlStr.startsWith('/') && !urlStr.startsWith('/assets') && !urlStr.startsWith('/src'));
 
         if (isTargetApi) {
@@ -98,6 +98,4 @@ if (!window._nativeFetch) {
 
         return window._nativeFetch(input, init);
     };
-
-    console.log('[SmartFetch] Global Real-Time Multi-API Failover Interceptor active with 4 backend endpoints:', API_POOL);
 }
