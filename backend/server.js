@@ -39,7 +39,11 @@ import userRoutes from './routes/userRoutes.js';
 import controlRoutes from './routes/controlRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import phoneAppRoutes from './routes/phoneAppRoutes.js';
-
+import contractRoutes from './routes/contractRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import lostphoneRoutes from './routes/lostphoneRoutes.js';
+import wallpaperRoutes from './routes/wallpaperRoutes.js';
+import historyRoutes, { createHistoryRoutes } from './routes/historyRoutes.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -104,12 +108,23 @@ app.all(['/api/db-status/backup-firebase', '/api/backup-firebase'], requireAdmin
     }
 });
 
-// ── Mount Modular Routes (Backend Primary: Auth, Users, Control, Dashboard, Phone-App) ──
+// ── Mount All Routes (Unified Multi-API Backend Cluster) ──
 app.use('/api/auth', createAuthRoutes(bot));
 app.use('/api/users', userRoutes);
 app.use('/api/controlsystem', controlRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/phone-app', phoneAppRoutes);
+app.use('/api/contracts', contractRoutes);
+app.use('/contracts', contractRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api', paymentRoutes);
+app.use('/payments', paymentRoutes);
+app.use('/pay', paymentRoutes);
+app.use('/', paymentRoutes);
+app.use('/api', lostphoneRoutes);
+app.use('/api', wallpaperRoutes);
+app.use('/api/history', historyRoutes);
+app.use('/api/history', createHistoryRoutes(bot));
 
 
 app.use((err, req, res, next) => {

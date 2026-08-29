@@ -427,6 +427,3 @@ router.get('/pay/:contractId', async (req, res) => {
 });
 
 export default router;
-
-
-

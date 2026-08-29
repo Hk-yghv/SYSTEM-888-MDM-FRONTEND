@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { FaBan } from 'react-icons/fa';
+import { smartFetch, getActiveApiBase, API_POOL } from '../utils/smartFetch';
 
 const AuthContext = createContext();
 
+// All API_BASE pointers fallback and route through the active failover API pool
 const API_BASE = import.meta.env.VITE_API_BACKEND || 'http://localhost:5000/api';
-const API_BASE1 = import.meta.env.VITE_API_BACKEND1 || (import.meta.env.VITE_API_BACKEND ? import.meta.env.VITE_API_BACKEND : 'http://localhost:5001/api');
-const API_BASE2 = import.meta.env.VITE_API_BACKEND2 || (import.meta.env.VITE_API_BACKEND ? import.meta.env.VITE_API_BACKEND : 'http://localhost:5002/api');
-const API_BASE3 = import.meta.env.VITE_API_BACKEND3 || (import.meta.env.VITE_API_BACKEND ? import.meta.env.VITE_API_BACKEND : 'http://localhost:5003/api');
+const API_BASE1 = import.meta.env.VITE_API_BACKEND1 || API_BASE;
+const API_BASE2 = import.meta.env.VITE_API_BACKEND2 || API_BASE;
+const API_BASE3 = import.meta.env.VITE_API_BACKEND3 || API_BASE;
 
 
 export const AuthProvider = ({ children }) => {
@@ -190,7 +192,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, verifyOtp, logout, hasPermission, updateUserState, API_BASE, API_BASE1, API_BASE2, API_BASE3 }}>
+        <AuthContext.Provider value={{ user, token, loading, login, verifyOtp, logout, hasPermission, updateUserState, API_BASE, API_BASE1, API_BASE2, API_BASE3, smartFetch, getActiveApiBase, API_POOL }}>
             {/* Fullscreen Blocked Modal — shown immediately when admin blocks the user */}
             {isBlocked && (
                 <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md select-none animate-fade-in">
