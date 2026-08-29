@@ -100,7 +100,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         setSeenAlertKeys(newSeen);
         try {
             localStorage.setItem(storageKey, JSON.stringify(Array.from(newSeen)));
-        } catch {}
+        } catch { }
         updateUnreadCount(dueTodayList, overdueList, newSeen);
     };
 
@@ -182,11 +182,10 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         <button
                             onClick={() => setActiveTab('overdue')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${
-                                activeTab === 'overdue'
+                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'overdue'
                                     ? 'bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-600/25'
                                     : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
-                            }`}
+                                }`}
                         >
                             <FaExclamationTriangle className={activeTab === 'overdue' ? 'text-white' : 'text-rose-600'} />
                             <span>លើសថ្ងៃបង់ប្រាក់ ({summary.overdueCount})</span>
@@ -199,11 +198,10 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
 
                         <button
                             onClick={() => setActiveTab('dueToday')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${
-                                activeTab === 'dueToday'
+                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'dueToday'
                                     ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md shadow-amber-500/25'
                                     : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
-                            }`}
+                                }`}
                         >
                             <FaCalendarCheck className={activeTab === 'dueToday' ? 'text-slate-950' : 'text-amber-600'} />
                             <span>ដល់ថ្ងៃបង់ប្រាក់ ({summary.dueTodayCount})</span>
@@ -260,7 +258,6 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                 <th className="px-3.5 py-3.5">លេខទូរស័ព្ទ</th>
                                                 <th className="px-3.5 py-3.5">ម៉ាក (BRAND)</th>
                                                 <th className="px-3.5 py-3.5">ម៉ូឌែល / SERIAL</th>
-                                                <th className="px-3.5 py-3.5 text-right">ប្រាក់ត្រូវបង់</th>
                                                 <th className="px-3.5 py-3.5 text-center">ថ្ងៃត្រូវបង់</th>
                                                 <th className="px-3.5 py-3.5 text-center">រយៈពេលលើសថ្ងៃ</th>
                                                 <th className="px-3.5 py-3.5 text-center">LOCK STATUS</th>
@@ -273,9 +270,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                     <tr
                                                         key={idx}
                                                         onClick={() => handleMarkSingleAsRead(item)}
-                                                        className={`transition-colors cursor-pointer ${
-                                                            isUnread ? 'bg-amber-50/70 hover:bg-amber-100/70' : 'hover:bg-slate-50 text-slate-900'
-                                                        }`}
+                                                        className={`transition-colors cursor-pointer ${isUnread ? 'bg-amber-50/70 hover:bg-amber-100/70' : 'hover:bg-slate-50 text-slate-900'
+                                                            }`}
                                                     >
                                                         <td className="px-3.5 py-3 text-center font-bold text-slate-700">{idx + 1}</td>
                                                         <td className="px-3.5 py-3 whitespace-nowrap text-center">
@@ -303,9 +299,6 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                         <td className="px-3.5 py-3 whitespace-nowrap">
                                                             <div className="text-slate-900 font-black">{item.model}</div>
                                                             <div className="text-[11px] text-slate-500 font-mono font-medium">{item.serialNumber}</div>
-                                                        </td>
-                                                        <td className="px-3.5 py-3 text-right whitespace-nowrap font-mono font-black text-emerald-700 text-sm">
-                                                            ${Number(item.monthlyPayment).toFixed(2)}
                                                         </td>
                                                         <td className="px-3.5 py-3 text-center whitespace-nowrap text-slate-800 font-bold font-mono">
                                                             {item.dueDate}
@@ -356,9 +349,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                             <div
                                                 key={idx}
                                                 onClick={() => handleMarkSingleAsRead(item)}
-                                                className={`p-4 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3 cursor-pointer ${
-                                                    isUnread ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-slate-200'
-                                                }`}
+                                                className={`p-4 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3 cursor-pointer ${isUnread ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-slate-200'
+                                                    }`}
                                             >
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div>
