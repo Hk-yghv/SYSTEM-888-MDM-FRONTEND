@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
 import { AiOutlineMenu } from "react-icons/ai";
 import { MdOutlineSync, MdInfo, MdQrCode2, MdCheckCircle, MdSearch, MdSwapHoriz, MdComment, MdPictureAsPdf, MdOutlineWallpaper } from "react-icons/md";
-import { FaQrcode, FaCheck, FaMobileAlt, FaFileExcel, FaLock } from "react-icons/fa";
+import { FaQrcode, FaCheck, FaMobileAlt, FaFileExcel, FaLock, FaDollarSign } from "react-icons/fa";
 import CreateApplication from '../components/CreateApplication';
 import CustomModal from '../../../components/CustomModal';
 import Pagination from '../../../components/Pagination';
