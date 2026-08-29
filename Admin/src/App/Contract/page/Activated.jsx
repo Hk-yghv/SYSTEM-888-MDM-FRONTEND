@@ -104,6 +104,7 @@ const Activated = () => {
     const [redeemDateInput, setRedeemDateInput] = useState(new Date().toISOString().split('T')[0]);
 
     const handleChangeStatus = async (item, targetStatus) => {
+        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់ផ្លាស់ប្តូរស្ថានភាពកុងត្រារបស់ "${item.customerNameEn || item.customerNameKh}" ទៅជា ${targetStatus} មែនទេ?`)) return;
         if (targetStatus === 'Redeem') {
             if (item.lockPhoneStatus === 'Locked' || item.lockWallpaperStatus === 'Locked') {
                 const isPhoneLocked = item.lockPhoneStatus === 'Locked';
@@ -151,6 +152,7 @@ const Activated = () => {
     const handleConfirmRedeem = async (e) => {
         e.preventDefault();
         if (!redeemItem) return;
+        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់បញ្ជាក់ការ Redeem សម្រាប់ "${redeemItem.customerNameEn}" មែនទេ?`)) return;
         try {
             const res = await fetch(`${API_BASE1}/contracts/${redeemItem._id}`, {
                 method: 'PUT',
@@ -177,6 +179,7 @@ const Activated = () => {
     };
 
     const handleQuickDeviceAction = async (item, actionType) => {
+        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់បញ្ជូនសកម្មភាព [ ${actionType} ] លើឧបករណ៍របស់ "${item.customerNameEn || item.customerNameKh}" មែនទេ?`)) return;
         try {
             const res = await fetch(`${API_BASE2}/history/device-actions`, {
                 method: 'POST',

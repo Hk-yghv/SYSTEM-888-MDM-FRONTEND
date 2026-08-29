@@ -50,6 +50,9 @@ const Actions = () => {
     }, [page]);
 
     const handleToggleLock = async (contract, newStatus) => {
+        const actionLabel = newStatus === 'LockPhone' || newStatus === 'Locked' ? 'ចាក់សោ (Lock Phone)' : 'ដោះសោ (Unlock Phone)';
+        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់ធ្វើសកម្មភាព [ ${actionLabel} ] លើទូរស័ព្ទរបស់ "${contract.customerNameEn || contract.customerNameKh}" មែនទេ?`)) return;
+
         setTogglingId(contract._id);
         try {
             // Fetch current lockphone display configs from MongoDB ControlSystem (brand-specific first, fallback to Global)

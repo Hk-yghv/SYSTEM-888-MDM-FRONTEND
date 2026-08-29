@@ -50,6 +50,9 @@ const Actions = () => {
     }, [page]);
 
     const handleToggleWallpaper = async (contract, newStatus) => {
+        const actionLabel = newStatus === 'Locked' || newStatus === 'LockWallpaper' ? 'ចាក់សោ Wallpaper (Lock Wallpaper)' : 'ដោះសោ Wallpaper (Unlock Wallpaper)';
+        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់ធ្វើសកម្មភាព [ ${actionLabel} ] លើទូរស័ព្ទរបស់ "${contract.customerNameEn || contract.customerNameKh}" មែនទេ?`)) return;
+
         setTogglingId(contract._id);
         try {
             const res = await fetch(`${API_BASE2}/wallpaper/toggle-lock`, {

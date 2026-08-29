@@ -281,8 +281,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         if (!file) return;
         setPhotoUploading(true);
         try {
-            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_PRESET);

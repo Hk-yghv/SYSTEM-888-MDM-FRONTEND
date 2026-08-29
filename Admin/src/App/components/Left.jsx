@@ -22,19 +22,19 @@ const Left = () => {
     const isActive = (path) => location.pathname === path;
 
     const navItemClass = (path) =>
-        `w-full h-[44px] flex items-center gap-3 px-3 rounded-[5px] text-sm font-semibold transition-all glass-nav-item ${isActive(path)
+        `w-full h-[44px] flex-shrink-0 flex items-center gap-3 px-3 rounded-[5px] text-sm font-semibold transition-all glass-nav-item ${isActive(path)
             ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 border border-emerald-500"
             : "bg-white text-slate-700 hover:bg-emerald-50/70 hover:text-emerald-700 border border-slate-200/80 shadow-2xs"
         }`;
 
     const subItemClass = (path) =>
-        `block px-3 py-2 ml-4 text-xs font-medium rounded-[5px] transition-all ${isActive(path)
-            ? "bg-emerald-100 text-emerald-800 font-bold border border-emerald-300"
-            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+        `flex items-center gap-2 flex-shrink-0 px-3.5 py-2.5 ml-3 text-xs font-bold rounded-[5px] transition-all ${isActive(path)
+            ? "bg-emerald-600 text-white shadow-xs border border-emerald-500"
+            : "text-slate-700 bg-white/80 hover:bg-emerald-50 hover:text-emerald-800 border border-slate-200/70"
         }`;
 
     const dropdownHeaderClass = (menuName) =>
-        `w-full h-[44px] flex items-center justify-between px-3 bg-white hover:bg-emerald-50/70 text-slate-700 border border-slate-200/80 hover:border-emerald-300 rounded-[5px] cursor-pointer text-sm font-semibold transition-all shadow-2xs`;
+        `w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-white hover:bg-emerald-50/70 text-slate-700 border border-slate-200/80 hover:border-emerald-300 rounded-[5px] cursor-pointer text-sm font-semibold transition-all shadow-2xs`;
 
     return (
         <div className="w-[260px] h-full min-h-0 flex-shrink-0 border-r border-slate-200 bg-slate-50/90 p-3 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-sm">
@@ -70,7 +70,7 @@ const Left = () => {
                 hasPermission(json.report.lockPhone, 'read') ||
                 hasPermission(json.report.setWallpaper, 'read') ||
                 hasPermission(json.report.installment, 'read')) && (
-                    <div>
+                    <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("report")} className={dropdownHeaderClass("report")}>
                             <p className="flex items-center gap-3">
                                 <MdOutlineBarChart size={20} className="text-indigo-600" />
@@ -79,7 +79,7 @@ const Left = () => {
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-indigo-600 ${openMenu === "report" ? "rotate-180" : ""}`} />
                         </div>
 
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.report.allCustomers, 'read') && (
                                 <Link to={json.report.allCustomers} className={subItemClass(json.report.allCustomers)}>{t('allCustomerReport')}</Link>
                             )}
@@ -109,7 +109,7 @@ const Left = () => {
                 hasPermission(json.contract.redeem, 'read') ||
                 hasPermission(json.contract.comments, 'read') ||
                 hasPermission(json.contract.blacklist, 'read')) && (
-                    <div>
+                    <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("contract")} className={dropdownHeaderClass("contract")}>
                             <p className="flex items-center gap-3">
                                 <MdOutlineContactPhone size={20} className="text-emerald-600" />
@@ -118,7 +118,7 @@ const Left = () => {
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "contract" ? "rotate-180" : ""}`} />
                         </div>
 
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "contract" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "contract" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.contract.application, 'read') && (
                                 <Link to={json.contract.application} className={subItemClass(json.contract.application)}>{t('application')}</Link>
                             )}
@@ -143,7 +143,7 @@ const Left = () => {
 
             {/* Installment */}
             {hasPermission(json.installment.paymentHistory, 'read') && (
-                <div>
+                <div className="flex-shrink-0">
                     <div onClick={() => toggleMenu("installment")} className={dropdownHeaderClass("installment")}>
                         <p className="flex items-center gap-3">
                             <IoMdWallet size={20} className="text-emerald-600" />
@@ -152,7 +152,7 @@ const Left = () => {
                         <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "installment" ? "rotate-180" : ""}`} />
                     </div>
 
-                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                         {hasPermission(json.installment.paymentHistory, 'read') && (
                             <Link to={json.installment.paymentHistory} className={subItemClass(json.installment.paymentHistory)}>{t('paymentHistory')}</Link>
                         )}
@@ -164,7 +164,7 @@ const Left = () => {
             {(hasPermission(json.lostphone.actionLockphone, 'read') ||
                 hasPermission(json.lostphone.lockPhone, 'read') ||
                 hasPermission(json.lostphone.unlockPhone, 'read')) && (
-                    <div>
+                    <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("lostphone")} className={dropdownHeaderClass("lostphone")}>
                             <p className="flex items-center gap-3">
                                 <MdOutlinePhoneIphone size={20} className="text-emerald-600" />
@@ -173,7 +173,7 @@ const Left = () => {
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "lostphone" ? "rotate-180" : ""}`} />
                         </div>
 
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "lostphone" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "lostphone" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.lostphone.actionLockphone, 'read') && (
                                 <Link to={json.lostphone.actionLockphone} className={subItemClass(json.lostphone.actionLockphone)}>{t('actions')}</Link>
                             )}
@@ -191,7 +191,7 @@ const Left = () => {
             {(hasPermission(json.wallpaper.actionWallpaper, 'read') ||
                 hasPermission(json.wallpaper.lockWallpaper, 'read') ||
                 hasPermission(json.wallpaper.unlockWallpaper, 'read')) && (
-                    <div>
+                    <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("wallpaper")} className={dropdownHeaderClass("wallpaper")}>
                             <p className="flex items-center gap-3">
                                 <MdOutlineWallpaper size={20} className="text-emerald-600" />
@@ -200,7 +200,7 @@ const Left = () => {
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "wallpaper" ? "rotate-180" : ""}`} />
                         </div>
 
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "wallpaper" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "wallpaper" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.wallpaper.actionWallpaper, 'read') && (
                                 <Link to={json.wallpaper.actionWallpaper} className={subItemClass(json.wallpaper.actionWallpaper)}>{t('actions')}</Link>
                             )}
@@ -217,7 +217,7 @@ const Left = () => {
             {/* History */}
             {(hasPermission(json.history?.loginHistory || '/history/login-history', 'read') ||
                 hasPermission(json.history?.deviceHistory || '/history/device-history', 'read')) && (
-                    <div>
+                    <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("history")} className={dropdownHeaderClass("history")}>
                             <p className="flex items-center gap-3">
                                 <FaHistory size={18} className="text-emerald-600" />
@@ -226,7 +226,7 @@ const Left = () => {
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "history" ? "rotate-180" : ""}`} />
                         </div>
 
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "history" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "history" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.history?.loginHistory || '/history/login-history', 'read') && (
                                 <Link to={json.history?.loginHistory || '/history/login-history'} className={subItemClass(json.history?.loginHistory || '/history/login-history')}>{t('loginHistory')}</Link>
                             )}
@@ -241,7 +241,7 @@ const Left = () => {
             {(hasPermission('/settings/all-account', 'read') ||
                 hasPermission(json.settings.controlSystem, 'read') ||
                 hasPermission('/settings/phone-app', 'read')) && (
-                    <div>
+                    <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("setting")} className={dropdownHeaderClass("setting")}>
                             <p className="flex items-center gap-3">
                                 <IoIosSettings size={20} className="text-emerald-600" />
@@ -250,7 +250,7 @@ const Left = () => {
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "setting" ? "rotate-180" : ""}`} />
                         </div>
 
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "setting" ? "max-h-[500px] mt-2 space-y-1" : "max-h-0"}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "setting" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission('/settings/all-account', 'read') && (
                                 <Link to="/settings/all-account" className={subItemClass('/settings/all-account')}>{t('allAccount')}</Link>
                             )}

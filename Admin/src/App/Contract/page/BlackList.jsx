@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { AiOutlineMenu } from "react-icons/ai";
-import { MdOutlineSync, MdEdit, MdDelete, MdPictureAsPdf } from "react-icons/md";
+import { MdOutlineSync, MdEdit, MdDelete, MdPictureAsPdf, MdSwapHoriz } from "react-icons/md";
 import { FaFileExcel } from 'react-icons/fa';
 import CreateApplication from '../components/CreateApplication';
 import Pagination from '../../../components/Pagination';
@@ -40,6 +40,24 @@ const BlackList = () => {
     };
 
     useEffect(() => { fetchBlackListContracts(page); }, [page]);
+
+    const handleRestoreToActivated = async (item) => {
+        if (!window.confirm(`តើអ្នកពិតជាចង់ផ្លាស់ប្តូរស្ថានភាពកុងត្រារបស់ "${item.customerNameEn || item.customerNameKh}" ត្រឡប់ទៅ Activated វិញមែនទេ?`)) return;
+        try {
+            const res = await fetch(`${API_BASE1}/contracts/${item._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'Activated' })
+            });
+            if (res.ok) {
+                alert(`បានផ្លាស់ប្តូរស្ថានភាពកុងត្រា "${item.customerNameEn}" ទៅជា Activated វិញដោយជោគជ័យ!`);
+                fetchBlackListContracts();
+                setOpenMenuId(null);
+            }
+        } catch (err) {
+            console.error('Restore to Activated error:', err);
+        }
+    };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Delete this blacklist record?')) return;
@@ -152,7 +170,14 @@ const BlackList = () => {
                                             </button>
 
                                             {openMenuId === item._id && (
-                                                <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                    <button
+                                                        onClick={() => handleRestoreToActivated(item)}
+                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                    >
+                                                        <MdSwapHoriz className="text-emerald-600 text-base" />
+                                                        <span>Move to Activated</span>
+                                                    </button>
                                                     {hasPermission('/contract/blacklist', 'edit') && (
                                                         <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2">
                                                             <MdEdit className="text-amber-600" /> Edit
