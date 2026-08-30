@@ -223,14 +223,14 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
             <div className="bg-[#0b0f1e] border border-indigo-500/40 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-xs">
 
                 {/* Header */}
-                <div className="px-5 py-3 border-b border-gray-800 bg-[#0f1426] flex items-center justify-between flex-shrink-0">
+                <div className="px-5 py-3 border-b border-gray-800 bg-[#fff] flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-emerald-950/80 border border-emerald-600/50 flex items-center justify-center text-emerald-400 text-lg">
                             <FaDollarSign />
                         </div>
                         <div>
                             <h3 className="text-sm font-bold text-gray-100 flex items-center gap-2">
-                                <span>តារាងព័ត៌មានបង់ប្រាក់កម្ចី (Loan Repayment Schedule)</span>
+                                <span>តារាងព័ត៌មានបង់ប្រាក់កម្ចី</span>
                                 <span className="px-2.5 py-0.5 bg-indigo-950 text-indigo-300 border border-indigo-700/60 rounded-full text-[10px] font-bold">
                                     {contract.contractId}
                                 </span>
@@ -267,15 +267,15 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                     <table className="w-full text-left text-xs whitespace-nowrap">
                         <thead className="text-gray-300 uppercase tracking-wider border-b border-gray-800">
                             <tr>
-                                <th className="px-3 py-2.5 text-center">ខែ/ថ្ងៃ (Term)</th>
-                                <th className="px-3 py-2.5">ថ្ងៃខែត្រូវបង់ (Due Date)</th>
+                                <th className="px-3 py-2.5 text-center">ខែ/ថ្ងៃ</th>
+                                <th className="px-3 py-2.5">ថ្ងៃខែត្រូវបង់</th>
                                 <th className="px-3 py-2.5 font-mono text-emerald-400">Total loan amount</th>
-                                <th className="px-3 py-2.5 text-amber-400 font-bold">ពិន័យ (Penalty)</th>
-                                <th className="px-3 py-2.5 text-sky-400 font-bold">ត្រូវបង់សរុប (Monthly Due)</th>
+                                <th className="px-3 py-2.5 text-amber-400 font-bold">ពិន័យ</th>
+                                <th className="px-3 py-2.5 text-sky-400 font-bold">ត្រូវបង់សរុប</th>
                                 <th className="px-3 py-2.5 text-emerald-300 font-extrabold">Total</th>
-                                <th className="px-3 py-2.5 text-emerald-400">ភ្ញៀវបានបង់ (Paid Amount)</th>
+                                <th className="px-3 py-2.5 text-emerald-400">ភ្ញៀវបានបង់</th>
                                 <th className="px-3 py-2.5">Comment (Note)</th>
-                                <th className="px-3 py-2.5 text-purple-300">កាលបរិច្ឆេទបានបង់ (Paid Date)</th>
+                                <th className="px-3 py-2.5 text-purple-300">កាលបរិច្ឆេទបានបង់</th>
                                 {!isReadOnly && <th className="px-3 py-2.5 text-center">Action ($)</th>}
                             </tr>
                         </thead>
