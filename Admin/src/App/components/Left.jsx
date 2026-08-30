@@ -24,17 +24,17 @@ const Left = () => {
     const navItemClass = (path) =>
         `w-full h-[44px] flex-shrink-0 flex items-center gap-3 px-3 rounded-[5px] text-sm font-semibold transition-all glass-nav-item ${isActive(path)
             ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 border border-emerald-500"
-            : "bg-white text-slate-700 hover:bg-emerald-50/70 hover:text-emerald-700 border border-slate-200/80 shadow-2xs"
+            : "bg-[var(--app-card,rgba(255,255,255,0.4))] text-[var(--app-text,#0f172a)] hover:bg-emerald-500/20 border border-[var(--app-border,rgba(226,232,240,0.6))] shadow-2xs backdrop-blur-md"
         }`;
 
     const subItemClass = (path) =>
         `flex items-center gap-2 flex-shrink-0 px-3.5 py-2.5 ml-3 text-xs font-bold rounded-[5px] transition-all ${isActive(path)
             ? "bg-emerald-600 text-white shadow-xs border border-emerald-500"
-            : "text-slate-700 bg-white/80 hover:bg-emerald-50 hover:text-emerald-800 border border-slate-200/70"
+            : "bg-[var(--app-card,rgba(255,255,255,0.3))] text-[var(--app-text,#0f172a)] hover:bg-emerald-500/20 border border-[var(--app-border,rgba(226,232,240,0.6))] backdrop-blur-md"
         }`;
 
     const dropdownHeaderClass = (menuName) =>
-        `w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-white hover:bg-emerald-50/70 text-slate-700 border border-slate-200/80 hover:border-emerald-300 rounded-[5px] cursor-pointer text-sm font-semibold transition-all shadow-2xs`;
+        `w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-[var(--app-card,rgba(255,255,255,0.4))] hover:bg-emerald-500/20 text-[var(--app-text,#0f172a)] border border-[var(--app-border,rgba(226,232,240,0.6))] rounded-[5px] cursor-pointer text-sm font-semibold transition-all shadow-2xs backdrop-blur-md`;
 
     return (
         <div

@@ -370,3 +370,18 @@ thead th,
 .table-container th {
     color: var(--app-th-color, #6366f1) !important;
 }
+
+/* TABLE BODY ROWS & CELLS DYNAMIC TEXT & HOVER STYLING */
+table tbody tr,
+table tbody td,
+.table-container td {
+    color: var(--app-text, #0f172a);
+}
+
+table tbody tr {
+    background-color: transparent !important;
+}
+
+table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
