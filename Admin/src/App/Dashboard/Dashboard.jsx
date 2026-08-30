@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import {
-    MdDashboard, MdOutlineWallpaper, MdOutlineSync, MdCheckCircle,
+    MdDashboard, MdOutlineSync, MdCheckCircle,
     MdTrendingUp, MdPeople, MdBarChart, MdClose,
     MdDateRange, MdFilterList, MdInfo
 } from 'react-icons/md';
@@ -13,6 +13,12 @@ const Dashboard = () => {
     const { t } = useLanguage();
     const { API_BASE, API_BASE1, user } = useAuth();
 
+    // ── Master Admin Check ──
+    const isMasterAdmin = useMemo(() => {
+        return user?.username === '@hakyonghouv' || user?.username === 'hakyonghouv' || user?.role === 'Administrator' || user?.isImmutable;
+    }, [user]);
+
+    // ── State Management ──
     const [stats, setStats] = useState({
         totalContracts: 0, activatedContracts: 0, applicationContracts: 0,
         checkContracts: 0, redeemContracts: 0, commentsContracts: 0,
@@ -21,38 +27,37 @@ const Dashboard = () => {
         totalLoanAmount: 0, totalCustomerReceived: 0, totalBorrowers: 0, outstandingBalance: 0
     });
 
-    const [timeRange, setTimeRange] = useState('monthly');
-    const [brandFilter, setBrandFilter] = useState(user?.brand || '');
+    const [timeRange, setTimeRange] = useState('monthly'); // 'daily', 'monthly', 'yearly', 'all'
+    const [brandFilter, setBrandFilter] = useState('');
     const [brandsList, setBrandsList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
 
-    const [sessionModal, setSessionModal] = useState(false);
-    const [recentSessions, setRecentSessions] = useState([]);
-    const [sessionsLoading, setSessionsLoading] = useState(false);
-
-    const todayStr = new Date().toISOString().split('T')[0];
-    const thirtyDaysAgoStr = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    const [rawContracts, setRawContracts] = useState([]);
-    const [rawPayments, setRawPayments] = useState([]);
-
-    const [startDate, setStartDate] = useState(thirtyDaysAgoStr);
-    const [endDate, setEndDate] = useState(todayStr);
-    const [activityTypeFilter, setActivityTypeFilter] = useState('All');
-    const [allActivities, setAllActivities] = useState([]);
-    const [detailModal, setDetailModal] = useState({ open: false, title: '', items: [] });
-    const [detailSearch, setDetailSearch] = useState('');
-
-    const isMasterAdmin = useMemo(() => {
-        return user?.username === '@hakyonghouv' || user?.username === 'hakyonghouv' || user?.role === 'Administrator' || user?.isImmutable;
-    }, [user]);
-
+    // Active Brand Filter Scope
     const activeUserBrand = useMemo(() => {
         if (!isMasterAdmin && user?.brand) return user.brand;
         return brandFilter;
     }, [isMasterAdmin, user, brandFilter]);
 
+    // Audit & Activity State
+    const todayStr = new Date().toISOString().split('T')[0];
+    const thirtyDaysAgoStr = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const [rawContracts, setRawContracts] = useState([]);
+    const [rawPayments, setRawPayments] = useState([]);
+    const [startDate, setStartDate] = useState(thirtyDaysAgoStr);
+    const [endDate, setEndDate] = useState(todayStr);
+    const [activityTypeFilter, setActivityTypeFilter] = useState('All');
+    const [allActivities, setAllActivities] = useState([]);
+
+    // Modals
+    const [sessionModal, setSessionModal] = useState(false);
+    const [recentSessions, setRecentSessions] = useState([]);
+    const [sessionsLoading, setSessionsLoading] = useState(false);
+    const [detailModal, setDetailModal] = useState({ open: false, title: '', items: [] });
+    const [detailSearch, setDetailSearch] = useState('');
+
+    // ── API Fetchers ──
     const fetchBrands = async () => {
         try {
             const res = await fetch(`${API_BASE}/controlsystem?brand=`);
@@ -82,7 +87,7 @@ const Dashboard = () => {
             console.error('Failed to fetch dashboard stats:', err);
         } finally {
             setLoading(false);
-            setTimeout(() => setReloading(false), 600);
+            setTimeout(() => setReloading(false), 500);
         }
     };
 
@@ -99,11 +104,11 @@ const Dashboard = () => {
                 fetch(`${API_BASE1}/contracts?${params.toString()}`),
                 fetch(`${API_BASE1}/payments?${params.toString()}`)
             ]);
-            // normalize any date string to YYYY-MM-DD
+
             const toDate = (raw) => {
                 if (!raw) return todayStr;
                 const s = String(raw);
-                if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;  // already YYYY-MM-DD
+                if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
                 const d = new Date(s);
                 if (!isNaN(d)) return d.toISOString().split('T')[0];
                 return todayStr;
@@ -175,7 +180,7 @@ const Dashboard = () => {
             logs.sort((a, b) => b.timestamp - a.timestamp);
             setAllActivities(logs);
         } catch (err) {
-            console.error('Failed to fetch activity audit logs:', err);
+            console.error('Failed to fetch audit logs:', err);
         }
     };
 
@@ -186,11 +191,8 @@ const Dashboard = () => {
             if (res.ok) {
                 const users = await res.json();
                 const allSessions = [];
-
                 users.forEach(u => {
-                    // Non-master admins only see their own login sessions
                     if (!isMasterAdmin && u.username !== user?.username) return;
-
                     (u.loginHistory || []).slice(-5).forEach(log => {
                         allSessions.push({ ...log, username: u.username, name: u.name, role: u.role });
                     });
@@ -216,9 +218,9 @@ const Dashboard = () => {
 
     const handleOpenSessions = () => { setSessionModal(true); fetchRecentSessions(); };
 
+    // ── Computed Filtered Data ──
     const filteredAuditLogs = useMemo(() => {
         return allActivities.filter(act => {
-            // act.date is always YYYY-MM-DD (normalized in fetchAuditLogs)
             const d = (act.date || '').slice(0, 10);
             const matchesStart = !startDate || d >= startDate;
             const matchesEnd = !endDate || d <= endDate;
@@ -248,47 +250,7 @@ const Dashboard = () => {
         setDetailSearch('');
     };
 
-    const summaryTableData = useMemo(() => {
-        const brandMap = {};
-
-        rawContracts.forEach(c => {
-            const b = c.brand || 'General / MDM';
-            if (!brandMap[b]) {
-                brandMap[b] = {
-                    brand: b,
-                    totalContracts: 0,
-                    activatedCount: 0,
-                    loanDisbursed: 0,
-                    monthlyCollectionEst: 0,
-                    phoneLocked: 0,
-                    wallpaperLocked: 0,
-                    revenueCollected: 0
-                };
-            }
-            brandMap[b].totalContracts += 1;
-            if (c.status === 'Activated') {
-                brandMap[b].activatedCount += 1;
-                brandMap[b].loanDisbursed += (Number(c.amount) || 0);
-                brandMap[b].monthlyCollectionEst += (Number(c.monthlyPayment) || 0);
-            }
-            if (c.lockPhoneStatus === 'Locked') brandMap[b].phoneLocked += 1;
-            if (c.lockWallpaperStatus === 'Locked') brandMap[b].wallpaperLocked += 1;
-        });
-
-        // Lookup for contract brands
-        const cBrandLookup = {};
-        rawContracts.forEach(c => { if (c.contractId) cBrandLookup[c.contractId] = c.brand || 'General / MDM'; });
-
-        rawPayments.forEach(p => {
-            const b = p.brand || cBrandLookup[p.contractId] || 'General / MDM';
-            if (brandMap[b]) {
-                brandMap[b].revenueCollected += (Number(p.amount) || 0);
-            }
-        });
-
-        return Object.values(brandMap);
-    }, [rawContracts, rawPayments]);
-
+    // Percentage Calculations
     const activatedPct = stats.totalContracts ? Math.round((stats.activatedContracts / stats.totalContracts) * 100) : 0;
     const applicationPct = stats.totalContracts ? Math.round((stats.applicationContracts / stats.totalContracts) * 100) : 0;
     const checkPct = stats.totalContracts ? Math.round((stats.checkContracts / stats.totalContracts) * 100) : 0;
@@ -297,39 +259,21 @@ const Dashboard = () => {
     const phoneLockPct = stats.totalContracts ? Math.round((stats.lockedPhones / stats.totalContracts) * 100) : 0;
     const wallpaperLockPct = stats.totalContracts ? Math.round((stats.lockedWallpapers / stats.totalContracts) * 100) : 0;
 
-    // ── Real Financial Data from Backend ──
-    const customerReceivedAmt = stats.totalCustomerReceived || 0;     // ទឹកប្រាក់ដែលភ្ញៀវទទួល (monthlyPayment)
-    const loanOutAmt = stats.totalLoanAmount || 0;                    // ប្រាក់ LOAN ចេញ (amount)
-    const weCollectedAmt = stats.totalRevenue || 0;                   // ទឹកប្រាក់ដែលយើងទទួល (payments)
-    const totalBorrowers = stats.totalBorrowers || stats.totalContracts || 0; // ចំនួនភ្ញៀវខ្ចី
-    const netProfitLoss = weCollectedAmt - customerReceivedAmt;       // ចំណេញ/ខាត (collected - customer received)
-    const outstandingBal = stats.outstandingBalance || 0;             // ប្រាក់ជំពាក់
+    // Financial Metrics
+    const customerReceivedAmt = stats.totalCustomerReceived || 0;
+    const loanOutAmt = stats.totalLoanAmount || 0;
+    const weCollectedAmt = stats.totalRevenue || 0;
+    const totalBorrowers = stats.totalBorrowers || stats.totalContracts || 0;
+    const netProfitLoss = weCollectedAmt - customerReceivedAmt;
+    const outstandingBal = stats.outstandingBalance || 0;
     const profitPct = customerReceivedAmt > 0 ? ((netProfitLoss / customerReceivedAmt) * 100).toFixed(1) : '0.0';
     const collectionPct = customerReceivedAmt > 0 ? Math.round((weCollectedAmt / customerReceivedAmt) * 100) : 0;
-    const outstandingPct = loanOutAmt > 0 ? Math.round((outstandingBal / loanOutAmt) * 100) : 0;
     const isProfit = netProfitLoss >= 0;
-    const isAdmin = user?.role === 'Administrator';
 
-    const modalFilteredItems = useMemo(() => {
-        if (!detailSearch.trim()) return detailModal.items;
-        const q = detailSearch.toLowerCase();
-        return detailModal.items.filter(i =>
-            i.customerName?.toLowerCase().includes(q) || i.model?.toLowerCase().includes(q) ||
-            i.serialNumber?.toLowerCase().includes(q) || i.type?.toLowerCase().includes(q)
-        );
-    }, [detailModal.items, detailSearch]);
-
+    // Bar Chart Comparative Data
     const barChartData = useMemo(() => {
-        const filteredContracts = rawContracts.filter(c => {
-            if (brandFilter && user?.role === 'Administrator') return c.brand === brandFilter;
-            if (user?.brand && !user?.isImmutable && user?.username !== '@hakyonghouv') return c.brand === user.brand;
-            return true;
-        });
-
-        const filteredPayments = rawPayments.filter(p => {
-            if (brandFilter && user?.role === 'Administrator') return !p.brand || p.brand === brandFilter;
-            return true;
-        });
+        const filteredContracts = rawContracts;
+        const filteredPayments = rawPayments;
 
         const toDateStr = (raw) => {
             if (!raw) return todayStr;
@@ -452,213 +396,105 @@ const Dashboard = () => {
             return [
                 { label: 'Loan Disbursed', amount: totalLoan, color: 'bg-blue-600', text: 'text-blue-700', type: 'financial', entry: 0, exit: 0 },
                 { label: 'Revenue Collected', amount: totalRev, color: 'bg-emerald-600', text: 'text-emerald-700', type: 'financial', entry: 0, exit: 0 },
-                { label: totalProfit >= 0 ? 'Net Profit' : 'Net Loss', amount: Math.abs(totalProfit), color: totalProfit >= 0 ? 'bg-teal-600' : 'bg-red-600', text: totalProfit >= 0 ? 'text-teal-700' : 'text-red-700', type: 'financial', entry: 0, exit: 0 },
-                { label: 'Total Requested Amount', amount: totalLoan, color: 'bg-amber-500', text: 'text-amber-700', type: 'financial', entry: 0, exit: 0 },
+                { label: totalProfit >= 0 ? 'Net Profit' : 'Net Loss', amount: Math.abs(totalProfit), color: totalProfit >= 0 ? 'bg-teal-600' : 'bg-rose-600', text: totalProfit >= 0 ? 'text-teal-700' : 'text-rose-700', type: 'financial', entry: 0, exit: 0 },
+                { label: 'Total Loan Disbursed', amount: totalLoan, color: 'bg-amber-500', text: 'text-amber-700', type: 'financial', entry: 0, exit: 0 },
                 { label: 'Entry Customers', amount: totalEntry, color: 'bg-indigo-600', text: 'text-indigo-700', type: 'count', entry: totalEntry, exit: 0 },
                 { label: 'Exit Redeemed', amount: totalExit, color: 'bg-purple-600', text: 'text-purple-700', type: 'count', entry: 0, exit: totalExit }
             ];
         }
-    }, [timeRange, rawContracts, rawPayments, brandFilter, user, todayStr]);
+    }, [timeRange, rawContracts, rawPayments, todayStr]);
+
+    // Summary Breakdown Table Data
+    const summaryTableData = useMemo(() => {
+        const brandMap = {};
+
+        rawContracts.forEach(c => {
+            const b = c.brand || 'General / MDM';
+            if (!brandMap[b]) {
+                brandMap[b] = {
+                    brand: b,
+                    totalContracts: 0,
+                    activatedCount: 0,
+                    loanDisbursed: 0,
+                    monthlyCollectionEst: 0,
+                    phoneLocked: 0,
+                    wallpaperLocked: 0,
+                    revenueCollected: 0
+                };
+            }
+            brandMap[b].totalContracts += 1;
+            if (c.status === 'Activated') {
+                brandMap[b].activatedCount += 1;
+                brandMap[b].loanDisbursed += (Number(c.amount) || 0);
+                brandMap[b].monthlyCollectionEst += (Number(c.monthlyPayment) || 0);
+            }
+            if (c.lockPhoneStatus === 'Locked') brandMap[b].phoneLocked += 1;
+            if (c.lockWallpaperStatus === 'Locked') brandMap[b].wallpaperLocked += 1;
+        });
+
+        const cBrandLookup = {};
+        rawContracts.forEach(c => { if (c.contractId) cBrandLookup[c.contractId] = c.brand || 'General / MDM'; });
+
+        rawPayments.forEach(p => {
+            const b = p.brand || cBrandLookup[p.contractId] || 'General / MDM';
+            if (brandMap[b]) {
+                brandMap[b].revenueCollected += (Number(p.amount) || 0);
+            }
+        });
+
+        return Object.values(brandMap);
+    }, [rawContracts, rawPayments]);
+
+    const modalFilteredItems = useMemo(() => {
+        if (!detailSearch.trim()) return detailModal.items;
+        const q = detailSearch.toLowerCase();
+        return detailModal.items.filter(i =>
+            i.customerName?.toLowerCase().includes(q) || i.model?.toLowerCase().includes(q) ||
+            i.serialNumber?.toLowerCase().includes(q) || i.type?.toLowerCase().includes(q)
+        );
+    }, [detailModal.items, detailSearch]);
 
     return (
-        <div className="w-full min-h-screen bg-[#f4f6f8] p-6 space-y-6 select-none">
+        <div className="w-full min-h-screen bg-[#f8fafc] p-4 sm:p-6 lg:p-8 space-y-6 select-none font-sans text-slate-900">
 
-            {/* ── Header ── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                        <MdDashboard className="text-emerald-600 text-3xl" />
-                        {t('dashboard')}
-                    </h1>
-                    <p className="text-xs text-slate-600 font-semibold mt-1">System Analytics, Financial Profit/Loss & Real-Time Tracking</p>
+            {/* ── 1. Top Executive Header Bar ── */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-xl font-bold border border-emerald-500/20">
+                            <MdDashboard />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+                                {t('dashboard')}
+                            </h1>
+                            <p className="text-xs text-slate-600 font-semibold">Executive Analytics • Financial Intelligence &amp; System Health</p>
+                        </div>
+                    </div>
                 </div>
+
                 <div className="flex flex-wrap items-center gap-3">
-                    {isAdmin && brandsList.length > 0 && (
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 shadow-xs">
-                            <FaLayerGroup className="text-emerald-600 text-xs" />
-                            <select value={brandFilter} onChange={e => setBrandFilter(e.target.value)}
-                                className="bg-transparent text-slate-800 font-bold cursor-pointer outline-none pr-1">
-                                <option value="">All Brands</option>
+                    {/* Brand Scope Badge */}
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700">
+                        <FaLayerGroup className="text-emerald-600 text-xs" />
+                        {isMasterAdmin && brandsList.length > 0 ? (
+                            <select
+                                value={brandFilter}
+                                onChange={e => setBrandFilter(e.target.value)}
+                                className="bg-transparent text-slate-900 font-bold outline-none cursor-pointer pr-1"
+                            >
+                                <option value="">🌐 All Brands</option>
                                 {brandsList.map(b => <option key={b} value={b}>{b}</option>)}
                             </select>
-                        </div>
-                    )}
-                    <div className="flex items-center p-1 bg-white border border-slate-300 rounded-xl text-xs font-bold shadow-xs">
-                        {[['daily', 'Daily'], ['monthly', 'Monthly'], ['yearly', 'Yearly'], ['all', 'All Time']].map(([val, label]) => (
-                            <button key={val} onClick={() => setTimeRange(val)}
-                                className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${timeRange === val ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-                                {label}
-                            </button>
-                        ))}
-                    </div>
-                    <button onClick={handleOpenSessions}
-                        className="flex items-center gap-2 px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs">
-                        <FaHistory className="text-sm" /> <span>Recent Sessions</span>
-                    </button>
-                    <button onClick={fetchDashboardStats} disabled={reloading}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs">
-                        <MdOutlineSync className={`text-base ${reloading ? 'spin-reload text-emerald-600' : ''}`} />
-                        <span>{t('reload')}</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Brand filter badge */}
-            {(brandFilter || user?.brand) && (
-                <div className="flex items-center gap-2 text-xs">
-                    <span className="text-slate-600 font-semibold">Showing stats for:</span>
-                    <span className="px-3 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold flex items-center gap-1.5">
-                        <FaLayerGroup size={10} /> {brandFilter || user?.brand}
-                        {isAdmin && brandFilter && (
-                            <button onClick={() => setBrandFilter('')} className="ml-1 text-emerald-700 hover:text-emerald-950 cursor-pointer">✕</button>
+                        ) : (
+                            <span className="text-emerald-700 font-bold font-mono">
+                                🏢 {user?.brand || 'Default Brand'}
+                            </span>
                         )}
-                    </span>
-                </div>
-            )}
-
-            {/* ── Profit & Loss ── */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 space-y-5 shadow-md">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                        <MdTrendingUp className="text-xl text-emerald-600" /> Profit &amp; Loss Financial Analytics
-                    </h2>
-                    <span className={`px-3 py-1 border rounded-full font-mono text-xs font-bold ${isProfit
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                        : 'bg-red-50 text-red-800 border-red-300'
-                        }`}>
-                        {isProfit ? '▲' : '▼'} Net {isProfit ? 'Profit' : 'Loss'}: {Math.abs(Number(profitPct))}%
-                    </span>
-                </div>
-
-                {/* ── 4 Real Finance Cards ── */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-
-                    {/* Card 1: Customer Received Amount */}
-                    <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200">
-                        <span className="text-blue-600 block text-[11px] uppercase font-bold tracking-wide">{t('ctmReceived')}</span>
-                        <span className="text-2xl font-black font-mono block mt-1 text-blue-700">
-                            ${customerReceivedAmt.toLocaleString()}
-                        </span>
-                        <span className="text-[10px] text-blue-500 font-semibold mt-1 block">Customer Received Amount</span>
-                        <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-blue-100">
-                            <span className="text-[10px] text-blue-400 font-medium">Loan Out: <span className="font-mono font-bold text-blue-600">${loanOutAmt.toLocaleString()}</span></span>
-                            <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded-full">{totalBorrowers} ភ្ញៀវ</span>
-                        </div>
                     </div>
 
-                    {/* Card 2: We Collected */}
-                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
-                        <span className="text-emerald-700 block text-[11px] uppercase font-bold tracking-wide">ទឹកប្រាក់ដែលយើងទទួល</span>
-                        <span className="text-2xl font-black font-mono block mt-1 text-emerald-700">${weCollectedAmt.toLocaleString()}</span>
-                        <span className="text-[10px] text-emerald-600 font-semibold mt-1 block">Total Collected ({collectionPct}% of Customer Received)</span>
-                        <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-emerald-100">
-                            <span className="text-[10px] text-emerald-500 font-medium">{stats.paymentCount} Transactions</span>
-                            <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">{collectionPct}%</span>
-                        </div>
-                    </div>
-
-                    {/* Card 3: Net Profit / Loss */}
-                    <div className={`p-4 rounded-2xl border ${isProfit ? 'bg-teal-50 border-teal-200' : 'bg-red-50 border-red-200'
-                        }`}>
-                        <span className={`block text-[11px] uppercase font-bold tracking-wide ${isProfit ? 'text-teal-700' : 'text-red-700'
-                            }`}>ចំណេញ / ខាត</span>
-                        <span className={`text-2xl font-black font-mono block mt-1 ${isProfit ? 'text-teal-700' : 'text-red-700'
-                            }`}>
-                            {isProfit ? '+' : '-'}${Math.abs(netProfitLoss).toLocaleString()}
-                        </span>
-                        <span className={`text-[10px] font-semibold mt-1 block ${isProfit ? 'text-teal-600' : 'text-red-600'
-                            }`}>Net {isProfit ? 'Profit' : 'Loss'} ({profitPct}%)</span>
-                        <div className={`flex items-center justify-between mt-1.5 pt-1.5 border-t ${isProfit ? 'border-teal-100' : 'border-red-100'
-                            }`}>
-                            <span className={`text-[10px] font-medium ${isProfit ? 'text-teal-500' : 'text-red-400'
-                                }`}>{isProfit ? 'Collected > Customer Received' : 'Loss: Below customer received'}</span>
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isProfit ? 'bg-teal-100 text-teal-700' : 'bg-red-100 text-red-700'
-                                }`}>{isProfit ? '+' : ''}{profitPct}%</span>
-                        </div>
-                    </div>
-
-                    {/* Card 4: Total Requested Amount */}
-                    <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
-                        <span className="text-amber-700 block text-[11px] uppercase font-bold tracking-wide">ទឹកប្រាក់សរុបដែលភ្ញៀវដាក់ស្នើ</span>
-                        <span className="text-2xl font-black font-mono block mt-1 text-amber-700">${loanOutAmt.toLocaleString()}</span>
-                        <span className="text-[10px] text-amber-600 font-semibold mt-1 block">Total Requested Amount</span>
-                        <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-amber-100">
-                            <span className="text-[10px] text-amber-500 font-medium">Loan Out</span>
-                            <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-full">{totalBorrowers} Loans</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Stacked Bar Chart ── */}
-                <div className="space-y-3 pt-2 border-t border-slate-200">
-                    <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Financial Flow Visualization</p>
-                    {/* Loan vs Collected Bar */}
-                    <div>
-                        <div className="flex justify-between text-[10px] font-bold text-slate-600 mb-1">
-                            <span>Loan Disbursed vs Collected</span>
-                            <span className="font-mono">{collectionPct}% collected</span>
-                        </div>
-                        <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
-                            <div
-                                className="h-full bg-emerald-500 transition-all duration-700 flex items-center justify-center"
-                                style={{ width: `${Math.min(collectionPct, 100)}%` }}
-                            >
-                                {collectionPct > 10 && <span className="text-[9px] text-white font-bold">{collectionPct}%</span>}
-                            </div>
-                            <div
-                                className="h-full bg-blue-300 transition-all duration-700"
-                                style={{ width: `${Math.max(100 - collectionPct, 0)}%` }}
-                            />
-                        </div>
-                        <div className="flex gap-4 mt-1 text-[10px] text-slate-600 font-semibold">
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500 rounded-sm" />Collected ${weCollectedAmt.toLocaleString()}</span>
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-blue-300 rounded-sm" />Customer Received ${customerReceivedAmt.toLocaleString()}</span>
-                        </div>
-                    </div>
-                    {/* Profit/Loss Bar */}
-                    <div>
-                        <div className="flex justify-between text-[10px] font-bold text-slate-600 mb-1">
-                            <span>Profit / Loss Ratio</span>
-                            <span className={`font-mono ${isProfit ? 'text-teal-700' : 'text-red-700'}`}>
-                                {isProfit ? '+' : ''}{profitPct}%
-                            </span>
-                        </div>
-                        <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
-                            <div
-                                className={`h-full transition-all duration-700 flex items-center justify-center ${isProfit ? 'bg-teal-500' : 'bg-red-500'
-                                    }`}
-                                style={{ width: `${Math.min(Math.abs(Number(profitPct)), 100)}%` }}
-                            >
-                                {Math.abs(Number(profitPct)) > 5 && (
-                                    <span className="text-[9px] text-white font-bold">{Math.abs(Number(profitPct))}%</span>
-                                )}
-                            </div>
-                        </div>
-                        <div className="flex gap-4 mt-1 text-[10px] text-slate-600 font-semibold">
-                            <span className={`flex items-center gap-1 ${isProfit ? 'text-teal-700' : 'text-red-700'}`}>
-                                <span className={`w-2 h-2 rounded-sm ${isProfit ? 'bg-teal-500' : 'bg-red-500'}`} />
-                                {isProfit ? 'Profit' : 'Loss'}: {isProfit ? '+' : '-'}${Math.abs(netProfitLoss).toLocaleString()} ({profitPct}%)
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Interactive Bar Chart (ក្រាបសសរព័ត៌មានហិរញ្ញវត្ថុ ភ្ញៀវចូល និងភ្ញៀវចេញ) ── */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 space-y-4 shadow-md">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
-                    <div>
-                        <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                            <FaChartBar className="text-xl text-emerald-600" />
-                            ក្រាបសសរវិភាគព័ត៌មាន (Bar Chart Analytics — {timeRange.toUpperCase()})
-                        </h2>
-                        <p className="text-xs text-slate-500 font-medium mt-0.5">
-                            បង្ហាញព័ត៌មានហិរញ្ញវត្ថុ ចំណូល/ចំណាយ/ចំណេញ/ខាត និងចំនួនភ្ញៀវចូល-ចេញ ({timeRange})
-                        </p>
-                    </div>
-
-                    {/* Dynamic Time Range Filter Pills */}
-                    <div className="flex items-center p-1 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold shadow-2xs">
+                    {/* Period Filter Buttons */}
+                    <div className="flex items-center p-1 bg-slate-100 border border-slate-200 rounded-2xl text-xs font-bold">
                         {[
                             ['daily', 'Daily'],
                             ['monthly', 'Monthly'],
@@ -668,83 +504,154 @@ const Dashboard = () => {
                             <button
                                 key={val}
                                 onClick={() => setTimeRange(val)}
-                                className={`px-3.5 py-1.5 rounded-xl cursor-pointer font-bold transition-all ${timeRange === val
-                                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                                className={`px-3 py-1.5 rounded-xl cursor-pointer font-bold transition-all ${timeRange === val
+                                    ? 'bg-slate-900 text-white shadow-xs'
+                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                                     }`}
                             >
                                 {label}
                             </button>
                         ))}
                     </div>
+
+                    {/* Sessions & Reload */}
+                    <button
+                        onClick={handleOpenSessions}
+                        className="flex items-center gap-2 px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-2xl text-xs font-bold cursor-pointer transition-all shadow-2xs"
+                    >
+                        <FaHistory className="text-xs" /> <span>Sessions</span>
+                    </button>
+                    <button
+                        onClick={fetchDashboardStats}
+                        disabled={reloading}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-bold cursor-pointer transition-all shadow-xs"
+                    >
+                        <MdOutlineSync className={`text-base ${reloading ? 'spin-reload text-emerald-400' : ''}`} />
+                        <span>{t('reload')}</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* ── 2. Executive Financial Scorecard (4 Hero KPI Cards) ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Card 1: Loan Disbursed */}
+                <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-3 relative overflow-hidden group hover:border-blue-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">ប្រាក់ LOAN ចេញសរុប</span>
+                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform">
+                            <IoMdWallet />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-2xl font-black font-mono text-slate-900">${loanOutAmt.toLocaleString()}</div>
+                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">Total Loan Disbursed</p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-600">
+                        <span>ភ្ញៀវសរុប: <strong className="text-slate-900 font-mono">{totalBorrowers}</strong> នាក់</span>
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 font-mono font-bold rounded-full border border-blue-200">LOAN</span>
+                    </div>
                 </div>
 
-                {/* Chart Legend */}
-                <div className="flex flex-wrap items-center gap-4 text-xs font-bold pt-1">
-                    <span className="flex items-center gap-1.5 text-emerald-700">
-                        <span className="w-3 h-3 bg-emerald-600 rounded-sm"></span> ទឹកប្រាក់ប្រមូលបាន (Revenue Collected)
-                    </span>
-                    <span className="flex items-center gap-1.5 text-blue-700">
-                        <span className="w-3 h-3 bg-blue-600 rounded-sm"></span> ទឹកប្រាក់ចេញ LOAN (Loan Disbursed)
-                    </span>
-                    <span className="flex items-center gap-1.5 text-teal-700">
-                        <span className="w-3 h-3 bg-teal-600 rounded-sm"></span> {isProfit ? 'ចំណេញ Net Profit' : 'ខាត Net Loss'}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-indigo-700">
-                        <span className="w-3 h-3 bg-indigo-600 rounded-sm"></span> ភ្ញៀវចូល (Activated Entry)
-                    </span>
-                    <span className="flex items-center gap-1.5 text-purple-700">
-                        <span className="w-3 h-3 bg-purple-600 rounded-sm"></span> ភ្ញៀវចេញ (Redeemed Exit)
-                    </span>
+                {/* Card 2: Revenue Collected */}
+                <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-3 relative overflow-hidden group hover:border-emerald-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">ទឹកប្រាក់ប្រមូលបាន</span>
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform">
+                            <MdTrendingUp />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-2xl font-black font-mono text-emerald-600">${weCollectedAmt.toLocaleString()}</div>
+                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">Total Revenue Collected ({collectionPct}%)</p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-600">
+                        <span>ប្រកតិនប្រតិបត្តិការ: <strong className="text-slate-900 font-mono">{stats.paymentCount}</strong></span>
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-mono font-bold rounded-full border border-emerald-200">{collectionPct}%</span>
+                    </div>
                 </div>
 
-                {/* Vertical Bar Chart Container */}
-                <div className="h-80 w-full bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-end justify-around gap-4 overflow-x-auto relative">
-                    {timeRange === 'all' ? (
-                        barChartData.map((item, idx) => {
-                            const maxVal = Math.max(...barChartData.map(b => b.amount || 1));
-                            const heightPct = Math.max(18, Math.min(100, Math.round((item.amount / maxVal) * 100)));
-                            return (
-                                <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group relative cursor-pointer">
-                                    {/* Hover Popover Tooltip */}
-                                    <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col bg-slate-900 text-white text-[11px] p-3 rounded-xl shadow-2xl z-30 min-w-[170px] pointer-events-none transition-all animate-fade-in border border-slate-700">
-                                        <div className="font-bold border-b border-slate-700 pb-1 mb-1.5 text-emerald-400 font-mono">{item.label}</div>
-                                        <div className="flex justify-between items-center py-0.5">
-                                            <span className="text-slate-400">Value:</span>
-                                            <span className="font-bold font-mono text-emerald-300">
-                                                {item.type === 'financial' ? `$${item.amount.toLocaleString()}` : `${item.amount} នាក់`}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center py-0.5 text-[10px]">
-                                            <span className="text-slate-400">Type:</span>
-                                            <span className="font-bold text-indigo-300 uppercase">{item.type}</span>
-                                        </div>
-                                    </div>
+                {/* Card 3: Net Profit / Loss */}
+                <div className={`p-6 bg-white border rounded-3xl shadow-xs space-y-3 relative overflow-hidden group transition-all ${isProfit ? 'hover:border-teal-300' : 'hover:border-rose-300'}`}>
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">ចំណេញ / ខាត (Net Profit)</span>
+                        <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform ${isProfit ? 'bg-teal-50 text-teal-600 border-teal-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                            <MdBarChart />
+                        </div>
+                    </div>
+                    <div>
+                        <div className={`text-2xl font-black font-mono ${isProfit ? 'text-teal-600' : 'text-rose-600'}`}>
+                            {isProfit ? '+' : '-'}${Math.abs(netProfitLoss).toLocaleString()}
+                        </div>
+                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">Margin Ratio: {profitPct}%</p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-600">
+                        <span>ស្ថានភាព: <strong className={isProfit ? 'text-teal-700 font-bold' : 'text-rose-700 font-bold'}>{isProfit ? 'Net Profit' : 'Net Loss'}</strong></span>
+                        <span className={`px-2 py-0.5 font-mono font-bold rounded-full border ${isProfit ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                            {isProfit ? '▲' : '▼'} {profitPct}%
+                        </span>
+                    </div>
+                </div>
 
-                                    {/* Number on top of bar */}
-                                    <span className={`text-[11px] font-black font-mono px-1.5 py-0.5 rounded bg-white border border-slate-200 shadow-2xs ${item.text}`}>
-                                        {item.type === 'financial' ? `$${item.amount.toLocaleString()}` : `${item.amount} នាក់`}
-                                    </span>
-                                    <div
-                                        style={{ height: `${heightPct}%` }}
-                                        className={`w-full max-w-[54px] ${item.color} rounded-t-xl transition-all duration-500 group-hover:scale-105 group-hover:brightness-110 shadow-md flex items-center justify-center`}
-                                    >
-                                        <span className="text-[10px] font-bold text-white font-mono">{heightPct}%</span>
-                                    </div>
-                                    <span className="text-[10px] font-bold text-slate-700 text-center truncate max-w-[90px]">{item.label}</span>
-                                </div>
-                            );
-                        })
-                    ) : (
-                        barChartData.map((item, idx) => {
+                {/* Card 4: Outstanding Balance */}
+                <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-3 relative overflow-hidden group hover:border-amber-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">ប្រាក់ជំពាក់នៅសល់</span>
+                        <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform">
+                            <FaLock />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-2xl font-black font-mono text-amber-600">${outstandingBal.toLocaleString()}</div>
+                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">Outstanding Receivables</p>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-600">
+                        <span>ទូរស័ព្ទចាក់សោរ: <strong className="text-rose-600 font-mono">{stats.lockedPhones}</strong></span>
+                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-mono font-bold rounded-full border border-amber-200">Active</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── 3. Dual Main Charts: Interactive Bar Chart & Donut Distribution ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {/* Bar Chart (Left 2 Columns) */}
+                <div className="lg:col-span-2 p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                        <div>
+                            <h2 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
+                                <FaChartBar className="text-emerald-600 text-lg" />
+                                ក្រាបសសរវិភាគការប្រមូលចំណូល &amp; LOAN ({timeRange.toUpperCase()})
+                            </h2>
+                            <p className="text-xs text-slate-600 font-medium mt-0.5">
+                                ប្រៀបធៀបទឹកប្រាក់ប្រមូលបាន ចេញ LOAN និងចំនួនភ្ញៀវចូល-ចេញ
+                            </p>
+                        </div>
+
+                        {/* Chart Legend */}
+                        <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold">
+                            <span className="flex items-center gap-1.5 text-emerald-700">
+                                <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span> ចំណូលប្រមូលបាន
+                            </span>
+                            <span className="flex items-center gap-1.5 text-blue-700">
+                                <span className="w-2.5 h-2.5 bg-blue-500 rounded-full"></span> LOAN ចេញ
+                            </span>
+                            <span className="flex items-center gap-1.5 text-indigo-700">
+                                <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full"></span> ភ្ញៀវចូល
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Chart Container */}
+                    <div className="h-72 w-full bg-slate-50/60 rounded-2xl p-4 border border-slate-100 flex items-end justify-around gap-4 overflow-x-auto relative">
+                        {barChartData.map((item, idx) => {
                             const maxVal = Math.max(...barChartData.map(b => Math.max(b.revenue, b.loan, 1)));
                             return (
                                 <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group relative cursor-pointer">
-                                    {/* Hover Popover Tooltip */}
-                                    <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col bg-slate-900 text-white text-[11px] p-3 rounded-2xl shadow-2xl z-30 min-w-[210px] pointer-events-none transition-all animate-fade-in border border-slate-700 space-y-1">
+                                    {/* Tooltip */}
+                                    <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col bg-slate-900 text-white text-[11px] p-3 rounded-2xl shadow-xl z-30 min-w-[200px] pointer-events-none transition-all border border-slate-700 space-y-1">
                                         <div className="font-bold border-b border-slate-700 pb-1 text-emerald-400 font-mono text-xs flex justify-between items-center">
                                             <span>{item.label}</span>
-                                            <span className="text-[10px] text-slate-400 uppercase font-sans">{timeRange}</span>
+                                            <span className="text-[10px] text-slate-400 uppercase">{timeRange}</span>
                                         </div>
                                         <div className="flex justify-between items-center text-emerald-300 font-mono text-[11px]">
                                             <span>🟢 Revenue Collected:</span>
@@ -754,218 +661,161 @@ const Dashboard = () => {
                                             <span>🔵 Loan Disbursed:</span>
                                             <span className="font-bold">${item.loan.toLocaleString()}</span>
                                         </div>
-                                        <div className={`flex justify-between items-center font-mono text-[11px] ${item.profit >= 0 ? 'text-teal-300' : 'text-red-300'}`}>
-                                            <span>{item.profit >= 0 ? '🟣 Net Profit:' : '🔴 Net Loss:'}</span>
-                                            <span className="font-bold">{item.profit >= 0 ? '+' : '-'}${Math.abs(item.profit).toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-indigo-300 font-mono text-[11px] border-t border-slate-800 pt-1">
-                                            <span>👤 Entry Customers:</span>
+                                        <div className="flex justify-between items-center text-indigo-300 font-mono text-[11px]">
+                                            <span>👤 Activated Entry:</span>
                                             <span className="font-bold">{item.entry} នាក់</span>
                                         </div>
-                                        <div className="flex justify-between items-center text-purple-300 font-mono text-[11px]">
-                                            <span>🔄 Exit Customers:</span>
-                                            <span className="font-bold">{item.exit} នាក់</span>
-                                        </div>
                                     </div>
 
-                                    {/* Numbers on Top of Bars */}
-                                    <div className="flex items-center gap-1 text-[10px] font-bold font-mono">
-                                        {item.revenue > 0 && <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 rounded">${item.revenue > 1000 ? `${(item.revenue / 1000).toFixed(1)}k` : item.revenue}</span>}
-                                        {item.entry > 0 && <span className="text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 rounded">{item.entry} នាក់</span>}
-                                    </div>
+                                    {/* Amount Badge */}
+                                    {item.revenue > 0 && (
+                                        <span className="text-[10px] font-bold font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md shadow-2xs">
+                                            ${item.revenue > 1000 ? `${(item.revenue / 1000).toFixed(1)}k` : item.revenue}
+                                        </span>
+                                    )}
 
-                                    {/* Bars Columns */}
-                                    <div className="w-full flex items-end justify-center gap-1.5 h-[75%]">
-                                        {/* Revenue Bar */}
+                                    {/* Bars */}
+                                    <div className="w-full flex items-end justify-center gap-1.5 h-[70%]">
                                         <div
-                                            style={{ height: `${Math.max(14, Math.min(100, (item.revenue / (maxVal || 1)) * 100))}%` }}
-                                            className="w-full max-w-[16px] bg-emerald-600 rounded-t-md transition-all group-hover:scale-105 group-hover:brightness-110 shadow-xs"
-                                        ></div>
-                                        {/* Loan Bar */}
+                                            style={{ height: `${Math.max(12, Math.min(100, (item.revenue / maxVal) * 100))}%` }}
+                                            className="w-full max-w-[14px] bg-emerald-500 rounded-t-md transition-all group-hover:scale-105 group-hover:bg-emerald-400 shadow-2xs"
+                                        />
                                         <div
-                                            style={{ height: `${Math.max(14, Math.min(100, (item.loan / (maxVal || 1)) * 100))}%` }}
-                                            className="w-full max-w-[16px] bg-blue-600 rounded-t-md transition-all group-hover:scale-105 group-hover:brightness-110 shadow-xs"
-                                        ></div>
-                                        {/* Entry Customers Bar */}
-                                        <div
-                                            style={{ height: `${Math.max(14, Math.min(100, (item.entry / (Math.max(...barChartData.map(b => b.entry), 1)) * 100)))}%` }}
-                                            className="w-full max-w-[16px] bg-indigo-600 rounded-t-md transition-all group-hover:scale-105 group-hover:brightness-110 shadow-xs"
-                                        ></div>
-                                        {/* Exit Customers Bar */}
-                                        <div
-                                            style={{ height: `${Math.max(14, Math.min(100, (item.exit / (Math.max(...barChartData.map(b => b.exit), 1)) * 100)))}%` }}
-                                            className="w-full max-w-[16px] bg-purple-600 rounded-t-md transition-all group-hover:scale-105 group-hover:brightness-110 shadow-xs"
-                                        ></div>
+                                            style={{ height: `${Math.max(12, Math.min(100, (item.loan / maxVal) * 100))}%` }}
+                                            className="w-full max-w-[14px] bg-blue-500 rounded-t-md transition-all group-hover:scale-105 group-hover:bg-blue-400 shadow-2xs"
+                                        />
                                     </div>
-                                    <span className="text-[11px] font-bold text-slate-800 text-center font-mono mt-1">{item.label}</span>
+                                    <span className="text-[10px] font-bold text-slate-700 font-mono truncate">{item.label}</span>
                                 </div>
                             );
-                        })
-                    )}
-                </div>
-            </div>
-
-            {/* ── Metric Cards ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: 'Total Contracts', value: stats.totalContracts, sub: `${stats.activatedContracts} Activated • ${stats.applicationContracts} Pending`, icon: <MdPeople />, iconBg: 'bg-slate-100 border-slate-200 text-slate-700', hover: 'hover:border-emerald-300', valueColor: 'text-slate-900' },
-                    { label: t('activated'), value: stats.activatedContracts, sub: `${activatedPct}% activation rate`, icon: <MdCheckCircle />, iconBg: 'bg-emerald-50 border-emerald-200 text-emerald-700', hover: 'hover:border-emerald-300', valueColor: 'text-slate-900' },
-                    { label: 'Total Revenue', value: `$${stats.totalRevenue.toLocaleString()}`, sub: `${stats.paymentCount} payment transactions`, icon: <IoMdWallet />, iconBg: 'bg-emerald-50 border-emerald-200 text-emerald-700', hover: 'hover:border-emerald-300', valueColor: 'text-emerald-700' },
-                    { label: 'Phone Locked', value: stats.lockedPhones, sub: `${stats.unlockedPhones} Unlocked • ${stats.lockedWallpapers} Wallpaper`, icon: <FaLock />, iconBg: 'bg-red-50 border-red-200 text-red-700', hover: 'hover:border-red-300', valueColor: 'text-red-700' },
-                ].map(card => (
-                    <div key={card.label} className={`p-5 rounded-2xl bg-white border border-slate-200 ${card.hover} transition-all shadow-sm group`}>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">{card.label}</p>
-                                <h2 className={`text-3xl font-black mt-1 ${card.valueColor}`}>{card.value}</h2>
-                            </div>
-                            <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-xl group-hover:scale-110 transition-transform ${card.iconBg}`}>
-                                {card.icon}
-                            </div>
-                        </div>
-                        <div className="mt-3 text-[11px] text-slate-600 font-semibold">{card.sub}</div>
+                        })}
                     </div>
-                ))}
-            </div>
+                </div>
 
-            {/* ── Donut + Analytics ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Donut Chart */}
-                <div className="lg:col-span-1 p-6 rounded-2xl bg-white border border-slate-200 space-y-4 shadow-sm">
-                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                        <FaChartPie className="text-emerald-600 text-base" /> Contract Status Distribution
-                    </h3>
-                    <div className="flex flex-col items-center justify-center gap-4 pt-2">
-                        <div className="relative w-40 h-40 flex items-center justify-center">
+                {/* Donut Chart (Right 1 Column) */}
+                <div className="lg:col-span-1 p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h3 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
+                            <FaChartPie className="text-purple-600 text-lg" />
+                            សមាមាត្រកិច្ចសន្យា (Status Donut)
+                        </h3>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center gap-4 pt-1">
+                        <div className="relative w-36 h-36 flex items-center justify-center">
                             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                                 <path className="text-slate-100" strokeWidth="3.8" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                <path className="text-emerald-600" strokeDasharray={`${activatedPct}, 100`} strokeWidth="3.8" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path className="text-emerald-500" strokeDasharray={`${activatedPct}, 100`} strokeWidth="3.8" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                 <path className="text-amber-500" strokeDasharray={`${applicationPct}, 100`} strokeDashoffset={`-${activatedPct}`} strokeWidth="3.8" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                 <path className="text-sky-500" strokeDasharray={`${checkPct}, 100`} strokeDashoffset={`-${activatedPct + applicationPct}`} strokeWidth="3.8" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                 <path className="text-purple-500" strokeDasharray={`${redeemPct}, 100`} strokeDashoffset={`-${activatedPct + applicationPct + checkPct}`} strokeWidth="3.8" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                <path className="text-red-500" strokeDasharray={`${blacklistPct}, 100`} strokeDashoffset={`-${activatedPct + applicationPct + checkPct + redeemPct}`} strokeWidth="3.8" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path className="text-rose-500" strokeDasharray={`${blacklistPct}, 100`} strokeDashoffset={`-${activatedPct + applicationPct + checkPct + redeemPct}`} strokeWidth="3.8" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                             </svg>
                             <div className="absolute flex flex-col items-center justify-center text-center">
-                                <span className="text-2xl font-black text-slate-900">{stats.totalContracts}</span>
-                                <span className="text-[10px] uppercase text-slate-500 font-bold">Total</span>
+                                <span className="text-2xl font-black text-slate-900 font-mono">{stats.totalContracts}</span>
+                                <span className="text-[10px] uppercase text-slate-600 font-bold">Total</span>
                             </div>
                         </div>
+
                         <div className="w-full space-y-1.5 text-xs font-bold">
                             {[
-                                { label: t('activated'), count: stats.activatedContracts, pct: activatedPct, color: 'bg-emerald-600', text: 'text-emerald-800', border: 'border-emerald-200', bg: 'bg-emerald-50' },
-                                { label: t('application'), count: stats.applicationContracts, pct: applicationPct, color: 'bg-amber-500', text: 'text-amber-800', border: 'border-amber-200', bg: 'bg-amber-50' },
-                                { label: t('check'), count: stats.checkContracts, pct: checkPct, color: 'bg-sky-500', text: 'text-sky-800', border: 'border-sky-200', bg: 'bg-sky-50' },
-                                { label: t('redeem'), count: stats.redeemContracts, pct: redeemPct, color: 'bg-purple-500', text: 'text-purple-800', border: 'border-purple-200', bg: 'bg-purple-50' },
-                                { label: 'Blacklist', count: stats.blacklistContracts, pct: blacklistPct, color: 'bg-red-500', text: 'text-red-800', border: 'border-red-200', bg: 'bg-red-50' },
+                                { label: t('activated'), count: stats.activatedContracts, pct: activatedPct, color: 'bg-emerald-500', text: 'text-emerald-800', bg: 'bg-emerald-50/70 border-emerald-200' },
+                                { label: t('application'), count: stats.applicationContracts, pct: applicationPct, color: 'bg-amber-500', text: 'text-amber-800', bg: 'bg-amber-50/70 border-amber-200' },
+                                { label: t('check'), count: stats.checkContracts, pct: checkPct, color: 'bg-sky-500', text: 'text-sky-800', bg: 'bg-sky-50/70 border-sky-200' },
+                                { label: t('redeem'), count: stats.redeemContracts, pct: redeemPct, color: 'bg-purple-500', text: 'text-purple-800', bg: 'bg-purple-50/70 border-purple-200' },
+                                { label: 'Blacklist', count: stats.blacklistContracts, pct: blacklistPct, color: 'bg-rose-500', text: 'text-rose-800', bg: 'bg-rose-50/70 border-rose-200' },
                             ].map(item => (
-                                <div key={item.label} className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg ${item.bg} border ${item.border}`}>
+                                <div key={item.label} className={`flex items-center justify-between px-3 py-1.5 rounded-xl border ${item.bg}`}>
                                     <span className={`flex items-center gap-2 ${item.text}`}>
                                         <span className={`w-2 h-2 rounded-full ${item.color}`}></span>{item.label}
                                     </span>
-                                    <span className="flex items-center gap-1.5">
-                                        <span className="font-mono text-slate-900 font-bold">{item.count}</span>
-                                        <span className="text-slate-500 text-[10px]">{item.pct}%</span>
-                                    </span>
+                                    <span className="font-mono text-slate-900 font-bold">{item.count} <span className="text-slate-600 text-[10px]">({item.pct}%)</span></span>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* Analytics Panel */}
-                <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-slate-200 space-y-5 shadow-sm">
-                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                        <MdBarChart className="text-emerald-600 text-lg" /> Data Analysis & Security Overview
-                    </h3>
-                    <div className="space-y-4">
-                        {[
-                            { label: 'Activation Rate', pct: activatedPct, barColor: 'bg-emerald-600', textColor: 'text-emerald-700', suffix: `${activatedPct}% (${stats.activatedContracts}/${stats.totalContracts})` },
-                            { label: 'Wallpaper Lock Ratio', pct: wallpaperLockPct, barColor: 'bg-purple-600', textColor: 'text-purple-700', suffix: `${stats.lockedWallpapers} Locked / ${stats.unlockedWallpapers} Unlocked` },
-                        ].map(item => (
-                            <div key={item.label}>
-                                <div className="flex justify-between items-center text-xs font-bold mb-2">
-                                    <span className="text-slate-700">{item.label}</span>
-                                    <span className={`font-mono ${item.textColor}`}>{item.suffix}</span>
-                                </div>
-                                <div className="w-full h-3 bg-slate-100 border border-slate-200 rounded-full overflow-hidden">
-                                    <div className={`h-full ${item.barColor} transition-all duration-700 rounded-full`} style={{ width: `${item.pct}%` }}></div>
-                                </div>
-                            </div>
-                        ))}
+            {/* ── 4. Operational & Security Health Status ── */}
+            <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-4">
+                <h3 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
+                    <MdBarChart className="text-emerald-600 text-lg" />
+                    សុវត្ថិភាពឧបករណ៍ &amp; ស្ថានភាពគ្រប់គ្រង (Security &amp; MDM Control Ratio)
+                </h3>
 
-                        {/* Phone Lock split bar */}
-                        <div>
-                            <div className="flex justify-between items-center text-xs font-bold mb-2">
-                                <span className="text-slate-700">Phone Lock Ratio</span>
-                                <span className="text-red-700 font-mono">{stats.lockedPhones} Locked / {stats.unlockedPhones} Unlocked</span>
-                            </div>
-                            <div className="w-full h-3 bg-slate-100 border border-slate-200 rounded-full overflow-hidden flex">
-                                <div className="h-full bg-red-600 transition-all duration-500" style={{ width: `${phoneLockPct}%` }}></div>
-                                <div className="h-full bg-emerald-600 transition-all duration-500" style={{ width: `${100 - phoneLockPct}%` }}></div>
-                            </div>
-                            <div className="flex gap-3 mt-1 text-[10px] text-slate-600 font-semibold">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 bg-red-600 rounded-sm"></span>Locked {phoneLockPct}%</span>
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-600 rounded-sm"></span>Unlocked {100 - phoneLockPct}%</span>
-                            </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-1">
+                    {/* Phone Lock Status */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs font-bold">
+                            <span className="text-slate-700">Phone Remote Lock Ratio</span>
+                            <span className="text-rose-600 font-mono">{stats.lockedPhones} Locked / {stats.unlockedPhones} Unlocked</span>
                         </div>
-
-                        {/* Avg Revenue */}
-                        <div>
-                            <div className="flex justify-between items-center text-xs font-bold mb-2">
-                                <span className="text-slate-700">Avg. Revenue per Payment</span>
-                                <span className="text-emerald-700 font-mono font-bold">
-                                    ${stats.paymentCount ? (stats.totalRevenue / stats.paymentCount).toFixed(2) : '0.00'} / txn
-                                </span>
-                            </div>
-                            <div className="w-full h-3 bg-slate-100 border border-slate-200 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-600 transition-all duration-500 rounded-full" style={{ width: `${Math.min(stats.paymentCount * 5, 100)}%` }}></div>
-                            </div>
+                        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
+                            <div className="h-full bg-rose-500 transition-all duration-500" style={{ width: `${phoneLockPct}%` }} />
+                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${100 - phoneLockPct}%` }} />
+                        </div>
+                        <div className="flex justify-between text-[11px] font-semibold text-slate-600">
+                            <span className="text-rose-600 font-bold">Locked ({phoneLockPct}%)</span>
+                            <span className="text-emerald-600 font-bold">Unlocked ({100 - phoneLockPct}%)</span>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 pt-2 border-t border-slate-200">
-                        {[
-                            { label: 'At Risk', value: stats.blacklistContracts, sub: 'Blacklisted', color: 'text-red-700' },
-                            { label: 'In Review', value: stats.checkContracts, sub: 'Check Stage', color: 'text-sky-700' },
-                            { label: 'Redeemed', value: stats.redeemContracts, sub: 'Paid Off', color: 'text-purple-700' },
-                        ].map(c => (
-                            <div key={c.label} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
-                                <p className="text-[10px] text-slate-500 font-bold uppercase">{c.label}</p>
-                                <p className={`text-xl font-black mt-1 ${c.color}`}>{c.value}</p>
-                                <p className="text-[10px] text-slate-600 font-semibold">{c.sub}</p>
-                            </div>
-                        ))}
+                    {/* Wallpaper Lock Status */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs font-bold">
+                            <span className="text-slate-700">Lockscreen Wallpaper Control</span>
+                            <span className="text-purple-600 font-mono">{stats.lockedWallpapers} Active</span>
+                        </div>
+                        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                            <div className="h-full bg-purple-500 transition-all duration-500 rounded-full" style={{ width: `${wallpaperLockPct}%` }} />
+                        </div>
+                        <div className="flex justify-between text-[11px] font-semibold text-slate-600">
+                            <span className="text-purple-600 font-bold">Wallpaper Enforced ({wallpaperLockPct}%)</span>
+                            <span>{stats.unlockedWallpapers} Standard</span>
+                        </div>
+                    </div>
+
+                    {/* Avg Transaction Value */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs font-bold">
+                            <span className="text-slate-700">Average Collection / Transaction</span>
+                            <span className="text-emerald-600 font-mono font-bold">${stats.paymentCount ? (stats.totalRevenue / stats.paymentCount).toFixed(2) : '0.00'}</span>
+                        </div>
+                        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                            <div className="h-full bg-emerald-500 transition-all duration-500 rounded-full" style={{ width: `${Math.min(stats.paymentCount * 4, 100)}%` }} />
+                        </div>
+                        <div className="flex justify-between text-[11px] font-semibold text-slate-600">
+                            <span>{stats.paymentCount} Completed Payments</span>
+                            <span className="text-emerald-600 font-bold">Per Txn Avg</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* ── Custom Date Audit & 3 Charts ── */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 space-y-6 shadow-md">
-
-                {/* Filters */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+            {/* ── 5. Custom Date Audit & Interactive Activity Analytics ── */}
+            <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                     <div>
-                        <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
-                            <MdDateRange className="text-emerald-600 text-2xl" />
-                            <span>ព័ត៌មានលម្អិត និង ស្ថិតិត្រួតពិនិត្យ (Custom Date Audit & Interactive Analytics)</span>
+                        <h2 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
+                            <MdDateRange className="text-emerald-600 text-xl" />
+                            <span>សកម្មភាព និងការត្រួតពិនិត្យ (Custom Date Audit Log)</span>
                         </h2>
-                        <p className="text-xs text-slate-600 font-semibold mt-1">ជ្រើសរើសចន្លោះកាលបរិច្ឆេទ • ចុចលើក្រាបដើម្បីមើល UI លម្អិត</p>
+                        <p className="text-xs text-slate-600 font-semibold mt-0.5">ជ្រើសរើសចន្លោះកាលបរិច្ឆេទដើម្បីពិនិត្យសកម្មភាពលម្អិត</p>
                     </div>
+
                     <div className="flex flex-wrap items-center gap-3 text-xs font-bold">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-700">
-                            <span className="text-slate-500 font-medium">ពីថ្ងៃ:</span>
-                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                                className="bg-transparent font-bold outline-none cursor-pointer text-slate-800" />
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700">
+                            <span className="text-slate-600 font-semibold">ពី:</span>
+                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent font-bold outline-none cursor-pointer text-slate-800" />
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-700">
-                            <span className="text-slate-500 font-medium">ដល់ថ្ងៃ:</span>
-                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                                className="bg-transparent font-bold outline-none cursor-pointer text-slate-800" />
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700">
+                            <span className="text-slate-600 font-semibold">ដល់:</span>
+                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent font-bold outline-none cursor-pointer text-slate-800" />
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-700">
-                            <MdFilterList className="text-emerald-600 text-sm" />
-                            <select value={activityTypeFilter} onChange={e => setActivityTypeFilter(e.target.value)}
-                                className="bg-transparent font-bold outline-none cursor-pointer text-slate-800">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700">
+                            <MdFilterList className="text-emerald-600" />
+                            <select value={activityTypeFilter} onChange={e => setActivityTypeFilter(e.target.value)} className="bg-transparent font-bold outline-none cursor-pointer text-slate-800">
                                 <option value="All">All Activities</option>
                                 <option value="Activated">Activated</option>
                                 <option value="Application">Application</option>
@@ -975,102 +825,91 @@ const Dashboard = () => {
                                 <option value="Payment">Payment</option>
                             </select>
                         </div>
-                        <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
-                            <button onClick={() => { setStartDate(todayStr); setEndDate(todayStr); }} className="px-2.5 py-1 hover:bg-white rounded-lg text-slate-700 transition-all cursor-pointer">Today</button>
-                            <button onClick={() => { setStartDate(thirtyDaysAgoStr); setEndDate(todayStr); }} className="px-2.5 py-1 hover:bg-white rounded-lg text-slate-700 transition-all cursor-pointer">30 Days</button>
-                            <button onClick={() => { setStartDate(''); setEndDate(''); setActivityTypeFilter('All'); }} className="px-2.5 py-1 hover:bg-white rounded-lg text-slate-700 transition-all cursor-pointer">Reset</button>
-                        </div>
+                        <button onClick={() => { setStartDate(todayStr); setEndDate(todayStr); }} className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all cursor-pointer">Today</button>
+                        <button onClick={() => { setStartDate(thirtyDaysAgoStr); setEndDate(todayStr); }} className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all cursor-pointer">30 Days</button>
                     </div>
                 </div>
 
-                {/* 3 Charts */}
+                {/* 3 Visual Mini Audit Charts */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                    {/* Bar Chart */}
-                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                    {/* Bar breakdown */}
+                    <div className="p-5 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                                <FaChartBar className="text-emerald-600 text-sm" /> ក្រាបសសរ (Bar Chart)
-                            </h3>
-                            <span className="text-[10px] text-slate-500 font-bold">ចុចលើសសរ</span>
+                            <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-2">
+                                <FaChartBar className="text-emerald-600" /> តាមប្រភេទ (Bar)
+                            </h4>
+                            <span className="text-[10px] text-slate-600 font-bold">ចុចលើសសរ</span>
                         </div>
-                        <div className="h-44 flex items-end justify-around gap-1 pt-4 border-b border-slate-200">
+                        <div className="h-40 flex items-end justify-around gap-1 pt-3 border-b border-slate-200">
                             {Object.entries(typeDistribution).map(([cat, count]) => {
                                 const maxVal = Math.max(...Object.values(typeDistribution), 1);
                                 const heightPct = Math.round((count / maxVal) * 100);
                                 return (
-                                    <div key={cat} onClick={() => handleChartPointClick('Bar Chart', cat)}
-                                        className="flex-1 flex flex-col items-center gap-1 cursor-pointer group" title={`Click: ${cat}`}>
+                                    <div key={cat} onClick={() => handleChartPointClick('Bar Chart', cat)} className="flex-1 flex flex-col items-center gap-1 cursor-pointer group" title={`Click: ${cat}`}>
                                         <span className="text-[10px] font-mono font-bold text-slate-800">{count}</span>
-                                        <div className="w-full max-w-[26px] bg-slate-200 rounded-t-lg overflow-hidden h-32 flex items-end">
-                                            <div className="w-full bg-emerald-600 group-hover:bg-emerald-500 transition-all rounded-t-lg"
-                                                style={{ height: `${Math.max(heightPct, 6)}%` }}></div>
+                                        <div className="w-full max-w-[24px] bg-slate-200 rounded-t-lg overflow-hidden h-28 flex items-end">
+                                            <div className="w-full bg-emerald-500 group-hover:bg-emerald-400 transition-all rounded-t-lg" style={{ height: `${Math.max(heightPct, 6)}%` }} />
                                         </div>
-                                        <span className="text-[9px] font-bold text-slate-600 truncate w-full text-center">{cat.slice(0, 6)}</span>
+                                        <span className="text-[9px] font-bold text-slate-600 truncate w-full text-center">{cat.slice(0, 5)}</span>
                                     </div>
                                 );
                             })}
                         </div>
-                        <p className="text-[11px] text-slate-500 italic text-center font-medium">ស្ថិតិសកម្មភាពតាមប្រភេទ</p>
                     </div>
 
-                    {/* Line Chart */}
-                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                    {/* Line Trend */}
+                    <div className="p-5 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                                <FaChartLine className="text-sky-600 text-sm" /> ក្រាបខ្សែរ (Line Chart)
-                            </h3>
-                            <span className="text-[10px] text-slate-500 font-bold">ចុចលើ Point</span>
+                            <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-2">
+                                <FaChartLine className="text-sky-600" /> តាមកាលបរិច្ឆេទ (Line)
+                            </h4>
+                            <span className="text-[10px] text-slate-600 font-bold">ចុចលើ Point</span>
                         </div>
-                        <div className="h-44">
+                        <div className="h-40">
                             {trendData.length === 0 ? (
-                                <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">No trend data</div>
+                                <div className="h-full flex items-center justify-center text-slate-600 text-xs italic">No activity trend</div>
                             ) : (
-                                <div className={`relative h-32 w-full flex items-end ${trendData.length === 1 ? 'justify-center' : 'justify-between'} px-6 pt-4`}>
+                                <div className={`relative h-28 w-full flex items-end ${trendData.length === 1 ? 'justify-center' : 'justify-between'} px-4 pt-4`}>
                                     {trendData.length > 1 && (
                                         <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
                                             <polyline fill="none" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                                                 points={trendData.map((d, i) => {
                                                     const maxC = Math.max(...trendData.map(x => x.count), 1);
                                                     const x = (i / (trendData.length - 1)) * 90 + 5;
-                                                    const y = 85 - (d.count / maxC) * 70;
+                                                    const y = 80 - (d.count / maxC) * 65;
                                                     return `${x}%,${y}%`;
                                                 }).join(' ')}
                                             />
                                         </svg>
                                     )}
-                                    {trendData.map((d) => (
-                                        <div key={d.date} onClick={() => handleChartPointClick('Date Trend', d.date, true)}
-                                            className="relative z-10 flex flex-col items-center cursor-pointer group">
-                                            <span className="text-[10px] font-mono font-bold text-sky-800 opacity-100 group-hover:scale-110 transition-transform mb-1 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-md">{d.count}</span>
-                                            <div className="w-4 h-4 rounded-full bg-white border-2 border-sky-600 group-hover:bg-sky-600 group-hover:scale-125 transition-all shadow-sm flex items-center justify-center">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-sky-600 group-hover:bg-white"></div>
-                                            </div>
-                                            <span className="text-[10px] font-mono text-slate-700 font-bold mt-1.5">{d.date.slice(5)}</span>
+                                    {trendData.map(d => (
+                                        <div key={d.date} onClick={() => handleChartPointClick('Date Trend', d.date, true)} className="relative z-10 flex flex-col items-center cursor-pointer group">
+                                            <span className="text-[10px] font-mono font-bold text-sky-700 bg-sky-50 border border-sky-200 px-1 rounded mb-1">{d.count}</span>
+                                            <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-sky-600 group-hover:bg-sky-600 transition-all shadow-xs" />
+                                            <span className="text-[9px] font-mono text-slate-600 font-bold mt-1">{d.date.slice(5)}</span>
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
-                        <p className="text-[11px] text-slate-500 italic text-center font-medium">ការប្រែប្រួលសកម្មភាពតាមថ្ងៃ</p>
                     </div>
 
-                    {/* Pie Chart */}
-                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                    {/* Donut distribution */}
+                    <div className="p-5 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                                <FaChartPie className="text-purple-600 text-sm" /> ក្រាបផ្លិត (Pie Chart)
-                            </h3>
-                            <span className="text-[10px] text-slate-500 font-bold">ចុចលើ Legend</span>
+                            <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-2">
+                                <FaChartPie className="text-purple-600" /> សមាមាត្រ (Pie)
+                            </h4>
+                            <span className="text-[10px] text-slate-600 font-bold">ចុចលើ Legend</span>
                         </div>
-                        <div className="h-44 flex items-center justify-center gap-4">
-                            <div className="relative w-28 h-28 shrink-0">
+                        <div className="h-40 flex items-center justify-center gap-3">
+                            <div className="relative w-24 h-24 shrink-0">
                                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                                     <path className="text-slate-200" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                     {Object.entries(typeDistribution).map(([cat, count], idx) => {
                                         const total = filteredAuditLogs.length || 1;
                                         const pct = Math.round((count / total) * 100);
-                                        const colors = ['#059669', '#f59e0b', '#0284c7', '#7c3aed', '#dc2626', '#0d9488'];
+                                        const colors = ['#10b981', '#f59e0b', '#06b6d4', '#8b5cf6', '#f43f5e', '#14b8a6'];
                                         return (
                                             <circle key={cat} onClick={() => handleChartPointClick('Pie Segment', cat)}
                                                 r="15.9155" cx="18" cy="18" fill="none"
@@ -1080,18 +919,17 @@ const Dashboard = () => {
                                         );
                                     })}
                                 </svg>
-                                <div className="absolute inset-0 flex items-center justify-center font-mono font-black text-slate-900 text-sm">
+                                <div className="absolute inset-0 flex items-center justify-center font-mono font-black text-slate-900 text-xs">
                                     {filteredAuditLogs.length}
                                 </div>
                             </div>
-                            <div className="flex-1 space-y-1 text-[11px] font-bold overflow-y-auto max-h-36 pr-1">
+                            <div className="flex-1 space-y-1 text-[10px] font-bold overflow-y-auto max-h-32 pr-1">
                                 {Object.entries(typeDistribution).map(([cat, count], idx) => {
-                                    const colors = ['bg-emerald-600', 'bg-amber-500', 'bg-sky-600', 'bg-purple-600', 'bg-red-600', 'bg-teal-600'];
+                                    const colors = ['bg-emerald-500', 'bg-amber-500', 'bg-sky-500', 'bg-purple-500', 'bg-rose-500', 'bg-teal-500'];
                                     return (
-                                        <div key={cat} onClick={() => handleChartPointClick('Pie Category', cat)}
-                                            className="flex items-center justify-between p-1 rounded-md hover:bg-slate-200/60 cursor-pointer transition-colors">
+                                        <div key={cat} onClick={() => handleChartPointClick('Pie Category', cat)} className="flex items-center justify-between p-1 rounded hover:bg-slate-200/50 cursor-pointer transition-colors">
                                             <span className="flex items-center gap-1.5 text-slate-800">
-                                                <span className={`w-2 h-2 rounded-full ${colors[idx % colors.length]}`}></span>{cat}
+                                                <span className={`w-2 h-2 rounded-full ${colors[idx % colors.length]}`} />{cat}
                                             </span>
                                             <span className="font-mono text-slate-900">{count}</span>
                                         </div>
@@ -1099,205 +937,24 @@ const Dashboard = () => {
                                 })}
                             </div>
                         </div>
-                        <p className="text-[11px] text-slate-500 italic text-center font-medium">សមាមាត្រសរុបសកម្មភាព</p>
                     </div>
                 </div>
-
-                {/* ── Per-Type Audit Cards + Mini Line Charts ── */}
-                {(() => {
-                    const TYPE_META = [
-                        { type: 'Activated', label: 'Activated', stroke: '#059669', bg: 'bg-emerald-50', border: 'border-emerald-300', badge: 'bg-emerald-50 text-emerald-800 border-emerald-300', dot: 'bg-emerald-600' },
-                        { type: 'Application', label: 'Application', stroke: '#f59e0b', bg: 'bg-amber-50', border: 'border-amber-300', badge: 'bg-amber-50 text-amber-800 border-amber-300', dot: 'bg-amber-500' },
-                        { type: 'Check', label: 'Check', stroke: '#0284c7', bg: 'bg-sky-50', border: 'border-sky-300', badge: 'bg-sky-50 text-sky-800 border-sky-300', dot: 'bg-sky-500' },
-                        { type: 'Lock Device', label: 'Lock Device', stroke: '#dc2626', bg: 'bg-red-50', border: 'border-red-300', badge: 'bg-red-50 text-red-700 border-red-300', dot: 'bg-red-600' },
-                        { type: 'Wallpaper Lock', label: 'Wallpaper Lock', stroke: '#7c3aed', bg: 'bg-purple-50', border: 'border-purple-300', badge: 'bg-purple-50 text-purple-700 border-purple-300', dot: 'bg-purple-600' },
-                        { type: 'Payment', label: 'Payment', stroke: '#0d9488', bg: 'bg-teal-50', border: 'border-teal-300', badge: 'bg-teal-50 text-teal-800 border-teal-300', dot: 'bg-teal-600' },
-                        { type: 'Redeem', label: 'Redeem', stroke: '#9333ea', bg: 'bg-violet-50', border: 'border-violet-300', badge: 'bg-violet-50 text-violet-700 border-violet-300', dot: 'bg-violet-600' },
-                    ];
-
-                    // Build date-keyed trend for each type
-                    const buildTrend = (type) => {
-                        const map = {};
-                        filteredAuditLogs.filter(a => a.type === type).forEach(a => {
-                            const d = a.date || 'Unknown';
-                            map[d] = (map[d] || 0) + 1;
-                        });
-                        return Object.keys(map).sort().slice(-10).map(d => ({ date: d, count: map[d] }));
-                    };
-
-                    // Mini SVG line chart
-                    const MiniLine = ({ data, stroke }) => {
-                        if (!data || data.length === 0) return (
-                            <div className="h-16 flex flex-col items-center justify-center text-slate-400 text-[10px] italic">
-                                <span>No trend data</span>
-                            </div>
-                        );
-
-                        if (data.length === 1) {
-                            const item = data[0];
-                            return (
-                                <div className="relative h-16 w-full flex flex-col items-center justify-center px-4">
-                                    <div className="flex items-center justify-between w-full mb-1">
-                                        <span className="text-[10px] font-bold text-slate-600 font-mono">{item.date}</span>
-                                        <span className="text-xs font-black font-mono px-2 py-0.5 rounded-md text-white shadow-xs" style={{ backgroundColor: stroke }}>
-                                            {item.count} Record{item.count > 1 ? 's' : ''}
-                                        </span>
-                                    </div>
-                                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                                        <div className="h-full rounded-full" style={{ width: '100%', backgroundColor: stroke }}></div>
-                                    </div>
-                                </div>
-                            );
-                        }
-
-                        const maxC = Math.max(...data.map(d => d.count), 1);
-                        const pts = data.map((d, i) => {
-                            const x = (i / (data.length - 1)) * 96 + 2;
-                            const y = 88 - ((d.count / maxC) * 76);
-                            return `${x}%,${y}%`;
-                        }).join(' ');
-                        return (
-                            <div className="relative h-16 w-full">
-                                <svg className="w-full h-full overflow-visible">
-                                    <defs>
-                                        <linearGradient id={`grad-${stroke.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor={stroke} stopOpacity="0.18" />
-                                            <stop offset="100%" stopColor={stroke} stopOpacity="0" />
-                                        </linearGradient>
-                                    </defs>
-                                    <polyline fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={pts} />
-                                    {data.map((d, i) => {
-                                        const x = (i / (data.length - 1)) * 96 + 2;
-                                        const y = 88 - ((d.count / maxC) * 76);
-                                        return (
-                                            <g key={i}>
-                                                <circle cx={`${x}%`} cy={`${y}%`} r="3.5" fill="white" stroke={stroke} strokeWidth="2" />
-                                                <text x={`${x}%`} y={`${y - 6}%`} textAnchor="middle" fontSize="8" fill={stroke} fontWeight="bold">{d.count}</text>
-                                            </g>
-                                        );
-                                    })}
-                                </svg>
-                                <div className="absolute bottom-0 left-0 right-0 flex justify-between px-1 text-[8px] text-slate-400 font-mono">
-                                    {data.map(d => <span key={d.date}>{d.date.slice(5)}</span>)}
-                                </div>
-                            </div>
-                        );
-                    };
-
-                    const activeTypes = TYPE_META.filter(m => {
-                        if (activityTypeFilter !== 'All') return m.type === activityTypeFilter;
-                        return filteredAuditLogs.some(a => a.type === m.type);
-                    });
-
-                    if (activeTypes.length === 0) return (
-                        <div className="text-center py-10 text-slate-500 italic text-sm">
-                            មិនមានទិន្នន័យសម្រាប់ filter ដែលបានជ្រើស
-                        </div>
-                    );
-
-                    return (
-                        <div className="space-y-6 pt-2">
-                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                                <MdInfo className="text-emerald-600 text-base" />
-                                តារាងបង្ហាញព័ត៌មានលម្អិតតាមប្រភេទ ({filteredAuditLogs.length} Records)
-                            </h3>
-
-                            {activeTypes.map(meta => {
-                                const rows = filteredAuditLogs.filter(a => a.type === meta.type);
-                                if (rows.length === 0) return null;
-                                const trend = buildTrend(meta.type);
-
-                                return (
-                                    <div key={meta.type} className={`rounded-2xl border ${meta.border} bg-white shadow-sm overflow-hidden`}>
-                                        {/* Card Header */}
-                                        <div className={`flex items-center justify-between px-5 py-3 ${meta.bg} border-b ${meta.border}`}>
-                                            <div className="flex items-center gap-3">
-                                                <span className={`w-3 h-3 rounded-full ${meta.dot}`}></span>
-                                                <span className="text-sm font-black text-slate-900">{meta.label}</span>
-                                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${meta.badge}`}>
-                                                    {rows.length} Records
-                                                </span>
-                                            </div>
-                                            <button onClick={() => handleChartPointClick(meta.label, meta.type)}
-                                                className="text-[10px] font-bold text-slate-500 hover:text-slate-800 cursor-pointer transition-colors px-2.5 py-1 bg-white/70 border border-slate-200 rounded-lg">
-                                                View All →
-                                            </button>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 lg:grid-cols-3">
-                                            {/* Mini Line Chart */}
-                                            <div className="lg:col-span-1 px-5 py-4 border-r border-slate-100">
-                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                                                    <FaChartLine style={{ color: meta.stroke }} className="text-xs" />
-                                                    Trend ក្នុងរយៈពេល
-                                                </p>
-                                                <MiniLine data={trend} stroke={meta.stroke} />
-                                            </div>
-
-                                            {/* Table */}
-                                            <div className="lg:col-span-2 overflow-x-auto">
-                                                <table className="w-full text-left text-xs">
-                                                    <thead className="bg-slate-50/80 text-slate-600 uppercase tracking-wider border-b border-slate-100">
-                                                        <tr>
-                                                            <th className="px-3 py-2.5 text-center text-[10px]">No</th>
-                                                            <th className="px-3 py-2.5 text-[10px]">Date</th>
-                                                            <th className="px-3 py-2.5 text-[10px]">Customer Name</th>
-                                                            <th className="px-3 py-2.5 text-[10px]">Model</th>
-                                                            <th className="px-3 py-2.5 text-[10px]">Serial / IMEI</th>
-                                                            <th className="px-3 py-2.5 text-[10px]">By</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-slate-50 font-medium text-slate-800">
-                                                        {rows.slice(0, 8).map((item, idx) => (
-                                                            <tr key={item.id || idx} className="hover:bg-slate-50/60 transition-colors">
-                                                                <td className="px-3 py-2 text-center font-mono text-slate-500 text-[10px]">{idx + 1}</td>
-                                                                <td className="px-3 py-2 font-mono text-[11px] font-bold" style={{ color: meta.stroke }}>{item.date}</td>
-                                                                <td className="px-3 py-2">
-                                                                    <span className="font-bold text-slate-900 block text-[11px]">{item.customerName}</span>
-                                                                    {item.customerNameKh && <span className="text-emerald-700 text-[10px]">{item.customerNameKh}</span>}
-                                                                </td>
-                                                                <td className="px-3 py-2 font-semibold text-slate-700 text-[11px]">{item.model}</td>
-                                                                <td className="px-3 py-2 font-mono text-slate-500 text-[10px]">{item.serialNumber}</td>
-                                                                <td className="px-3 py-2 text-slate-600 text-[10px] font-semibold">{item.performedBy}</td>
-                                                            </tr>
-                                                        ))}
-                                                        {rows.length > 8 && (
-                                                            <tr>
-                                                                <td colSpan={6} className="px-3 py-2 text-center text-[10px] text-slate-500 italic font-medium">
-                                                                    + {rows.length - 8} more records —{' '}
-                                                                    <button onClick={() => handleChartPointClick(meta.label, meta.type)}
-                                                                        className="underline cursor-pointer font-bold" style={{ color: meta.stroke }}>
-                                                                        View All
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
-                                                        )}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    );
-                })()}
             </div>
 
-            {/* ── Summary Breakdown Table (តារាងបង្ហាញព័ត៌មានសរុបតាម Brand / សាខា) ── */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 space-y-4 shadow-md">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+            {/* ── 6. Executive Brand Summary Table (តារាងសរុបព័ត៌មានតាមសាខា) ── */}
+            <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                     <div>
-                        <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
-                            <FaLayerGroup className="text-emerald-600 text-xl" />
-                            <span>តារាងសរុបព័ត៌មានតាមសាខា (Brand Summary Breakdown Table)</span>
+                        <h2 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
+                            <FaLayerGroup className="text-emerald-600 text-lg" />
+                            <span>តារាងសរុបព័ត៌មានតាមសាខា (Executive Brand Summary Breakdown)</span>
                         </h2>
-                        <p className="text-xs text-slate-500 font-medium mt-0.5">
-                            សរុបទិន្នន័យកិច្ចសន្យា ទឹកប្រាក់ចេញ LOAN ការប្រមូលចំណូល និងការចាក់សោរឧបករណ៍តាម Brand នីមួយៗ
+                        <p className="text-xs text-slate-600 font-semibold mt-0.5">
+                            ទិន្នន័យសរុបកិច្ចសន្យា ទឹកប្រាក់ប្រមូលបាន LOAN ចេញ និងការចាក់សោរតាម Brand
                         </p>
                     </div>
-                    <span className="px-3 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-mono text-xs font-bold shrink-0">
-                        {summaryTableData.length} Brand{summaryTableData.length > 1 ? 's' : ''} Listed
+                    <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full font-mono text-xs font-bold shrink-0">
+                        {summaryTableData.length} Brand Domain{summaryTableData.length > 1 ? 's' : ''}
                     </span>
                 </div>
 
@@ -1321,7 +978,7 @@ const Dashboard = () => {
                         <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                             {summaryTableData.length === 0 ? (
                                 <tr>
-                                    <td colSpan={11} className="text-center py-8 text-slate-400 italic">
+                                    <td colSpan={11} className="text-center py-8 text-slate-600 italic">
                                         មិនទាន់មានទិន្នន័យសាខាក្នុងប្រព័ន្ធនៅឡើយ
                                     </td>
                                 </tr>
@@ -1330,10 +987,10 @@ const Dashboard = () => {
                                     const netBal = Math.max(row.loanDisbursed - row.revenueCollected, 0);
                                     const isProf = row.revenueCollected >= row.monthlyCollectionEst && row.revenueCollected > 0;
                                     return (
-                                        <tr key={row.brand} className="hover:bg-emerald-50/40 transition-colors">
-                                            <td className="px-4 py-3 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
+                                        <tr key={row.brand} className="hover:bg-emerald-50/30 transition-colors">
+                                            <td className="px-4 py-3 text-center font-mono text-slate-600 font-bold">{idx + 1}</td>
                                             <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
-                                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                                                 {row.brand}
                                             </td>
                                             <td className="px-4 py-3 text-center font-bold text-slate-800 font-mono">{row.totalContracts}</td>
@@ -1345,19 +1002,19 @@ const Dashboard = () => {
                                             <td className="px-4 py-3 text-right font-mono font-bold text-blue-700">${row.loanDisbursed.toLocaleString()}</td>
                                             <td className="px-4 py-3 text-right font-mono font-bold text-slate-700">${row.monthlyCollectionEst.toLocaleString()}</td>
                                             <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">${row.revenueCollected.toLocaleString()}</td>
-                                            <td className="px-4 py-3 text-right font-mono font-bold text-rose-700">${netBal.toLocaleString()}</td>
+                                            <td className="px-4 py-3 text-right font-mono font-bold text-rose-600">${netBal.toLocaleString()}</td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className={`px-2 py-0.5 font-mono font-bold rounded-full text-[11px] ${row.phoneLocked > 0 ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-600'}`}>
+                                                <span className={`px-2 py-0.5 font-mono font-bold rounded-full text-[11px] ${row.phoneLocked > 0 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>
                                                     {row.phoneLocked} Locked
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className={`px-2 py-0.5 font-mono font-bold rounded-full text-[11px] ${row.wallpaperLocked > 0 ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-600'}`}>
+                                                <span className={`px-2 py-0.5 font-mono font-bold rounded-full text-[11px] ${row.wallpaperLocked > 0 ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
                                                     {row.wallpaperLocked} WP
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase border ${isProf ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300'}`}>
+                                                <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase border ${isProf ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                                                     {isProf ? 'Healthy' : 'Active Loan'}
                                                 </span>
                                             </td>
@@ -1398,7 +1055,7 @@ const Dashboard = () => {
                                         {summaryTableData.reduce((s, r) => s + r.wallpaperLocked, 0)} WP
                                     </td>
                                     <td className="px-4 py-3 text-center font-mono font-black text-emerald-400">
-                                        ✓ ALL SYSTEM
+                                        ✓ SYSTEM
                                     </td>
                                 </tr>
                             </tfoot>
@@ -1407,16 +1064,15 @@ const Dashboard = () => {
                 </div>
             </div>
 
-
             {/* ── Recent Sessions Modal ── */}
             {sessionModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4" onClick={() => setSessionModal(false)}>
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4" onClick={() => setSessionModal(false)}>
                     <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-2xl shadow-2xl space-y-4 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
                             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                <FaHistory className="text-purple-600" /> Recent Login Sessions (All Users)
+                                <FaHistory className="text-purple-600" /> Recent Login Sessions
                             </h3>
-                            <button onClick={() => setSessionModal(false)} className="text-slate-500 hover:text-slate-900 text-lg cursor-pointer"><MdClose /></button>
+                            <button onClick={() => setSessionModal(false)} className="text-slate-400 hover:text-slate-800 text-lg cursor-pointer"><MdClose /></button>
                         </div>
                         <div className="overflow-y-auto flex-1 space-y-2 pr-1 text-xs">
                             {sessionsLoading ? (
@@ -1424,7 +1080,7 @@ const Dashboard = () => {
                                     <MdOutlineSync className="spin-reload text-xl" /> Loading sessions...
                                 </div>
                             ) : recentSessions.length === 0 ? (
-                                <p className="text-slate-500 italic text-center py-8">No login sessions recorded yet.</p>
+                                <p className="text-slate-600 italic text-center py-8">No login sessions recorded yet.</p>
                             ) : recentSessions.map((log, idx) => (
                                 <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-start gap-3 hover:bg-slate-100 transition-colors">
                                     <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-sm shrink-0">
@@ -1436,16 +1092,16 @@ const Dashboard = () => {
                                             <span className="text-[10px] px-2 py-0.5 bg-slate-200 border border-slate-300 rounded-full text-slate-700 font-semibold shrink-0">{log.role}</span>
                                         </div>
                                         <p className="text-slate-900 font-bold text-[11px] truncate">{log.name}</p>
-                                        <p className="text-slate-500 text-[10px] font-mono mt-0.5">
+                                        <p className="text-slate-600 text-[10px] font-mono mt-0.5">
                                             🕐 {new Date(log.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' })}
                                         </p>
-                                        <p className="text-slate-500 text-[10px] mt-0.5">📍 {log.ip || '127.0.0.1'} • 🖥 {log.deviceInfo || 'Web Browser'}</p>
+                                        <p className="text-slate-600 text-[10px] mt-0.5">📍 {log.ip || '127.0.0.1'} • 🖥 {log.deviceInfo || 'Web Browser'}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                        <div className="shrink-0 text-right pt-2 border-t border-slate-200">
-                            <button onClick={() => setSessionModal(false)} className="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold rounded-xl cursor-pointer transition-all">Close</button>
+                        <div className="shrink-0 text-right pt-2 border-t border-slate-100">
+                            <button onClick={() => setSessionModal(false)} className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl cursor-pointer transition-all">Close</button>
                         </div>
                     </div>
                 </div>
@@ -1453,14 +1109,14 @@ const Dashboard = () => {
 
             {/* ── Chart Detail Modal ── */}
             {detailModal.open && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4" onClick={() => setDetailModal({ open: false, title: '', items: [] })}>
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4" onClick={() => setDetailModal({ open: false, title: '', items: [] })}>
                     <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-4xl shadow-2xl space-y-4 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
                             <div>
                                 <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                                     <MdInfo className="text-emerald-600 text-lg" /> {detailModal.title}
                                 </h3>
-                                <p className="text-xs text-slate-500 font-semibold mt-0.5">ព័ត៌មានលម្អិតសម្រាប់ប្រភេទ/កាលបរិច្ឆេទដែលបានជ្រើស</p>
+                                <p className="text-xs text-slate-600 font-semibold mt-0.5">ព័ត៌មានលម្អិតសម្រាប់ប្រភេទដែលបានជ្រើស</p>
                             </div>
                             <button onClick={() => setDetailModal({ open: false, title: '', items: [] })} className="text-slate-400 hover:text-slate-800 text-xl font-bold cursor-pointer"><MdClose /></button>
                         </div>
@@ -1468,11 +1124,11 @@ const Dashboard = () => {
                             <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                             <input type="text" value={detailSearch} onChange={e => setDetailSearch(e.target.value)}
                                 placeholder="Search customer, model, serial..."
-                                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-emerald-500" />
+                                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-emerald-500" />
                         </div>
                         <div className="overflow-y-auto flex-1 border border-slate-200 rounded-2xl">
                             <table className="w-full text-left text-xs">
-                                <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 sticky top-0">
+                                <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 sticky top-0 font-bold">
                                     <tr>
                                         <th className="px-4 py-3 text-center">No</th>
                                         <th className="px-4 py-3">Date</th>
@@ -1486,9 +1142,9 @@ const Dashboard = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                                     {modalFilteredItems.length === 0 ? (
-                                        <tr><td colSpan={8} className="text-center py-8 text-slate-500 italic">No records found.</td></tr>
+                                        <tr><td colSpan={8} className="text-center py-8 text-slate-600 italic">No records found.</td></tr>
                                     ) : modalFilteredItems.map((item, idx) => (
-                                        <tr key={idx} className="hover:bg-emerald-50/50 transition-colors">
+                                        <tr key={idx} className="hover:bg-emerald-50/40 transition-colors">
                                             <td className="px-4 py-2.5 text-center font-mono text-slate-600 font-semibold">{idx + 1}</td>
                                             <td className="px-4 py-2.5 font-mono text-emerald-700 font-bold">{item.date}</td>
                                             <td className="px-4 py-2.5 font-bold text-slate-900">{item.customerName}</td>
@@ -1502,9 +1158,9 @@ const Dashboard = () => {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="shrink-0 text-right pt-2 border-t border-slate-200 flex justify-end">
+                        <div className="shrink-0 text-right pt-2 border-t border-slate-100 flex justify-end">
                             <button onClick={() => setDetailModal({ open: false, title: '', items: [] })}
-                                className="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold rounded-xl cursor-pointer transition-all">
+                                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl cursor-pointer transition-all">
                                 Close
                             </button>
                         </div>
