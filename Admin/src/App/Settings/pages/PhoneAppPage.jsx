@@ -277,9 +277,9 @@ const PhoneAppPage = () => {
     }, [deviceData]);
 
     return (
-        <div className="w-full min-h-[93vh] bg-[#070913] p-4 text-slate-100 select-none space-y-4 overflow-y-auto">
+        <div className="w-full bg-transparent p-4 text-slate-800 select-none space-y-4 overflow-y-auto">
             {/* Header */}
-            <header className="p-4 border border-gray-800/80 bg-[#0f1426]/90 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+            <header className="p-4 border border-slate-200 bg-white rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
                 <div>
                     <h1 className="text-xl font-extrabold text-indigo-400 flex items-center gap-2">
                         <MdPhoneAndroid className="text-2xl" />

@@ -101,7 +101,7 @@ const Profile = () => {
     };
 
     return (
-        <div className="w-full h-[93vh] overflow-y-auto bg-[#070913] p-6 select-none space-y-6">
+        <div className="w-full bg-transparent p-6 select-none space-y-6">
             <div className="flex items-center gap-3 pb-4 border-b border-gray-800/80">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-2xl shadow-lg">
                     <FaUserCircle />

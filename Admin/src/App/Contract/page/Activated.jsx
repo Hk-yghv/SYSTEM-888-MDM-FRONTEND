@@ -363,7 +363,7 @@ const Activated = () => {
     };
 
     return (
-        <div className='w-full h-[93vh] overflow-y-auto bg-[#070913] p-4 select-none space-y-4 relative'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
 
             {/* UI Custom Modal Popup */}
             <CustomModal
@@ -429,7 +429,7 @@ const Activated = () => {
             )}
 
             {/* Header */}
-            <header className='p-3 w-full border-b border-gray-800/80 bg-[#0f1426]/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <MdCheckCircle className="text-emerald-400 text-xl" />

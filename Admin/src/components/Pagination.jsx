@@ -21,7 +21,7 @@ const Pagination = ({ currentPage = 1, totalItems = 0, itemsPerPage = 10, onPage
     };
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-[#0f1426]/90 border border-gray-800 rounded-2xl text-xs select-none">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-2xl text-xs select-none shadow-xs">
             <div className="text-gray-400">
                 Showing <span className="font-bold text-indigo-400">{startItem}</span> – <span className="font-bold text-indigo-400">{endItem}</span> of <span className="font-bold text-gray-100">{totalItems}</span> records
             </div>

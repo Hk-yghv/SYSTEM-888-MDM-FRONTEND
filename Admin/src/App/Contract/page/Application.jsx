@@ -155,9 +155,9 @@ const Application = () => {
     };
 
     return (
-        <div className='w-full h-[93vh] overflow-y-auto bg-[#070913] p-4 select-none space-y-4 relative'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
             {/* Header */}
-            <header className='p-3 w-full border-b border-gray-800/80 bg-[#0f1426]/90 rounded-2xl flex items-center justify-between shadow-md'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('application')} List</span>

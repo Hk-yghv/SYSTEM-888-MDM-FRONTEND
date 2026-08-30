@@ -379,8 +379,8 @@ const ControlSystem = () => {
     };
 
     return (
-        <div className='w-full h-[93vh] overflow-y-auto bg-[#070913] p-4 select-none space-y-6'>
-            <header className='p-3 w-full border-b border-gray-800/80 bg-[#0f1426]/90 rounded-2xl flex items-center justify-between shadow-md'>
+        <div className='w-full bg-transparent p-4 select-none space-y-6'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div className='w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl'>
                         <IoIosSettings />
