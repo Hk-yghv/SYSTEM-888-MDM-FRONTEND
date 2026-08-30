@@ -71,22 +71,49 @@ import PaymentAlertDrawer from "../components/PaymentAlertDrawer";
 const MainLayout = ({ children }) => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
+  const { theme } = useTheme();
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300">
-      <Header onOpenAlerts={() => setIsAlertOpen(true)} alertCount={alertCount} />
-      <div className="flex flex-1 overflow-hidden">
-        <Left />
-        <div className="flex-1 overflow-y-auto">
-          {children}
+    <div
+      className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden"
+      style={
+        theme?.bgType === 'image' && theme?.bgImage
+          ? { backgroundImage: `url(${theme.bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+          : {}
+      }
+    >
+      {/* Background Video Player (Capped to 10 Seconds Loop) */}
+      {theme?.bgType === 'video' && theme?.bgVideo && (
+        <video
+          src={theme.bgVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          onTimeUpdate={(e) => {
+            if (e.target.currentTime >= 10) {
+              e.target.currentTime = 0;
+            }
+          }}
+          className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-35 transition-opacity duration-500"
+        />
+      )}
+
+      <div className="relative z-10 flex flex-col h-full overflow-hidden">
+        <Header onOpenAlerts={() => setIsAlertOpen(true)} alertCount={alertCount} />
+        <div className="flex flex-1 overflow-hidden">
+          <Left />
+          <div className="flex-1 overflow-y-auto">
+            {children}
+          </div>
         </div>
+        <PaymentAlertDrawer
+          isOpen={isAlertOpen}
+          onClose={() => setIsAlertOpen(false)}
+          alertCount={alertCount}
+          setAlertCount={setAlertCount}
+        />
       </div>
-      <PaymentAlertDrawer
-        isOpen={isAlertOpen}
-        onClose={() => setIsAlertOpen(false)}
-        alertCount={alertCount}
-        setAlertCount={setAlertCount}
-      />
     </div>
   );
 };
@@ -96,8 +123,8 @@ const App = () => {
   return (
     <DesktopOnlyGuard>
       <Suspense fallback={<Loading />}>
-        <ThemeProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <ThemeProvider>
             <LanguageProvider>
               <BrowserRouter>
                 <Routes>
@@ -153,8 +180,8 @@ const App = () => {
                 </Routes>
               </BrowserRouter>
             </LanguageProvider>
-          </AuthProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </Suspense>
     </DesktopOnlyGuard>
   );

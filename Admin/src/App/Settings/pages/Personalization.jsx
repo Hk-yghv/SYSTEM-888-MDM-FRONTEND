@@ -133,8 +133,107 @@ const Personalization = () => {
                 <section className="lg:col-span-1 bg-[var(--app-card,#ffffff)] p-5 border border-slate-200 rounded-2xl space-y-4 shadow-xs">
                     <h2 className="text-base font-black text-[var(--app-text,#0f172a)] flex items-center gap-2">
                         <MdOutlineColorLens className="text-indigo-600 text-xl" />
-                        <span>Custom Color Settings (កំណត់ពណ៌)</span>
+                        <span>Custom Theme & Background</span>
                     </h2>
+
+                    {/* Background Type Mode Selector */}
+                    <div className="space-y-2 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100">
+                        <label className="text-xs font-bold text-indigo-900 block">Background Style (ប្រភេទផ្ទៃក្រោយ)</label>
+                        <div className="grid grid-cols-3 gap-1.5 text-xs font-bold">
+                            <button
+                                onClick={() => handleColorChange('bgType', 'color')}
+                                className={`py-1.5 rounded-lg border transition-all cursor-pointer ${
+                                    customTheme.bgType === 'color' || !customTheme.bgType
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                }`}
+                            >
+                                🎨 Solid Color
+                            </button>
+                            <button
+                                onClick={() => handleColorChange('bgType', 'image')}
+                                className={`py-1.5 rounded-lg border transition-all cursor-pointer ${
+                                    customTheme.bgType === 'image'
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                }`}
+                            >
+                                🖼 Image File
+                            </button>
+                            <button
+                                onClick={() => handleColorChange('bgType', 'video')}
+                                className={`py-1.5 rounded-lg border transition-all cursor-pointer ${
+                                    customTheme.bgType === 'video'
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                }`}
+                            >
+                                🎬 Video File (10s)
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Image Upload Input */}
+                    {customTheme.bgType === 'image' && (
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                            <label className="text-xs font-bold text-slate-800 block">Upload Background Image (រូបភាព)</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onload = (evt) => {
+                                            handleColorChange('bgImage', evt.target.result);
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
+                                }}
+                                className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer w-full"
+                            />
+                            {customTheme.bgImage && (
+                                <div className="flex items-center justify-between text-[11px] font-bold text-emerald-600">
+                                    <span>✓ Image file loaded</span>
+                                    <button onClick={() => handleColorChange('bgImage', '')} className="text-rose-500 hover:underline">Remove</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Video Upload Input (Capped to 10 Seconds) */}
+                    {customTheme.bgType === 'video' && (
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-slate-800 block">Upload Background Video (វីដេអូ)</label>
+                                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-md">Max 10s Loop</span>
+                            </div>
+                            <input
+                                type="file"
+                                accept="video/mp4,video/webm,video/ogg"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onload = (evt) => {
+                                            handleColorChange('bgVideo', evt.target.result);
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
+                                }}
+                                className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer w-full"
+                            />
+                            <p className="text-[10px] text-slate-500 italic">
+                                Note: Video will automatically loop every 10 seconds in the background.
+                            </p>
+                            {customTheme.bgVideo && (
+                                <div className="flex items-center justify-between text-[11px] font-bold text-emerald-600">
+                                    <span>✓ 10s Video file loaded</span>
+                                    <button onClick={() => handleColorChange('bgVideo', '')} className="text-rose-500 hover:underline">Remove</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <div className="space-y-3 text-xs">
                         {/* Main Background Color */}
@@ -253,10 +352,30 @@ const Personalization = () => {
 
                     {/* Preview Box Container */}
                     <div
-                        className="w-full h-[360px] rounded-2xl border border-slate-300 overflow-hidden flex flex-col shadow-inner transition-colors duration-300 p-2"
-                        style={{ backgroundColor: customTheme.bgPrimary }}
+                        className="w-full h-[360px] rounded-2xl border border-slate-300 overflow-hidden flex flex-col shadow-inner transition-colors duration-300 p-2 relative"
+                        style={
+                            customTheme.bgType === 'image' && customTheme.bgImage
+                                ? { backgroundImage: `url(${customTheme.bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                                : { backgroundColor: customTheme.bgPrimary }
+                        }
                     >
-                        {/* Mock Top Header */}
+                        {/* Video Background Mockup */}
+                        {customTheme.bgType === 'video' && customTheme.bgVideo && (
+                            <video
+                                src={customTheme.bgVideo}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                onTimeUpdate={(e) => {
+                                    if (e.target.currentTime >= 10) e.target.currentTime = 0;
+                                }}
+                                className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-40"
+                            />
+                        )}
+
+                        <div className="relative z-10 flex flex-col h-full">
+                            {/* Mock Top Header */}
                         <div
                             className="w-full h-10 rounded-xl px-3 flex items-center justify-between border border-slate-200/50 shadow-xs mb-2 transition-colors"
                             style={{ backgroundColor: customTheme.headerBg }}
@@ -324,6 +443,7 @@ const Personalization = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
                         </div>
                     </div>
                 </section>

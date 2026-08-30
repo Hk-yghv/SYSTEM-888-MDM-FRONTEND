@@ -7,73 +7,98 @@ export const PRESET_THEMES = {
     default: {
         name: 'Default MDM (ដើម)',
         mode: 'default',
+        bgType: 'color',
         bgPrimary: '#f4f6f8',
         bgCard: '#ffffff',
         textPrimary: '#0f172a',
         textSecondary: '#64748b',
         accentColor: '#4f46e5',
         sidebarBg: '#f8fafc',
-        headerBg: '#ffffff'
+        headerBg: '#ffffff',
+        bgImage: '',
+        bgVideo: ''
     },
     dark: {
         name: 'Dark Mode (ងងឹត)',
         mode: 'dark',
+        bgType: 'color',
         bgPrimary: '#0f172a',
         bgCard: '#1e293b',
         textPrimary: '#f8fafc',
         textSecondary: '#94a3b8',
         accentColor: '#6366f1',
         sidebarBg: '#0f172a',
-        headerBg: '#1e293b'
+        headerBg: '#1e293b',
+        bgImage: '',
+        bgVideo: ''
     },
     ocean: {
         name: 'Ocean Deep (សមុទ្រ)',
         mode: 'ocean',
+        bgType: 'color',
         bgPrimary: '#0b192c',
         bgCard: '#1e3e62',
         textPrimary: '#f1f5f9',
         textSecondary: '#94a3b8',
         accentColor: '#008bbf',
         sidebarBg: '#001f3f',
-        headerBg: '#1e3e62'
+        headerBg: '#1e3e62',
+        bgImage: '',
+        bgVideo: ''
     },
     sunset: {
         name: 'Sunset Rose (ថ្ងៃលិច)',
         mode: 'sunset',
+        bgType: 'color',
         bgPrimary: '#18181b',
         bgCard: '#27272a',
         textPrimary: '#f4f4f5',
         textSecondary: '#a1a1aa',
         accentColor: '#f43f5e',
         sidebarBg: '#18181b',
-        headerBg: '#27272a'
+        headerBg: '#27272a',
+        bgImage: '',
+        bgVideo: ''
     },
     emerald: {
         name: 'Emerald Mint (បៃតង)',
         mode: 'emerald',
+        bgType: 'color',
         bgPrimary: '#064e3b',
         bgCard: '#065f46',
         textPrimary: '#ecfdf5',
         textSecondary: '#a7f3d0',
         accentColor: '#10b981',
         sidebarBg: '#022c22',
-        headerBg: '#065f46'
+        headerBg: '#065f46',
+        bgImage: '',
+        bgVideo: ''
     },
     cyberpunk: {
         name: 'Cyberpunk Neon (ស៊ីប័រ)',
         mode: 'cyberpunk',
+        bgType: 'color',
         bgPrimary: '#09090b',
         bgCard: '#18181b',
         textPrimary: '#f4f4f5',
         textSecondary: '#a1a1aa',
         accentColor: '#ec4899',
         sidebarBg: '#09090b',
-        headerBg: '#18181b'
+        headerBg: '#18181b',
+        bgImage: '',
+        bgVideo: ''
     }
 };
 
 export const ThemeProvider = ({ children }) => {
-    const { user } = useAuth();
+    let user = null;
+    try {
+        const auth = useAuth();
+        user = auth ? auth.user : null;
+    } catch {
+        user = null;
+    }
+
     const storageKey = `mdm_theme_${user?.username || 'guest'}`;
 
     const [theme, setTheme] = useState(() => {
