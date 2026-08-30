@@ -283,28 +283,6 @@ input::placeholder, textarea::placeholder {
 .shadow-indigo-500\/30 {
     box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25) !important;
 }
-
-.bg-indigo-950\/20,
-.bg-indigo-600\/30,
-.bg-indigo-600\/40,
-.bg-indigo-900\/60,
-.bg-indigo-950\/40 {
-    background: #ecfdf5 !important;
-    border-color: rgba(16, 185, 129, 0.3) !important;
-}
-
-.bg-red-950\/20 {
-    background: #fef2f2 !important;
-    border-color: rgba(239, 68, 68, 0.3) !important;
-}
-
-.bg-emerald-950\/40,
-.bg-emerald-950\/30,
-.bg-emerald-950 {
-    background: #ecfdf5 !important;
-    border-color: rgba(16, 185, 129, 0.3) !important;
-}
-
 /* GLOBAL THEME & GLASSMORPHISM OVERRIDES FOR ALL PAGES ACROSS SYSTEM */
 .bg-\[\#f4f6f8\],
 div[class*="bg-[#f4f6f8]"],
@@ -313,23 +291,32 @@ main {
     background-color: transparent !important;
 }
 
-/* Glassmorphism Cards Across All Pages */
+/* Glassmorphism Cards Across All Pages (Dashboard, Reports, Customer, Settings, etc.) */
 .bg-white,
 .bg-slate-50,
 .bg-slate-100,
+.bg-slate-200,
 .bg-indigo-50,
 .bg-emerald-50,
 .bg-purple-50,
 .bg-amber-50,
 .bg-rose-50,
 .bg-blue-50,
-div[class*="bg-slate-50"],
-div[class*="bg-slate-100"],
-div[class*="bg-indigo-50"],
-div[class*="bg-emerald-50"],
-div[class*="bg-purple-50"],
-div[class*="bg-amber-50"] {
-    background-color: var(--app-card, rgba(255, 255, 255, 0.45)) !important;
+.bg-indigo-950\/20,
+.bg-indigo-600\/30,
+.bg-indigo-600\/40,
+.bg-indigo-900\/60,
+.bg-indigo-950\/40,
+.bg-red-950\/20,
+.bg-emerald-950\/40,
+.bg-emerald-950\/30,
+.bg-emerald-950,
+div[class*="bg-slate-"],
+div[class*="bg-indigo-"],
+div[class*="bg-emerald-"],
+div[class*="bg-purple-"],
+div[class*="bg-amber-"] {
+    background-color: var(--app-card, rgba(255, 255, 255, 0.35)) !important;
     backdrop-filter: blur(var(--app-glass-blur, 14px)) !important;
     -webkit-backdrop-filter: blur(var(--app-glass-blur, 14px)) !important;
     border-color: var(--app-border, rgba(226, 232, 240, 0.6)) !important;
