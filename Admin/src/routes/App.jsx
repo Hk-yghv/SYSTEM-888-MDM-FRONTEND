@@ -9,7 +9,7 @@ import Loading from "../utils/Loading";
 
 import { LanguageProvider } from "../context/LanguageContext";
 import { AuthProvider } from "../context/AuthContext";
-import { ThemeProvider } from "../context/ThemeContext";
+import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import ProtectRoute from "../services/ProtectRoute";
 import SignIn from "../services/SignIn";
 
