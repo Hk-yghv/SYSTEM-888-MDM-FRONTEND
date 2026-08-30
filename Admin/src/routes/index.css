@@ -363,3 +363,10 @@ div[class*="bg-amber-"] {
 .text-slate-600 {
     color: var(--app-text-sub, #64748b);
 }
+
+/* TABLE HEADER TEXT COLOR OVERRIDE ACROSS ALL PAGES */
+th,
+thead th,
+.table-container th {
+    color: var(--app-th-color, #6366f1) !important;
+}

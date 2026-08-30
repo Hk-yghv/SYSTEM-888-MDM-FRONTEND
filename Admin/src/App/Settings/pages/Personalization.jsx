@@ -313,7 +313,7 @@ const Personalization = () => {
                         <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
                             <div>
                                 <p className="font-bold text-slate-800">Primary Text Color (ពណ៌អក្សរចម្បង)</p>
-                                <p className="text-[10px] text-slate-500">Headings & table headers</p>
+                                <p className="text-[10px] text-slate-500">Headings & titles</p>
                             </div>
                             <div className="flex items-center gap-2">
                                 <input
@@ -323,6 +323,23 @@ const Personalization = () => {
                                     className="w-8 h-8 rounded-lg border border-slate-300 cursor-pointer p-0.5 bg-white"
                                 />
                                 <span className="font-mono text-xs font-bold text-slate-700">{customTheme.textPrimary}</span>
+                            </div>
+                        </div>
+
+                        {/* Table Header Text Color */}
+                        <div className="flex items-center justify-between p-2.5 bg-indigo-50/60 border border-indigo-200 rounded-xl">
+                            <div>
+                                <p className="font-bold text-indigo-950">Table Header Text (ពណ៌អក្សរ Table Header)</p>
+                                <p className="text-[10px] text-indigo-700">All table column titles (TH)</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={customTheme.tableHeaderTextColor || customTheme.accentColor || '#6366f1'}
+                                    onChange={(e) => handleColorChange('tableHeaderTextColor', e.target.value)}
+                                    className="w-8 h-8 rounded-lg border border-indigo-300 cursor-pointer p-0.5 bg-white shadow-2xs"
+                                />
+                                <span className="font-mono text-xs font-bold text-indigo-900">{customTheme.tableHeaderTextColor || customTheme.accentColor || '#6366f1'}</span>
                             </div>
                         </div>
 

@@ -182,6 +182,7 @@ export const ThemeProvider = ({ children }) => {
         root.style.setProperty('--app-text', theme.textPrimary || '#0f172a');
         root.style.setProperty('--app-text-sub', theme.textSecondary || '#64748b');
         root.style.setProperty('--app-accent', theme.accentColor || '#4f46e5');
+        root.style.setProperty('--app-th-color', theme.tableHeaderTextColor || theme.accentColor || '#6366f1');
         root.style.setProperty('--app-sidebar', hexToRgba(theme.sidebarBg || '#ffffff', cardAlpha));
         root.style.setProperty('--app-header', hexToRgba(theme.headerBg || '#ffffff', cardAlpha));
         root.style.setProperty('--app-border', theme.borderColor || '#cbd5e1');
