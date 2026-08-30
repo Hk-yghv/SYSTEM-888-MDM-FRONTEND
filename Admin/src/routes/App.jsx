@@ -74,14 +74,18 @@ const MainLayout = ({ children }) => {
   const { theme } = useTheme();
 
   return (
-    <div
-      className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden"
-      style={
-        theme?.bgType === 'image' && theme?.bgImage
-          ? { backgroundImage: `url(${theme.bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-          : {}
-      }
-    >
+    <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden">
+      {/* Background Image Layer (Fixed Fullscreen Backdrop) */}
+      {theme?.bgType === 'image' && theme?.bgImage && (
+        <div
+          className="fixed inset-0 w-full h-full bg-cover bg-center z-0 pointer-events-none transition-opacity duration-500"
+          style={{
+            backgroundImage: `url(${theme.bgImage})`,
+            opacity: 'var(--app-bg-opacity, 0.75)'
+          }}
+        />
+      )}
+
       {/* Background Video Player (Capped to 10 Seconds Loop) */}
       {theme?.bgType === 'video' && theme?.bgVideo && (
         <video
@@ -96,7 +100,7 @@ const MainLayout = ({ children }) => {
             }
           }}
           className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none transition-opacity duration-500"
-          style={{ opacity: 'var(--app-bg-opacity, 0.65)' }}
+          style={{ opacity: 'var(--app-bg-opacity, 0.75)' }}
         />
       )}
 

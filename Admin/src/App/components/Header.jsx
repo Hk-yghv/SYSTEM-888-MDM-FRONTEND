@@ -48,7 +48,13 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
     const currentLangObj = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0];
 
     return (
-        <header className='w-full h-[7vh] flex items-center justify-between px-6 bg-white/90 border-b border-emerald-500/20 backdrop-blur-md z-40 select-none shadow-sm'>
+        <header
+            className='w-full h-[7vh] flex items-center justify-between px-6 border-b z-40 select-none shadow-sm transition-colors backdrop-blur-md'
+            style={{
+                backgroundColor: 'var(--app-header, rgba(255, 255, 255, 0.9))',
+                borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'
+            }}
+        >
             <div className='flex items-center gap-4'>
                 <Link to="/dashboard" className='flex items-center gap-2.5 group'>
                     <h1 className="text-xl font-extrabold tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors">

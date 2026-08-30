@@ -114,6 +114,21 @@ export const PRESET_THEMES = {
     }
 };
 
+const hexToRgba = (hex, alpha = 1) => {
+    if (!hex || typeof hex !== 'string') return `rgba(255, 255, 255, ${alpha})`;
+    if (hex.startsWith('rgba') || hex.startsWith('hsla')) return hex;
+    let cleanHex = hex.replace('#', '');
+    if (cleanHex.length === 3) {
+        cleanHex = cleanHex.split('').map(c => c + c).join('');
+    }
+    const num = parseInt(cleanHex, 16);
+    if (isNaN(num)) return `rgba(255, 255, 255, ${alpha})`;
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 export const ThemeProvider = ({ children }) => {
     let user = null;
     try {
@@ -151,16 +166,21 @@ export const ThemeProvider = ({ children }) => {
     // Dynamically set CSS Custom Properties on document root
     useEffect(() => {
         const root = document.documentElement;
+        const opacity = (theme.cardOpacity ?? 90) / 100;
+        const isMediaBg = theme.bgType === 'image' || theme.bgType === 'video';
+        // When image or video background is active, enforce translucent glass cards
+        const cardAlpha = isMediaBg ? Math.min(opacity, 0.75) : opacity;
+
         root.style.setProperty('--app-bg', theme.bgPrimary || '#f4f6f8');
-        root.style.setProperty('--app-card', theme.bgCard || '#ffffff');
+        root.style.setProperty('--app-card', hexToRgba(theme.bgCard || '#ffffff', cardAlpha));
         root.style.setProperty('--app-text', theme.textPrimary || '#0f172a');
         root.style.setProperty('--app-text-sub', theme.textSecondary || '#64748b');
         root.style.setProperty('--app-accent', theme.accentColor || '#4f46e5');
-        root.style.setProperty('--app-sidebar', theme.sidebarBg || '#ffffff');
-        root.style.setProperty('--app-header', theme.headerBg || '#ffffff');
+        root.style.setProperty('--app-sidebar', hexToRgba(theme.sidebarBg || '#ffffff', cardAlpha));
+        root.style.setProperty('--app-header', hexToRgba(theme.headerBg || '#ffffff', cardAlpha));
         root.style.setProperty('--app-border', theme.borderColor || '#cbd5e1');
-        root.style.setProperty('--app-card-opacity', ((theme.cardOpacity ?? 90) / 100).toString());
-        root.style.setProperty('--app-bg-opacity', ((theme.bgOpacity ?? 65) / 100).toString());
+        root.style.setProperty('--app-card-opacity', cardAlpha.toString());
+        root.style.setProperty('--app-bg-opacity', ((theme.bgOpacity ?? 75) / 100).toString());
         root.style.setProperty('--app-glass-blur', `${theme.glassBlur ?? 12}px`);
     }, [theme]);
 

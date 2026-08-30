@@ -37,7 +37,13 @@ const Left = () => {
         `w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-white hover:bg-emerald-50/70 text-slate-700 border border-slate-200/80 hover:border-emerald-300 rounded-[5px] cursor-pointer text-sm font-semibold transition-all shadow-2xs`;
 
     return (
-        <div className="w-[260px] h-full min-h-0 flex-shrink-0 border-r border-slate-200 bg-slate-50/90 p-3 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-sm">
+        <div
+            className="w-[260px] h-full min-h-0 flex-shrink-0 border-r p-3 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-colors"
+            style={{
+                backgroundColor: 'var(--app-sidebar, rgba(248, 250, 252, 0.9))',
+                borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'
+            }}
+        >
 
             {/* Dashboard */}
             {hasPermission('/dashboard', 'read') && (
