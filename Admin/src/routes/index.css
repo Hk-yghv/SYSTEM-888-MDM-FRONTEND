@@ -393,6 +393,21 @@ table tbody td,
     color: var(--app-text, #0f172a) !important;
 }
 
+/* FORCE SINGLE-LINE TABLE CELLS & PREVENT LINE WRAPPING ACROSS ALL TABLES */
+.table-container,
+div[class*="table-container"],
+div[class*="overflow-x-auto"] {
+    overflow-x: auto !important;
+}
+
+table,
+table th,
+table td,
+.table-container th,
+.table-container td {
+    white-space: nowrap !important;
+}
+
 table tbody tr {
     background-color: transparent !important;
 }

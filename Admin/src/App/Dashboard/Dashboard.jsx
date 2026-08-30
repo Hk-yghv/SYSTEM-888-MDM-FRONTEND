@@ -387,20 +387,38 @@ const Dashboard = () => {
             }));
 
         } else {
-            const totalLoan = filteredContracts.filter(c => c.status === 'Activated').reduce((s, c) => s + (Number(c.amount) || 0), 0);
-            const totalCustomerReceived = filteredContracts.filter(c => c.status === 'Activated').reduce((s, c) => s + (Number(c.monthlyPayment) || 0), 0);
-            const totalRev = filteredPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-            const totalProfit = totalRev - totalCustomerReceived;
-            const totalEntry = filteredContracts.filter(c => c.status === 'Activated').length;
-            const totalExit = filteredContracts.filter(c => c.status === 'Redeem').length;
-            return [
-                { label: 'Loan Disbursed', amount: totalLoan, color: 'bg-blue-600', text: 'text-blue-700', type: 'financial', entry: 0, exit: 0 },
-                { label: 'Revenue Collected', amount: totalRev, color: 'bg-emerald-600', text: 'text-emerald-700', type: 'financial', entry: 0, exit: 0 },
-                { label: totalProfit >= 0 ? 'Net Profit' : 'Net Loss', amount: Math.abs(totalProfit), color: totalProfit >= 0 ? 'bg-teal-600' : 'bg-rose-600', text: totalProfit >= 0 ? 'text-teal-700' : 'text-rose-700', type: 'financial', entry: 0, exit: 0 },
-                { label: 'Total Loan Disbursed', amount: totalLoan, color: 'bg-amber-500', text: 'text-amber-700', type: 'financial', entry: 0, exit: 0 },
-                { label: 'Entry Customers', amount: totalEntry, color: 'bg-indigo-600', text: 'text-indigo-700', type: 'count', entry: totalEntry, exit: 0 },
-                { label: 'Exit Redeemed', amount: totalExit, color: 'bg-purple-600', text: 'text-purple-700', type: 'count', entry: 0, exit: totalExit }
-            ];
+            const yearMap = {};
+            filteredContracts.forEach(c => {
+                const yKey = toDateStr(c.inputDate || c.createdAt).slice(0, 4);
+                if (!yearMap[yKey]) {
+                    yearMap[yKey] = { label: yKey, yearKey: yKey, revenue: 0, loan: 0, customerReceived: 0, profit: 0, entry: 0, exit: 0 };
+                }
+                if (c.status === 'Activated') {
+                    yearMap[yKey].entry += 1;
+                    yearMap[yKey].loan += (Number(c.amount) || 0);
+                    yearMap[yKey].customerReceived += (Number(c.monthlyPayment) || 0);
+                } else if (c.status === 'Redeem') {
+                    yearMap[yKey].exit += 1;
+                }
+            });
+
+            filteredPayments.forEach(p => {
+                const yKey = toDateStr(p.paidDate || p.paymentDate || p.createdAt).slice(0, 4);
+                if (!yearMap[yKey]) {
+                    yearMap[yKey] = { label: yKey, yearKey: yKey, revenue: 0, loan: 0, customerReceived: 0, profit: 0, entry: 0, exit: 0 };
+                }
+                yearMap[yKey].revenue += (Number(p.amount) || 0);
+            });
+
+            const sortedYears = Object.keys(yearMap).sort();
+            if (sortedYears.length === 0) {
+                return [{ label: 'All Time', dateKey: 'all', revenue: 0, loan: 0, customerReceived: 0, profit: 0, entry: 0, exit: 0 }];
+            }
+
+            return sortedYears.map(y => ({
+                ...yearMap[y],
+                profit: yearMap[y].revenue - yearMap[y].customerReceived
+            }));
         }
     }, [timeRange, rawContracts, rawPayments, todayStr]);
 
