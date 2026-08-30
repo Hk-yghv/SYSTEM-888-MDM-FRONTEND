@@ -166,10 +166,10 @@ export const ThemeProvider = ({ children }) => {
     // Dynamically set CSS Custom Properties on document root
     useEffect(() => {
         const root = document.documentElement;
-        const opacity = (theme.cardOpacity ?? 90) / 100;
+        const opacity = (theme.cardOpacity ?? 85) / 100;
         const isMediaBg = theme.bgType === 'image' || theme.bgType === 'video';
-        // When image or video background is active, enforce translucent glass cards
-        const cardAlpha = isMediaBg ? Math.min(opacity, 0.75) : opacity;
+        // When image or video background is active, enforce crystal-clear glass translucency (0.50 opacity max)
+        const cardAlpha = isMediaBg ? Math.min(opacity, 0.50) : opacity;
 
         root.style.setProperty('--app-bg', theme.bgPrimary || '#f4f6f8');
         root.style.setProperty('--app-card', hexToRgba(theme.bgCard || '#ffffff', cardAlpha));
@@ -180,8 +180,8 @@ export const ThemeProvider = ({ children }) => {
         root.style.setProperty('--app-header', hexToRgba(theme.headerBg || '#ffffff', cardAlpha));
         root.style.setProperty('--app-border', theme.borderColor || '#cbd5e1');
         root.style.setProperty('--app-card-opacity', cardAlpha.toString());
-        root.style.setProperty('--app-bg-opacity', ((theme.bgOpacity ?? 75) / 100).toString());
-        root.style.setProperty('--app-glass-blur', `${theme.glassBlur ?? 12}px`);
+        root.style.setProperty('--app-bg-opacity', ((theme.bgOpacity ?? 85) / 100).toString());
+        root.style.setProperty('--app-glass-blur', `${theme.glassBlur ?? 14}px`);
     }, [theme]);
 
     const updateTheme = (newTheme) => {

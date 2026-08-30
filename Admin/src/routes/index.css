@@ -307,17 +307,22 @@ input::placeholder, textarea::placeholder {
 
 /* GLOBAL THEME OVERRIDES FOR ALL PAGES ACROSS SYSTEM */
 .bg-\[\#f4f6f8\],
-div[class*="bg-[#f4f6f8]"] {
+div[class*="bg-[#f4f6f8]"],
+main {
     background-color: transparent !important;
 }
 
-.bg-white {
-    background-color: var(--app-card, rgba(255, 255, 255, 0.92)) !important;
-    backdrop-filter: blur(var(--app-glass-blur, 12px));
-    -webkit-backdrop-filter: blur(var(--app-glass-blur, 12px));
+.bg-white,
+.bg-slate-50,
+.bg-slate-50\/90 {
+    background-color: var(--app-card, rgba(255, 255, 255, 0.70)) !important;
+    backdrop-filter: blur(var(--app-glass-blur, 14px)) !important;
+    -webkit-backdrop-filter: blur(var(--app-glass-blur, 14px)) !important;
 }
 
-.border-slate-200 {
+.border-slate-200,
+.border-slate-200\/80,
+.border-slate-200\/70 {
     border-color: var(--app-border, rgba(226, 232, 240, 0.8)) !important;
 }
 
