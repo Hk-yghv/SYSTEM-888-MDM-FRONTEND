@@ -73,7 +73,6 @@ const DocumentScanner = ({ onParsedData }) => {
             gender: 'male',
             birthAddress: '',
             currentAddress: '',
-            // Device Specs Fields
             brand: '',
             model: '',
             serialNumber: '',
@@ -87,7 +86,7 @@ const DocumentScanner = ({ onParsedData }) => {
 
         // ── 1. Device Screenshot Parsing (iOS / Android "About" screen) ──
         
-        // Model Name (e.g. Model Name: iPhone 12 Pro Max or iPhone 12 pro Max) -> map to Model / Device Model
+        // Model Name (e.g. Model Name: iPhone 12 Pro Max)
         const modelNameMatch = normalizedText.match(/Model\s*Name[\s:\t>]+([^\n\r>]+)/i) ||
             normalizedText.match(/\b(iPhone\s+[0-9]{1,2}(?:\s*(?:Pro\s*Max|Pro|Plus|Mini))?)\b/i) ||
             normalizedText.match(/\b(Samsung\s+Galaxy\s+[^\n\r]+)/i);
@@ -97,10 +96,10 @@ const DocumentScanner = ({ onParsedData }) => {
             else if (/samsung|galaxy/i.test(parsed.model)) parsed.brand = 'Samsung';
         }
 
-        // iOS Version / System Version (e.g. iOS Version 26.5 or iOS Version: 16.5) -> map to Version
-        const iosVersionMatch = normalizedText.match(/iOS\s*Version[\s:\t>]+([^\n\r>]+)/i) ||
+        // iOS Version (e.g. iOS Version 26.5 or 16.5) -> map to Version
+        const iosVersionMatch = normalizedText.match(/iOS\s*Version[\s:\t>]+([0-9\.]+)/i) ||
             normalizedText.match(/(?:Software|System|Android)\s*Version[\s:\t>]+([^\n\r>]+)/i) ||
-            normalizedText.match(/\b(iOS\s+[0-9]{1,2}(?:\.[0-9]{1,2})?)\b/i);
+            normalizedText.match(/\b(iOS\s+[0-9\.]+)\b/i);
         if (iosVersionMatch) {
             const rawVer = (iosVersionMatch[1] || iosVersionMatch[0]).replace(/[\>\:\;]/g, '').trim();
             parsed.version = rawVer.toLowerCase().startsWith('ios') ? rawVer : `iOS ${rawVer}`;
@@ -113,13 +112,10 @@ const DocumentScanner = ({ onParsedData }) => {
             parsed.serialNumber = serialMatch[1].trim();
         }
 
-        // MEID (e.g. MEID: 35173227736075)
+        // MEID & IMEI
         const meidMatch = normalizedText.match(/MEID[\s:\t>]+([0-9\s]{14,18})/i);
-        if (meidMatch) {
-            parsed.meid = meidMatch[1].replace(/\s+/g, '').trim();
-        }
+        if (meidMatch) parsed.meid = meidMatch[1].replace(/\s+/g, '').trim();
 
-        // IMEI 1 & IMEI 2
         const imeiLabelMatch = normalizedText.match(/(?:^|\n)IMEI[\s:\t>]+([0-9\s]{14,20})/i);
         const imei2LabelMatch = normalizedText.match(/IMEI2[\s:\t>]+([0-9\s]{14,20})/i);
         if (imeiLabelMatch) parsed.imei1 = imeiLabelMatch[1].replace(/\s+/g, '').trim();
@@ -129,114 +125,118 @@ const DocumentScanner = ({ onParsedData }) => {
             const allImeiMatches = normalizedText.match(/\b(35\d{13}|86\d{13}|01\d{13}|\d{15})\b/g);
             if (allImeiMatches && allImeiMatches.length > 0) {
                 parsed.imei1 = allImeiMatches[0];
-                if (allImeiMatches.length > 1 && !parsed.imei2) {
-                    parsed.imei2 = allImeiMatches[1];
-                }
+                if (allImeiMatches.length > 1 && !parsed.imei2) parsed.imei2 = allImeiMatches[1];
             }
         }
 
-        // Capacity / Storage (e.g. Capacity 128 GB) -> map to Capacity / Storage
+        // Capacity / Storage (e.g. Capacity 128 GB)
         const capacityMatch = normalizedText.match(/Capacity[\s:\t>]+([0-9]{1,4}\s*(?:GB|TB))/i) ||
             normalizedText.match(/\b([0-9]{2,4}\s*(?:GB|TB))\b/i);
-        if (capacityMatch) {
-            parsed.capacity = capacityMatch[1].trim();
-        }
+        if (capacityMatch) parsed.capacity = capacityMatch[1].trim();
 
         const brandsList = ['APPLE', 'SAMSUNG', 'OPPO', 'VIVO', 'REALME', 'XIAOMI', 'REDMI', 'ONEPLUS', 'GOOGLE', 'HONOR', 'HUAWEI'];
         const foundBrand = brandsList.find(b => fullText.includes(b));
-        if (foundBrand && !parsed.brand) {
-            parsed.brand = foundBrand === 'APPLE' ? 'Apple' : foundBrand;
-        }
+        if (foundBrand && !parsed.brand) parsed.brand = foundBrand === 'APPLE' ? 'Apple' : foundBrand;
 
-        // ── 2. Cambodian ID Card / Passport Parsing ──
 
-        // ID Card Number (e.g. 062396649 or MRZ IDKHM0623966497) -> map to ID Card Number
+        // ── 2. Cambodian ID Card Parsing ──
+
+        // A. ID Card Number (e.g. 062396649 or MRZ IDKHM0623966497)
         const mrzIdMatch = normalizedText.match(/IDKHM([0-9]{9,10})/i) || normalizedText.match(/KHM([0-9]{9,10})/i);
         if (mrzIdMatch) {
             parsed.idCardNumber = mrzIdMatch[1];
         } else {
             const idNumMatch = normalizedText.match(/\b(0\d{8,9})\b/) ||
                 normalizedText.match(/\b\d{3}\s?\d{3}\s?\d{3}\b/) ||
-                normalizedText.match(/\b(ID|NO|NUM|PASSPORT|លេខ)[:\s]*([A-Z0-9]{7,12})\b/i) ||
-                normalizedText.match(/\b([A-Z]\d{7,8}|\d{9,10})\b/);
+                normalizedText.match(/\b([A-Z0-9]{9,10})\b/);
             if (idNumMatch && !/IMEI|MEID|ICCID/i.test(idNumMatch[0])) {
-                const rawId = (idNumMatch[2] || idNumMatch[1] || idNumMatch[0]).replace(/\s+/g, '');
-                if (rawId.length >= 7 && rawId.length <= 12) {
-                    parsed.idCardNumber = rawId;
-                }
+                parsed.idCardNumber = idNumMatch[1] || idNumMatch[0];
             }
         }
 
-        // Khmer Name (e.g. គោត្តនាមនិងនាម: ហាក់ យ៉ុងហាវ) -> map to Name Khmer
-        const khmerNameMatch = normalizedText.match(/គោត្តនាម(?:និង|\s*និង\s*)នាម[\s:\t]*([\u1780-\u17FF\s]+)/) ||
-            normalizedText.match(/គោត្តនាម[\s:\t]*([\u1780-\u17FF\s]+)/);
+        // B. Khmer Name (e.g. គោត្តនាមនិងនាម: ហាក់ យ៉ុងហាវ)
+        const khmerNameMatch = normalizedText.match(/(?:គោត្តនាម(?:និង|\s*និង\s*)នាម|គោត្តនាម|ឈ្មោះ)[\s:\t>]*([\u1780-\u17FF\s]{2,30})/);
         if (khmerNameMatch) {
-            parsed.customerNameKh = khmerNameMatch[1].replace(/(ថ្ងៃខែ|ឆ្នាំ|កំណើត|ភេទ|សញ្ជាតិ|ទីកន្លែង)/g, '').trim();
-        } else {
-            const khmerLines = lines.filter(line => /[\u1780-\u17FF]/.test(line));
-            const khmerNameLine = khmerLines.find(l => !l.includes('ព្រះរាជាណាចក្រ') && !l.includes('អត្តសញ្ញាណប័ណ្ណ') && !l.includes('សញ្ជាតិ') && !l.includes('កំណើត') && !l.includes('អាសយដ្ឋាន'));
-            if (khmerNameLine) {
-                parsed.customerNameKh = khmerNameLine.replace(/(ឈ្មោះ|ភេទ|ថ្ងៃកំណើត|សញ្ជាតិ|គោត្តនាម|និងនាម)/g, '').trim();
+            let cleanKh = khmerNameMatch[1]
+                .replace(/(ថ្ងៃ|ខែ|ឆ្នាំ|កំណើត|ភេទ|សញ្ជាតិ|ទីកន្លែង|អាសយដ្ឋាន|ប្រុស|ស្រី|រែម)/g, '')
+                .replace(/^[:\s\u17D6\u17D4\u17D5]+/, '')
+                .trim();
+            if (cleanKh.length >= 2) parsed.customerNameKh = cleanKh;
+        }
+        if (!parsed.customerNameKh) {
+            const khLines = lines.filter(l => /[\u1780-\u17FF]/.test(l) && !/ព្រះរាជាណាចក្រ|អត្តសញ្ញាណប័ណ្ណ|សញ្ជាតិ|ថ្ងៃកំណើត|អាសយដ្ឋាន|ទីកន្លែង/.test(l));
+            if (khLines.length > 0) {
+                parsed.customerNameKh = khLines[0].replace(/(គោត្តនាម|និងនាម|ឈ្មោះ|ភេទ|រែម)/g, '').replace(/^[:\s]+/, '').trim();
             }
         }
 
-        // English Name (e.g. HAK YONGHOUV) -> map to Name English
+        // C. English Name (e.g. HAK YONGHOUV or from MRZ HAK<<YONGHOUV<<<<<<<<<<<<<<<)
         const mrzNameMatch = normalizedText.match(/([A-Z]+)<<([A-Z]+(?:<[A-Z]+)*)<*/);
         if (mrzNameMatch) {
             const surname = mrzNameMatch[1];
             const givenName = mrzNameMatch[2].replace(/</g, ' ');
             parsed.customerNameEn = `${surname} ${givenName}`.trim();
         } else {
-            const nameMatch = normalizedText.match(/HAK\s+YONGHOUV/i);
-            if (nameMatch) {
-                parsed.customerNameEn = nameMatch[0].toUpperCase();
-            } else {
-                const nameCandidates = lines.filter(line => {
-                    const clean = line.replace(/[^A-Z\s]/g, '').trim();
-                    return clean.length >= 3 && clean === line.toUpperCase() && !/KINGDOM|NATIONAL|ABOUT|CARRIER|NETWORK|CAMBODIA|IDENTITY|CARD/i.test(clean);
-                });
-                if (nameCandidates.length > 0) {
-                    parsed.customerNameEn = nameCandidates[0].replace(/[^A-Za-z\s]/g, '').trim();
-                }
+            const englishCandidates = lines.map(l => l.replace(/[^A-Z\s]/g, '').trim())
+                .filter(l => l.length >= 3 && l === l.toUpperCase() && !/KINGDOM|CAMBODIA|NATIONAL|IDENTITY|CARD|ABOUT|CARRIER|NETWORK|IDKHM|MODEL|SERIAL/i.test(l));
+            if (englishCandidates.length > 0) {
+                parsed.customerNameEn = englishCandidates[0];
             }
         }
 
-        // Date of Birth (e.g. ថ្ងៃខែឆ្នាំកំណើត: ១៥.០៥.២០០៥) -> map to Date of Birth (YYYY-MM-DD)
-        const khDobMatch = normalizedText.match(/ថ្ងៃខែឆ្នាំកំណើត[\s:\t]*(\d{2}[\/\.-]\d{2}[\/\.-]\d{4})/);
-        if (khDobMatch) {
-            const parts = khDobMatch[1].split(/[\/\.-]/);
-            if (parts[2].length === 4) {
-                parsed.dob = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        // D. Date of Birth (e.g. ថ្ងៃខែឆ្នាំកំណើត: ១៥.០៥.២០០៥ -> 2005-05-15)
+        const dobRegex = /(\d{1,2})[\s\.\/\,-]+(\d{1,2})[\s\.\/\,-]+(\d{2,4})/;
+        const khDobLine = lines.find(l => /កំណើត|ថ្ងៃ/.test(l) || dobRegex.test(l));
+        const dobMatch = (khDobLine && khDobLine.match(dobRegex)) || normalizedText.match(dobRegex);
+
+        if (dobMatch) {
+            let day = parseInt(dobMatch[1], 10);
+            let month = parseInt(dobMatch[2], 10);
+            let year = parseInt(dobMatch[3], 10);
+
+            if (year < 100) year += year > (new Date().getFullYear() % 100) ? 1900 : 2000;
+            if (month > 12 && day <= 12) {
+                const tmp = day; day = month; month = tmp;
             }
-        } else {
-            const dobMatch = normalizedText.match(/\b(\d{2}[\/\.-]\d{2}[\/\.-]\d{4}|\d{4}[\/\.-]\d{2}[\/\.-]\d{2})\b/);
-            if (dobMatch) {
-                const parts = dobMatch[1].split(/[\/\.-]/);
-                if (parts[0].length === 4) {
-                    parsed.dob = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-                } else if (parts[2].length === 4) {
-                    parsed.dob = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                }
+
+            if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1940 && year <= 2026) {
+                parsed.dob = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
         }
 
-        // Gender (e.g. ភេទ: ប្រុស -> Male) -> map to Gender select dropdown
-        if (/ភេទ[\s:\t]*ស្រី/i.test(normalizedText) || /FEMALE/i.test(fullText) || /SEX[\s:\t]*F/i.test(fullText)) {
+        // E. Gender (e.g. ភេទ: ប្រុស -> male, ភេទ: ស្រី -> female)
+        if (/ភេទ[\s:\t]*ស្រី/i.test(normalizedText) || /FEMALE/i.test(fullText) || /\bF\b/i.test(fullText)) {
             parsed.gender = 'female';
-        } else if (/ភេទ[\s:\t]*ប្រុស/i.test(normalizedText) || /MALE/i.test(fullText) || /SEX[\s:\t]*M/i.test(fullText)) {
+        } else if (/ភេទ[\s:\t]*ប្រុស/i.test(normalizedText) || /MALE/i.test(fullText) || /\bM\b/i.test(fullText)) {
             parsed.gender = 'male';
         }
 
-        // Birth Address (e.g. ទីកន្លែងកំណើត: សង្កាត់បឹងកុក ក្រុងកំពង់ចាម កំពង់ចាម) -> map to Birth Address
-        const birthAddressMatch = normalizedText.match(/ទីកន្លែងកំណើត[\s:\t]*([^\n\r]+)/);
-        if (birthAddressMatch) {
-            parsed.birthAddress = birthAddressMatch[1].replace(/(អាសយដ្ឋាន|សញ្ជាតិ|កម្ពស់)/g, '').trim();
+        // F. Birth Address (ទីកន្លែងកំណើត)
+        const birthAddrMatch = normalizedText.match(/ទីកន្លែងកំណើត[\s:\t]*([\u1780-\u17FF\s\d\.]+)/) ||
+            normalizedText.match(/ទីកន្លែង[\s:\t]*([\u1780-\u17FF\s\d\.]+)/);
+        if (birthAddrMatch) {
+            parsed.birthAddress = birthAddrMatch[1].replace(/(អាសយដ្ឋាន|សញ្ជាតិ|កម្ពស់|ថ្ងៃកំណើត)/g, '').replace(/^[:\s]+/, '').trim();
         }
 
-        // Current Address (e.g. អាសយដ្ឋាន: ភូមិបឹងកុកទី១ សង្កាត់បឹងកុក ក្រុងកំពង់ចាម កំពង់ចាម) -> map to Current Address
-        const currentAddressMatch = normalizedText.match(/អាសយដ្ឋាន[\s:\t]*([^\n\r]+)/);
-        if (currentAddressMatch) {
-            parsed.currentAddress = currentAddressMatch[1].replace(/(សពុលភាព|ស្នាមមេដៃ|កាលបរិច្ឆេទ)/g, '').trim();
+        // G. Current Address (អាសយដ្ឋាន)
+        const currentAddrMatch = normalizedText.match(/អាសយដ្ឋាន[\s:\t]*([\u1780-\u17FF\s\d\.]+)/);
+        if (currentAddrMatch) {
+            const addrIdx = lines.findIndex(l => /អាសយដ្ឋាន/.test(l));
+            if (addrIdx !== -1) {
+                const addrParts = [];
+                for (let i = addrIdx; i < Math.min(lines.length, addrIdx + 3); i++) {
+                    const l = lines[i].replace(/(អាសយដ្ឋាន|សពុលភាព|ស្នាមមេដៃ|កាលបរិច្ឆេទ)/g, '').replace(/^[:\s]+/, '').trim();
+                    if (/[\u1780-\u17FF]/.test(l) && !/IDKHM|KINGDOM/i.test(l)) {
+                        addrParts.push(l);
+                    }
+                }
+                if (addrParts.length > 0) {
+                    parsed.currentAddress = addrParts.join(' ').trim();
+                }
+            }
+            if (!parsed.currentAddress) {
+                parsed.currentAddress = currentAddrMatch[1].replace(/(សពុលភាព|ស្នាមមេដៃ|កាលបរិច្ឆេទ)/g, '').replace(/^[:\s]+/, '').trim();
+            }
         }
 
         return parsed;
@@ -277,12 +277,25 @@ const DocumentScanner = ({ onParsedData }) => {
                 setStatusText(`កំពុងស្កេនរូបភាពទី ${i + 1}/${imageFiles.length}...`);
 
                 const enhancedDataUrl = await preprocessImageForOCR(file);
-                const { data } = await worker.recognize(enhancedDataUrl);
-                const result = parseDocumentText(data.text || '');
+                const { data: data1 } = await worker.recognize(enhancedDataUrl);
+                const res1 = parseDocumentText(data1.text || '');
 
-                Object.keys(result).forEach(key => {
-                    if (result[key] && (!combinedParsed[key] || combinedParsed[key] === 'male')) {
-                        combinedParsed[key] = result[key];
+                let res2 = {};
+                if (!res1.customerNameEn || !res1.dob || !res1.currentAddress) {
+                    try {
+                        const rawUrl = URL.createObjectURL(file);
+                        const { data: data2 } = await worker.recognize(rawUrl);
+                        res2 = parseDocumentText(data2.text || '');
+                        URL.revokeObjectURL(rawUrl);
+                    } catch {}
+                }
+
+                const merged = { ...res2, ...res1 };
+                Object.keys(merged).forEach(key => {
+                    if (merged[key] && merged[key] !== '') {
+                        if (!combinedParsed[key] || (key === 'gender' && merged.gender)) {
+                            combinedParsed[key] = merged[key];
+                        }
                     }
                 });
             }
