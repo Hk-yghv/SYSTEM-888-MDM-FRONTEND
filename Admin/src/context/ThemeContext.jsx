@@ -174,8 +174,8 @@ export const ThemeProvider = ({ children }) => {
         const root = document.documentElement;
         const opacity = (theme.cardOpacity ?? 85) / 100;
         const isMediaBg = theme.bgType === 'image' || theme.bgType === 'video';
-        // When image or video background is active, enforce crystal-clear glass translucency (0.50 opacity max)
-        const cardAlpha = isMediaBg ? Math.min(opacity, 0.50) : opacity;
+        // When image or video background is active, enforce crystal-clear glass translucency (0.35 opacity max)
+        const cardAlpha = isMediaBg ? Math.min(opacity, 0.35) : opacity;
 
         root.style.setProperty('--app-bg', theme.bgPrimary || '#f4f6f8');
         root.style.setProperty('--app-card', hexToRgba(theme.bgCard || '#ffffff', cardAlpha));

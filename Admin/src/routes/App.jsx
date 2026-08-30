@@ -72,17 +72,11 @@ const MainLayout = ({ children }) => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
   const { theme } = useTheme();
-  const location = useLocation();
-
-  const isDashboardPage = location.pathname === '/dashboard' || location.pathname === json.dashboard;
-  const isDashboardBgDisabled = isDashboardPage && theme?.showDashboardBg === false;
 
   return (
-    <div className={`flex flex-col h-screen text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden ${
-      isDashboardBgDisabled ? 'bg-[#f4f6f8] theme-dashboard-clean' : 'bg-[var(--app-bg,#f4f6f8)]'
-    }`}>
+    <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden">
       {/* Background Image Layer (Fixed Fullscreen Backdrop) */}
-      {!isDashboardBgDisabled && theme?.bgType === 'image' && theme?.bgImage && (
+      {theme?.bgType === 'image' && theme?.bgImage && (
         <div
           className="fixed inset-0 w-full h-full bg-cover bg-center z-0 pointer-events-none transition-opacity duration-500"
           style={{
@@ -93,7 +87,7 @@ const MainLayout = ({ children }) => {
       )}
 
       {/* Background Video Player (Capped to 10 Seconds Loop) */}
-      {!isDashboardBgDisabled && theme?.bgType === 'video' && theme?.bgVideo && (
+      {theme?.bgType === 'video' && theme?.bgVideo && (
         <video
           src={theme.bgVideo}
           autoPlay
