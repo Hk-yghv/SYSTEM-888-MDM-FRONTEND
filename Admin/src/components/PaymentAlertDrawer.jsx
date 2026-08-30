@@ -227,7 +227,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                 </div>
 
                 {/* Main Content Area (High Contrast Text & Clean Panels) */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f8fafc]">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 text-slate-600 gap-3">
                             <FaSync className="animate-spin text-3xl text-amber-500" />
