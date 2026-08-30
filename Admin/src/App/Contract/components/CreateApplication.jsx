@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
-import DocumentScanner from '../../../components/DocumentScanner';
 import { formatIMEI } from '../../../utils/imeiFormatter';
 
 
@@ -433,7 +432,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
                     {/* TAB 1: Customer Info */}
                     {activeTab === 'customer' && (<>
-                        <DocumentScanner onParsedData={handleDocumentParsed} />
                         <div className="grid grid-cols-4 gap-3">
                             <AutoField id="customerNameEn" label="Name English" value={form.customerNameEn} placeholder="Name English" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                             <AutoField id="customerNameKh" label="Name Khmer" value={form.customerNameKh} placeholder="Name Khmer" font="font-khmer" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
