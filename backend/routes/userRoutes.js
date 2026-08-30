@@ -11,13 +11,13 @@ const OFFLINE_THRESHOLD_MS = 45 * 1000; // 45 seconds threshold
 
 const formatUserStatus = (u) => {
     const rawObj = u.toObject ? u.toObject() : { ...u };
-    if (!rawObj.lastSeen || (Date.now() - new Date(rawObj.lastSeen).getTime() > OFFLINE_THRESHOLD_MS)) {
-        rawObj.status = 'Offline';
-    }
+    const lastSeenMs = rawObj.lastSeen ? new Date(rawObj.lastSeen).getTime() : 0;
+    const isOnline = lastSeenMs > 0 && (Date.now() - lastSeenMs <= OFFLINE_THRESHOLD_MS);
+    rawObj.status = isOnline ? 'Online' : 'Offline';
     return rawObj;
 };
 
-// GET all users — merged from all 3 DBs
+// GET all users — merged from all 3 DBs with real-time status evaluation
 router.get('/', async (req, res) => {
     try {
         let rawUsers = [];
@@ -26,10 +26,23 @@ router.get('/', async (req, res) => {
         } else {
             rawUsers = MEM_DB.users;
         }
-        const evaluated = rawUsers.map(formatUserStatus);
-        res.json(evaluated);
+
+        const userMap = new Map();
+        rawUsers.forEach(u => {
+            const formatted = formatUserStatus(u);
+            const existing = userMap.get(formatted.username);
+            const curLastSeenMs = formatted.lastSeen ? new Date(formatted.lastSeen).getTime() : 0;
+            const exLastSeenMs = existing?.lastSeen ? new Date(existing.lastSeen).getTime() : 0;
+
+            if (!existing || (formatted.status === 'Online' && existing.status !== 'Online') || curLastSeenMs > exLastSeenMs) {
+                userMap.set(formatted.username, formatted);
+            }
+        });
+
+        res.json(Array.from(userMap.values()));
     } catch (err) {
-        res.json(MEM_DB.users.map(formatUserStatus));
+        const evaluated = (MEM_DB.users || []).map(formatUserStatus);
+        res.json(evaluated);
     }
 });
 

@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
         };
 
         sendHeartbeat();
-        const hbInterval = setInterval(sendHeartbeat, 15000); // Heartbeat every 15s
+        const hbInterval = setInterval(sendHeartbeat, 10000); // Heartbeat every 10s
 
         const handleUnload = () => {
             if (user?.username) {

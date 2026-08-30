@@ -345,14 +345,12 @@ export default function createAuthRoutes(bot) {
             if (username) {
                 const now = new Date();
                 if (isMongoConnected) {
-                    const WriteModel = getWriteModel(User);
-                    await WriteModel.updateOne({ username }, { $set: { status: 'Online', lastSeen: now } });
-                } else {
-                    const memUser = MEM_DB.users.find(u => u.username === username);
-                    if (memUser) {
-                        memUser.status = 'Online';
-                        memUser.lastSeen = now;
-                    }
+                    await queryAllDBs(User, (M) => M.updateMany({ username }, { $set: { status: 'Online', lastSeen: now } }));
+                }
+                const memUser = MEM_DB.users.find(u => u.username === username);
+                if (memUser) {
+                    memUser.status = 'Online';
+                    memUser.lastSeen = now;
                 }
             }
             res.json({ success: true });

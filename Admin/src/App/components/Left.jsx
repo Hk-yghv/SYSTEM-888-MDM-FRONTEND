@@ -80,10 +80,10 @@ const Left = () => {
                     <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("report")} className={dropdownHeaderClass("report")}>
                             <p className="flex items-center gap-3">
-                                <MdOutlineBarChart size={20} className="text-indigo-600" />
+                                <MdOutlineBarChart size={20} className="text-emerald-600" />
                                 <span>{t('report')}</span>
                             </p>
-                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-indigo-600 ${openMenu === "report" ? "rotate-180" : ""}`} />
+                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "report" ? "rotate-180" : ""}`} />
                         </div>
 
                         <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
@@ -155,28 +155,28 @@ const Left = () => {
             {(hasPermission(json.installment.paymentHistory, 'read') ||
                 hasPermission(json.installment.cashOut, 'read') ||
                 hasPermission(json.installment.cashIn, 'read')) && (
-                <div className="flex-shrink-0">
-                    <div onClick={() => toggleMenu("installment")} className={dropdownHeaderClass("installment")}>
-                        <p className="flex items-center gap-3">
-                            <IoMdWallet size={20} className="text-emerald-600" />
-                            {t('installment')}
-                        </p>
-                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "installment" ? "rotate-180" : ""}`} />
-                    </div>
+                    <div className="flex-shrink-0">
+                        <div onClick={() => toggleMenu("installment")} className={dropdownHeaderClass("installment")}>
+                            <p className="flex items-center gap-3">
+                                <IoMdWallet size={20} className="text-emerald-600" />
+                                {t('installment')}
+                            </p>
+                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "installment" ? "rotate-180" : ""}`} />
+                        </div>
 
-                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
-                        {hasPermission(json.installment.paymentHistory, 'read') && (
-                            <Link to={json.installment.paymentHistory} className={subItemClass(json.installment.paymentHistory)}>{t('paymentHistory')}</Link>
-                        )}
-                        {hasPermission(json.installment.cashOut, 'read') && (
-                            <Link to={json.installment.cashOut} className={subItemClass(json.installment.cashOut)}>{t('cashOut')}</Link>
-                        )}
-                        {hasPermission(json.installment.cashIn, 'read') && (
-                            <Link to={json.installment.cashIn} className={subItemClass(json.installment.cashIn)}>{t('cashIn')}</Link>
-                        )}
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                            {hasPermission(json.installment.paymentHistory, 'read') && (
+                                <Link to={json.installment.paymentHistory} className={subItemClass(json.installment.paymentHistory)}>{t('paymentHistory')}</Link>
+                            )}
+                            {hasPermission(json.installment.cashOut, 'read') && (
+                                <Link to={json.installment.cashOut} className={subItemClass(json.installment.cashOut)}>{t('cashOut')}</Link>
+                            )}
+                            {hasPermission(json.installment.cashIn, 'read') && (
+                                <Link to={json.installment.cashIn} className={subItemClass(json.installment.cashIn)}>{t('cashIn')}</Link>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
             {/* Lost Phone */}
             {(hasPermission(json.lostphone.actionLockphone, 'read') ||

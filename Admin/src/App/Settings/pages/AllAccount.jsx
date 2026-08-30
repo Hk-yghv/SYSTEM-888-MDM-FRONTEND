@@ -116,7 +116,7 @@ const AllAccount = () => {
                 .then(res => res.ok ? res.json() : null)
                 .then(data => { if (data) setUsers(data); })
                 .catch(() => {});
-        }, 4000);
+        }, 3000);
         return () => clearInterval(pollInterval);
     }, [API_BASE]);
 
