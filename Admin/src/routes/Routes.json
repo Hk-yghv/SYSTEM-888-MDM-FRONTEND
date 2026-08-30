@@ -23,7 +23,9 @@
         "blacklist": "/contract/blacklist"
     },
     "installment": {
-        "paymentHistory": "/installment/paymentHistory"
+        "paymentHistory": "/installment/paymentHistory",
+        "cashOut": "/installment/cash-out",
+        "cashIn": "/installment/cash-in"
     },
     "lostphone": {
         "actionLockphone": "/lostphone/actions",

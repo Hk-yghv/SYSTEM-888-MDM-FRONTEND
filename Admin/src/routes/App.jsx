@@ -41,6 +41,8 @@ import BlackList from "../App/Contract/page/BlackList";
 
 // Installment
 import PaymentHistory from "../App/Installment/pages/PaymentHistory";
+import CashOutPage from "../App/Installment/pages/CashOutPage";
+import CashInPage from "../App/Installment/pages/CashInPage";
 
 // Lostphone
 import ActionLockphone from "../App/Lostphone/pages/Actions";
@@ -125,6 +127,8 @@ const App = () => {
                   <Route path={json.contract.blacklist} element={<ProtectRoute pagePath={json.contract.blacklist}> <MainLayout><BlackList /></MainLayout> </ProtectRoute>} />
                   {/* Installment */}
                   <Route path={json.installment.paymentHistory} element={<ProtectRoute pagePath={json.installment.paymentHistory}> <MainLayout><PaymentHistory /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.installment.cashOut} element={<ProtectRoute pagePath={json.installment.cashOut}> <MainLayout><CashOutPage /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.installment.cashIn} element={<ProtectRoute pagePath={json.installment.cashIn}> <MainLayout><CashInPage /></MainLayout> </ProtectRoute>} />
                   {/* Lostphone */}
                   <Route path={json.lostphone.actionLockphone} element={<ProtectRoute pagePath={json.lostphone.actionLockphone}> <MainLayout><ActionLockphone /></MainLayout> </ProtectRoute>} />
                   <Route path={json.lostphone.lockPhone} element={<ProtectRoute pagePath={json.lostphone.lockPhone}> <MainLayout><LockPhone /></MainLayout> </ProtectRoute>} />

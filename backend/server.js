@@ -44,6 +44,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import lostphoneRoutes from './routes/lostphoneRoutes.js';
 import wallpaperRoutes from './routes/wallpaperRoutes.js';
 import historyRoutes, { createHistoryRoutes } from './routes/historyRoutes.js';
+import cashTransactionRoutes from './routes/cashTransactionRoutes.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -123,6 +124,7 @@ app.use('/pay', paymentRoutes);
 app.use('/api', lostphoneRoutes);
 app.use('/api', wallpaperRoutes);
 app.use('/api/history', createHistoryRoutes(bot));
+app.use('/api', cashTransactionRoutes);
 app.use((err, req, res, next) => {
     console.error('Unhandled System Error:', err);
     res.status(err.status || 500).json({

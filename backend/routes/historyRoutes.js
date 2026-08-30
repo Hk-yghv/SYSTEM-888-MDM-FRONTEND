@@ -40,8 +40,14 @@ const getNextReportTime = () => {
     try {
         if (fs.existsSync(REPORT_SCHEDULE_FILE)) {
             const data = JSON.parse(fs.readFileSync(REPORT_SCHEDULE_FILE, 'utf8'));
-            if (data.nextReportTime && data.nextReportTime > Date.now()) {
-                return data.nextReportTime;
+            if (data.nextReportTime) {
+                let target = data.nextReportTime;
+                // If stored target time has passed, advance in 7-day intervals
+                while (target <= Date.now()) {
+                    target += SCHEDULE_INTERVAL_MS;
+                }
+                saveReportSchedule(target);
+                return target;
             }
         }
     } catch (e) {}

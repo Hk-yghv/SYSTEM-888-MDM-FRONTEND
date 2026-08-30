@@ -54,13 +54,15 @@ const LoginHistory = () => {
         }
     }, [API_BASE2, page, searchTerm, roleFilter, statusFilter, user]);
 
+    const [targetTimestamp, setTargetTimestamp] = useState(null);
+
     const fetchReportSchedule = useCallback(async () => {
         try {
             const res = await fetch(`${API_BASE2}/history/report-schedule`);
             if (res.ok) {
                 const data = await res.json();
-                if (data.countdown) {
-                    setCountdown(data.countdown);
+                if (data.nextReportTime) {
+                    setTargetTimestamp(data.nextReportTime);
                 }
             }
         } catch (err) {
@@ -80,14 +82,31 @@ const LoginHistory = () => {
         return () => clearTimeout(timer);
     }, [searchTerm, roleFilter, statusFilter]);
 
-    // Schedule polling timer (every second for live clock)
+    // Initial fetch of report schedule and periodic sync
     useEffect(() => {
         fetchReportSchedule();
-        const interval = setInterval(() => {
-            fetchReportSchedule();
-        }, 1000);
-        return () => clearInterval(interval);
+        const syncInterval = setInterval(fetchReportSchedule, 30000); // sync every 30s
+        return () => clearInterval(syncInterval);
     }, [fetchReportSchedule]);
+
+    // Live 1-second local timer calculating real-time elapsed time against targetTimestamp
+    useEffect(() => {
+        if (!targetTimestamp) return;
+
+        const updateClock = () => {
+            const remainingMs = Math.max(0, targetTimestamp - Date.now());
+            const totalSec = Math.floor(remainingMs / 1000);
+            const days = Math.floor(totalSec / (24 * 3600));
+            const hours = Math.floor((totalSec % (24 * 3600)) / 3600);
+            const minutes = Math.floor((totalSec % 3600) / 60);
+            const seconds = totalSec % 60;
+            setCountdown({ days, hours, minutes, seconds });
+        };
+
+        updateClock();
+        const tickInterval = setInterval(updateClock, 1000);
+        return () => clearInterval(tickInterval);
+    }, [targetTimestamp]);
 
     const handleSendTelegramReport = async () => {
         if (sendingTelegram) return;
