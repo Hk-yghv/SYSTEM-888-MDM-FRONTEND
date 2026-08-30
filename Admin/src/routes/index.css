@@ -363,3 +363,35 @@ div[class*="bg-amber-"] {
 .text-slate-600 {
     color: var(--app-text-sub, #64748b);
 }
+
+/* WHEN DASHBOARD BACKGROUND DISPLAY IS SWITCHED OFF (OFF Mode) */
+.theme-dashboard-clean {
+    background-color: #f4f6f8 !important;
+}
+
+.theme-dashboard-clean header {
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    backdrop-filter: none !important;
+}
+
+.theme-dashboard-clean div[class*="w-\[260px\]"] {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    backdrop-filter: none !important;
+}
+
+.theme-dashboard-clean .bg-white,
+.theme-dashboard-clean .bg-slate-50,
+.theme-dashboard-clean .bg-slate-100,
+.theme-dashboard-clean .bg-slate-200,
+.theme-dashboard-clean div[class*="bg-slate-"],
+.theme-dashboard-clean div[class*="bg-indigo-"],
+.theme-dashboard-clean div[class*="bg-emerald-"],
+.theme-dashboard-clean div[class*="bg-purple-"],
+.theme-dashboard-clean div[class*="bg-amber-"] {
+    background-color: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: #e2e8f0 !important;
+}

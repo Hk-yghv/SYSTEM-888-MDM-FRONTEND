@@ -78,7 +78,9 @@ const MainLayout = ({ children }) => {
   const isDashboardBgDisabled = isDashboardPage && theme?.showDashboardBg === false;
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden">
+    <div className={`flex flex-col h-screen text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden ${
+      isDashboardBgDisabled ? 'bg-[#f4f6f8] theme-dashboard-clean' : 'bg-[var(--app-bg,#f4f6f8)]'
+    }`}>
       {/* Background Image Layer (Fixed Fullscreen Backdrop) */}
       {!isDashboardBgDisabled && theme?.bgType === 'image' && theme?.bgImage && (
         <div
