@@ -33,7 +33,7 @@ export const exportToExcel = (data, filename = 'MDM_Report') => {
     document.body.removeChild(link);
 };
 
-export const exportToPDF = (title, columns, data, brandName = '') => {
+export const exportToPDF = (title, columns, data, brandName = '', orientation = 'portrait') => {
     if (!data || !data.length) {
         alert('No data available to export');
         return;
@@ -41,6 +41,7 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
 
     const bName = (brandName || '').trim();
     const systemTitle = bName ? (bName.toUpperCase().startsWith('SYSTEM') ? bName.toUpperCase() : `SYSTEM ${bName.toUpperCase()}`) : 'MDM SYSTEM';
+    const isLandscape = orientation === 'landscape';
 
     const printWindow = window.open('', '_blank');
     const htmlContent = `
@@ -50,8 +51,8 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
             <title>${title} - ${systemTitle}</title>
             <style>
                 @page {
-                    size: A4 portrait;
-                    margin: 12mm 12mm;
+                    size: A4 ${isLandscape ? 'landscape' : 'portrait'};
+                    margin: ${isLandscape ? '8mm 10mm' : '12mm 12mm'};
                 }
                 * { box-sizing: border-box; }
                 body {
@@ -66,18 +67,18 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
                 .pdf-container {
                     width: 100%;
                     box-sizing: border-box;
-                    padding: 10px 0;
+                    padding: ${isLandscape ? '6px 0' : '10px 0'};
                 }
                 .header-brand {
                     border-bottom: 2px solid #4f46e5;
-                    padding-bottom: 8px;
-                    margin-bottom: 14px;
+                    padding-bottom: ${isLandscape ? '6px' : '8px'};
+                    margin-bottom: ${isLandscape ? '10px' : '14px'};
                     display: flex;
                     justify-content: space-between;
                     align-items: flex-end;
                 }
                 .header-left h1 {
-                    font-size: 18px;
+                    font-size: ${isLandscape ? '15px' : '18px'};
                     color: #3730a3;
                     text-transform: uppercase;
                     margin: 0;
@@ -85,17 +86,17 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
                     letter-spacing: 0.5px;
                 }
                 .header-left p {
-                    font-size: 11px;
+                    font-size: ${isLandscape ? '9px' : '11px'};
                     color: #64748b;
                     margin-top: 4px;
                     margin-bottom: 0;
                 }
                 .header-right {
-                    font-size: 11px;
+                    font-size: ${isLandscape ? '9px' : '11px'};
                     font-weight: 700;
                     color: #4f46e5;
                     background: #eef2ff;
-                    padding: 4px 10px;
+                    padding: ${isLandscape ? '3px 8px' : '4px 10px'};
                     border-radius: 6px;
                     border: 1px solid #c7d2fe;
                 }
@@ -105,7 +106,7 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    font-size: 11px;
+                    font-size: ${isLandscape ? '9px' : '11px'};
                     page-break-inside: auto;
                 }
                 thead {
@@ -117,7 +118,7 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
                 }
                 th, td {
                     border: 1px solid #cbd5e1;
-                    padding: 8px 10px;
+                    padding: ${isLandscape ? '5px 7px' : '8px 10px'};
                     text-align: left;
                 }
                 th {
@@ -125,17 +126,21 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
                     color: white !important;
                     text-transform: uppercase;
                     font-weight: 700;
-                    font-size: 10px;
+                    font-size: ${isLandscape ? '8px' : '10px'};
                     letter-spacing: 0.5px;
                 }
                 tr:nth-child(even) {
                     background-color: #f8fafc;
                 }
+                .summary-row {
+                    background-color: #eef2ff !important;
+                    font-weight: bold;
+                }
                 .footer-page {
                     border-top: 1px solid #cbd5e1;
-                    padding-top: 8px;
-                    margin-top: 14px;
-                    font-size: 10px;
+                    padding-top: ${isLandscape ? '5px' : '8px'};
+                    margin-top: ${isLandscape ? '10px' : '14px'};
+                    font-size: ${isLandscape ? '8px' : '10px'};
                     color: #64748b;
                     display: flex;
                     justify-content: space-between;
@@ -158,7 +163,7 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
                 <div class="header-brand">
                     <div class="header-left">
                         <h1>${systemTitle}</h1>
-                        <p>Report: ${title} &bull; Generated: ${new Date().toLocaleString()}</p>
+                        <p>Report: ${title} &bull; Generated: ${new Date().toLocaleString()} &bull; Format: A4 ${isLandscape ? 'Landscape (ផ្តេក)' : 'Portrait (បញ្ឈរ)'}</p>
                     </div>
                     <div class="header-right">
                         Total Records: ${data.length}
@@ -173,7 +178,7 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
                         </thead>
                         <tbody>
                             ${data.map((row, idx) => `
-                                <tr>
+                                <tr class="${row.isTotalRow ? 'summary-row' : ''}">
                                     ${columns.map(col => `<td>${col.cell ? col.cell(row, idx) : (row[col.accessor] !== undefined && row[col.accessor] !== null ? row[col.accessor] : '')}</td>`).join('')}
                                 </tr>
                             `).join('')}
@@ -182,7 +187,7 @@ export const exportToPDF = (title, columns, data, brandName = '') => {
                 </div>
                 <div class="footer-page">
                     <span>SYSTEM MDM &bull; ${title}</span>
-                    <span>Total Records: ${data.length}</span>
+                    <span>Total Records: ${data.length} &bull; A4 ${isLandscape ? 'Landscape' : 'Portrait'}</span>
                 </div>
             </div>
             <script>

@@ -22,6 +22,7 @@ const AllCustomersReport = () => {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
+    const [pdfOrientation, setPdfOrientation] = useState('portrait');
 
     const fetchData = useCallback(async (pg = page, search = searchTerm) => {
         setReloading(true);
@@ -117,6 +118,21 @@ const AllCustomersReport = () => {
     };
 
     const handleExportExcel = async () => {
+        if (activeTab === 'summary') {
+            const rows = [...summaryBreakdown.rows, { ...summaryBreakdown.grandTotal }];
+            const exported = rows.map((r, idx) => ({
+                'No': r.isTotalRow ? 'TOTAL' : idx + 1,
+                'Brand Domain': r.brand,
+                'Total Customers': r.totalCustomers,
+                'Total Loan ($)': r.totalLoan.toFixed(2),
+                'Total Paid ($)': r.totalPaid.toFixed(2),
+                'Remaining Balance ($)': r.remainingBalance.toFixed(2),
+                'Activated': r.activatedCount,
+                'Lock Phone': r.lockedPhoneCount,
+                'Lock Wallpaper': r.lockedWallpaperCount
+            }));
+            return exportToExcel(exported, 'All_Customers_Summary_Report');
+        }
         const allData = await fetchAllForExport();
         const exported = allData.map((item, idx) => ({
             'No': idx + 1,
@@ -133,6 +149,21 @@ const AllCustomersReport = () => {
     };
 
     const handleExportPDF = async () => {
+        if (activeTab === 'summary') {
+            const summaryColumns = [
+                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
+                { header: 'Brand Domain', accessor: 'brand' },
+                { header: 'Total Customers', accessor: 'totalCustomers' },
+                { header: 'Total Loan ($)', cell: (r) => `$${r.totalLoan.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Total Paid ($)', cell: (r) => `$${r.totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Remaining ($)', cell: (r) => `$${r.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Activated', accessor: 'activatedCount' },
+                { header: 'Lock Phone', accessor: 'lockedPhoneCount' },
+                { header: 'Lock Wallpaper', accessor: 'lockedWallpaperCount' }
+            ];
+            const pdfData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
+            return exportToPDF('All Customers — Summary Table', summaryColumns, pdfData, user?.brand || '', pdfOrientation);
+        }
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -143,7 +174,7 @@ const AllCustomersReport = () => {
             { header: 'Phone Lock', accessor: 'lockPhoneStatus' },
             { header: 'Status', accessor: 'status' }
         ];
-        exportToPDF('All Customers Report', columns, allData, user?.brand || '');
+        exportToPDF('All Customers Report', columns, allData, user?.brand || '', pdfOrientation);
     };
 
     // Calculate Brand Breakdown & Financial Totals for Summary Table
@@ -269,8 +300,19 @@ const AllCustomersReport = () => {
                     <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <FaFileExcel className="text-emerald-600 text-sm" /><span>{t('exportExcel')}</span>
                     </button>
+                    {/* PDF Orientation Toggle */}
+                    <div className="flex items-center rounded-xl border border-slate-300 overflow-hidden shadow-xs">
+                        <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
+                            className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
+                            <span>📄</span><span className="hidden sm:inline">Portrait</span>
+                        </button>
+                        <button onClick={() => setPdfOrientation('landscape')} title="Landscape (ផ្តេក)"
+                            className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer border-l border-slate-300 ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
+                            <span>🖼</span><span className="hidden sm:inline">Landscape</span>
+                        </button>
+                    </div>
                     <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>{t('exportPDF')}</span>
+                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>{activeTab === 'summary' ? 'PDF (Summary)' : t('exportPDF')}</span>
                     </button>
                     <button onClick={() => { fetchData(page, searchTerm); fetchFullData(); }} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-600' : ''} /><span>{t('reload')}</span>

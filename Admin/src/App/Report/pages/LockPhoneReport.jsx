@@ -21,6 +21,7 @@ const LockPhoneReport = () => {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
+    const [pdfOrientation, setPdfOrientation] = useState('portrait');
 
     const fetchData = useCallback(async (pg = page, search = searchTerm) => {
         setReloading(true);
@@ -101,6 +102,16 @@ const LockPhoneReport = () => {
     };
 
     const handleExportExcel = async () => {
+        if (activeTab === 'summary') {
+            const rows = [...summaryBreakdown.rows, { ...summaryBreakdown.grandTotal }];
+            const exported = rows.map((r, idx) => ({
+                'No': r.isTotalRow ? 'TOTAL' : idx + 1,
+                'Brand Domain': r.brand,
+                'Total Lock Actions': r.totalLockActions,
+                'Unique Locked Customers': r.uniqueCustomers
+            }));
+            return exportToExcel(exported, 'LockPhone_Summary_Report');
+        }
         const allData = await fetchAllForExport();
         const exported = allData.map((item, idx) => ({
             'No': idx + 1,
@@ -115,6 +126,16 @@ const LockPhoneReport = () => {
     };
 
     const handleExportPDF = async () => {
+        if (activeTab === 'summary') {
+            const summaryColumns = [
+                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
+                { header: 'Brand Domain', accessor: 'brand' },
+                { header: 'Total Lock Actions', accessor: 'totalLockActions' },
+                { header: 'Unique Locked Customers', accessor: 'uniqueCustomers' }
+            ];
+            const pdfData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
+            return exportToPDF('Lock Phone — Summary Table', summaryColumns, pdfData, user?.brand || '', pdfOrientation);
+        }
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -124,7 +145,7 @@ const LockPhoneReport = () => {
             { header: 'Last Lock', cell: (r) => r.lastLockTime || `${r.date} ${r.time}` },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
-        exportToPDF('Lock Phone Report', columns, allData, user?.brand || '');
+        exportToPDF('Lock Phone Report', columns, allData, user?.brand || '', pdfOrientation);
     };
 
     // Calculate Brand Summary Grouping
@@ -199,8 +220,19 @@ const LockPhoneReport = () => {
                     <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <FaFileExcel className="text-emerald-600 text-sm" /><span>{t('exportExcel')}</span>
                     </button>
+                    {/* PDF Orientation Toggle */}
+                    <div className="flex items-center rounded-xl border border-slate-300 overflow-hidden shadow-xs">
+                        <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
+                            className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
+                            <span>📄</span><span className="hidden sm:inline">Portrait</span>
+                        </button>
+                        <button onClick={() => setPdfOrientation('landscape')} title="Landscape (ផ្តេក)"
+                            className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer border-l border-slate-300 ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
+                            <span>🖼</span><span className="hidden sm:inline">Landscape</span>
+                        </button>
+                    </div>
                     <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>{t('exportPDF')}</span>
+                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>{activeTab === 'summary' ? 'PDF (Summary)' : t('exportPDF')}</span>
                     </button>
                     <button onClick={() => { fetchData(page, searchTerm); fetchFullData(); }} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-rose-600' : ''} /><span>{t('reload')}</span>
