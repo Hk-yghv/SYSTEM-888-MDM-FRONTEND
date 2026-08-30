@@ -374,8 +374,23 @@ thead th,
 /* TABLE BODY ROWS & CELLS DYNAMIC TEXT & HOVER STYLING */
 table tbody tr,
 table tbody td,
-.table-container td {
-    color: var(--app-text, #0f172a);
+.table-container td,
+.table-container td span,
+.table-container td div,
+.table-container td p,
+.table-container td a,
+.table-container td code,
+.table-container .text-slate-900,
+.table-container .text-slate-800,
+.table-container .text-slate-700,
+.table-container .text-slate-600,
+.table-container .text-slate-500,
+.table-container .text-gray-900,
+.table-container .text-gray-800,
+.table-container .text-gray-700,
+.table-container .text-gray-600,
+.table-container .font-mono {
+    color: var(--app-text, #0f172a) !important;
 }
 
 table tbody tr {
@@ -383,5 +398,5 @@ table tbody tr {
 }
 
 table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.12) !important;
+    background-color: rgba(255, 255, 255, 0.14) !important;
 }
