@@ -305,25 +305,43 @@ input::placeholder, textarea::placeholder {
     border-color: rgba(16, 185, 129, 0.3) !important;
 }
 
-/* GLOBAL THEME OVERRIDES FOR ALL PAGES ACROSS SYSTEM */
+/* GLOBAL THEME & GLASSMORPHISM OVERRIDES FOR ALL PAGES ACROSS SYSTEM */
 .bg-\[\#f4f6f8\],
 div[class*="bg-[#f4f6f8]"],
+.bg-slate-50\/90,
 main {
     background-color: transparent !important;
 }
 
+/* Glassmorphism Cards Across All Pages */
 .bg-white,
 .bg-slate-50,
-.bg-slate-50\/90 {
-    background-color: var(--app-card, rgba(255, 255, 255, 0.70)) !important;
+.bg-slate-100,
+.bg-indigo-50,
+.bg-emerald-50,
+.bg-purple-50,
+.bg-amber-50,
+.bg-rose-50,
+.bg-blue-50,
+div[class*="bg-slate-50"],
+div[class*="bg-slate-100"],
+div[class*="bg-indigo-50"],
+div[class*="bg-emerald-50"],
+div[class*="bg-purple-50"],
+div[class*="bg-amber-50"] {
+    background-color: var(--app-card, rgba(255, 255, 255, 0.45)) !important;
     backdrop-filter: blur(var(--app-glass-blur, 14px)) !important;
     -webkit-backdrop-filter: blur(var(--app-glass-blur, 14px)) !important;
+    border-color: var(--app-border, rgba(226, 232, 240, 0.6)) !important;
 }
 
 .border-slate-200,
+.border-slate-300,
 .border-slate-200\/80,
-.border-slate-200\/70 {
-    border-color: var(--app-border, rgba(226, 232, 240, 0.8)) !important;
+.border-slate-200\/70,
+.border-slate-200\/60,
+.border-slate-200\/50 {
+    border-color: var(--app-border, rgba(226, 232, 240, 0.6)) !important;
 }
 
 .text-slate-800,
