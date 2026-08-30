@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import "./index.css";
 
 import json from "./Routes.json";
@@ -72,11 +72,15 @@ const MainLayout = ({ children }) => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
   const { theme } = useTheme();
+  const location = useLocation();
+
+  const isDashboardPage = location.pathname === '/dashboard' || location.pathname === json.dashboard;
+  const isDashboardBgDisabled = isDashboardPage && theme?.showDashboardBg === false;
 
   return (
     <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden">
       {/* Background Image Layer (Fixed Fullscreen Backdrop) */}
-      {theme?.bgType === 'image' && theme?.bgImage && (
+      {!isDashboardBgDisabled && theme?.bgType === 'image' && theme?.bgImage && (
         <div
           className="fixed inset-0 w-full h-full bg-cover bg-center z-0 pointer-events-none transition-opacity duration-500"
           style={{
@@ -87,7 +91,7 @@ const MainLayout = ({ children }) => {
       )}
 
       {/* Background Video Player (Capped to 10 Seconds Loop) */}
-      {theme?.bgType === 'video' && theme?.bgVideo && (
+      {!isDashboardBgDisabled && theme?.bgType === 'video' && theme?.bgVideo && (
         <video
           src={theme.bgVideo}
           autoPlay

@@ -136,6 +136,28 @@ const Personalization = () => {
                         <span>Custom Theme & Background</span>
                     </h2>
 
+                    {/* Dashboard Background Display Toggle (ON/OFF) */}
+                    <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl flex items-center justify-between shadow-2xs">
+                        <div>
+                            <p className="text-xs font-bold text-indigo-950">Show Background on Dashboard</p>
+                            <p className="text-[10px] font-semibold text-indigo-700">
+                                {customTheme.showDashboardBg !== false
+                                    ? 'ON (បង្ហាញ Background លើ Dashboard)'
+                                    : 'OFF (មិនបង្ហាញ Background លើ Dashboard)'}
+                            </p>
+                        </div>
+                        {/* Toggle Switch Button */}
+                        <button
+                            type="button"
+                            onClick={() => handleColorChange('showDashboardBg', !(customTheme.showDashboardBg !== false))}
+                            className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
+                                customTheme.showDashboardBg !== false ? 'bg-indigo-600 justify-end' : 'bg-slate-300 justify-start'
+                            }`}
+                        >
+                            <div className="w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300"></div>
+                        </button>
+                    </div>
+
                     {/* Background Type Mode Selector */}
                     <div className="space-y-2 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100">
                         <label className="text-xs font-bold text-indigo-900 block">Background Style (ប្រភេទផ្ទៃក្រោយ)</label>
