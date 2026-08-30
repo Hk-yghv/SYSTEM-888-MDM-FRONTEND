@@ -496,10 +496,10 @@ const Dashboard = () => {
                     {/* Period Filter Buttons */}
                     <div className="flex items-center p-1 bg-slate-100 border border-slate-200 rounded-2xl text-xs font-bold">
                         {[
-                            ['daily', 'Daily'],
-                            ['monthly', 'Monthly'],
-                            ['yearly', 'Yearly'],
-                            ['all', 'All Time']
+                            ['daily', t('daily')],
+                            ['monthly', t('monthly')],
+                            ['yearly', t('yearly')],
+                            ['all', t('allTime')]
                         ].map(([val, label]) => (
                             <button
                                 key={val}
@@ -537,17 +537,17 @@ const Dashboard = () => {
                 {/* Card 1: Loan Disbursed */}
                 <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-3 relative overflow-hidden group hover:border-blue-300 transition-all">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">ប្រាក់ LOAN ចេញសរុប</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{t('totalLoanDisbursed')}</span>
                         <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform">
                             <IoMdWallet />
                         </div>
                     </div>
                     <div>
                         <div className="text-2xl font-black font-mono text-slate-900">${loanOutAmt.toLocaleString()}</div>
-                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">Total Loan Disbursed</p>
+                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">{t('totalLoanDisbursed')}</p>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-600">
-                        <span>ភ្ញៀវសរុប: <strong className="text-slate-900 font-mono">{totalBorrowers}</strong> នាក់</span>
+                        <span>{t('totalBorrowers')}: <strong className="text-slate-900 font-mono">{totalBorrowers}</strong></span>
                         <span className="px-2 py-0.5 bg-blue-50 text-blue-700 font-mono font-bold rounded-full border border-blue-200">LOAN</span>
                     </div>
                 </div>
@@ -555,17 +555,17 @@ const Dashboard = () => {
                 {/* Card 2: Revenue Collected */}
                 <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-3 relative overflow-hidden group hover:border-emerald-300 transition-all">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">ទឹកប្រាក់ប្រមូលបាន</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{t('totalRevenueCollected')}</span>
                         <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform">
                             <MdTrendingUp />
                         </div>
                     </div>
                     <div>
                         <div className="text-2xl font-black font-mono text-emerald-600">${weCollectedAmt.toLocaleString()}</div>
-                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">Total Revenue Collected ({collectionPct}%)</p>
+                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">{t('totalRevenueCollected')} ({collectionPct}%)</p>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-600">
-                        <span>ប្រកតិនប្រតិបត្តិការ: <strong className="text-slate-900 font-mono">{stats.paymentCount}</strong></span>
+                        <span>{t('totalTransactions')}: <strong className="text-slate-900 font-mono">{stats.paymentCount}</strong></span>
                         <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-mono font-bold rounded-full border border-emerald-200">{collectionPct}%</span>
                     </div>
                 </div>
@@ -573,7 +573,7 @@ const Dashboard = () => {
                 {/* Card 3: Net Profit / Loss */}
                 <div className={`p-6 bg-white border rounded-3xl shadow-xs space-y-3 relative overflow-hidden group transition-all ${isProfit ? 'hover:border-teal-300' : 'hover:border-rose-300'}`}>
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">ចំណេញ / ខាត (Net Profit)</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{t('netProfitLoss')}</span>
                         <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform ${isProfit ? 'bg-teal-50 text-teal-600 border-teal-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
                             <MdBarChart />
                         </div>
@@ -582,10 +582,10 @@ const Dashboard = () => {
                         <div className={`text-2xl font-black font-mono ${isProfit ? 'text-teal-600' : 'text-rose-600'}`}>
                             {isProfit ? '+' : '-'}${Math.abs(netProfitLoss).toLocaleString()}
                         </div>
-                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">Margin Ratio: {profitPct}%</p>
+                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">{t('marginRatio')}: {profitPct}%</p>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-600">
-                        <span>ស្ថានភាព: <strong className={isProfit ? 'text-teal-700 font-bold' : 'text-rose-700 font-bold'}>{isProfit ? 'Net Profit' : 'Net Loss'}</strong></span>
+                        <span>{t('status')}: <strong className={isProfit ? 'text-teal-700 font-bold' : 'text-rose-700 font-bold'}>{isProfit ? 'Net Profit' : 'Net Loss'}</strong></span>
                         <span className={`px-2 py-0.5 font-mono font-bold rounded-full border ${isProfit ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
                             {isProfit ? '▲' : '▼'} {profitPct}%
                         </span>
@@ -595,17 +595,17 @@ const Dashboard = () => {
                 {/* Card 4: Outstanding Balance */}
                 <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-3 relative overflow-hidden group hover:border-amber-300 transition-all">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">ប្រាក់ជំពាក់នៅសល់</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{t('outstandingReceivables')}</span>
                         <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform">
                             <FaLock />
                         </div>
                     </div>
                     <div>
                         <div className="text-2xl font-black font-mono text-amber-600">${outstandingBal.toLocaleString()}</div>
-                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">Outstanding Receivables</p>
+                        <p className="text-[11px] font-semibold text-slate-600 mt-0.5">{t('outstandingReceivables')}</p>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-600">
-                        <span>ទូរស័ព្ទចាក់សោរ: <strong className="text-rose-600 font-mono">{stats.lockedPhones}</strong></span>
+                        <span>{t('phoneLockCol')}: <strong className="text-rose-600 font-mono">{stats.lockedPhones}</strong></span>
                         <span className="px-2 py-0.5 bg-amber-50 text-amber-700 font-mono font-bold rounded-full border border-amber-200">Active</span>
                     </div>
                 </div>
@@ -620,23 +620,23 @@ const Dashboard = () => {
                         <div>
                             <h2 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
                                 <FaChartBar className="text-emerald-600 text-lg" />
-                                ក្រាបសសរវិភាគការប្រមូលចំណូល &amp; LOAN ({timeRange.toUpperCase()})
+                                {t('barChartTitle')} ({timeRange.toUpperCase()})
                             </h2>
                             <p className="text-xs text-slate-600 font-medium mt-0.5">
-                                ប្រៀបធៀបទឹកប្រាក់ប្រមូលបាន ចេញ LOAN និងចំនួនភ្ញៀវចូល-ចេញ
+                                {t('barChartSubtitle')}
                             </p>
                         </div>
 
                         {/* Chart Legend */}
                         <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold">
                             <span className="flex items-center gap-1.5 text-emerald-700">
-                                <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span> ចំណូលប្រមូលបាន
+                                <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span> {t('revenueCollectedLegend')}
                             </span>
                             <span className="flex items-center gap-1.5 text-blue-700">
-                                <span className="w-2.5 h-2.5 bg-blue-500 rounded-full"></span> LOAN ចេញ
+                                <span className="w-2.5 h-2.5 bg-blue-500 rounded-full"></span> {t('loanDisbursedLegend')}
                             </span>
                             <span className="flex items-center gap-1.5 text-indigo-700">
-                                <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full"></span> ភ្ញៀវចូល
+                                <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full"></span> {t('activatedEntryLegend')}
                             </span>
                         </div>
                     </div>
@@ -1061,11 +1061,8 @@ const Dashboard = () => {
                     <div>
                         <h2 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
                             <FaLayerGroup className="text-emerald-600 text-lg" />
-                            <span>តារាងសរុបព័ត៌មានតាមសាខា (Executive Brand Summary Breakdown)</span>
+                            <span>{t('brandSummaryTitle')}</span>
                         </h2>
-                        <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                            ទិន្នន័យសរុបកិច្ចសន្យា ទឹកប្រាក់ប្រមូលបាន LOAN ចេញ និងការចាក់សោរតាម Brand
-                        </p>
                     </div>
                     <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full font-mono text-xs font-bold shrink-0">
                         {summaryTableData.length} Brand Domain{summaryTableData.length > 1 ? 's' : ''}
@@ -1076,24 +1073,24 @@ const Dashboard = () => {
                     <table className="w-full text-left text-xs">
                         <thead className="bg-slate-900 text-white uppercase tracking-wider text-[11px] font-bold">
                             <tr>
-                                <th className="px-4 py-3 text-center">ល.រ</th>
-                                <th className="px-4 py-3">ឈ្មោះសាខា / Brand</th>
-                                <th className="px-4 py-3 text-center">កិច្ចសន្យាសរុប</th>
-                                <th className="px-4 py-3 text-center">កិច្ចសន្យាសកម្ម</th>
-                                <th className="px-4 py-3 text-right">ប្រាក់ LOAN ចេញ ($)</th>
-                                <th className="px-4 py-3 text-right">ប្រាក់ត្រូវប្រមូល ($)</th>
-                                <th className="px-4 py-3 text-right">ប្រាក់ប្រមូលបាន ($)</th>
-                                <th className="px-4 py-3 text-right">ប្រាក់ជំពាក់នៅសល់ ($)</th>
-                                <th className="px-4 py-3 text-center">ទូរស័ព្ទចាក់សោរ</th>
-                                <th className="px-4 py-3 text-center">WP ចាក់សោរ</th>
-                                <th className="px-4 py-3 text-center">ស្ថានភាព</th>
+                                <th className="px-4 py-3 text-center">#</th>
+                                <th className="px-4 py-3">{t('branchName')}</th>
+                                <th className="px-4 py-3 text-center">{t('totalContractsCol')}</th>
+                                <th className="px-4 py-3 text-center">{t('activatedCol')}</th>
+                                <th className="px-4 py-3 text-right">{t('loanDisbursedCol')}</th>
+                                <th className="px-4 py-3 text-right">{t('monthlyEstCol')}</th>
+                                <th className="px-4 py-3 text-right">{t('revenueCol')}</th>
+                                <th className="px-4 py-3 text-right">{t('outstandingCol')}</th>
+                                <th className="px-4 py-3 text-center">{t('phoneLockCol')}</th>
+                                <th className="px-4 py-3 text-center">{t('wallpaperLockCol')}</th>
+                                <th className="px-4 py-3 text-center">{t('status')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                             {summaryTableData.length === 0 ? (
                                 <tr>
                                     <td colSpan={11} className="text-center py-8 text-slate-600 italic">
-                                        មិនទាន់មានទិន្នន័យសាខាក្នុងប្រព័ន្ធនៅឡើយ
+                                        No brand data available
                                     </td>
                                 </tr>
                             ) : (
@@ -1142,7 +1139,7 @@ const Dashboard = () => {
                             <tfoot className="bg-slate-900 text-white font-bold font-mono text-xs border-t-2 border-slate-700">
                                 <tr>
                                     <td colSpan={2} className="px-4 py-3 uppercase tracking-wider text-emerald-400 font-black font-sans">
-                                        សរុបរួម (Grand Total)
+                                        {t('grandTotal')}
                                     </td>
                                     <td className="px-4 py-3 text-center font-mono font-black text-amber-300">
                                         {summaryTableData.reduce((s, r) => s + r.totalContracts, 0)}
