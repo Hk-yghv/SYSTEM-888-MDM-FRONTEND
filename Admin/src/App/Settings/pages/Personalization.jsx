@@ -215,9 +215,19 @@ const Personalization = () => {
                                 className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer w-full"
                             />
                             {customTheme.bgImage && (
-                                <div className="flex items-center justify-between text-[11px] font-bold text-emerald-600">
+                                <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs font-bold text-emerald-800">
                                     <span>✓ Image file loaded</span>
-                                    <button onClick={() => handleColorChange('bgImage', '')} className="text-rose-500 hover:underline">Remove</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const updated = { ...customTheme, bgImage: '', bgType: 'color' };
+                                            setCustomTheme(updated);
+                                            updateTheme(updated);
+                                        }}
+                                        className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1"
+                                    >
+                                        🗑️ លុបរូបភាព (Clear Image Storage)
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -249,9 +259,19 @@ const Personalization = () => {
                                 Note: Video will automatically loop every 10 seconds in the background.
                             </p>
                             {customTheme.bgVideo && (
-                                <div className="flex items-center justify-between text-[11px] font-bold text-emerald-600">
+                                <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs font-bold text-emerald-800">
                                     <span>✓ 10s Video file loaded</span>
-                                    <button onClick={() => handleColorChange('bgVideo', '')} className="text-rose-500 hover:underline">Remove</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const updated = { ...customTheme, bgVideo: '', bgType: 'color' };
+                                            setCustomTheme(updated);
+                                            updateTheme(updated);
+                                        }}
+                                        className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1"
+                                    >
+                                        🗑️ លុបវីដេអូ (Clear Video Storage)
+                                    </button>
                                 </div>
                             )}
                         </div>
