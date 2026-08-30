@@ -95,7 +95,8 @@ const MainLayout = ({ children }) => {
               e.target.currentTime = 0;
             }
           }}
-          className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-35 transition-opacity duration-500"
+          className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none transition-opacity duration-500"
+          style={{ opacity: 'var(--app-bg-opacity, 0.65)' }}
         />
       )}
 

@@ -321,6 +321,61 @@ const Personalization = () => {
                             </div>
                         </div>
 
+                        {/* Border Color */}
+                        <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                            <div>
+                                <p className="font-bold text-slate-800">Border Color (ពណ៌បន្ទាត់ជុំវិញ)</p>
+                                <p className="text-[10px] text-slate-500">Cards & table borders</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={customTheme.borderColor || '#cbd5e1'}
+                                    onChange={(e) => handleColorChange('borderColor', e.target.value)}
+                                    className="w-8 h-8 rounded-lg border border-slate-300 cursor-pointer p-0.5 bg-white"
+                                />
+                                <span className="font-mono text-xs font-bold text-slate-700">{customTheme.borderColor}</span>
+                            </div>
+                        </div>
+
+                        {/* Card Glass Opacity Slider */}
+                        <div className="p-2.5 bg-indigo-50/40 border border-indigo-100 rounded-xl space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-800">Card Glass Transparency (កម្រិតភាពព្រាលនៃប្រអប់)</span>
+                                <span className="font-mono font-bold text-indigo-600">{customTheme.cardOpacity ?? 90}%</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="10"
+                                max="100"
+                                value={customTheme.cardOpacity ?? 90}
+                                onChange={(e) => handleColorChange('cardOpacity', parseInt(e.target.value))}
+                                className="w-full accent-indigo-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                            />
+                            <p className="text-[10px] text-slate-500">
+                                Lower values allow background images/videos to shine through cards.
+                            </p>
+                        </div>
+
+                        {/* Background Image/Video Opacity Slider */}
+                        <div className="p-2.5 bg-indigo-50/40 border border-indigo-100 rounded-xl space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-800">Background Visibility (ភាពច្បាស់នៃរូប/វីដេអូ)</span>
+                                <span className="font-mono font-bold text-indigo-600">{customTheme.bgOpacity ?? 65}%</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="20"
+                                max="100"
+                                value={customTheme.bgOpacity ?? 65}
+                                onChange={(e) => handleColorChange('bgOpacity', parseInt(e.target.value))}
+                                className="w-full accent-indigo-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                            />
+                            <p className="text-[10px] text-slate-500">
+                                Adjust background image or video brightness/visibility level.
+                            </p>
+                        </div>
+
                         {/* Sidebar Background */}
                         <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
                             <div>
@@ -370,7 +425,8 @@ const Personalization = () => {
                                 onTimeUpdate={(e) => {
                                     if (e.target.currentTime >= 10) e.target.currentTime = 0;
                                 }}
-                                className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none opacity-40"
+                                className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none transition-opacity duration-300"
+                                style={{ opacity: (customTheme.bgOpacity ?? 65) / 100 }}
                             />
                         )}
 

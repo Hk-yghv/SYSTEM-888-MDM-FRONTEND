@@ -15,6 +15,10 @@ export const PRESET_THEMES = {
         accentColor: '#4f46e5',
         sidebarBg: '#f8fafc',
         headerBg: '#ffffff',
+        borderColor: '#cbd5e1',
+        cardOpacity: 90,
+        bgOpacity: 65,
+        glassBlur: 12,
         bgImage: '',
         bgVideo: ''
     },
@@ -29,6 +33,10 @@ export const PRESET_THEMES = {
         accentColor: '#6366f1',
         sidebarBg: '#0f172a',
         headerBg: '#1e293b',
+        borderColor: '#334155',
+        cardOpacity: 85,
+        bgOpacity: 70,
+        glassBlur: 14,
         bgImage: '',
         bgVideo: ''
     },
@@ -43,6 +51,10 @@ export const PRESET_THEMES = {
         accentColor: '#008bbf',
         sidebarBg: '#001f3f',
         headerBg: '#1e3e62',
+        borderColor: '#1e40af',
+        cardOpacity: 80,
+        bgOpacity: 75,
+        glassBlur: 16,
         bgImage: '',
         bgVideo: ''
     },
@@ -57,6 +69,10 @@ export const PRESET_THEMES = {
         accentColor: '#f43f5e',
         sidebarBg: '#18181b',
         headerBg: '#27272a',
+        borderColor: '#3f3f46',
+        cardOpacity: 85,
+        bgOpacity: 70,
+        glassBlur: 14,
         bgImage: '',
         bgVideo: ''
     },
@@ -71,6 +87,10 @@ export const PRESET_THEMES = {
         accentColor: '#10b981',
         sidebarBg: '#022c22',
         headerBg: '#065f46',
+        borderColor: '#047857',
+        cardOpacity: 85,
+        bgOpacity: 75,
+        glassBlur: 12,
         bgImage: '',
         bgVideo: ''
     },
@@ -85,6 +105,10 @@ export const PRESET_THEMES = {
         accentColor: '#ec4899',
         sidebarBg: '#09090b',
         headerBg: '#18181b',
+        borderColor: '#831843',
+        cardOpacity: 80,
+        bgOpacity: 80,
+        glassBlur: 16,
         bgImage: '',
         bgVideo: ''
     }
@@ -134,6 +158,10 @@ export const ThemeProvider = ({ children }) => {
         root.style.setProperty('--app-accent', theme.accentColor || '#4f46e5');
         root.style.setProperty('--app-sidebar', theme.sidebarBg || '#ffffff');
         root.style.setProperty('--app-header', theme.headerBg || '#ffffff');
+        root.style.setProperty('--app-border', theme.borderColor || '#cbd5e1');
+        root.style.setProperty('--app-card-opacity', ((theme.cardOpacity ?? 90) / 100).toString());
+        root.style.setProperty('--app-bg-opacity', ((theme.bgOpacity ?? 65) / 100).toString());
+        root.style.setProperty('--app-glass-blur', `${theme.glassBlur ?? 12}px`);
     }, [theme]);
 
     const updateTheme = (newTheme) => {
