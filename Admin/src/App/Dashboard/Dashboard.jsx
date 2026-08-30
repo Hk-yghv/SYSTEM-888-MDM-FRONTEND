@@ -8,6 +8,7 @@ import {
 } from 'react-icons/md';
 import { IoMdWallet } from 'react-icons/io';
 import { FaLock, FaChartPie, FaLayerGroup, FaHistory, FaChartLine, FaChartBar, FaSearch } from 'react-icons/fa';
+import LineChart from '../../components/LineChart';
 
 const Dashboard = () => {
     const { t } = useLanguage();
@@ -848,6 +849,22 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ── 5. Trend Line Chart (Revenue & Loan Trend) ── */}
+            <LineChart
+                title="ក្រាបខ្សែនិន្នាការហិរញ្ញវត្ថុ (Financial Trend Line Chart)"
+                subtitle="បង្ហាញពីការប្រែប្រួលទឹកប្រាក់ប្រមូល ឥណទាន និងចំនួន Activated តាមពេលវេលា"
+                data={barChartData.map(d => ({ label: d.label, revenue: d.revenue, loan: d.loan, entry: d.entry, exit: d.exit }))}
+                series={[
+                    { key: 'revenue', label: 'ប្រាក់ប្រមូលបាន ($)', color: '#10b981', isCurrency: true },
+                    { key: 'loan', label: 'ឥណទានចេញ ($)', color: '#3b82f6', isCurrency: true },
+                    { key: 'entry', label: 'Activated (នាក់)', color: '#a855f7', isCurrency: false },
+                    { key: 'exit', label: 'Redeem (នាក់)', color: '#f43f5e', isCurrency: false }
+                ]}
+                timeFilterOptions={['7d', '30d', 'monthly', 'all']}
+                defaultFilter={timeRange === 'daily' ? '7d' : timeRange === 'monthly' ? 'monthly' : 'all'}
+                height={300}
+            />
 
             {/* ── 5. Custom Date Audit & Interactive Activity Analytics ── */}
             <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-6">

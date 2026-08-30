@@ -432,8 +432,7 @@ const Activated = () => {
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
-                        <MdCheckCircle className="text-emerald-400 text-xl" />
-                        <span>{t('activated')} Contracts</span>
+                        <span>{t('activated')}</span>
                         <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-normal">
                             {filteredContracts.length} Records
                         </span>
@@ -448,7 +447,7 @@ const Activated = () => {
                             value={searchTerm}
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             placeholder="Search name, model, serial..."
-                            className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
+                            className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
                         />
                     </div>
 
@@ -508,11 +507,6 @@ const Activated = () => {
                                     <td className='px-4 py-3 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
                                     <td className='px-4 py-3'>
                                         <div className="flex items-center gap-2">
-                                            {/* <img
-                                                src={item.customerPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                                                alt="avatar"
-                                                className="w-7 h-7 rounded-full object-cover border border-slate-300"
-                                            /> */}
                                             <div>
                                                 <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
                                                 <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' />

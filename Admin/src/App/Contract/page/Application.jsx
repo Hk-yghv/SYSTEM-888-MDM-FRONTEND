@@ -231,7 +231,7 @@ const Application = () => {
                                             {item.customerNameKh && <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs font-semibold' />}
                                             {item.modifiedByAdmin && (
                                                 <span className='px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-300 rounded-full font-bold text-[9px] uppercase shadow-2xs' title={`Last modified by ${item.lastModifiedBy || 'Administrator'}`}>
-                                                    ⚡ Modified by Admin
+                                                    Modified by Admin
                                                 </span>
                                             )}
                                         </div>
@@ -243,9 +243,7 @@ const Application = () => {
                                     </td>
                                     <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
                                     <td className='px-4 py-3'>
-                                        <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
-                                            {item.brand || '—'}
-                                        </span>
+                                        {item.brand || '—'}
                                     </td>
                                     <td className='px-4 py-3 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber || 'Pending'} className='font-mono text-slate-600 font-medium' /></td>
                                     <td className="px-4 py-3 text-center relative">
@@ -258,27 +256,25 @@ const Application = () => {
                                             </button>
 
                                             {openMenuId === item._id && (
-                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
                                                     <button
                                                         onClick={() => { setInfoData(item); setOpenMenuId(null); }}
-                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                     >
-                                                        <MdInfo className="text-indigo-600 text-sm" />
                                                         <span>{t('information')}</span>
                                                     </button>
                                                     {hasPermission('/contract/application', 'edit') && (
                                                         <button
                                                             onClick={() => handleActivateContract(item._id)}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                         >
-                                                            <MdCheckCircle className="text-emerald-600 text-sm" />
                                                             <span>Set to Activated</span>
                                                         </button>
                                                     )}
                                                     {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
                                                         <button
                                                             onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
-                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                         >
                                                             <span>Open Mosyle</span>
                                                         </button>
@@ -286,18 +282,16 @@ const Application = () => {
                                                     {hasPermission('/contract/application', 'edit') && (
                                                         <button
                                                             onClick={() => handleOpenEdit(item)}
-                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                         >
-                                                            <MdEdit className="text-amber-600 text-sm" />
                                                             <span>{t('edit')}</span>
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/application', 'delete') && (
                                                         <button
                                                             onClick={() => handleDeleteContract(item._id)}
-                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                         >
-                                                            <MdDelete className="text-red-600 text-sm" />
                                                             <span>{t('delete')}</span>
                                                         </button>
                                                     )}
@@ -337,19 +331,19 @@ const Application = () => {
                                 <MdInfo className="text-indigo-400 text-xl" />
                                 Detailed Application Contract Information
                             </h3>
-                            <button onClick={() => setInfoData(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold">✕</button>
+                            <button onClick={() => setInfoData(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold cursor-pointer">✕</button>
                         </div>
 
                         {/* Customer Info */}
                         <div className="space-y-2">
                             <h4 className="text-xs font-bold text-indigo-300 uppercase">Customer Information</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Name EN</span><span className="font-bold text-gray-100">{infoData.customerNameEn}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Name KH</span><span className="font-bold text-indigo-400 font-khmer">{infoData.customerNameKh}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">ID Number</span><span className="font-mono text-gray-200">{infoData.idCardNumber || '-'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Phone</span><span className="font-mono text-gray-200">{infoData.phone || '-'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Relative Phone</span><span className="font-mono text-gray-200">{infoData.relativePhone || '-'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Current Address</span><span className="text-gray-200">{infoData.currentAddress || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Name EN</span><span className="font-bold text-gray-100">{infoData.customerNameEn}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Name KH</span><span className="font-bold text-indigo-400 font-khmer">{infoData.customerNameKh}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">ID Number</span><span className="font-mono text-gray-200">{infoData.idCardNumber || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Phone</span><span className="font-mono text-gray-200">{infoData.phone || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Relative Phone</span><span className="font-mono text-gray-200">{infoData.relativePhone || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Current Address</span><span className="text-gray-200">{infoData.currentAddress || '-'}</span></div>
                             </div>
                         </div>
 
@@ -357,14 +351,14 @@ const Application = () => {
                         <div className="space-y-2 pt-2 border-t border-gray-800">
                             <h4 className="text-xs font-bold text-purple-300 uppercase">Device Details</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Model</span><span className="font-bold text-gray-100">{infoData.model}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Serial Number</span><span className="font-mono font-bold text-indigo-300">{infoData.serialNumber}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 1</span><span className="font-mono text-gray-100 font-bold">{formatIMEI(infoData.imei1)}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 2</span><span className="font-mono text-gray-100 font-bold">{formatIMEI(infoData.imei2)}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">MEID</span><span className="font-mono text-pink-400 font-bold">{infoData.meid || '—'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Version / OS</span><span className="text-indigo-300 font-bold">{infoData.version || '—'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Color</span><span className="text-gray-200">{infoData.color || '—'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Brand</span><span className="text-purple-300 font-bold">{infoData.brand || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Model</span><span className="font-bold text-gray-100">{infoData.model}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Serial Number</span><span className="font-mono font-bold text-indigo-300">{infoData.serialNumber}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 1</span><span className="font-mono text-gray-100 font-bold">{formatIMEI(infoData.imei1)}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 2</span><span className="font-mono text-gray-100 font-bold">{formatIMEI(infoData.imei2)}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">MEID</span><span className="font-mono text-pink-400 font-bold">{infoData.meid || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Version / OS</span><span className="text-indigo-300 font-bold">{infoData.version || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Color</span><span className="text-gray-200">{infoData.color || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Brand</span><span className="text-purple-300 font-bold">{infoData.brand || '—'}</span></div>
                             </div>
 
                         </div>
@@ -373,7 +367,7 @@ const Application = () => {
                         {infoData.deviceProblem && (
                             <div className="space-y-1 pt-2 border-t border-gray-800">
                                 <h4 className="text-xs font-bold text-amber-400 uppercase flex items-center gap-1.5">🔧 Device Problem / បញ្ហាឧបករណ៍</h4>
-                                <div className="p-3 bg-amber-900/15 border border-amber-700/40 rounded-xl text-xs text-amber-300 font-medium leading-relaxed whitespace-pre-wrap">
+                                <div className="p-3 bg-amber-900/15 border border-amber-700/40 rounded-[5px] text-xs text-amber-300 font-medium leading-relaxed whitespace-pre-wrap">
                                     {infoData.deviceProblem}
                                 </div>
                             </div>
@@ -384,14 +378,14 @@ const Application = () => {
                         <div className="space-y-2 pt-2 border-t border-gray-800">
                             <h4 className="text-xs font-bold text-emerald-300 uppercase">Loan & Financial Details</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Total Loan Amount</span><span className="font-mono font-bold text-emerald-400">${infoData.amount || infoData.totalAmount || 0}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Monthly Installment</span><span className="font-mono font-bold text-emerald-400">${infoData.monthlyPayment}/mo</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Interest / Duration</span><span className="text-gray-300">{infoData.interest || '14%'} &bull; {infoData.duration || '12 Mo'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Total Loan Amount</span><span className="font-mono font-bold text-emerald-400">${infoData.amount || infoData.totalAmount || 0}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Monthly Installment</span><span className="font-mono font-bold text-emerald-400">${infoData.monthlyPayment}/mo</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Interest / Duration</span><span className="text-gray-300">{infoData.interest || '14%'} &bull; {infoData.duration || '12 Mo'}</span></div>
                             </div>
                         </div>
 
                         <div className="text-right pt-2">
-                            <button onClick={() => setInfoData(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl">Close</button>
+                            <button onClick={() => setInfoData(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-[5px] cursor-pointer">Close</button>
                         </div>
                     </div>
                 </div>

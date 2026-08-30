@@ -116,15 +116,12 @@ const PaymentHistory = () => {
             {/* Header */}
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 text-xl'>
-                        <IoMdWallet />
-                    </div>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
                             {t('paymentHistory')}
                         </h1>
                         <p className='text-xs text-emerald-700 font-mono font-bold'>
-                            Total Revenue: ${totalPaid.toLocaleString()} — {total} Transactions
+                            Total: ${totalPaid.toLocaleString()} — {total}
                         </p>
                     </div>
                 </div>
@@ -132,14 +129,14 @@ const PaymentHistory = () => {
                 <div className='flex items-center gap-3'>
                     <button
                         onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <FaFileExcel className="text-emerald-600 text-sm" />
                         <span>Excel</span>
                     </button>
                     <button
                         onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <MdPictureAsPdf className="text-red-600 text-sm" />
                         <span>PDF</span>
@@ -152,9 +149,9 @@ const PaymentHistory = () => {
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                             placeholder={t('search')}
-                            className="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-44 font-medium outline-none shadow-xs"
+                            className="px-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-44 font-medium outline-none shadow-xs"
                         />
-                        <button type="submit" className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs">
+                        <button type="submit" className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs">
                             Go
                         </button>
                         {searchTerm && (
@@ -165,7 +162,7 @@ const PaymentHistory = () => {
                     <button
                         onClick={() => fetchPayments(page)}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>

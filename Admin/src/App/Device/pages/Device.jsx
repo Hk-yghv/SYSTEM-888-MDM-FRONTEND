@@ -152,12 +152,9 @@ const Device = () => {
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 text-xl'>
-                        <MdOutlinePhoneIphone />
-                    </div>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
-                            {t('device')} Inventory Management
+                            {t('device')}
                         </h1>
                         <p className='text-xs text-purple-700 font-bold'>
                             {total} Registered Activated Devices

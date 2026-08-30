@@ -236,7 +236,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                                 </span>
                                 {isMasterAdmin && (
                                     <span className="px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-600/60 rounded-full text-[9px] font-bold uppercase">
-                                        👑 Master Admin Privilege
+                                        Master Admin Privilege
                                     </span>
                                 )}
                             </h3>
@@ -254,18 +254,18 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                 </div>
 
                 {/* Schedule Table Container */}
-                <div className="flex-1 overflow-x-auto overflow-y-auto p-4 pb-32 min-h-[350px] space-y-3 bg-[#070913]">
+                <div className="flex-1 overflow-x-auto overflow-y-auto p-4 pb-32 min-h-[350px] space-y-3">
                     {isSetupActivate && (
                         <div className="p-3 rounded-2xl bg-indigo-950/60 border border-indigo-600/40 text-indigo-200 text-xs font-medium flex items-center gap-2">
                             <FaCalendarAlt className="text-indigo-400 text-base flex-shrink-0" />
-                            <span>
+                            <span className='text-black'>
                                 សូមពិនិត្យ និងបញ្ចូលកាលបរិច្ឆេទថ្ងៃខែត្រូវបង់ត្រឡប់ និងទឹកប្រាក់សម្រាប់ខែនីមួយៗខាងក្រោមឱ្យបានគ្រប់គ្រាន់ រួចចុចប៊ូតុង <strong>"រក្សាទុក & Activate Contract"</strong> ដើម្បីដំណើរការ!
                             </span>
                         </div>
                     )}
 
                     <table className="w-full text-left text-xs whitespace-nowrap">
-                        <thead className="bg-[#0f1426] text-gray-300 uppercase tracking-wider border-b border-gray-800">
+                        <thead className="text-gray-300 uppercase tracking-wider border-b border-gray-800">
                             <tr>
                                 <th className="px-3 py-2.5 text-center">ខែ/ថ្ងៃ (Term)</th>
                                 <th className="px-3 py-2.5">ថ្ងៃខែត្រូវបង់ (Due Date)</th>
@@ -279,7 +279,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                                 {!isReadOnly && <th className="px-3 py-2.5 text-center">Action ($)</th>}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-800/60 font-medium text-gray-200">
+                        <tbody className="divide-y divide-gray-800/60 font-medium">
                             {rows.map((row, idx) => {
                                 const isLocked = (!isMasterAdmin && (row.status === 'Paid' || row.status === 'PayOff' || row.status === 'Settled')) || isReadOnly;
                                 const isCurrentActive = idx === activeRowIdx && !isReadOnly;
@@ -287,7 +287,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
 
                                 return (
                                     <tr key={idx} className={`transition-colors ${row.status === 'Paid' ? 'bg-emerald-950/20' : row.status === 'PayOff' ? 'bg-indigo-950/30' : isCurrentActive ? 'bg-amber-950/30 border-l-4 border-amber-500' : 'hover:bg-gray-900/50'}`}>
-                                        <td className="px-3 py-2 text-center font-bold text-gray-300 font-mono">
+                                        <td className="px-3 py-2 text-center font-bold text-white font-mono">
                                             {row.labelName || `Month ${row.monthIndex}`}
                                         </td>
 

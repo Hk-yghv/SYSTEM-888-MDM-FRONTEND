@@ -6,6 +6,7 @@ import { FaFileExcel, FaUsers, FaDollarSign, FaMoneyBillWave, FaExchangeAlt, FaL
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
+import LineChart from '../../../components/LineChart';
 
 const LIMIT = 10;
 
@@ -280,17 +281,34 @@ const AllCustomersReport = () => {
         };
     }, [allContracts, allPayments, dataList]);
 
+    // Trend line chart data
+    const chartTrendData = useMemo(() => {
+        const sourceContracts = allContracts.length > 0 ? allContracts : dataList;
+        const map = {};
+        sourceContracts.forEach(c => {
+            const dateStr = (c.inputDate || c.createdAt || c.date || '').slice(0, 10);
+            if (!dateStr) return;
+            if (!map[dateStr]) map[dateStr] = { label: dateStr, customerCount: 0, loanAmount: 0, paidAmount: 0 };
+            map[dateStr].customerCount += 1;
+            map[dateStr].loanAmount += Number(c.amount || c.totalAmount || 0);
+        });
+        allPayments.forEach(p => {
+            const dateStr = (p.paidDate || p.paymentDate || p.createdAt || p.date || '').slice(0, 10);
+            if (!dateStr) return;
+            if (!map[dateStr]) map[dateStr] = { label: dateStr, customerCount: 0, loanAmount: 0, paidAmount: 0 };
+            map[dateStr].paidAmount += Number(p.amount || 0);
+        });
+        return Object.values(map).sort((a, b) => a.label.localeCompare(b.label));
+    }, [allContracts, dataList, allPayments]);
+
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             {/* Header */}
             <header className='p-4 w-full border border-slate-200 bg-white rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-12 h-12 rounded-2xl bg-indigo-600 border border-indigo-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-indigo-600/30'>
-                        <FaUsers />
-                    </div>
                     <div>
                         <h1 className='text-xl font-black text-slate-900 flex items-center gap-2 tracking-wide'>
-                            {user?.brand ? (user.brand.toUpperCase().startsWith('SYSTEM') ? user.brand.toUpperCase() : `SYSTEM ${user.brand.toUpperCase()}`) : 'SYSTEM MDM'} — {t('allCustomerReport')}
+                            {t('allCustomerReport')}
                         </h1>
                         <p className='text-xs text-indigo-700 font-bold'>
                             {t('allCustomerReport')} ({total})
@@ -299,11 +317,11 @@ const AllCustomersReport = () => {
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <FaFileExcel className="text-emerald-600 text-sm" /><span>{t('exportExcel')}</span>
                     </button>
                     {/* PDF Orientation Toggle */}
-                    <div className="flex items-center rounded-xl border border-slate-300 overflow-hidden shadow-xs">
+                    <div className="flex items-center rounded-[5px] border border-slate-300 overflow-hidden shadow-xs">
                         <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
                             <span>📄</span><span className="hidden sm:inline">Portrait</span>
@@ -313,10 +331,10 @@ const AllCustomersReport = () => {
                             <span>🖼</span><span className="hidden sm:inline">Landscape</span>
                         </button>
                     </div>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <MdPictureAsPdf className="text-red-600 text-sm" /><span>{activeTab === 'summary' ? 'PDF (Summary)' : t('exportPDF')}</span>
                     </button>
-                    <button onClick={() => { fetchData(page, searchTerm); fetchFullData(); }} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
+                    <button onClick={() => { fetchData(page, searchTerm); fetchFullData(); }} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-600' : ''} /><span>{t('reload')}</span>
                     </button>
                 </div>
@@ -341,7 +359,7 @@ const AllCustomersReport = () => {
                     {/* KPI Cards Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
                         <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center text-lg font-bold">
+                            <div className="w-10 h-10 rounded-[5px] bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center text-lg font-bold">
                                 <FaUsers />
                             </div>
                             <div>
@@ -351,7 +369,7 @@ const AllCustomersReport = () => {
                         </div>
 
                         <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-lg font-bold">
+                            <div className="w-10 h-10 rounded-[5px] bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-lg font-bold">
                                 <FaDollarSign />
                             </div>
                             <div>
@@ -361,7 +379,7 @@ const AllCustomersReport = () => {
                         </div>
 
                         <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg font-bold">
+                            <div className="w-10 h-10 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg font-bold">
                                 <FaMoneyBillWave />
                             </div>
                             <div>
@@ -371,7 +389,7 @@ const AllCustomersReport = () => {
                         </div>
 
                         <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg font-bold">
+                            <div className="w-10 h-10 rounded-[5px] bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg font-bold">
                                 <FaExchangeAlt />
                             </div>
                             <div>
@@ -381,7 +399,7 @@ const AllCustomersReport = () => {
                         </div>
 
                         <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center text-lg font-bold">
+                            <div className="w-10 h-10 rounded-[5px] bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center text-lg font-bold">
                                 <FaLock />
                             </div>
                             <div>
@@ -391,7 +409,7 @@ const AllCustomersReport = () => {
                         </div>
 
                         <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center text-lg font-bold">
+                            <div className="w-10 h-10 rounded-[5px] bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center text-lg font-bold">
                                 <FaImage />
                             </div>
                             <div>
@@ -400,6 +418,18 @@ const AllCustomersReport = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Line Chart Component */}
+                    <LineChart
+                        title="ក្រាបខ្សែនិន្នាការអតិថិជន & ទឹកប្រាក់សរុប (Customer & Financial Line Chart)"
+                        subtitle="បង្ហាញពីកំណើនចំនួនអតិថិជន ទឹកប្រាក់ឥណទាន និងទឹកប្រាក់ទទួលបានប្រចាំថ្ងៃ/ខែ"
+                        data={chartTrendData}
+                        series={[
+                            { key: 'customerCount', label: 'ចំនួនអតិថិជន (Customers)', color: '#6366f1', isCurrency: false },
+                            { key: 'loanAmount', label: 'ទឹកប្រាក់ឥណទាន ($)', color: '#3b82f6', isCurrency: true },
+                            { key: 'paidAmount', label: 'ទឹកប្រាក់ទទួលបាន ($)', color: '#10b981', isCurrency: true }
+                        ]}
+                    />
 
                     {/* Interactive Visual Graph & Brand Distribution Bars */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -515,7 +545,7 @@ const AllCustomersReport = () => {
                         </p>
                     </div>
 
-                    <div className='w-full overflow-x-auto rounded-xl border border-slate-200 table-container'>
+                    <div className='w-full overflow-x-auto rounded-[5px] border border-slate-200 table-container'>
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-indigo-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                                 <tr>

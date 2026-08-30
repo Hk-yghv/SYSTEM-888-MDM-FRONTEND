@@ -124,27 +124,24 @@ const LockPhone = () => {
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-700 text-xl'>
-                        <FaLock />
-                    </div>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
-                            {t('lockPhone')} Audit History Log
+                            {t('lockPhone')}
                         </h1>
                         <p className='text-xs text-red-700 font-bold'>
-                            {total} records — Date, Time, Last Lock, Reason, Display Text, Hotline, User Name
+                            Tota: {total}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
                     </button>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
                     </button>
-                    <button onClick={() => fetchLockLogs(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
+                    <button onClick={() => fetchLockLogs(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>

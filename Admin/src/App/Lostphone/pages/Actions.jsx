@@ -112,16 +112,10 @@ const Actions = () => {
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-700 text-xl'>
-                        <MdOutlinePhoneIphone />
-                    </div>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
-                            Lost Phone Action Control
+                            Lost Phone
                         </h1>
-                        <p className='text-xs text-red-700 font-bold'>
-                            Toggle device lock status & auto-log audit history to Lock/Unlock Phone pages
-                        </p>
                     </div>
                 </div>
 
@@ -133,13 +127,13 @@ const Actions = () => {
                             placeholder="Search customer, model, serial..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all w-64 shadow-2xs"
+                            className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all w-64 shadow-2xs"
                         />
                     </div>
                     <button
                         onClick={fetchContracts}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
@@ -194,7 +188,7 @@ const Actions = () => {
                                                     <button
                                                         onClick={() => handleToggleLock(item, 'Unlocked')}
                                                         disabled={togglingId === item._id}
-                                                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                                                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-emerald-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
                                                     >
                                                         <FaUnlock size={11} />
                                                         <span>Set to Unlock Phone</span>
@@ -203,7 +197,7 @@ const Actions = () => {
                                                     <button
                                                         onClick={() => handleToggleLock(item, 'Locked')}
                                                         disabled={togglingId === item._id}
-                                                        className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-red-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                                                        className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-red-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
                                                     >
                                                         <FaLock size={11} />
                                                         <span>Set to Lock Phone</span>

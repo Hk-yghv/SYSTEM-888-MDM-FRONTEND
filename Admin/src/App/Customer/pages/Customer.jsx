@@ -198,11 +198,8 @@ const Customer = () => {
             {/* Header */}
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 text-xl'>
-                        <IoIosContact />
-                    </div>
                     <div>
-                        <h1 className='text-lg font-bold text-slate-900'>{t('customer')} Profile Directory</h1>
+                        <h1 className='text-lg font-bold text-slate-900'>{t('customer')}</h1>
                         <p className='text-xs text-emerald-700 font-bold'>{filteredCustomers.length} Active Customers</p>
                     </div>
                 </div>
@@ -216,7 +213,7 @@ const Customer = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search name, phone, model..."
-                            className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
+                            className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
                         />
                     </div>
 

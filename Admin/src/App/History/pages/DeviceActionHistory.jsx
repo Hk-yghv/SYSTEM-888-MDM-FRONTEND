@@ -200,15 +200,12 @@ const DeviceActionHistory = () => {
             {/* Header */}
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 text-xl'>
-                        <FaMobileAlt />
-                    </div>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
                             {t('deviceHistory')}
                         </h1>
                         <p className='text-xs text-amber-700 font-bold'>
-                            {total} records — Track Lock Phone, Unlock Phone & Set Wallpaper actions with Pending/Success status
+                            Total: {total}
                         </p>
                     </div>
                 </div>
@@ -216,18 +213,18 @@ const DeviceActionHistory = () => {
                 <div className="flex items-center gap-2 flex-wrap">
                     <button
                         onClick={() => { fetchActivatedContracts(); setOpenActionModal(true); }}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/20'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/20'
                     >
                         <FaPlus size={12} />
                         <span>{t('create')} / ដាក់ Lock ឬ Wallpaper</span>
                     </button>
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
                     </button>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
                     </button>
-                    <button onClick={() => fetchDeviceActionLogs(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
+                    <button onClick={() => fetchDeviceActionLogs(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
@@ -243,7 +240,7 @@ const DeviceActionHistory = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder={t('search')}
-                        className='w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:border-amber-500 bg-slate-50'
+                        className='w-full pl-9 pr-3 py-2 border border-slate-300 rounded-[5px] text-xs font-medium focus:outline-none focus:border-amber-500 bg-slate-50'
                     />
                 </div>
 
@@ -253,7 +250,7 @@ const DeviceActionHistory = () => {
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className='px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer'
+                            className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer'
                         >
                             <option value=''>All Status</option>
                             <option value='Pending'>Pending (រង់ចាំ)</option>
@@ -266,7 +263,7 @@ const DeviceActionHistory = () => {
                         <select
                             value={actionFilter}
                             onChange={(e) => setActionFilter(e.target.value)}
-                            className='px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer'
+                            className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer'
                         >
                             <option value=''>All Actions</option>
                             <option value='Lock Phone'>Lock Phone</option>
@@ -366,7 +363,7 @@ const DeviceActionHistory = () => {
                                                     <button
                                                         onClick={() => handleMarkDone(item)}
                                                         disabled={markingDoneId === (item._id || item.logId)}
-                                                        className='px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-600/20 inline-flex items-center gap-1 cursor-pointer transition-all'
+                                                        className='px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] font-bold text-xs shadow-md shadow-emerald-600/20 inline-flex items-center gap-1 cursor-pointer transition-all'
                                                     >
                                                         <FaCheckCircle size={12} />
                                                         <span>{t('done')} (រួចរាល់)</span>
@@ -414,7 +411,7 @@ const DeviceActionHistory = () => {
                                     <select
                                         value={selectedContractId}
                                         onChange={(e) => setSelectedContractId(e.target.value)}
-                                        className='w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold bg-slate-50 text-slate-800 focus:outline-none focus:border-amber-500'
+                                        className='w-full px-3 py-2 border border-slate-300 rounded-[5px] font-semibold bg-slate-50 text-slate-800 focus:outline-none focus:border-amber-500'
                                     >
                                         {activatedContracts.map((c) => (
                                             <option key={c._id || c.contractId} value={c.contractId}>
@@ -431,7 +428,7 @@ const DeviceActionHistory = () => {
                                     <select
                                         value={actionType}
                                         onChange={(e) => setActionType(e.target.value)}
-                                        className='w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold bg-slate-50 text-slate-800 focus:outline-none focus:border-amber-500'
+                                        className='w-full px-3 py-2 border border-slate-300 rounded-[5px] font-semibold bg-slate-50 text-slate-800 focus:outline-none focus:border-amber-500'
                                     >
                                         <option value='Lock Phone'>Lock Phone (ចាក់សោទូរស័ព្ទ)</option>
                                         <option value='Unlock Phone'>Unlock Phone (ដោះសោទូរស័ព្ទ)</option>
@@ -446,7 +443,7 @@ const DeviceActionHistory = () => {
                                     <select
                                         value={actionStatus}
                                         onChange={(e) => setActionStatus(e.target.value)}
-                                        className='w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold bg-slate-50 text-slate-800 focus:outline-none focus:border-amber-500'
+                                        className='w-full px-3 py-2 border border-slate-300 rounded-[5px] font-semibold bg-slate-50 text-slate-800 focus:outline-none focus:border-amber-500'
                                     >
                                         <option value='Pending'>Pending (រង់ចាំអ្នកចុច Done)</option>
                                         <option value='Success'>Success (ជោគជ័យភ្លាមៗ)</option>
@@ -461,7 +458,7 @@ const DeviceActionHistory = () => {
                                     value={reasonInput}
                                     onChange={(e) => setReasonInput(e.target.value)}
                                     placeholder='E.g. Lock device due to overdue payment'
-                                    className='w-full px-3 py-2 border border-slate-300 rounded-xl font-medium focus:outline-none focus:border-amber-500 bg-slate-50'
+                                    className='w-full px-3 py-2 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-amber-500 bg-slate-50'
                                 />
                             </div>
 
@@ -469,14 +466,14 @@ const DeviceActionHistory = () => {
                                 <button
                                     type='button'
                                     onClick={() => setOpenActionModal(false)}
-                                    className='px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all cursor-pointer'
+                                    className='px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[5px] font-bold transition-all cursor-pointer'
                                 >
                                     {t('cancel')}
                                 </button>
                                 <button
                                     type='submit'
                                     disabled={submittingAction || !selectedContractId}
-                                    className='px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold shadow-lg shadow-amber-600/20 transition-all cursor-pointer'
+                                    className='px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-[5px] font-bold shadow-lg shadow-amber-600/20 transition-all cursor-pointer'
                                 >
                                     {submittingAction ? 'Saving...' : 'Record History'}
                                 </button>

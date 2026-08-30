@@ -118,20 +118,20 @@ const Check = () => {
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-base font-bold text-slate-900 flex items-center gap-2'>
-                        <span>{t('check')} List</span>
+                        <span>{t('check')}</span>
                     </h1>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <FaFileExcel className="text-emerald-600 text-sm" />
                         <span>Excel</span>
                     </button>
                     <button
                         onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <MdPictureAsPdf className="text-red-600 text-sm" />
                         <span>PDF</span>
@@ -139,7 +139,7 @@ const Check = () => {
                     <button
                         onClick={fetchCheckContracts}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
@@ -186,17 +186,17 @@ const Check = () => {
                                             {openMenuId === item._id && (
                                                 <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
                                                     {hasPermission('/contract/check', 'edit') && (
-                                                        <button onClick={() => handleMoveToActivated(item)} className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer">
+                                                        <button onClick={() => handleMoveToActivated(item)} className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer">
                                                             <MdCheckCircle className="text-emerald-600" /> Move to Activated
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/check', 'edit') && (
-                                                        <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2">
+                                                        <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2">
                                                             <MdEdit className="text-amber-600" /> Edit
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/check', 'delete') && (
-                                                        <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2">
+                                                        <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2">
                                                             <MdDelete className="text-red-600" /> Delete
                                                         </button>
                                                     )}

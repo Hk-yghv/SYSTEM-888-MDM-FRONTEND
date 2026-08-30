@@ -98,8 +98,7 @@ const Comments = () => {
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-base font-bold text-slate-900 flex items-center gap-2'>
-                        <MdComment className="text-xl text-teal-600" />
-                        <span>{t('comments')} List</span>
+                        <span>{t('comments')}</span>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-300 font-bold">
                             {total} Records with Comments
                         </span>
@@ -108,14 +107,14 @@ const Comments = () => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <FaFileExcel className="text-emerald-600 text-sm" />
                         <span>Excel</span>
                     </button>
                     <button
                         onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         <MdPictureAsPdf className="text-red-600 text-sm" />
                         <span>PDF</span>
@@ -123,7 +122,7 @@ const Comments = () => {
                     <button
                         onClick={fetchCommentsContracts}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
@@ -173,16 +172,16 @@ const Comments = () => {
 
                                             {openMenuId === item._id && (
                                                 <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
-                                                    <button onClick={() => { setSelectedInfo(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-xl flex items-center gap-2">
+                                                    <button onClick={() => { setSelectedInfo(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2">
                                                         <MdInfo className="text-indigo-600" /> Details
                                                     </button>
                                                     {hasPermission('/contract/comments', 'edit') && (
-                                                        <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2">
+                                                        <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2">
                                                             <MdEdit className="text-amber-600" /> Edit
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/comments', 'delete') && (
-                                                        <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-xl flex items-center gap-2">
+                                                        <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2">
                                                             <MdDelete className="text-red-600" /> Delete
                                                         </button>
                                                     )}
@@ -215,11 +214,11 @@ const Comments = () => {
                             <p className="text-gray-400">Serial Number: <span className="text-indigo-300 font-mono">{selectedInfo.serialNumber}</span></p>
                             <div className="pt-2 border-t border-gray-800">
                                 <span className="text-cyan-400 font-bold block mb-1">Comment Note:</span>
-                                <p className="text-white bg-gray-950 p-3 rounded-xl border border-gray-800 font-sans leading-relaxed">{selectedInfo.notes || 'No notes'}</p>
+                                <p className="text-white bg-gray-950 p-3 rounded-[5px] border border-gray-800 font-sans leading-relaxed">{selectedInfo.notes || 'No notes'}</p>
                             </div>
                         </div>
                         <div className="text-right">
-                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-cyan-600 text-white font-bold text-xs rounded-xl">Close</button>
+                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-cyan-600 text-white font-bold text-xs rounded-[5px]">Close</button>
                         </div>
                     </div>
                 </div>
