@@ -4,7 +4,6 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
 import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaShieldAlt, FaBell } from 'react-icons/fa';
-import { HiSparkles } from 'react-icons/hi2';
 
 const Header = ({ onOpenAlerts, alertCount = 0 }) => {
     const [accountOpen, setAccountOpen] = useState(false);
