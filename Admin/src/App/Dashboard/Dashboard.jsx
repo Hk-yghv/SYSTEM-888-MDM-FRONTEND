@@ -455,7 +455,7 @@ const Dashboard = () => {
     }, [detailModal.items, detailSearch]);
 
     return (
-        <div className="w-full min-h-screen bg-[#f8fafc] p-4 sm:p-6 lg:p-8 space-y-6 select-none font-sans text-slate-900">
+        <div className="w-full min-h-screen p-4 sm:p-6 lg:p-8 space-y-6 select-none font-sans text-slate-900">
 
             {/* ── 1. Top Executive Header Bar ── */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs">
@@ -891,7 +891,7 @@ const Dashboard = () => {
                                     <div className="flex-1 relative">
                                         {/* Horizontal gridlines */}
                                         <div className="absolute inset-x-0 inset-y-0 flex flex-col justify-between pointer-events-none pb-5">
-                                            {[0,1,2,3].map(i => <div key={i} className="w-full border-t border-dashed border-slate-200" />)}
+                                            {[0, 1, 2, 3].map(i => <div key={i} className="w-full border-t border-dashed border-slate-200" />)}
                                         </div>
                                         {/* Bars */}
                                         <div className="h-36 flex items-end justify-around gap-1 pb-5 relative z-10">
@@ -943,7 +943,7 @@ const Dashboard = () => {
                                     <div className="flex-1 relative">
                                         {/* Horizontal gridlines */}
                                         <div className="absolute inset-x-0 inset-y-0 flex flex-col justify-between pointer-events-none pb-5">
-                                            {[0,1,2,3].map(i => <div key={i} className="w-full border-t border-dashed border-slate-200" />)}
+                                            {[0, 1, 2, 3].map(i => <div key={i} className="w-full border-t border-dashed border-slate-200" />)}
                                         </div>
                                         {/* SVG Connecting Line */}
                                         <div className="relative h-36">
