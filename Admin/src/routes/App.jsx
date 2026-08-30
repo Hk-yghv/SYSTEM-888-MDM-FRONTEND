@@ -62,6 +62,7 @@ import DeviceActionHistory from "../App/History/pages/DeviceActionHistory";
 // Settings & Profile
 import ControlSystem from "../App/Settings/pages/ControlSystem";
 import AllAccount from "../App/Settings/pages/AllAccount";
+import Personalization from "../App/Settings/pages/Personalization";
 import Profile from "../App/Profile/Profile";
 
 import DesktopOnlyGuard from "../components/DesktopOnlyGuard";
@@ -72,7 +73,7 @@ const MainLayout = ({ children }) => {
   const [alertCount, setAlertCount] = useState(0);
 
   return (
-    <div className="flex flex-col h-screen bg-[#f4f6f8] relative">
+    <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300">
       <Header onOpenAlerts={() => setIsAlertOpen(true)} alertCount={alertCount} />
       <div className="flex flex-1 overflow-hidden">
         <Left />
@@ -144,6 +145,7 @@ const App = () => {
                   {/* Settings */}
                   <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />
                   <Route path={json.settings.controlSystem} element={<ProtectRoute pagePath={json.settings.controlSystem}><MainLayout><ControlSystem /></MainLayout></ProtectRoute>} />
+                  <Route path={json.settings.personalization} element={<MainLayout><Personalization /></MainLayout>} />
                   <Route path={json.settings.profile} element={<ProtectRoute pagePath={json.settings.profile}> <MainLayout><Profile /></MainLayout> </ProtectRoute>} />
 
                   {/* Fallback */}

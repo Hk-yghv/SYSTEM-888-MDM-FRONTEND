@@ -250,28 +250,25 @@ const Left = () => {
                 )}
 
             {/* Setting */}
-            {(hasPermission('/settings/all-account', 'read') ||
-                hasPermission(json.settings.controlSystem, 'read') ||
-                hasPermission('/settings/phone-app', 'read')) && (
-                    <div className="flex-shrink-0">
-                        <div onClick={() => toggleMenu("setting")} className={dropdownHeaderClass("setting")}>
-                            <p className="flex items-center gap-3">
-                                <IoIosSettings size={20} className="text-emerald-600" />
-                                {t('settings')}
-                            </p>
-                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "setting" ? "rotate-180" : ""}`} />
-                        </div>
+            <div className="flex-shrink-0">
+                <div onClick={() => toggleMenu("setting")} className={dropdownHeaderClass("setting")}>
+                    <p className="flex items-center gap-3">
+                        <IoIosSettings size={20} className="text-emerald-600" />
+                        {t('settings')}
+                    </p>
+                    <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "setting" ? "rotate-180" : ""}`} />
+                </div>
 
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "setting" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
-                            {hasPermission('/settings/all-account', 'read') && (
-                                <Link to="/settings/all-account" className={subItemClass('/settings/all-account')}>{t('allAccount')}</Link>
-                            )}
-                            {hasPermission(json.settings.controlSystem, 'read') && (
-                                <Link to={json.settings.controlSystem} className={subItemClass(json.settings.controlSystem)}>{t('controlSystem')}</Link>
-                            )}
-                        </div>
-                    </div>
-                )}
+                <div className={`overflow-hidden transition-all duration-300 ${openMenu === "setting" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                    {hasPermission('/settings/all-account', 'read') && (
+                        <Link to="/settings/all-account" className={subItemClass('/settings/all-account')}>{t('allAccount')}</Link>
+                    )}
+                    {hasPermission(json.settings.controlSystem, 'read') && (
+                        <Link to={json.settings.controlSystem} className={subItemClass(json.settings.controlSystem)}>{t('controlSystem')}</Link>
+                    )}
+                    <Link to={json.settings.personalization} className={subItemClass(json.settings.personalization)}>{t('personalization')}</Link>
+                </div>
+            </div>
 
         </div>
     );

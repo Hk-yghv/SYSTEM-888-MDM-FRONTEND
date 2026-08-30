@@ -44,6 +44,7 @@
     "settings": {
         "controlSystem": "/settings/control-system",
         "allAccount": "/settings/all-account",
+        "personalization": "/settings/personalization",
         "phoneApp": "/settings/phone-app",
         "profile": "/profile"
     }
