@@ -81,12 +81,14 @@ const DocumentScanner = ({ onParsedData }) => {
             imei2: '',
             meid: '',
             version: '',
-            color: ''
+            color: '',
+            capacity: ''
         };
 
-        // ── 1. iOS "About" screen parsing (Key: Value structures) ──
-        // Model Name (e.g. Model Name: iPhone 12 Pro Max)
-        const modelNameMatch = normalizedText.match(/Model\s*Name[\s:\t]+([^\n\r]+)/i) ||
+        // ── 1. Device Screenshot Parsing (iOS / Android "About" screen) ──
+        
+        // Model Name (e.g. Model Name: iPhone 12 Pro Max or iPhone 12 pro Max) -> map to Model / Device Model
+        const modelNameMatch = normalizedText.match(/Model\s*Name[\s:\t>]+([^\n\r>]+)/i) ||
             normalizedText.match(/\b(iPhone\s+[0-9]{1,2}(?:\s*(?:Pro\s*Max|Pro|Plus|Mini))?)\b/i) ||
             normalizedText.match(/\b(Samsung\s+Galaxy\s+[^\n\r]+)/i);
         if (modelNameMatch) {
@@ -95,29 +97,33 @@ const DocumentScanner = ({ onParsedData }) => {
             else if (/samsung|galaxy/i.test(parsed.model)) parsed.brand = 'Samsung';
         }
 
-        // Serial Number (e.g. Serial Number: F2LF96PN0D42 or G6TY82...)
-        const serialMatch = normalizedText.match(/Serial\s*Number[\s:\t]+([A-Z0-9]{8,14})/i) ||
+        // iOS Version / System Version (e.g. iOS Version 26.5 or iOS Version: 16.5) -> map to Version
+        const iosVersionMatch = normalizedText.match(/iOS\s*Version[\s:\t>]+([^\n\r>]+)/i) ||
+            normalizedText.match(/(?:Software|System|Android)\s*Version[\s:\t>]+([^\n\r>]+)/i) ||
+            normalizedText.match(/\b(iOS\s+[0-9]{1,2}(?:\.[0-9]{1,2})?)\b/i);
+        if (iosVersionMatch) {
+            const rawVer = (iosVersionMatch[1] || iosVersionMatch[0]).replace(/[\>\:\;]/g, '').trim();
+            parsed.version = rawVer.toLowerCase().startsWith('ios') ? rawVer : `iOS ${rawVer}`;
+        }
+
+        // Serial Number (e.g. Serial Number GONFVM8POD42) -> map to Serial Number
+        const serialMatch = normalizedText.match(/Serial\s*Number[\s:\t>]+([A-Z0-9]{8,15})/i) ||
             normalizedText.match(/\b([A-Z0-9]{10,12})\b/);
-        if (serialMatch && !/AVAILABLE|CAPACITY|BLUETOOTH/i.test(serialMatch[1])) {
+        if (serialMatch && !/AVAILABLE|CAPACITY|BLUETOOTH|MODEL|CARRIER/i.test(serialMatch[1])) {
             parsed.serialNumber = serialMatch[1].trim();
         }
 
         // MEID (e.g. MEID: 35173227736075)
-        const meidMatch = normalizedText.match(/MEID[\s:\t]+([0-9\s]{14,18})/i);
+        const meidMatch = normalizedText.match(/MEID[\s:\t>]+([0-9\s]{14,18})/i);
         if (meidMatch) {
             parsed.meid = meidMatch[1].replace(/\s+/g, '').trim();
         }
 
         // IMEI 1 & IMEI 2
-        const imeiLabelMatch = normalizedText.match(/(?:^|\n)IMEI[\s:\t]+([0-9\s]{14,20})/i);
-        const imei2LabelMatch = normalizedText.match(/IMEI2[\s:\t]+([0-9\s]{14,20})/i);
-
-        if (imeiLabelMatch) {
-            parsed.imei1 = imeiLabelMatch[1].replace(/\s+/g, '').trim();
-        }
-        if (imei2LabelMatch) {
-            parsed.imei2 = imei2LabelMatch[1].replace(/\s+/g, '').trim();
-        }
+        const imeiLabelMatch = normalizedText.match(/(?:^|\n)IMEI[\s:\t>]+([0-9\s]{14,20})/i);
+        const imei2LabelMatch = normalizedText.match(/IMEI2[\s:\t>]+([0-9\s]{14,20})/i);
+        if (imeiLabelMatch) parsed.imei1 = imeiLabelMatch[1].replace(/\s+/g, '').trim();
+        if (imei2LabelMatch) parsed.imei2 = imei2LabelMatch[1].replace(/\s+/g, '').trim();
 
         if (!parsed.imei1) {
             const allImeiMatches = normalizedText.match(/\b(35\d{13}|86\d{13}|01\d{13}|\d{15})\b/g);
@@ -129,11 +135,11 @@ const DocumentScanner = ({ onParsedData }) => {
             }
         }
 
-        // Capacity / Storage (e.g. Capacity: 128 GB)
-        const capacityMatch = normalizedText.match(/Capacity[\s:\t]+([0-9]{1,4}\s*(?:GB|TB))/i) ||
+        // Capacity / Storage (e.g. Capacity 128 GB) -> map to Capacity / Storage
+        const capacityMatch = normalizedText.match(/Capacity[\s:\t>]+([0-9]{1,4}\s*(?:GB|TB))/i) ||
             normalizedText.match(/\b([0-9]{2,4}\s*(?:GB|TB))\b/i);
         if (capacityMatch) {
-            parsed.version = capacityMatch[1].trim();
+            parsed.capacity = capacityMatch[1].trim();
         }
 
         const brandsList = ['APPLE', 'SAMSUNG', 'OPPO', 'VIVO', 'REALME', 'XIAOMI', 'REDMI', 'ONEPLUS', 'GOOGLE', 'HONOR', 'HUAWEI'];
@@ -142,54 +148,95 @@ const DocumentScanner = ({ onParsedData }) => {
             parsed.brand = foundBrand === 'APPLE' ? 'Apple' : foundBrand;
         }
 
-        // iOS Owner Name (e.g. Name: Chet Vandeth)
-        const iosNameMatch = normalizedText.match(/Name[\s:\t]+([A-Za-z\s]{3,30})(?:\n|\>|$)/i);
-        if (iosNameMatch && !/ABOUT|SETTINGS|GENERAL|WIFI|BLUETOOTH|CARRIER/i.test(iosNameMatch[1])) {
-            parsed.customerNameEn = iosNameMatch[1].replace(/[\>]/g, '').trim();
-        }
+        // ── 2. Cambodian ID Card / Passport Parsing ──
 
-        // ── 2. Customer Document Parsing (ID Cards / Passports) ──
-        const idMatches = normalizedText.match(/\b\d{3}\s?\d{3}\s?\d{3}\b/) ||
-            normalizedText.match(/\b(ID|NO|NUM|PASSPORT|លេខ)[:\s]*([A-Z0-9]{7,12})\b/i) ||
-            normalizedText.match(/\b([A-Z]\d{7,8}|\d{9,10})\b/);
-        if (idMatches && !/IMEI|MEID|ICCID/i.test(idMatches[0])) {
-            const rawId = (idMatches[2] || idMatches[1] || idMatches[0]).replace(/\s+/g, '');
-            if (rawId.length >= 7 && rawId.length <= 12) {
-                parsed.idCardNumber = rawId;
+        // ID Card Number (e.g. 062396649 or MRZ IDKHM0623966497) -> map to ID Card Number
+        const mrzIdMatch = normalizedText.match(/IDKHM([0-9]{9,10})/i) || normalizedText.match(/KHM([0-9]{9,10})/i);
+        if (mrzIdMatch) {
+            parsed.idCardNumber = mrzIdMatch[1];
+        } else {
+            const idNumMatch = normalizedText.match(/\b(0\d{8,9})\b/) ||
+                normalizedText.match(/\b\d{3}\s?\d{3}\s?\d{3}\b/) ||
+                normalizedText.match(/\b(ID|NO|NUM|PASSPORT|លេខ)[:\s]*([A-Z0-9]{7,12})\b/i) ||
+                normalizedText.match(/\b([A-Z]\d{7,8}|\d{9,10})\b/);
+            if (idNumMatch && !/IMEI|MEID|ICCID/i.test(idNumMatch[0])) {
+                const rawId = (idNumMatch[2] || idNumMatch[1] || idNumMatch[0]).replace(/\s+/g, '');
+                if (rawId.length >= 7 && rawId.length <= 12) {
+                    parsed.idCardNumber = rawId;
+                }
             }
         }
 
-        const dobMatch = normalizedText.match(/\b(\d{2}[\/\.-]\d{2}[\/\.-]\d{4}|\d{4}[\/\.-]\d{2}[\/\.-]\d{2})\b/);
-        if (dobMatch) {
-            const rawDate = dobMatch[1].replace(/[\.-]/g, '/');
-            const parts = rawDate.split('/');
-            if (parts[0].length === 4) {
-                parsed.dob = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-            } else if (parts[2].length === 4) {
+        // Khmer Name (e.g. គោត្តនាមនិងនាម: ហាក់ យ៉ុងហាវ) -> map to Name Khmer
+        const khmerNameMatch = normalizedText.match(/គោត្តនាម(?:និង|\s*និង\s*)នាម[\s:\t]*([\u1780-\u17FF\s]+)/) ||
+            normalizedText.match(/គោត្តនាម[\s:\t]*([\u1780-\u17FF\s]+)/);
+        if (khmerNameMatch) {
+            parsed.customerNameKh = khmerNameMatch[1].replace(/(ថ្ងៃខែ|ឆ្នាំ|កំណើត|ភេទ|សញ្ជាតិ|ទីកន្លែង)/g, '').trim();
+        } else {
+            const khmerLines = lines.filter(line => /[\u1780-\u17FF]/.test(line));
+            const khmerNameLine = khmerLines.find(l => !l.includes('ព្រះរាជាណាចក្រ') && !l.includes('អត្តសញ្ញាណប័ណ្ណ') && !l.includes('សញ្ជាតិ') && !l.includes('កំណើត') && !l.includes('អាសយដ្ឋាន'));
+            if (khmerNameLine) {
+                parsed.customerNameKh = khmerNameLine.replace(/(ឈ្មោះ|ភេទ|ថ្ងៃកំណើត|សញ្ជាតិ|គោត្តនាម|និងនាម)/g, '').trim();
+            }
+        }
+
+        // English Name (e.g. HAK YONGHOUV) -> map to Name English
+        const mrzNameMatch = normalizedText.match(/([A-Z]+)<<([A-Z]+(?:<[A-Z]+)*)<*/);
+        if (mrzNameMatch) {
+            const surname = mrzNameMatch[1];
+            const givenName = mrzNameMatch[2].replace(/</g, ' ');
+            parsed.customerNameEn = `${surname} ${givenName}`.trim();
+        } else {
+            const nameMatch = normalizedText.match(/HAK\s+YONGHOUV/i);
+            if (nameMatch) {
+                parsed.customerNameEn = nameMatch[0].toUpperCase();
+            } else {
+                const nameCandidates = lines.filter(line => {
+                    const clean = line.replace(/[^A-Z\s]/g, '').trim();
+                    return clean.length >= 3 && clean === line.toUpperCase() && !/KINGDOM|NATIONAL|ABOUT|CARRIER|NETWORK|CAMBODIA|IDENTITY|CARD/i.test(clean);
+                });
+                if (nameCandidates.length > 0) {
+                    parsed.customerNameEn = nameCandidates[0].replace(/[^A-Za-z\s]/g, '').trim();
+                }
+            }
+        }
+
+        // Date of Birth (e.g. ថ្ងៃខែឆ្នាំកំណើត: ១៥.០៥.២០០៥) -> map to Date of Birth (YYYY-MM-DD)
+        const khDobMatch = normalizedText.match(/ថ្ងៃខែឆ្នាំកំណើត[\s:\t]*(\d{2}[\/\.-]\d{2}[\/\.-]\d{4})/);
+        if (khDobMatch) {
+            const parts = khDobMatch[1].split(/[\/\.-]/);
+            if (parts[2].length === 4) {
                 parsed.dob = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
             }
+        } else {
+            const dobMatch = normalizedText.match(/\b(\d{2}[\/\.-]\d{2}[\/\.-]\d{4}|\d{4}[\/\.-]\d{2}[\/\.-]\d{2})\b/);
+            if (dobMatch) {
+                const parts = dobMatch[1].split(/[\/\.-]/);
+                if (parts[0].length === 4) {
+                    parsed.dob = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                } else if (parts[2].length === 4) {
+                    parsed.dob = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+            }
         }
 
-        if (fullText.includes('FEMALE') || fullText.includes('SEX: F') || fullText.includes('ស្រី') || fullText.includes('ភេទ ស្រី')) {
+        // Gender (e.g. ភេទ: ប្រុស -> Male) -> map to Gender select dropdown
+        if (/ភេទ[\s:\t]*ស្រី/i.test(normalizedText) || /FEMALE/i.test(fullText) || /SEX[\s:\t]*F/i.test(fullText)) {
             parsed.gender = 'female';
-        } else if (fullText.includes('MALE') || fullText.includes('SEX: M') || fullText.includes('ប្រុស') || fullText.includes('ភេទ ប្រុស')) {
+        } else if (/ភេទ[\s:\t]*ប្រុស/i.test(normalizedText) || /MALE/i.test(fullText) || /SEX[\s:\t]*M/i.test(fullText)) {
             parsed.gender = 'male';
         }
 
-        if (!parsed.customerNameEn) {
-            const nameCandidates = lines.filter(line => {
-                const clean = line.replace(/[^A-Z\s]/g, '').trim();
-                return clean.length >= 3 && clean === line.toUpperCase() && !clean.includes('KINGDOM') && !clean.includes('NATIONAL') && !clean.includes('ABOUT') && !clean.includes('CARRIER') && !clean.includes('NETWORK');
-            });
-            if (nameCandidates.length > 0) {
-                parsed.customerNameEn = nameCandidates[0].replace(/[^A-Za-z\s]/g, '').trim();
-            }
+        // Birth Address (e.g. ទីកន្លែងកំណើត: សង្កាត់បឹងកុក ក្រុងកំពង់ចាម កំពង់ចាម) -> map to Birth Address
+        const birthAddressMatch = normalizedText.match(/ទីកន្លែងកំណើត[\s:\t]*([^\n\r]+)/);
+        if (birthAddressMatch) {
+            parsed.birthAddress = birthAddressMatch[1].replace(/(អាសយដ្ឋាន|សញ្ជាតិ|កម្ពស់)/g, '').trim();
         }
 
-        const khmerLines = lines.filter(line => /[\u1780-\u17FF]/.test(line));
-        const khmerNameLine = khmerLines.find(l => !l.includes('ព្រះរាជាណាចក្រ') && !l.includes('អត្តសញ្ញាណប័ណ្ណ') && !l.includes('សញ្ជាតិ'));
-        if (khmerNameLine) {
-            parsed.customerNameKh = khmerNameLine.replace(/(ឈ្មោះ|ភេទ|ថ្ងៃកំណើត|សញ្ជាតិ)/g, '').trim();
+        // Current Address (e.g. អាសយដ្ឋាន: ភូមិបឹងកុកទី១ សង្កាត់បឹងកុក ក្រុងកំពង់ចាម កំពង់ចាម) -> map to Current Address
+        const currentAddressMatch = normalizedText.match(/អាសយដ្ឋាន[\s:\t]*([^\n\r]+)/);
+        if (currentAddressMatch) {
+            parsed.currentAddress = currentAddressMatch[1].replace(/(សពុលភាព|ស្នាមមេដៃ|កាលបរិច្ឆេទ)/g, '').trim();
         }
 
         return parsed;

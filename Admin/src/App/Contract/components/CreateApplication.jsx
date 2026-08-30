@@ -314,7 +314,26 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     };
 
     const handleDocumentParsed = (parsedData) => {
-        setForm(prev => ({ ...prev, ...parsedData }));
+        if (!parsedData) return;
+        setForm(prev => ({
+            ...prev,
+            customerNameEn: parsedData.customerNameEn || prev.customerNameEn,
+            customerNameKh: parsedData.customerNameKh || prev.customerNameKh,
+            idCardNumber: parsedData.idCardNumber || prev.idCardNumber,
+            dob: parsedData.dob || prev.dob,
+            gender: (parsedData.gender || '').toLowerCase() === 'female' ? 'female' : 'male',
+            birthAddress: parsedData.birthAddress || prev.birthAddress,
+            currentAddress: parsedData.currentAddress || prev.currentAddress,
+            model: parsedData.model || prev.model,
+            serialNumber: parsedData.serialNumber || prev.serialNumber,
+            version: parsedData.version || prev.version,
+            capacity: parsedData.capacity || parsedData.storage || prev.capacity,
+            imei1: parsedData.imei1 || prev.imei1,
+            imei2: parsedData.imei2 || prev.imei2,
+            meid: parsedData.meid || prev.meid,
+            color: parsedData.color || prev.color,
+            brand: parsedData.brand || prev.brand
+        }));
         setAutoFilled(true);
     };
 
