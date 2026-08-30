@@ -119,33 +119,34 @@ const AllCustomersReport = () => {
 
     const handleExportExcel = async () => {
         if (activeTab === 'summary') {
-            const rows = [...summaryBreakdown.rows, { ...summaryBreakdown.grandTotal }];
-            const exported = rows.map((r, idx) => ({
-                'No': r.isTotalRow ? 'TOTAL' : idx + 1,
-                'Brand Domain': r.brand,
-                'Total Customers': r.totalCustomers,
-                'Total Loan ($)': r.totalLoan.toFixed(2),
-                'Total Paid ($)': r.totalPaid.toFixed(2),
-                'Remaining Balance ($)': r.remainingBalance.toFixed(2),
-                'Activated': r.activatedCount,
-                'Lock Phone': r.lockedPhoneCount,
-                'Lock Wallpaper': r.lockedWallpaperCount
-            }));
-            return exportToExcel(exported, 'All_Customers_Summary_Report');
+            const summaryColumns = [
+                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
+                { header: 'Brand Domain', accessor: 'brand' },
+                { header: 'Total Customers', accessor: 'totalCustomers' },
+                { header: 'Total Loan ($)', cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Total Paid ($)', cell: (r) => `$${(r.totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Remaining ($)', cell: (r) => `$${(r.remainingBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Activated', accessor: 'activatedCount' },
+                { header: 'Lock Phone', accessor: 'lockedPhoneCount' },
+                { header: 'Lock Wallpaper', accessor: 'lockedWallpaperCount' }
+            ];
+            const excelData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
+            return exportToExcel('All Customers — Summary Table', summaryColumns, excelData, user?.brand || '');
         }
+
         const allData = await fetchAllForExport();
-        const exported = allData.map((item, idx) => ({
-            'No': idx + 1,
-            'Customer Name (EN)': item.customerNameEn || '',
-            'Customer Name (KH)': item.customerNameKh || '',
-            'Model': item.model || '',
-            'Serial Number': item.serialNumber || '',
-            'Brand': item.brand || user?.brand || 'SYSTEM',
-            'Phone Lock Status': item.lockPhoneStatus || 'Unlocked',
-            'Wallpaper Lock Status': item.lockWallpaperStatus || 'Unlocked',
-            'Status': item.status || 'Active'
-        }));
-        exportToExcel(exported, 'All_Customers_Report');
+        const columns = [
+            { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'Customer (EN)', accessor: 'customerNameEn' },
+            { header: 'Customer (KH)', accessor: 'customerNameKh' },
+            { header: 'Model', accessor: 'model' },
+            { header: 'Serial No.', accessor: 'serialNumber' },
+            { header: 'Brand', accessor: 'brand' },
+            { header: 'Phone Lock', accessor: 'lockPhoneStatus' },
+            { header: 'Wallpaper Lock', accessor: 'lockWallpaperStatus' },
+            { header: 'Status', accessor: 'status' }
+        ];
+        exportToExcel('All Customers Report', columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async () => {
@@ -154,9 +155,9 @@ const AllCustomersReport = () => {
                 { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
                 { header: 'Brand Domain', accessor: 'brand' },
                 { header: 'Total Customers', accessor: 'totalCustomers' },
-                { header: 'Total Loan ($)', cell: (r) => `$${r.totalLoan.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-                { header: 'Total Paid ($)', cell: (r) => `$${r.totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-                { header: 'Remaining ($)', cell: (r) => `$${r.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Total Loan ($)', cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Total Paid ($)', cell: (r) => `$${(r.totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Remaining ($)', cell: (r) => `$${(r.remainingBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
                 { header: 'Activated', accessor: 'activatedCount' },
                 { header: 'Lock Phone', accessor: 'lockedPhoneCount' },
                 { header: 'Lock Wallpaper', accessor: 'lockedWallpaperCount' }
@@ -171,6 +172,7 @@ const AllCustomersReport = () => {
             { header: 'Customer (KH)', accessor: 'customerNameKh' },
             { header: 'Model', accessor: 'model' },
             { header: 'Serial No.', accessor: 'serialNumber' },
+            { header: 'Brand', accessor: 'brand' },
             { header: 'Phone Lock', accessor: 'lockPhoneStatus' },
             { header: 'Status', accessor: 'status' }
         ];

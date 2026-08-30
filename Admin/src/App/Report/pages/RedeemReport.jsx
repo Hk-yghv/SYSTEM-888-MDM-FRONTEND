@@ -103,26 +103,27 @@ const RedeemReport = () => {
 
     const handleExportExcel = async () => {
         if (activeTab === 'summary') {
-            const rows = [...summaryBreakdown.rows, { ...summaryBreakdown.grandTotal }];
-            const exported = rows.map((r, idx) => ({
-                'No': r.isTotalRow ? 'TOTAL' : idx + 1,
-                'Brand Domain': r.brand,
-                'Total Redeemed': r.totalRedeem,
-                'Total Redeemed Value ($)': r.totalLoan.toFixed(2)
-            }));
-            return exportToExcel(exported, 'Redeem_Summary_Report');
+            const summaryColumns = [
+                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
+                { header: 'Brand Domain', accessor: 'brand' },
+                { header: 'Total Redeemed', accessor: 'totalRedeem' },
+                { header: 'Total Redeemed Value ($)', cell: (r) => `$${(r.totalLoanValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
+            ];
+            const excelData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
+            return exportToExcel('Redeem Contracts — Summary Table', summaryColumns, excelData, user?.brand || '');
         }
+
         const allData = await fetchAllForExport();
-        const exported = allData.map((item, idx) => ({
-            'No': idx + 1,
-            'Customer Name': item.customerNameEn || '',
-            'Model': item.model || '',
-            'Serial Number': item.serialNumber || '',
-            'Brand': item.brand || user?.brand || 'SYSTEM',
-            'Redeemed Value ($)': item.amount || item.totalAmount || 0,
-            'Status': 'Redeem'
-        }));
-        exportToExcel(exported, 'Redeem_Contracts_Report');
+        const columns = [
+            { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'Customer (EN)', accessor: 'customerNameEn' },
+            { header: 'Customer (KH)', accessor: 'customerNameKh' },
+            { header: 'Model', accessor: 'model' },
+            { header: 'Serial No.', accessor: 'serialNumber' },
+            { header: 'Brand', accessor: 'brand' },
+            { header: 'Status', cell: () => 'Redeem' }
+        ];
+        exportToExcel('Redeem Contracts Report', columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async () => {
@@ -131,7 +132,7 @@ const RedeemReport = () => {
                 { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
                 { header: 'Brand Domain', accessor: 'brand' },
                 { header: 'Total Redeemed', accessor: 'totalRedeem' },
-                { header: 'Total Redeemed Value ($)', cell: (r) => `$${r.totalLoan.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
+                { header: 'Total Redeemed Value ($)', cell: (r) => `$${(r.totalLoanValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
             ];
             const pdfData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
             return exportToPDF('Redeem Contracts — Summary Table', summaryColumns, pdfData, user?.brand || '', pdfOrientation);

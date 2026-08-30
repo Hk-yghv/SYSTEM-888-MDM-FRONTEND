@@ -233,17 +233,16 @@ const CashInPage = () => {
 
     const handleExportExcel = async () => {
         const allData = await fetchAllForExport();
-        const exported = allData.map((item, idx) => ({
-            'No': idx + 1,
-            'Date': item.date || '',
-            'Category': item.category || '',
-            'Amount': item.currency === 'KHR' ? `${item.amount} ៛` : `$${item.amount}`,
-            'Amount USD Est.': `$${(item.amountUSD || 0).toFixed(2)}`,
-            'Description': item.description || '',
-            'Performed By': item.performedBy || '',
-            'Brand': item.brand || 'SYSTEM'
-        }));
-        exportToExcel(exported, 'Cash_In_Report');
+        const columns = [
+            { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'Date', accessor: 'date' },
+            { header: 'Category', accessor: 'category' },
+            { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
+            { header: 'Amount USD Est.', cell: (r) => `$${(r.amountUSD || 0).toFixed(2)}` },
+            { header: 'Description', accessor: 'description' },
+            { header: 'Performed By', accessor: 'performedBy' }
+        ];
+        exportToExcel('Cash In Report (ប្រាក់ចូល)', columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async () => {

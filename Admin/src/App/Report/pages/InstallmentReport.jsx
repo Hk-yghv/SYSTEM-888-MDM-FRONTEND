@@ -100,28 +100,29 @@ const InstallmentReport = () => {
 
     const handleExportExcel = async () => {
         if (activeTab === 'summary') {
-            const rows = [...summaryBreakdown.rows, { ...summaryBreakdown.grandTotal }];
-            const exported = rows.map((r, idx) => ({
-                'No': r.isTotalRow ? 'TOTAL' : idx + 1,
-                'Brand Domain': r.brand,
-                'Total Transactions': r.totalTransactions,
-                'Total Revenue Collected ($)': r.totalCollected.toFixed(2),
-                'Unique Paying Customers': r.uniqueCustomersCount
-            }));
-            return exportToExcel(exported, 'Installment_Payments_Summary_Report');
+            const summaryColumns = [
+                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
+                { header: 'Brand Domain', accessor: 'brand' },
+                { header: 'Total Transactions', accessor: 'totalTransactions' },
+                { header: 'Total Collected ($)', cell: (r) => `$${(r.totalCollected || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Unique Customers', accessor: 'uniqueCustomersCount' },
+                { header: 'Avg Payment ($)', cell: (r) => `$${(r.totalTransactions || 0) > 0 ? ((r.totalCollected || 0) / r.totalTransactions).toFixed(2) : '0.00'}` }
+            ];
+            const excelData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
+            return exportToExcel('Installment Payments — Summary Table', summaryColumns, excelData, user?.brand || '');
         }
+
         const allData = await fetchAllForExport();
-        const exported = allData.map((item, idx) => ({
-            'No': idx + 1,
-            'Customer Name': item.customerName || '',
-            'Model': item.model || '',
-            'Serial Number': item.serialNumber || '',
-            'Paid Amount ($)': item.amount || 0,
-            'Payment Method': item.paymentMethod || '',
-            'Paid By': item.paidBy || '',
-            'Paid Date': item.paidDate || ''
-        }));
-        exportToExcel(exported, 'Installment_Payments_Report');
+        const columns = [
+            { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'Customer', accessor: 'customerName' },
+            { header: 'Model', accessor: 'model' },
+            { header: 'Serial No.', accessor: 'serialNumber' },
+            { header: 'Brand', accessor: 'brand' },
+            { header: 'Paid Amount ($)', cell: (r) => `$${r.amount || 0}` },
+            { header: 'Paid Date', accessor: 'paidDate' }
+        ];
+        exportToExcel('Installment Payment Report', columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async () => {
@@ -130,9 +131,9 @@ const InstallmentReport = () => {
                 { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
                 { header: 'Brand Domain', accessor: 'brand' },
                 { header: 'Total Transactions', accessor: 'totalTransactions' },
-                { header: 'Total Collected ($)', cell: (r) => `$${r.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: 'Total Collected ($)', cell: (r) => `$${(r.totalCollected || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
                 { header: 'Unique Customers', accessor: 'uniqueCustomersCount' },
-                { header: 'Avg Payment ($)', cell: (r) => `$${r.totalTransactions > 0 ? (r.totalCollected / r.totalTransactions).toFixed(2) : '0.00'}` }
+                { header: 'Avg Payment ($)', cell: (r) => `$${(r.totalTransactions || 0) > 0 ? ((r.totalCollected || 0) / r.totalTransactions).toFixed(2) : '0.00'}` }
             ];
             const pdfData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
             return exportToPDF('Installment Payments — Summary Table', summaryColumns, pdfData, user?.brand || '', pdfOrientation);

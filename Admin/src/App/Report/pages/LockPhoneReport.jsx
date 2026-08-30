@@ -103,26 +103,26 @@ const LockPhoneReport = () => {
 
     const handleExportExcel = async () => {
         if (activeTab === 'summary') {
-            const rows = [...summaryBreakdown.rows, { ...summaryBreakdown.grandTotal }];
-            const exported = rows.map((r, idx) => ({
-                'No': r.isTotalRow ? 'TOTAL' : idx + 1,
-                'Brand Domain': r.brand,
-                'Total Lock Actions': r.totalLockActions,
-                'Unique Locked Customers': r.uniqueCustomers
-            }));
-            return exportToExcel(exported, 'LockPhone_Summary_Report');
+            const summaryColumns = [
+                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
+                { header: 'Brand Domain', accessor: 'brand' },
+                { header: 'Total Lock Actions', accessor: 'totalLockActions' },
+                { header: 'Unique Locked Customers', accessor: 'uniqueCustomersCount' }
+            ];
+            const excelData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
+            return exportToExcel('Lock Phone — Summary Table', summaryColumns, excelData, user?.brand || '');
         }
+
         const allData = await fetchAllForExport();
-        const exported = allData.map((item, idx) => ({
-            'No': idx + 1,
-            'Customer Name': item.customerName || '',
-            'Model': item.model || '',
-            'Serial Number': item.serialNumber || '',
-            'Brand': item.brand || user?.brand || 'SYSTEM',
-            'Last Lock Date': item.lastLockTime || `${item.date} ${item.time}`,
-            'Performed By': item.performedBy || ''
-        }));
-        exportToExcel(exported, 'Lock_Phone_Report');
+        const columns = [
+            { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'Customer', accessor: 'customerName' },
+            { header: 'Model', accessor: 'model' },
+            { header: 'Serial No.', accessor: 'serialNumber' },
+            { header: 'Last Lock', cell: (r) => r.lastLockTime || `${r.date || ''} ${r.time || ''}` },
+            { header: 'Performed By', accessor: 'performedBy' }
+        ];
+        exportToExcel('Lock Phone Report', columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async () => {
@@ -131,7 +131,7 @@ const LockPhoneReport = () => {
                 { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
                 { header: 'Brand Domain', accessor: 'brand' },
                 { header: 'Total Lock Actions', accessor: 'totalLockActions' },
-                { header: 'Unique Locked Customers', accessor: 'uniqueCustomers' }
+                { header: 'Unique Locked Customers', accessor: 'uniqueCustomersCount' }
             ];
             const pdfData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
             return exportToPDF('Lock Phone — Summary Table', summaryColumns, pdfData, user?.brand || '', pdfOrientation);
@@ -142,7 +142,7 @@ const LockPhoneReport = () => {
             { header: 'Customer', accessor: 'customerName' },
             { header: 'Model', accessor: 'model' },
             { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Last Lock', cell: (r) => r.lastLockTime || `${r.date} ${r.time}` },
+            { header: 'Last Lock', cell: (r) => r.lastLockTime || `${r.date || ''} ${r.time || ''}` },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
         exportToPDF('Lock Phone Report', columns, allData, user?.brand || '', pdfOrientation);

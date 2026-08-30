@@ -213,63 +213,47 @@ const ReportAll = () => {
         };
     }, [filteredContracts, filteredPayments]);
 
-    // Export to Excel
+    const [pdfOrientation, setPdfOrientation] = useState('landscape');
+
+    // Export to Excel (Styled Spreadsheet)
     const handleExportExcel = () => {
-        const exportRows = brandSummaryData.rows.map((r, idx) => ({
-            'No': idx + 1,
-            'Brand Name': r.brand,
-            'Total Customers': r.totalCustomers,
-            'Total Loan ($)': r.totalLoan.toFixed(2),
-            'Total Paid ($)': r.totalPaid.toFixed(2),
-            'Remaining Balance ($)': r.remainingBalance.toFixed(2),
-            'Activated': r.activatedCount,
-            'Application': r.applicationCount,
-            'Check': r.checkCount,
-            'Redeem': r.redeemCount,
-            'Blacklist': r.blacklistCount,
-            'Lock Phone Devices': r.lockedPhoneCount,
-            'Lock Wallpaper Devices': r.lockedWallpaperCount
-        }));
-
-        // Add Summary Total row
-        const g = brandSummaryData.grandTotal;
-        exportRows.push({
-            'No': 'TOTAL',
-            'Brand Name': g.brand,
-            'Total Customers': g.totalCustomers,
-            'Total Loan ($)': g.totalLoan.toFixed(2),
-            'Total Paid ($)': g.totalPaid.toFixed(2),
-            'Remaining Balance ($)': g.remainingBalance.toFixed(2),
-            'Activated': g.activatedCount,
-            'Application': g.applicationCount,
-            'Check': g.checkCount,
-            'Redeem': g.redeemCount,
-            'Blacklist': g.blacklistCount,
-            'Lock Phone Devices': g.lockedPhoneCount,
-            'Lock Wallpaper Devices': g.lockedWallpaperCount
-        });
-
-        exportToExcel(exportRows, 'Master_Executive_All_Report');
-    };
-
-    // Export to PDF (Landscape Format)
-    const handleExportPDFLandscape = () => {
         const columns = [
             { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
             { header: 'Brand Name', accessor: 'brand' },
             { header: 'Customers', accessor: 'totalCustomers' },
-            { header: 'Total Loan ($)', cell: (r) => `$${r.totalLoan.toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
-            { header: 'Total Paid ($)', cell: (r) => `$${r.totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
-            { header: 'Remaining ($)', cell: (r) => `$${r.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: 'Total Loan ($)', cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: 'Total Paid ($)', cell: (r) => `$${(r.totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: 'Remaining ($)', cell: (r) => `$${(r.remainingBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
             { header: 'Activated', accessor: 'activatedCount' },
-            { header: 'App / Check', cell: (r) => `${r.applicationCount} / ${r.checkCount}` },
-            { header: 'Redeem / Blacklist', cell: (r) => `${r.redeemCount} / ${r.blacklistCount}` },
+            { header: 'Application', accessor: 'applicationCount' },
+            { header: 'Check', accessor: 'checkCount' },
+            { header: 'Redeem', accessor: 'redeemCount' },
+            { header: 'Blacklist', accessor: 'blacklistCount' },
+            { header: 'Lock Phone', accessor: 'lockedPhoneCount' },
+            { header: 'Lock Wallpaper', accessor: 'lockedWallpaperCount' }
+        ];
+        const exportData = [...brandSummaryData.rows, brandSummaryData.grandTotal];
+        exportToExcel('Master Executive Summary Report', columns, exportData, user?.brand || 'GLOBAL ALL');
+    };
+
+    // Export to PDF
+    const handleExportPDF = () => {
+        const columns = [
+            { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
+            { header: 'Brand Name', accessor: 'brand' },
+            { header: 'Customers', accessor: 'totalCustomers' },
+            { header: 'Total Loan ($)', cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: 'Total Paid ($)', cell: (r) => `$${(r.totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: 'Remaining ($)', cell: (r) => `$${(r.remainingBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: 'Activated', accessor: 'activatedCount' },
+            { header: 'App / Check', cell: (r) => `${r.applicationCount || 0} / ${r.checkCount || 0}` },
+            { header: 'Redeem / Blacklist', cell: (r) => `${r.redeemCount || 0} / ${r.blacklistCount || 0}` },
             { header: 'Lock Phone', accessor: 'lockedPhoneCount' },
             { header: 'Lock Wallpaper', accessor: 'lockedWallpaperCount' }
         ];
 
         const pdfData = [...brandSummaryData.rows, brandSummaryData.grandTotal];
-        exportToPDFLandscape('Master Executive Summary Report (All Brands)', columns, pdfData, user?.brand || 'GLOBAL ALL');
+        exportToPDF('Master Executive Summary Report (All Brands)', columns, pdfData, user?.brand || 'GLOBAL ALL', pdfOrientation);
     };
 
     return (
@@ -308,6 +292,24 @@ const ReportAll = () => {
                         </select>
                     </div>
 
+                    {/* PDF Orientation Selector */}
+                    <div className="flex items-center gap-1 bg-slate-100 border border-slate-300 p-1 rounded-xl text-xs">
+                        <button
+                            onClick={() => setPdfOrientation('portrait')}
+                            className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                            title="A4 Portrait Page Layout (សន្លឹកបញ្ឈរ)"
+                        >
+                            📄 បញ្ឈរ (Portrait)
+                        </button>
+                        <button
+                            onClick={() => setPdfOrientation('landscape')}
+                            className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                            title="A4 Landscape Page Layout (សន្លឹកផ្តេក)"
+                        >
+                            🖼️ ផ្តេក (Landscape)
+                        </button>
+                    </div>
+
                     <button
                         onClick={handleExportExcel}
                         className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
@@ -317,12 +319,11 @@ const ReportAll = () => {
                     </button>
 
                     <button
-                        onClick={handleExportPDFLandscape}
+                        onClick={handleExportPDF}
                         className='flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md shadow-indigo-600/20'
-                        title="Export Multi-Column Report in Landscape PDF Format (សន្លឹកផ្តេក)"
                     >
                         <MdPictureAsPdf className="text-white text-sm" />
-                        <span>PDF (សន្លឹកផ្តេក)</span>
+                        <span>Export PDF ({pdfOrientation === 'landscape' ? 'ផ្តេក' : 'បញ្ឈរ'})</span>
                     </button>
 
                     <button
