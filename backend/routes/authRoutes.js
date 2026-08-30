@@ -313,16 +313,22 @@ export default function createAuthRoutes(bot) {
     // POST /api/auth/logout — Mark user Offline immediately
     router.post('/logout', async (req, res) => {
         try {
-            const { username } = req.body;
+            let username = req.body?.username;
+            if (!username && req.body) {
+                try {
+                    const parsed = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+                    username = parsed?.username;
+                } catch {}
+            }
             if (username) {
                 if (isMongoConnected) {
                     const WriteModel = getWriteModel(User);
-                    await WriteModel.updateOne({ username }, { $set: { status: 'Offline', lastSeen: new Date() } });
+                    await WriteModel.updateOne({ username }, { $set: { status: 'Offline', lastSeen: new Date(Date.now() - 60000) } });
                 } else {
                     const memUser = MEM_DB.users.find(u => u.username === username);
                     if (memUser) {
                         memUser.status = 'Offline';
-                        memUser.lastSeen = new Date();
+                        memUser.lastSeen = new Date(Date.now() - 60000);
                     }
                 }
             }

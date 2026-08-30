@@ -111,7 +111,14 @@ const AllAccount = () => {
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+        const pollInterval = setInterval(() => {
+            fetch(`${API_BASE}/users`)
+                .then(res => res.ok ? res.json() : null)
+                .then(data => { if (data) setUsers(data); })
+                .catch(() => {});
+        }, 4000);
+        return () => clearInterval(pollInterval);
+    }, [API_BASE]);
 
     const handlePermissionToggle = (path, action) => {
         setFormData(prev => {

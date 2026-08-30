@@ -7,7 +7,7 @@ import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 const router = express.Router();
 
 // GET all users — merged from all 3 DBs
-const OFFLINE_THRESHOLD_MS = 3 * 60 * 1000; // 3 minutes
+const OFFLINE_THRESHOLD_MS = 45 * 1000; // 45 seconds threshold
 
 const formatUserStatus = (u) => {
     const rawObj = u.toObject ? u.toObject() : { ...u };

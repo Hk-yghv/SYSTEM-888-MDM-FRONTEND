@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('mdm_token');
     }, [user?.username]);
 
-    // Send periodic heartbeat to keep online status fresh
+    // Send periodic heartbeat to keep online status fresh & sendBeacon on unload
     useEffect(() => {
         if (!user?.username || !token) return;
 
@@ -55,8 +55,23 @@ export const AuthProvider = ({ children }) => {
         };
 
         sendHeartbeat();
-        const hbInterval = setInterval(sendHeartbeat, 60000); // every 60s
-        return () => clearInterval(hbInterval);
+        const hbInterval = setInterval(sendHeartbeat, 15000); // Heartbeat every 15s
+
+        const handleUnload = () => {
+            if (user?.username) {
+                const blob = new Blob([JSON.stringify({ username: user.username })], { type: 'application/json' });
+                navigator.sendBeacon(`${API_BASE}/auth/logout`, blob);
+            }
+        };
+
+        window.addEventListener('beforeunload', handleUnload);
+        window.addEventListener('pagehide', handleUnload);
+
+        return () => {
+            clearInterval(hbInterval);
+            window.removeEventListener('beforeunload', handleUnload);
+            window.removeEventListener('pagehide', handleUnload);
+        };
     }, [user?.username, token]);
 
     // ── 15-Minute Inactivity Auto Logout ──
