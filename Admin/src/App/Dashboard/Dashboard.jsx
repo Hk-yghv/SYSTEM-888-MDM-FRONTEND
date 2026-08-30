@@ -44,6 +44,15 @@ const Dashboard = () => {
     const [detailModal, setDetailModal] = useState({ open: false, title: '', items: [] });
     const [detailSearch, setDetailSearch] = useState('');
 
+    const isMasterAdmin = useMemo(() => {
+        return user?.username === '@hakyonghouv' || user?.username === 'hakyonghouv' || user?.role === 'Administrator' || user?.isImmutable;
+    }, [user]);
+
+    const activeUserBrand = useMemo(() => {
+        if (!isMasterAdmin && user?.brand) return user.brand;
+        return brandFilter;
+    }, [isMasterAdmin, user, brandFilter]);
+
     const fetchBrands = async () => {
         try {
             const res = await fetch(`${API_BASE}/controlsystem?brand=`);
@@ -59,8 +68,11 @@ const Dashboard = () => {
         setReloading(true);
         try {
             const params = new URLSearchParams();
-            if (brandFilter && user?.role === 'Administrator') params.set('userBrand', brandFilter);
-            else if (user?.brand) params.set('userBrand', user.brand);
+            if (activeUserBrand) params.set('userBrand', activeUserBrand);
+            if (user?.username) params.set('username', user.username);
+            if (user?.role) params.set('userRole', user.role);
+            if (user?.isImmutable) params.set('isImmutable', 'true');
+
             const res = await fetch(`${API_BASE}/dashboard/stats?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
@@ -76,9 +88,16 @@ const Dashboard = () => {
 
     const fetchAuditLogs = async () => {
         try {
+            const params = new URLSearchParams();
+            if (activeUserBrand) params.set('userBrand', activeUserBrand);
+            if (user?.username) params.set('username', user.username);
+            if (user?.role) params.set('userRole', user.role);
+            if (user?.isImmutable) params.set('isImmutable', 'true');
+            params.set('limit', '999999');
+
             const [cRes, pRes] = await Promise.all([
-                fetch(`${API_BASE1}/contracts?limit=200`),
-                fetch(`${API_BASE1}/payments?limit=200`)
+                fetch(`${API_BASE1}/contracts?${params.toString()}`),
+                fetch(`${API_BASE1}/payments?${params.toString()}`)
             ]);
             // normalize any date string to YYYY-MM-DD
             const toDate = (raw) => {
@@ -167,7 +186,6 @@ const Dashboard = () => {
             if (res.ok) {
                 const users = await res.json();
                 const allSessions = [];
-                const isMasterAdmin = user?.role === 'Administrator' || user?.username === '@hakyonghouv';
 
                 users.forEach(u => {
                     // Non-master admins only see their own login sessions
@@ -187,8 +205,14 @@ const Dashboard = () => {
         }
     };
 
-    useEffect(() => { fetchBrands(); fetchAuditLogs(); }, []);
-    useEffect(() => { fetchDashboardStats(); }, [brandFilter]);
+    useEffect(() => {
+        fetchBrands();
+    }, []);
+
+    useEffect(() => {
+        fetchDashboardStats();
+        fetchAuditLogs();
+    }, [activeUserBrand]);
 
     const handleOpenSessions = () => { setSessionModal(true); fetchRecentSessions(); };
 
@@ -223,6 +247,47 @@ const Dashboard = () => {
         setDetailModal({ open: true, title: `${title}: ${categoryOrDate} (${matches.length} Items)`, items: matches });
         setDetailSearch('');
     };
+
+    const summaryTableData = useMemo(() => {
+        const brandMap = {};
+
+        rawContracts.forEach(c => {
+            const b = c.brand || 'General / MDM';
+            if (!brandMap[b]) {
+                brandMap[b] = {
+                    brand: b,
+                    totalContracts: 0,
+                    activatedCount: 0,
+                    loanDisbursed: 0,
+                    monthlyCollectionEst: 0,
+                    phoneLocked: 0,
+                    wallpaperLocked: 0,
+                    revenueCollected: 0
+                };
+            }
+            brandMap[b].totalContracts += 1;
+            if (c.status === 'Activated') {
+                brandMap[b].activatedCount += 1;
+                brandMap[b].loanDisbursed += (Number(c.amount) || 0);
+                brandMap[b].monthlyCollectionEst += (Number(c.monthlyPayment) || 0);
+            }
+            if (c.lockPhoneStatus === 'Locked') brandMap[b].phoneLocked += 1;
+            if (c.lockWallpaperStatus === 'Locked') brandMap[b].wallpaperLocked += 1;
+        });
+
+        // Lookup for contract brands
+        const cBrandLookup = {};
+        rawContracts.forEach(c => { if (c.contractId) cBrandLookup[c.contractId] = c.brand || 'General / MDM'; });
+
+        rawPayments.forEach(p => {
+            const b = p.brand || cBrandLookup[p.contractId] || 'General / MDM';
+            if (brandMap[b]) {
+                brandMap[b].revenueCollected += (Number(p.amount) || 0);
+            }
+        });
+
+        return Object.values(brandMap);
+    }, [rawContracts, rawPayments]);
 
     const activatedPct = stats.totalContracts ? Math.round((stats.activatedContracts / stats.totalContracts) * 100) : 0;
     const applicationPct = stats.totalContracts ? Math.round((stats.applicationContracts / stats.totalContracts) * 100) : 0;
@@ -1217,6 +1282,129 @@ const Dashboard = () => {
                         </div>
                     );
                 })()}
+            </div>
+
+            {/* ── Summary Breakdown Table (តារាងបង្ហាញព័ត៌មានសរុបតាម Brand / សាខា) ── */}
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 space-y-4 shadow-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+                    <div>
+                        <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
+                            <FaLayerGroup className="text-emerald-600 text-xl" />
+                            <span>តារាងសរុបព័ត៌មានតាមសាខា (Brand Summary Breakdown Table)</span>
+                        </h2>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">
+                            សរុបទិន្នន័យកិច្ចសន្យា ទឹកប្រាក់ចេញ LOAN ការប្រមូលចំណូល និងការចាក់សោរឧបករណ៍តាម Brand នីមួយៗ
+                        </p>
+                    </div>
+                    <span className="px-3 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-mono text-xs font-bold shrink-0">
+                        {summaryTableData.length} Brand{summaryTableData.length > 1 ? 's' : ''} Listed
+                    </span>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-900 text-white uppercase tracking-wider text-[11px] font-bold">
+                            <tr>
+                                <th className="px-4 py-3 text-center">ល.រ</th>
+                                <th className="px-4 py-3">ឈ្មោះសាខា / Brand</th>
+                                <th className="px-4 py-3 text-center">កិច្ចសន្យាសរុប</th>
+                                <th className="px-4 py-3 text-center">កិច្ចសន្យាសកម្ម</th>
+                                <th className="px-4 py-3 text-right">ប្រាក់ LOAN ចេញ ($)</th>
+                                <th className="px-4 py-3 text-right">ប្រាក់ត្រូវប្រមូល ($)</th>
+                                <th className="px-4 py-3 text-right">ប្រាក់ប្រមូលបាន ($)</th>
+                                <th className="px-4 py-3 text-right">ប្រាក់ជំពាក់នៅសល់ ($)</th>
+                                <th className="px-4 py-3 text-center">ទូរស័ព្ទចាក់សោរ</th>
+                                <th className="px-4 py-3 text-center">WP ចាក់សោរ</th>
+                                <th className="px-4 py-3 text-center">ស្ថានភាព</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                            {summaryTableData.length === 0 ? (
+                                <tr>
+                                    <td colSpan={11} className="text-center py-8 text-slate-400 italic">
+                                        មិនទាន់មានទិន្នន័យសាខាក្នុងប្រព័ន្ធនៅឡើយ
+                                    </td>
+                                </tr>
+                            ) : (
+                                summaryTableData.map((row, idx) => {
+                                    const netBal = Math.max(row.loanDisbursed - row.revenueCollected, 0);
+                                    const isProf = row.revenueCollected >= row.monthlyCollectionEst && row.revenueCollected > 0;
+                                    return (
+                                        <tr key={row.brand} className="hover:bg-emerald-50/40 transition-colors">
+                                            <td className="px-4 py-3 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
+                                            <td className="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
+                                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                                                {row.brand}
+                                            </td>
+                                            <td className="px-4 py-3 text-center font-bold text-slate-800 font-mono">{row.totalContracts}</td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-mono font-bold rounded-full text-[11px]">
+                                                    {row.activatedCount}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-mono font-bold text-blue-700">${row.loanDisbursed.toLocaleString()}</td>
+                                            <td className="px-4 py-3 text-right font-mono font-bold text-slate-700">${row.monthlyCollectionEst.toLocaleString()}</td>
+                                            <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">${row.revenueCollected.toLocaleString()}</td>
+                                            <td className="px-4 py-3 text-right font-mono font-bold text-rose-700">${netBal.toLocaleString()}</td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className={`px-2 py-0.5 font-mono font-bold rounded-full text-[11px] ${row.phoneLocked > 0 ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-600'}`}>
+                                                    {row.phoneLocked} Locked
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className={`px-2 py-0.5 font-mono font-bold rounded-full text-[11px] ${row.wallpaperLocked > 0 ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-600'}`}>
+                                                    {row.wallpaperLocked} WP
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase border ${isProf ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300'}`}>
+                                                    {isProf ? 'Healthy' : 'Active Loan'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                        {/* Grand Total Row */}
+                        {summaryTableData.length > 0 && (
+                            <tfoot className="bg-slate-900 text-white font-bold font-mono text-xs border-t-2 border-slate-700">
+                                <tr>
+                                    <td colSpan={2} className="px-4 py-3 uppercase tracking-wider text-emerald-400 font-black font-sans">
+                                        សរុបរួម (Grand Total)
+                                    </td>
+                                    <td className="px-4 py-3 text-center font-mono font-black text-amber-300">
+                                        {summaryTableData.reduce((s, r) => s + r.totalContracts, 0)}
+                                    </td>
+                                    <td className="px-4 py-3 text-center font-mono font-black text-emerald-400">
+                                        {summaryTableData.reduce((s, r) => s + r.activatedCount, 0)}
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-mono font-black text-blue-300">
+                                        ${summaryTableData.reduce((s, r) => s + r.loanDisbursed, 0).toLocaleString()}
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-mono font-black text-slate-300">
+                                        ${summaryTableData.reduce((s, r) => s + r.monthlyCollectionEst, 0).toLocaleString()}
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-mono font-black text-emerald-300">
+                                        ${summaryTableData.reduce((s, r) => s + r.revenueCollected, 0).toLocaleString()}
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-mono font-black text-rose-300">
+                                        ${Math.max(summaryTableData.reduce((s, r) => s + r.loanDisbursed - r.revenueCollected, 0), 0).toLocaleString()}
+                                    </td>
+                                    <td className="px-4 py-3 text-center font-mono font-black text-rose-400">
+                                        {summaryTableData.reduce((s, r) => s + r.phoneLocked, 0)} Locked
+                                    </td>
+                                    <td className="px-4 py-3 text-center font-mono font-black text-purple-300">
+                                        {summaryTableData.reduce((s, r) => s + r.wallpaperLocked, 0)} WP
+                                    </td>
+                                    <td className="px-4 py-3 text-center font-mono font-black text-emerald-400">
+                                        ✓ ALL SYSTEM
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        )}
+                    </table>
+                </div>
             </div>
 
 
