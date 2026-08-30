@@ -257,7 +257,7 @@ export default function createAuthRoutes(bot) {
             const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
             clearLoginAttempts(ip);
             user.status = 'Online';
-            user.lastOtp = '';
+            user.lastSeen = new Date();
             const ua = req.headers['user-agent'] || 'Unknown Browser';
             const { os, browser } = parseUserAgent(ua);
 
@@ -305,6 +305,51 @@ export default function createAuthRoutes(bot) {
                     permissions: formatPermissions(user.permissions)
                 }
             });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // POST /api/auth/logout — Mark user Offline immediately
+    router.post('/logout', async (req, res) => {
+        try {
+            const { username } = req.body;
+            if (username) {
+                if (isMongoConnected) {
+                    const WriteModel = getWriteModel(User);
+                    await WriteModel.updateOne({ username }, { $set: { status: 'Offline', lastSeen: new Date() } });
+                } else {
+                    const memUser = MEM_DB.users.find(u => u.username === username);
+                    if (memUser) {
+                        memUser.status = 'Offline';
+                        memUser.lastSeen = new Date();
+                    }
+                }
+            }
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // POST /api/auth/heartbeat — Update lastSeen and refresh Online status
+    router.post('/heartbeat', async (req, res) => {
+        try {
+            const { username } = req.body;
+            if (username) {
+                const now = new Date();
+                if (isMongoConnected) {
+                    const WriteModel = getWriteModel(User);
+                    await WriteModel.updateOne({ username }, { $set: { status: 'Online', lastSeen: now } });
+                } else {
+                    const memUser = MEM_DB.users.find(u => u.username === username);
+                    if (memUser) {
+                        memUser.status = 'Online';
+                        memUser.lastSeen = now;
+                    }
+                }
+            }
+            res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }

@@ -43,7 +43,46 @@ const CashInPage = () => {
         photoUrl: ''
     });
     const [submitting, setSubmitting] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null); // image preview modal
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploadingImage(true);
+        try {
+            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+            const bodyData = new FormData();
+            bodyData.append('file', file);
+            bodyData.append('upload_preset', CLOUDINARY_PRESET);
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                method: 'POST',
+                body: bodyData
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setFormData(prev => ({ ...prev, photoUrl: data.secure_url }));
+            } else {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setFormData(prev => ({ ...prev, photoUrl: reader.result }));
+                };
+                reader.readAsDataURL(file);
+            }
+        } catch (err) {
+            console.error('Cloudinary upload error:', err);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, photoUrl: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        } finally {
+            setUploadingImage(false);
+        }
+    };
 
     const fetchData = useCallback(async (pg = page, search = searchTerm, sDate = startDate, eDate = endDate) => {
         setReloading(true);
@@ -500,14 +539,29 @@ const CashInPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">តំណភ្ជាប់រូបភាព/វិក្កយបត្រ (Receipt Image URL)</label>
-                                <input
-                                    type="text"
-                                    placeholder="https://res.cloudinary.com/..."
-                                    value={formData.photoUrl}
-                                    onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-mono text-[11px] focus:outline-none focus:border-emerald-500"
-                                />
+                                <label className="block text-slate-700 font-bold mb-1">រូបភាព/វិក្កយបត្រ (Choose Image File &amp; Upload Cloudinary)</label>
+                                <div className="space-y-2">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileUpload}
+                                        className="w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                                    />
+                                    {uploadingImage && <p className="text-[11px] text-emerald-600 font-bold animate-pulse">☁️ កំពុង Upload រូបភាពទៅ Cloudinary...</p>}
+                                    <input
+                                        type="text"
+                                        placeholder="ឬបិទភ្ជាប់ URL: https://res.cloudinary.com/..."
+                                        value={formData.photoUrl}
+                                        onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-mono text-[11px] focus:outline-none focus:border-emerald-500"
+                                    />
+                                    {formData.photoUrl && (
+                                        <div className="flex items-center gap-2 pt-1">
+                                            <img src={formData.photoUrl} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs" />
+                                            <span className="text-[10px] text-emerald-700 font-bold">✓ រូបភាពបានបញ្ចូលរួចរាល់</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="pt-2 flex items-center justify-end gap-2">

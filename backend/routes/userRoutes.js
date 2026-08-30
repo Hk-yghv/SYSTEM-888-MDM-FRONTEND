@@ -7,15 +7,29 @@ import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 const router = express.Router();
 
 // GET all users — merged from all 3 DBs
+const OFFLINE_THRESHOLD_MS = 3 * 60 * 1000; // 3 minutes
+
+const formatUserStatus = (u) => {
+    const rawObj = u.toObject ? u.toObject() : { ...u };
+    if (!rawObj.lastSeen || (Date.now() - new Date(rawObj.lastSeen).getTime() > OFFLINE_THRESHOLD_MS)) {
+        rawObj.status = 'Offline';
+    }
+    return rawObj;
+};
+
+// GET all users — merged from all 3 DBs
 router.get('/', async (req, res) => {
     try {
+        let rawUsers = [];
         if (isMongoConnected) {
-            const users = await queryAllDBs(User, (M) => M.find().sort({ createdAt: -1 }));
-            return res.json(users);
+            rawUsers = await queryAllDBs(User, (M) => M.find().sort({ createdAt: -1 }));
+        } else {
+            rawUsers = MEM_DB.users;
         }
-        res.json(MEM_DB.users);
+        const evaluated = rawUsers.map(formatUserStatus);
+        res.json(evaluated);
     } catch (err) {
-        res.json(MEM_DB.users);
+        res.json(MEM_DB.users.map(formatUserStatus));
     }
 });
 

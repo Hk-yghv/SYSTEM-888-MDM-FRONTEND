@@ -27,13 +27,37 @@ export const AuthProvider = ({ children }) => {
     const lastActivityRef = useRef(Date.now());
 
     const logout = useCallback(() => {
+        if (user?.username) {
+            fetch(`${API_BASE}/auth/logout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user.username })
+            }).catch(() => {});
+        }
         setUser(null);
         setToken('');
         sessionStorage.removeItem('mdm_user');
         sessionStorage.removeItem('mdm_token');
         localStorage.removeItem('mdm_user');
         localStorage.removeItem('mdm_token');
-    }, []);
+    }, [user?.username]);
+
+    // Send periodic heartbeat to keep online status fresh
+    useEffect(() => {
+        if (!user?.username || !token) return;
+
+        const sendHeartbeat = () => {
+            fetch(`${API_BASE}/auth/heartbeat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user.username })
+            }).catch(() => {});
+        };
+
+        sendHeartbeat();
+        const hbInterval = setInterval(sendHeartbeat, 60000); // every 60s
+        return () => clearInterval(hbInterval);
+    }, [user?.username, token]);
 
     // ── 15-Minute Inactivity Auto Logout ──
     useEffect(() => {
