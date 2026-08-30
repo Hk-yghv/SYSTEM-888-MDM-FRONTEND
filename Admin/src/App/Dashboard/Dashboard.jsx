@@ -641,55 +641,93 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Chart Container */}
-                    <div className="h-72 w-full bg-slate-50/60 rounded-2xl p-4 border border-slate-100 flex items-end justify-around gap-4 overflow-x-auto relative">
-                        {barChartData.map((item, idx) => {
-                            const maxVal = Math.max(...barChartData.map(b => Math.max(b.revenue, b.loan, 1)));
-                            return (
-                                <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group relative cursor-pointer">
-                                    {/* Tooltip */}
-                                    <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col bg-slate-900 text-white text-[11px] p-3 rounded-2xl shadow-xl z-30 min-w-[200px] pointer-events-none transition-all border border-slate-700 space-y-1">
-                                        <div className="font-bold border-b border-slate-700 pb-1 text-emerald-400 font-mono text-xs flex justify-between items-center">
-                                            <span>{item.label}</span>
-                                            <span className="text-[10px] text-slate-400 uppercase">{timeRange}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-emerald-300 font-mono text-[11px]">
-                                            <span>🟢 Revenue Collected:</span>
-                                            <span className="font-bold">${item.revenue.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-blue-300 font-mono text-[11px]">
-                                            <span>🔵 Loan Disbursed:</span>
-                                            <span className="font-bold">${item.loan.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-indigo-300 font-mono text-[11px]">
-                                            <span>👤 Activated Entry:</span>
-                                            <span className="font-bold">{item.entry} នាក់</span>
-                                        </div>
-                                    </div>
+                    {/* Chart Container with Left Y-Axis & Horizontal Gridlines */}
+                    {(() => {
+                        const maxBarVal = Math.max(...barChartData.map(b => Math.max(b.revenue, b.loan, 1)));
+                        const yTicks = [1, 0.75, 0.5, 0.25, 0].map(ratio => Math.round(maxBarVal * ratio));
 
-                                    {/* Amount Badge */}
-                                    {item.revenue > 0 && (
-                                        <span className="text-[10px] font-bold font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md shadow-2xs">
-                                            ${item.revenue > 1000 ? `${(item.revenue / 1000).toFixed(1)}k` : item.revenue}
+                        return (
+                            <div className="flex items-stretch gap-3">
+                                {/* Left Y-Axis Numbers */}
+                                <div className="flex flex-col justify-between items-end pb-7 text-[10px] font-mono text-slate-500 font-bold select-none w-14 shrink-0">
+                                    {yTicks.map((val, i) => (
+                                        <span key={i}>
+                                            ${val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}
                                         </span>
-                                    )}
-
-                                    {/* Bars */}
-                                    <div className="w-full flex items-end justify-center gap-1.5 h-[70%]">
-                                        <div
-                                            style={{ height: `${Math.max(12, Math.min(100, (item.revenue / maxVal) * 100))}%` }}
-                                            className="w-full max-w-[14px] bg-emerald-500 rounded-t-md transition-all group-hover:scale-105 group-hover:bg-emerald-400 shadow-2xs"
-                                        />
-                                        <div
-                                            style={{ height: `${Math.max(12, Math.min(100, (item.loan / maxVal) * 100))}%` }}
-                                            className="w-full max-w-[14px] bg-blue-500 rounded-t-md transition-all group-hover:scale-105 group-hover:bg-blue-400 shadow-2xs"
-                                        />
-                                    </div>
-                                    <span className="text-[10px] font-bold text-slate-700 font-mono truncate">{item.label}</span>
+                                    ))}
                                 </div>
-                            );
-                        })}
-                    </div>
+
+                                {/* Main Chart Area */}
+                                <div className="flex-1 relative bg-slate-50/60 rounded-2xl p-4 border border-slate-100 min-h-[300px] flex flex-col justify-between">
+                                    {/* Horizontal Gridlines */}
+                                    <div className="absolute inset-x-4 inset-y-4 flex flex-col justify-between pointer-events-none pb-7">
+                                        {[0, 1, 2, 3, 4].map(i => (
+                                            <div key={i} className="w-full border-t border-dashed border-slate-200" />
+                                        ))}
+                                    </div>
+
+                                    {/* Bars Columns */}
+                                    <div className="h-64 w-full flex items-end justify-around gap-3 pt-4 pb-7 overflow-x-auto relative z-10">
+                                        {barChartData.map((item, idx) => {
+                                            const revPct = Math.min(100, Math.round((item.revenue / maxBarVal) * 100));
+                                            const loanPct = Math.min(100, Math.round((item.loan / maxBarVal) * 100));
+                                            return (
+                                                <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group relative cursor-pointer">
+                                                    {/* Rich Hover Tooltip */}
+                                                    <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col bg-slate-900 text-white text-[11px] p-3.5 rounded-2xl shadow-2xl z-30 min-w-[210px] pointer-events-none transition-all border border-slate-700 space-y-1">
+                                                        <div className="font-bold border-b border-slate-700 pb-1 text-emerald-400 font-mono text-xs flex justify-between items-center">
+                                                            <span>{item.label}</span>
+                                                            <span className="text-[10px] text-slate-400 uppercase font-sans">{timeRange}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-emerald-300 font-mono text-[11px]">
+                                                            <span>🟢 Revenue Collected:</span>
+                                                            <span className="font-bold">${item.revenue.toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-blue-300 font-mono text-[11px]">
+                                                            <span>🔵 Loan Disbursed:</span>
+                                                            <span className="font-bold">${item.loan.toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-indigo-300 font-mono text-[11px]">
+                                                            <span>👤 Activated Entry:</span>
+                                                            <span className="font-bold">{item.entry} នាក់</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-purple-300 font-mono text-[11px]">
+                                                            <span>🔄 Exit Customers:</span>
+                                                            <span className="font-bold">{item.exit} នាក់</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Amount Badge */}
+                                                    {item.revenue > 0 && (
+                                                        <span className="text-[9px] font-bold font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md shadow-2xs">
+                                                            ${item.revenue >= 1000 ? `${(item.revenue / 1000).toFixed(1)}k` : item.revenue}
+                                                        </span>
+                                                    )}
+
+                                                    {/* Bars */}
+                                                    <div className="w-full flex items-end justify-center gap-1.5 h-[75%]">
+                                                        <div
+                                                            style={{ height: `${Math.max(8, revPct)}%` }}
+                                                            className="w-full max-w-[14px] bg-emerald-500 rounded-t-md transition-all group-hover:scale-105 group-hover:bg-emerald-400 shadow-2xs"
+                                                        />
+                                                        <div
+                                                            style={{ height: `${Math.max(8, loanPct)}%` }}
+                                                            className="w-full max-w-[14px] bg-blue-500 rounded-t-md transition-all group-hover:scale-105 group-hover:bg-blue-400 shadow-2xs"
+                                                        />
+                                                    </div>
+
+                                                    {/* X-Axis Label */}
+                                                    <span className="absolute bottom-0 text-[10px] font-bold text-slate-700 font-mono truncate max-w-full">
+                                                        {item.label}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 {/* Donut Chart (Right 1 Column) */}
@@ -832,7 +870,7 @@ const Dashboard = () => {
 
                 {/* 3 Visual Mini Audit Charts */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Bar breakdown */}
+                    {/* Bar breakdown with Y-Axis + Gridlines + Hover Tooltip */}
                     <div className="p-5 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-3">
                         <div className="flex items-center justify-between">
                             <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-2">
@@ -840,24 +878,49 @@ const Dashboard = () => {
                             </h4>
                             <span className="text-[10px] text-slate-600 font-bold">ចុចលើសសរ</span>
                         </div>
-                        <div className="h-40 flex items-end justify-around gap-1 pt-3 border-b border-slate-200">
-                            {Object.entries(typeDistribution).map(([cat, count]) => {
-                                const maxVal = Math.max(...Object.values(typeDistribution), 1);
-                                const heightPct = Math.round((count / maxVal) * 100);
-                                return (
-                                    <div key={cat} onClick={() => handleChartPointClick('Bar Chart', cat)} className="flex-1 flex flex-col items-center gap-1 cursor-pointer group" title={`Click: ${cat}`}>
-                                        <span className="text-[10px] font-mono font-bold text-slate-800">{count}</span>
-                                        <div className="w-full max-w-[24px] bg-slate-200 rounded-t-lg overflow-hidden h-28 flex items-end">
-                                            <div className="w-full bg-emerald-500 group-hover:bg-emerald-400 transition-all rounded-t-lg" style={{ height: `${Math.max(heightPct, 6)}%` }} />
-                                        </div>
-                                        <span className="text-[9px] font-bold text-slate-600 truncate w-full text-center">{cat.slice(0, 5)}</span>
+                        {(() => {
+                            const maxMiniBar = Math.max(...Object.values(typeDistribution), 1);
+                            const miniTicks = [1, 0.66, 0.33, 0].map(r => Math.round(maxMiniBar * r));
+                            return (
+                                <div className="flex items-stretch gap-2">
+                                    {/* Y-Axis */}
+                                    <div className="flex flex-col justify-between items-end pb-5 text-[9px] font-mono text-slate-500 font-bold select-none w-6 shrink-0">
+                                        {miniTicks.map((v, i) => <span key={i}>{v}</span>)}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                    {/* Chart body */}
+                                    <div className="flex-1 relative">
+                                        {/* Horizontal gridlines */}
+                                        <div className="absolute inset-x-0 inset-y-0 flex flex-col justify-between pointer-events-none pb-5">
+                                            {[0,1,2,3].map(i => <div key={i} className="w-full border-t border-dashed border-slate-200" />)}
+                                        </div>
+                                        {/* Bars */}
+                                        <div className="h-36 flex items-end justify-around gap-1 pb-5 relative z-10">
+                                            {Object.entries(typeDistribution).map(([cat, count]) => {
+                                                const heightPct = Math.round((count / maxMiniBar) * 100);
+                                                return (
+                                                    <div key={cat} onClick={() => handleChartPointClick('Bar Chart', cat)} className="flex-1 flex flex-col items-center gap-0.5 cursor-pointer group relative" title={`Click: ${cat}`}>
+                                                        {/* Hover Tooltip */}
+                                                        <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-30 min-w-[110px] pointer-events-none border border-slate-700 space-y-0.5">
+                                                            <span className="font-bold text-emerald-400 border-b border-slate-700 pb-1 mb-1">{cat}</span>
+                                                            <span className="text-slate-200 font-mono">Count: <strong className="text-white">{count}</strong></span>
+                                                        </div>
+                                                        <span className="text-[9px] font-mono font-bold text-slate-800">{count}</span>
+                                                        <div className="w-full max-w-[20px] bg-slate-200 rounded-t-md overflow-hidden flex-1 flex items-end">
+                                                            <div className="w-full bg-emerald-500 group-hover:bg-emerald-400 transition-all rounded-t-md" style={{ height: `${Math.max(heightPct, 6)}%` }} />
+                                                        </div>
+                                                        {/* X-Axis Label */}
+                                                        <span className="absolute bottom-0 text-[8px] font-bold text-slate-600 truncate w-full text-center">{cat.slice(0, 6)}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
 
-                    {/* Line Trend */}
+                    {/* Line Trend with Y-Axis + Gridlines + Hover Tooltip */}
                     <div className="p-5 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-3">
                         <div className="flex items-center justify-between">
                             <h4 className="text-xs font-black uppercase text-slate-900 tracking-wider flex items-center gap-2">
@@ -865,33 +928,84 @@ const Dashboard = () => {
                             </h4>
                             <span className="text-[10px] text-slate-600 font-bold">ចុចលើ Point</span>
                         </div>
-                        <div className="h-40">
-                            {trendData.length === 0 ? (
-                                <div className="h-full flex items-center justify-center text-slate-600 text-xs italic">No activity trend</div>
-                            ) : (
-                                <div className={`relative h-28 w-full flex items-end ${trendData.length === 1 ? 'justify-center' : 'justify-between'} px-4 pt-4`}>
-                                    {trendData.length > 1 && (
-                                        <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
-                                            <polyline fill="none" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                                                points={trendData.map((d, i) => {
-                                                    const maxC = Math.max(...trendData.map(x => x.count), 1);
-                                                    const x = (i / (trendData.length - 1)) * 90 + 5;
-                                                    const y = 80 - (d.count / maxC) * 65;
-                                                    return `${x}%,${y}%`;
-                                                }).join(' ')}
-                                            />
-                                        </svg>
-                                    )}
-                                    {trendData.map(d => (
-                                        <div key={d.date} onClick={() => handleChartPointClick('Date Trend', d.date, true)} className="relative z-10 flex flex-col items-center cursor-pointer group">
-                                            <span className="text-[10px] font-mono font-bold text-sky-700 bg-sky-50 border border-sky-200 px-1 rounded mb-1">{d.count}</span>
-                                            <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-sky-600 group-hover:bg-sky-600 transition-all shadow-xs" />
-                                            <span className="text-[9px] font-mono text-slate-600 font-bold mt-1">{d.date.slice(5)}</span>
+                        {trendData.length === 0 ? (
+                            <div className="h-36 flex items-center justify-center text-slate-600 text-xs italic">No activity trend</div>
+                        ) : (() => {
+                            const maxLineVal = Math.max(...trendData.map(x => x.count), 1);
+                            const lineTicks = [1, 0.66, 0.33, 0].map(r => Math.round(maxLineVal * r));
+                            return (
+                                <div className="flex items-stretch gap-2">
+                                    {/* Y-Axis */}
+                                    <div className="flex flex-col justify-between items-end pb-5 text-[9px] font-mono text-slate-500 font-bold select-none w-6 shrink-0">
+                                        {lineTicks.map((v, i) => <span key={i}>{v}</span>)}
+                                    </div>
+                                    {/* Chart body */}
+                                    <div className="flex-1 relative">
+                                        {/* Horizontal gridlines */}
+                                        <div className="absolute inset-x-0 inset-y-0 flex flex-col justify-between pointer-events-none pb-5">
+                                            {[0,1,2,3].map(i => <div key={i} className="w-full border-t border-dashed border-slate-200" />)}
                                         </div>
-                                    ))}
+                                        {/* SVG Connecting Line */}
+                                        <div className="relative h-36">
+                                            {trendData.length > 1 && (
+                                                <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                                                    {/* Fill area under line */}
+                                                    <defs>
+                                                        <linearGradient id="lineGradFill" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="#0284c7" stopOpacity="0.18" />
+                                                            <stop offset="100%" stopColor="#0284c7" stopOpacity="0" />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <polygon
+                                                        fill="url(#lineGradFill)"
+                                                        points={
+                                                            [
+                                                                ...trendData.map((d, i) => {
+                                                                    const x = (i / (trendData.length - 1)) * 88 + 6;
+                                                                    const y = 78 - (d.count / maxLineVal) * 62;
+                                                                    return `${x}%,${y}%`;
+                                                                }),
+                                                                `94%,95%`,
+                                                                `6%,95%`
+                                                            ].join(' ')
+                                                        }
+                                                    />
+                                                    <polyline
+                                                        fill="none"
+                                                        stroke="#0284c7"
+                                                        strokeWidth="2.5"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        points={trendData.map((d, i) => {
+                                                            const x = (i / (trendData.length - 1)) * 88 + 6;
+                                                            const y = 78 - (d.count / maxLineVal) * 62;
+                                                            return `${x}%,${y}%`;
+                                                        }).join(' ')}
+                                                    />
+                                                </svg>
+                                            )}
+                                            {/* Interactive Points */}
+                                            <div className={`absolute inset-0 flex items-end ${trendData.length === 1 ? 'justify-center' : 'justify-between'} px-2 pb-5`}>
+                                                {trendData.map(d => (
+                                                    <div key={d.date} onClick={() => handleChartPointClick('Date Trend', d.date, true)} className="relative z-10 flex flex-col items-center cursor-pointer group">
+                                                        {/* Hover Tooltip */}
+                                                        <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-xl z-30 min-w-[130px] pointer-events-none border border-slate-700 space-y-0.5">
+                                                            <span className="font-bold text-sky-400 border-b border-slate-700 pb-1 mb-1 font-mono">{d.date}</span>
+                                                            <span className="text-slate-200">Activities: <strong className="text-white font-mono">{d.count}</strong></span>
+                                                            <span className="text-[9px] text-sky-300 font-semibold mt-0.5">ចុចដើម្បីមើលលម្អិត →</span>
+                                                        </div>
+                                                        <span className="text-[9px] font-mono font-bold text-sky-700 bg-sky-50 border border-sky-200 px-1 rounded mb-1 shadow-2xs group-hover:scale-110 transition-transform">{d.count}</span>
+                                                        <div className="w-3.5 h-3.5 rounded-full bg-white border-2 border-sky-600 group-hover:bg-sky-600 group-hover:scale-125 transition-all shadow-xs" />
+                                                        {/* X-Axis Label */}
+                                                        <span className="text-[8px] font-mono text-slate-600 font-bold mt-1">{d.date.slice(5)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+                            );
+                        })()}
                     </div>
 
                     {/* Donut distribution */}
