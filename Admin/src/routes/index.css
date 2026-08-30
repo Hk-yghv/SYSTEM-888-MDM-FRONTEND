@@ -11,8 +11,8 @@
 
     body {
         width: 100%;
-        background: #f4f6f8;
-        color: #0f172a;
+        background: var(--app-bg, #f4f6f8);
+        color: var(--app-text, #0f172a);
     }
 
     /* CUSTOM SLEEK EMERALD SCROLLBAR DESIGN */
@@ -303,4 +303,31 @@ input::placeholder, textarea::placeholder {
 .bg-emerald-950 {
     background: #ecfdf5 !important;
     border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+/* GLOBAL THEME OVERRIDES FOR ALL PAGES ACROSS SYSTEM */
+.bg-\[\#f4f6f8\],
+div[class*="bg-[#f4f6f8]"] {
+    background-color: transparent !important;
+}
+
+.bg-white {
+    background-color: var(--app-card, rgba(255, 255, 255, 0.92)) !important;
+    backdrop-filter: blur(var(--app-glass-blur, 12px));
+    -webkit-backdrop-filter: blur(var(--app-glass-blur, 12px));
+}
+
+.border-slate-200 {
+    border-color: var(--app-border, rgba(226, 232, 240, 0.8)) !important;
+}
+
+.text-slate-800,
+.text-slate-900,
+.text-slate-700 {
+    color: var(--app-text, #0f172a);
+}
+
+.text-slate-500,
+.text-slate-600 {
+    color: var(--app-text-sub, #64748b);
 }
