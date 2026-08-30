@@ -257,7 +257,7 @@ const ReportAll = () => {
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full p-4 select-none space-y-4'>
             {/* Top Header */}
             <header className='p-4 w-full border border-slate-200 bg-white rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
                 <div className='flex items-center gap-3'>
