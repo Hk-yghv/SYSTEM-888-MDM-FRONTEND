@@ -983,7 +983,7 @@ const Dashboard = () => {
                                         {/* SVG Connecting Line */}
                                         <div className="relative h-36">
                                             {trendData.length > 1 && (
-                                                <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                                                <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" viewBox="0 0 100 100">
                                                     {/* Fill area under line */}
                                                     <defs>
                                                         <linearGradient id="lineGradFill" x1="0" y1="0" x2="0" y2="1">
@@ -998,10 +998,10 @@ const Dashboard = () => {
                                                                 ...trendData.map((d, i) => {
                                                                     const x = (i / (trendData.length - 1)) * 88 + 6;
                                                                     const y = 78 - (d.count / maxLineVal) * 62;
-                                                                    return `${x}%,${y}%`;
+                                                                    return `${x},${y}`;
                                                                 }),
-                                                                `94%,95%`,
-                                                                `6%,95%`
+                                                                `94,95`,
+                                                                `6,95`
                                                             ].join(' ')
                                                         }
                                                     />
@@ -1014,7 +1014,7 @@ const Dashboard = () => {
                                                         points={trendData.map((d, i) => {
                                                             const x = (i / (trendData.length - 1)) * 88 + 6;
                                                             const y = 78 - (d.count / maxLineVal) * 62;
-                                                            return `${x}%,${y}%`;
+                                                            return `${x},${y}`;
                                                         }).join(' ')}
                                                     />
                                                 </svg>
