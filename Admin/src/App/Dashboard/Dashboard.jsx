@@ -476,7 +476,7 @@ const Dashboard = () => {
     return (
         <div className="w-full min-h-screen p-4 sm:p-6 lg:p-8 space-y-6 select-none font-sans text-slate-900">
 
-            {/* ── 1. Top Executive Header Bar ── */}
+            {/* Top Executive Header Bar */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs">
                 <div className="space-y-1">
                     <div className="flex items-center gap-3">
@@ -502,12 +502,12 @@ const Dashboard = () => {
                                 onChange={e => setBrandFilter(e.target.value)}
                                 className="bg-transparent text-slate-900 font-bold outline-none cursor-pointer pr-1"
                             >
-                                <option value="">🌐 All Brands</option>
+                                <option value="">All Brands</option>
                                 {brandsList.map(b => <option key={b} value={b}>{b}</option>)}
                             </select>
                         ) : (
                             <span className="text-emerald-700 font-bold font-mono">
-                                🏢 {user?.brand || 'Default Brand'}
+                                {user?.brand || 'Default Brand'}
                             </span>
                         )}
                     </div>
@@ -524,7 +524,7 @@ const Dashboard = () => {
                                 key={val}
                                 onClick={() => setTimeRange(val)}
                                 className={`px-3 py-1.5 rounded-xl cursor-pointer font-bold transition-all ${timeRange === val
-                                    ? 'bg-slate-900 text-white shadow-xs'
+                                    ? 'bg-slate-900 text-blue-400 shadow-xs'
                                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                                     }`}
                             >
@@ -543,9 +543,9 @@ const Dashboard = () => {
                     <button
                         onClick={fetchDashboardStats}
                         disabled={reloading}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-bold cursor-pointer transition-all shadow-xs"
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-black rounded-2xl text-xs font-bold cursor-pointer transition-all shadow-xs"
                     >
-                        <MdOutlineSync className={`text-base ${reloading ? 'spin-reload text-emerald-400' : ''}`} />
+                        <MdOutlineSync className={`text-base ${reloading ? 'spin-reload text-black' : ''}`} />
                         <span>{t('reload')}</span>
                     </button>
                 </div>
@@ -699,19 +699,19 @@ const Dashboard = () => {
                                                             <span className="text-[10px] text-slate-400 uppercase font-sans">{timeRange}</span>
                                                         </div>
                                                         <div className="flex justify-between items-center text-emerald-300 font-mono text-[11px]">
-                                                            <span>🟢 Revenue Collected:</span>
+                                                            <span>Revenue Collected:</span>
                                                             <span className="font-bold">${item.revenue.toLocaleString()}</span>
                                                         </div>
                                                         <div className="flex justify-between items-center text-blue-300 font-mono text-[11px]">
-                                                            <span>🔵 Loan Disbursed:</span>
+                                                            <span>Loan Disbursed:</span>
                                                             <span className="font-bold">${item.loan.toLocaleString()}</span>
                                                         </div>
                                                         <div className="flex justify-between items-center text-indigo-300 font-mono text-[11px]">
-                                                            <span>👤 Activated Entry:</span>
+                                                            <span>Activated Entry:</span>
                                                             <span className="font-bold">{item.entry} នាក់</span>
                                                         </div>
                                                         <div className="flex justify-between items-center text-purple-300 font-mono text-[11px]">
-                                                            <span>🔄 Exit Customers:</span>
+                                                            <span>Exit Customers:</span>
                                                             <span className="font-bold">{item.exit} នាក់</span>
                                                         </div>
                                                     </div>

@@ -220,18 +220,15 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
 
     return (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[99999] p-4 select-none">
-            <div className="bg-[#0b0f1e] border border-indigo-500/40 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-xs">
+            <div className="bg-[#fff] border border-indigo-500/40 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-xs">
 
                 {/* Header */}
                 <div className="px-5 py-3 border-b border-gray-800 bg-[#fff] flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-emerald-950/80 border border-emerald-600/50 flex items-center justify-center text-emerald-400 text-lg">
-                            <FaDollarSign />
-                        </div>
                         <div>
                             <h3 className="text-sm font-bold text-gray-100 flex items-center gap-2">
                                 <span>តារាងព័ត៌មានបង់ប្រាក់កម្ចី</span>
-                                <span className="px-2.5 py-0.5 bg-indigo-950 text-indigo-300 border border-indigo-700/60 rounded-full text-[10px] font-bold">
+                                <span className="px-2.5 py-0.5 text-indigo-300 border border-indigo-700/60 rounded-full text-[10px] font-bold">
                                     {contract.contractId}
                                 </span>
                                 {isMasterAdmin && (
@@ -241,7 +238,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                                 )}
                             </h3>
                             <p className="text-[11px] text-gray-400">
-                                ភ្ញៀវ៖ <span className="text-emerald-300 font-bold">{contract.customerNameKh || contract.customerNameEn}</span> |
+                                ភ្ញៀវ៖ <span className="text-emerald-500 font-bold">{contract.customerNameKh || contract.customerNameEn}</span> |
                                 ស្នើ៖ <span className="text-amber-300 font-bold">{contract.duration || '12 Months'}</span> |
                                 ប្រាក់កម្ចីសរុប៖ <span className="text-emerald-400 font-mono font-bold">${Number(contract.amount || 0).toLocaleString()}</span>
                             </p>
@@ -264,7 +261,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                         </div>
                     )}
 
-                    <table className="w-full text-left text-xs whitespace-nowrap">
+                    <table className="w-full text-left text-xs whitespace-nowrap border border-gray-800 rounded-xln">
                         <thead className="text-gray-300 uppercase tracking-wider border-b border-gray-800">
                             <tr>
                                 <th className="px-3 py-2.5 text-center">ខែ/ថ្ងៃ</th>
@@ -413,7 +410,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleSaveRowDraft(idx)}
-                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-emerald-300 hover:bg-gray-800 flex items-center gap-1.5 cursor-pointer"
+                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-emerald-500 hover:bg-gray-200 flex items-center gap-1.5 cursor-pointer"
                                                                 >
                                                                     <FaSave size={11} /> Save
                                                                 </button>
@@ -421,7 +418,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => { handleRowChange(idx, 'status', 'Pending'); setActiveDropdownIdx(null); }}
-                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-sky-300 hover:bg-gray-800 flex items-center gap-1.5 cursor-pointer"
+                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-sky-300 hover:bg-gray-200 flex items-center gap-1.5 cursor-pointer"
                                                                 >
                                                                     <FaEdit size={11} /> Edit
                                                                 </button>
@@ -430,18 +427,18 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleMarkPaid(idx)}
-                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-amber-300 hover:bg-gray-800 flex items-center gap-1.5 cursor-pointer border-t border-gray-800"
+                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-amber-300 hover:bg-gray-200 flex items-center gap-1.5 cursor-pointer border-t border-gray-800"
                                                                     >
-                                                                        <FaCheckCircle size={11} /> Paid (បានបង់)
+                                                                        <FaCheckCircle size={11} /> Paid
                                                                     </button>
                                                                 )}
 
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleMarkPayOff(idx)}
-                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-indigo-300 hover:bg-gray-800 flex items-center gap-1.5 cursor-pointer border-t border-gray-800"
+                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-indigo-300 hover:bg-gray-200 flex items-center gap-1.5 cursor-pointer border-t border-gray-800"
                                                                 >
-                                                                    <FaLock size={11} /> Pay Off (បង់ផ្តាច់)
+                                                                    <FaLock size={11} /> Pay Off
                                                                 </button>
 
                                                                 {isMasterAdmin && (row.status === 'Paid' || row.status === 'PayOff') && (

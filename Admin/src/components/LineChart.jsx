@@ -175,7 +175,7 @@ const LineChart = ({
                                     key={opt}
                                     onClick={() => setSelectedFilter(opt)}
                                     className={`px-3 py-1 rounded-xl cursor-pointer transition-all ${selectedFilter === opt
-                                        ? 'bg-slate-900 text-white shadow-xs'
+                                        ? 'bg-blue-900 text-white shadow-xs'
                                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                                         }`}
                                 >

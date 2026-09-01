@@ -5,17 +5,13 @@ const IDCard3DViewer = ({ customer }) => {
     if (!customer) return null;
 
     return (
-        <div className="w-full bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 border border-indigo-500/40 rounded-2xl p-5 text-slate-100 space-y-4 shadow-xl select-none">
+        <div className="w-full bg-gray-200 rounded-xl p-5 text-slate-100 space-y-4 shadow-xl select-none">
             <div className="flex items-center justify-between border-b border-indigo-500/30 pb-3">
                 <div className="flex items-center gap-2">
-                    <FaIdCard className="text-indigo-400 text-xl" />
                     <span className="text-xs font-bold uppercase tracking-wider text-indigo-300 font-khmer">
-                        🇰🇭 ព្រះរាជាណាចក្រកម្ពុជា &bull; អត្តសញ្ញាណប័ណ្ណសញ្ជាតិខ្មែរ
+                        អត្តសញ្ញាណប័ណ្ណសញ្ជាតិខ្មែរ
                     </span>
                 </div>
-                <span className="text-[10px] font-mono bg-emerald-950 border border-emerald-700 text-emerald-400 px-2 py-0.5 rounded-full font-bold">
-                    VERIFIED
-                </span>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -29,7 +25,7 @@ const IDCard3DViewer = ({ customer }) => {
                     <div className="grid grid-cols-2 gap-2">
                         <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800">
                             <span className="text-[9px] text-slate-400 block">ឈ្មោះ អង់គ្លេស</span>
-                            <span className="font-bold text-white text-xs">{customer.customerNameEn || '—'}</span>
+                            <span className="font-bold text-black text-xs">{customer.customerNameEn || '—'}</span>
                         </div>
                         <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800">
                             <span className="text-[9px] text-slate-400 block">ឈ្មោះ ខ្មែរ</span>
@@ -44,14 +40,14 @@ const IDCard3DViewer = ({ customer }) => {
                         </div>
                         <div className="text-right">
                             <span className="text-[9px] text-slate-400 block">ថ្ងៃខែឆ្នាំកំណើត (DOB)</span>
-                            <span className="font-bold text-slate-200 text-xs">{customer.dob || '—'}</span>
+                            <span className="font-bold text-black text-xs">{customer.dob || '—'}</span>
                         </div>
                     </div>
 
                     {customer.currentAddress && (
                         <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800 text-[11px] text-slate-300 flex items-center gap-1.5">
                             <FaMapMarkerAlt className="text-red-400 flex-shrink-0" />
-                            <span className="truncate">{customer.currentAddress}</span>
+                            <span className="truncate text-black">{customer.currentAddress}</span>
                         </div>
                     )}
                 </div>

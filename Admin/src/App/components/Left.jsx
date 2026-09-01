@@ -22,19 +22,19 @@ const Left = () => {
     const isActive = (path) => location.pathname === path;
 
     const navItemClass = (path) =>
-        `w-full h-[44px] flex-shrink-0 flex items-center gap-3 px-3 rounded-[5px] text-sm font-semibold transition-all glass-nav-item ${isActive(path)
+        `group relative w-full h-[44px] flex-shrink-0 flex items-center gap-3 px-3 rounded-[5px] text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-lg hover:shadow-emerald-500/10 active:scale-[0.98] active:translate-y-[1px] glass-nav-item ${isActive(path)
             ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 border border-emerald-500"
-            : "bg-[var(--app-card,rgba(255,255,255,0.4))] text-[var(--app-text,#0f172a)] hover:bg-emerald-500/20 border border-[var(--app-border,rgba(226,232,240,0.6))] shadow-2xs backdrop-blur-md"
+            : "bg-[var(--app-card,rgba(255,255,255,0.4))] text-[var(--app-text,#0f172a)] hover:bg-emerald-500/15 border border-[var(--app-border,rgba(226,232,240,0.6))] shadow-2xs backdrop-blur-md"
         }`;
 
     const subItemClass = (path) =>
-        `flex items-center gap-2 flex-shrink-0 px-3.5 py-2.5 ml-3 text-xs font-bold rounded-[5px] transition-all ${isActive(path)
+        `group relative flex items-center gap-2 flex-shrink-0 px-3.5 py-2.5 ml-3 text-xs font-bold rounded-[5px] overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.98] active:translate-y-[1px] ${isActive(path)
             ? "bg-emerald-600 text-white shadow-xs border border-emerald-500"
-            : "bg-[var(--app-card,rgba(255,255,255,0.3))] text-[var(--app-text,#0f172a)] hover:bg-emerald-500/20 border border-[var(--app-border,rgba(226,232,240,0.6))] backdrop-blur-md"
+            : "bg-[var(--app-card,rgba(255,255,255,0.3))] text-[var(--app-text,#0f172a)] hover:bg-emerald-500/15 border border-[var(--app-border,rgba(226,232,240,0.6))] backdrop-blur-md"
         }`;
 
     const dropdownHeaderClass = (menuName) =>
-        `w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-[var(--app-card,rgba(255,255,255,0.4))] hover:bg-emerald-500/20 text-[var(--app-text,#0f172a)] border border-[var(--app-border,rgba(226,232,240,0.6))] rounded-[5px] cursor-pointer text-sm font-semibold transition-all shadow-2xs backdrop-blur-md`;
+        `group relative w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-[var(--app-card,rgba(255,255,255,0.4))] hover:bg-emerald-500/15 text-[var(--app-text,#0f172a)] border border-[var(--app-border,rgba(226,232,240,0.6))] rounded-[5px] cursor-pointer text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.005] hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.99] active:translate-y-[1px] shadow-2xs backdrop-blur-md`;
 
     return (
         <div

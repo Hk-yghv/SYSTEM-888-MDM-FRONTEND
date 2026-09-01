@@ -22,7 +22,10 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         }
     });
 
-    const getItemKey = (item) => `${item.contractId}_${item.dueDate}`;
+    const getItemKey = (item) => {
+        const stableId = item?.contractId || item?._id || item?.customerNameEn || item?.phone || item?.serialNumber || item?.dueDate || 'unknown';
+        return String(stableId).trim();
+    };
 
     const updateUnreadCount = useCallback((dueList, overdueList, seenKeys) => {
         const allItems = [...dueList, ...overdueList];
