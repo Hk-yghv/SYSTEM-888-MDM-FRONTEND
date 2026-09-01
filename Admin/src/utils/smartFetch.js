@@ -38,7 +38,6 @@ const NON_CACHEABLE_PATHS = [
 export const invalidateApiCache = (pathPrefix = '') => {
     if (!pathPrefix) {
         apiCache.clear();
-        console.log('[SmartFetch Cache] Cleared all API response cache.');
         return;
     }
     let count = 0;
@@ -48,7 +47,6 @@ export const invalidateApiCache = (pathPrefix = '') => {
             count++;
         }
     }
-    console.log(`[SmartFetch Cache] Invalidated ${count} cache entries for prefix '${pathPrefix}'.`);
 };
 
 export const smartFetch = async (inputUrlOrPath, options = {}) => {
