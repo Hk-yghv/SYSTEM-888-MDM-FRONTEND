@@ -62,7 +62,6 @@ import DeviceActionHistory from "../App/History/pages/DeviceActionHistory";
 // Settings & Profile
 import ControlSystem from "../App/Settings/pages/ControlSystem";
 import AllAccount from "../App/Settings/pages/AllAccount";
-import Personalization from "../App/Settings/pages/Personalization";
 import Profile from "../App/Profile/Profile";
 
 import DesktopOnlyGuard from "../components/DesktopOnlyGuard";
@@ -177,7 +176,6 @@ const App = () => {
                   {/* Settings */}
                   <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />
                   <Route path={json.settings.controlSystem} element={<ProtectRoute pagePath={json.settings.controlSystem}><MainLayout><ControlSystem /></MainLayout></ProtectRoute>} />
-                  <Route path={json.settings.personalization} element={<MainLayout><Personalization /></MainLayout>} />
                   <Route path={json.settings.profile} element={<ProtectRoute pagePath={json.settings.profile}> <MainLayout><Profile /></MainLayout> </ProtectRoute>} />
 
                   {/* Fallback */}

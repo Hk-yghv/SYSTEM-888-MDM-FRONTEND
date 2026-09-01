@@ -32,8 +32,6 @@
     "settings": "Settings",
     "allAccount": "All Account",
     "controlSystem": "Control System",
-    "personalization": "Personalization",
-    "personalizationSub": "Customize background, card, sidebar, and text colors per account",
     "resetDefault": "Reset Default",
     "saveTheme": "Save Preferences",
     "themeSaved": "Saved successfully!",
