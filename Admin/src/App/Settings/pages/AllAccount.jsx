@@ -23,6 +23,9 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Installment & Payment', path: '/installment/overdue', label: 'Overdue Customers (ភ្ញៀវយឺត)', actions: ['read', 'export'] },
     { category: 'Installment & Payment', path: '/installment/due-today', label: 'Due Today (ភ្ញៀវត្រូវបង់ថ្ងៃនេះ)', actions: ['read', 'export'] },
     { category: 'Installment & Payment', path: '/installment/due-in-3-days', label: 'Due In 3 Days (ភ្ញៀវនៅសល់ ៣ ថ្ងៃ)', actions: ['read', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/overdue-3-days', label: 'Overdue 3 Days (ភ្ញៀវយឺត ៣ ថ្ងៃ)', actions: ['read', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/unpaid-yesterday', label: 'Unpaid Yesterday (ភ្ញៀវមិនបានបង់ប្រាក់ម្សិលម៉ិញ)', actions: ['read', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/overdue-7-days', label: 'Overdue 7 Days (ភ្ញៀវខកខានបង់ប្រាក់ ៧ ថ្ងៃ)', actions: ['read', 'export'] },
 
     { category: 'Lost Phone Control', path: '/lostphone/actions', label: 'Lost Phone Actions', actions: ['read', 'lockDevice', 'unlockPhone'] },
     { category: 'Lost Phone Control', path: '/lostphone/lockphone', label: 'Lock Phone Log', actions: ['read', 'export'] },

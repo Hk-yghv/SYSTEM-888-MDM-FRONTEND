@@ -466,6 +466,9 @@ router.get('/payment-alerts', async (req, res) => {
 
         const now = new Date();
         const dueTodayList = [];
+        const dueIn3DaysList = [];
+        const overdue3DaysList = [];
+        const overdue7DaysList = [];
         const overdueList = [];
 
         for (const c of contracts) {
@@ -530,27 +533,49 @@ router.get('/payment-alerts', async (req, res) => {
                 status: sanitized.status || 'Activated'
             };
 
-            // Categorize into Due Today vs Overdue
+            // Categorize months/days remaining correctly:
+            // overdue = already past due date
+            // dueToday = exactly due today
+            // dueIn3Days = 1 to 3 days remaining before due date
+            // overdue3Days = 3 days after due date
+            // overdue7Days = 7 days after due date
             if (diffDays > 0) {
                 overdueList.push(alertItem);
-            } else if (diffDays >= -7) { // Due within 7 days or today
+                if (diffDays >= 3 && diffDays <= 6) {
+                    overdue3DaysList.push(alertItem);
+                }
+                if (diffDays >= 7 && diffDays <= 14) {
+                    overdue7DaysList.push(alertItem);
+                }
+            } else if (diffDays === 0) {
                 dueTodayList.push(alertItem);
+            } else if (diffDays >= -3) {
+                dueIn3DaysList.push(alertItem);
             }
         }
 
         // Sort overdue list by overdue days descending (most overdue first)
         overdueList.sort((a, b) => b.overdueDays - a.overdueDays);
+        overdue3DaysList.sort((a, b) => b.overdueDays - a.overdueDays);
+        overdue7DaysList.sort((a, b) => b.overdueDays - a.overdueDays);
         dueTodayList.sort((a, b) => a.overdueDays - b.overdueDays);
+        dueIn3DaysList.sort((a, b) => a.overdueDays - b.overdueDays);
 
         res.json({
             success: true,
             brand: userBrand || 'ALL',
             summary: {
                 dueTodayCount: dueTodayList.length,
+                dueIn3DaysCount: dueIn3DaysList.length,
+                overdue3DaysCount: overdue3DaysList.length,
+                overdue7DaysCount: overdue7DaysList.length,
                 overdueCount: overdueList.length,
-                totalAlerts: dueTodayList.length + overdueList.length
+                totalAlerts: dueTodayList.length + dueIn3DaysList.length + overdue3DaysList.length + overdue7DaysList.length + overdueList.length
             },
             dueTodayList,
+            dueIn3DaysList,
+            overdue3DaysList,
+            overdue7DaysList,
             overdueList
         });
     } catch (err) {

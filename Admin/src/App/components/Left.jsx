@@ -115,7 +115,10 @@ const Left = () => {
                 hasPermission(json.installment.cashIn, 'read') ||
                 hasPermission(json.installment.overdue, 'read') ||
                 hasPermission(json.installment.dueToday, 'read') ||
-                hasPermission(json.installment.dueIn3Days, 'read')) && (
+                hasPermission(json.installment.dueIn3Days, 'read') ||
+                hasPermission(json.installment.overdue3Days, 'read') ||
+                hasPermission(json.installment.unpaidYesterday, 'read') ||
+                hasPermission(json.installment.overdue7Days, 'read')) && (
                     <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("installment")} className={dropdownHeaderClass("installment")}>
                             <p className="flex items-center gap-3">
@@ -137,6 +140,15 @@ const Left = () => {
                             )}
                             {hasPermission(json.installment.dueIn3Days, 'read') && (
                                 <Link to={json.installment.dueIn3Days} className={subItemClass(json.installment.dueIn3Days)}>{t('dueIn3Days')}</Link>
+                            )}
+                            {hasPermission(json.installment.overdue3Days, 'read') && (
+                                <Link to={json.installment.overdue3Days} className={subItemClass(json.installment.overdue3Days)}>{t('overdue3Days')}</Link>
+                            )}
+                            {hasPermission(json.installment.unpaidYesterday, 'read') && (
+                                <Link to={json.installment.unpaidYesterday} className={subItemClass(json.installment.unpaidYesterday)}>{t('unpaidYesterday')}</Link>
+                            )}
+                            {hasPermission(json.installment.overdue7Days, 'read') && (
+                                <Link to={json.installment.overdue7Days} className={subItemClass(json.installment.overdue7Days)}>{t('overdue7Days')}</Link>
                             )}
                             {hasPermission(json.installment.paymentHistory, 'read') && (
                                 <Link to={json.installment.paymentHistory} className={subItemClass(json.installment.paymentHistory)}>{t('paymentHistory')}</Link>

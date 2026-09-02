@@ -47,6 +47,9 @@ import CashInPage from "../App/Installment/pages/CashInPage";
 import OverduePage from "../App/Installment/pages/OverduePage";
 import DueTodayPage from "../App/Installment/pages/DueTodayPage";
 import DueIn3DaysPage from "../App/Installment/pages/DueIn3DaysPage";
+import Overdue3DaysPage from "../App/Installment/pages/Overdue3DaysPage";
+import UnpaidYesterdayPage from "../App/Installment/pages/UnpaidYesterdayPage";
+import Overdue7DaysPage from "../App/Installment/pages/Overdue7DaysPage";
 
 // Lostphone
 import ActionLockphone from "../App/Lostphone/pages/Actions";
@@ -169,6 +172,9 @@ const App = () => {
                   <Route path={json.installment.overdue} element={<ProtectRoute pagePath={json.installment.overdue}> <MainLayout><OverduePage /></MainLayout> </ProtectRoute>} />
                   <Route path={json.installment.dueToday} element={<ProtectRoute pagePath={json.installment.dueToday}> <MainLayout><DueTodayPage /></MainLayout> </ProtectRoute>} />
                   <Route path={json.installment.dueIn3Days} element={<ProtectRoute pagePath={json.installment.dueIn3Days}> <MainLayout><DueIn3DaysPage /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.installment.overdue3Days} element={<ProtectRoute pagePath={json.installment.overdue3Days}> <MainLayout><Overdue3DaysPage /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.installment.unpaidYesterday} element={<ProtectRoute pagePath={json.installment.unpaidYesterday}> <MainLayout><UnpaidYesterdayPage /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.installment.overdue7Days} element={<ProtectRoute pagePath={json.installment.overdue7Days}> <MainLayout><Overdue7DaysPage /></MainLayout> </ProtectRoute>} />
                   {/* Lostphone */}
                   <Route path={json.lostphone.actionLockphone} element={<ProtectRoute pagePath={json.lostphone.actionLockphone}> <MainLayout><ActionLockphone /></MainLayout> </ProtectRoute>} />
                   <Route path={json.lostphone.lockPhone} element={<ProtectRoute pagePath={json.lostphone.lockPhone}> <MainLayout><LockPhone /></MainLayout> </ProtectRoute>} />

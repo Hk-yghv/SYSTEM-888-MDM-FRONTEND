@@ -29,7 +29,10 @@
         "cashIn": "/installment/cash-in",
         "overdue": "/installment/overdue",
         "dueToday": "/installment/due-today",
-        "dueIn3Days": "/installment/due-in-3-days"
+        "dueIn3Days": "/installment/due-in-3-days",
+        "overdue3Days": "/installment/overdue-3-days",
+        "unpaidYesterday": "/installment/unpaid-yesterday",
+        "overdue7Days": "/installment/overdue-7-days"
     },
     "lostphone": {
         "actionLockphone": "/lostphone/actions",
