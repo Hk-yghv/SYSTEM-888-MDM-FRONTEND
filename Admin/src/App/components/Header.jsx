@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaShieldAlt, FaBell } from 'react-icons/fa';
+import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaShieldAlt, FaBell, FaExpand, FaCompress } from 'react-icons/fa';
 
 const Header = ({ onOpenAlerts, alertCount = 0 }) => {
     const [accountOpen, setAccountOpen] = useState(false);
@@ -45,6 +45,36 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
     };
 
     const currentLangObj = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0];
+
+
+    // set full screen
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const toggleFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+                setIsFullscreen(true);
+            } else {
+                await document.exitFullscreen();
+                setIsFullscreen(false);
+            }
+        } catch (error) {
+            console.error('Fullscreen error:', error);
+        }
+    };
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        };
+    }, []);
 
     return (
         <header
@@ -96,6 +126,15 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                             {alertCount}
                         </span>
                     )}
+                </button>
+
+                {/* Fullscreen Button */}
+                <button
+                    onClick={toggleFullscreen}
+                    className='flex items-center gap-2 px-3 py-1.5 rounded-[5px] bg-slate-100 border border-slate-200 hover:border-emerald-500/50 transition-all text-xs font-semibold cursor-pointer shadow-xs hover:bg-slate-200/60'
+                    title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                >
+                    {isFullscreen ? <FaCompress className='text-emerald-600 text-sm' /> : <FaExpand className='text-emerald-600 text-sm' />}
                 </button>
 
                 {/* Multi-Language Selector */}
