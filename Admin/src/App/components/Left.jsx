@@ -127,19 +127,19 @@ const Left = () => {
 
                         <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.installment.installmentPage, 'read') && (
-                                <Link to={json.installment.installmentPage} className={subItemClass(json.installment.installmentPage)}>Installment</Link>
+                                <Link to={json.installment.installmentPage} className={subItemClass(json.installment.installmentPage)}>{t('installment')}</Link>
+                            )}
+                            {hasPermission(json.installment.overdue, 'read') && (
+                                <Link to={json.installment.overdue} className={subItemClass(json.installment.overdue)}>{t('overdueCustomers')}</Link>
+                            )}
+                            {hasPermission(json.installment.dueToday, 'read') && (
+                                <Link to={json.installment.dueToday} className={subItemClass(json.installment.dueToday)}>{t('dueToday')}</Link>
+                            )}
+                            {hasPermission(json.installment.dueIn3Days, 'read') && (
+                                <Link to={json.installment.dueIn3Days} className={subItemClass(json.installment.dueIn3Days)}>{t('dueIn3Days')}</Link>
                             )}
                             {hasPermission(json.installment.paymentHistory, 'read') && (
                                 <Link to={json.installment.paymentHistory} className={subItemClass(json.installment.paymentHistory)}>{t('paymentHistory')}</Link>
-                            )}
-                            {hasPermission(json.installment.overdue, 'read') && (
-                                <Link to={json.installment.overdue} className={subItemClass(json.installment.overdue)}>Overdue Customers</Link>
-                            )}
-                            {hasPermission(json.installment.dueToday, 'read') && (
-                                <Link to={json.installment.dueToday} className={subItemClass(json.installment.dueToday)}>Due Today</Link>
-                            )}
-                            {hasPermission(json.installment.dueIn3Days, 'read') && (
-                                <Link to={json.installment.dueIn3Days} className={subItemClass(json.installment.dueIn3Days)}>Due In 3 Days</Link>
                             )}
                             {hasPermission(json.installment.cashOut, 'read') && (
                                 <Link to={json.installment.cashOut} className={subItemClass(json.installment.cashOut)}>{t('cashOut')}</Link>

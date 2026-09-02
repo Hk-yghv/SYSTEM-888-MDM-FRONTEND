@@ -155,7 +155,10 @@
     "noFile": "No File",
     "lastOtpCode": "Last OTP Code",
     "userAccountsPermissions": "All Accounts & Permissions Matrix",
-    "grantAccess": "Check to Grant Access"
+    "grantAccess": "Check to Grant Access",
+    "overdueCustomers": "Overdue Customers",
+    "dueToday": "Due Today",
+    "dueIn3Days": "Due In 3 Days"
   },
   "km": {
     "systemTitle": "ប្រព័ន្ធ SYSTEM MDM",
@@ -310,7 +313,10 @@
     "noFile": "គ្មានរូបភាព",
     "lastOtpCode": "OTP ចុងក្រោយ",
     "userAccountsPermissions": "គណនី និងម៉ាទ្រីសសិទ្ធិប្រើប្រាស់",
-    "grantAccess": "ជ្រើសរើសដើម្បីផ្តល់សិទ្ធិ"
+    "grantAccess": "ជ្រើសរើសដើម្បីផ្តល់សិទ្ធិ",
+    "overdueCustomers": "អតិថិជនខកខានមិនបានបង់ប្រាក់",
+    "dueToday": "ត្រូវបង់ប្រាក់ថ្ងៃនេះ",
+    "dueIn3Days": "ខកខានមិនបានបង់ប្រាក់ក្នុងរយៈពេល 3 ថ្ងៃ"
   },
   "ja": {
     "systemTitle": "SYSTEM MDM",
@@ -367,7 +373,10 @@
     "otpCode": "OTPコード",
     "verify": "認証する",
     "ctmReceived": "顧客から受け取った金額",
-    "deviceProblem": "デバイスの問題"
+    "deviceProblem": "デバイスの問題",
+    "overdueCustomers": "支払い期限超過の顧客",
+    "dueToday": "今日支払期限",
+    "dueIn3Days": "3日以内に支払期限"
   },
   "th": {
     "systemTitle": "ระบบ SYSTEM MDM",
@@ -424,7 +433,10 @@
     "otpCode": "รหัส OTP",
     "verify": "ยืนยัน OTP",
     "ctmReceived": "รับเงินจากลูกค้า",
-    "deviceProblem": "ปัญหาอุปกรณ์"
+    "deviceProblem": "ปัญหาอุปกรณ์",
+    "overdueCustomers": "ลูกค้าชำระล่าช้า",
+    "dueToday": "ชำระภายในวันนี้",
+    "dueIn3Days": "ชำระภายใน 3 วัน"
   },
   "vi": {
     "systemTitle": "SYSTEM MDM",
@@ -481,7 +493,10 @@
     "otpCode": "Mã OTP",
     "verify": "Xác nhận OTP",
     "ctmReceived": "nhận tiền từ khách hàng",
-    "deviceProblem": "vấn đề thiết bị"
+    "deviceProblem": "vấn đề thiết bị",
+    "overdueCustomers": "Khách hàng trễ hạn thanh toán",
+    "dueToday": "Đến hạn thanh toán hôm nay",
+    "dueIn3Days": "Đến hạn thanh toán trong 3 ngày"
   },
   "zh": {
     "systemTitle": "SYSTEM MDM 系统",
@@ -538,7 +553,10 @@
     "otpCode": "验证码",
     "verify": "验证 OTP",
     "ctmReceived": "收到客户的钱",
-    "deviceProblem": "设备问题"
+    "deviceProblem": "设备问题",
+    "overdueCustomers": "逾期客户",
+    "dueToday": "今日到期",
+    "dueIn3Days": "3天内到期"
   },
   "ko": {
     "systemTitle": "SYSTEM MDM",
@@ -595,7 +613,10 @@
     "otpCode": "OTP 코드",
     "verify": "OTP 인증",
     "ctmReceived": "고객이 받은 돈",
-    "deviceProblem": "기기 문제"
+    "deviceProblem": "기기 문제",
+    "overdueCustomers": "연체 고객",
+    "dueToday": "오늘 납부 기한",
+    "dueIn3Days": "3일 내 납부 기한"
   },
   "ru": {
     "systemTitle": "SYSTEM MDM",
@@ -652,7 +673,10 @@
     "otpCode": "Код OTP",
     "verify": "Подтвердить OTP",
     "ctmReceived": "Полученные деньги от клиентов",
-    "deviceProblem": "Проблема с устройством"
+    "deviceProblem": "Проблема с устройством",
+    "overdueCustomers": "Клиенты с просроченной задолженностью",
+    "dueToday": "Сегодня крайний срок оплаты",
+    "dueIn3Days": "Крайний срок оплаты в течение 3 дней"
   },
   "la": {
     "systemTitle": "ລະບົບ SYSTEM MDM",
@@ -709,6 +733,9 @@
     "otpCode": "ລະຫັດ OTP",
     "verify": "ຢືນຢັນ OTP",
     "ctmReceived": "ເງິນທີ່ໄດ້ຮັບຈາກລູກຄ້າ",
-    "deviceProblem": "ບັນຫາອຸປະກອນ"
+    "deviceProblem": "ບັນຫາອຸປະກອນ",
+    "overdueCustomers": "ລູກຄ້າຊຳລະຊ້າ",
+    "dueToday": "ເຖິງກຳหนดຈ່າຍມື້ນີ້",
+    "dueIn3Days": "ເຖິງກຳหนดຈ່າຍໃນ 3 ວັນ"
   }
 }
