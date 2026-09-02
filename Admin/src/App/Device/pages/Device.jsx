@@ -7,6 +7,7 @@ import Pagination from '../../../components/Pagination';
 import Device3DPointers from '../../../components/Device3DPointers';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import { formatIMEI } from '../../../utils/imeiFormatter';
+import CopyCell from '../../../components/CopyCell';
 
 const LIMIT = 10;
 
@@ -239,22 +240,18 @@ const Device = () => {
                                     <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
                                     <td className='px-4 py-3 font-bold text-slate-900 flex items-center gap-2'>
                                         <FaMobileAlt className="text-emerald-600 text-sm" />
-                                        {item.model}
+                                        <CopyCell text={item.model} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
                                     </td>
                                     <td className='px-4 py-3'>
-                                        <span className='px-2.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full font-bold text-[10px]'>
-                                            {item.version || '—'}
-                                        </span>
+                                        <CopyCell text={item.version || '—'} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
                                     </td>
                                     <td className='px-4 py-3'>
-                                        <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
-                                            {item.brand || '—'}
-                                        </span>
+                                        {item.brand || '—'}
                                     </td>
-                                    <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'>{item.serialNumber}</td>
-                                    <td className='px-4 py-3 font-mono text-slate-700 font-bold whitespace-nowrap'>{formatIMEI(item.imei1)}</td>
+                                    <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
+                                    <td className='px-4 py-3 font-mono text-slate-700 font-bold whitespace-nowrap'><CopyCell text={item.imei1} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
                                     <td className='px-4 py-3 font-semibold text-slate-800'>
-                                        {item.customerNameEn} <span className="text-emerald-700 font-khmer text-xs font-semibold">({item.customerNameKh})</span>
+                                        <CopyCell text={item.customerNameEn} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /> <span className="text-emerald-700 font-khmer text-xs font-semibold"><CopyCell text={item.customerNameKh} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></span>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
                                         <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 w-24 mx-auto ${item.lockPhoneStatus === 'Locked' ? 'bg-red-50 border border-red-300 text-red-700' : 'bg-emerald-50 border border-emerald-300 text-emerald-800'}`}>

@@ -5,7 +5,6 @@ import CopyCell from '../../../components/CopyCell';
 import { AiOutlineMenu } from "react-icons/ai";
 import { MdOutlineSync, MdInfo, MdQrCode2, MdCheckCircle, MdSearch, MdSwapHoriz, MdComment, MdPictureAsPdf, MdOutlineWallpaper } from "react-icons/md";
 import { FaQrcode, FaCheck, FaMobileAlt, FaFileExcel, FaLock, FaDollarSign } from "react-icons/fa";
-import CreateApplication from '../components/CreateApplication';
 import CustomModal from '../../../components/CustomModal';
 import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
@@ -528,14 +527,6 @@ const Activated = () => {
                                     <td className='px-4 py-3 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
                                     <td className="px-4 py-3 text-center relative">
                                         <div className="flex items-center justify-center gap-2">
-                                            {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
-                                                <button
-                                                    onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
-                                                    className="px-3 h-8 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-300 text-sky-800 flex items-center justify-center text-[10px] font-semibold transition-all shadow-2xs"
-                                                >
-                                                    Mosyle
-                                                </button>
-                                            )}
                                             <div className="relative inline-block text-left">
                                                 <button
                                                     onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
@@ -559,6 +550,14 @@ const Activated = () => {
                                                                 className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
                                                             >
                                                                 <span>Open Mosyle</span>
+                                                            </button>
+                                                        )}
+                                                        {(item.urlFb) && (
+                                                            <button
+                                                                onClick={() => window.open(item.urlFb, '_blank')}
+                                                                className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                            >
+                                                                <span>Open Facebook</span>
                                                             </button>
                                                         )}
                                                         <button
@@ -701,20 +700,15 @@ const Activated = () => {
                                 <MdInfo className="text-indigo-400 text-xl" />
                                 Activated Contract Details
                             </h3>
-                            <button onClick={() => setSelectedInfo(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold">✕</button>
+                            <button onClick={() => setSelectedInfo(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold cursor-pointer">✕</button>
                         </div>
 
                         <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-900/60 border border-gray-800">
-                            <img
-                                src={selectedInfo.customerPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                                alt="avatar"
-                                className="w-16 h-16 rounded-2xl object-cover border border-indigo-500/40"
-                            />
-                            <div>
+                            <div className='flex gap-3 justify-center items-center'>
                                 <h4 className="text-base font-bold text-gray-100">{selectedInfo.customerNameEn}</h4>
                                 <p className="text-sm text-indigo-400 font-khmer">{selectedInfo.customerNameKh}</p>
                                 <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
-                                    ✓ Activated
+                                    Activated
                                 </span>
                             </div>
                         </div>
@@ -729,7 +723,7 @@ const Activated = () => {
                         </div>
 
                         <div className="text-right pt-2">
-                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl">Close</button>
+                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl cursor-pointer">Close</button>
                         </div>
                     </div>
                 </div>
