@@ -40,6 +40,7 @@ import Comments from "../App/Contract/page/Comments";
 import BlackList from "../App/Contract/page/BlackList";
 
 // Installment
+import InstallmentPage from "../App/Installment/pages/InstallmentPage";
 import PaymentHistory from "../App/Installment/pages/PaymentHistory";
 import CashOutPage from "../App/Installment/pages/CashOutPage";
 import CashInPage from "../App/Installment/pages/CashInPage";
@@ -158,6 +159,7 @@ const App = () => {
                   <Route path={json.contract.comments} element={<ProtectRoute pagePath={json.contract.comments}> <MainLayout><Comments /></MainLayout> </ProtectRoute>} />
                   <Route path={json.contract.blacklist} element={<ProtectRoute pagePath={json.contract.blacklist}> <MainLayout><BlackList /></MainLayout> </ProtectRoute>} />
                   {/* Installment */}
+                  <Route path={json.installment.installmentPage} element={<ProtectRoute pagePath={json.installment.installmentPage}> <MainLayout><InstallmentPage /></MainLayout> </ProtectRoute>} />
                   <Route path={json.installment.paymentHistory} element={<ProtectRoute pagePath={json.installment.paymentHistory}> <MainLayout><PaymentHistory /></MainLayout> </ProtectRoute>} />
                   <Route path={json.installment.cashOut} element={<ProtectRoute pagePath={json.installment.cashOut}> <MainLayout><CashOutPage /></MainLayout> </ProtectRoute>} />
                   <Route path={json.installment.cashIn} element={<ProtectRoute pagePath={json.installment.cashIn}> <MainLayout><CashInPage /></MainLayout> </ProtectRoute>} />

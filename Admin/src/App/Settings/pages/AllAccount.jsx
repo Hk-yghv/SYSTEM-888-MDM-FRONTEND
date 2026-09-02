@@ -16,6 +16,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Contract Management', path: '/contract/comments', label: 'Contract Comments', actions: ['read', 'create', 'edit', 'delete'] },
     { category: 'Contract Management', path: '/contract/blacklist', label: 'Contract Blacklist', actions: ['read', 'create', 'delete'] },
 
+    { category: 'Installment & Payment', path: '/installment/schedule', label: 'Installment Schedule (តារាងបង់ប្រាក់)', actions: ['read', 'edit', 'export'] },
     { category: 'Installment & Payment', path: '/installment/paymentHistory', label: 'Payment History', actions: ['read', 'create', 'export'] },
     { category: 'Installment & Payment', path: '/installment/cash-out', label: 'Cash Out (ប្រាក់ចេញ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/cash-in', label: 'Cash In (ប្រាក់ចូល)', actions: ['read', 'create', 'edit', 'delete', 'export'] },

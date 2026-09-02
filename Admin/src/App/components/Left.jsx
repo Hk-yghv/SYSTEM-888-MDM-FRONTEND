@@ -152,7 +152,8 @@ const Left = () => {
                 )}
 
             {/* Installment */}
-            {(hasPermission(json.installment.paymentHistory, 'read') ||
+            {(hasPermission(json.installment.installmentPage, 'read') ||
+                hasPermission(json.installment.paymentHistory, 'read') ||
                 hasPermission(json.installment.cashOut, 'read') ||
                 hasPermission(json.installment.cashIn, 'read')) && (
                     <div className="flex-shrink-0">
@@ -165,6 +166,9 @@ const Left = () => {
                         </div>
 
                         <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                            {hasPermission(json.installment.installmentPage, 'read') && (
+                                <Link to={json.installment.installmentPage} className={subItemClass(json.installment.installmentPage)}>Installment</Link>
+                            )}
                             {hasPermission(json.installment.paymentHistory, 'read') && (
                                 <Link to={json.installment.paymentHistory} className={subItemClass(json.installment.paymentHistory)}>{t('paymentHistory')}</Link>
                             )}

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo } from 'react-icons/fa';
 import { MdClose } from 'react-icons/md';
 
-const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', onSaved }) => {
+const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', defaultMonthIdx = null, onSaved }) => {
     const { API_BASE1, user } = useAuth();
 
     const isMasterAdmin = Boolean(
@@ -14,8 +14,62 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
     );
 
     const [rows, setRows] = useState([]);
+    const [latePenaltyRules, setLatePenaltyRules] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const [activeDropdownIdx, setActiveDropdownIdx] = useState(null);
+    const rowRefs = useRef([]);
+
+    const computeLatePenalty = (row, rules = []) => {
+        if (!row || !row.dueDate) return Number(row?.penalty || 0) || 0;
+        if (row.status === 'Paid' || row.status === 'PayOff' || row.status === 'Settled') return Number(row.penalty || 0) || 0;
+
+        const due = new Date(`${row.dueDate}T00:00:00`);
+        if (Number.isNaN(due.getTime())) return Number(row.penalty || 0) || 0;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.max(0, Math.floor((today - due) / 86400000));
+        if (diffDays <= 0) return 0;
+
+        const relevantRules = (Array.isArray(rules) ? rules : []).filter(rule => {
+            const ruleBrand = String(rule?.brand || '').trim();
+            const selectedBrand = String(contract?.brand || user?.brand || '').trim();
+            return !ruleBrand || ruleBrand === selectedBrand;
+        });
+
+        if (relevantRules.length === 0) return 0;
+
+        const applicable = relevantRules.filter(rule => diffDays >= Number(rule.afterDays || 0));
+        if (applicable.length === 0) return 0;
+
+        const bestRule = applicable.reduce((winner, rule) => {
+            const ruleAmount = Number(rule.penaltyPerDay || rule.amount || rule.penalty || 0);
+            if (!winner || Number(rule.afterDays || 0) > Number(winner.afterDays || 0)) return { ...rule, ruleAmount };
+            return winner;
+        }, null);
+
+        return diffDays * Number(bestRule?.penaltyPerDay || bestRule?.amount || bestRule?.penalty || 0);
+    };
+
+    useEffect(() => {
+        const fetchLatePenaltySetting = async () => {
+            const brand = contract?.brand || user?.brand || '';
+            try {
+                const res = await fetch(`${API_BASE1}/controlsystem?brand=${encodeURIComponent(brand)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const rules = Array.isArray(data?.late_penalty_rules) ? data.late_penalty_rules : [];
+                    setLatePenaltyRules(rules);
+                    return;
+                }
+            } catch (err) {
+                console.error('Failed to fetch late penalty config:', err);
+            }
+            setLatePenaltyRules([]);
+        };
+
+        fetchLatePenaltySetting();
+    }, [API_BASE1, contract?.brand, user?.brand]);
 
     // Parse duration string (e.g. "15 Days" -> { isDays: true, count: 15 }, "3 Months" -> { isDays: false, count: 3 })
     const parseDuration = (durationStr) => {
@@ -83,13 +137,35 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
     useEffect(() => {
         if (!open || !contract) return;
 
-        if (Array.isArray(contract.repaymentSchedule) && contract.repaymentSchedule.length > 0) {
-            setRows(contract.repaymentSchedule);
-        } else {
-            setRows(generateDefaultRows(contract));
-        }
+        const baseRows = Array.isArray(contract.repaymentSchedule) && contract.repaymentSchedule.length > 0
+            ? contract.repaymentSchedule
+            : generateDefaultRows(contract);
+
+        const generatedRows = generateDefaultRows(contract);
+        const normalizedRows = baseRows.map((row, index) => {
+            const rowWithDueDate = row.dueDate
+                ? row
+                : { ...row, dueDate: generatedRows[index]?.dueDate || '' };
+            const autoPenalty = computeLatePenalty(rowWithDueDate, latePenaltyRules);
+            const scheduledAmount = Number(row.scheduledAmount || 0);
+            const total = Number(row.totalAmount || 0) || scheduledAmount + Number(row.penalty || 0);
+            return {
+                ...rowWithDueDate,
+                penalty: autoPenalty > 0 ? autoPenalty : Number(row.penalty || 0),
+                totalAmount: autoPenalty > 0 ? scheduledAmount + autoPenalty : total
+            };
+        });
+
+        setRows(normalizedRows);
         setActiveDropdownIdx(null);
-    }, [open, contract]);
+
+        if (defaultMonthIdx !== null && defaultMonthIdx >= 0) {
+            setTimeout(() => {
+                const el = rowRefs.current[defaultMonthIdx];
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 120);
+        }
+    }, [open, contract, defaultMonthIdx, latePenaltyRules]);
 
     if (!open || !contract) return null;
 
@@ -106,7 +182,12 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
             const updated = [...prev];
             const row = { ...updated[idx], [field]: val };
 
-            if (field === 'penalty' || field === 'scheduledAmount') {
+            if (field === 'dueDate') {
+                const autoPenalty = computeLatePenalty({ ...row, dueDate: val }, latePenaltyRules);
+                row.penalty = autoPenalty;
+            }
+
+            if (field === 'penalty' || field === 'scheduledAmount' || field === 'dueDate') {
                 const penaltyNum = Number(field === 'penalty' ? val : row.penalty) || 0;
                 const schedNum = Number(field === 'scheduledAmount' ? val : row.scheduledAmount) || 0;
                 row.totalAmount = penaltyNum + schedNum;
@@ -190,6 +271,18 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
         setActiveDropdownIdx(null);
     };
 
+    const applyLatePenaltyToAllRows = () => {
+        setRows(prev => prev.map(row => {
+            const penalty = computeLatePenalty(row, latePenaltyRules);
+            const scheduled = Number(row.scheduledAmount || 0);
+            return {
+                ...row,
+                penalty,
+                totalAmount: scheduled + penalty
+            };
+        }));
+    };
+
     const handleSaveSchedule = async (newContractStatus = null) => {
         setSubmitting(true);
         try {
@@ -245,9 +338,18 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                         </div>
                     </div>
 
-                    <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-bold cursor-pointer transition-all flex items-center justify-center">
-                        <MdClose size={18} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={applyLatePenaltyToAllRows}
+                            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-gray-950 rounded-lg text-[10px] font-bold cursor-pointer transition-all"
+                        >
+                            Auto Penalty
+                        </button>
+                        <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-bold cursor-pointer transition-all flex items-center justify-center">
+                            <MdClose size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Schedule Table Container */}
@@ -283,7 +385,10 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', o
                                 const isLastMonth = idx === rows.length - 1;
 
                                 return (
-                                    <tr key={idx} className={`transition-colors ${row.status === 'Paid' ? 'bg-emerald-950/20' : row.status === 'PayOff' ? 'bg-indigo-950/30' : isCurrentActive ? 'bg-amber-950/30 border-l-4 border-amber-500' : 'hover:bg-gray-900/50'}`}>
+                                    <tr
+                                        key={idx}
+                                        ref={el => rowRefs.current[idx] = el}
+                                        className={`transition-colors ${row.status === 'Paid' ? 'bg-emerald-950/20' : row.status === 'PayOff' ? 'bg-indigo-950/30' : isCurrentActive ? 'bg-amber-950/30 border-l-4 border-amber-500' : idx === defaultMonthIdx ? 'bg-indigo-950/20 border-l-4 border-indigo-400' : 'hover:bg-gray-900/50'}`}>
                                         <td className="px-3 py-2 text-center font-bold text-white font-mono">
                                             {row.labelName || `Month ${row.monthIndex}`}
                                         </td>

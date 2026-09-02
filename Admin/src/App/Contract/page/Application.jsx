@@ -160,7 +160,7 @@ const Application = () => {
             <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
-                        <span>{t('application')} List</span>
+                        <span>{t('application')}</span>
                     </h1>
                 </div>
                 <div className='flex items-center gap-3'>

@@ -3,7 +3,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { IoIosSettings } from 'react-icons/io';
 import { MdOutlineSync, MdAddCircle, MdDelete, MdSave, MdOutlineSettingsBackupRestore } from 'react-icons/md';
-import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup, FaGlobeAmericas } from 'react-icons/fa';
+import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup, FaGlobeAmericas, FaDollarSign } from 'react-icons/fa';
 
 
 
@@ -30,6 +30,10 @@ const ControlSystem = () => {
     const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer']);
     const [lockphoneDisplayText, setLockphoneDisplayText] = useState('ប្រព័ន្ធ SYSTEM MDM — ទូរស័ព្ទនេះត្រូវបានចាក់សោ ហេតុថាមានបំណុលជំពាក់');
     const [lockphonePhoneNumber, setLockphonePhoneNumber] = useState('+855 12 903 120');
+    const [latePenaltyRules, setLatePenaltyRules] = useState([]);
+    const [newPenaltyBrand, setNewPenaltyBrand] = useState(user?.brand || 'MDM');
+    const [newPenaltyDays, setNewPenaltyDays] = useState(1);
+    const [newPenaltyAmount, setNewPenaltyAmount] = useState(0);
 
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
@@ -115,6 +119,12 @@ const ControlSystem = () => {
 
                     if (data.lockphone_phone_number) setLockphonePhoneNumber(data.lockphone_phone_number);
                     else if (globalData.lockphone_phone_number) setLockphonePhoneNumber(globalData.lockphone_phone_number);
+
+                    const highPriorityRules = Array.isArray(data.late_penalty_rules) && data.late_penalty_rules.length > 0
+                        ? data.late_penalty_rules
+                        : (Array.isArray(globalData.late_penalty_rules) ? globalData.late_penalty_rules : []);
+                    setLatePenaltyRules(highPriorityRules);
+                    if (!selectedBrand) setNewPenaltyBrand((globalData?.brand || 'MDM'));
                 }
             } else {
                 // Global brand selected
@@ -123,6 +133,8 @@ const ControlSystem = () => {
                 if (globalData.roles) setRoles(globalData.roles);
                 if (globalData.lockphone_display_text) setLockphoneDisplayText(globalData.lockphone_display_text);
                 if (globalData.lockphone_phone_number) setLockphonePhoneNumber(globalData.lockphone_phone_number);
+                setLatePenaltyRules(Array.isArray(globalData.late_penalty_rules) ? globalData.late_penalty_rules : []);
+                setNewPenaltyBrand(globalData?.brand || 'MDM');
             }
         } catch (err) {
             console.error('Fetch control system configs error:', err);
@@ -324,6 +336,7 @@ const ControlSystem = () => {
                 { key: 'call_phone_display', value: callPhoneDisplay },
                 { key: 'lockphone_display_text', value: lockphoneDisplayText },
                 { key: 'lockphone_phone_number', value: lockphonePhoneNumber },
+                { key: 'late_penalty_rules', value: latePenaltyRules },
                 { key: 'roles', value: roles },
                 { key: 'droplists', value: droplists }
             ];
@@ -346,6 +359,7 @@ const ControlSystem = () => {
                         call_phone_display: 'private',
                         lockphone_display_text: 'private',
                         lockphone_phone_number: 'private',
+                        late_penalty_rules: 'private',
                         roles: 'private',
                         droplists: 'private',
                     }));
@@ -510,7 +524,135 @@ const ControlSystem = () => {
                     </div>
                 </div>
 
-                {/* Section 2: Roles Definition */}
+                {/* Section 2: Installment Late Penalty Rules */}
+                <div className="p-6 rounded-3xl glass-card border border-amber-500/30 space-y-4 shadow-xl">
+                    <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-amber-300 text-xs font-bold uppercase">
+                        <FaDollarSign /> Installment Late Penalty Rules
+                        <OriginBadge fieldKey="late_penalty_rules" />
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                                <label className="block text-gray-400 font-semibold mb-1">Brand</label>
+                                <select
+                                    value={newPenaltyBrand}
+                                    onChange={(e) => setNewPenaltyBrand(e.target.value)}
+                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold"
+                                >
+                                    <option value="">Global</option>
+                                    {brandsList.map((b, idx) => (
+                                        <option key={idx} value={b}>{b}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-gray-400 font-semibold mb-1">After Days</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={newPenaltyDays}
+                                    onChange={(e) => setNewPenaltyDays(Number(e.target.value) || 0)}
+                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-gray-400 font-semibold mb-1">Penalty / Day ($)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={newPenaltyAmount}
+                                    onChange={(e) => setNewPenaltyAmount(Number(e.target.value) || 0)}
+                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const brandValue = (newPenaltyBrand || selectedBrand || 'MDM').trim();
+                                    if (!brandValue || newPenaltyDays < 0 || newPenaltyAmount < 0) return;
+                                    const nextRule = { brand: brandValue, afterDays: Number(newPenaltyDays), penaltyPerDay: Number(newPenaltyAmount) };
+                                    setLatePenaltyRules(prev => [...prev, nextRule]);
+                                    setNewPenaltyDays(1);
+                                    setNewPenaltyAmount(0);
+                                }}
+                                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold cursor-pointer"
+                            >
+                                Add Rule
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {latePenaltyRules.length === 0 ? (
+                                <div className="p-3 rounded-xl bg-gray-950/70 border border-gray-800 text-gray-400 text-[11px] italic">
+                                    No penalty rule configured yet.
+                                </div>
+                            ) : (
+                                latePenaltyRules.map((rule, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 p-2.5 rounded-xl bg-gray-950/60 border border-gray-800">
+                                        <input
+                                            type="text"
+                                            value={rule.brand || ''}
+                                            onChange={(e) => {
+                                                const next = [...latePenaltyRules];
+                                                next[idx].brand = e.target.value;
+                                                setLatePenaltyRules(next);
+                                            }}
+                                            className="w-28 h-9 px-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 text-[11px] font-semibold"
+                                        />
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={rule.afterDays ?? 0}
+                                            onChange={(e) => {
+                                                const next = [...latePenaltyRules];
+                                                next[idx].afterDays = Number(e.target.value) || 0;
+                                                setLatePenaltyRules(next);
+                                            }}
+                                            className="w-20 h-9 px-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 text-[11px] font-mono"
+                                        />
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={rule.penaltyPerDay ?? 0}
+                                            onChange={(e) => {
+                                                const next = [...latePenaltyRules];
+                                                next[idx].penaltyPerDay = Number(e.target.value) || 0;
+                                                setLatePenaltyRules(next);
+                                            }}
+                                            className="w-28 h-9 px-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 text-[11px] font-mono"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setLatePenaltyRules(prev => prev.filter((_, i) => i !== idx))}
+                                            className="ml-auto px-2 py-1.5 bg-red-900/60 hover:bg-red-800 text-red-200 rounded-lg text-[10px] font-bold cursor-pointer"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="pt-2 text-right">
+                            <button
+                                onClick={() => saveConfigToMongoDB('late_penalty_rules', latePenaltyRules)}
+                                disabled={saving}
+                                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-lg shadow-amber-600/30"
+                            >
+                                <MdSave size={16} /> Save Late Penalty Rules
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Section 3: Roles Definition */}
                 <div className="p-6 rounded-3xl glass-card border border-gray-800 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-purple-300 text-xs font-bold uppercase">
                         <FaUserShield /> System User Roles Configurator
@@ -547,7 +689,7 @@ const ControlSystem = () => {
                     </div>
                 </div>
 
-                {/* Section 3: Dynamic Droplists & Options */}
+                {/* Section 4: Dynamic Droplists & Options */}
                 <div className="lg:col-span-2 p-6 rounded-3xl glass-card border border-gray-800 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-emerald-300 text-xs font-bold uppercase">
                         <FaList /> System Dropdown Lists & Dynamic Options (Droplists)
@@ -609,7 +751,7 @@ const ControlSystem = () => {
 
             </div>
 
-            {/* Section 4: Brand Management — Administrator + Global Config only */}
+            {/* Section 5: Brand Management — Administrator + Global Config only */}
             {user?.role === 'Administrator' && selectedBrand === '' && (
                 <div className="p-6 rounded-3xl glass-card border border-amber-500/30 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-amber-300 text-xs font-bold uppercase">

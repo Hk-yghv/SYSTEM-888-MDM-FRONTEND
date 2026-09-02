@@ -60,7 +60,7 @@ bcrypt.hash('houv#^123', 10).then(hash => {
 const SYSTEM_PAGES = [
     '/dashboard', '/customer', '/device', '/contract/application', '/contract/activated',
     '/contract/check', '/contract/redeem', '/contract/comments', '/contract/blacklist',
-    '/installment/paymentHistory', '/lostphone/actions', '/lostphone/lockphone', '/lostphone/unlockphone',
+    '/installment/schedule', '/installment/paymentHistory', '/lostphone/actions', '/lostphone/lockphone', '/lostphone/unlockphone',
     '/wallpaper/actions', '/wallpaper/lockphone', '/wallpaper/unlockphone',
     '/history/login-history', '/history/device-history',
     '/settings/all-account', '/settings/control-system', '/profile'

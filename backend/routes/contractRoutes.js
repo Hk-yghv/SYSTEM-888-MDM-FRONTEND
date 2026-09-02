@@ -18,10 +18,11 @@ const sanitizeAndDecryptContract = (c) => {
 // GET contracts
 router.get('/', async (req, res) => {
     try {
-        const { status, userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '' } = req.query;
+        const { status, userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '', dateFrom = '', dateTo = '', requireSchedule = false } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true);
-        
+        const needsSchedule = requireSchedule === 'true' || requireSchedule === true;
+
         let query = {};
         if (status === 'Comments') {
             query.$and = [{
@@ -33,10 +34,19 @@ router.get('/', async (req, res) => {
         } else if (status) {
             query.status = status;
         }
+
         const brandFilter = req.query.brand || userBrand;
         if (brandFilter && (!isMasterAdmin || req.query.brand)) {
             query.brand = brandFilter;
         }
+
+        if (dateFrom || dateTo) {
+            const dueDateFilter = {};
+            if (dateFrom) dueDateFilter.$gte = dateFrom;
+            if (dateTo) dueDateFilter.$lte = dateTo;
+            query.$and = [...(query.$and || []), { repaymentSchedule: { $elemMatch: { dueDate: dueDateFilter } } }];
+        }
+
         if (search) {
             const searchQuery = [
                 { customerNameEn: { $regex: search, $options: 'i' } },
@@ -48,6 +58,10 @@ router.get('/', async (req, res) => {
             query.$and = [...(query.$and || []), { $or: searchQuery }];
         }
 
+        if (needsSchedule) {
+            query.$and = [...(query.$and || []), { repaymentSchedule: { $exists: true, $ne: [] } }];
+        }
+
         if (isMongoConnected) {
             const allContracts = await queryAllDBs(Contract, (M) => M.find(query).sort({ createdAt: -1 }));
             const total = allContracts.length;
@@ -55,6 +69,7 @@ router.get('/', async (req, res) => {
             const data = contracts.map(sanitizeAndDecryptContract);
             return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
+
         let filtered = MEM_DB.contracts;
         if (status === 'Comments') {
             filtered = filtered.filter(c => c.status === 'Comments' || (c.status === 'Activated' && c.notes));
@@ -62,6 +77,17 @@ router.get('/', async (req, res) => {
             filtered = filtered.filter(c => c.status === status);
         }
         if (brandFilter && (!isMasterAdmin || req.query.brand)) filtered = filtered.filter(c => c.brand === brandFilter);
+        if (dateFrom || dateTo) {
+            filtered = filtered.filter(c => {
+                const schedule = Array.isArray(c.repaymentSchedule) ? c.repaymentSchedule : [];
+                return schedule.some(row => {
+                    if (!row.dueDate) return false;
+                    if (dateFrom && row.dueDate < dateFrom) return false;
+                    if (dateTo && row.dueDate > dateTo) return false;
+                    return true;
+                });
+            });
+        }
         if (search) filtered = filtered.filter(c =>
             (c.customerNameEn || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.customerNameKh || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -69,6 +95,9 @@ router.get('/', async (req, res) => {
             (c.contractId || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.model || '').toLowerCase().includes(search.toLowerCase())
         );
+        if (needsSchedule) {
+            filtered = filtered.filter(c => Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0);
+        }
         const total = filtered.length;
         const data = filtered.slice(skip, skip + parseInt(limit)).map(sanitizeAndDecryptContract);
         res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });

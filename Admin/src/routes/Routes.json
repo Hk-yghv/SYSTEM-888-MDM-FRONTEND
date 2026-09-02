@@ -23,6 +23,7 @@
         "blacklist": "/contract/blacklist"
     },
     "installment": {
+        "installmentPage": "/installment/schedule",
         "paymentHistory": "/installment/paymentHistory",
         "cashOut": "/installment/cash-out",
         "cashIn": "/installment/cash-in"
