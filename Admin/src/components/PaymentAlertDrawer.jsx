@@ -385,17 +385,17 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                             )}
                                                         </td>
                                                         <td className="px-3.5 py-3 font-black text-slate-900 whitespace-nowrap text-sm">
-                                                             <button
-                                                                 onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
-                                                                 className="flex items-center gap-1.5 text-left hover:text-rose-600 transition-colors cursor-pointer group"
-                                                                 title="ចូលទៅ Overdue Page"
-                                                             >
-                                                                 <span>{item.customerNameKh || item.customerNameEn}</span>
-                                                                 <FaExternalLinkAlt className="text-[9px] text-rose-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                                                             </button>
-                                                         </td>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
+                                                                className="flex items-center gap-1.5 text-left hover:text-rose-600 transition-colors cursor-pointer group"
+                                                                title="ចូលទៅ Overdue Page"
+                                                            >
+                                                                <span>{item.customerNameKh || item.customerNameEn}</span>
+                                                                <FaExternalLinkAlt className="text-[9px] text-rose-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
+                                                            </button>
+                                                        </td>
                                                         <td className="px-3.5 py-3 whitespace-nowrap font-mono text-indigo-700 font-bold">
-                                                            <CopyCell value={item.phone} label={item.phone} />
+                                                            <CopyCell text={item.phone} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
                                                         </td>
                                                         <td className="px-3.5 py-3 whitespace-nowrap">
                                                             <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 border border-slate-300 font-black text-[11px]">
@@ -468,15 +468,15 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                             )}
                                                         </div>
                                                         <h4 className="text-[15px] font-black text-slate-900">
-                                                             <button
-                                                                 onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
-                                                                 className="flex items-center gap-1.5 hover:text-amber-700 transition-colors cursor-pointer group text-left"
-                                                                 title={t('dueToday')}
-                                                             >
-                                                                 <span>{item.customerNameKh || item.customerNameEn}</span>
-                                                                 <FaExternalLinkAlt className="text-[9px] text-amber-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                                                             </button>
-                                                         </h4>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
+                                                                className="flex items-center gap-1.5 hover:text-amber-700 transition-colors cursor-pointer group text-left"
+                                                                title={t('dueToday')}
+                                                            >
+                                                                <span>{item.customerNameKh || item.customerNameEn}</span>
+                                                                <FaExternalLinkAlt className="text-[9px] text-amber-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
+                                                            </button>
+                                                        </h4>
                                                         <p className="text-xs text-indigo-700 font-mono font-bold mt-0.5 flex items-center gap-1">
                                                             <FaPhone className="text-[10px]" />
                                                             <CopyCell value={item.phone} label={item.phone} />
@@ -560,15 +560,15 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                             )}
                                                         </div>
                                                         <h4 className="text-[15px] font-black text-slate-900">
-                                                             <button
-                                                                 onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
-                                                                 className="flex items-center gap-1.5 hover:text-sky-700 transition-colors cursor-pointer group text-left"
-                                                                 title={t('dueIn3Days')}
-                                                             >
-                                                                 <span>{item.customerNameKh || item.customerNameEn}</span>
-                                                                 <FaExternalLinkAlt className="text-[9px] text-sky-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                                                             </button>
-                                                         </h4>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
+                                                                className="flex items-center gap-1.5 hover:text-sky-700 transition-colors cursor-pointer group text-left"
+                                                                title={t('dueIn3Days')}
+                                                            >
+                                                                <span>{item.customerNameKh || item.customerNameEn}</span>
+                                                                <FaExternalLinkAlt className="text-[9px] text-sky-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
+                                                            </button>
+                                                        </h4>
                                                         <p className="text-xs text-indigo-700 font-mono font-bold mt-0.5 flex items-center gap-1">
                                                             <FaPhone className="text-[10px]" />
                                                             <CopyCell value={item.phone} label={item.phone} />
@@ -652,15 +652,15 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                             )}
                                                         </div>
                                                         <h4 className="text-[15px] font-black text-slate-900">
-                                                             <button
-                                                                 onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
-                                                                 className="flex items-center gap-1.5 hover:text-orange-700 transition-colors cursor-pointer group text-left"
-                                                                 title={t('overdueCustomers')}
-                                                             >
-                                                                 <span>{item.customerNameKh || item.customerNameEn}</span>
-                                                                 <FaExternalLinkAlt className="text-[9px] text-orange-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                                                             </button>
-                                                         </h4>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
+                                                                className="flex items-center gap-1.5 hover:text-orange-700 transition-colors cursor-pointer group text-left"
+                                                                title={t('overdueCustomers')}
+                                                            >
+                                                                <span>{item.customerNameKh || item.customerNameEn}</span>
+                                                                <FaExternalLinkAlt className="text-[9px] text-orange-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
+                                                            </button>
+                                                        </h4>
                                                         <p className="text-xs text-indigo-700 font-mono font-bold mt-0.5 flex items-center gap-1">
                                                             <FaPhone className="text-[10px]" />
                                                             <CopyCell value={item.phone} label={item.phone} />
@@ -744,15 +744,15 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                             )}
                                                         </div>
                                                         <h4 className="text-[15px] font-black text-slate-900">
-                                                             <button
-                                                                 onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
-                                                                 className="flex items-center gap-1.5 hover:text-violet-700 transition-colors cursor-pointer group text-left"
-                                                                 title={t('overdue7Days')}
-                                                             >
-                                                                 <span>{item.customerNameKh || item.customerNameEn}</span>
-                                                                 <FaExternalLinkAlt className="text-[9px] text-violet-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                                                             </button>
-                                                         </h4>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
+                                                                className="flex items-center gap-1.5 hover:text-violet-700 transition-colors cursor-pointer group text-left"
+                                                                title={t('overdue7Days')}
+                                                            >
+                                                                <span>{item.customerNameKh || item.customerNameEn}</span>
+                                                                <FaExternalLinkAlt className="text-[9px] text-violet-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
+                                                            </button>
+                                                        </h4>
                                                         <p className="text-xs text-indigo-700 font-mono font-bold mt-0.5 flex items-center gap-1">
                                                             <FaPhone className="text-[10px]" />
                                                             <CopyCell value={item.phone} label={item.phone} />
