@@ -115,13 +115,11 @@ export const smartFetch = async (inputUrlOrPath, options = {}) => {
 
             // HTTP 502/503/504 means server down/sleeping/limit reached on Render
             if (response.status === 502 || response.status === 503 || response.status === 504) {
-                console.warn(`[SmartFetch Real-Time Failover] Server ${currentBase} returned HTTP ${response.status}. Retrying on next API...`);
                 continue;
             }
 
             // Successfully reached working backend server!
             if (activeApiIndex !== tryIndex) {
-                console.log(`[SmartFetch Real-Time Failover] Promoted active API server to: ${currentBase}`);
                 activeApiIndex = tryIndex;
             }
 
@@ -137,13 +135,11 @@ export const smartFetch = async (inputUrlOrPath, options = {}) => {
                         timestamp: Date.now()
                     });
                 } catch (cErr) {
-                    console.warn('[SmartFetch Cache] Clone caching warning:', cErr.message);
                 }
             }
 
             return response;
         } catch (err) {
-            console.warn(`[SmartFetch Real-Time Failover] Connection failed to ${targetUrl}: ${err.message}. Trying next backend...`);
             lastError = err;
         }
     }
