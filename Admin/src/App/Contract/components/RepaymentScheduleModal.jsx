@@ -370,7 +370,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 <th className="px-3 py-2.5">ថ្ងៃខែត្រូវបង់</th>
                                 <th className="px-3 py-2.5 font-mono text-emerald-400">Total loan amount</th>
                                 <th className="px-3 py-2.5 text-amber-400 font-bold">ពិន័យ</th>
-                                <th className="px-3 py-2.5 text-sky-400 font-bold">ត្រូវបង់សរុប</th>
+                                <th className="px-3 py-2.5 text-sky-400 font-bold">ត្រូវបង់</th>
                                 <th className="px-3 py-2.5 text-emerald-300 font-extrabold">Total</th>
                                 <th className="px-3 py-2.5 text-emerald-400">ភ្ញៀវបានបង់</th>
                                 <th className="px-3 py-2.5">Comment (Note)</th>

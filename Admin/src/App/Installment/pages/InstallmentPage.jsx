@@ -80,14 +80,14 @@ const getDisplayValues = (row, contract, rules) => {
 
 // ─── Status badge colours ──────────────────────────────────────────────────────
 const statusBadgeClass = (status) => {
-    if (status === 'Paid')    return 'bg-emerald-50 border-emerald-300 text-emerald-700';
-    if (status === 'PayOff')  return 'bg-indigo-50  border-indigo-300  text-indigo-700';
+    if (status === 'Paid') return 'bg-emerald-50 border-emerald-300 text-emerald-700';
+    if (status === 'PayOff') return 'bg-indigo-50  border-indigo-300  text-indigo-700';
     if (status === 'Settled') return 'bg-slate-50   border-slate-300   text-slate-500';
     return 'bg-amber-50 border-amber-300 text-amber-700';
 };
 const statusTextClass = (status) => {
-    if (status === 'Paid')    return 'text-emerald-600';
-    if (status === 'PayOff')  return 'text-indigo-600';
+    if (status === 'Paid') return 'text-emerald-600';
+    if (status === 'PayOff') return 'text-indigo-600';
     if (status === 'Settled') return 'text-slate-400';
     return 'text-amber-700';
 };
@@ -102,7 +102,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
     // Adjust position so dropdown doesn't overflow the viewport
     const dropdownWidth = 240;
     const left = Math.max(8, Math.min(pos.left, window.innerWidth - dropdownWidth - 8));
-    const top  = pos.bottom + 4;
+    const top = pos.bottom + 4;
 
     return ReactDOM.createPortal(
         <div
@@ -139,11 +139,10 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
                             <button
                                 key={mIdx}
                                 onClick={() => { onSelectMonth(item, mIdx); onClose(); }}
-                                className={`w-full text-left px-2.5 py-1.5 text-[11px] font-semibold rounded-[5px] flex items-center justify-between gap-2 cursor-pointer transition-colors ${
-                                    isCurrentMonth
+                                className={`w-full text-left px-2.5 py-1.5 text-[11px] font-semibold rounded-[5px] flex items-center justify-between gap-2 cursor-pointer transition-colors ${isCurrentMonth
                                         ? 'bg-amber-100 text-amber-800 border border-amber-300'
                                         : `hover:bg-slate-50 ${statusTextClass(row.status)}`
-                                }`}
+                                    }`}
                             >
                                 <span>{row.labelName || `Month ${row.monthIndex}`}</span>
                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${statusBadgeClass(row.status)}`}>
@@ -165,22 +164,22 @@ const InstallmentPage = () => {
     const { t } = useLanguage();
     const { API_BASE1, user } = useAuth();
 
-    const [contracts, setContracts]     = useState([]);
-    const [loading, setLoading]         = useState(true);
-    const [reloading, setReloading]     = useState(false);
-    const [searchTerm, setSearchTerm]   = useState('');
-    const [dateFrom, setDateFrom]       = useState('');
-    const [dateTo, setDateTo]           = useState('');
+    const [contracts, setContracts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [reloading, setReloading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [total, setTotal]             = useState(0);
-    const [limit, setLimit]             = useState(10);
+    const [total, setTotal] = useState(0);
+    const [limit, setLimit] = useState(10);
     const [latePenaltyRules, setLatePenaltyRules] = useState([]);
 
     // Dropdown state — { id: string|null, pos: { left, bottom } }
     const [openMenu, setOpenMenu] = useState({ id: null, pos: { left: 0, bottom: 0 } });
 
     // RepaymentScheduleModal state
-    const [scheduleModalOpen, setScheduleModalOpen]         = useState(false);
+    const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
     const [scheduleModalContract, setScheduleModalContract] = useState(null);
     const [scheduleModalMonthIdx, setScheduleModalMonthIdx] = useState(null);
     const [selectedMonthByContract, setSelectedMonthByContract] = useState({});
@@ -249,23 +248,23 @@ const InstallmentPage = () => {
             const row = getDisplayValues(getDisplayRow(c.repaymentSchedule || [], selectedMonthByContract[contractId] ?? null), c, latePenaltyRules);
             if (!row) return;
             loanAmount += Number(row.loanAmount || c.amount || 0);
-            penalty    += Number(row.penalty || 0);
-            scheduled  += Number(row.scheduledAmount || 0);
-            totalSum   += Number(row.penalty || 0) + Number(row.scheduledAmount || 0);
-            paid       += Number(row.paidAmount || 0);
+            penalty += Number(row.penalty || 0);
+            scheduled += Number(row.scheduledAmount || 0);
+            totalSum += Number(row.penalty || 0) + Number(row.scheduledAmount || 0);
+            paid += Number(row.paidAmount || 0);
         });
         return { loanAmount, penalty, scheduled, total: totalSum, paid };
     }, [contracts, latePenaltyRules, selectedMonthByContract]);
 
     // ── Pagination ────────────────────────────────────────────────────────────
     const totalPages = Math.ceil(total / limit) || 1;
-    const startItem  = (currentPage - 1) * limit + 1;
-    const endItem    = Math.min(currentPage * limit, total);
+    const startItem = (currentPage - 1) * limit + 1;
+    const endItem = Math.min(currentPage * limit, total);
 
     const getPageNumbers = () => {
         const pages = [], maxVisible = 5;
         let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-        let end   = Math.min(totalPages, start + maxVisible - 1);
+        let end = Math.min(totalPages, start + maxVisible - 1);
         if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
         for (let i = start; i <= end; i++) pages.push(i);
         return pages;
@@ -322,10 +321,10 @@ const InstallmentPage = () => {
 
     const handleExportPDF = () => {
         const columns = [
-            { header: 'No',        cell: (_, i) => i + 1 },
-            { header: 'Customer',  accessor: 'customerNameEn' },
-            { header: 'Model',     accessor: 'model' },
-            { header: 'Brand',     accessor: 'brand' },
+            { header: 'No', cell: (_, i) => i + 1 },
+            { header: 'Customer', accessor: 'customerNameEn' },
+            { header: 'Model', accessor: 'model' },
+            { header: 'Brand', accessor: 'brand' },
             { header: 'Loan Date', accessor: 'inputDate' },
         ];
         exportToPDF('Installment Schedule', columns, contracts);
@@ -434,7 +433,7 @@ const InstallmentPage = () => {
 
             {/* ── Table ─────────────────────────────────────────────────── */}
             <div className='w-full overflow-auto rounded-2xl border border-slate-200 bg-white shadow-md'
-                 style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10'>
                         <tr>
@@ -446,7 +445,7 @@ const InstallmentPage = () => {
                             <th className='px-4 py-3'>ថ្ងៃខែត្រូវបង់</th>
                             <th className='px-4 py-3 text-right font-mono text-emerald-700'>Total Loan Amount</th>
                             <th className='px-4 py-3 text-right text-amber-600'>ពិន័យ</th>
-                            <th className='px-4 py-3 text-right text-sky-600'>ត្រូវបង់សរុប</th>
+                            <th className='px-4 py-3 text-right text-sky-600'>ត្រូវបង់</th>
                             <th className='px-4 py-3 text-right text-emerald-600 font-extrabold'>Total</th>
                             <th className='px-4 py-3 text-right text-emerald-700'>ភ្ញៀវបានបង់</th>
                             <th className='px-4 py-3'>Comment</th>
@@ -463,12 +462,12 @@ const InstallmentPage = () => {
                             </td></tr>
                         ) : (
                             contracts.map((item, idx) => {
-                                const schedule   = item.repaymentSchedule || [];
-                                const itemId      = item._id || item.contractId || String(idx);
+                                const schedule = item.repaymentSchedule || [];
+                                const itemId = item._id || item.contractId || String(idx);
                                 const displayRow = getDisplayValues(getDisplayRow(schedule, selectedMonthByContract[itemId] ?? null), item, latePenaltyRules);
-                                const activeIdx  = getActiveRowIdx(schedule);
-                                const isAllDone  = activeIdx === -1;
-                                const menuKey    = itemId;
+                                const activeIdx = getActiveRowIdx(schedule);
+                                const isAllDone = activeIdx === -1;
+                                const menuKey = itemId;
 
                                 return (
                                     <tr key={menuKey}
@@ -537,11 +536,10 @@ const InstallmentPage = () => {
                                         <td className="px-4 py-3 text-center">
                                             <button
                                                 onClick={(e) => handleOpenMenu(e, menuKey)}
-                                                className={`w-8 h-8 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
-                                                    openMenu.id === menuKey
+                                                className={`w-8 h-8 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === menuKey
                                                         ? 'bg-amber-100 border-amber-400 text-amber-700'
                                                         : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
-                                                }`}
+                                                    }`}
                                             >
                                                 <AiOutlineMenu size={16} />
                                             </button>
