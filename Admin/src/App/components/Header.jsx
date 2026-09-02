@@ -129,12 +129,17 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                 </button>
 
                 {/* Fullscreen Button */}
+                {/* Fullscreen Button */}
                 <button
                     onClick={toggleFullscreen}
-                    className='flex items-center gap-2 px-3 py-1.5 rounded-[5px] bg-slate-100 border border-slate-200 hover:border-emerald-500/50 transition-all text-xs font-semibold cursor-pointer shadow-xs hover:bg-slate-200/60'
+                    className='flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
                     title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                 >
-                    {isFullscreen ? <FaCompress className='text-emerald-600 text-sm' /> : <FaExpand className='text-emerald-600 text-sm' />}
+                    {isFullscreen ? (
+                        <FaCompress className='text-sm' />
+                    ) : (
+                        <FaExpand className='text-sm' />
+                    )}
                 </button>
 
                 {/* Multi-Language Selector */}
