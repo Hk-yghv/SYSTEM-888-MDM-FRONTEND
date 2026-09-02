@@ -138,14 +138,14 @@ const Left = () => {
                             {hasPermission(json.installment.dueToday, 'read') && (
                                 <Link to={json.installment.dueToday} className={subItemClass(json.installment.dueToday)}>{t('dueToday')}</Link>
                             )}
+                            {hasPermission(json.installment.unpaidYesterday, 'read') && (
+                                <Link to={json.installment.unpaidYesterday} className={subItemClass(json.installment.unpaidYesterday)}>{t('unpaidYesterday')}</Link>
+                            )}
                             {hasPermission(json.installment.dueIn3Days, 'read') && (
                                 <Link to={json.installment.dueIn3Days} className={subItemClass(json.installment.dueIn3Days)}>{t('dueIn3Days')}</Link>
                             )}
                             {hasPermission(json.installment.overdue3Days, 'read') && (
                                 <Link to={json.installment.overdue3Days} className={subItemClass(json.installment.overdue3Days)}>{t('overdue3Days')}</Link>
-                            )}
-                            {hasPermission(json.installment.unpaidYesterday, 'read') && (
-                                <Link to={json.installment.unpaidYesterday} className={subItemClass(json.installment.unpaidYesterday)}>{t('unpaidYesterday')}</Link>
                             )}
                             {hasPermission(json.installment.overdue7Days, 'read') && (
                                 <Link to={json.installment.overdue7Days} className={subItemClass(json.installment.overdue7Days)}>{t('overdue7Days')}</Link>
