@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaBell, FaTimes, FaPhone, FaExclamationTriangle, FaCalendarCheck, FaSync, FaSearch, FaLock, FaUnlock, FaShieldAlt, FaCheckDouble } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaBell, FaTimes, FaPhone, FaExclamationTriangle, FaCalendarCheck, FaSync, FaSearch, FaLock, FaUnlock, FaShieldAlt, FaCheckDouble, FaExternalLinkAlt } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import CopyCell from './CopyCell';
 
 const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     const { user, API_BASE1, API_BASE } = useAuth();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('overdue'); // Default to overdue list
     const [loading, setLoading] = useState(false);
     const [dueTodayList, setDueTodayList] = useState([]);
@@ -112,6 +114,15 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     const userBrandName = user?.brand || 'ទូទាំងប្រព័ន្ធ (All Brands)';
 
     // Filter helper
+    const handleCustomerNavigation = (item) => {
+        const queryName = item?.customerNameEn || item?.customerNameKh || '';
+        const route = activeTab === 'overdue' ? '/installment/overdue' : '/installment/due-today';
+        const target = queryName ? `${route}?search=${encodeURIComponent(queryName)}` : route;
+        handleMarkSingleAsRead(item);
+        onClose();
+        navigate(target);
+    };
+
     const filterItems = (list) => {
         if (!searchTerm.trim()) return list;
         const q = searchTerm.toLowerCase();
@@ -289,8 +300,15 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                             )}
                                                         </td>
                                                         <td className="px-3.5 py-3 font-black text-slate-900 whitespace-nowrap text-sm">
-                                                            {item.customerNameKh || item.customerNameEn}
-                                                        </td>
+                                                             <button
+                                                                 onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
+                                                                 className="flex items-center gap-1.5 text-left hover:text-rose-600 transition-colors cursor-pointer group"
+                                                                 title="ចូលទៅ Overdue Page"
+                                                             >
+                                                                 <span>{item.customerNameKh || item.customerNameEn}</span>
+                                                                 <FaExternalLinkAlt className="text-[9px] text-rose-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
+                                                             </button>
+                                                         </td>
                                                         <td className="px-3.5 py-3 whitespace-nowrap font-mono text-indigo-700 font-bold">
                                                             <CopyCell value={item.phone} label={item.phone} />
                                                         </td>
@@ -364,9 +382,16 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <h4 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
-                                                            {item.customerNameKh || item.customerNameEn}
-                                                        </h4>
+                                                        <h4 className="text-sm font-black text-slate-900">
+                                                             <button
+                                                                 onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
+                                                                 className="flex items-center gap-1.5 hover:text-amber-700 transition-colors cursor-pointer group text-left"
+                                                                 title="ចូលទៅ Due Today Page"
+                                                             >
+                                                                 <span>{item.customerNameKh || item.customerNameEn}</span>
+                                                                 <FaExternalLinkAlt className="text-[9px] text-amber-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
+                                                             </button>
+                                                         </h4>
                                                         <p className="text-xs text-indigo-700 font-mono font-bold mt-0.5 flex items-center gap-1">
                                                             <FaPhone className="text-[10px]" />
                                                             <CopyCell value={item.phone} label={item.phone} />

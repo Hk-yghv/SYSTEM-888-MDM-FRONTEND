@@ -69,49 +69,6 @@ const Left = () => {
                 </Link>
             )}
 
-            {/* Report Droplist Menu */}
-            {(hasPermission(json.report.allCustomers, 'read') ||
-                hasPermission(json.report.reportAll, 'read') ||
-                hasPermission(json.report.activated, 'read') ||
-                hasPermission(json.report.redeem, 'read') ||
-                hasPermission(json.report.lockPhone, 'read') ||
-                hasPermission(json.report.setWallpaper, 'read') ||
-                hasPermission(json.report.installment, 'read')) && (
-                    <div className="flex-shrink-0">
-                        <div onClick={() => toggleMenu("report")} className={dropdownHeaderClass("report")}>
-                            <p className="flex items-center gap-3">
-                                <MdOutlineBarChart size={20} className="text-emerald-600" />
-                                <span>{t('report')}</span>
-                            </p>
-                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "report" ? "rotate-180" : ""}`} />
-                        </div>
-
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
-                            {hasPermission(json.report.allCustomers, 'read') && (
-                                <Link to={json.report.allCustomers} className={subItemClass(json.report.allCustomers)}>{t('allCustomerReport')}</Link>
-                            )}
-                            {hasPermission(json.report.reportAll, 'read') && (
-                                <Link to={json.report.reportAll} className={subItemClass(json.report.reportAll)}>{t('reportAll')}</Link>
-                            )}
-                            {hasPermission(json.report.activated, 'read') && (
-                                <Link to={json.report.activated} className={subItemClass(json.report.activated)}>{t('activatedReport')}</Link>
-                            )}
-                            {hasPermission(json.report.redeem, 'read') && (
-                                <Link to={json.report.redeem} className={subItemClass(json.report.redeem)}>{t('redeemReport')}</Link>
-                            )}
-                            {hasPermission(json.report.lockPhone, 'read') && (
-                                <Link to={json.report.lockPhone} className={subItemClass(json.report.lockPhone)}>{t('lockPhoneReport')}</Link>
-                            )}
-                            {hasPermission(json.report.setWallpaper, 'read') && (
-                                <Link to={json.report.setWallpaper} className={subItemClass(json.report.setWallpaper)}>{t('setWallpaperReport')}</Link>
-                            )}
-                            {hasPermission(json.report.installment, 'read') && (
-                                <Link to={json.report.installment} className={subItemClass(json.report.installment)}>{t('installmentReport')}</Link>
-                            )}
-                        </div>
-                    </div>
-                )}
-
             {/* Contract */}
             {(hasPermission(json.contract.application, 'read') ||
                 hasPermission(json.contract.activated, 'read') ||
@@ -155,7 +112,10 @@ const Left = () => {
             {(hasPermission(json.installment.installmentPage, 'read') ||
                 hasPermission(json.installment.paymentHistory, 'read') ||
                 hasPermission(json.installment.cashOut, 'read') ||
-                hasPermission(json.installment.cashIn, 'read')) && (
+                hasPermission(json.installment.cashIn, 'read') ||
+                hasPermission(json.installment.overdue, 'read') ||
+                hasPermission(json.installment.dueToday, 'read') ||
+                hasPermission(json.installment.dueIn3Days, 'read')) && (
                     <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("installment")} className={dropdownHeaderClass("installment")}>
                             <p className="flex items-center gap-3">
@@ -172,12 +132,22 @@ const Left = () => {
                             {hasPermission(json.installment.paymentHistory, 'read') && (
                                 <Link to={json.installment.paymentHistory} className={subItemClass(json.installment.paymentHistory)}>{t('paymentHistory')}</Link>
                             )}
+                            {hasPermission(json.installment.overdue, 'read') && (
+                                <Link to={json.installment.overdue} className={subItemClass(json.installment.overdue)}>Overdue Customers</Link>
+                            )}
+                            {hasPermission(json.installment.dueToday, 'read') && (
+                                <Link to={json.installment.dueToday} className={subItemClass(json.installment.dueToday)}>Due Today</Link>
+                            )}
+                            {hasPermission(json.installment.dueIn3Days, 'read') && (
+                                <Link to={json.installment.dueIn3Days} className={subItemClass(json.installment.dueIn3Days)}>Due In 3 Days</Link>
+                            )}
                             {hasPermission(json.installment.cashOut, 'read') && (
                                 <Link to={json.installment.cashOut} className={subItemClass(json.installment.cashOut)}>{t('cashOut')}</Link>
                             )}
                             {hasPermission(json.installment.cashIn, 'read') && (
                                 <Link to={json.installment.cashIn} className={subItemClass(json.installment.cashIn)}>{t('cashIn')}</Link>
                             )}
+
                         </div>
                     </div>
                 )}
@@ -231,6 +201,49 @@ const Left = () => {
                             )}
                             {hasPermission(json.wallpaper.unlockWallpaper, 'read') && (
                                 <Link to={json.wallpaper.unlockWallpaper} className={subItemClass(json.wallpaper.unlockWallpaper)}>{t('unlockWallpaper')}</Link>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+            {/* Report Droplist Menu */}
+            {(hasPermission(json.report.allCustomers, 'read') ||
+                hasPermission(json.report.reportAll, 'read') ||
+                hasPermission(json.report.activated, 'read') ||
+                hasPermission(json.report.redeem, 'read') ||
+                hasPermission(json.report.lockPhone, 'read') ||
+                hasPermission(json.report.setWallpaper, 'read') ||
+                hasPermission(json.report.installment, 'read')) && (
+                    <div className="flex-shrink-0">
+                        <div onClick={() => toggleMenu("report")} className={dropdownHeaderClass("report")}>
+                            <p className="flex items-center gap-3">
+                                <MdOutlineBarChart size={20} className="text-emerald-600" />
+                                <span>{t('report')}</span>
+                            </p>
+                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "report" ? "rotate-180" : ""}`} />
+                        </div>
+
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                            {hasPermission(json.report.allCustomers, 'read') && (
+                                <Link to={json.report.allCustomers} className={subItemClass(json.report.allCustomers)}>{t('allCustomerReport')}</Link>
+                            )}
+                            {hasPermission(json.report.reportAll, 'read') && (
+                                <Link to={json.report.reportAll} className={subItemClass(json.report.reportAll)}>{t('reportAll')}</Link>
+                            )}
+                            {hasPermission(json.report.activated, 'read') && (
+                                <Link to={json.report.activated} className={subItemClass(json.report.activated)}>{t('activatedReport')}</Link>
+                            )}
+                            {hasPermission(json.report.redeem, 'read') && (
+                                <Link to={json.report.redeem} className={subItemClass(json.report.redeem)}>{t('redeemReport')}</Link>
+                            )}
+                            {hasPermission(json.report.lockPhone, 'read') && (
+                                <Link to={json.report.lockPhone} className={subItemClass(json.report.lockPhone)}>{t('lockPhoneReport')}</Link>
+                            )}
+                            {hasPermission(json.report.setWallpaper, 'read') && (
+                                <Link to={json.report.setWallpaper} className={subItemClass(json.report.setWallpaper)}>{t('setWallpaperReport')}</Link>
+                            )}
+                            {hasPermission(json.report.installment, 'read') && (
+                                <Link to={json.report.installment} className={subItemClass(json.report.installment)}>{t('installmentReport')}</Link>
                             )}
                         </div>
                     </div>

@@ -26,7 +26,10 @@
         "installmentPage": "/installment/schedule",
         "paymentHistory": "/installment/paymentHistory",
         "cashOut": "/installment/cash-out",
-        "cashIn": "/installment/cash-in"
+        "cashIn": "/installment/cash-in",
+        "overdue": "/installment/overdue",
+        "dueToday": "/installment/due-today",
+        "dueIn3Days": "/installment/due-in-3-days"
     },
     "lostphone": {
         "actionLockphone": "/lostphone/actions",

@@ -140,8 +140,8 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
                                 key={mIdx}
                                 onClick={() => { onSelectMonth(item, mIdx); onClose(); }}
                                 className={`w-full text-left px-2.5 py-1.5 text-[11px] font-semibold rounded-[5px] flex items-center justify-between gap-2 cursor-pointer transition-colors ${isCurrentMonth
-                                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                                        : `hover:bg-slate-50 ${statusTextClass(row.status)}`
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                    : `hover:bg-slate-50 ${statusTextClass(row.status)}`
                                     }`}
                             >
                                 <span>{row.labelName || `Month ${row.monthIndex}`}</span>
@@ -387,8 +387,7 @@ const InstallmentPage = () => {
                             className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
                         />
                     </div>
-
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-[5px] px-2 py-1.5">
+                    <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5">
                         <input
                             type="date"
                             value={dateFrom}
@@ -537,8 +536,8 @@ const InstallmentPage = () => {
                                             <button
                                                 onClick={(e) => handleOpenMenu(e, menuKey)}
                                                 className={`w-8 h-8 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === menuKey
-                                                        ? 'bg-amber-100 border-amber-400 text-amber-700'
-                                                        : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
+                                                    ? 'bg-amber-100 border-amber-400 text-amber-700'
+                                                    : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
                                                     }`}
                                             >
                                                 <AiOutlineMenu size={16} />
