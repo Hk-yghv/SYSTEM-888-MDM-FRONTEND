@@ -185,7 +185,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
 
     return (
         <div className="fixed inset-0 z-[999] flex justify-end bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 select-none">
-            <div className="w-[92vw] max-w-7xl text-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-300 animate-in slide-in-from-right duration-300">
+            <div className="w-[95vw] max-w-7xl text-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-300 animate-in slide-in-from-right duration-300">
                 {/* Header (Clean Light Theme) */}
                 <div className="p-5 bg-white border-b border-slate-200 flex items-center justify-between gap-3 shadow-xs">
                     <div className="flex items-center gap-3">
