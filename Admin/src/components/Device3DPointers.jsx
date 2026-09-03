@@ -59,7 +59,7 @@ const Device3DPointers = ({ device }) => {
                 ">
                             Serial:
                             <span className="text-gray-600 ml-1">
-                                {device.serialNumber || 'SN-MDM-9912'}
+                                {device.serialNumber || '—'}
                             </span>
                         </p>
                     </div>
@@ -186,7 +186,7 @@ const Device3DPointers = ({ device }) => {
                 text-gray-800
                 text-[11px]
             ">
-                        {device.storage || '128 GB'}
+                        {device.capacity || '128 GB'}
                     </p>
                 </div>
 
@@ -216,7 +216,7 @@ const Device3DPointers = ({ device }) => {
                 text-gray-800
                 text-[11px]
             ">
-                        {device.ram || '8 GB'}
+                        {device.ram || '-'}
                     </p>
                 </div>
 
@@ -248,7 +248,7 @@ const Device3DPointers = ({ device }) => {
             ">
                         {device.batteryLevel
                             ? `${device.batteryLevel}%`
-                            : '95%'}
+                            : '-'}
                     </p>
                 </div>
 
