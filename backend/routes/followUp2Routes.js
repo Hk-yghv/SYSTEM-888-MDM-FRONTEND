@@ -105,6 +105,7 @@ router.get('/', async (req, res) => {
         const totalRequestedAmount = allRecords.reduce((sum, r) => sum + (Number(r.requestedAmount) || 0), 0);
         const totalSuccess = allRecords.filter(r => r.status === 'ជោគជ័យ' || r.status === 'Success').length;
         const totalFailed = allRecords.filter(r => r.status === 'បរាជ័យ' || r.status === 'Failed').length;
+        const totalReview = allRecords.filter(r => r.status === 'Review' || r.status === 'កំពុងពិនិត្យ' || r.status === 'រង់ចាំពិនិត្យ').length;
         const totalRecords = allRecords.length;
         const successRate = totalRecords > 0 ? ((totalSuccess / totalRecords) * 100).toFixed(1) : 0;
 
@@ -112,6 +113,7 @@ router.get('/', async (req, res) => {
             totalRequestedAmount,
             totalSuccess,
             totalFailed,
+            totalReview,
             totalRecords,
             successRate
         };

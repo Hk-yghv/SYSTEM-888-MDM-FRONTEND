@@ -37,6 +37,7 @@ const FollowUp2 = () => {
         totalRequestedAmount: 0,
         totalSuccess: 0,
         totalFailed: 0,
+        totalReview: 0,
         successRate: 0
     });
 
@@ -1247,7 +1248,7 @@ const FollowUp2 = () => {
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
                                     ស្ថានភាព (ជោគជ័យ ឬ បរាជ័យ)
                                 </label>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-3 gap-3">
                                     <button
                                         type="button"
                                         onClick={() => setFormData(prev => ({ ...prev, status: 'ជោគជ័យ' }))}
@@ -1258,6 +1259,22 @@ const FollowUp2 = () => {
                                     >
                                         <FaCheckCircle size={15} />
                                         <span>ជោគជ័យ (Success)</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                status: 'Review'
+                                            }))
+                                        }
+                                        className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${formData.status === 'Review'
+                                                ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20'
+                                                : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)]'
+                                            }`}
+                                    >
+                                        <MdOutlineRateReview size={17} />
+                                        <span>Review</span>
                                     </button>
                                     <button
                                         type="button"
