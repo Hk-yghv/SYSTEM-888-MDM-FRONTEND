@@ -16,8 +16,39 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     const [rows, setRows] = useState([]);
     const [latePenaltyRules, setLatePenaltyRules] = useState([]);
     const [submitting, setSubmitting] = useState(false);
+    const [downloadingPdf, setDownloadingPdf] = useState(false);
     const [activeDropdownIdx, setActiveDropdownIdx] = useState(null);
     const rowRefs = useRef([]);
+
+    const handleDirectExportPdf = async () => {
+        if (!contract || downloadingPdf) return;
+        setDownloadingPdf(true);
+        try {
+            const id = contract._id || contract.contractId;
+            const res = await fetch(`${API_BASE1}/contracts/${id}/pdf`);
+            if (!res.ok) throw new Error(`Status: ${res.status}`);
+            
+            const blob = await res.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            const safeName = (contract.customerNameEn || contract.customerNameKh || 'Customer').replace(/[^a-zA-Z0-9_\-]/g, '_');
+            const safeId = (contract.contractId || contract.serialNumber || 'Contract').replace(/[^a-zA-Z0-9_\-]/g, '_');
+            link.download = `Report_${safeId}_${safeName}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            
+            setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl);
+                document.body.removeChild(link);
+            }, 300);
+        } catch (err) {
+            console.error('Direct PDF export error:', err);
+            alert('បរាជ័យក្នុងការទាញយក PDF (Download Failed): ' + err.message);
+        } finally {
+            setDownloadingPdf(false);
+        }
+    };
 
     const computeLatePenalty = (row, rules = []) => {
         if (!row || !row.dueDate) return Number(row?.penalty || 0) || 0;
@@ -377,16 +408,13 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            onClick={() => {
-                                if (!contract) return;
-                                const url = `${API_BASE1}/contracts/${contract._id || contract.contractId}/pdf`;
-                                window.open(url, '_blank');
-                            }}
-                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
-                            title="Download Customer Dossier & Repayment Schedule as PDF"
+                            disabled={downloadingPdf}
+                            onClick={handleDirectExportPdf}
+                            className={`px-3 py-1.5 ${downloadingPdf ? 'bg-rose-400 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 cursor-pointer'} text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 shadow-sm`}
+                            title="Download Customer Dossier & Repayment Schedule as PDF directly"
                         >
-                            <FaFilePdf size={12} />
-                            <span>Export PDF</span>
+                            <FaFilePdf size={12} className={downloadingPdf ? 'animate-pulse' : ''} />
+                            <span>{downloadingPdf ? 'Downloading...' : 'Export PDF'}</span>
                         </button>
                         <button
                             type="button"
