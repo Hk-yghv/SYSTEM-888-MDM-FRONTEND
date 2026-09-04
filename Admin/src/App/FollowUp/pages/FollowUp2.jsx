@@ -1020,21 +1020,55 @@ const FollowUp2 = () => {
                         {dataList.length > 0 && (
                             <tfoot>
                                 <tr className="bg-indigo-500/10 dark:bg-indigo-950/40 border-t-2 border-indigo-500/30 text-xs font-bold text-[var(--app-text,#0f172a)]">
-                                    <td colSpan="4" className="py-3.5 px-4 text-left font-bold text-indigo-800 dark:text-indigo-300">
-                                        <span className="uppercase tracking-wider">សរុបទាំងអស់ (Overall Totals):</span>
+
+                                    <td
+                                        colSpan="4"
+                                        className="py-3.5 px-4 text-left font-bold text-indigo-800 dark:text-indigo-300"
+                                    >
+                                        <span className="uppercase tracking-wider">
+                                            សរុបទាំងអស់ (Overall Totals):
+                                        </span>
                                     </td>
+
                                     <td className="py-3.5 px-3 text-right font-extrabold text-amber-700 dark:text-amber-300 text-sm">
                                         ${(summary.totalRequestedAmount || 0).toLocaleString()}
                                     </td>
-                                    <td colSpan="5" className="py-3.5 px-3 text-right font-semibold text-slate-600 dark:text-slate-300">
-                                        ជោគជ័យ: <span className="text-emerald-600 font-bold">{summary.totalSuccess}</span> &bull; បរាជ័យ: <span className="text-rose-600 font-bold">{summary.totalFailed}</span>
+
+                                    <td
+                                        colSpan="5"
+                                        className="py-3.5 px-3 text-right font-semibold text-slate-600 dark:text-slate-300"
+                                    >
+                                        ជោគជ័យ:{' '}
+                                        <span className="text-emerald-600 font-bold">
+                                            {summary.totalSuccess}
+                                        </span>
+
+                                        {' '} &bull; {' '}
+
+                                        បរាជ័យ:{' '}
+                                        <span className="text-rose-600 font-bold">
+                                            {summary.totalFailed}
+                                        </span>
+
+                                        {' '} &bull; {' '}
+
+                                        Review:{' '}
+                                        <span className="text-amber-600 dark:text-amber-400 font-bold">
+                                            {summary.totalReview || 0}
+                                        </span>
                                     </td>
+
                                     <td className="py-3.5 px-3 text-center font-extrabold text-sky-700 dark:text-sky-300 text-sm">
                                         {summary.successRate}%
                                     </td>
-                                    <td colSpan="2" className="py-3.5 px-4 text-right text-xs text-slate-500 font-semibold">
+
+                                    <td
+                                        colSpan="2"
+                                        className="py-3.5 px-4 text-right text-xs text-slate-500 font-semibold"
+                                    >
                                         Total Records: {total}
                                     </td>
+
                                 </tr>
                             </tfoot>
                         )}
