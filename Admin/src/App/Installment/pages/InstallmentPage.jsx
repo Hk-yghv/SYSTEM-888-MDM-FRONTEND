@@ -4,10 +4,11 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
 import { AiOutlineMenu } from 'react-icons/ai';
-import { MdOutlineSync, MdSearch, MdPictureAsPdf } from 'react-icons/md';
+import { MdOutlineSync, MdSearch, MdPictureAsPdf, MdQrCode2 } from 'react-icons/md';
 import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import { FaFileExcel, FaDollarSign } from 'react-icons/fa';
 import RepaymentScheduleModal from '../../Contract/components/RepaymentScheduleModal';
+import QrPaymentModal from '../components/QrPaymentModal';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -95,7 +96,7 @@ const statusTextClass = (status) => {
 // ──────────────────────────────────────────────────────────────────────────────
 // Portal dropdown — renders outside DOM tree to escape overflow clipping
 // ──────────────────────────────────────────────────────────────────────────────
-const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMonth }) => {
+const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMonth, onOpenQrModal }) => {
     const schedule = item?.repaymentSchedule || [];
     const activeIdx = getActiveRowIdx(schedule);
 
@@ -113,8 +114,20 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
         >
             {/* Header label */}
             <div className="px-3 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                Repayment Schedule
+                Repayment Actions
             </div>
+
+            {/* QR Code Payment button */}
+            <button
+                onClick={() => {
+                    onOpenQrModal(item);
+                    onClose();
+                }}
+                className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[6px] flex items-center gap-2 cursor-pointer transition-colors"
+            >
+                <MdQrCode2 className="text-emerald-600 text-base flex-shrink-0" />
+                <span>QR Code Payment</span>
+            </button>
 
             {/* Auto-open button — opens to the current unpaid month */}
             <button
@@ -183,6 +196,9 @@ const InstallmentPage = () => {
     const [scheduleModalContract, setScheduleModalContract] = useState(null);
     const [scheduleModalMonthIdx, setScheduleModalMonthIdx] = useState(null);
     const [selectedMonthByContract, setSelectedMonthByContract] = useState({});
+
+    // QR Payment state
+    const [selectedQrContract, setSelectedQrContract] = useState(null);
 
     // ── Close menu on outside click ───────────────────────────────────────────
     useEffect(() => {
@@ -349,6 +365,14 @@ const InstallmentPage = () => {
                 onSaved={() => fetchContracts(currentPage, searchTerm, limit)}
             />
 
+            {/* ── QrPaymentModal ─────────────────────────────────────────── */}
+            <QrPaymentModal
+                open={Boolean(selectedQrContract)}
+                contract={selectedQrContract}
+                onClose={() => setSelectedQrContract(null)}
+                onSaved={() => fetchContracts(currentPage, searchTerm, limit, dateFrom, dateTo)}
+            />
+
             {/* ── Portal dropdown ────────────────────────────────────────── */}
             {openMenu.id && openMenuContract && (
                 <ActionDropdownPortal
@@ -357,6 +381,7 @@ const InstallmentPage = () => {
                     onClose={() => setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } })}
                     onOpenSchedule={openScheduleForMonth}
                     onSelectMonth={selectMonthForOuterRow}
+                    onOpenQrModal={(c) => setSelectedQrContract(c)}
                 />
             )}
 

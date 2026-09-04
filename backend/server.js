@@ -45,6 +45,7 @@ import lostphoneRoutes from './routes/lostphoneRoutes.js';
 import wallpaperRoutes from './routes/wallpaperRoutes.js';
 import historyRoutes, { createHistoryRoutes } from './routes/historyRoutes.js';
 import cashTransactionRoutes from './routes/cashTransactionRoutes.js';
+import { initTelegramBotService } from './services/telegramBotService.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -67,9 +68,14 @@ const PORT = process.env.PORT || 5000;
 let bot = null;
 if (process.env.TELEGRAM_BOT_TOKEN) {
     try {
-        bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
+        bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+        bot.on('polling_error', (err) => {
+            // Log warning without crashing server on transient network glitches
+            console.warn('[TelegramBot Polling]:', err.message);
+        });
         setSecurityTelegramBot(bot);
-        console.log('Telegram Bot initialized successfully & Security Notifier connected');
+        initTelegramBotService(bot);
+        console.log('Telegram Bot initialized successfully & Interactive /sys Bot Service connected');
     } catch (err) {
         console.error('Telegram Bot init error:', err.message);
     }

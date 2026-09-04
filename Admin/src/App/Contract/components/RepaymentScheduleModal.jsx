@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo } from 'react-icons/fa';
+import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo, FaFilePdf } from 'react-icons/fa';
 import { MdClose, MdSwapHoriz } from 'react-icons/md';
 
 const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', defaultMonthIdx = null, onSaved, onRedeem }) => {
@@ -375,6 +375,19 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (!contract) return;
+                                const url = `${API_BASE1}/contracts/${contract._id || contract.contractId}/pdf`;
+                                window.open(url, '_blank');
+                            }}
+                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
+                            title="Download Customer Dossier & Repayment Schedule as PDF"
+                        >
+                            <FaFilePdf size={12} />
+                            <span>Export PDF</span>
+                        </button>
                         <button
                             type="button"
                             onClick={applyLatePenaltyToAllRows}

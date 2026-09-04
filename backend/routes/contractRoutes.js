@@ -4,6 +4,7 @@ import Contract from '../models/Contract.js';
 import Payment from '../models/Payment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { generateCustomerPdf } from '../utils/customerPdfGenerator.js';
 
 const router = express.Router();
 
@@ -300,6 +301,42 @@ router.get('/customer-info/:contractId', async (req, res) => {
 </html>`);
     } catch (err) {
         res.status(500).send(`<html><body style="background:#0f172a;color:#f87171;font-family:sans-serif;padding:40px;text-align:center"><h2>Server Error</h2><p>${err.message}</p></body></html>`);
+    }
+});
+
+// GET /:id/pdf — Export Customer Profile and Repayment Schedule as downloadable PDF
+router.get('/:id/pdf', async (req, res) => {
+    try {
+        const id = req.params.id;
+        let contract = null;
+        if (isMongoConnected) {
+            const contracts = await queryAllDBs(Contract, (M) => M.find({ $or: [{ contractId: id }, { _id: id }] }));
+            contract = contracts[0] || null;
+        } else {
+            contract = MEM_DB.contracts.find(c => c.contractId === id || c._id === id);
+        }
+
+        if (!contract) {
+            return res.status(404).json({ error: 'Contract not found' });
+        }
+
+        let payments = [];
+        if (isMongoConnected) {
+            payments = await queryAllDBs(Payment, (M) => M.find({ contractId: contract.contractId }));
+        } else if (MEM_DB.payments) {
+            payments = MEM_DB.payments.filter(p => p.contractId === contract.contractId);
+        }
+
+        const pdfBuffer = await generateCustomerPdf(contract, payments, contract.brand || req.query.brand || '');
+        const filename = `Report_${(contract.contractId || id).replace(/[^a-zA-Z0-9_\-]/g, '_')}_${(contract.customerNameEn || 'Customer').replace(/[^a-zA-Z0-9_\-]/g, '_')}.pdf`;
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        res.end(pdfBuffer);
+    } catch (err) {
+        console.error('PDF export route error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 

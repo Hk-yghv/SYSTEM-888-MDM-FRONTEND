@@ -318,7 +318,7 @@ const Device = () => {
                                     font-bold
                                     text-gray-900
                                 ">
-                                                {selectedDevice.model}
+                                                <CopyCell text={selectedDevice.model} className="text-base font-bold text-gray-900" />
                                             </h3>
 
                                             <span className="
@@ -331,7 +331,7 @@ const Device = () => {
                                     font-bold
                                     uppercase
                                 ">
-                                                {selectedDevice.brand || 'Device'}
+                                                <CopyCell text={selectedDevice.brand || 'Device'} className="text-gray-700 font-bold" />
                                             </span>
 
                                         </div>
@@ -343,7 +343,7 @@ const Device = () => {
                                 mt-1
                                 truncate
                             ">
-                                            Serial: {selectedDevice.serialNumber}
+                                            Serial: <CopyCell text={selectedDevice.serialNumber} className="text-gray-600 font-mono font-bold" />
                                         </p>
 
                                     </div>
@@ -404,9 +404,7 @@ const Device = () => {
                                             Model Name
                                         </span>
 
-                                        <span className="text-[11px] font-bold text-gray-900 truncate block">
-                                            {selectedDevice.model}
-                                        </span>
+                                        <CopyCell text={selectedDevice.model} className="text-[11px] font-bold text-gray-900 truncate block" />
                                     </div>
 
 
@@ -416,9 +414,7 @@ const Device = () => {
                                             Version / OS
                                         </span>
 
-                                        <span className="text-[11px] font-bold text-violet-600 truncate block">
-                                            {selectedDevice.version || '—'}
-                                        </span>
+                                        <CopyCell text={selectedDevice.version || '—'} className="text-[11px] font-bold text-violet-600 truncate block" />
                                     </div>
 
 
@@ -428,9 +424,7 @@ const Device = () => {
                                             Serial Number
                                         </span>
 
-                                        <span className="text-[10px] font-mono font-bold text-emerald-600 truncate block">
-                                            {selectedDevice.serialNumber}
-                                        </span>
+                                        <CopyCell text={selectedDevice.serialNumber} className="text-[10px] font-mono font-bold text-emerald-600 truncate block" />
                                     </div>
 
 
@@ -440,9 +434,7 @@ const Device = () => {
                                             IMEI 1
                                         </span>
 
-                                        <span className="text-[10px] font-mono font-bold text-sky-600 truncate block">
-                                            {formatIMEI(selectedDevice.imei1)}
-                                        </span>
+                                        <CopyCell text={formatIMEI(selectedDevice.imei1)} copyValue={selectedDevice.imei1} className="text-[10px] font-mono font-bold text-sky-600 truncate block" />
                                     </div>
 
 
@@ -452,9 +444,7 @@ const Device = () => {
                                             IMEI 2
                                         </span>
 
-                                        <span className="text-[10px] font-mono font-bold text-sky-600 truncate block">
-                                            {formatIMEI(selectedDevice.imei2)}
-                                        </span>
+                                        <CopyCell text={formatIMEI(selectedDevice.imei2)} copyValue={selectedDevice.imei2} className="text-[10px] font-mono font-bold text-sky-600 truncate block" />
                                     </div>
 
 
@@ -464,9 +454,7 @@ const Device = () => {
                                             MEID
                                         </span>
 
-                                        <span className="text-[10px] font-mono font-bold text-fuchsia-600 truncate block">
-                                            {selectedDevice.meid || '—'}
-                                        </span>
+                                        <CopyCell text={selectedDevice.meid || '—'} className="text-[10px] font-mono font-bold text-fuchsia-600 truncate block" />
                                     </div>
 
 
@@ -476,9 +464,7 @@ const Device = () => {
                                             Color
                                         </span>
 
-                                        <span className="text-[11px] font-bold text-gray-800 truncate block">
-                                            {selectedDevice.color || '—'}
-                                        </span>
+                                        <CopyCell text={selectedDevice.color || '—'} className="text-[11px] font-bold text-gray-800 truncate block" />
                                     </div>
 
 
@@ -488,9 +474,7 @@ const Device = () => {
                                             Brand
                                         </span>
 
-                                        <span className="text-[11px] font-bold text-indigo-600 truncate block">
-                                            {selectedDevice.brand || '—'}
-                                        </span>
+                                        <CopyCell text={selectedDevice.brand || '—'} className="text-[11px] font-bold text-indigo-600 truncate block" />
                                     </div>
 
                                 </div>
@@ -536,32 +520,22 @@ const Device = () => {
 
                                     <p className="text-sm font-bold text-gray-900">
 
-                                        {selectedDevice.customerNameEn || '—'}
+                                        <CopyCell text={selectedDevice.customerNameEn || '—'} className="text-gray-900 font-bold" />
 
-                                        <span className="
-                                text-violet-600
-                                font-khmer
-                                text-xs
-                                font-normal
-                                ml-1
-                            ">
-                                            ({selectedDevice.customerNameKh || '—'})
-                                        </span>
+                                        {selectedDevice.customerNameKh && (
+                                            <CopyCell text={`(${selectedDevice.customerNameKh})`} copyValue={selectedDevice.customerNameKh} className="text-violet-600 font-khmer text-xs font-normal ml-1" />
+                                        )}
 
                                     </p>
 
                                     <p className="text-[10px] text-gray-500 font-mono mt-2">
                                         Phone:
-                                        <span className="text-gray-700 ml-1">
-                                            {selectedDevice.phone || '—'}
-                                        </span>
+                                        <CopyCell text={selectedDevice.phone || '—'} className="text-gray-700 ml-1 font-mono font-bold" />
                                     </p>
 
                                     <p className="text-[10px] text-gray-400 font-mono mt-1">
                                         Contract ID:
-                                        <span className="text-gray-600 ml-1">
-                                            {selectedDevice.contractId || '—'}
-                                        </span>
+                                        <CopyCell text={selectedDevice.contractIid || selectedDevice.contractId || '—'} className="text-gray-600 ml-1 font-mono font-bold" />
                                     </p>
 
                                 </div>
@@ -723,9 +697,10 @@ const Device = () => {
                         leading-relaxed
                         whitespace-pre-wrap
                     ">
-                                    {selectedDevice.deviceProblem ||
-                                        selectedDevice.device_problem ||
-                                        '— គ្មានបញ្ហាឧបករណ៍ (No recorded device problem)'}
+                                    <CopyCell
+                                        text={selectedDevice.deviceProblem || selectedDevice.device_problem || '— គ្មានបញ្ហាឧបករណ៍ (No recorded device problem)'}
+                                        className="text-gray-700 font-medium"
+                                    />
                                 </p>
 
                             </div>

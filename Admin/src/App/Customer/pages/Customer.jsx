@@ -351,13 +351,8 @@ const Customer = () => {
 
                                 <div>
                                     <h3 className="text-base font-black text-gray-900 tracking-wide flex items-center gap-2">
-                                        <span className="text-gray-900">
-                                            {selectedCustomer.customerNameEn}
-                                        </span>
-
-                                        <span className="text-xs text-emerald-600 font-khmer font-normal">
-                                            ({selectedCustomer.customerNameKh})
-                                        </span>
+                                        <CopyCell text={selectedCustomer.customerNameEn} className="text-gray-900 font-bold" />
+                                        <CopyCell text={selectedCustomer.customerNameKh ? `(${selectedCustomer.customerNameKh})` : ''} copyValue={selectedCustomer.customerNameKh} className="text-xs text-emerald-600 font-khmer font-normal" />
                                     </h3>
 
                                     <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -366,11 +361,11 @@ const Customer = () => {
                                         </span>
 
                                         <span className="text-[10px] text-gray-500 font-bold">
-                                            Contract: {selectedCustomer.contractId}
+                                            Contract: <CopyCell text={selectedCustomer.contractIid || selectedCustomer.contractId} className="text-gray-700 font-mono" />
                                         </span>
 
                                         <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                            {selectedCustomer.brand || 'Device'}
+                                            <CopyCell text={selectedCustomer.brand || 'Device'} className="text-emerald-700 font-bold" />
                                         </span>
                                     </div>
                                 </div>
@@ -626,14 +621,15 @@ const Customer = () => {
                                                 {label}
                                             </span>
 
-                                            <span className="
+                                            <CopyCell
+                                                text={value}
+                                                className="
                                     font-semibold
                                     text-gray-900
                                     break-words
                                     leading-relaxed
-                                ">
-                                                {value}
-                                            </span>
+                                "
+                                            />
                                         </div>
                                     ))}
 
@@ -660,12 +656,12 @@ const Customer = () => {
                                         ['Device Model', selectedCustomer.model],
                                         ['Brand', selectedCustomer.brand || '-'],
                                         ['Serial Number', selectedCustomer.serialNumber],
-                                        ['IMEI 1', formatIMEI(selectedCustomer.imei1)],
-                                        ['IMEI 2', formatIMEI(selectedCustomer.imei2)],
+                                        ['IMEI 1', formatIMEI(selectedCustomer.imei1), selectedCustomer.imei1],
+                                        ['IMEI 2', formatIMEI(selectedCustomer.imei2), selectedCustomer.imei2],
                                         ['MEID', selectedCustomer.meid || '-'],
                                         ['Color', selectedCustomer.color || '-'],
                                         ['Storage / Version', selectedCustomer.version || '-'],
-                                    ].map(([label, value]) => (
+                                    ].map(([label, value, rawVal]) => (
 
                                         <div
                                             key={label}
@@ -691,7 +687,9 @@ const Customer = () => {
                                                 {label}
                                             </span>
 
-                                            <span
+                                            <CopyCell
+                                                text={value}
+                                                copyValue={rawVal || value}
                                                 className={`
                                         font-semibold
                                         ${label === 'MEID'
@@ -701,9 +699,7 @@ const Customer = () => {
                                                             : 'text-gray-900'
                                                     }
                                     `}
-                                            >
-                                                {value}
-                                            </span>
+                                            />
                                         </div>
 
                                     ))}
@@ -743,7 +739,7 @@ const Customer = () => {
                             leading-relaxed
                             whitespace-pre-wrap
                         ">
-                                        {selectedCustomer.deviceProblem}
+                                        <CopyCell text={selectedCustomer.deviceProblem} className="text-gray-700 font-medium" />
                                     </div>
                                 </div>
                             )}
@@ -766,11 +762,11 @@ const Customer = () => {
 
                                     {[
                                         ['Loan Date (កាលបរិច្ឆេទ)', selectedCustomer.inputDate || '-'],
-                                        ['Total Loan Amount', `$${totalLoan.toLocaleString()}`],
-                                        ['Monthly Installment', `$${selectedCustomer.monthlyPayment}/mo`],
+                                        ['Total Loan Amount', `$${totalLoan.toLocaleString()}`, totalLoan],
+                                        ['Monthly Installment', `$${selectedCustomer.monthlyPayment}/mo`, selectedCustomer.monthlyPayment],
                                         ['Interest Rate', selectedCustomer.interest || '-'],
                                         ['Duration', selectedCustomer.duration || '-'],
-                                    ].map(([label, value]) => (
+                                    ].map(([label, value, rawVal]) => (
 
                                         <div
                                             key={label}
@@ -796,9 +792,7 @@ const Customer = () => {
                                                 {label}
                                             </span>
 
-                                            <span className="font-bold text-gray-900 font-mono">
-                                                {value}
-                                            </span>
+                                            <CopyCell text={value} copyValue={rawVal || value} className="font-bold text-gray-900 font-mono" />
                                         </div>
 
                                     ))}
@@ -836,9 +830,7 @@ const Customer = () => {
                                                 Total Loan
                                             </span>
 
-                                            <span className="text-gray-900 font-mono font-bold text-sm">
-                                                ${totalLoan.toLocaleString()}
-                                            </span>
+                                            <CopyCell text={`$${totalLoan.toLocaleString()}`} copyValue={totalLoan} className="text-gray-900 font-mono font-bold text-sm" />
                                         </div>
 
                                         <div className="p-2 bg-white border border-gray-200 rounded-xl">
@@ -846,9 +838,7 @@ const Customer = () => {
                                                 Total Paid So Far
                                             </span>
 
-                                            <span className="text-emerald-600 font-mono font-bold text-sm">
-                                                ${totalPaidSum.toLocaleString()}
-                                            </span>
+                                            <CopyCell text={`$${totalPaidSum.toLocaleString()}`} copyValue={totalPaidSum} className="text-emerald-600 font-mono font-bold text-sm" />
                                         </div>
 
                                         <div className="p-2 bg-white border border-gray-200 rounded-xl">
@@ -856,9 +846,7 @@ const Customer = () => {
                                                 Remaining Balance
                                             </span>
 
-                                            <span className="text-orange-600 font-mono font-bold text-sm">
-                                                ${remainingBalance.toLocaleString()}
-                                            </span>
+                                            <CopyCell text={`$${remainingBalance.toLocaleString()}`} copyValue={remainingBalance} className="text-orange-600 font-mono font-bold text-sm" />
                                         </div>
 
                                     </div>
