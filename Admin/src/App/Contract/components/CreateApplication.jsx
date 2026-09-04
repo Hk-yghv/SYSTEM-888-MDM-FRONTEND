@@ -78,9 +78,12 @@ const Field = ({ label, children, accent = false }) => (
 const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const { API_BASE, API_BASE1, user } = useAuth();
 
+    const currentYear = new Date().getFullYear();
+
     const emptyForm = {
         inputDate: new Date().toISOString().split('T')[0],
         brand: user?.brand || '',
+        contractSuffix: '000000001',
         customerNameEn: '', customerNameKh: '',
         idCardNumber: '', dob: '', gender: 'male',
         birthAddress: '', currentAddress: '',
@@ -102,6 +105,22 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const [activeTab, setActiveTab] = useState('customer');
     const [photoUploading, setPhotoUploading] = useState(false);
     const photoFileRef = useRef(null);
+
+    const computeNextSuffixForBrand = (targetBrand, customersList) => {
+        const cleanBrand = (targetBrand || user?.brand || 'M8').trim().toLowerCase();
+        const matching = (customersList || []).filter(c => (c.brand || '').trim().toLowerCase() === cleanBrand);
+        let maxNum = 0;
+        matching.forEach(c => {
+            const iid = c.contractIid || c.contractId || '';
+            const parts = String(iid).split('-');
+            if (parts.length >= 3) {
+                const num = parseInt(parts[parts.length - 1], 10);
+                if (!isNaN(num) && num > maxNum) maxNum = num;
+            }
+        });
+        const nextVal = maxNum > 0 ? maxNum + 1 : (matching.length > 0 ? matching.length + 1 : 1);
+        return String(nextVal).padStart(9, '0');
+    };
 
     useEffect(() => {
         const go = async () => {
@@ -215,9 +234,18 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     useEffect(() => {
         if (open) {
             if (editData) {
+                let suffix = '';
+                const iidSource = editData.contractIid || editData.contractId;
+                if (iidSource) {
+                    const parts = String(iidSource).split('-');
+                    suffix = parts.length >= 3 ? parts.slice(2).join('-') : String(iidSource).replace(/^[^0-9]*/, '');
+                }
                 setForm({
                     ...emptyForm,
                     ...editData,
+                    contractId: editData.contractId || '',
+                    contractIid: editData.contractIid || '',
+                    contractSuffix: suffix || '000000001',
                     deviceProblem: editData.deviceProblem || editData.device_problem || editData.Device_Problem || '',
                     capacity: editData.capacity || editData.storage || editData.Storage || '',
                     urlFb: editData.urlFb || editData.url_fb || editData.facebookUrl || '',
@@ -229,15 +257,28 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     meid: editData.meid || '',
                 });
             } else {
-                setForm({ ...emptyForm, brand: user?.brand || '' });
+                const initialBrand = form.brand || user?.brand || (brandsList.length > 0 ? brandsList[0] : 'M8');
+                const autoSuffix = computeNextSuffixForBrand(initialBrand, allCustomers);
+                const autoContractId = `CT-${currentYear}-${Math.floor(100 + Math.random() * 900)}`;
+                setForm({
+                    ...emptyForm,
+                    brand: initialBrand,
+                    contractId: autoContractId,
+                    contractSuffix: autoSuffix
+                });
             }
             setAutoFilled(false);
             setActiveTab('customer');
         }
-    }, [open, editData]);
+    }, [open, editData, allCustomers.length]);
 
     const handleChange = (e) => {
         const { id, value } = e.target;
+        if (id === 'brand' && !editData) {
+            const nextSuffix = computeNextSuffixForBrand(value, allCustomers);
+            setForm(prev => ({ ...prev, [id]: value, contractSuffix: nextSuffix }));
+            return;
+        }
         setForm(prev => ({ ...prev, [id]: value }));
     };
 
@@ -341,8 +382,24 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         setSubmitting(true);
         const isAdmin = user?.role === 'Administrator';
         const photo = form.googleDrivePhotoUrl || form.customerPhoto || '';
+
+        const currentBrand = (form.brand || editData?.brand || user?.brand || 'M8').trim();
+        const rawSuffix = String(form.contractSuffix || '').trim();
+        let cleanSuffix = rawSuffix ? rawSuffix.replace(/[^0-9]/g, '') : '';
+        if (cleanSuffix) {
+            cleanSuffix = cleanSuffix.padStart(9, '0');
+        } else {
+            cleanSuffix = '000000001';
+        }
+        const fullContractIid = `${currentBrand}-${currentYear}-${cleanSuffix}`;
+        const fullContractId = editData?.contractId || form.contractId || (`CT-${currentYear}-${Math.floor(100 + Math.random() * 900)}`);
+
+        const { _id, __v, createdAt, updatedAt, ...cleanFormData } = form;
+
         const payload = {
-            ...form,
+            ...cleanFormData,
+            contractId: fullContractId,
+            contractIid: fullContractIid,
             deviceProblem: form.deviceProblem || '',
             capacity: form.capacity || '',
             customerPhoto: photo,
@@ -365,10 +422,14 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             });
             setSubmitting(false);
             if (res.ok) { setOpen(false); if (onSaved) onSaved(); }
-            else alert('Failed to save contract');
+            else {
+                const errData = await res.json().catch(() => ({}));
+                alert(`បរាជ័យក្នុងការរក្សាទុក Contract: ${errData.error || res.statusText}`);
+            }
         } catch (err) {
             setSubmitting(false);
             console.error('Save contract error:', err);
+            alert(`Error: ${err.message}`);
         }
     };
 
@@ -386,8 +447,9 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     };
 
     return (
-        <div className="w-[calc(100%-260px)] h-[82vh] overflow-hidden absolute right-0 top-[8vh] bg-gray-900 border border-gray-700 z-[99999] shadow-2xl flex flex-col rounded-xl">
-            <form onSubmit={handleSubmit} className="flex flex-col h-full">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 select-none animate-in fade-in duration-150">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-xs">
+                <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-700 bg-gray-800 flex-shrink-0">
@@ -560,7 +622,22 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
                     {/* TAB 3: Loan Terms */}
                     {activeTab === 'loan' && (<>
-                        <div className="grid grid-cols-5 gap-3">
+                        <div className="grid grid-cols-6 gap-3">
+                            <Field label={`Contract IID (${(form.brand || user?.brand || 'M8').trim()}-${currentYear}-...)`}>
+                                <div className="flex items-center">
+                                    <span className="px-2.5 py-2 bg-indigo-950/80 border border-r-0 border-indigo-700/80 rounded-l-[5px] text-indigo-300 font-mono font-bold text-xs select-none whitespace-nowrap">
+                                        {(form.brand || user?.brand || 'M8').trim()}-{currentYear}-
+                                    </span>
+                                    <input
+                                        className="w-full p-2 bg-gray-800/80 border border-indigo-700/80 focus:border-indigo-400 rounded-r-[5px] text-indigo-200 font-mono font-bold text-xs outline-none transition-colors"
+                                        type="text"
+                                        id="contractSuffix"
+                                        value={form.contractSuffix || ''}
+                                        onChange={handleChange}
+                                        placeholder="000000001"
+                                    />
+                                </div>
+                            </Field>
                             <Field label="Loan Date">
                                 <input className="w-full p-2 bg-gray-800/80 border border-indigo-600/70 rounded-[5px] text-gray-100 font-mono text-xs outline-none focus:border-indigo-500 font-bold"
                                     type="date" id="inputDate" value={form.inputDate || ''} onChange={handleChange} required />
@@ -578,7 +655,19 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                         </div>
                         <div className="p-4 bg-emerald-900/20 border border-emerald-700/40 rounded-xl">
                             <p className="text-[10px] text-emerald-400 font-bold uppercase mb-3">Loan Summary Preview</p>
-                            <div className="grid grid-cols-3 gap-3 text-xs mb-3">
+                            <div className="grid grid-cols-5 gap-3 text-xs mb-3">
+                                <div className="p-3 bg-gray-900/60 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px] mb-1">Contract IID (Manual)</span>
+                                    <span className="text-indigo-400 font-mono font-bold text-sm">
+                                        {(form.brand || user?.brand || 'M8').trim()}-{currentYear}-{String(form.contractSuffix || '1').replace(/[^0-9]/g, '').padStart(9, '0')}
+                                    </span>
+                                </div>
+                                <div className="p-3 bg-gray-900/60 rounded-xl border border-gray-800">
+                                    <span className="text-gray-500 block text-[10px] mb-1">Contract ID (Auto)</span>
+                                    <span className="text-amber-300 font-mono font-bold text-sm">
+                                        {form.contractId || `CT-${currentYear}-...`}
+                                    </span>
+                                </div>
                                 <div className="p-3 bg-gray-900/60 rounded-xl border border-gray-800">
                                     <span className="text-gray-500 block text-[10px] mb-1">Total Loan Amount</span>
                                     <span className="text-emerald-400 font-mono font-bold text-base">${Number(form.amount || 0).toLocaleString()}</span>
@@ -608,7 +697,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
             </form>
         </div>
-    );
+    </div>
+);
 };
 
 export default CreateApplication;

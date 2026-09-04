@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo } from 'react-icons/fa';
-import { MdClose } from 'react-icons/md';
+import { MdClose, MdSwapHoriz } from 'react-icons/md';
 
-const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', defaultMonthIdx = null, onSaved }) => {
+const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', defaultMonthIdx = null, onSaved, onRedeem }) => {
     const { API_BASE1, user } = useAuth();
 
     const isMasterAdmin = Boolean(
@@ -281,6 +281,42 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 totalAmount: scheduled + penalty
             };
         }));
+    };
+
+    const handleRedeem = async () => {
+        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់ប្តូរស្ថានភាពទៅជា Redeem សម្រាប់ "${contract?.customerNameEn || contract?.customerNameKh || ''}" មែនទេ?`)) return;
+
+        if (onRedeem) {
+            setOpen(false);
+            onRedeem(contract);
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const res = await fetch(`${API_BASE1}/contracts/${contract._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    repaymentSchedule: rows,
+                    status: 'Redeem',
+                    redeemDate: todayStr,
+                    modifiedByAdmin: isMasterAdmin
+                })
+            });
+            if (res.ok) {
+                setOpen(false);
+                if (onSaved) onSaved();
+            } else {
+                alert('បរាជ័យក្នុងការ Redeem');
+            }
+        } catch (err) {
+            console.error('Redeem error:', err);
+            alert('Error: ' + err.message);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleSaveSchedule = async (newContractStatus = null) => {
@@ -578,6 +614,16 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold cursor-pointer transition-all"
                     >
                         បិទ (Close)
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleRedeem}
+                        disabled={submitting}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5 transition-all"
+                    >
+                        <MdSwapHoriz size={16} />
+                        <span>Redeem</span>
                     </button>
 
                     {!isReadOnly && (

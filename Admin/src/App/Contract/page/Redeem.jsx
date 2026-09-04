@@ -186,6 +186,7 @@ const Redeem = () => {
                             <th className='px-4 py-3'>Redeem Date (កាលបរិច្ឆេទ Redeem)</th>
                             <th className='px-4 py-3'>{t('customerName')}</th>
                             <th className='px-4 py-3 text-center'>{t('status')}</th>
+                            <th className='px-4 py-3 text-center'>Contract</th>
                             <th className='px-4 py-3'>{t('model')}</th>
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
@@ -193,7 +194,7 @@ const Redeem = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredContracts.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="text-center py-8 text-slate-500 italic font-medium">No redeem contracts found.</td>
+                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">No redeem contracts found.</td>
                             </tr>
                         ) : (
                             filteredContracts.map((item, idx) => (
@@ -208,6 +209,9 @@ const Redeem = () => {
                                     </td>
                                     <td className='px-4 py-3 text-center'>
                                         <span className='px-3 py-1 bg-purple-50 text-purple-800 border border-purple-300 rounded-full font-bold text-[10px] uppercase'>Redeem</span>
+                                    </td>
+                                    <td className='px-4 py-3 text-center font-mono text-indigo-700 font-bold'>
+                                        <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
                                     </td>
                                     <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
                                     <td className="px-4 py-3 text-center relative">

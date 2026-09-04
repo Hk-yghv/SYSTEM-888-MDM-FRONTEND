@@ -155,6 +155,7 @@ const Check = () => {
                             <th className='px-4 py-3'>{t('inputDate')}</th>
                             <th className='px-4 py-3'>{t('customerName')}</th>
                             <th className='px-4 py-3 text-center'>{t('status')}</th>
+                            <th className='px-4 py-3 text-center'>Contract</th>
                             <th className='px-4 py-3'>{t('model')}</th>
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
@@ -162,7 +163,7 @@ const Check = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {contracts.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="text-center py-8 text-slate-500 italic font-medium">No check contracts found.</td>
+                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">No check contracts found.</td>
                             </tr>
                         ) : (
                             contracts.map((item, idx) => (
@@ -175,6 +176,9 @@ const Check = () => {
                                     </td>
                                     <td className='px-4 py-3 text-center'>
                                         <span className='px-3 py-1 bg-sky-50 text-sky-800 border border-sky-300 rounded-full font-bold text-[10px] uppercase'>Check</span>
+                                    </td>
+                                    <td className='px-4 py-3 text-center font-mono text-indigo-700 font-bold'>
+                                        <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
                                     </td>
                                     <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
                                     <td className="px-4 py-3 text-center relative">

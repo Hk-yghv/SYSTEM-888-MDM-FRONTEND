@@ -53,6 +53,7 @@ router.get('/', async (req, res) => {
                 { customerNameKh: { $regex: search, $options: 'i' } },
                 { serialNumber: { $regex: search, $options: 'i' } },
                 { contractId: { $regex: search, $options: 'i' } },
+                { contractIid: { $regex: search, $options: 'i' } },
                 { model: { $regex: search, $options: 'i' } }
             ];
             query.$and = [...(query.$and || []), { $or: searchQuery }];
@@ -93,6 +94,7 @@ router.get('/', async (req, res) => {
             (c.customerNameKh || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.serialNumber || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.contractId || '').toLowerCase().includes(search.toLowerCase()) ||
+            (c.contractIid || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.model || '').toLowerCase().includes(search.toLowerCase())
         );
         if (needsSchedule) {
@@ -304,13 +306,19 @@ router.get('/customer-info/:contractId', async (req, res) => {
 // CREATE contract
 router.post('/', async (req, res) => {
     try {
+        const currentYear = new Date().getFullYear();
+        const autoRandomId = `CT-${currentYear}-${Math.floor(100 + Math.random() * 900)}`;
         const newContract = {
-            contractId: 'CT-2026-' + Math.floor(100 + Math.random() * 900),
+            contractId: req.body.contractId || autoRandomId,
+            contractIid: req.body.contractIid || '',
             status: 'Application',
             lockPhoneStatus: 'Unlocked',
             lockWallpaperStatus: 'Unlocked',
             ...req.body
         };
+        if (!req.body.contractId) {
+            newContract.contractId = autoRandomId;
+        }
 
         let savedContract = newContract;
 
@@ -332,28 +340,53 @@ router.post('/', async (req, res) => {
 // UPDATE contract
 router.put('/:id', async (req, res) => {
     try {
+        const updateData = { ...req.body };
+        delete updateData._id;
+        delete updateData.__v;
+        delete updateData.createdAt;
+        delete updateData.updatedAt;
+
+        let updatedDoc = null;
+
         if (isMongoConnected) {
-            const results = await queryAllDBs(Contract, (M) => {
-                try { return M.findById(req.params.id).then(r => r ? [r] : []); } catch { return []; }
+            const results = await queryAllDBs(Contract, async (BoundM) => {
+                try {
+                    let doc = await BoundM.findByIdAndUpdate(req.params.id, { $set: updateData }, { new: true });
+                    if (!doc) {
+                        doc = await BoundM.findOneAndUpdate({ contractId: req.params.id }, { $set: updateData }, { new: true });
+                    }
+                    return doc ? [doc] : [];
+                } catch {
+                    return [];
+                }
             });
-            let contractDoc = results[0];
-            if (!contractDoc) {
-                const r2 = await queryAllDBs(Contract, (M) => M.find({ contractId: req.params.id }));
-                contractDoc = r2[0] || null;
+            if (results && results.length > 0) {
+                updatedDoc = results[0];
             }
-            if (contractDoc) {
-                Object.assign(contractDoc, req.body);
-                await contractDoc.save();
-                return res.json(sanitizeAndDecryptContract(contractDoc));
+            if (!updatedDoc) {
+                const WriteModel = getWriteModel(Contract);
+                if (WriteModel) {
+                    try {
+                        updatedDoc = await WriteModel.findByIdAndUpdate(req.params.id, { $set: updateData }, { new: true }) ||
+                                     await WriteModel.findOneAndUpdate({ contractId: req.params.id }, { $set: updateData }, { new: true });
+                    } catch {}
+                }
             }
         }
+
         const idx = MEM_DB.contracts.findIndex(c => c._id === req.params.id || c.contractId === req.params.id);
         if (idx !== -1) {
-            MEM_DB.contracts[idx] = { ...MEM_DB.contracts[idx], ...req.body };
-            return res.json(sanitizeAndDecryptContract(MEM_DB.contracts[idx]));
+            MEM_DB.contracts[idx] = { ...MEM_DB.contracts[idx], ...updateData };
+            if (!updatedDoc) updatedDoc = MEM_DB.contracts[idx];
         }
+
+        if (updatedDoc) {
+            return res.json(sanitizeAndDecryptContract(updatedDoc));
+        }
+
         res.status(404).json({ error: 'Contract not found' });
     } catch (err) {
+        console.error('Update contract error:', err);
         res.status(500).json({ error: err.message });
     }
 });

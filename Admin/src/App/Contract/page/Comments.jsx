@@ -140,13 +140,14 @@ const Comments = () => {
                             <th className='px-4 py-3'>{t('model')}</th>
                             <th className='px-4 py-3'>Comment Note</th>
                             <th className='px-4 py-3 text-center'>{t('status')}</th>
+                            <th className='px-4 py-3 text-center'>Contract</th>
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {contracts.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">No contracts with comments found.</td>
+                                <td colSpan={8} className="text-center py-8 text-slate-500 italic font-medium">No contracts with comments found.</td>
                             </tr>
                         ) : (
                             contracts.map((item, idx) => (
@@ -163,6 +164,9 @@ const Comments = () => {
                                     </td>
                                     <td className='px-4 py-3 text-center'>
                                         <span className='px-3 py-1 bg-teal-50 text-teal-800 border border-teal-300 rounded-full font-bold text-[10px] uppercase'>Comments</span>
+                                    </td>
+                                    <td className='px-4 py-3 text-center font-mono text-indigo-700 font-bold'>
+                                        <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
                                     </td>
                                     <td className="px-4 py-3 text-center relative">
                                         <div className="relative inline-block text-left">

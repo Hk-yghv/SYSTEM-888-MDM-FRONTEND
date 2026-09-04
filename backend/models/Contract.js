@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const contractSchema = new mongoose.Schema({
     contractId: { type: String, required: true, unique: true },
+    contractIid: { type: String, default: '' },
     inputDate: { type: String, required: true },
 
     // Customer Information
