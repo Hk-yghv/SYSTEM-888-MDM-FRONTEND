@@ -409,7 +409,7 @@ const FollowUp1 = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-6 max-w-full overflow-x-hidden min-h-screen">
+        <div className="p-4 md:p-6 space-y-6 max-w-full overflow-x-hidden">
             {/* Header / Title Area */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[var(--app-card,#ffffff)] p-5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs">
                 <div className="flex items-center gap-3">
