@@ -18,12 +18,14 @@ const arialBoldPath = path.join(FONT_DIR, 'arialbd.ttf');
 
 /**
  * Generate a clean, responsive, non-overlapping PDF report containing:
- * 1. Customer Personal Profile
- * 2. Device & Hardware Details
- * 3. Loan & Financial Summary
- * 4. Full Repayment Schedule Table ($)
- * 5. Payment Transaction History
- * 6. Detailed Installment & Overdue Analytics Report (Overdue Days, Penalties, Health Status)
+ * Page 1:
+ *   1. Customer Information
+ *   2. Device Specifications
+ *   3. Loan & Financial Terms
+ *   4. Full Repayment Schedule Table ($)
+ * Page 2:
+ *   5. Installment & Overdue Analytics Report (Consecutive, Never skips #5)
+ *   6. Payment Transaction History (if payments exist)
  *
  * @param {Object} contract - Contract document
  * @param {Array} payments - Array of payment records
@@ -35,12 +37,13 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
         try {
             const doc = new PDFDocument({
                 size: 'A4',
-                margin: 36, // 0.5 inch margins
+                margins: { top: 30, bottom: 15, left: 30, right: 30 },
                 bufferPages: true,
+                autoFirstPage: true,
                 info: {
                     Title: `Customer Report - ${contract.customerNameEn || contract.contractId || 'MDM'}`,
                     Author: 'SYSTEM MDM Platform',
-                    Subject: 'Customer Details & Repayment Schedule & Installment Report',
+                    Subject: 'Customer Details, Repayment Schedule & Installment Analytics',
                     Keywords: 'MDM, Contract, Repayment, Schedule, Loan, Installment, Overdue'
                 }
             });
@@ -71,6 +74,13 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
             const margin = 36;
             const contentWidth = pageWidth - (margin * 2);
 
+            // Dynamic Sequential Section Numbering
+            let sectionIndex = 0;
+            const nextSection = () => {
+                sectionIndex += 1;
+                return String(sectionIndex);
+            };
+
             // Theme Palette
             const brandNavy = '#0f172a'; // Slate 900
             const accentBlue = '#2563eb'; // Blue 600
@@ -83,115 +93,99 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
             const dangerColor = '#dc2626';
 
             // ── TOP HEADER BANNER ──
-            const renderHeaderBanner = () => {
-                doc.rect(margin, margin, contentWidth, 58).fillAndStroke(brandNavy, brandNavy);
+            const printDate = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Phnom_Penh' });
 
-                doc.fillColor('#ffffff').fontSize(15).font(FONT_BOLD)
-                    .text('SYSTEM MDM', margin + 16, margin + 12);
+            const renderTopHeader = (isContinuation = false) => {
+                if (!isContinuation) {
+                    doc.rect(margin, margin, contentWidth, 52).fillAndStroke(brandNavy, brandNavy);
 
-                doc.fillColor('#38bdf8').fontSize(9.5).font(FONT_BOLD)
-                    .text(`BRAND: ${String(activeBrand).toUpperCase()}`, margin + 16, margin + 33);
+                    doc.fillColor('#ffffff').fontSize(14).font(FONT_BOLD)
+                        .text('SYSTEM MDM', margin + 14, margin + 10, { lineBreak: false });
 
-                doc.fillColor('#94a3b8').fontSize(8.5).font(FONT_BOLD)
-                    .text('CUSTOMER DOSSIER & REPAYMENT SCHEDULE', margin, margin + 14, { align: 'right', width: contentWidth - 16 });
+                    doc.fillColor('#38bdf8').fontSize(9).font(FONT_BOLD)
+                        .text(`BRAND: ${String(activeBrand).toUpperCase()}`, margin + 14, margin + 28, { lineBreak: false });
 
-                const printDate = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Phnom_Penh' });
-                doc.fillColor('#cbd5e1').fontSize(8).font(FONT_REGULAR)
-                    .text(`Generated: ${printDate}`, margin, margin + 33, { align: 'right', width: contentWidth - 16 });
+                    doc.fillColor('#94a3b8').fontSize(8).font(FONT_BOLD)
+                        .text('CUSTOMER DOSSIER & REPAYMENT SCHEDULE', margin, margin + 12, { align: 'right', width: contentWidth - 14, lineBreak: false });
+
+                    doc.fillColor('#cbd5e1').fontSize(7.5).font(FONT_REGULAR)
+                        .text(`Generated: ${printDate}`, margin, margin + 28, { align: 'right', width: contentWidth - 14, lineBreak: false });
+                } else {
+                    doc.rect(margin, margin, contentWidth, 24).fillAndStroke(brandNavy, brandNavy);
+                    doc.fillColor('#ffffff').fontSize(9).font(FONT_BOLD)
+                        .text(`SYSTEM MDM — ${String(activeBrand).toUpperCase()} (Customer Dossier & Analytics)`, margin + 10, margin + 7, { lineBreak: false });
+                    doc.fillColor('#94a3b8').fontSize(7.5).font(FONT_REGULAR)
+                        .text(`Report ID: ${contract.contractId || contract.serialNumber || 'DOC'}`, margin, margin + 7, { align: 'right', width: contentWidth - 10, lineBreak: false });
+                }
             };
 
-            renderHeaderBanner();
+            // First Page Header
+            renderTopHeader(false);
+            let y = margin + 58;
 
-            let y = margin + 68;
-
-            // ── Helper: Section Title with Clean Vector Badge ──
+            // Helper: Section Title with Clean Vector Badge
             const drawSectionHeader = (number, titleEn, titleKh = '') => {
-                if (y > pageHeight - 110) {
-                    doc.addPage();
-                    y = margin;
-                }
+                doc.rect(margin, y, contentWidth, 18).fillAndStroke(lightCardBg, borderColor);
+                doc.rect(margin, y, 4, 18).fill(accentBlue);
 
-                // Background bar
-                doc.rect(margin, y, contentWidth, 22).fillAndStroke(lightCardBg, borderColor);
-                doc.rect(margin, y, 4, 22).fill(accentBlue);
+                doc.circle(margin + 13, y + 9, 5.5).fill(accentBlue);
+                doc.fillColor('#ffffff').fontSize(6.5).font(FONT_BOLD)
+                    .text(String(number), margin + 8, y + 6, { width: 10, align: 'center', lineBreak: false });
 
-                // Number badge
-                doc.circle(margin + 16, y + 11, 7).fill(accentBlue);
-                doc.fillColor('#ffffff').fontSize(7.5).font(FONT_BOLD)
-                    .text(String(number), margin + 11, y + 7.5, { width: 10, align: 'center' });
-
-                // Title Text
-                doc.fillColor(brandNavy).fontSize(9.5).font(FONT_BOLD)
-                    .text(titleEn.toUpperCase(), margin + 28, y + 6);
+                doc.fillColor(brandNavy).fontSize(8.5).font(FONT_BOLD)
+                    .text(titleEn.toUpperCase(), margin + 24, y + 4.5, { lineBreak: false });
 
                 if (titleKh) {
-                    doc.fillColor(textMuted).fontSize(8.5).font(FONT_KHMER)
-                        .text(`(${titleKh})`, margin + 30 + doc.widthOfString(titleEn.toUpperCase(), { font: FONT_BOLD, size: 9.5 }) + 6, y + 6);
+                    doc.fillColor(textMuted).fontSize(7.5).font(FONT_KHMER)
+                        .text(`(${titleKh})`, margin + 26 + doc.widthOfString(titleEn.toUpperCase(), { font: FONT_BOLD, size: 8.5 }) + 6, y + 4.5, { lineBreak: false });
                 }
 
-                y += 26;
+                y += 21;
             };
 
-            // ── Helper: Dynamic-Height 2-Column Grid (Zero Overlap Guaranteed) ──
+            // Helper: Dynamic-Height 2-Column Grid
             const drawDynamicGrid2Col = (items) => {
-                const gap = 8;
+                const gap = 6;
                 const colWidth = (contentWidth - gap) / 2;
                 const labelWidth = colWidth * 0.38;
-                const valueWidth = colWidth * 0.62 - 12;
+                const valueWidth = colWidth * 0.62 - 10;
 
                 for (let i = 0; i < items.length; i += 2) {
                     const item1 = items[i];
                     const item2 = items[i + 1] || null;
 
-                    // Calculate required heights for both items
                     const valStr1 = String(item1.value || '—');
                     const valStr2 = item2 ? String(item2.value || '—') : '';
 
-                    const h1 = doc.heightOfString(valStr1, {
-                        width: valueWidth,
-                        font: FONT_KHMER,
-                        size: 8
-                    });
+                    const h1 = doc.heightOfString(valStr1, { width: valueWidth, font: FONT_KHMER, size: 7.5 });
+                    const h2 = item2 ? doc.heightOfString(valStr2, { width: valueWidth, font: FONT_KHMER, size: 7.5 }) : 0;
+                    const rowHeight = Math.max(16, Math.max(h1, h2) + 6);
 
-                    const h2 = item2 ? doc.heightOfString(valStr2, {
-                        width: valueWidth,
-                        font: FONT_KHMER,
-                        size: 8
-                    }) : 0;
-
-                    const rowHeight = Math.max(22, Math.max(h1, h2) + 10);
-
-                    // Check page overflow
-                    if (y + rowHeight > pageHeight - 35) {
-                        doc.addPage();
-                        y = margin;
-                    }
-
-                    // Draw Box 1
+                    // Box 1
                     const x1 = margin;
                     doc.rect(x1, y, colWidth, rowHeight).fillAndStroke('#ffffff', borderColor);
-                    doc.fillColor(textMuted).fontSize(8).font(FONT_BOLD)
-                        .text(item1.label + ':', x1 + 6, y + 5, { width: labelWidth - 6 });
-                    doc.fillColor(textDark).fontSize(8).font(FONT_KHMER)
-                        .text(valStr1, x1 + labelWidth, y + 5, { width: valueWidth });
+                    doc.fillColor(textMuted).fontSize(7).font(FONT_BOLD)
+                        .text(item1.label + ':', x1 + 5, y + 3.5, { width: labelWidth - 5, lineBreak: false });
+                    doc.fillColor(textDark).fontSize(7.5).font(FONT_KHMER)
+                        .text(valStr1, x1 + labelWidth, y + 3.5, { width: valueWidth, lineBreak: false });
 
-                    // Draw Box 2 (if present)
+                    // Box 2
                     if (item2) {
                         const x2 = margin + colWidth + gap;
                         doc.rect(x2, y, colWidth, rowHeight).fillAndStroke('#ffffff', borderColor);
-                        doc.fillColor(textMuted).fontSize(8).font(FONT_BOLD)
-                            .text(item2.label + ':', x2 + 6, y + 5, { width: labelWidth - 6 });
-                        doc.fillColor(textDark).fontSize(8).font(FONT_KHMER)
-                            .text(valStr2, x2 + labelWidth, y + 5, { width: valueWidth });
+                        doc.fillColor(textMuted).fontSize(7).font(FONT_BOLD)
+                            .text(item2.label + ':', x2 + 5, y + 3.5, { width: labelWidth - 5, lineBreak: false });
+                        doc.fillColor(textDark).fontSize(7.5).font(FONT_KHMER)
+                            .text(valStr2, x2 + labelWidth, y + 3.5, { width: valueWidth, lineBreak: false });
                     }
 
-                    y += rowHeight + 3;
+                    y += rowHeight + 2.5;
                 }
-                y += 6;
+                y += 3;
             };
 
             // ── 1. CUSTOMER INFORMATION ──
-            drawSectionHeader('1', 'Customer Information');
+            drawSectionHeader(nextSection(), 'Customer Information');
             const customerItems = [
                 { label: 'Name (EN)', value: contract.customerNameEn },
                 { label: 'Name (KH)', value: contract.customerNameKh },
@@ -209,7 +203,7 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
             drawDynamicGrid2Col(customerItems);
 
             // ── 2. DEVICE SPECIFICATIONS ──
-            drawSectionHeader('2', 'Device Specifications');
+            drawSectionHeader(nextSection(), 'Device Specifications');
             const deviceItems = [
                 { label: 'Model', value: contract.model },
                 { label: 'Device Brand', value: contract.brand || activeBrand },
@@ -226,7 +220,7 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
             ];
             drawDynamicGrid2Col(deviceItems);
 
-            // ── FINANCIAL CALCULATION ──
+            // ── FINANCIAL TERMS SETUP ──
             const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
 
             const scheduleTotal = schedule.reduce((acc, row) => acc + (parseFloat(row.totalAmount || row.amount || 0) || 0), 0);
@@ -245,10 +239,12 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
             const remainingBalance = Math.max(0, totalLoanAmount - totalPaidAmount);
             const monthlyPayment = (parseFloat(contract.monthlyPayment) > 0)
                 ? parseFloat(contract.monthlyPayment)
-                : (schedule.length > 0 && parseFloat(schedule[0].amount || schedule[0].monthlyPayment) ? parseFloat(schedule[0].amount || schedule[0].monthlyPayment) : (totalLoanAmount / Math.max(1, schedule.length || 1)));
+                : (schedule.length > 0 && parseFloat(schedule[0].amount || schedule[0].monthlyPayment)
+                    ? parseFloat(schedule[0].amount || schedule[0].monthlyPayment)
+                    : (totalLoanAmount / Math.max(1, schedule.length || 1)));
 
-            // ── 3. LOAN & CONTRACT FINANCIALS ──
-            drawSectionHeader('3', 'Loan & Financial Terms');
+            // ── 3. LOAN & FINANCIAL TERMS ──
+            drawSectionHeader(nextSection(), 'Loan & Financial Terms');
 
             const loanItems = [
                 { label: 'Contract ID', value: contract.contractId },
@@ -267,9 +263,8 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
             drawDynamicGrid2Col(loanItems);
 
             // ── 4. REPAYMENT SCHEDULE TABLE ──
-            drawSectionHeader('4', 'Repayment Schedule ($)');
+            drawSectionHeader(nextSection(), 'Repayment Schedule ($)');
 
-            // Table Column Setup
             const cols = [
                 { title: '#', width: 24, align: 'center' },
                 { title: 'Due Date', width: 70, align: 'left' },
@@ -282,35 +277,29 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                 { title: 'Notes', width: 53.28, align: 'left' }
             ];
 
-            const renderTableHeader = () => {
-                doc.rect(margin, y, contentWidth, 18).fill(brandNavy);
+            const renderScheduleTableHeader = () => {
+                doc.rect(margin, y, contentWidth, 16).fill(brandNavy);
                 let currX = margin;
                 cols.forEach(col => {
-                    doc.fillColor('#ffffff').fontSize(7.5).font(FONT_BOLD)
-                        .text(col.title, currX + 2, y + 5, { width: col.width - 4, align: col.align });
+                    doc.fillColor('#ffffff').fontSize(7).font(FONT_BOLD)
+                        .text(col.title, currX + 2, y + 4.5, { width: col.width - 4, align: col.align, lineBreak: false });
                     currX += col.width;
                 });
-                y += 18;
+                y += 16;
             };
 
-            renderTableHeader();
+            renderScheduleTableHeader();
 
             if (schedule.length === 0) {
-                doc.rect(margin, y, contentWidth, 20).fillAndStroke('#ffffff', borderColor);
-                doc.fillColor(textMuted).fontSize(8).font(FONT_REGULAR)
-                    .text('No repayment schedule records available for this contract.', margin + 10, y + 6);
-                y += 26;
+                doc.rect(margin, y, contentWidth, 16).fillAndStroke('#ffffff', borderColor);
+                doc.fillColor(textMuted).fontSize(7.5).font(FONT_REGULAR)
+                    .text('No repayment schedule records available for this contract.', margin + 8, y + 4.5, { lineBreak: false });
+                y += 18;
             } else {
                 schedule.forEach((row, idx) => {
-                    if (y > pageHeight - 40) {
-                        doc.addPage();
-                        y = margin;
-                        renderTableHeader();
-                    }
-
                     const isEven = idx % 2 === 0;
                     const rowBg = isEven ? '#ffffff' : '#f8fafc';
-                    const rowHeight = 17;
+                    const rowHeight = 14;
 
                     doc.rect(margin, y, contentWidth, rowHeight).fillAndStroke(rowBg, borderColor);
 
@@ -327,38 +316,38 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                     let currX = margin;
 
                     // #
-                    doc.fillColor(textDark).fontSize(7.5).font(FONT_REGULAR)
-                        .text(String(monthNum), currX + 2, y + 4.5, { width: cols[0].width - 4, align: cols[0].align });
+                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
+                        .text(String(monthNum), currX + 2, y + 3.5, { width: cols[0].width - 4, align: cols[0].align, lineBreak: false });
                     currX += cols[0].width;
 
                     // Due Date
-                    doc.fillColor(textDark).fontSize(7.5).font(FONT_REGULAR)
-                        .text(dueDate, currX + 2, y + 4.5, { width: cols[1].width - 4, align: cols[1].align });
+                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
+                        .text(dueDate, currX + 2, y + 3.5, { width: cols[1].width - 4, align: cols[1].align, lineBreak: false });
                     currX += cols[1].width;
 
                     // Scheduled ($)
-                    doc.fillColor(textDark).fontSize(7.5).font(FONT_REGULAR)
-                        .text(`$${schedAmount}`, currX + 2, y + 4.5, { width: cols[2].width - 4, align: cols[2].align });
+                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
+                        .text(`$${schedAmount}`, currX + 2, y + 3.5, { width: cols[2].width - 4, align: cols[2].align, lineBreak: false });
                     currX += cols[2].width;
 
                     // Penalty ($)
-                    doc.fillColor(parseFloat(penalty) > 0 ? dangerColor : textMuted).fontSize(7.5).font(FONT_REGULAR)
-                        .text(parseFloat(penalty) > 0 ? `$${penalty}` : '$0.00', currX + 2, y + 4.5, { width: cols[3].width - 4, align: cols[3].align });
+                    doc.fillColor(parseFloat(penalty) > 0 ? dangerColor : textMuted).fontSize(7).font(FONT_REGULAR)
+                        .text(parseFloat(penalty) > 0 ? `$${penalty}` : '$0.00', currX + 2, y + 3.5, { width: cols[3].width - 4, align: cols[3].align, lineBreak: false });
                     currX += cols[3].width;
 
                     // Total Due ($)
-                    doc.fillColor(textDark).fontSize(7.5).font(FONT_BOLD)
-                        .text(`$${totalDue}`, currX + 2, y + 4.5, { width: cols[4].width - 4, align: cols[4].align });
+                    doc.fillColor(textDark).fontSize(7).font(FONT_BOLD)
+                        .text(`$${totalDue}`, currX + 2, y + 3.5, { width: cols[4].width - 4, align: cols[4].align, lineBreak: false });
                     currX += cols[4].width;
 
                     // Paid ($)
-                    doc.fillColor(parseFloat(paid) > 0 ? successColor : textMuted).fontSize(7.5).font(FONT_BOLD)
-                        .text(`$${paid}`, currX + 2, y + 4.5, { width: cols[5].width - 4, align: cols[5].align });
+                    doc.fillColor(parseFloat(paid) > 0 ? successColor : textMuted).fontSize(7).font(FONT_BOLD)
+                        .text(`$${paid}`, currX + 2, y + 3.5, { width: cols[5].width - 4, align: cols[5].align, lineBreak: false });
                     currX += cols[5].width;
 
                     // Paid Date
-                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
-                        .text(paidDate, currX + 2, y + 4.5, { width: cols[6].width - 4, align: cols[6].align });
+                    doc.fillColor(textDark).fontSize(6.5).font(FONT_REGULAR)
+                        .text(paidDate, currX + 2, y + 3.5, { width: cols[6].width - 4, align: cols[6].align, lineBreak: false });
                     currX += cols[6].width;
 
                     // Status
@@ -366,75 +355,24 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                     if (status.toLowerCase().includes('paid') || status.toLowerCase().includes('settled')) statusColor = successColor;
                     else if (status.toLowerCase().includes('partial') || status.toLowerCase().includes('due')) statusColor = warningColor;
 
-                    doc.fillColor(statusColor).fontSize(7.5).font(FONT_BOLD)
-                        .text(status, currX + 2, y + 4.5, { width: cols[7].width - 4, align: cols[7].align });
+                    doc.fillColor(statusColor).fontSize(7).font(FONT_BOLD)
+                        .text(status, currX + 2, y + 3.5, { width: cols[7].width - 4, align: cols[7].align, lineBreak: false });
                     currX += cols[7].width;
 
                     // Notes
-                    doc.fillColor(textMuted).fontSize(6.5).font(FONT_KHMER)
-                        .text(note || '—', currX + 2, y + 4.5, { width: cols[8].width - 4, align: cols[8].align, ellipsis: true });
+                    doc.fillColor(textMuted).fontSize(6).font(FONT_KHMER)
+                        .text(note || '—', currX + 2, y + 3.5, { width: cols[8].width - 4, align: cols[8].align, ellipsis: true, lineBreak: false });
 
                     y += rowHeight;
                 });
-                y += 10;
+                y += 6;
             }
 
-            // ── 5. PAYMENT HISTORY LOG (IF ANY) ──
-            if (payments && payments.length > 0) {
-                drawSectionHeader('5', 'Payment History');
+            // ── PAGE 2: DEDICATED INSTALLMENT & OVERDUE ANALYTICS REPORT ──
+            doc.addPage();
+            renderTopHeader(true);
+            y = margin + 32;
 
-                const pCols = [
-                    { title: '#', width: 30, align: 'center' },
-                    { title: 'Payment ID', width: 95, align: 'left' },
-                    { title: 'Paid Date', width: 85, align: 'left' },
-                    { title: 'Payment Method', width: 110, align: 'left' },
-                    { title: 'Amount ($)', width: 80, align: 'right' },
-                    { title: 'Description', width: 123.28, align: 'left' }
-                ];
-
-                doc.rect(margin, y, contentWidth, 18).fill('#334155');
-                let currX = margin;
-                pCols.forEach(col => {
-                    doc.fillColor('#ffffff').fontSize(7.5).font(FONT_BOLD)
-                        .text(col.title, currX + 2, y + 5, { width: col.width - 4, align: col.align });
-                    currX += col.width;
-                });
-                y += 18;
-
-                payments.forEach((p, pIdx) => {
-                    if (y > pageHeight - 40) {
-                        doc.addPage();
-                        y = margin;
-                    }
-                    const rowBg = pIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
-                    doc.rect(margin, y, contentWidth, 16).fillAndStroke(rowBg, borderColor);
-
-                    let px = margin;
-                    // #
-                    doc.fillColor(textDark).fontSize(7.5).font(FONT_REGULAR).text(String(pIdx + 1), px + 2, y + 4, { width: pCols[0].width - 4, align: 'center' });
-                    px += pCols[0].width;
-                    // Payment ID
-                    doc.fillColor(textDark).fontSize(7.5).font(FONT_REGULAR).text(p.paymentId || '—', px + 2, y + 4, { width: pCols[1].width - 4, align: 'left' });
-                    px += pCols[1].width;
-                    // Paid Date
-                    doc.fillColor(textDark).fontSize(7.5).font(FONT_REGULAR).text(p.paidDate || '—', px + 2, y + 4, { width: pCols[2].width - 4, align: 'left' });
-                    px += pCols[2].width;
-                    // Paid By
-                    doc.fillColor(textDark).fontSize(7.5).font(FONT_REGULAR).text(p.paidBy || 'QR Mobile Payment', px + 2, y + 4, { width: pCols[3].width - 4, align: 'left' });
-                    px += pCols[3].width;
-                    // Amount
-                    doc.fillColor(successColor).fontSize(7.5).font(FONT_BOLD).text(`$${(parseFloat(p.amount) || 0).toFixed(2)}`, px + 2, y + 4, { width: pCols[4].width - 4, align: 'right' });
-                    px += pCols[4].width;
-                    // Description
-                    doc.fillColor(textMuted).fontSize(7).font(FONT_KHMER).text(p.description || '—', px + 2, y + 4, { width: pCols[5].width - 4, align: 'left', ellipsis: true });
-
-                    y += 16;
-                });
-                y += 10;
-            }
-
-            // ── 6. DEDICATED INSTALLMENT & OVERDUE ANALYTICS REPORT ──
-            // Calculate comprehensive installment metrics
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
@@ -446,6 +384,12 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
             let paidOnTimeTermsCount = 0;
             let pendingUpcomingTermsCount = 0;
             let maxOverdueDaysOnSingleTerm = 0;
+
+            let overdue3To6DaysCount = 0;
+            let overdue7PlusDaysCount = 0;
+            let dueIn3DaysCount = 0;
+            let dueTodayCount = 0;
+            let unpaidYesterdayCount = 0;
 
             const installmentBreakdown = schedule.map((row, idx) => {
                 const termNum = row.month || row.term || (idx + 1);
@@ -464,15 +408,27 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                 if (dueDateStr) {
                     const dueDate = new Date(`${dueDateStr}T00:00:00`);
                     if (!isNaN(dueDate.getTime())) {
+                        const diffDays = Math.floor((today - dueDate) / 86400000);
+                        const isNotPaid = statusStr !== 'Paid' && statusStr !== 'PayOff' && statusStr !== 'Settled' && paidAmt < totalDueAmt;
+
                         if (paidDateStr) {
                             const paidDate = new Date(`${paidDateStr}T00:00:00`);
                             if (!isNaN(paidDate.getTime())) {
                                 overdueDays = Math.max(0, Math.floor((paidDate - dueDate) / 86400000));
                                 if (overdueDays > 0) isTermLatePaid = true;
                             }
-                        } else if (statusStr !== 'Paid' && statusStr !== 'PayOff' && statusStr !== 'Settled') {
-                            overdueDays = Math.max(0, Math.floor((today - dueDate) / 86400000));
-                            if (overdueDays > 0) isTermOverdue = true;
+                        } else if (isNotPaid) {
+                            overdueDays = Math.max(0, diffDays);
+                            if (overdueDays > 0) {
+                                isTermOverdue = true;
+                                if (overdueDays >= 7) overdue7PlusDaysCount++;
+                                else if (overdueDays >= 3) overdue3To6DaysCount++;
+                                if (diffDays === 1) unpaidYesterdayCount++;
+                            } else if (diffDays === 0) {
+                                dueTodayCount++;
+                            } else if (diffDays >= -3 && diffDays < 0) {
+                                dueIn3DaysCount++;
+                            }
                         }
                     }
                 }
@@ -485,7 +441,7 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                     paidLateTermsCount++;
                     totalLateDays += overdueDays;
                     if (overdueDays > maxOverdueDaysOnSingleTerm) maxOverdueDaysOnSingleTerm = overdueDays;
-                } else if (statusStr === 'Paid' || statusStr === 'PayOff' || statusStr === 'Settled') {
+                } else if (statusStr === 'Paid' || statusStr === 'PayOff' || statusStr === 'Settled' || paidAmt >= totalDueAmt) {
                     paidOnTimeTermsCount++;
                 } else {
                     pendingUpcomingTermsCount++;
@@ -513,7 +469,6 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
 
             const unpaidPenalty = Math.max(0, totalPenaltyIncurred - totalPenaltyPaid);
 
-            // Determine overall health status
             let healthRating = 'Good Standing (Up to Date)';
             let healthColor = successColor;
             if (overdueTermsCount > 0) {
@@ -529,19 +484,12 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                 }
             }
 
-            // Always add a fresh page for the Installment & Overdue Analytics Report
-            doc.addPage();
-            y = margin;
-
-            // Render Header Banner on Analytics Page
-            renderHeaderBanner();
-            y = margin + 68;
-
-            drawSectionHeader('6', 'Installment & Overdue Analytics Report');
+            // ── 5. INSTALLMENT & OVERDUE ANALYTICS REPORT (Always Section 5) ──
+            drawSectionHeader(nextSection(), 'Installment & Overdue Analytics Report');
 
             // 4 KPI Overview Metric Cards
             const cardWidth = (contentWidth - 18) / 4;
-            const cardHeight = 44;
+            const cardHeight = 40;
 
             const kpiCards = [
                 { label: 'Installment Terms', value: `${schedule.length} Terms`, sub: `${paidOnTimeTermsCount} Paid / ${overdueTermsCount} Overdue`, color: accentBlue },
@@ -555,145 +503,196 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                 doc.rect(cx, y, cardWidth, cardHeight).fillAndStroke(lightCardBg, borderColor);
                 doc.rect(cx, y, cardWidth, 3).fill(card.color);
 
-                doc.fillColor(textMuted).fontSize(7).font(FONT_BOLD)
-                    .text(card.label.toUpperCase(), cx + 6, y + 6, { width: cardWidth - 12 });
+                doc.fillColor(textMuted).fontSize(6.5).font(FONT_BOLD)
+                    .text(card.label.toUpperCase(), cx + 5, y + 5, { width: cardWidth - 10, lineBreak: false });
 
-                doc.fillColor(card.color).fontSize(11).font(FONT_BOLD)
-                    .text(card.value, cx + 6, y + 17, { width: cardWidth - 12 });
+                doc.fillColor(card.color).fontSize(10).font(FONT_BOLD)
+                    .text(card.value, cx + 5, y + 14, { width: cardWidth - 10, lineBreak: false });
 
                 doc.fillColor(textDark).fontSize(6.5).font(FONT_REGULAR)
-                    .text(card.sub, cx + 6, y + 31, { width: cardWidth - 12, ellipsis: true });
+                    .text(card.sub, cx + 5, y + 27, { width: cardWidth - 10, ellipsis: true, lineBreak: false });
             });
 
-            y += cardHeight + 12;
+            y += cardHeight + 8;
 
-            // Summary Info Grid
+            // Summary Analytics Grid with Overdue Categories
             const analyticsSummaryItems = [
                 { label: 'Contract Duration', value: contract.duration || `${schedule.length} Months` },
                 { label: 'Monthly Payment ($)', value: `$${monthlyPayment.toFixed(2)}` },
                 { label: 'Terms Paid On-Time', value: `${paidOnTimeTermsCount} Month(s)` },
                 { label: 'Terms Paid with Delay', value: `${paidLateTermsCount} Month(s)` },
-                { label: 'Terms Currently Overdue', value: `${overdueTermsCount} Month(s)` },
-                { label: 'Pending / Future Terms', value: `${pendingUpcomingTermsCount} Month(s)` },
-                { label: 'Total Penalty Paid ($)', value: `$${totalPenaltyPaid.toFixed(2)}` },
-                { label: 'Remaining Unpaid Penalty ($)', value: `$${unpaidPenalty.toFixed(2)}` },
+                { label: 'Overdue 3-6 Days (យឺត ៣ ថ្ងៃ)', value: `${overdue3To6DaysCount} Term(s)` },
+                { label: 'Overdue 7+ Days (យឺត ៧ ថ្ងៃឡើង)', value: `${overdue7PlusDaysCount} Term(s)` },
+                { label: 'Due in 3 Days (ជិតដល់ថ្ងៃបង់)', value: `${dueIn3DaysCount} Term(s)` },
+                { label: 'Due Today (ត្រូវបង់ថ្ងៃនេះ)', value: `${dueTodayCount} Term(s)` },
+                { label: 'Unpaid Yesterday (មិនបានបង់ម្សិលមិញ)', value: `${unpaidYesterdayCount} Term(s)` },
                 { label: 'Remaining Principal ($)', value: `$${remainingBalance.toFixed(2)}` },
-                { label: 'Overall Installment Status', value: healthRating }
+                { label: 'Total Penalty Paid ($)', value: `$${totalPenaltyPaid.toFixed(2)}` },
+                { label: 'Remaining Unpaid Penalty ($)', value: `$${unpaidPenalty.toFixed(2)}` }
             ];
 
             drawDynamicGrid2Col(analyticsSummaryItems);
 
-            // Overdue Detailed Breakdown Table
-            if (y > pageHeight - 120) {
-                doc.addPage();
-                y = margin;
+            // Overdue Detailed Breakdown Table (if schedule exists)
+            if (installmentBreakdown.length > 0) {
+                doc.rect(margin, y, contentWidth, 16).fill('#334155');
+                doc.fillColor('#ffffff').fontSize(7.5).font(FONT_BOLD)
+                    .text('TERM-BY-TERM OVERDUE & LATE PAYMENT BREAKDOWN', margin + 8, y + 4.5, { lineBreak: false });
+                y += 18;
+
+                const repCols = [
+                    { title: 'Term #', width: 40, align: 'center' },
+                    { title: 'Due Date', width: 75, align: 'left' },
+                    { title: 'Scheduled ($)', width: 70, align: 'right' },
+                    { title: 'Overdue / Late', width: 95, align: 'center' },
+                    { title: 'Penalty ($)', width: 65, align: 'right' },
+                    { title: 'Paid Date', width: 75, align: 'center' },
+                    { title: 'Paid ($)', width: 60, align: 'right' },
+                    { title: 'Status', width: 43.28, align: 'center' }
+                ];
+
+                const renderRepTableHeader = () => {
+                    doc.rect(margin, y, contentWidth, 15).fill(brandNavy);
+                    let currX = margin;
+                    repCols.forEach(col => {
+                        doc.fillColor('#ffffff').fontSize(7).font(FONT_BOLD)
+                            .text(col.title, currX + 2, y + 4, { width: col.width - 4, align: col.align, lineBreak: false });
+                        currX += col.width;
+                    });
+                    y += 15;
+                };
+
+                renderRepTableHeader();
+
+                installmentBreakdown.forEach((r, rIdx) => {
+                    const isEven = rIdx % 2 === 0;
+                    const rowBg = isEven ? '#ffffff' : '#f8fafc';
+                    const rowHeight = 14;
+
+                    doc.rect(margin, y, contentWidth, rowHeight).fillAndStroke(rowBg, borderColor);
+
+                    let currX = margin;
+
+                    // Term #
+                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
+                        .text(`Term ${r.termNum}`, currX + 2, y + 3.5, { width: repCols[0].width - 4, align: 'center', lineBreak: false });
+                    currX += repCols[0].width;
+
+                    // Due Date
+                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
+                        .text(r.dueDateStr || '—', currX + 2, y + 3.5, { width: repCols[1].width - 4, align: 'left', lineBreak: false });
+                    currX += repCols[1].width;
+
+                    // Scheduled
+                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
+                        .text(`$${r.schedAmt.toFixed(2)}`, currX + 2, y + 3.5, { width: repCols[2].width - 4, align: 'right', lineBreak: false });
+                    currX += repCols[2].width;
+
+                    // Overdue Days
+                    let dayColor = successColor;
+                    let dayText = '0 Days (On-Time)';
+                    if (r.overdueDays > 0) {
+                        dayColor = r.overdueDays >= 7 ? dangerColor : warningColor;
+                        dayText = `+${r.overdueDays} Days Late`;
+                    }
+                    doc.fillColor(dayColor).fontSize(7).font(FONT_BOLD)
+                        .text(dayText, currX + 2, y + 3.5, { width: repCols[3].width - 4, align: 'center', lineBreak: false });
+                    currX += repCols[3].width;
+
+                    // Penalty
+                    doc.fillColor(r.penaltyAmt > 0 ? dangerColor : textMuted).fontSize(7).font(FONT_REGULAR)
+                        .text(r.penaltyAmt > 0 ? `$${r.penaltyAmt.toFixed(2)}` : '$0.00', currX + 2, y + 3.5, { width: repCols[4].width - 4, align: 'right', lineBreak: false });
+                    currX += repCols[4].width;
+
+                    // Paid Date
+                    doc.fillColor(textDark).fontSize(6.5).font(FONT_REGULAR)
+                        .text(r.paidDateStr || '—', currX + 2, y + 3.5, { width: repCols[5].width - 4, align: 'center', lineBreak: false });
+                    currX += repCols[5].width;
+
+                    // Paid Amount
+                    doc.fillColor(r.paidAmt > 0 ? successColor : textMuted).fontSize(7).font(FONT_BOLD)
+                        .text(`$${r.paidAmt.toFixed(2)}`, currX + 2, y + 3.5, { width: repCols[6].width - 4, align: 'right', lineBreak: false });
+                    currX += repCols[6].width;
+
+                    // Status
+                    let sColor = dangerColor;
+                    if (r.statusStr.toLowerCase().includes('paid') || r.statusStr.toLowerCase().includes('settled')) sColor = successColor;
+                    else if (r.statusStr.toLowerCase().includes('partial') || r.statusStr.toLowerCase().includes('due')) sColor = warningColor;
+
+                    doc.fillColor(sColor).fontSize(7).font(FONT_BOLD)
+                        .text(r.statusStr, currX + 2, y + 3.5, { width: repCols[7].width - 4, align: 'center', lineBreak: false });
+
+                    y += rowHeight;
+                });
+                y += 6;
             }
 
-            doc.rect(margin, y, contentWidth, 18).fill('#334155');
-            doc.fillColor('#ffffff').fontSize(8).font(FONT_BOLD)
-                .text('TERM-BY-TERM OVERDUE & LATE PAYMENT BREAKDOWN', margin + 10, y + 5);
-            y += 22;
+            // ── 6. PAYMENT TRANSACTION HISTORY (If payments exist) ──
+            if (payments && payments.length > 0) {
+                drawSectionHeader(nextSection(), 'Payment Transaction History');
 
-            const repCols = [
-                { title: 'Term #', width: 40, align: 'center' },
-                { title: 'Due Date', width: 75, align: 'left' },
-                { title: 'Scheduled ($)', width: 70, align: 'right' },
-                { title: 'Overdue / Late (Days)', width: 95, align: 'center' },
-                { title: 'Penalty ($)', width: 65, align: 'right' },
-                { title: 'Paid Date', width: 75, align: 'center' },
-                { title: 'Paid ($)', width: 60, align: 'right' },
-                { title: 'Term Status', width: 43.28, align: 'center' }
-            ];
+                const pCols = [
+                    { title: '#', width: 30, align: 'center' },
+                    { title: 'Payment ID', width: 95, align: 'left' },
+                    { title: 'Paid Date', width: 85, align: 'left' },
+                    { title: 'Payment Method', width: 110, align: 'left' },
+                    { title: 'Amount ($)', width: 80, align: 'right' },
+                    { title: 'Description', width: 123.28, align: 'left' }
+                ];
 
-            const renderRepTableHeader = () => {
-                doc.rect(margin, y, contentWidth, 18).fill(brandNavy);
+                doc.rect(margin, y, contentWidth, 15).fill('#334155');
                 let currX = margin;
-                repCols.forEach(col => {
-                    doc.fillColor('#ffffff').fontSize(7.5).font(FONT_BOLD)
-                        .text(col.title, currX + 2, y + 5, { width: col.width - 4, align: col.align });
+                pCols.forEach(col => {
+                    doc.fillColor('#ffffff').fontSize(7).font(FONT_BOLD)
+                        .text(col.title, currX + 2, y + 4, { width: col.width - 4, align: col.align, lineBreak: false });
                     currX += col.width;
                 });
-                y += 18;
-            };
+                y += 15;
 
-            renderRepTableHeader();
+                payments.forEach((p, pIdx) => {
+                    const rowBg = pIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                    doc.rect(margin, y, contentWidth, 14).fillAndStroke(rowBg, borderColor);
 
-            installmentBreakdown.forEach((r, rIdx) => {
-                if (y > pageHeight - 35) {
-                    doc.addPage();
-                    y = margin;
-                    renderRepTableHeader();
-                }
+                    let px = margin;
+                    // #
+                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR).text(String(pIdx + 1), px + 2, y + 3.5, { width: pCols[0].width - 4, align: 'center', lineBreak: false });
+                    px += pCols[0].width;
+                    // Payment ID
+                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR).text(p.paymentId || '—', px + 2, y + 3.5, { width: pCols[1].width - 4, align: 'left', lineBreak: false });
+                    px += pCols[1].width;
+                    // Paid Date
+                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR).text(p.paidDate || '—', px + 2, y + 3.5, { width: pCols[2].width - 4, align: 'left', lineBreak: false });
+                    px += pCols[2].width;
+                    // Paid By
+                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR).text(p.paidBy || 'QR Mobile Payment', px + 2, y + 3.5, { width: pCols[3].width - 4, align: 'left', lineBreak: false });
+                    px += pCols[3].width;
+                    // Amount
+                    doc.fillColor(successColor).fontSize(7.5).font(FONT_BOLD).text(`$${(parseFloat(p.amount) || 0).toFixed(2)}`, px + 2, y + 3.5, { width: pCols[4].width - 4, align: 'right', lineBreak: false });
+                    px += pCols[4].width;
+                    // Description
+                    doc.fillColor(textMuted).fontSize(6.5).font(FONT_KHMER).text(p.description || '—', px + 2, y + 3.5, { width: pCols[5].width - 4, align: 'left', ellipsis: true, lineBreak: false });
 
-                const isEven = rIdx % 2 === 0;
-                const rowBg = isEven ? '#ffffff' : '#f8fafc';
-                const rowHeight = 16;
-
-                doc.rect(margin, y, contentWidth, rowHeight).fillAndStroke(rowBg, borderColor);
-
-                let currX = margin;
-
-                // Term #
-                doc.fillColor(textDark).fontSize(7.5).font(FONT_REGULAR)
-                    .text(`Term ${r.termNum}`, currX + 2, y + 4, { width: repCols[0].width - 4, align: 'center' });
-                currX += repCols[0].width;
-
-                // Due Date
-                doc.fillColor(textDark).fontSize(7.5).font(FONT_REGULAR)
-                    .text(r.dueDateStr || '—', currX + 2, y + 4, { width: repCols[1].width - 4, align: 'left' });
-                currX += repCols[1].width;
-
-                // Scheduled
-                doc.fillColor(textDark).fontSize(7.5).font(FONT_REGULAR)
-                    .text(`$${r.schedAmt.toFixed(2)}`, currX + 2, y + 4, { width: repCols[2].width - 4, align: 'right' });
-                currX += repCols[2].width;
-
-                // Overdue Days
-                let dayColor = successColor;
-                let dayText = '0 Days (On-Time)';
-                if (r.overdueDays > 0) {
-                    dayColor = r.overdueDays >= 7 ? dangerColor : warningColor;
-                    dayText = `+${r.overdueDays} Days Late`;
-                }
-                doc.fillColor(dayColor).fontSize(7.5).font(FONT_BOLD)
-                    .text(dayText, currX + 2, y + 4, { width: repCols[3].width - 4, align: 'center' });
-                currX += repCols[3].width;
-
-                // Penalty
-                doc.fillColor(r.penaltyAmt > 0 ? dangerColor : textMuted).fontSize(7.5).font(FONT_REGULAR)
-                    .text(r.penaltyAmt > 0 ? `$${r.penaltyAmt.toFixed(2)}` : '$0.00', currX + 2, y + 4, { width: repCols[4].width - 4, align: 'right' });
-                currX += repCols[4].width;
-
-                // Paid Date
-                doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
-                    .text(r.paidDateStr || '—', currX + 2, y + 4, { width: repCols[5].width - 4, align: 'center' });
-                currX += repCols[5].width;
-
-                // Paid Amount
-                doc.fillColor(r.paidAmt > 0 ? successColor : textMuted).fontSize(7.5).font(FONT_BOLD)
-                    .text(`$${r.paidAmt.toFixed(2)}`, currX + 2, y + 4, { width: repCols[6].width - 4, align: 'right' });
-                currX += repCols[6].width;
-
-                // Status
-                let sColor = dangerColor;
-                if (r.statusStr.toLowerCase().includes('paid') || r.statusStr.toLowerCase().includes('settled')) sColor = successColor;
-                else if (r.statusStr.toLowerCase().includes('partial') || r.statusStr.toLowerCase().includes('due')) sColor = warningColor;
-
-                doc.fillColor(sColor).fontSize(7.5).font(FONT_BOLD)
-                    .text(r.statusStr, currX + 2, y + 4, { width: repCols[7].width - 4, align: 'center' });
-
-                y += rowHeight;
-            });
+                    y += 14;
+                });
+                y += 6;
+            }
 
             // ── PAGE NUMBERING FOOTER ON ALL PAGES ──
             const range = doc.bufferedPageRange();
             for (let i = range.start; i < range.start + range.count; i++) {
                 doc.switchToPage(i);
-                doc.rect(margin, pageHeight - 26, contentWidth, 1).fill(borderColor);
-                doc.fillColor(textMuted).fontSize(7.5).font(FONT_REGULAR)
-                    .text(`SYSTEM MDM Automated Dossier • Brand: ${activeBrand} • Confidential Document`, margin, pageHeight - 20, { align: 'left' });
-                doc.fillColor(textMuted).fontSize(7.5).font(FONT_REGULAR)
-                    .text(`Page ${i + 1} of ${range.count}`, margin, pageHeight - 20, { align: 'right', width: contentWidth });
+                doc.rect(margin, pageHeight - 30, contentWidth, 1).fill(borderColor);
+                doc.fillColor(textMuted).fontSize(7).font(FONT_REGULAR)
+                    .text(`SYSTEM MDM Automated Dossier • Brand: ${activeBrand} • Confidential Document`, margin, pageHeight - 24, {
+                        align: 'left',
+                        lineBreak: false
+                    });
+                doc.fillColor(textMuted).fontSize(7).font(FONT_REGULAR)
+                    .text(`Page ${i + 1} of ${range.count}`, margin, pageHeight - 24, {
+                        align: 'right',
+                        width: contentWidth,
+                        lineBreak: false
+                    });
             }
 
             doc.end();

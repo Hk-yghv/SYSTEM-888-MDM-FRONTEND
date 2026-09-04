@@ -63,6 +63,20 @@ const AllAccount = () => {
 
     const [openCreateModal, setOpenCreateModal] = useState(false);
     const [selectedHistoryUser, setSelectedHistoryUser] = useState(null);
+    const [historyModalTab, setHistoryModalTab] = useState('online'); // 'online', 'otp', 'login'
+
+    // Format duration in seconds to human readable (e.g. 1h 25m 30s)
+    const formatDuration = (seconds) => {
+        if (!seconds || seconds <= 0) return '< 1m';
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        const parts = [];
+        if (h > 0) parts.push(`${h}h`);
+        if (m > 0 || h > 0) parts.push(`${m}m`);
+        if (parts.length === 0 || s > 0) parts.push(`${s}s`);
+        return parts.join(' ');
+    };
 
     // New / Edit User Form State
     const [editingUser, setEditingUser] = useState(null);
@@ -368,24 +382,56 @@ const AllAccount = () => {
                                         )}
                                     </td>
                                     <td className='px-4 py-3 text-center'>
-                                        <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1 w-20 mx-auto ${item.status === 'Online' ? 'bg-emerald-50 text-emerald-700 border border-emerald-300' : 'bg-slate-100 text-slate-500 border border-slate-300'}`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'Online' ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`}></span>
-                                            {item.status || 'Offline'}
-                                        </span>
-                                    </td>
-                                    <td className='px-4 py-3 text-center font-mono text-xs text-amber-700 font-bold'>
-                                        {item.lastOtp ? (
-                                            <span className="px-2 py-0.5 rounded bg-amber-50 border border-amber-300 text-amber-800">{item.lastOtp}</span>
+                                        {item.status === 'Online' ? (
+                                            <div className="flex flex-col items-center gap-0.5">
+                                                <span className="px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-xs">
+                                                    <span className="relative flex h-2 w-2">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                    </span>
+                                                    Online
+                                                </span>
+                                                <span className="text-[9px] text-emerald-600 font-medium">Active now</span>
+                                            </div>
                                         ) : (
-                                            <span className="text-slate-400 font-normal text-[10px]">-</span>
+                                            <div className="flex flex-col items-center gap-0.5">
+                                                <span className="px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1 bg-slate-100 text-slate-500 border border-slate-300">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                    Offline
+                                                </span>
+                                                {item.lastSeen && (
+                                                    <span className="text-[9px] text-slate-400 font-mono">
+                                                        {new Date(item.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className='px-4 py-3 text-center'>
+                                        {item.lastOtp ? (
+                                            <button
+                                                onClick={() => { setSelectedHistoryUser(item); setHistoryModalTab('otp'); }}
+                                                className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-mono font-bold text-xs inline-flex items-center gap-1.5 mx-auto cursor-pointer transition-all shadow-xs"
+                                                title="Click to view all OTP History"
+                                            >
+                                                <span className="tracking-wider">{item.lastOtp}</span>
+                                                {item.otpHistory?.length > 1 && (
+                                                    <span className="text-[9px] bg-amber-200 text-amber-800 px-1 py-0.2 rounded-full">
+                                                        +{item.otpHistory.length - 1}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        ) : (
+                                            <span className="text-slate-400 font-normal text-[11px]">-</span>
                                         )}
                                     </td>
                                     <td className='px-4 py-3 text-center'>
                                         <button
-                                            onClick={() => setSelectedHistoryUser(item)}
-                                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg text-[11px] font-semibold flex items-center gap-1 mx-auto cursor-pointer transition-all"
+                                            onClick={() => { setSelectedHistoryUser(item); setHistoryModalTab('online'); }}
+                                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 mx-auto cursor-pointer transition-all shadow-xs"
                                         >
-                                            <FaHistory /> View
+                                            <FaHistory className="text-indigo-600" />
+                                            <span>Sessions & Logs</span>
                                         </button>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
@@ -438,33 +484,146 @@ const AllAccount = () => {
                 </table>
             </div>
 
-            {/* Login History Modal */}
+            {/* 3-in-1 Audit History Modal: Online Sessions, 6-Digit OTP History, and Login Logs */}
             {selectedHistoryUser && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4">
-                        <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-                            <h3 className="text-sm font-bold text-gray-100 flex items-center gap-2">
-                                <FaHistory className="text-indigo-400" />
-                                Login History for {selectedHistoryUser.username}
-                            </h3>
-                            <button onClick={() => setSelectedHistoryUser(null)} className="text-gray-400 hover:text-gray-200 text-xs font-bold">✕</button>
+                    <div className="bg-[#0f172a] border border-slate-700 rounded-3xl p-6 w-full max-w-2xl shadow-2xl space-y-4">
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <div>
+                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                    <FaHistory className="text-indigo-400" />
+                                    Account Audit & Logs: <span className="text-emerald-400 font-mono">{selectedHistoryUser.username}</span>
+                                </h3>
+                                <p className="text-[11px] text-slate-400">User ID: {selectedHistoryUser.userId || '—'} &bull; Role: {selectedHistoryUser.role || 'Staff'}</p>
+                            </div>
+                            <button onClick={() => setSelectedHistoryUser(null)} className="text-slate-400 hover:text-white text-sm font-bold cursor-pointer">✕</button>
                         </div>
 
-                        <div className="max-h-60 overflow-y-auto space-y-2 pr-1 text-xs">
-                            {(!selectedHistoryUser.loginHistory || selectedHistoryUser.loginHistory.length === 0) ? (
-                                <p className="text-gray-500 italic text-center py-4">No login history recorded yet.</p>
-                            ) : (
-                                selectedHistoryUser.loginHistory.map((log, lIdx) => (
-                                    <div key={lIdx} className="p-3 bg-gray-900/60 border border-gray-800 rounded-xl space-y-0.5 font-mono">
-                                        <p className="text-indigo-300 font-bold">{new Date(log.timestamp).toLocaleString()}</p>
-                                        <p className="text-gray-400 text-[11px]">IP: {log.ip || '127.0.0.1'} &bull; {log.deviceInfo}</p>
+                        {/* Tabs */}
+                        <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+                            <button
+                                onClick={() => setHistoryModalTab('online')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'online' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
+                            >
+                                🕒 Online Sessions ({selectedHistoryUser.onlineHistory?.length || 0})
+                            </button>
+                            <button
+                                onClick={() => setHistoryModalTab('otp')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'otp' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
+                            >
+                                🔑 OTP 6-Digit Codes ({selectedHistoryUser.otpHistory?.length || (selectedHistoryUser.lastOtp ? 1 : 0)})
+                            </button>
+                            <button
+                                onClick={() => setHistoryModalTab('login')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
+                            >
+                                📋 Login Audit ({selectedHistoryUser.loginHistory?.length || 0})
+                            </button>
+                        </div>
+
+                        {/* Tab Content: Online Sessions (From - To Time & Duration) */}
+                        {historyModalTab === 'online' && (
+                            <div className="max-h-72 overflow-y-auto space-y-2 pr-1 text-xs">
+                                {(!selectedHistoryUser.onlineHistory || selectedHistoryUser.onlineHistory.length === 0) ? (
+                                    <div className="text-center py-8 text-slate-500 italic space-y-1">
+                                        <p>No active online session history recorded yet.</p>
+                                        <p className="text-[11px] text-slate-600">Sessions are automatically recorded when user logs in and active.</p>
                                     </div>
-                                ))
-                            )}
-                        </div>
+                                ) : (
+                                    selectedHistoryUser.onlineHistory.map((sess, sIdx) => {
+                                        const isCurrent = !sess.logoutTime && selectedHistoryUser.status === 'Online';
+                                        return (
+                                            <div key={sIdx} className={`p-3 rounded-2xl border ${isCurrent ? 'bg-emerald-950/30 border-emerald-800/80' : 'bg-slate-900/70 border-slate-800'} space-y-1 font-mono`}>
+                                                <div className="flex items-center justify-between text-[11px]">
+                                                    <span className="text-slate-300 font-bold flex items-center gap-1.5">
+                                                        <span className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`}></span>
+                                                        {isCurrent ? '🟢 Currently Online (Active Session)' : '⚪ Completed Session'}
+                                                    </span>
+                                                    <span className="text-indigo-400 font-bold bg-indigo-950/60 border border-indigo-800/60 px-2 py-0.5 rounded-md">
+                                                        Duration: {formatDuration(sess.durationSeconds)}
+                                                    </span>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 pt-1 text-[11px] text-slate-400">
+                                                    <div>
+                                                        <span className="text-slate-500 block">Login Time (ម៉ោងចូល):</span>
+                                                        <span className="text-slate-200">{new Date(sess.loginTime).toLocaleString('en-GB')}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-slate-500 block">Last Active / Logout (ម៉ោងចេញ):</span>
+                                                        <span className="text-slate-200">
+                                                            {sess.logoutTime ? new Date(sess.logoutTime).toLocaleString('en-GB') : (sess.lastSeen ? new Date(sess.lastSeen).toLocaleString('en-GB') : 'Active')}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <p className="text-[10px] text-slate-500 pt-0.5">IP: {sess.ip || '127.0.0.1'} &bull; Device: {sess.deviceInfo || 'Web Browser'}</p>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
 
-                        <div className="text-right pt-2">
-                            <button onClick={() => setSelectedHistoryUser(null)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">Close</button>
+                        {/* Tab Content: OTP 6-Digit Codes History */}
+                        {historyModalTab === 'otp' && (
+                            <div className="max-h-72 overflow-y-auto space-y-2 pr-1 text-xs">
+                                {(!selectedHistoryUser.otpHistory || selectedHistoryUser.otpHistory.length === 0) && !selectedHistoryUser.lastOtp ? (
+                                    <div className="text-center py-8 text-slate-500 italic space-y-1">
+                                        <p>No 6-digit OTP codes recorded for this account.</p>
+                                        <p className="text-[11px] text-slate-600">Codes are recorded when 2FA Telegram login verification is requested.</p>
+                                    </div>
+                                ) : (
+                                    (selectedHistoryUser.otpHistory?.length > 0 ? selectedHistoryUser.otpHistory : [{ otp: selectedHistoryUser.lastOtp, createdAt: new Date(), status: 'Recent', ip: '127.0.0.1' }]).map((otpLog, oIdx) => (
+                                        <div key={oIdx} className="p-3 bg-slate-900/70 border border-slate-800 rounded-2xl flex items-center justify-between font-mono">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-amber-400 font-extrabold text-base tracking-widest bg-amber-950/60 border border-amber-800/80 px-2.5 py-0.5 rounded-lg">
+                                                        {otpLog.otp}
+                                                    </span>
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${otpLog.status === 'Verified' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : (otpLog.status === 'Pending' ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-slate-800 text-slate-400')}`}>
+                                                        {otpLog.status || 'Issued'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[11px] text-slate-400">
+                                                    Issued: {new Date(otpLog.createdAt).toLocaleString('en-GB')}
+                                                    {otpLog.usedAt && ` • Verified: ${new Date(otpLog.usedAt).toLocaleTimeString('en-GB')}`}
+                                                </p>
+                                            </div>
+                                            <div className="text-right text-[11px] text-slate-500">
+                                                <span>IP: {otpLog.ip || '127.0.0.1'}</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+
+                        {/* Tab Content: Login Audit Logs */}
+                        {historyModalTab === 'login' && (
+                            <div className="max-h-72 overflow-y-auto space-y-2 pr-1 text-xs">
+                                {(!selectedHistoryUser.loginHistory || selectedHistoryUser.loginHistory.length === 0) ? (
+                                    <p className="text-slate-500 italic text-center py-8">No login audit logs recorded yet.</p>
+                                ) : (
+                                    selectedHistoryUser.loginHistory.map((log, lIdx) => (
+                                        <div key={lIdx} className="p-3 bg-slate-900/70 border border-slate-800 rounded-2xl space-y-1 font-mono">
+                                            <div className="flex items-center justify-between text-[11px]">
+                                                <span className="text-indigo-300 font-bold">{new Date(log.timestamp).toLocaleString('en-GB')}</span>
+                                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${log.status === 'Success' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}`}>
+                                                    {log.status || 'Success'}
+                                                </span>
+                                            </div>
+                                            <p className="text-slate-400 text-[11px]">IP: {log.ip || '127.0.0.1'} &bull; Device: {log.deviceInfo || 'Web Browser'}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+
+                        {/* Footer */}
+                        <div className="text-right pt-2 border-t border-slate-800">
+                            <button onClick={() => setSelectedHistoryUser(null)} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md">
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>

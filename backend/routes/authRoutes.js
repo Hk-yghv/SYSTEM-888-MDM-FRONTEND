@@ -147,6 +147,16 @@ export default function createAuthRoutes(bot) {
             if (user.twoFactorEnabled && user.telegramId) {
                 const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
                 user.lastOtp = otpCode;
+
+                if (!Array.isArray(user.otpHistory)) user.otpHistory = [];
+                user.otpHistory.unshift({
+                    otp: otpCode,
+                    createdAt: new Date(),
+                    status: 'Pending',
+                    ip
+                });
+                if (user.otpHistory.length > 50) user.otpHistory = user.otpHistory.slice(0, 50);
+
                 try {
                     if (isMongoConnected) await user.save();
                 } catch (sErr) {
@@ -171,15 +181,28 @@ export default function createAuthRoutes(bot) {
 
             clearLoginAttempts(ip);
             user.status = 'Online';
+            user.lastSeen = new Date();
 
             try {
                 if (!Array.isArray(user.loginHistory)) user.loginHistory = [];
-                user.loginHistory.push({
+                user.loginHistory.unshift({
                     timestamp: new Date(),
                     ip,
-                    deviceInfo,
+                    deviceInfo: `${browser} on ${os}`,
                     status: 'Success'
                 });
+                if (user.loginHistory.length > 50) user.loginHistory = user.loginHistory.slice(0, 50);
+
+                if (!Array.isArray(user.onlineHistory)) user.onlineHistory = [];
+                user.onlineHistory.unshift({
+                    loginTime: new Date(),
+                    lastSeen: new Date(),
+                    ip,
+                    deviceInfo: `${browser} on ${os}`,
+                    durationSeconds: 0
+                });
+                if (user.onlineHistory.length > 50) user.onlineHistory = user.onlineHistory.slice(0, 50);
+
                 if (isMongoConnected) await user.save();
             } catch (sErr) {
                 console.error('Failed to save user login history (Success):', sErr.message);
@@ -262,13 +285,34 @@ export default function createAuthRoutes(bot) {
             const { os, browser } = parseUserAgent(ua);
 
             try {
+                // Update OTP History status
+                if (Array.isArray(user.otpHistory)) {
+                    const otpEntry = user.otpHistory.find(o => o.otp === otp && o.status === 'Pending');
+                    if (otpEntry) {
+                        otpEntry.status = 'Verified';
+                        otpEntry.usedAt = new Date();
+                    }
+                }
+
                 if (!Array.isArray(user.loginHistory)) user.loginHistory = [];
-                user.loginHistory.push({
+                user.loginHistory.unshift({
                     timestamp: new Date(),
                     ip,
                     deviceInfo: `${browser} on ${os}`,
                     status: 'Success'
                 });
+                if (user.loginHistory.length > 50) user.loginHistory = user.loginHistory.slice(0, 50);
+
+                if (!Array.isArray(user.onlineHistory)) user.onlineHistory = [];
+                user.onlineHistory.unshift({
+                    loginTime: new Date(),
+                    lastSeen: new Date(),
+                    ip,
+                    deviceInfo: `${browser} on ${os}`,
+                    durationSeconds: 0
+                });
+                if (user.onlineHistory.length > 50) user.onlineHistory = user.onlineHistory.slice(0, 50);
+
                 if (isMongoConnected) await user.save();
             } catch (sErr) {
                 console.error('Failed to save OTP user login history:', sErr.message);
@@ -310,7 +354,7 @@ export default function createAuthRoutes(bot) {
         }
     });
 
-    // POST /api/auth/logout — Mark user Offline immediately
+    // POST /api/auth/logout — Mark user Offline immediately & close online session
     router.post('/logout', async (req, res) => {
         try {
             let username = req.body?.username;
@@ -321,14 +365,34 @@ export default function createAuthRoutes(bot) {
                 } catch {}
             }
             if (username) {
+                const now = new Date();
                 if (isMongoConnected) {
-                    const WriteModel = getWriteModel(User);
-                    await WriteModel.updateOne({ username }, { $set: { status: 'Offline', lastSeen: new Date(Date.now() - 60000) } });
-                } else {
-                    const memUser = MEM_DB.users.find(u => u.username === username);
-                    if (memUser) {
-                        memUser.status = 'Offline';
-                        memUser.lastSeen = new Date(Date.now() - 60000);
+                    const users = await queryAllDBs(User, (M) => M.find({ username }));
+                    for (const u of users) {
+                        u.status = 'Offline';
+                        u.lastSeen = new Date(Date.now() - 90000);
+                        if (Array.isArray(u.onlineHistory) && u.onlineHistory.length > 0) {
+                            const latest = u.onlineHistory[0];
+                            if (!latest.logoutTime) {
+                                latest.logoutTime = now;
+                                latest.lastSeen = now;
+                                latest.durationSeconds = Math.max(0, Math.round((now.getTime() - new Date(latest.loginTime).getTime()) / 1000));
+                            }
+                        }
+                        await u.save();
+                    }
+                }
+                const memUser = MEM_DB.users.find(u => u.username === username);
+                if (memUser) {
+                    memUser.status = 'Offline';
+                    memUser.lastSeen = new Date(Date.now() - 90000);
+                    if (Array.isArray(memUser.onlineHistory) && memUser.onlineHistory.length > 0) {
+                        const latest = memUser.onlineHistory[0];
+                        if (!latest.logoutTime) {
+                            latest.logoutTime = now;
+                            latest.lastSeen = now;
+                            latest.durationSeconds = Math.max(0, Math.round((now.getTime() - new Date(latest.loginTime).getTime()) / 1000));
+                        }
                     }
                 }
             }
@@ -338,19 +402,38 @@ export default function createAuthRoutes(bot) {
         }
     });
 
-    // POST /api/auth/heartbeat — Update lastSeen and refresh Online status
+    // POST /api/auth/heartbeat — Update lastSeen and refresh Online status & duration
     router.post('/heartbeat', async (req, res) => {
         try {
             const { username } = req.body;
             if (username) {
                 const now = new Date();
                 if (isMongoConnected) {
-                    await queryAllDBs(User, (M) => M.updateMany({ username }, { $set: { status: 'Online', lastSeen: now } }));
+                    const users = await queryAllDBs(User, (M) => M.find({ username }));
+                    for (const u of users) {
+                        u.status = 'Online';
+                        u.lastSeen = now;
+                        if (Array.isArray(u.onlineHistory) && u.onlineHistory.length > 0) {
+                            const latest = u.onlineHistory[0];
+                            if (!latest.logoutTime) {
+                                latest.lastSeen = now;
+                                latest.durationSeconds = Math.max(0, Math.round((now.getTime() - new Date(latest.loginTime).getTime()) / 1000));
+                            }
+                        }
+                        await u.save();
+                    }
                 }
                 const memUser = MEM_DB.users.find(u => u.username === username);
                 if (memUser) {
                     memUser.status = 'Online';
                     memUser.lastSeen = now;
+                    if (Array.isArray(memUser.onlineHistory) && memUser.onlineHistory.length > 0) {
+                        const latest = memUser.onlineHistory[0];
+                        if (!latest.logoutTime) {
+                            latest.lastSeen = now;
+                            latest.durationSeconds = Math.max(0, Math.round((now.getTime() - new Date(latest.loginTime).getTime()) / 1000));
+                        }
+                    }
                 }
             }
             res.json({ success: true });

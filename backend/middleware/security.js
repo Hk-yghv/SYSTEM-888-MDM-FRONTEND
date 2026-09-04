@@ -269,7 +269,7 @@ export const requireAdminRole = (req, res, next) => {
 
 // ── LAYER 9: Sensitive Data Response Masking ──
 const SENSITIVE_FIELDS = [
-    'password', 'lastOtp', 'jwtSecret', 'dbPassword', 'dbUri',
+    'password', 'jwtSecret', 'dbPassword', 'dbUri',
     'FIREBASE_SECRET_KEY', 'FIREBASE_DATABASE_URL', 'authSecret',
     'secondPassword', 'telegramToken', 'botToken', 'secretKey'
 ];

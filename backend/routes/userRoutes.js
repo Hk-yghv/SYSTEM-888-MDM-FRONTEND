@@ -7,13 +7,18 @@ import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 const router = express.Router();
 
 // GET all users — merged from all 3 DBs
-const OFFLINE_THRESHOLD_MS = 45 * 1000; // 45 seconds threshold
+// GET all users — merged from all 3 DBs
+const OFFLINE_THRESHOLD_MS = 90 * 1000; // 90 seconds threshold
 
 const formatUserStatus = (u) => {
     const rawObj = u.toObject ? u.toObject() : { ...u };
     const lastSeenMs = rawObj.lastSeen ? new Date(rawObj.lastSeen).getTime() : 0;
-    const isOnline = lastSeenMs > 0 && (Date.now() - lastSeenMs <= OFFLINE_THRESHOLD_MS);
+    const isOnline = lastSeenMs > 0 && (Date.now() - lastSeenMs <= OFFLINE_THRESHOLD_MS) && rawObj.status !== 'Offline';
     rawObj.status = isOnline ? 'Online' : 'Offline';
+    rawObj.lastSeen = rawObj.lastSeen || (isOnline ? new Date() : null);
+    rawObj.otpHistory = rawObj.otpHistory || [];
+    rawObj.onlineHistory = rawObj.onlineHistory || [];
+    rawObj.loginHistory = rawObj.loginHistory || [];
     return rawObj;
 };
 

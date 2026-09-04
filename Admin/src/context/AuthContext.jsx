@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: user.username })
-            }).catch(() => {});
+            }).catch(() => { });
         }
         setUser(null);
         setToken('');
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: user.username })
-            }).catch(() => {});
+            }).catch(() => { });
         };
 
         sendHeartbeat();
@@ -74,11 +74,11 @@ export const AuthProvider = ({ children }) => {
         };
     }, [user?.username, token]);
 
-    // ── 15-Minute Inactivity Auto Logout ──
+    // ── 30-Minute Inactivity Auto Logout
     useEffect(() => {
         if (!user || !token) return;
 
-        const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes in ms
+        const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in ms
 
         const resetActivity = () => {
             lastActivityRef.current = Date.now();

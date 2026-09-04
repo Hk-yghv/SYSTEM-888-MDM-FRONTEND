@@ -14,7 +14,23 @@ const userSchema = new mongoose.Schema({
     status: { type: String, enum: ['Online', 'Offline'], default: 'Offline' },
     telegramId: { type: String, default: '' },
     twoFactorEnabled: { type: Boolean, default: false },
+    lastSeen: { type: Date, default: Date.now },
     lastOtp: { type: String, default: '' },
+    otpHistory: [{
+        otp: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+        usedAt: { type: Date },
+        status: { type: String, default: 'Pending' }, // 'Pending', 'Verified', 'Expired'
+        ip: { type: String, default: '127.0.0.1' }
+    }],
+    onlineHistory: [{
+        loginTime: { type: Date, default: Date.now },
+        lastSeen: { type: Date, default: Date.now },
+        logoutTime: { type: Date },
+        durationSeconds: { type: Number, default: 0 },
+        ip: { type: String, default: '127.0.0.1' },
+        deviceInfo: { type: String, default: 'Web Browser' }
+    }],
     loginHistory: [{
         timestamp: { type: Date, default: Date.now },
         ip: { type: String, default: '127.0.0.1' },

@@ -1,7 +1,4 @@
-/**
- * Formats standard 15-digit IMEI to the format: 00 000000 000000 0
- * Example: 351732277360759 -> 35 173227 736075 9
- */
+
 export const formatIMEI = (imei) => {
     if (!imei || imei === '—' || imei === '-') return '—';
     const str = String(imei).trim();
