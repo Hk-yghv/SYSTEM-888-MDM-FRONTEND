@@ -75,6 +75,10 @@ const FollowUp2 = () => {
     const [previewIndex, setPreviewIndex] = useState(0);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+    // Selected images state (Pending upload until Submit)
+    // Structure: [{ id, type: 'url' | 'file', preview: string, file?: File, url?: string }]
+    const [selectedImages, setSelectedImages] = useState([]);
+
     // Export Modal State
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [exportFormat, setExportFormat] = useState('excel'); // 'excel' | 'pdf'
@@ -160,63 +164,24 @@ const FollowUp2 = () => {
         fetchData(1, '', '', '', '', '', '');
     };
 
-    // Multiple File Upload Handler (Cloudinary + Base64 fallback)
-    const handleMultipleImageUpload = async (e) => {
+    // Store selected files locally for instant preview without network upload
+    const handleMultipleImageSelection = (e) => {
         const files = Array.from(e.target.files || []);
         if (!files || files.length === 0) return;
 
-        setUploadingImages(true);
-        const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-        const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-
-        const uploadedUrls = [];
-
-        for (const file of files) {
-            try {
-                const bodyData = new FormData();
-                bodyData.append('file', file);
-                bodyData.append('upload_preset', CLOUDINARY_PRESET);
-
-                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                    method: 'POST',
-                    body: bodyData
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    uploadedUrls.push(data.secure_url);
-                } else {
-                    // Fallback to base64
-                    const b64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(file);
-                    });
-                    uploadedUrls.push(b64);
-                }
-            } catch (err) {
-                console.warn('Cloudinary upload error, falling back to base64:', err);
-                const b64 = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.readAsDataURL(file);
-                });
-                uploadedUrls.push(b64);
-            }
-        }
-
-        setFormData(prev => ({
-            ...prev,
-            images: [...(prev.images || []), ...uploadedUrls]
+        const newItems = files.map(file => ({
+            id: `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            type: 'file',
+            preview: URL.createObjectURL(file),
+            file
         }));
-        setUploadingImages(false);
+
+        setSelectedImages(prev => [...prev, ...newItems]);
+        e.target.value = ''; // Reset input to allow selecting the same file again if needed
     };
 
-    const handleRemoveImage = (indexToRemove) => {
-        setFormData(prev => ({
-            ...prev,
-            images: (prev.images || []).filter((_, idx) => idx !== indexToRemove)
-        }));
+    const handleRemoveSelectedImage = (indexToRemove) => {
+        setSelectedImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
     };
 
     // Open Lightbox Viewer
@@ -230,6 +195,7 @@ const FollowUp2 = () => {
     // Form Handlers
     const handleOpenCreate = () => {
         setEditingItem(null);
+        setSelectedImages([]);
         setFormData({
             customerName: '',
             source: 'Facebook',
@@ -250,6 +216,13 @@ const FollowUp2 = () => {
 
     const handleOpenEdit = (item) => {
         setEditingItem(item);
+        const existingImgs = Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []);
+        setSelectedImages(existingImgs.map(url => ({
+            id: url,
+            type: 'url',
+            preview: url,
+            url
+        })));
         setFormData({
             customerName: item.customerName || '',
             source: item.source || 'Facebook',
@@ -261,11 +234,59 @@ const FollowUp2 = () => {
             valuationRange: item.valuationRange || '',
             status: item.status || 'ជោគជ័យ',
             reason: item.reason || '',
-            images: Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []),
+            images: existingImgs,
             brand: item.brand || user?.brand || 'MDM',
             notes: item.notes || ''
         });
         setIsFormOpen(true);
+    };
+
+    // Upload pending local files to Cloudinary on Submit
+    const uploadImagesToCloudinary = async (items) => {
+        const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+        const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+
+        const finalUrls = [];
+
+        for (const item of items) {
+            if (item.type === 'url' && item.url) {
+                finalUrls.push(item.url);
+            } else if (item.type === 'file' && item.file) {
+                try {
+                    const bodyData = new FormData();
+                    bodyData.append('file', item.file);
+                    bodyData.append('upload_preset', CLOUDINARY_PRESET);
+
+                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                        method: 'POST',
+                        body: bodyData
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        finalUrls.push(data.secure_url);
+                    } else {
+                        // Fallback to Base64
+                        const b64 = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(item.file);
+                        });
+                        finalUrls.push(b64);
+                    }
+                } catch (err) {
+                    console.warn('Cloudinary upload error, using fallback:', err);
+                    const b64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(item.file);
+                    });
+                    finalUrls.push(b64);
+                }
+            }
+        }
+
+        return finalUrls;
     };
 
     const handleFormSubmit = async (e) => {
@@ -276,7 +297,11 @@ const FollowUp2 = () => {
         }
 
         setSubmitting(true);
+        setUploadingImages(true);
         try {
+            // Upload local images to Cloudinary now on submit
+            const uploadedUrls = await uploadImagesToCloudinary(selectedImages);
+
             const url = editingItem
                 ? `${API_BASE}/follow-up-2/${editingItem._id}`
                 : `${API_BASE}/follow-up-2`;
@@ -285,7 +310,7 @@ const FollowUp2 = () => {
             const payload = {
                 ...formData,
                 requestedAmount: Number(formData.requestedAmount) || 0,
-                images: formData.images || [],
+                images: uploadedUrls,
                 brand: formData.brand || user?.brand || 'MDM',
                 createdBy: user?.name || user?.username || 'Staff',
                 username: user?.username || ''
@@ -300,6 +325,7 @@ const FollowUp2 = () => {
             if (res.ok) {
                 setIsFormOpen(false);
                 setEditingItem(null);
+                setSelectedImages([]);
                 fetchData(page);
             } else {
                 const errData = await res.json().catch(() => ({}));
@@ -310,6 +336,7 @@ const FollowUp2 = () => {
             alert('Network error while saving follow-up 2');
         } finally {
             setSubmitting(false);
+            setUploadingImages(false);
         }
     };
 
@@ -1023,14 +1050,11 @@ const FollowUp2 = () => {
                                 <div className="flex items-center justify-between">
                                     <label className="text-xs font-bold text-[var(--app-text,#334155)] flex items-center gap-1.5">
                                         <FaCamera className="text-indigo-600" size={14} />
-                                        <span>បញ្ចូលរូបភាពទ្រព្យ/ឯកសារ (អាចបញ្ចូលបានច្រើន)</span>
+                                        <span>បញ្ចូលរូបភាពទ្រព្យ/ឯកសារ (អាចជ្រើសរើសបានច្រើនសន្លឹក)</span>
                                     </label>
-                                    {uploadingImages && (
-                                        <span className="text-[11px] font-semibold text-indigo-600 flex items-center gap-1">
-                                            <MdOutlineSync className="animate-spin" size={13} />
-                                            <span>កំពុងបញ្ចូល...</span>
-                                        </span>
-                                    )}
+                                    <span className="text-[11px] font-semibold text-slate-400">
+                                        {selectedImages.length} រូបភាព
+                                    </span>
                                 </div>
 
                                 {/* Custom Upload Button */}
@@ -1042,32 +1066,37 @@ const FollowUp2 = () => {
                                             type="file"
                                             multiple
                                             accept="image/*"
-                                            onChange={handleMultipleImageUpload}
+                                            onChange={handleMultipleImageSelection}
                                             className="hidden"
-                                            disabled={uploadingImages}
+                                            disabled={submitting}
                                         />
                                     </label>
                                 </div>
 
                                 {/* Thumbnails Grid */}
-                                {formData.images && formData.images.length > 0 && (
+                                {selectedImages && selectedImages.length > 0 && (
                                     <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 pt-2">
-                                        {formData.images.map((imgUrl, imgIdx) => (
-                                            <div key={imgIdx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-100 shadow-2xs">
+                                        {selectedImages.map((imgItem, imgIdx) => (
+                                            <div key={imgItem.id || imgIdx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-100 shadow-2xs">
                                                 <img
-                                                    src={imgUrl}
+                                                    src={imgItem.preview}
                                                     alt={`Uploaded ${imgIdx}`}
                                                     className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-200"
-                                                    onClick={() => handleOpenImageViewer(formData.images, imgIdx)}
+                                                    onClick={() => handleOpenImageViewer(selectedImages.map(it => it.preview), imgIdx)}
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleRemoveImage(imgIdx)}
+                                                    onClick={() => handleRemoveSelectedImage(imgIdx)}
                                                     className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity shadow-sm cursor-pointer"
                                                     title="លុបរូបភាពនេះ"
                                                 >
                                                     <FaTimes size={10} />
                                                 </button>
+                                                {imgItem.type === 'file' && (
+                                                    <span className="absolute bottom-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1 rounded shadow-xs">
+                                                        New
+                                                    </span>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -1151,8 +1180,10 @@ const FollowUp2 = () => {
                                     disabled={submitting || uploadingImages}
                                     className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs hover:shadow-md cursor-pointer disabled:opacity-50"
                                 >
-                                    {submitting && <MdOutlineSync className="animate-spin" size={14} />}
-                                    <span>{t('submit') || 'Save'}</span>
+                                    {(submitting || uploadingImages) && <MdOutlineSync className="animate-spin" size={14} />}
+                                    <span>
+                                        {uploadingImages ? 'កំពុង Upload រូបភាព...' : (submitting ? 'កំពុងរក្សាទុក...' : (t('submit') || 'Save'))}
+                                    </span>
                                 </button>
                             </div>
                         </form>
