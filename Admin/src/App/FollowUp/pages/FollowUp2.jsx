@@ -358,6 +358,41 @@ const FollowUp2 = () => {
         }
     };
 
+    // Group records by date for daily subtotal rendering & grand total calculation
+    const groupedDateList = useMemo(() => {
+        if (!dataList || dataList.length === 0) return [];
+        const map = new Map();
+        dataList.forEach(item => {
+            const d = item.date ? item.date.split('T')[0] : 'N/A';
+            if (!map.has(d)) {
+                map.set(d, []);
+            }
+            map.get(d).push(item);
+        });
+
+        const result = [];
+        map.forEach((items, dateKey) => {
+            const dayTotalAmount = items.reduce((s, it) => s + (Number(it.requestedAmount) || 0), 0);
+            const daySuccess = items.filter(it => it.status === 'ជោគជ័យ' || it.status === 'Success').length;
+            const dayFailed = items.filter(it => it.status === 'បរាជ័យ' || it.status === 'Failed').length;
+            const dayRate = items.length > 0 ? ((daySuccess / items.length) * 100).toFixed(1) : '0.0';
+
+            result.push({
+                date: dateKey,
+                items,
+                summary: {
+                    count: items.length,
+                    totalAmount: dayTotalAmount,
+                    success: daySuccess,
+                    failed: dayFailed,
+                    successRate: dayRate
+                }
+            });
+        });
+
+        return result;
+    }, [dataList]);
+
     // Open Export Props Modal
     const handleOpenExportModal = (format = 'excel') => {
         setExportFormat(format);
@@ -414,6 +449,7 @@ const FollowUp2 = () => {
                 userRole: user?.role || '',
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false',
+                fetchAll: 'true',
                 limit: 10000
             });
 
@@ -433,7 +469,7 @@ const FollowUp2 = () => {
                 return;
             }
 
-            // Calculate Totals for the Export
+            // Calculate Grand Totals for the Export
             const totalAmount = items.reduce((sum, it) => sum + (Number(it.requestedAmount) || 0), 0);
             const totalSucc = items.filter(it => it.status === 'ជោគជ័យ' || it.status === 'Success').length;
             const totalFail = items.filter(it => it.status === 'បរាជ័យ' || it.status === 'Failed').length;
@@ -441,48 +477,88 @@ const FollowUp2 = () => {
 
             // Define Export Table Columns
             const exportColumns = [
-                { header: '#', accessor: (row, idx) => row.isTotalRow ? '' : String(idx + 1) },
-                { header: 'Customer Name (ឈ្មោះអតិថិជន)', accessor: (row) => row.isTotalRow ? 'TOTAL / សរុប' : (row.customerName || '') },
-                { header: 'Source (តាមរយៈ)', accessor: (row) => row.isTotalRow ? `Total Records: ${items.length}` : (row.source || '') },
+                { header: '#', accessor: (row, idx) => (row.isGrandTotal ? '★' : row.isDailyTotal ? '—' : String(idx + 1)) },
+                { header: 'Customer Name (ឈ្មោះអតិថិជន)', accessor: (row) => row.customerName || '' },
+                { header: 'Source (តាមរយៈ)', accessor: (row) => row.source || '' },
                 { header: 'Tel (លេខទូរស័ព្ទ)', accessor: (row) => row.phone || '' },
-                { header: 'ចំនួនស្នើបញ្ចាំ ($)', accessor: (row) => row.isTotalRow ? `$${totalAmount.toLocaleString()}` : `$${Number(row.requestedAmount || 0).toLocaleString()}` },
+                {
+                    header: 'ចំនួនស្នើបញ្ចាំ ($)',
+                    accessor: (row) => row.requestedAmount !== undefined && row.requestedAmount !== ''
+                        ? `$${Number(row.requestedAmount || 0).toLocaleString()}`
+                        : ''
+                },
                 { header: 'ប្រភេទទ្រព្យបញ្ចាំ', accessor: (row) => row.collateralType || '' },
                 { header: 'អ្នកឆ្លើយតបឆាត', accessor: (row) => row.responder || '' },
                 { header: 'កាលបរិច្ឆេទឆ្នាំ', accessor: (row) => row.date ? row.date.split('T')[0] : '' },
                 { header: 'វាយតម្លៃបានចន្លោះណាដល់ណា', accessor: (row) => row.valuationRange || '' },
-                { header: 'រូបភាព (Photos)', accessor: (row) => row.isTotalRow ? '' : `${(row.images || []).length} រូប` },
-                { header: 'ស្ថានភាព (Status)', accessor: (row) => row.isTotalRow ? `ជោគជ័យ: ${totalSucc} | បរាជ័យ: ${totalFail}` : (row.status || '') },
+                { header: 'រូបភាព (Photos)', accessor: (row) => (row.isTotalRow ? '' : `${(row.images || []).length} រូប`) },
+                { header: 'ស្ថានភាព (Status)', accessor: (row) => row.status || '' },
                 { header: 'មូលហេតុ (Reason)', accessor: (row) => row.reason || '' },
                 { header: 'Brand', accessor: (row) => row.brand || '' }
             ];
 
-            // Append Total Summary Row at the bottom
-            const dataWithSummaryRow = [
-                ...items,
-                {
+            // Build structured export data with Daily Subtotals and Grand Total
+            const exportDataWithTotals = [];
+            const exportGroupedMap = new Map();
+
+            items.forEach(it => {
+                const dStr = it.date ? it.date.split('T')[0] : 'N/A';
+                if (!exportGroupedMap.has(dStr)) exportGroupedMap.set(dStr, []);
+                exportGroupedMap.get(dStr).push(it);
+            });
+
+            exportGroupedMap.forEach((dayItems, dStr) => {
+                // Add day items
+                dayItems.forEach(it => exportDataWithTotals.push(it));
+
+                // Add daily subtotal row
+                const dAmount = dayItems.reduce((sum, it) => sum + (Number(it.requestedAmount) || 0), 0);
+                const dSucc = dayItems.filter(it => it.status === 'ជោគជ័យ' || it.status === 'Success').length;
+                const dFail = dayItems.filter(it => it.status === 'បរាជ័យ' || it.status === 'Failed').length;
+                const dRate = dayItems.length > 0 ? ((dSucc / dayItems.length) * 100).toFixed(1) : '0.0';
+
+                exportDataWithTotals.push({
                     isTotalRow: true,
-                    isGrandTotal: true,
-                    customerName: 'TOTAL / សរុប',
-                    source: `Total: ${items.length}`,
+                    isDailyTotal: true,
+                    customerName: `សរុបប្រចាំថ្ងៃ (${dStr})`,
+                    source: `ចំនួន: ${dayItems.length} នាក់`,
                     phone: '',
-                    requestedAmount: totalAmount,
+                    requestedAmount: dAmount,
                     collateralType: '',
                     responder: '',
-                    date: '',
-                    valuationRange: `Success Rate: ${overallRate}%`,
+                    date: dStr,
+                    valuationRange: `Success: ${dRate}%`,
                     images: [],
-                    status: `Success: ${totalSucc} | Failed: ${totalFail}`,
-                    reason: 'Summary Totals',
+                    status: `ជោគជ័យ: ${dSucc} | បរាជ័យ: ${dFail}`,
+                    reason: `Subtotal for ${dStr}`,
                     brand: ''
-                }
-            ];
+                });
+            });
+
+            // Append Grand Total Row at the bottom
+            exportDataWithTotals.push({
+                isTotalRow: true,
+                isGrandTotal: true,
+                customerName: 'សរុបទាំងអស់ (GRAND TOTAL)',
+                source: `សរុប: ${items.length} នាក់`,
+                phone: '',
+                requestedAmount: totalAmount,
+                collateralType: '',
+                responder: '',
+                date: '',
+                valuationRange: `Success Rate: ${overallRate}%`,
+                images: [],
+                status: `ជោគជ័យ: ${totalSucc} | បរាជ័យ: ${totalFail}`,
+                reason: 'Grand Summary Totals',
+                brand: ''
+            });
 
             const title = `Follow_Up_2_Report_${exportScope}_${range.start || 'all'}_to_${range.end || 'all'}`;
 
             if (exportFormat === 'excel') {
-                exportToExcel(title, exportColumns, dataWithSummaryRow, user?.brand || 'SYSTEM');
+                exportToExcel(title, exportColumns, exportDataWithTotals, user?.brand || 'SYSTEM');
             } else {
-                exportToPDF(title, exportColumns, dataWithSummaryRow, user?.brand || 'SYSTEM', 'landscape');
+                exportToPDF(title, exportColumns, exportDataWithTotals, user?.brand || 'SYSTEM', 'landscape');
             }
 
             setIsExportModalOpen(false);
@@ -781,114 +857,145 @@ const FollowUp2 = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                dataList.map((item, index) => {
-                                    const isSuccess = item.status === 'ជោគជ័យ' || item.status === 'Success';
-                                    const amount = Number(item.requestedAmount) || 0;
-                                    const imgList = Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []);
+                                (() => {
+                                    let runningIndex = (page - 1) * LIMIT;
+                                    return groupedDateList.map((group, groupIdx) => (
+                                        <React.Fragment key={group.date || groupIdx}>
+                                            {group.items.map((item, itemIdx) => {
+                                                runningIndex++;
+                                                const isSuccess = item.status === 'ជោគជ័យ' || item.status === 'Success';
+                                                const amount = Number(item.requestedAmount) || 0;
+                                                const imgList = Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []);
 
-                                    return (
-                                        <tr key={item._id || index} className="hover:bg-slate-500/5 transition-colors">
-                                            <td className="py-3 px-3 text-center text-slate-400 font-mono text-[11px]">
-                                                {(page - 1) * LIMIT + index + 1}
-                                            </td>
-                                            <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                                                {item.customerName || '-'}
-                                            </td>
-                                            <td className="py-3 px-3 whitespace-nowrap">
-                                                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                                                    {item.source || 'Facebook'}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-3 font-mono font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                                {item.phone ? (
-                                                    <a href={`tel:${item.phone}`} className="hover:text-emerald-600 flex items-center gap-1">
-                                                        <FaPhoneAlt size={10} className="text-emerald-500" />
-                                                        <span>{item.phone}</span>
-                                                    </a>
-                                                ) : '-'}
-                                            </td>
-                                            <td className="py-3 px-3 text-right font-extrabold text-amber-600 dark:text-amber-400">
-                                                ${amount.toLocaleString()}
-                                            </td>
-                                            <td className="py-3 px-3 text-slate-700 dark:text-slate-300">
-                                                {item.collateralType || '-'}
-                                            </td>
-                                            {/* Photo thumbnail cell */}
-                                            <td className="py-3 px-3 text-center">
-                                                {imgList.length > 0 ? (
-                                                    <div
-                                                        onClick={() => handleOpenImageViewer(imgList, 0)}
-                                                        className="inline-flex items-center gap-1.5 cursor-pointer group p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-                                                        title="ចុចដើម្បីមើលរូបភាពធំ"
-                                                    >
-                                                        <div className="w-8 h-8 rounded-md overflow-hidden border border-indigo-400 shadow-2xs relative flex-shrink-0 bg-slate-100">
-                                                            <img
-                                                                src={imgList[0]}
-                                                                alt="Collateral"
-                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
-                                                            />
-                                                            {imgList.length > 1 && (
-                                                                <span className="absolute bottom-0 right-0 bg-indigo-600 text-white text-[9px] font-bold px-1 rounded-tl">
-                                                                    +{imgList.length - 1}
-                                                                </span>
+                                                return (
+                                                    <tr key={item._id || itemIdx} className="hover:bg-slate-500/5 transition-colors">
+                                                        <td className="py-3 px-3 text-center text-slate-400 font-mono text-[11px]">
+                                                            {runningIndex}
+                                                        </td>
+                                                        <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                                                            {item.customerName || '-'}
+                                                        </td>
+                                                        <td className="py-3 px-3 whitespace-nowrap">
+                                                            <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                                                {item.source || 'Facebook'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-3 font-mono font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                                            {item.phone ? (
+                                                                <a href={`tel:${item.phone}`} className="hover:text-emerald-600 flex items-center gap-1">
+                                                                    <FaPhoneAlt size={10} className="text-emerald-500" />
+                                                                    <span>{item.phone}</span>
+                                                                </a>
+                                                            ) : '-'}
+                                                        </td>
+                                                        <td className="py-3 px-3 text-right font-extrabold text-amber-600 dark:text-amber-400">
+                                                            ${amount.toLocaleString()}
+                                                        </td>
+                                                        <td className="py-3 px-3 text-slate-700 dark:text-slate-300">
+                                                            {item.collateralType || '-'}
+                                                        </td>
+                                                        {/* Photo thumbnail cell */}
+                                                        <td className="py-3 px-3 text-center">
+                                                            {imgList.length > 0 ? (
+                                                                <div
+                                                                    onClick={() => handleOpenImageViewer(imgList, 0)}
+                                                                    className="inline-flex items-center gap-1.5 cursor-pointer group p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                                                                    title="ចុចដើម្បីមើលរូបភាពធំ"
+                                                                >
+                                                                    <div className="w-8 h-8 rounded-md overflow-hidden border border-indigo-400 shadow-2xs relative flex-shrink-0 bg-slate-100">
+                                                                        <img
+                                                                            src={imgList[0]}
+                                                                            alt="Collateral"
+                                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                                        />
+                                                                        {imgList.length > 1 && (
+                                                                            <span className="absolute bottom-0 right-0 bg-indigo-600 text-white text-[9px] font-bold px-1 rounded-tl">
+                                                                                +{imgList.length - 1}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
+                                                                        {imgList.length} រូប
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-slate-300 text-[11px]">គ្មាន</span>
                                                             )}
-                                                        </div>
-                                                        <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
-                                                            {imgList.length} រូប
+                                                        </td>
+                                                        <td className="py-3 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                                            {item.responder || '-'}
+                                                        </td>
+                                                        <td className="py-3 px-3 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                                            {item.date ? item.date.split('T')[0] : 'N/A'}
+                                                        </td>
+                                                        <td className="py-3 px-3 text-indigo-600 dark:text-indigo-400 font-medium">
+                                                            {item.valuationRange || '-'}
+                                                        </td>
+                                                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold ${isSuccess
+                                                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                                                                : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                                                                }`}>
+                                                                {isSuccess ? <FaCheckCircle size={10} /> : <FaTimesCircle size={10} />}
+                                                                <span>{item.status || 'ជោគជ័យ'}</span>
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
+                                                            <p className="line-clamp-2" title={item.reason}>
+                                                                {item.reason || '-'}
+                                                            </p>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-center">
+                                                            <div className="flex items-center justify-center gap-1.5">
+                                                                {hasPermission('/follow-up/follow-up-2', 'edit') && (
+                                                                    <button
+                                                                        onClick={() => handleOpenEdit(item)}
+                                                                        className="p-1.5 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
+                                                                        title="កែប្រែ"
+                                                                    >
+                                                                        <FaEdit size={14} />
+                                                                    </button>
+                                                                )}
+                                                                {hasPermission('/follow-up/follow-up-2', 'delete') && (
+                                                                    <button
+                                                                        onClick={() => handleDelete(item)}
+                                                                        className="p-1.5 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
+                                                                        title="លុប"
+                                                                    >
+                                                                        <FaTrashAlt size={13} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+
+                                            {/* Total តាមថ្ងៃ (Daily Subtotal Row) */}
+                                            <tr className="bg-amber-500/10 dark:bg-amber-950/40 border-y-2 border-amber-500/30 text-xs font-bold text-[var(--app-text,#0f172a)]">
+                                                <td colSpan="4" className="py-2.5 px-4 text-left font-bold text-amber-900 dark:text-amber-200">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <FaRegCalendarAlt className="text-amber-600" size={13} />
+                                                        <span className="uppercase tracking-wide">សរុបប្រចាំថ្ងៃ ({group.date}):</span>
+                                                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200 text-[11px] font-extrabold">
+                                                            {group.summary.count} នាក់
                                                         </span>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-slate-300 text-[11px]">គ្មាន</span>
-                                                )}
-                                            </td>
-                                            <td className="py-3 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                                                {item.responder || '-'}
-                                            </td>
-                                            <td className="py-3 px-3 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                                                {item.date ? item.date.split('T')[0] : 'N/A'}
-                                            </td>
-                                            <td className="py-3 px-3 text-indigo-600 dark:text-indigo-400 font-medium">
-                                                {item.valuationRange || '-'}
-                                            </td>
-                                            <td className="py-3 px-3 text-center whitespace-nowrap">
-                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold ${isSuccess
-                                                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                                                    : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
-                                                    }`}>
-                                                    {isSuccess ? <FaCheckCircle size={10} /> : <FaTimesCircle size={10} />}
-                                                    <span>{item.status || 'ជោគជ័យ'}</span>
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
-                                                <p className="line-clamp-2" title={item.reason}>
-                                                    {item.reason || '-'}
-                                                </p>
-                                            </td>
-                                            <td className="py-3 px-3 text-center">
-                                                <div className="flex items-center justify-center gap-1.5">
-                                                    {hasPermission('/follow-up/follow-up-2', 'edit') && (
-                                                        <button
-                                                            onClick={() => handleOpenEdit(item)}
-                                                            className="p-1.5 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
-                                                            title="កែប្រែ"
-                                                        >
-                                                            <FaEdit size={14} />
-                                                        </button>
-                                                    )}
-                                                    {hasPermission('/follow-up/follow-up-2', 'delete') && (
-                                                        <button
-                                                            onClick={() => handleDelete(item)}
-                                                            className="p-1.5 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
-                                                            title="លុប"
-                                                        >
-                                                            <FaTrashAlt size={13} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
+                                                    </span>
+                                                </td>
+                                                <td className="py-2.5 px-3 text-right font-black text-amber-700 dark:text-amber-300 text-sm">
+                                                    ${group.summary.totalAmount.toLocaleString()}
+                                                </td>
+                                                <td colSpan="5" className="py-2.5 px-3 text-right text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                                    ជោគជ័យ: <span className="text-emerald-600 font-extrabold">{group.summary.success}</span> &bull; បរាជ័យ: <span className="text-rose-600 font-extrabold">{group.summary.failed}</span>
+                                                </td>
+                                                <td className="py-2.5 px-3 text-center font-extrabold text-sky-700 dark:text-sky-300 text-xs">
+                                                    {group.summary.successRate}%
+                                                </td>
+                                                <td colSpan="2" className="py-2.5 px-4"></td>
+                                            </tr>
+                                        </React.Fragment>
+                                    ));
+                                })()
                             )}
                         </tbody>
 
