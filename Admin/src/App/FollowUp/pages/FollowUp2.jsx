@@ -864,7 +864,15 @@ const FollowUp2 = () => {
                                         <React.Fragment key={group.date || groupIdx}>
                                             {group.items.map((item, itemIdx) => {
                                                 runningIndex++;
-                                                const isSuccess = item.status === 'ជោគជ័យ' || item.status === 'Success';
+                                                const isSuccess =
+                                                    item.status === 'ជោគជ័យ' ||
+                                                    item.status === 'Success';
+
+                                                const isReview =
+                                                    item.status === 'Review' ||
+                                                    item.status === 'review' ||
+                                                    item.status === 'ពិនិត្យ' ||
+                                                    item.status === 'កំពុងពិនិត្យ';
                                                 const amount = Number(item.requestedAmount) || 0;
                                                 const imgList = Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []);
 
@@ -935,9 +943,17 @@ const FollowUp2 = () => {
                                                         <td className="py-3 px-3 text-center whitespace-nowrap">
                                                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold ${isSuccess
                                                                 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                                                                : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                                                                : isReview
+                                                                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                                                                    : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
                                                                 }`}>
-                                                                {isSuccess ? <FaCheckCircle size={10} /> : <FaTimesCircle size={10} />}
+                                                                {isSuccess ? (
+                                                                    <FaCheckCircle size={10} />
+                                                                ) : isReview ? (
+                                                                    <MdOutlineRateReview size={12} />
+                                                                ) : (
+                                                                    <FaTimesCircle size={10} />
+                                                                )}
                                                                 <span>{item.status || 'ជោគជ័យ'}</span>
                                                             </span>
                                                         </td>
@@ -1269,8 +1285,8 @@ const FollowUp2 = () => {
                                             }))
                                         }
                                         className={`p-2.5 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${formData.status === 'Review'
-                                                ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20'
-                                                : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)]'
+                                            ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20'
+                                            : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)]'
                                             }`}
                                     >
                                         <MdOutlineRateReview size={17} />
