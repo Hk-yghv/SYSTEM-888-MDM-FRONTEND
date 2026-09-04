@@ -362,28 +362,48 @@ const FollowUp2 = () => {
     // Group records by date for daily subtotal rendering & grand total calculation
     const groupedDateList = useMemo(() => {
         if (!dataList || dataList.length === 0) return [];
+
         const map = new Map();
+
         dataList.forEach(item => {
             const d = item.date ? item.date.split('T')[0] : 'N/A';
+
             if (!map.has(d)) {
                 map.set(d, []);
             }
+
             map.get(d).push(item);
         });
 
         const result = [];
+
         map.forEach((items, dateKey) => {
-            const dayTotalAmount = items.reduce((s, it) => s + (Number(it.requestedAmount) || 0), 0);
-            const daySuccess = items.filter(it => it.status === 'ជោគជ័យ' || it.status === 'Success').length;
-            const dayFailed = items.filter(it => it.status === 'បរាជ័យ' || it.status === 'Failed').length;
-            const dayReview = dayItems.filter(
+            const dayTotalAmount = items.reduce(
+                (s, it) => s + (Number(it.requestedAmount) || 0),
+                0
+            );
+
+            const daySuccess = items.filter(
+                it => it.status === 'ជោគជ័យ' || it.status === 'Success'
+            ).length;
+
+            const dayFailed = items.filter(
+                it => it.status === 'បរាជ័យ' || it.status === 'Failed'
+            ).length;
+
+            // ✅ Review
+            const dayReview = items.filter(
                 item =>
                     item.status === 'Review' ||
                     item.status === 'review' ||
                     item.status === 'ពិនិត្យ' ||
                     item.status === 'កំពុងពិនិត្យ'
             ).length;
-            const dayRate = items.length > 0 ? ((daySuccess / items.length) * 100).toFixed(1) : '0.0';
+
+            const dayRate =
+                items.length > 0
+                    ? ((daySuccess / items.length) * 100).toFixed(1)
+                    : '0.0';
 
             result.push({
                 date: dateKey,
@@ -393,6 +413,8 @@ const FollowUp2 = () => {
                     totalAmount: dayTotalAmount,
                     success: daySuccess,
                     failed: dayFailed,
+                    review: dayReview,
+
                     successRate: dayRate
                 }
             });
