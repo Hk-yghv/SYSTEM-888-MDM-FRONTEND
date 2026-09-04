@@ -942,15 +942,19 @@ const FollowUp2 = () => {
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
                                         តាមរយៈ (Source / Channel)
                                     </label>
-                                    <select
+                                    <input
+                                        type="text"
+                                        list="sourceList"
+                                        placeholder="ឧ. Facebook, Telegram, Walk-in..."
                                         value={formData.source}
                                         onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                                    >
+                                    />
+                                    <datalist id="sourceList">
                                         {SOURCE_OPTIONS.map((s, idx) => (
-                                            <option key={idx} value={s}>{s}</option>
+                                            <option key={idx} value={s} />
                                         ))}
-                                    </select>
+                                    </datalist>
                                 </div>
                             </div>
 
