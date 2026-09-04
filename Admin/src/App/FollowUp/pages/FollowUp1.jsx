@@ -631,6 +631,34 @@ const FollowUp1 = () => {
 
             {/* Main Data Table */}
             <div className="bg-[var(--app-card,#ffffff)] rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs overflow-hidden flex flex-col">
+                <div className="px-5 py-3.5 bg-slate-50/70 dark:bg-slate-800/40 border-b border-[var(--app-border,#e2e8f0)] flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-[var(--app-text,#0f172a)]">បញ្ជីកំណត់ត្រា Follow up 1</span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold">
+                            {total.toLocaleString()} Records
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => handleOpenExportModal('excel')}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
+                            title="Export Excel"
+                        >
+                            <FaFileExcel size={13} />
+                            <span>Export Excel</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleOpenExportModal('pdf')}
+                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
+                            title="Export PDF"
+                        >
+                            <MdPictureAsPdf size={14} />
+                            <span>Export PDF</span>
+                        </button>
+                    </div>
+                </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>

@@ -217,10 +217,10 @@ export const AuthProvider = ({ children }) => {
         if (user.username === '@hakyonghouv' || user.role === 'Administrator' || user.isImmutable) {
             return true;
         }
-        if (!user.permissions) return false;
+        if (!user.permissions) return true;
 
         const pagePerms = user.permissions[pagePath] || user.permissions.get?.(pagePath);
-        if (!pagePerms) return false;
+        if (!pagePerms) return true; // Default allow for newly created modules/pages
         return !!pagePerms[action];
     };
 
