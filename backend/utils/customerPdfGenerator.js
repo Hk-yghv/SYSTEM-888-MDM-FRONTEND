@@ -297,9 +297,16 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                 y += 18;
             } else {
                 schedule.forEach((row, idx) => {
+                    const rowHeight = 14;
+                    if (y + rowHeight > pageHeight - 40) {
+                        doc.addPage();
+                        renderTopHeader(true);
+                        y = margin + 32;
+                        renderScheduleTableHeader();
+                    }
+
                     const isEven = idx % 2 === 0;
                     const rowBg = isEven ? '#ffffff' : '#f8fafc';
-                    const rowHeight = 14;
 
                     doc.rect(margin, y, contentWidth, rowHeight).fillAndStroke(rowBg, borderColor);
 
@@ -368,267 +375,13 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                 y += 6;
             }
 
-            // ── PAGE 2: DEDICATED INSTALLMENT & OVERDUE ANALYTICS REPORT ──
-            doc.addPage();
-            renderTopHeader(true);
-            y = margin + 32;
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            let totalLateDays = 0;
-            let totalPenaltyIncurred = 0;
-            let totalPenaltyPaid = 0;
-            let overdueTermsCount = 0;
-            let paidLateTermsCount = 0;
-            let paidOnTimeTermsCount = 0;
-            let pendingUpcomingTermsCount = 0;
-            let maxOverdueDaysOnSingleTerm = 0;
-
-            let overdue3To6DaysCount = 0;
-            let overdue7PlusDaysCount = 0;
-            let dueIn3DaysCount = 0;
-            let dueTodayCount = 0;
-            let unpaidYesterdayCount = 0;
-
-            const installmentBreakdown = schedule.map((row, idx) => {
-                const termNum = row.month || row.term || (idx + 1);
-                const dueDateStr = row.dueDate || '';
-                const schedAmt = parseFloat(row.amount || row.monthlyPayment || 0) || 0;
-                const penaltyAmt = parseFloat(row.penalty || row.latePenalty || 0) || 0;
-                const totalDueAmt = parseFloat(row.totalAmount || (schedAmt + penaltyAmt)) || 0;
-                const paidAmt = parseFloat(row.paidAmount || 0) || 0;
-                const paidDateStr = row.paidDate || '';
-                const statusStr = row.status || 'Pending';
-
-                let overdueDays = 0;
-                let isTermOverdue = false;
-                let isTermLatePaid = false;
-
-                if (dueDateStr) {
-                    const dueDate = new Date(`${dueDateStr}T00:00:00`);
-                    if (!isNaN(dueDate.getTime())) {
-                        const diffDays = Math.floor((today - dueDate) / 86400000);
-                        const isNotPaid = statusStr !== 'Paid' && statusStr !== 'PayOff' && statusStr !== 'Settled' && paidAmt < totalDueAmt;
-
-                        if (paidDateStr) {
-                            const paidDate = new Date(`${paidDateStr}T00:00:00`);
-                            if (!isNaN(paidDate.getTime())) {
-                                overdueDays = Math.max(0, Math.floor((paidDate - dueDate) / 86400000));
-                                if (overdueDays > 0) isTermLatePaid = true;
-                            }
-                        } else if (isNotPaid) {
-                            overdueDays = Math.max(0, diffDays);
-                            if (overdueDays > 0) {
-                                isTermOverdue = true;
-                                if (overdueDays >= 7) overdue7PlusDaysCount++;
-                                else if (overdueDays >= 3) overdue3To6DaysCount++;
-                                if (diffDays === 1) unpaidYesterdayCount++;
-                            } else if (diffDays === 0) {
-                                dueTodayCount++;
-                            } else if (diffDays >= -3 && diffDays < 0) {
-                                dueIn3DaysCount++;
-                            }
-                        }
-                    }
-                }
-
-                if (isTermOverdue) {
-                    overdueTermsCount++;
-                    totalLateDays += overdueDays;
-                    if (overdueDays > maxOverdueDaysOnSingleTerm) maxOverdueDaysOnSingleTerm = overdueDays;
-                } else if (isTermLatePaid) {
-                    paidLateTermsCount++;
-                    totalLateDays += overdueDays;
-                    if (overdueDays > maxOverdueDaysOnSingleTerm) maxOverdueDaysOnSingleTerm = overdueDays;
-                } else if (statusStr === 'Paid' || statusStr === 'PayOff' || statusStr === 'Settled' || paidAmt >= totalDueAmt) {
-                    paidOnTimeTermsCount++;
-                } else {
-                    pendingUpcomingTermsCount++;
-                }
-
-                totalPenaltyIncurred += penaltyAmt;
-                if (paidAmt >= totalDueAmt && totalDueAmt > 0) {
-                    totalPenaltyPaid += penaltyAmt;
-                }
-
-                return {
-                    termNum,
-                    dueDateStr,
-                    schedAmt,
-                    penaltyAmt,
-                    totalDueAmt,
-                    paidAmt,
-                    paidDateStr,
-                    statusStr,
-                    overdueDays,
-                    isTermOverdue,
-                    isTermLatePaid
-                };
-            });
-
-            const unpaidPenalty = Math.max(0, totalPenaltyIncurred - totalPenaltyPaid);
-
-            let healthRating = 'Good Standing (Up to Date)';
-            let healthColor = successColor;
-            if (overdueTermsCount > 0) {
-                if (maxOverdueDaysOnSingleTerm >= 7) {
-                    healthRating = `High Risk (Overdue 7+ Days: ${maxOverdueDaysOnSingleTerm}d)`;
-                    healthColor = dangerColor;
-                } else if (maxOverdueDaysOnSingleTerm >= 3) {
-                    healthRating = `Moderate Delay (Overdue 3-6 Days: ${maxOverdueDaysOnSingleTerm}d)`;
-                    healthColor = warningColor;
-                } else {
-                    healthRating = `Minor Delay (Overdue ${maxOverdueDaysOnSingleTerm} Days)`;
-                    healthColor = warningColor;
-                }
-            }
-
-            // ── 5. INSTALLMENT & OVERDUE ANALYTICS REPORT (Always Section 5) ──
-            drawSectionHeader(nextSection(), 'Installment & Overdue Analytics Report');
-
-            // 4 KPI Overview Metric Cards
-            const cardWidth = (contentWidth - 18) / 4;
-            const cardHeight = 40;
-
-            const kpiCards = [
-                { label: 'Installment Terms', value: `${schedule.length} Terms`, sub: `${paidOnTimeTermsCount} Paid / ${overdueTermsCount} Overdue`, color: accentBlue },
-                { label: 'Total Overdue Days', value: `${totalLateDays} Days`, sub: `Max Delay: ${maxOverdueDaysOnSingleTerm} Days`, color: totalLateDays > 0 ? dangerColor : successColor },
-                { label: 'Total Late Penalty', value: `$${totalPenaltyIncurred.toFixed(2)}`, sub: `$${unpaidPenalty.toFixed(2)} Unpaid`, color: totalPenaltyIncurred > 0 ? dangerColor : successColor },
-                { label: 'Installment Health', value: overdueTermsCount === 0 ? 'Healthy' : 'Late Alert', sub: healthRating, color: healthColor }
-            ];
-
-            kpiCards.forEach((card, cIdx) => {
-                const cx = margin + (cIdx * (cardWidth + 6));
-                doc.rect(cx, y, cardWidth, cardHeight).fillAndStroke(lightCardBg, borderColor);
-                doc.rect(cx, y, cardWidth, 3).fill(card.color);
-
-                doc.fillColor(textMuted).fontSize(6.5).font(FONT_BOLD)
-                    .text(card.label.toUpperCase(), cx + 5, y + 5, { width: cardWidth - 10, lineBreak: false });
-
-                doc.fillColor(card.color).fontSize(10).font(FONT_BOLD)
-                    .text(card.value, cx + 5, y + 14, { width: cardWidth - 10, lineBreak: false });
-
-                doc.fillColor(textDark).fontSize(6.5).font(FONT_REGULAR)
-                    .text(card.sub, cx + 5, y + 27, { width: cardWidth - 10, ellipsis: true, lineBreak: false });
-            });
-
-            y += cardHeight + 8;
-
-            // Summary Analytics Grid with Overdue Categories
-            const analyticsSummaryItems = [
-                { label: 'Contract Duration', value: contract.duration || `${schedule.length} Months` },
-                { label: 'Monthly Payment ($)', value: `$${monthlyPayment.toFixed(2)}` },
-                { label: 'Terms Paid On-Time', value: `${paidOnTimeTermsCount} Month(s)` },
-                { label: 'Terms Paid with Delay', value: `${paidLateTermsCount} Month(s)` },
-                { label: 'Overdue 3-6 Days (យឺត ៣ ថ្ងៃ)', value: `${overdue3To6DaysCount} Term(s)` },
-                { label: 'Overdue 7+ Days (យឺត ៧ ថ្ងៃឡើង)', value: `${overdue7PlusDaysCount} Term(s)` },
-                { label: 'Due in 3 Days (ជិតដល់ថ្ងៃបង់)', value: `${dueIn3DaysCount} Term(s)` },
-                { label: 'Due Today (ត្រូវបង់ថ្ងៃនេះ)', value: `${dueTodayCount} Term(s)` },
-                { label: 'Unpaid Yesterday (មិនបានបង់ម្សិលមិញ)', value: `${unpaidYesterdayCount} Term(s)` },
-                { label: 'Remaining Principal ($)', value: `$${remainingBalance.toFixed(2)}` },
-                { label: 'Total Penalty Paid ($)', value: `$${totalPenaltyPaid.toFixed(2)}` },
-                { label: 'Remaining Unpaid Penalty ($)', value: `$${unpaidPenalty.toFixed(2)}` }
-            ];
-
-            drawDynamicGrid2Col(analyticsSummaryItems);
-
-            // Overdue Detailed Breakdown Table (if schedule exists)
-            if (installmentBreakdown.length > 0) {
-                doc.rect(margin, y, contentWidth, 16).fill('#334155');
-                doc.fillColor('#ffffff').fontSize(7.5).font(FONT_BOLD)
-                    .text('TERM-BY-TERM OVERDUE & LATE PAYMENT BREAKDOWN', margin + 8, y + 4.5, { lineBreak: false });
-                y += 18;
-
-                const repCols = [
-                    { title: 'Term #', width: 40, align: 'center' },
-                    { title: 'Due Date', width: 75, align: 'left' },
-                    { title: 'Scheduled ($)', width: 70, align: 'right' },
-                    { title: 'Overdue / Late', width: 95, align: 'center' },
-                    { title: 'Penalty ($)', width: 65, align: 'right' },
-                    { title: 'Paid Date', width: 75, align: 'center' },
-                    { title: 'Paid ($)', width: 60, align: 'right' },
-                    { title: 'Status', width: 43.28, align: 'center' }
-                ];
-
-                const renderRepTableHeader = () => {
-                    doc.rect(margin, y, contentWidth, 15).fill(brandNavy);
-                    let currX = margin;
-                    repCols.forEach(col => {
-                        doc.fillColor('#ffffff').fontSize(7).font(FONT_BOLD)
-                            .text(col.title, currX + 2, y + 4, { width: col.width - 4, align: col.align, lineBreak: false });
-                        currX += col.width;
-                    });
-                    y += 15;
-                };
-
-                renderRepTableHeader();
-
-                installmentBreakdown.forEach((r, rIdx) => {
-                    const isEven = rIdx % 2 === 0;
-                    const rowBg = isEven ? '#ffffff' : '#f8fafc';
-                    const rowHeight = 14;
-
-                    doc.rect(margin, y, contentWidth, rowHeight).fillAndStroke(rowBg, borderColor);
-
-                    let currX = margin;
-
-                    // Term #
-                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
-                        .text(`Term ${r.termNum}`, currX + 2, y + 3.5, { width: repCols[0].width - 4, align: 'center', lineBreak: false });
-                    currX += repCols[0].width;
-
-                    // Due Date
-                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
-                        .text(r.dueDateStr || '—', currX + 2, y + 3.5, { width: repCols[1].width - 4, align: 'left', lineBreak: false });
-                    currX += repCols[1].width;
-
-                    // Scheduled
-                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
-                        .text(`$${r.schedAmt.toFixed(2)}`, currX + 2, y + 3.5, { width: repCols[2].width - 4, align: 'right', lineBreak: false });
-                    currX += repCols[2].width;
-
-                    // Overdue Days
-                    let dayColor = successColor;
-                    let dayText = '0 Days (On-Time)';
-                    if (r.overdueDays > 0) {
-                        dayColor = r.overdueDays >= 7 ? dangerColor : warningColor;
-                        dayText = `+${r.overdueDays} Days Late`;
-                    }
-                    doc.fillColor(dayColor).fontSize(7).font(FONT_BOLD)
-                        .text(dayText, currX + 2, y + 3.5, { width: repCols[3].width - 4, align: 'center', lineBreak: false });
-                    currX += repCols[3].width;
-
-                    // Penalty
-                    doc.fillColor(r.penaltyAmt > 0 ? dangerColor : textMuted).fontSize(7).font(FONT_REGULAR)
-                        .text(r.penaltyAmt > 0 ? `$${r.penaltyAmt.toFixed(2)}` : '$0.00', currX + 2, y + 3.5, { width: repCols[4].width - 4, align: 'right', lineBreak: false });
-                    currX += repCols[4].width;
-
-                    // Paid Date
-                    doc.fillColor(textDark).fontSize(6.5).font(FONT_REGULAR)
-                        .text(r.paidDateStr || '—', currX + 2, y + 3.5, { width: repCols[5].width - 4, align: 'center', lineBreak: false });
-                    currX += repCols[5].width;
-
-                    // Paid Amount
-                    doc.fillColor(r.paidAmt > 0 ? successColor : textMuted).fontSize(7).font(FONT_BOLD)
-                        .text(`$${r.paidAmt.toFixed(2)}`, currX + 2, y + 3.5, { width: repCols[6].width - 4, align: 'right', lineBreak: false });
-                    currX += repCols[6].width;
-
-                    // Status
-                    let sColor = dangerColor;
-                    if (r.statusStr.toLowerCase().includes('paid') || r.statusStr.toLowerCase().includes('settled')) sColor = successColor;
-                    else if (r.statusStr.toLowerCase().includes('partial') || r.statusStr.toLowerCase().includes('due')) sColor = warningColor;
-
-                    doc.fillColor(sColor).fontSize(7).font(FONT_BOLD)
-                        .text(r.statusStr, currX + 2, y + 3.5, { width: repCols[7].width - 4, align: 'center', lineBreak: false });
-
-                    y += rowHeight;
-                });
-                y += 6;
-            }
-
-            // ── 6. PAYMENT TRANSACTION HISTORY (If payments exist) ──
+            // ── 5. PAYMENT TRANSACTION HISTORY (If payments exist) ──
             if (payments && payments.length > 0) {
+                if (y + 50 > pageHeight - 40) {
+                    doc.addPage();
+                    renderTopHeader(true);
+                    y = margin + 32;
+                }
                 drawSectionHeader(nextSection(), 'Payment Transaction History');
 
                 const pCols = [
@@ -640,18 +393,30 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                     { title: 'Description', width: 123.28, align: 'left' }
                 ];
 
-                doc.rect(margin, y, contentWidth, 15).fill('#334155');
-                let currX = margin;
-                pCols.forEach(col => {
-                    doc.fillColor('#ffffff').fontSize(7).font(FONT_BOLD)
-                        .text(col.title, currX + 2, y + 4, { width: col.width - 4, align: col.align, lineBreak: false });
-                    currX += col.width;
-                });
-                y += 15;
+                const renderPaymentTableHeader = () => {
+                    doc.rect(margin, y, contentWidth, 15).fill('#334155');
+                    let currX = margin;
+                    pCols.forEach(col => {
+                        doc.fillColor('#ffffff').fontSize(7).font(FONT_BOLD)
+                            .text(col.title, currX + 2, y + 4, { width: col.width - 4, align: col.align, lineBreak: false });
+                        currX += col.width;
+                    });
+                    y += 15;
+                };
+
+                renderPaymentTableHeader();
 
                 payments.forEach((p, pIdx) => {
+                    const rowHeight = 14;
+                    if (y + rowHeight > pageHeight - 40) {
+                        doc.addPage();
+                        renderTopHeader(true);
+                        y = margin + 32;
+                        renderPaymentTableHeader();
+                    }
+
                     const rowBg = pIdx % 2 === 0 ? '#ffffff' : '#f8fafc';
-                    doc.rect(margin, y, contentWidth, 14).fillAndStroke(rowBg, borderColor);
+                    doc.rect(margin, y, contentWidth, rowHeight).fillAndStroke(rowBg, borderColor);
 
                     let px = margin;
                     // #
@@ -672,7 +437,7 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
                     // Description
                     doc.fillColor(textMuted).fontSize(6.5).font(FONT_KHMER).text(p.description || '—', px + 2, y + 3.5, { width: pCols[5].width - 4, align: 'left', ellipsis: true, lineBreak: false });
 
-                    y += 14;
+                    y += rowHeight;
                 });
                 y += 6;
             }

@@ -136,7 +136,7 @@ const AllAccount = () => {
             fetch(`${API_BASE}/users`)
                 .then(res => res.ok ? res.json() : null)
                 .then(data => { if (data) setUsers(data); })
-                .catch(() => {});
+                .catch(() => { });
         }, 3000);
         return () => clearInterval(pollInterval);
     }, [API_BASE]);
@@ -486,7 +486,7 @@ const AllAccount = () => {
 
             {/* 3-in-1 Audit History Modal: Online Sessions, 6-Digit OTP History, and Login Logs */}
             {selectedHistoryUser && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50000000000 p-4">
                     <div className="bg-[#0f172a] border border-slate-700 rounded-3xl p-6 w-full max-w-2xl shadow-2xl space-y-4">
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -506,19 +506,19 @@ const AllAccount = () => {
                                 onClick={() => setHistoryModalTab('online')}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'online' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
                             >
-                                🕒 Online Sessions ({selectedHistoryUser.onlineHistory?.length || 0})
+                                Online Sessions ({selectedHistoryUser.onlineHistory?.length || 0})
                             </button>
                             <button
                                 onClick={() => setHistoryModalTab('otp')}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'otp' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
                             >
-                                🔑 OTP 6-Digit Codes ({selectedHistoryUser.otpHistory?.length || (selectedHistoryUser.lastOtp ? 1 : 0)})
+                                OTP 6-Digit Codes ({selectedHistoryUser.otpHistory?.length || (selectedHistoryUser.lastOtp ? 1 : 0)})
                             </button>
                             <button
                                 onClick={() => setHistoryModalTab('login')}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
                             >
-                                📋 Login Audit ({selectedHistoryUser.loginHistory?.length || 0})
+                                Login Audit ({selectedHistoryUser.loginHistory?.length || 0})
                             </button>
                         </div>
 
