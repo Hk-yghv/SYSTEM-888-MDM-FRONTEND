@@ -12,6 +12,7 @@ const followUp2Schema = new mongoose.Schema({
     valuationRange: { type: String, default: '' }, // វាយតម្លៃបានចន្លោះណាដល់ណា
     status: { type: String, default: 'ជោគជ័យ' }, // ជោគជ័យ ឬ បរាជ័យ
     reason: { type: String, default: '' }, // មូលហេតុ
+    images: { type: [String], default: [] }, // រូបភាពឯកសារ/ទ្រព្យបញ្ចាំច្រើនសន្លឹក
     brand: { type: String, default: '' },
     createdBy: { type: String, default: 'Staff' },
     notes: { type: String, default: '' }

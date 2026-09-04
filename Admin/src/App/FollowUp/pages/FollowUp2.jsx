@@ -7,9 +7,11 @@ import {
     FaListUl, FaChartPie, FaCheckCircle,
     FaTimesCircle, FaDollarSign, FaFilter,
     FaFileDownload, FaBuilding, FaUserTie,
-    FaPhoneAlt, FaCoins, FaTags, FaComments
+    FaPhoneAlt, FaCoins, FaTags, FaComments,
+    FaImage, FaCamera, FaChevronLeft, FaChevronRight,
+    FaTimes
 } from 'react-icons/fa';
-import { MdOutlineSync, MdPictureAsPdf, MdOutlineRateReview, MdOutlineAssignment, MdCall } from 'react-icons/md';
+import { MdOutlineSync, MdPictureAsPdf, MdOutlineRateReview, MdOutlineAssignment, MdCall, MdCloudUpload } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 
@@ -61,10 +63,17 @@ const FollowUp2 = () => {
         valuationRange: '',
         status: 'ជោគជ័យ',
         reason: '',
+        images: [],
         brand: user?.brand || 'MDM',
         notes: ''
     });
     const [submitting, setSubmitting] = useState(false);
+    const [uploadingImages, setUploadingImages] = useState(false);
+
+    // Lightbox / Image Viewer Modal
+    const [previewImages, setPreviewImages] = useState([]);
+    const [previewIndex, setPreviewIndex] = useState(0);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
     // Export Modal State
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -151,6 +160,73 @@ const FollowUp2 = () => {
         fetchData(1, '', '', '', '', '', '');
     };
 
+    // Multiple File Upload Handler (Cloudinary + Base64 fallback)
+    const handleMultipleImageUpload = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files || files.length === 0) return;
+
+        setUploadingImages(true);
+        const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+        const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+
+        const uploadedUrls = [];
+
+        for (const file of files) {
+            try {
+                const bodyData = new FormData();
+                bodyData.append('file', file);
+                bodyData.append('upload_preset', CLOUDINARY_PRESET);
+
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                    method: 'POST',
+                    body: bodyData
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    uploadedUrls.push(data.secure_url);
+                } else {
+                    // Fallback to base64
+                    const b64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(file);
+                    });
+                    uploadedUrls.push(b64);
+                }
+            } catch (err) {
+                console.warn('Cloudinary upload error, falling back to base64:', err);
+                const b64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(file);
+                });
+                uploadedUrls.push(b64);
+            }
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            images: [...(prev.images || []), ...uploadedUrls]
+        }));
+        setUploadingImages(false);
+    };
+
+    const handleRemoveImage = (indexToRemove) => {
+        setFormData(prev => ({
+            ...prev,
+            images: (prev.images || []).filter((_, idx) => idx !== indexToRemove)
+        }));
+    };
+
+    // Open Lightbox Viewer
+    const handleOpenImageViewer = (imagesList, startIndex = 0) => {
+        if (!imagesList || imagesList.length === 0) return;
+        setPreviewImages(imagesList);
+        setPreviewIndex(startIndex);
+        setIsPreviewOpen(true);
+    };
+
     // Form Handlers
     const handleOpenCreate = () => {
         setEditingItem(null);
@@ -165,6 +241,7 @@ const FollowUp2 = () => {
             valuationRange: '',
             status: 'ជោគជ័យ',
             reason: '',
+            images: [],
             brand: user?.brand || 'MDM',
             notes: ''
         });
@@ -184,6 +261,7 @@ const FollowUp2 = () => {
             valuationRange: item.valuationRange || '',
             status: item.status || 'ជោគជ័យ',
             reason: item.reason || '',
+            images: Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []),
             brand: item.brand || user?.brand || 'MDM',
             notes: item.notes || ''
         });
@@ -207,6 +285,7 @@ const FollowUp2 = () => {
             const payload = {
                 ...formData,
                 requestedAmount: Number(formData.requestedAmount) || 0,
+                images: formData.images || [],
                 brand: formData.brand || user?.brand || 'MDM',
                 createdBy: user?.name || user?.username || 'Staff',
                 username: user?.username || ''
@@ -344,6 +423,7 @@ const FollowUp2 = () => {
                 { header: 'អ្នកឆ្លើយតបឆាត', accessor: (row) => row.responder || '' },
                 { header: 'កាលបរិច្ឆេទឆ្នាំ', accessor: (row) => row.date ? row.date.split('T')[0] : '' },
                 { header: 'វាយតម្លៃបានចន្លោះណាដល់ណា', accessor: (row) => row.valuationRange || '' },
+                { header: 'រូបភាព (Photos)', accessor: (row) => row.isTotalRow ? '' : `${(row.images || []).length} រូប` },
                 { header: 'ស្ថានភាព (Status)', accessor: (row) => row.isTotalRow ? `ជោគជ័យ: ${totalSucc} | បរាជ័យ: ${totalFail}` : (row.status || '') },
                 { header: 'មូលហេតុ (Reason)', accessor: (row) => row.reason || '' },
                 { header: 'Brand', accessor: (row) => row.brand || '' }
@@ -363,6 +443,7 @@ const FollowUp2 = () => {
                     responder: '',
                     date: '',
                     valuationRange: `Success Rate: ${overallRate}%`,
+                    images: [],
                     status: `Success: ${totalSucc} | Failed: ${totalFail}`,
                     reason: 'Summary Totals',
                     brand: ''
@@ -402,7 +483,7 @@ const FollowUp2 = () => {
                             </span>
                         </h1>
                         <p className="text-xs text-[var(--app-text-muted,#64748b)] mt-0.5">
-                            គ្រប់គ្រង ឈ្មោះអតិថិជន, តាមរយៈ, Tel, ចំនួនស្នើបញ្ចាំ, ប្រភេទទ្រព្យ, អ្នកឆ្លើយតបឆាត, វាយតម្លៃ និងស្ថានភាពជោគជ័យ/បរាជ័យ
+                            គ្រប់គ្រង ឈ្មោះអតិថិជន, តាមរយៈ, Tel, ចំនួនស្នើបញ្ចាំ, ប្រភេទទ្រព្យ, រូបភាពច្រើនសន្លឹក, អ្នកឆ្លើយតបឆាត, វាយតម្លៃ និងស្ថានភាពជោគជ័យ/បរាជ័យ
                         </p>
                     </div>
                 </div>
@@ -619,18 +700,19 @@ const FollowUp2 = () => {
                                 <th className="py-3 px-3 min-w-[100px]">Tel</th>
                                 <th className="py-3 px-3 text-right min-w-[100px]">ចំនួនស្នើបញ្ចាំ</th>
                                 <th className="py-3 px-3 min-w-[120px]">ប្រភេទទ្រព្យ</th>
+                                <th className="py-3 px-3 min-w-[90px] text-center">រូបភាព</th>
                                 <th className="py-3 px-3 min-w-[110px]">អ្នកឆ្លើយតប</th>
                                 <th className="py-3 px-3 min-w-[95px]">កាលបរិច្ឆេទ</th>
                                 <th className="py-3 px-3 min-w-[120px]">វាយតម្លៃបាន</th>
                                 <th className="py-3 px-3 text-center min-w-[90px]">ស្ថានភាព</th>
-                                <th className="py-3 px-4 min-w-[140px]">មូលហេតុ</th>
+                                <th className="py-3 px-4 min-w-[130px]">មូលហេតុ</th>
                                 <th className="py-3 px-3 text-center min-w-[80px]">សកម្មភាព</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--app-border,#e2e8f0)] text-xs font-medium text-[var(--app-text,#0f172a)]">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="12" className="py-12 text-center text-slate-400">
+                                    <td colSpan="13" className="py-12 text-center text-slate-400">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <MdOutlineSync size={24} className="animate-spin text-indigo-600" />
                                             <span>កំពុងទាញយកទិន្នន័យ Follow up 2...</span>
@@ -639,7 +721,7 @@ const FollowUp2 = () => {
                                 </tr>
                             ) : dataList.length === 0 ? (
                                 <tr>
-                                    <td colSpan="12" className="py-12 text-center text-slate-400 font-normal">
+                                    <td colSpan="13" className="py-12 text-center text-slate-400 font-normal">
                                         មិនមានទិន្នន័យ Follow up 2 នៅឡើយទេ! សូមចុចប៊ូតុង "Create Entry" ដើម្បីបញ្ចូលទិន្នន័យថ្មី។
                                     </td>
                                 </tr>
@@ -647,6 +729,7 @@ const FollowUp2 = () => {
                                 dataList.map((item, index) => {
                                     const isSuccess = item.status === 'ជោគជ័យ' || item.status === 'Success';
                                     const amount = Number(item.requestedAmount) || 0;
+                                    const imgList = Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []);
 
                                     return (
                                         <tr key={item._id || index} className="hover:bg-slate-500/5 transition-colors">
@@ -674,6 +757,34 @@ const FollowUp2 = () => {
                                             </td>
                                             <td className="py-3 px-3 text-slate-700 dark:text-slate-300">
                                                 {item.collateralType || '-'}
+                                            </td>
+                                            {/* Photo thumbnail cell */}
+                                            <td className="py-3 px-3 text-center">
+                                                {imgList.length > 0 ? (
+                                                    <div
+                                                        onClick={() => handleOpenImageViewer(imgList, 0)}
+                                                        className="inline-flex items-center gap-1.5 cursor-pointer group p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                                                        title="ចុចដើម្បីមើលរូបភាពធំ"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-md overflow-hidden border border-indigo-400 shadow-2xs relative flex-shrink-0 bg-slate-100">
+                                                            <img
+                                                                src={imgList[0]}
+                                                                alt="Collateral"
+                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                            />
+                                                            {imgList.length > 1 && (
+                                                                <span className="absolute bottom-0 right-0 bg-indigo-600 text-white text-[9px] font-bold px-1 rounded-tl">
+                                                                    +{imgList.length - 1}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
+                                                            {imgList.length} រូប
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-300 text-[11px]">គ្មាន</span>
+                                                )}
                                             </td>
                                             <td className="py-3 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                                                 {item.responder || '-'}
@@ -736,7 +847,7 @@ const FollowUp2 = () => {
                                     <td className="py-3.5 px-3 text-right font-extrabold text-amber-700 dark:text-amber-300 text-sm">
                                         ${(summary.totalRequestedAmount || 0).toLocaleString()}
                                     </td>
-                                    <td colSpan="4" className="py-3.5 px-3 text-right font-semibold text-slate-600 dark:text-slate-300">
+                                    <td colSpan="5" className="py-3.5 px-3 text-right font-semibold text-slate-600 dark:text-slate-300">
                                         ជោគជ័យ: <span className="text-emerald-600 font-bold">{summary.totalSuccess}</span> &bull; បរាជ័យ: <span className="text-rose-600 font-bold">{summary.totalFailed}</span>
                                     </td>
                                     <td className="py-3.5 px-3 text-center font-extrabold text-sky-700 dark:text-sky-300 text-sm">
@@ -768,7 +879,7 @@ const FollowUp2 = () => {
             {/* Create / Edit Form Modal */}
             {isFormOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-                    <div className="bg-[var(--app-card,#ffffff)] w-full max-w-xl rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-[var(--app-card,#ffffff)] w-full max-w-xl rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
                             <h2 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
@@ -784,7 +895,7 @@ const FollowUp2 = () => {
                         </div>
 
                         {/* Modal Body */}
-                        <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
+                        <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
                             {/* Row 1: ឈ្មោះអតិថិជន & តាមរយៈ */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
@@ -907,6 +1018,62 @@ const FollowUp2 = () => {
                                 </div>
                             </div>
 
+                            {/* Multiple Images Upload Box */}
+                            <div className="p-3.5 bg-slate-500/5 rounded-xl border border-dashed border-indigo-300 dark:border-indigo-700/60 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold text-[var(--app-text,#334155)] flex items-center gap-1.5">
+                                        <FaCamera className="text-indigo-600" size={14} />
+                                        <span>បញ្ចូលរូបភាពទ្រព្យ/ឯកសារ (អាចបញ្ចូលបានច្រើន)</span>
+                                    </label>
+                                    {uploadingImages && (
+                                        <span className="text-[11px] font-semibold text-indigo-600 flex items-center gap-1">
+                                            <MdOutlineSync className="animate-spin" size={13} />
+                                            <span>កំពុងបញ្ចូល...</span>
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Custom Upload Button */}
+                                <div>
+                                    <label className="flex items-center justify-center gap-2 p-3 bg-[var(--app-card,#ffffff)] hover:bg-indigo-500/10 border border-indigo-300 dark:border-indigo-700 rounded-xl cursor-pointer transition-all text-xs font-semibold text-indigo-600 dark:text-indigo-400 shadow-2xs">
+                                        <MdCloudUpload size={18} />
+                                        <span>ចុចទីនេះដើម្បីជ្រើសរើសរូបភាព (អាចជ្រើសរើសបានច្រើនសន្លឹក)</span>
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="image/*"
+                                            onChange={handleMultipleImageUpload}
+                                            className="hidden"
+                                            disabled={uploadingImages}
+                                        />
+                                    </label>
+                                </div>
+
+                                {/* Thumbnails Grid */}
+                                {formData.images && formData.images.length > 0 && (
+                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 pt-2">
+                                        {formData.images.map((imgUrl, imgIdx) => (
+                                            <div key={imgIdx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-100 shadow-2xs">
+                                                <img
+                                                    src={imgUrl}
+                                                    alt={`Uploaded ${imgIdx}`}
+                                                    className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-200"
+                                                    onClick={() => handleOpenImageViewer(formData.images, imgIdx)}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveImage(imgIdx)}
+                                                    className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity shadow-sm cursor-pointer"
+                                                    title="លុបរូបភាពនេះ"
+                                                >
+                                                    <FaTimes size={10} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Row 5: ស្ថានភាពជោគជ័យឬបរាជ័យ */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
@@ -981,7 +1148,7 @@ const FollowUp2 = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={submitting}
+                                    disabled={submitting || uploadingImages}
                                     className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs hover:shadow-md cursor-pointer disabled:opacity-50"
                                 >
                                     {submitting && <MdOutlineSync className="animate-spin" size={14} />}
@@ -989,6 +1156,61 @@ const FollowUp2 = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Photo Lightbox / Preview Modal */}
+            {isPreviewOpen && previewImages.length > 0 && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <button
+                        onClick={() => setIsPreviewOpen(false)}
+                        className="absolute top-4 right-4 p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer z-50"
+                        title="Close"
+                    >
+                        <FaTimes size={20} />
+                    </button>
+
+                    <div className="relative max-w-4xl max-h-[85vh] flex flex-col items-center justify-center">
+                        <img
+                            src={previewImages[previewIndex]}
+                            alt="Preview Full"
+                            className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl border border-white/20"
+                        />
+
+                        {/* Navigation Arrows if multiple photos */}
+                        {previewImages.length > 1 && (
+                            <>
+                                <button
+                                    onClick={() => setPreviewIndex(prev => (prev > 0 ? prev - 1 : previewImages.length - 1))}
+                                    className="absolute left-2 sm:-left-12 top-1/2 -translate-y-1/2 p-3 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
+                                    title="Previous"
+                                >
+                                    <FaChevronLeft size={18} />
+                                </button>
+                                <button
+                                    onClick={() => setPreviewIndex(prev => (prev < previewImages.length - 1 ? prev + 1 : 0))}
+                                    className="absolute right-2 sm:-right-12 top-1/2 -translate-y-1/2 p-3 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
+                                    title="Next"
+                                >
+                                    <FaChevronRight size={18} />
+                                </button>
+                            </>
+                        )}
+
+                        {/* Counter & Thumbnails Bar */}
+                        <div className="mt-4 flex items-center gap-2 overflow-x-auto p-1 bg-black/40 rounded-xl">
+                            {previewImages.map((img, idx) => (
+                                <img
+                                    key={idx}
+                                    src={img}
+                                    alt={`Thumb ${idx}`}
+                                    onClick={() => setPreviewIndex(idx)}
+                                    className={`w-12 h-12 object-cover rounded-lg cursor-pointer border-2 transition-all ${previewIndex === idx ? 'border-indigo-500 scale-105' : 'border-transparent opacity-60 hover:opacity-100'
+                                        }`}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}

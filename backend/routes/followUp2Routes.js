@@ -151,6 +151,7 @@ router.post('/', async (req, res) => {
             valuationRange = '',
             status = 'ជោគជ័យ',
             reason = '',
+            images = [],
             brand = '',
             notes = '',
             createdBy = 'Staff'
@@ -175,6 +176,7 @@ router.post('/', async (req, res) => {
             valuationRange: valuationRange || '',
             status: status || 'ជោគជ័យ',
             reason: reason || '',
+            images: Array.isArray(images) ? images : (images ? [images] : []),
             brand: brand || '',
             notes: notes || '',
             createdBy
