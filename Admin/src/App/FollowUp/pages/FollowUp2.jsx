@@ -376,6 +376,13 @@ const FollowUp2 = () => {
             const dayTotalAmount = items.reduce((s, it) => s + (Number(it.requestedAmount) || 0), 0);
             const daySuccess = items.filter(it => it.status === 'ជោគជ័យ' || it.status === 'Success').length;
             const dayFailed = items.filter(it => it.status === 'បរាជ័យ' || it.status === 'Failed').length;
+            const dayReview = dayItems.filter(
+                item =>
+                    item.status === 'Review' ||
+                    item.status === 'review' ||
+                    item.status === 'ពិនិត្យ' ||
+                    item.status === 'កំពុងពិនិត្យ'
+            ).length;
             const dayRate = items.length > 0 ? ((daySuccess / items.length) * 100).toFixed(1) : '0.0';
 
             result.push({
@@ -989,27 +996,29 @@ const FollowUp2 = () => {
                                             })}
 
                                             {/* Total តាមថ្ងៃ (Daily Subtotal Row) */}
-                                            <tr className="bg-amber-500/10 dark:bg-amber-950/40 border-y-2 border-amber-500/30 text-xs font-bold text-[var(--app-text,#0f172a)]">
-                                                <td colSpan="4" className="py-2.5 px-4 text-left font-bold text-amber-900 dark:text-amber-200">
-                                                    <span className="flex items-center gap-1.5">
-                                                        <FaRegCalendarAlt className="text-amber-600" size={13} />
-                                                        <span className="uppercase tracking-wide">សរុបប្រចាំថ្ងៃ ({group.date}):</span>
-                                                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200 text-[11px] font-extrabold">
-                                                            {group.summary.count} នាក់
-                                                        </span>
-                                                    </span>
-                                                </td>
-                                                <td className="py-2.5 px-3 text-right font-black text-amber-700 dark:text-amber-300 text-sm">
-                                                    ${group.summary.totalAmount.toLocaleString()}
-                                                </td>
-                                                <td colSpan="5" className="py-2.5 px-3 text-right text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                                                    ជោគជ័យ: <span className="text-emerald-600 font-extrabold">{group.summary.success}</span> &bull; បរាជ័យ: <span className="text-rose-600 font-extrabold">{group.summary.failed}</span>
-                                                </td>
-                                                <td className="py-2.5 px-3 text-center font-extrabold text-sky-700 dark:text-sky-300 text-xs">
-                                                    {group.summary.successRate}%
-                                                </td>
-                                                <td colSpan="2" className="py-2.5 px-4"></td>
-                                            </tr>
+                                            <td
+                                                colSpan="5"
+                                                className="py-2.5 px-3 text-right text-[11px] font-bold text-slate-700 dark:text-slate-300"
+                                            >
+                                                ជោគជ័យ:{' '}
+                                                <span className="text-emerald-600 font-extrabold">
+                                                    {group.summary.success}
+                                                </span>
+
+                                                {' '} &bull; {' '}
+
+                                                បរាជ័យ:{' '}
+                                                <span className="text-rose-600 font-extrabold">
+                                                    {group.summary.failed}
+                                                </span>
+
+                                                {' '} &bull; {' '}
+
+                                                Review:{' '}
+                                                <span className="text-amber-600 dark:text-amber-400 font-extrabold">
+                                                    {group.summary.review || 0}
+                                                </span>
+                                            </td>
                                         </React.Fragment>
                                     ));
                                 })()
