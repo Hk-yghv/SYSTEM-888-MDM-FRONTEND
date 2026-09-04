@@ -35,6 +35,37 @@ const Customer = () => {
     // Customer detail payments history state
     const [customerPayments, setCustomerPayments] = useState([]);
     const [loadingPayments, setLoadingPayments] = useState(false);
+    const [exportingCustomerPdfId, setExportingCustomerPdfId] = useState(null);
+
+    const handleDirectExportPdf = async (customer) => {
+        if (!customer || exportingCustomerPdfId) return;
+        const cid = customer._id || customer.contractId;
+        setExportingCustomerPdfId(cid);
+        try {
+            const res = await fetch(`${API_BASE1}/contracts/${cid}/pdf`);
+            if (!res.ok) throw new Error(`Status: ${res.status}`);
+
+            const blob = await res.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            const safeName = (customer.customerNameEn || customer.customerNameKh || 'Customer').replace(/[^a-zA-Z0-9_\-]/g, '_');
+            const safeId = (customer.contractId || customer.serialNumber || 'Contract').replace(/[^a-zA-Z0-9_\-]/g, '_');
+            link.download = `Report_${safeId}_${safeName}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+
+            setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl);
+                document.body.removeChild(link);
+            }, 300);
+        } catch (err) {
+            console.error('Direct customer PDF export error:', err);
+            alert('បរាជ័យក្នុងការទាញយក PDF (Download Failed): ' + err.message);
+        } finally {
+            setExportingCustomerPdfId(null);
+        }
+    };
 
     useEffect(() => {
         if (!selectedCustomer) {
@@ -298,6 +329,15 @@ const Customer = () => {
                                     </td>
                                     <td className='px-4 py-3 text-center'>
                                         <div className="flex items-center justify-center gap-1.5">
+                                            {/* Export PDF Button */}
+                                            <button
+                                                onClick={() => handleDirectExportPdf(item)}
+                                                disabled={exportingCustomerPdfId === (item._id || item.contractId)}
+                                                className={`w-8 h-8 rounded-xl ${exportingCustomerPdfId === (item._id || item.contractId) ? 'bg-red-100 text-red-400' : 'bg-red-50 hover:bg-red-100 text-red-600'} border border-red-200 flex items-center justify-center text-sm transition-all cursor-pointer`}
+                                                title="Export Complete Customer PDF Dossier"
+                                            >
+                                                <MdPictureAsPdf className={exportingCustomerPdfId === (item._id || item.contractId) ? 'animate-pulse' : ''} />
+                                            </button>
                                             {/* Details Info Button */}
                                             <button
                                                 onClick={() => setSelectedCustomer(item)}
@@ -441,38 +481,8 @@ const Customer = () => {
 
                                     {/* PDF */}
                                     <button
-                                        onClick={() => {
-                                            const c = selectedCustomer;
-
-                                            const cols = [
-                                                { header: 'Field', accessor: 'field' },
-                                                { header: 'Value', accessor: 'value' }
-                                            ];
-
-                                            const rows = [
-                                                { field: 'Name EN', value: c.customerNameEn },
-                                                { field: 'Name KH', value: c.customerNameKh },
-                                                { field: 'ID Card', value: c.idCardNumber || '-' },
-                                                { field: 'DOB', value: c.dob || '-' },
-                                                { field: 'Phone', value: c.phone || '-' },
-                                                { field: 'Relative Phone', value: c.relativePhone || '-' },
-                                                { field: 'Current Address', value: c.currentAddress || '-' },
-                                                { field: 'Device Model', value: c.model },
-                                                { field: 'Serial Number', value: c.serialNumber },
-                                                { field: 'IMEI1', value: c.imei1 || '-' },
-                                                { field: 'MEID', value: c.meid || '-' },
-                                                { field: 'Total Amount', value: `$${c.amount || c.totalAmount || 0}` },
-                                                { field: 'Monthly Installment', value: `$${c.monthlyPayment}/mo` },
-                                                { field: 'Interest', value: c.interest || '-' },
-                                                { field: 'Duration', value: c.duration || '-' },
-                                            ];
-
-                                            exportToPDF(
-                                                `Customer: ${c.customerNameEn}`,
-                                                cols,
-                                                rows
-                                            );
-                                        }}
+                                        onClick={() => handleDirectExportPdf(selectedCustomer)}
+                                        disabled={exportingCustomerPdfId === (selectedCustomer._id || selectedCustomer.contractId)}
                                         className="
                                 group flex items-center gap-2
                                 px-3 py-1
@@ -497,10 +507,10 @@ const Customer = () => {
                                 flex items-center justify-center
                                 group-hover:bg-red-100
                             ">
-                                            <MdPictureAsPdf className="text-red-500 text-sm" />
+                                            <MdPictureAsPdf className={`text-red-500 text-sm ${exportingCustomerPdfId === (selectedCustomer._id || selectedCustomer.contractId) ? 'animate-pulse' : ''}`} />
                                         </span>
 
-                                        <span>PDF</span>
+                                        <span>{exportingCustomerPdfId === (selectedCustomer._id || selectedCustomer.contractId) ? 'Downloading...' : 'PDF Dossier'}</span>
                                     </button>
 
                                     {/* QR Profile */}

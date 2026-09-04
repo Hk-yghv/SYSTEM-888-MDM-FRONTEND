@@ -168,6 +168,18 @@ export function initTelegramBotService(bot) {
 
             const safeName = (contract.customerNameEn || contract.customerNameKh || 'Customer').replace(/[^a-zA-Z0-9_\-]/g, '_');
             const safeId = (contract.contractId || contract.serialNumber || 'DOC').replace(/[^a-zA-Z0-9_\-]/g, '_');
+            // Compute loan financials accurately
+            const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
+            const schedTotal = schedule.reduce((acc, row) => acc + (parseFloat(row.totalAmount || row.amount || 0) || 0), 0);
+            const totalLoan = (parseFloat(contract.totalAmount) > 0)
+                ? parseFloat(contract.totalAmount)
+                : (schedTotal > 0 ? schedTotal : (parseFloat(contract.amount) || 0));
+
+            const totalPaid = (payments && payments.length > 0)
+                ? payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0)
+                : schedule.reduce((acc, r) => acc + (parseFloat(r.paidAmount || 0) || 0), 0);
+
+            const remaining = Math.max(0, totalLoan - totalPaid);
             const filename = `Report_${safeId}_${safeName}.pdf`;
 
             const caption = `📄 <b>របាយការណ៍ព័ត៌មានភ្ញៀវ & តារាងបង់ប្រាក់ (PDF)</b>\n\n` +
@@ -178,27 +190,44 @@ export function initTelegramBotService(bot) {
                             `🆔 <b>IMEI:</b> <code>${contract.imei1 || contract.imei2 || '-'}</code>\n` +
                             `🏢 <b>Brand:</b> ${contract.brand || brandName || '-'}\n` +
                             `💰 <b>ស្ថានភាព:</b> <b>${contract.status || 'Active'}</b>\n` +
-                            `💵 <b>តម្លៃកម្ចីសរុប:</b> $${(parseFloat(contract.totalAmount) || 0).toFixed(2)}`;
+                            `💵 <b>តម្លៃកម្ចីសរុប (Total Loan):</b> $${totalLoan.toFixed(2)}\n` +
+                            `💳 <b>បានបង់សរុប (Total Paid):</b> $${totalPaid.toFixed(2)}\n` +
+                            `📉 <b>នៅសល់ (Remaining):</b> $${remaining.toFixed(2)}`;
+
+            // Extract and validate Facebook URL if present
+            let rawFbUrl = contract.urlFb || contract.url_fb || contract.facebookUrl || '';
+            if (!rawFbUrl && contract.facebookName && (contract.facebookName.startsWith('http://') || contract.facebookName.startsWith('https://') || contract.facebookName.includes('facebook.com'))) {
+                rawFbUrl = contract.facebookName;
+            }
+
+            let fbUrl = '';
+            if (rawFbUrl) {
+                let trimmed = String(rawFbUrl).trim();
+                if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+                    trimmed = `https://${trimmed}`;
+                }
+                if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+                    fbUrl = trimmed;
+                }
+            }
+
+            // Action buttons
+            const keyboard = [];
+            if (fbUrl) {
+                keyboard.push([{ text: '🌐 មើល Facebook ភ្ញៀវ (Open Facebook)', url: fbUrl }]);
+            }
+            keyboard.push([
+                { text: '🔍 ស្វែងរកភ្ញៀវបន្ត', callback_data: 'cmd:search_again' },
+                { text: '🏢 ជ្រើស Brand ផ្សេង', callback_data: 'cmd:switch_brand' }
+            ]);
 
             await bot.sendDocument(chatId, pdfBuffer, {
                 caption: caption,
-                parse_mode: 'HTML'
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: keyboard }
             }, {
                 filename: filename,
                 contentType: 'application/pdf'
-            });
-
-            // Action buttons after export
-            const keyboard = [
-                [
-                    { text: '🔍 ស្វែងរកភ្ញៀវបន្ត', callback_data: 'cmd:search_again' },
-                    { text: '🏢 ជ្រើស Brand ផ្សេង', callback_data: 'cmd:switch_brand' }
-                ]
-            ];
-
-            await bot.sendMessage(chatId, `✨ <b>បានផ្ញើឯកសារ PDF ជោគជ័យ!</b> តើអ្នកចង់បន្តធ្វើអ្វីទៀត?`, {
-                parse_mode: 'HTML',
-                reply_markup: { inline_keyboard: keyboard }
             });
 
         } catch (pdfErr) {
