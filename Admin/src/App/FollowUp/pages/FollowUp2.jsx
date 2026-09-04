@@ -821,7 +821,7 @@ const FollowUp2 = () => {
                         </button>
                     </div>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[var(--app-bg,#f8fafc)] border-b border-[var(--app-border,#e2e8f0)] text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted,#64748b)]">
@@ -1040,7 +1040,7 @@ const FollowUp2 = () => {
 
             {/* Create / Edit Form Modal */}
             {isFormOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+                <div className="fixed inset-0 z-500000 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
                     <div className="bg-[var(--app-card,#ffffff)] w-full max-w-xl rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
