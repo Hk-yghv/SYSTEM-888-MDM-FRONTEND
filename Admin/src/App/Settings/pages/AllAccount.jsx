@@ -46,6 +46,9 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Audit & History Logs', path: '/history/login-history', label: 'Login History Log', actions: ['read', 'export'] },
     { category: 'Audit & History Logs', path: '/history/device-history', label: 'Device Action Log', actions: ['read', 'export'] },
 
+    { category: 'Follow Up System', path: '/follow-up/follow-up-1', label: 'Follow up 1 (ការតាមដាន Message)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Follow Up System', path: '/follow-up/follow-up-2', label: 'Follow up 2 (បញ្ចាំ & ឆ្លើយតបឆាត)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+
     { category: 'Settings & Profile', path: '/profile', label: 'User Profile', actions: ['read', 'edit'] },
     { category: 'Settings & Profile', path: '/settings/all-account', label: 'All Account Management', actions: ['read', 'create', 'edit', 'delete'] },
     { category: 'Settings & Profile', path: '/settings/control-system', label: 'Control System Settings', actions: ['read', 'edit'] },

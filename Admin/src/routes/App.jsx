@@ -65,6 +65,9 @@ import UnlockWallpaper from "../App/Wallpaper/pages/UnlockWallpaper";
 import LoginHistory from "../App/History/pages/LoginHistory";
 import DeviceActionHistory from "../App/History/pages/DeviceActionHistory";
 
+// Follow Up
+import FollowUp1 from "../App/FollowUp/pages/FollowUp1";
+import FollowUp2 from "../App/FollowUp/pages/FollowUp2";
 
 // Settings & Profile
 import ControlSystem from "../App/Settings/pages/ControlSystem";
@@ -187,6 +190,10 @@ const App = () => {
                   {/* History */}
                   <Route path={json.history?.loginHistory} element={<ProtectRoute pagePath={json.history?.loginHistory}> <MainLayout><LoginHistory /></MainLayout> </ProtectRoute>} />
                   <Route path={json.history?.deviceHistory} element={<ProtectRoute pagePath={json.history?.deviceHistory}> <MainLayout><DeviceActionHistory /></MainLayout> </ProtectRoute>} />
+
+                  {/* Follow Up */}
+                  <Route path={json.followUp?.followUp1 || '/follow-up/follow-up-1'} element={<ProtectRoute pagePath={json.followUp?.followUp1 || '/follow-up/follow-up-1'}> <MainLayout><FollowUp1 /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.followUp?.followUp2 || '/follow-up/follow-up-2'} element={<ProtectRoute pagePath={json.followUp?.followUp2 || '/follow-up/follow-up-2'}> <MainLayout><FollowUp2 /></MainLayout> </ProtectRoute>} />
 
                   {/* Settings */}
                   <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />

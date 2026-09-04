@@ -6,6 +6,8 @@ import ControlSystem from '../models/ControlSystem.js';
 import PhoneLog from '../models/PhoneLog.js';
 import WallpaperLog from '../models/WallpaperLog.js';
 import DeviceActionLog from '../models/DeviceActionLog.js';
+import FollowUp from '../models/FollowUp.js';
+import FollowUp2 from '../models/FollowUp2.js';
 import { queryAllDBs, isAnyDBConnected } from './multiDB.js';
 import { MEM_DB } from './db.js';
 
@@ -128,6 +130,8 @@ export const runFirebaseBackup = async () => {
         let phoneLogs = [];
         let wallpaperLogs = [];
         let deviceLogs = [];
+        let followUps = [];
+        let followUps2 = [];
 
         if (isAnyDBConnected()) {
             users = await queryAllDBs(User, (M) => M.find({}));
@@ -137,6 +141,8 @@ export const runFirebaseBackup = async () => {
             phoneLogs = await queryAllDBs(PhoneLog, (M) => M.find({}));
             wallpaperLogs = await queryAllDBs(WallpaperLog, (M) => M.find({}));
             deviceLogs = await queryAllDBs(DeviceActionLog, (M) => M.find({}));
+            followUps = await queryAllDBs(FollowUp, (M) => M.find({}));
+            followUps2 = await queryAllDBs(FollowUp2, (M) => M.find({}));
         } else {
             users = MEM_DB.users || [];
             contracts = MEM_DB.contracts || [];
@@ -145,6 +151,8 @@ export const runFirebaseBackup = async () => {
             phoneLogs = MEM_DB.phoneLogs || [];
             wallpaperLogs = MEM_DB.wallpaperLogs || [];
             deviceLogs = MEM_DB.deviceActionLogs || [];
+            followUps = MEM_DB.followUps || [];
+            followUps2 = MEM_DB.followUps2 || [];
         }
 
         const cleanUrl = firebaseUrl.endsWith('/') ? firebaseUrl.slice(0, -1) : firebaseUrl;
@@ -168,6 +176,8 @@ export const runFirebaseBackup = async () => {
         const mergedPhoneLogs = mergeWithFirebaseHistory(phoneLogs, existingBackup?.phoneLogs, '_id');
         const mergedWallpaperLogs = mergeWithFirebaseHistory(wallpaperLogs, existingBackup?.wallpaperLogs, '_id');
         const mergedDeviceLogs = mergeWithFirebaseHistory(deviceLogs, existingBackup?.deviceActionLogs, '_id');
+        const mergedFollowUps = mergeWithFirebaseHistory(followUps, existingBackup?.followUps, 'followUpId');
+        const mergedFollowUps2 = mergeWithFirebaseHistory(followUps2, existingBackup?.followUps2, 'followUpId');
 
         const backupData = {
             metadata: {
@@ -175,7 +185,7 @@ export const runFirebaseBackup = async () => {
                 systemName: 'SYSTEM MDM Permanent Archival Backup',
                 version: '2.0.0',
                 nonDestructive: true,
-                totalCollections: 7
+                totalCollections: 9
             },
             users: mergedUsers,
             contracts: mergedContracts,
@@ -183,7 +193,9 @@ export const runFirebaseBackup = async () => {
             controlSystems: mergedControlSystems,
             phoneLogs: mergedPhoneLogs,
             wallpaperLogs: mergedWallpaperLogs,
-            deviceActionLogs: mergedDeviceLogs
+            deviceActionLogs: mergedDeviceLogs,
+            followUps: mergedFollowUps,
+            followUps2: mergedFollowUps2
         };
 
         let response = null;
@@ -213,7 +225,9 @@ export const runFirebaseBackup = async () => {
             controlSystems: mergedControlSystems.length,
             phoneLogs: mergedPhoneLogs.length,
             wallpaperLogs: mergedWallpaperLogs.length,
-            deviceActionLogs: mergedDeviceLogs.length
+            deviceActionLogs: mergedDeviceLogs.length,
+            followUps: mergedFollowUps.length,
+            followUps2: mergedFollowUps2.length
         };
         firebaseBackupStatus.error = null;
 
@@ -260,8 +274,10 @@ export const restoreFromFirebase = async () => {
     const phoneLogsToRestore = filterActive(backup.phoneLogs || []);
     const wallpaperLogsToRestore = filterActive(backup.wallpaperLogs || []);
     const deviceLogsToRestore = filterActive(backup.deviceActionLogs || []);
+    const followUpsToRestore = filterActive(backup.followUps || []);
+    const followUps2ToRestore = filterActive(backup.followUps2 || []);
 
-    console.log(`[Firebase Restore] 🔄 Restoring: ${contractsToRestore.length} contracts, ${usersToRestore.length} users, ${paymentsToRestore.length} payments, ${controlSystemsToRestore.length} control systems...`);
+    console.log(`[Firebase Restore] 🔄 Restoring: ${contractsToRestore.length} contracts, ${usersToRestore.length} users, ${paymentsToRestore.length} payments, ${controlSystemsToRestore.length} control systems, ${followUpsToRestore.length} follow ups, ${followUps2ToRestore.length} follow ups 2...`);
 
     // Restore into MongoDB across multi-DBs
     if (isAnyDBConnected()) {
@@ -300,6 +316,8 @@ export const restoreFromFirebase = async () => {
         await restoreCollection(PhoneLog, phoneLogsToRestore);
         await restoreCollection(WallpaperLog, wallpaperLogsToRestore);
         await restoreCollection(DeviceActionLog, deviceLogsToRestore);
+        await restoreCollection(FollowUp, followUpsToRestore);
+        await restoreCollection(FollowUp2, followUps2ToRestore);
     }
 
     // Sync Memory DB
@@ -310,6 +328,8 @@ export const restoreFromFirebase = async () => {
     MEM_DB.phoneLogs = phoneLogsToRestore;
     MEM_DB.wallpaperLogs = wallpaperLogsToRestore;
     MEM_DB.deviceActionLogs = deviceLogsToRestore;
+    MEM_DB.followUps = followUpsToRestore;
+    MEM_DB.followUps2 = followUps2ToRestore;
 
     const restoredCounts = {
         users: usersToRestore.length,
@@ -318,7 +338,9 @@ export const restoreFromFirebase = async () => {
         controlSystems: controlSystemsToRestore.length,
         phoneLogs: phoneLogsToRestore.length,
         wallpaperLogs: wallpaperLogsToRestore.length,
-        deviceActionLogs: deviceLogsToRestore.length
+        deviceActionLogs: deviceLogsToRestore.length,
+        followUps: followUpsToRestore.length,
+        followUps2: followUps2ToRestore.length
     };
 
     console.log('[Firebase Restore] ✅ Database restoration from Firebase completed successfully!', restoredCounts);

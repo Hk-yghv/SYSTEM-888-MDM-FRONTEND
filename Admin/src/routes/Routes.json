@@ -48,6 +48,10 @@
         "loginHistory": "/history/login-history",
         "deviceHistory": "/history/device-history"
     },
+    "followUp": {
+        "followUp1": "/follow-up/follow-up-1",
+        "followUp2": "/follow-up/follow-up-2"
+    },
     "settings": {
         "controlSystem": "/settings/control-system",
         "systemLogs": "/settings/system-logs",
