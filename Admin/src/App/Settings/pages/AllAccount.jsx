@@ -48,7 +48,8 @@ const ALL_SYSTEM_PAGES = [
 
     { category: 'Settings & Profile', path: '/profile', label: 'User Profile', actions: ['read', 'edit'] },
     { category: 'Settings & Profile', path: '/settings/all-account', label: 'All Account Management', actions: ['read', 'create', 'edit', 'delete'] },
-    { category: 'Settings & Profile', path: '/settings/control-system', label: 'Control System Settings', actions: ['read', 'edit'] }
+    { category: 'Settings & Profile', path: '/settings/control-system', label: 'Control System Settings', actions: ['read', 'edit'] },
+    { category: 'Settings & Profile', path: '/settings/system-logs', label: 'System Event Logs (កំណត់ហេតុប្រព័ន្ធ)', actions: ['read', 'export'] }
 ];
 
 const AllAccount = () => {

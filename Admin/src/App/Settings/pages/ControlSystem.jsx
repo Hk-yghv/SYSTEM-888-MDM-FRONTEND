@@ -46,6 +46,48 @@ const ControlSystem = () => {
     const [selectedCategoryIdx, setSelectedCategoryIdx] = useState(0);
     const [newBrandInput, setNewBrandInput] = useState('');
 
+    const [restoring, setRestoring] = useState(false);
+
+    const handleRestoreFromFirebase = async () => {
+        const isConfirmed = window.confirm(
+            '⚠️ ការព្រមានសំខាន់ (IMPORTANT RESTORE NOTICE):\n\n' +
+            'តើអ្នកពិតជាចង់ផ្ទេរទិន្នន័យពី Firebase មក MongoDB វិញមែនទេ?\n' +
+            'សកម្មភាពនេះនឹងសម្អាតទិន្នន័យ MongoDB ដែលខូច ហើយទាញយកច្បាប់ចម្លងទិន្នន័យចុងក្រោយទាំងអស់ពី Firebase មកវិញ។\n' +
+            'ទិន្នន័យនៅក្នុង Firebase នឹងមិនបាត់បង់ឡើយ!'
+        );
+        if (!isConfirmed) return;
+
+        setRestoring(true);
+        try {
+            const res = await fetch(`${API_BASE}/db-status/restore-firebase`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-role': user?.role || 'Administrator',
+                    'x-user-id': user?.userId || ''
+                }
+            });
+            const data = await res.json();
+            if (res.ok && data.result?.success) {
+                alert(`✅ ជោគជ័យ! បានផ្ទេរទិន្នន័យពី Firebase មក MongoDB រួចរាល់:\n\n` +
+                    `• Contracts: ${data.result.counts?.contracts || 0}\n` +
+                    `• Users: ${data.result.counts?.users || 0}\n` +
+                    `• Payments: ${data.result.counts?.payments || 0}\n` +
+                    `• Control System: ${data.result.counts?.controlSystems || 0}\n` +
+                    `• Phone Logs: ${data.result.counts?.phoneLogs || 0}\n` +
+                    `• Wallpaper Logs: ${data.result.counts?.wallpaperLogs || 0}`
+                );
+                fetchControlSystemConfigs();
+            } else {
+                alert(`❌ បរាជ័យក្នុងការ Restore: ${data.error || data.message || 'Unknown error'}`);
+            }
+        } catch (err) {
+            alert(`❌ Error connecting to server: ${err.message}`);
+        } finally {
+            setRestoring(false);
+        }
+    };
+
     // Fetch which fields are private overrides vs inherited from Global
     const fetchFieldOrigins = async (brand) => {
         try {
@@ -410,6 +452,18 @@ const ControlSystem = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    {user?.role === 'Administrator' && (
+                        <button
+                            type="button"
+                            onClick={handleRestoreFromFirebase}
+                            disabled={restoring}
+                            className='flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-orange-600/20 transition-all border border-amber-400/30'
+                            title="Restore and synchronize MongoDB from latest Firebase Backup"
+                        >
+                            <MdOutlineSettingsBackupRestore size={16} className={restoring ? 'spin-reload' : ''} />
+                            <span>{restoring ? 'កំពុង Restore...' : 'Restore from Firebase'}</span>
+                        </button>
+                    )}
                     <button
                         onClick={handleSaveAllConfigs}
                         disabled={saving}

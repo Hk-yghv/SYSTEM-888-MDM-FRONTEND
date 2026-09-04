@@ -4,10 +4,11 @@ import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
 import { AiOutlineMenu } from "react-icons/ai";
 import { MdOutlineSync, MdInfo, MdCheckCircle, MdSearch, MdSwapHoriz, MdComment, MdPictureAsPdf, MdOutlineWallpaper } from "react-icons/md";
-import { FaLock, FaFileExcel } from "react-icons/fa";
+import { FaLock, FaFileExcel, FaHistory } from "react-icons/fa";
 import CustomModal from '../../../components/CustomModal';
 import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import ContractActivityHistoryModal from '../components/ContractActivityHistoryModal';
 
 const Activated = () => {
     const { t } = useLanguage();
@@ -23,6 +24,7 @@ const Activated = () => {
 
     const [openMenuId, setOpenMenuId] = useState(null);
     const [selectedInfo, setSelectedInfo] = useState(null);
+    const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
     const [editData, setEditData] = useState(null);
     const [openEditModal, setOpenEditModal] = useState(false);
 
@@ -454,6 +456,17 @@ const Activated = () => {
                                                             </button>
                                                         )}
 
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedHistoryItem(item);
+                                                                setOpenMenuId(null);
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                        >
+                                                            <FaHistory className="text-indigo-600 text-sm" />
+                                                            <span>History (ប្រវត្តិសកម្មភាព)</span>
+                                                        </button>
+
                                                         {hasPermission('/contract/activated', 'edit') && (
                                                             <>
                                                                 <button
@@ -600,6 +613,14 @@ const Activated = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Customer Activity History Modal */}
+            {selectedHistoryItem && (
+                <ContractActivityHistoryModal
+                    contract={selectedHistoryItem}
+                    onClose={() => setSelectedHistoryItem(null)}
+                />
             )}
 
         </div>

@@ -50,6 +50,7 @@
     },
     "settings": {
         "controlSystem": "/settings/control-system",
+        "systemLogs": "/settings/system-logs",
         "allAccount": "/settings/all-account",
         "phoneApp": "/settings/phone-app",
         "profile": "/profile"

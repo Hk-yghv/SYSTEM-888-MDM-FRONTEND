@@ -68,6 +68,7 @@ import DeviceActionHistory from "../App/History/pages/DeviceActionHistory";
 
 // Settings & Profile
 import ControlSystem from "../App/Settings/pages/ControlSystem";
+import SystemAuditLogs from "../App/Settings/pages/SystemAuditLogs";
 import AllAccount from "../App/Settings/pages/AllAccount";
 import Profile from "../App/Profile/Profile";
 
@@ -190,6 +191,7 @@ const App = () => {
                   {/* Settings */}
                   <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />
                   <Route path={json.settings.controlSystem} element={<ProtectRoute pagePath={json.settings.controlSystem}><MainLayout><ControlSystem /></MainLayout></ProtectRoute>} />
+                  <Route path={json.settings.systemLogs} element={<ProtectRoute pagePath={json.settings.systemLogs}><MainLayout><SystemAuditLogs /></MainLayout></ProtectRoute>} />
                   <Route path={json.settings.profile} element={<ProtectRoute pagePath={json.settings.profile}> <MainLayout><Profile /></MainLayout> </ProtectRoute>} />
 
                   {/* Fallback */}

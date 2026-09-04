@@ -18,9 +18,11 @@ import { connectDB } from './config/db.js';
 import { getDBStatus } from './config/multiDB.js';
 import {
     runFirebaseBackup,
+    restoreFromFirebase,
     getFirebaseBackupStatus,
     startFirebaseBackupScheduler
 } from './config/firebaseBackup.js';
+import auditRoutes from './routes/auditRoutes.js';
 import {
     securityHeadersMiddleware,
     botFirewallMiddleware,
@@ -115,6 +117,19 @@ app.all(['/api/db-status/backup-firebase', '/api/backup-firebase'], requireAdmin
     }
 });
 
+// ── Restore MongoDB from Firebase Backup (Protected Admin-Only Endpoint) ──
+app.all(['/api/db-status/restore-firebase', '/api/restore-firebase', '/api/controlsystem/restore-firebase'], requireAdminRole, async (req, res) => {
+    try {
+        const result = await restoreFromFirebase();
+        res.json({
+            message: 'Firebase database backup restored successfully into MongoDB!',
+            result
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ── Mount All Routes (Unified Multi-API Backend Cluster) ──
 app.use('/api/auth', createAuthRoutes(bot));
 app.use('/api/users', userRoutes);
@@ -130,6 +145,8 @@ app.use('/pay', paymentRoutes);
 app.use('/api', lostphoneRoutes);
 app.use('/api', wallpaperRoutes);
 app.use('/api/history', createHistoryRoutes(bot));
+app.use('/api/audit-logs', auditRoutes);
+app.use('/api/system-logs', auditRoutes);
 app.use('/api', cashTransactionRoutes);
 app.use((err, req, res, next) => {
     console.error('Unhandled System Error:', err);

@@ -36,6 +36,74 @@ export const formatDocForFirebase = (doc) => {
     return obj;
 };
 
+// Helper to merge and preserve Firebase history without deletion
+const mergeWithFirebaseHistory = (mongoList, firebaseList = [], keyField = '_id') => {
+    const mongoMap = new Map();
+    mongoList.forEach(m => {
+        const k = String(m[keyField] || m.contractId || m.userId || m.paymentId || m._id || '');
+        if (k) mongoMap.set(k, m);
+    });
+
+    const mergedList = [];
+    const processedKeys = new Set();
+
+    // 1. Process items currently in MongoDB
+    mongoList.forEach(mongoItem => {
+        const k = String(mongoItem[keyField] || mongoItem.contractId || mongoItem.userId || mongoItem.paymentId || mongoItem._id || '');
+        processedKeys.add(k);
+
+        const existingFbItem = (Array.isArray(firebaseList) ? firebaseList : []).find(fb => {
+            const fbKey = String(fb[keyField] || fb.contractId || fb.userId || fb.paymentId || fb._id || '');
+            return fbKey === k;
+        });
+
+        if (existingFbItem) {
+            // Check if item has edits
+            const history = Array.isArray(existingFbItem._editHistory) ? [...existingFbItem._editHistory] : [];
+            const previousCopy = { ...existingFbItem };
+            delete previousCopy._editHistory;
+
+            // Preserve existing history and append previous version if updated
+            const isDifferent = JSON.stringify(formatDocForFirebase(mongoItem)) !== JSON.stringify(formatDocForFirebase(previousCopy));
+            if (isDifferent && history.length < 30) {
+                history.unshift({
+                    savedAt: new Date().toISOString(),
+                    previousState: previousCopy
+                });
+            }
+
+            mergedList.push({
+                ...formatDocForFirebase(mongoItem),
+                _editHistory: history,
+                _lastSyncedAt: new Date().toISOString()
+            });
+        } else {
+            mergedList.push({
+                ...formatDocForFirebase(mongoItem),
+                _editHistory: [],
+                _lastSyncedAt: new Date().toISOString()
+            });
+        }
+    });
+
+    // 2. Preserve archived items that were deleted in MongoDB (Never delete from Firebase!)
+    if (Array.isArray(firebaseList)) {
+        firebaseList.forEach(fbItem => {
+            const k = String(fbItem[keyField] || fbItem.contractId || fbItem.userId || fbItem.paymentId || fbItem._id || '');
+            if (k && !processedKeys.has(k)) {
+                mergedList.push({
+                    ...fbItem,
+                    _archivedInFirebase: true,
+                    _deletedInMongo: true,
+                    _deletedAt: fbItem._deletedAt || new Date().toISOString()
+                });
+            }
+        });
+    }
+
+    return mergedList;
+};
+
 export const runFirebaseBackup = async () => {
     const firebaseUrl = process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL;
     const authSecret = process.env.FIREBASE_SECRET_KEY || process.env.FIREBASE_AUTH_KEY;
@@ -51,7 +119,7 @@ export const runFirebaseBackup = async () => {
     firebaseBackupStatus.lastBackupStatus = 'Syncing...';
 
     try {
-        console.log('[Firebase Backup] 🔄 Starting MongoDB to Firebase full backup sync...');
+        console.log('[Firebase Backup] 🔄 Starting MongoDB to Firebase non-destructive backup sync with history preservation...');
 
         let users = [];
         let contracts = [];
@@ -79,32 +147,53 @@ export const runFirebaseBackup = async () => {
             deviceLogs = MEM_DB.deviceActionLogs || [];
         }
 
+        const cleanUrl = firebaseUrl.endsWith('/') ? firebaseUrl.slice(0, -1) : firebaseUrl;
+        const targetUrl = `${cleanUrl}/SYSTEM_MDM_BACKUP.json` + (authSecret ? `?auth=${authSecret}` : '');
+
+        // Fetch existing Firebase backup first to preserve edit history and archived items
+        let existingBackup = null;
+        try {
+            const fetchRes = await axios.get(targetUrl, { timeout: 15000 });
+            if (fetchRes.data && typeof fetchRes.data === 'object') {
+                existingBackup = fetchRes.data;
+            }
+        } catch (fErr) {
+            console.log('[Firebase Backup] Initial backup or fetch note:', fErr.message);
+        }
+
+        const mergedUsers = mergeWithFirebaseHistory(users, existingBackup?.users, 'username');
+        const mergedContracts = mergeWithFirebaseHistory(contracts, existingBackup?.contracts, 'contractId');
+        const mergedPayments = mergeWithFirebaseHistory(payments, existingBackup?.payments, 'paymentId');
+        const mergedControlSystems = mergeWithFirebaseHistory(controlSystems, existingBackup?.controlSystems, 'brand');
+        const mergedPhoneLogs = mergeWithFirebaseHistory(phoneLogs, existingBackup?.phoneLogs, '_id');
+        const mergedWallpaperLogs = mergeWithFirebaseHistory(wallpaperLogs, existingBackup?.wallpaperLogs, '_id');
+        const mergedDeviceLogs = mergeWithFirebaseHistory(deviceLogs, existingBackup?.deviceActionLogs, '_id');
+
         const backupData = {
             metadata: {
                 timestamp: new Date().toISOString(),
-                systemName: 'SYSTEM MDM Database Backup',
+                systemName: 'SYSTEM MDM Permanent Archival Backup',
+                version: '2.0.0',
+                nonDestructive: true,
                 totalCollections: 7
             },
-            users: users.map(formatDocForFirebase),
-            contracts: contracts.map(formatDocForFirebase),
-            payments: payments.map(formatDocForFirebase),
-            controlSystems: controlSystems.map(formatDocForFirebase),
-            phoneLogs: phoneLogs.map(formatDocForFirebase),
-            wallpaperLogs: wallpaperLogs.map(formatDocForFirebase),
-            deviceActionLogs: deviceLogs.map(formatDocForFirebase)
+            users: mergedUsers,
+            contracts: mergedContracts,
+            payments: mergedPayments,
+            controlSystems: mergedControlSystems,
+            phoneLogs: mergedPhoneLogs,
+            wallpaperLogs: mergedWallpaperLogs,
+            deviceActionLogs: mergedDeviceLogs
         };
-
-        const cleanUrl = firebaseUrl.endsWith('/') ? firebaseUrl.slice(0, -1) : firebaseUrl;
-        const targetUrl = `${cleanUrl}/SYSTEM_MDM_BACKUP.json` + (authSecret ? `?auth=${authSecret}` : '');
 
         let response = null;
         let lastErr = null;
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
-                console.log(`[Firebase Backup] Sending sync to Firebase (Attempt ${attempt}/3)...`);
+                console.log(`[Firebase Backup] Sending non-destructive sync to Firebase (Attempt ${attempt}/3)...`);
                 response = await axios.put(targetUrl, backupData, {
                     headers: { 'Content-Type': 'application/json' },
-                    timeout: 30000
+                    timeout: 35000
                 });
                 break;
             } catch (err) {
@@ -118,17 +207,17 @@ export const runFirebaseBackup = async () => {
         firebaseBackupStatus.lastBackupTime = new Date().toISOString();
         firebaseBackupStatus.lastBackupStatus = 'Success';
         firebaseBackupStatus.recordCounts = {
-            users: users.length,
-            contracts: contracts.length,
-            payments: payments.length,
-            controlSystems: controlSystems.length,
-            phoneLogs: phoneLogs.length,
-            wallpaperLogs: wallpaperLogs.length,
-            deviceActionLogs: deviceLogs.length
+            users: mergedUsers.length,
+            contracts: mergedContracts.length,
+            payments: mergedPayments.length,
+            controlSystems: mergedControlSystems.length,
+            phoneLogs: mergedPhoneLogs.length,
+            wallpaperLogs: mergedWallpaperLogs.length,
+            deviceActionLogs: mergedDeviceLogs.length
         };
         firebaseBackupStatus.error = null;
 
-        console.log(`[Firebase Backup] ✅ Backup completed successfully at ${firebaseBackupStatus.lastBackupTime}!`);
+        console.log(`[Firebase Backup] ✅ Non-destructive backup completed successfully at ${firebaseBackupStatus.lastBackupTime}!`);
         return { success: true, timestamp: firebaseBackupStatus.lastBackupTime, counts: firebaseBackupStatus.recordCounts };
 
     } catch (err) {
@@ -137,6 +226,108 @@ export const runFirebaseBackup = async () => {
         firebaseBackupStatus.error = err.message;
         return { success: false, error: err.message };
     }
+};
+
+/**
+ * Restore MongoDB completely from Firebase Backup
+ * Cleans damaged/corrupted MongoDB collections and restores healthy state from Firebase
+ */
+export const restoreFromFirebase = async () => {
+    const firebaseUrl = process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL;
+    const authSecret = process.env.FIREBASE_SECRET_KEY || process.env.FIREBASE_AUTH_KEY;
+
+    if (!firebaseUrl || firebaseUrl.includes('YOUR_FIREBASE')) {
+        throw new Error('FIREBASE_DATABASE_URL is not configured in environment variables.');
+    }
+
+    const cleanUrl = firebaseUrl.endsWith('/') ? firebaseUrl.slice(0, -1) : firebaseUrl;
+    const targetUrl = `${cleanUrl}/SYSTEM_MDM_BACKUP.json` + (authSecret ? `?auth=${authSecret}` : '');
+
+    console.log('[Firebase Restore] 📥 Fetching backup snapshot from Firebase...');
+    const response = await axios.get(targetUrl, { timeout: 35000 });
+    const backup = response.data;
+
+    if (!backup || typeof backup !== 'object') {
+        throw new Error('No valid backup snapshot found in Firebase database.');
+    }
+
+    const filterActive = (arr) => Array.isArray(arr) ? arr.filter(item => !item._deletedInMongo) : [];
+
+    const usersToRestore = filterActive(backup.users || []);
+    const contractsToRestore = filterActive(backup.contracts || []);
+    const paymentsToRestore = filterActive(backup.payments || []);
+    const controlSystemsToRestore = filterActive(backup.controlSystems || []);
+    const phoneLogsToRestore = filterActive(backup.phoneLogs || []);
+    const wallpaperLogsToRestore = filterActive(backup.wallpaperLogs || []);
+    const deviceLogsToRestore = filterActive(backup.deviceActionLogs || []);
+
+    console.log(`[Firebase Restore] 🔄 Restoring: ${contractsToRestore.length} contracts, ${usersToRestore.length} users, ${paymentsToRestore.length} payments, ${controlSystemsToRestore.length} control systems...`);
+
+    // Restore into MongoDB across multi-DBs
+    if (isAnyDBConnected()) {
+        const restoreCollection = async (Model, items) => {
+            if (!items || items.length === 0) return;
+            const cleanItems = items.map(it => {
+                const copy = { ...it };
+                if (Array.isArray(copy._editHistory) && (!copy.editHistory || copy.editHistory.length === 0)) {
+                    copy.editHistory = copy._editHistory.map(h => ({
+                        timestamp: h.savedAt ? new Date(h.savedAt) : new Date(),
+                        editedBy: h.previousState?.lastModifiedBy || 'Firebase Backup',
+                        reason: 'Archival edit snapshot',
+                        previousData: h.previousState,
+                        changedFields: []
+                    }));
+                }
+                delete copy._editHistory;
+                delete copy._lastSyncedAt;
+                delete copy._archivedInFirebase;
+                delete copy._deletedInMongo;
+                return copy;
+            });
+
+            await queryAllDBs(Model, async (M) => {
+                await M.deleteMany({});
+                if (cleanItems.length > 0) {
+                    await M.insertMany(cleanItems, { ordered: false });
+                }
+            });
+        };
+
+        await restoreCollection(User, usersToRestore);
+        await restoreCollection(Contract, contractsToRestore);
+        await restoreCollection(Payment, paymentsToRestore);
+        await restoreCollection(ControlSystem, controlSystemsToRestore);
+        await restoreCollection(PhoneLog, phoneLogsToRestore);
+        await restoreCollection(WallpaperLog, wallpaperLogsToRestore);
+        await restoreCollection(DeviceActionLog, deviceLogsToRestore);
+    }
+
+    // Sync Memory DB
+    MEM_DB.users = usersToRestore;
+    MEM_DB.contracts = contractsToRestore;
+    MEM_DB.payments = paymentsToRestore;
+    MEM_DB.controlSystems = controlSystemsToRestore;
+    MEM_DB.phoneLogs = phoneLogsToRestore;
+    MEM_DB.wallpaperLogs = wallpaperLogsToRestore;
+    MEM_DB.deviceActionLogs = deviceLogsToRestore;
+
+    const restoredCounts = {
+        users: usersToRestore.length,
+        contracts: contractsToRestore.length,
+        payments: paymentsToRestore.length,
+        controlSystems: controlSystemsToRestore.length,
+        phoneLogs: phoneLogsToRestore.length,
+        wallpaperLogs: wallpaperLogsToRestore.length,
+        deviceActionLogs: deviceLogsToRestore.length
+    };
+
+    console.log('[Firebase Restore] ✅ Database restoration from Firebase completed successfully!', restoredCounts);
+    return {
+        success: true,
+        restoredAt: new Date().toISOString(),
+        backupTimestamp: backup.metadata?.timestamp || 'Unknown',
+        counts: restoredCounts
+    };
 };
 
 // Automatic Hourly Backup Sync Scheduler

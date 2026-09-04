@@ -52,10 +52,17 @@ const contractSchema = new mongoose.Schema({
     lockPhoneStatus: { type: String, enum: ['Unlocked', 'Locked'], default: 'Unlocked' },
     lockWallpaperStatus: { type: String, enum: ['Unlocked', 'Locked'], default: 'Unlocked' },
     notes: { type: String, default: '' },
-    // Admin tracking
+    // Admin tracking & Edit History
     modifiedByAdmin: { type: Boolean, default: false },
     lastModifiedBy: { type: String, default: '' },
-    googleDrivePhotoUrl: { type: String, default: '' }
+    googleDrivePhotoUrl: { type: String, default: '' },
+    editHistory: [{
+        timestamp: { type: Date, default: Date.now },
+        editedBy: { type: String, default: 'Staff' },
+        reason: { type: String, default: 'Updated contract details' },
+        changedFields: [{ type: String }],
+        previousData: { type: mongoose.Schema.Types.Mixed }
+    }]
 }, { timestamps: true });
 
 export default mongoose.model('Contract', contractSchema);

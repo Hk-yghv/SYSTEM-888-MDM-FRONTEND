@@ -301,6 +301,9 @@ const Left = () => {
                     {hasPermission(json.settings.controlSystem, 'read') && (
                         <Link to={json.settings.controlSystem} className={subItemClass(json.settings.controlSystem)}>{t('controlSystem')}</Link>
                     )}
+                    {hasPermission(json.settings.systemLogs, 'read') && (
+                        <Link to={json.settings.systemLogs} className={subItemClass(json.settings.systemLogs)}>{t('systemLogs')}</Link>
+                    )}
                 </div>
             </div>
 

@@ -5,6 +5,7 @@ import Payment from '../models/Payment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { generateCustomerPdf } from '../utils/customerPdfGenerator.js';
+import { recordSystemAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
 
@@ -351,6 +352,13 @@ router.post('/', async (req, res) => {
             status: 'Application',
             lockPhoneStatus: 'Unlocked',
             lockWallpaperStatus: 'Unlocked',
+            editHistory: [{
+                timestamp: new Date(),
+                editedBy: req.body.lastModifiedBy || req.user?.username || 'Staff',
+                reason: 'Initial contract creation',
+                changedFields: ['contractId', 'customerNameEn', 'customerNameKh', 'model', 'amount'],
+                previousData: {}
+            }],
             ...req.body
         };
         if (!req.body.contractId) {
@@ -368,6 +376,19 @@ router.post('/', async (req, res) => {
 
         MEM_DB.contracts.unshift(savedContract);
 
+        // Record Audit Log
+        recordSystemAudit({
+            category: 'Contract',
+            level: 'Information',
+            action: 'CONTRACT_CREATE',
+            taskCategory: 'Customer Application',
+            description: `Created new contract ${savedContract.contractId} for ${savedContract.customerNameEn || savedContract.customerNameKh}`,
+            username: req.user?.username || req.body.lastModifiedBy || 'Staff',
+            brand: savedContract.brand || '',
+            contractId: savedContract.contractId,
+            payload: { customerNameEn: savedContract.customerNameEn, model: savedContract.model, amount: savedContract.amount }
+        }).catch(() => {});
+
         res.status(201).json(savedContract);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -382,6 +403,45 @@ router.put('/:id', async (req, res) => {
         delete updateData.__v;
         delete updateData.createdAt;
         delete updateData.updatedAt;
+
+        // Fetch existing contract to capture prior state and compute diff
+        let existingContract = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, (M) => M.findOne({ $or: [{ _id: req.params.id }, { contractId: req.params.id }] }));
+            existingContract = results[0] || null;
+        } else {
+            existingContract = MEM_DB.contracts.find(c => c._id === req.params.id || c.contractId === req.params.id);
+        }
+
+        const changedFields = [];
+        if (existingContract) {
+            const prevObj = existingContract.toObject ? existingContract.toObject() : existingContract;
+            for (const key in updateData) {
+                if (key === 'editHistory' || key === 'lastModifiedBy' || key === 'modifiedByAdmin') continue;
+                if (JSON.stringify(prevObj[key]) !== JSON.stringify(updateData[key])) {
+                    changedFields.push(key);
+                }
+            }
+
+            if (changedFields.length > 0) {
+                const historyList = Array.isArray(prevObj.editHistory) ? [...prevObj.editHistory] : [];
+                const previousSnapshot = { ...prevObj };
+                delete previousSnapshot.editHistory;
+
+                historyList.unshift({
+                    timestamp: new Date(),
+                    editedBy: req.body.lastModifiedBy || req.user?.username || 'Staff',
+                    reason: `Updated ${changedFields.join(', ')}`,
+                    changedFields,
+                    previousData: previousSnapshot
+                });
+
+                if (historyList.length > 30) historyList.length = 30; // Keep up to 30 past revisions
+                updateData.editHistory = historyList;
+                updateData.modifiedByAdmin = true;
+                updateData.lastModifiedBy = req.body.lastModifiedBy || req.user?.username || 'Staff';
+            }
+        }
 
         let updatedDoc = null;
 
@@ -418,6 +478,19 @@ router.put('/:id', async (req, res) => {
         }
 
         if (updatedDoc) {
+            // Record Audit Log
+            recordSystemAudit({
+                category: 'Contract',
+                level: 'Information',
+                action: 'CONTRACT_UPDATE',
+                taskCategory: 'Contract Modification',
+                description: `Updated contract ${updatedDoc.contractId || req.params.id} (${changedFields.length > 0 ? changedFields.join(', ') : 'Details'})`,
+                username: req.user?.username || req.body.lastModifiedBy || 'Staff',
+                brand: updatedDoc.brand || '',
+                contractId: updatedDoc.contractId || req.params.id,
+                payload: { changedFields, updatedFields: updateData }
+            }).catch(() => {});
+
             return res.json(sanitizeAndDecryptContract(updatedDoc));
         }
 
@@ -428,9 +501,10 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE contract
+// DELETE contract (Permanent in MongoDB, but archived/never deleted in Firebase)
 router.delete('/:id', async (req, res) => {
     try {
+        let deletedContractId = req.params.id;
         if (isMongoConnected) {
             await Promise.allSettled(
                 [Contract].map(async (M) => {
@@ -442,8 +516,20 @@ router.delete('/:id', async (req, res) => {
                 })
             );
         }
-        MEM_DB.contracts = MEM_DB.contracts.filter(c => c._id !== req.params.id);
-        res.json({ message: 'Contract deleted' });
+        MEM_DB.contracts = MEM_DB.contracts.filter(c => c._id !== req.params.id && c.contractId !== req.params.id);
+
+        // Record Audit Log
+        recordSystemAudit({
+            category: 'Contract',
+            level: 'Warning',
+            action: 'CONTRACT_DELETE',
+            taskCategory: 'Contract Removal',
+            description: `Deleted contract ${deletedContractId} in MongoDB (Archived in Firebase Backup)`,
+            username: req.user?.username || 'Staff',
+            contractId: deletedContractId
+        }).catch(() => {});
+
+        res.json({ message: 'Contract deleted from MongoDB (Archived in Firebase backup)' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
