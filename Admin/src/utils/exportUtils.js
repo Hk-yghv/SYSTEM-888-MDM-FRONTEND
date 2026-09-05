@@ -112,17 +112,17 @@ export const exportToExcel = (dataOrTitle, filenameOrColumns, optionalData, bran
                 </thead>
                 <tbody>
                     ${data.map((row, idx) => {
-                        const isEven = idx % 2 === 0;
-                        const isTotal = row.isTotalRow || row.isGrandTotal;
-                        return `
+        const isEven = idx % 2 === 0;
+        const isTotal = row.isTotalRow || row.isGrandTotal;
+        return `
                             <tr class="${isTotal ? 'summary' : (isEven ? 'even' : '')}">
                                 ${columns ? columns.map(c => {
-                                    const val = extractCellText(c, row, idx);
-                                    return `<td>${val}</td>`;
-                                }).join('') : Object.keys(data[0]).map(h => `<td>${row[h] !== undefined && row[h] !== null ? row[h] : ''}</td>`).join('')}
+            const val = extractCellText(c, row, idx);
+            return `<td>${val}</td>`;
+        }).join('') : Object.keys(data[0]).map(h => `<td>${row[h] !== undefined && row[h] !== null ? row[h] : ''}</td>`).join('')}
                             </tr>
                         `;
-                    }).join('')}
+    }).join('')}
                 </tbody>
             </table>
         </body>
@@ -759,10 +759,6 @@ export const exportFollowUp1PDF = (title, columns, data, summary, dateRangeLabel
                     <div class="kpi-box primary">
                         <div class="kpi-title">ជោគជ័យ (Success)</div>
                         <div class="kpi-val" style="color: #059669;">${totalSuccess.toLocaleString()}</div>
-                    </div>
-                    <div class="kpi-box primary">
-                        <div class="kpi-title">បង្កើតកុងត្រា (Created)</div>
-                        <div class="kpi-val" style="color: #7c3aed;">${totalCreated.toLocaleString()}</div>
                     </div>
                 </div>
 
