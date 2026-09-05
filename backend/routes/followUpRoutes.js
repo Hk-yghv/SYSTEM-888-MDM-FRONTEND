@@ -93,7 +93,6 @@ router.get('/', async (req, res) => {
         const totalReview = allRecords.reduce((sum, r) => sum + (Number(r.review) || 0), 0);
         const totalFailed = allRecords.reduce((sum, r) => sum + (Number(r.failed) || 0), 0);
         const totalSuccess = allRecords.reduce((sum, r) => sum + (Number(r.success) || 0), 0);
-        const totalCreated = allRecords.reduce((sum, r) => sum + (Number(r.contractCreated) || 0), 0);
         const totalRecords = allRecords.length;
         const successRate = totalRequested > 0 ? ((totalSuccess / totalRequested) * 100).toFixed(1) : 0;
 
@@ -104,7 +103,6 @@ router.get('/', async (req, res) => {
             totalReview,
             totalFailed,
             totalSuccess,
-            totalCreated,
             totalRecords,
             successRate
         };
@@ -195,7 +193,7 @@ router.post('/', async (req, res) => {
             username: userActor,
             brand: brand || '',
             payload: newDoc
-        }).catch(() => {});
+        }).catch(() => { });
 
         res.status(201).json(saved);
     } catch (err) {
@@ -260,7 +258,7 @@ router.put('/:id', async (req, res) => {
             if (!updated) {
                 const WriteModel = getWriteModel(FollowUp) || FollowUp;
                 updated = await WriteModel.findByIdAndUpdate(id, { $set: updateData }, { new: true }) ||
-                          await WriteModel.findOneAndUpdate({ followUpId: id }, { $set: updateData }, { new: true });
+                    await WriteModel.findOneAndUpdate({ followUpId: id }, { $set: updateData }, { new: true });
             }
         }
 
@@ -281,7 +279,7 @@ router.put('/:id', async (req, res) => {
                 username: req.body.username || req.body.createdBy || 'Staff',
                 brand: updated.brand || '',
                 payload: { diff, changedFields, previousData: prevObj, updatedData: updateData }
-            }).catch(() => {});
+            }).catch(() => { });
 
             return res.json(updated);
         }
@@ -298,14 +296,14 @@ router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const username = req.query.username || 'Staff';
-        
+
         let deletedItem = null;
         if (isMongoConnected) {
             const results = await queryAllDBs(FollowUp, (M) => M.findOne({ $or: [{ _id: id }, { followUpId: id }] }));
             deletedItem = results[0] || null;
             await queryAllDBs(FollowUp, async (BoundM) => {
-                try { await BoundM.findByIdAndDelete(id); } catch {}
-                try { await BoundM.deleteMany({ followUpId: id }); } catch {}
+                try { await BoundM.findByIdAndDelete(id); } catch { }
+                try { await BoundM.deleteMany({ followUpId: id }); } catch { }
                 return [];
             });
         } else {
@@ -323,7 +321,7 @@ router.delete('/:id', async (req, res) => {
             username,
             brand: deletedItem?.brand || '',
             payload: deletedItem || { id }
-        }).catch(() => {});
+        }).catch(() => { });
 
         res.json({ message: 'Follow up record deleted successfully' });
     } catch (err) {

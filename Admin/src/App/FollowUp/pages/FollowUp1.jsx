@@ -35,7 +35,6 @@ const FollowUp1 = () => {
         totalReview: 0,
         totalFailed: 0,
         totalSuccess: 0,
-        totalCreated: 0,
         successRate: 0
     });
 
@@ -59,7 +58,6 @@ const FollowUp1 = () => {
         review: 0,
         failed: 0,
         success: 0,
-        contractCreated: 0,
         reason: '',
         brand: user?.brand || 'MDM',
         notes: ''
@@ -161,7 +159,6 @@ const FollowUp1 = () => {
             review: 0,
             failed: 0,
             success: 0,
-            contractCreated: 0,
             reason: '',
             brand: user?.brand || 'MDM',
             notes: ''
@@ -180,7 +177,6 @@ const FollowUp1 = () => {
             review: item.review !== undefined ? item.review : 0,
             failed: item.failed !== undefined ? item.failed : 0,
             success: item.success !== undefined ? item.success : 0,
-            contractCreated: item.contractCreated !== undefined ? item.contractCreated : 0,
             reason: item.reason || '',
             brand: item.brand || user?.brand || 'MDM',
             notes: item.notes || ''
@@ -239,7 +235,6 @@ const FollowUp1 = () => {
                 review: Number(formData.review) || 0,
                 failed: Number(formData.failed) || 0,
                 success: Number(formData.success) || 0,
-                contractCreated: Number(formData.contractCreated) || 0,
                 brand: formData.brand || user?.brand || 'MDM',
                 username: user?.username || ''
             };
@@ -365,7 +360,6 @@ const FollowUp1 = () => {
             const totalRev = items.reduce((sum, it) => sum + (Number(it.review) || 0), 0);
             const totalFail = items.reduce((sum, it) => sum + (Number(it.failed) || 0), 0);
             const totalSucc = items.reduce((sum, it) => sum + (Number(it.success) || 0), 0);
-            const totalCreate = items.reduce((sum, it) => sum + (Number(it.contractCreated) || 0), 0);
             const overallRate = totalReq > 0 ? ((totalSucc / totalReq) * 100).toFixed(1) : '0.0';
 
             const exportSummaryObj = {
@@ -376,7 +370,6 @@ const FollowUp1 = () => {
                 totalReview: totalRev,
                 totalFailed: totalFail,
                 totalSuccess: totalSucc,
-                totalCreated: totalCreate,
                 successRate: overallRate
             };
 
@@ -391,7 +384,6 @@ const FollowUp1 = () => {
                 { header: 'Review (ពិនិត្យ)', accessor: (row) => String(row.review !== undefined ? row.review : 0) },
                 { header: 'Failed (បរាជ័យ)', accessor: (row) => String(row.failed !== undefined ? row.failed : 0) },
                 { header: 'Success (ជោគជ័យ)', accessor: (row) => String(row.success !== undefined ? row.success : 0) },
-                { header: 'Created (បង្កើតកុងត្រា)', accessor: (row) => String(row.contractCreated !== undefined ? row.contractCreated : 0) },
                 { header: 'Success Rate (%)', accessor: (row) => `${row.successRate || 0}%` },
                 { header: 'Reason (មូលហេតុ)', accessor: (row) => row.reason || '' },
                 { header: 'Brand', accessor: (row) => row.brand || '' },
@@ -414,8 +406,7 @@ const FollowUp1 = () => {
                 { no: '4', metric: 'បានស្នើរ (Requested Loans)', count: String(totalReq), rate: `${totalMsg > 0 ? ((totalReq / totalMsg) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនបានឆ្លើយតប និងស្នើសុំបញ្ចាំ' },
                 { no: '5', metric: 'កំពុងពិនិត្យ (In Review)', count: String(totalRev), rate: `${totalReq > 0 ? ((totalRev / totalReq) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនស្ថិតក្នុងដំណាក់កាលពិនិត្យឯកសារ/វាយតម្លៃ' },
                 { no: '6', metric: 'បរាជ័យ (Failed)', count: String(totalFail), rate: `${totalReq > 0 ? ((totalFail / totalReq) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនមិនត្រូវតាមលក្ខខណ្ឌ ឬបដិសេធ' },
-                { no: '7', metric: 'ជោគជ័យ (Success)', count: String(totalSucc), rate: `${overallRate}%`, desc: 'អតិថិជនជោគជ័យក្នុងការស្នើបញ្ចាំ (Success Rate)', isTotalRow: true },
-                { no: '8', metric: 'បានបង្កើតកុងត្រា (Created Contracts)', count: String(totalCreate), rate: `${totalSucc > 0 ? ((totalCreate / totalSucc) * 100).toFixed(1) : 0}%`, desc: 'កុងត្រាដែលបានបង្កើតចូលប្រព័ន្ធរួចរាល់' }
+                { no: '7', metric: 'ជោគជ័យ (Success)', count: String(totalSucc), rate: `${overallRate}%`, desc: 'អតិថិជនជោគជ័យក្នុងការស្នើបញ្ចាំ (Success Rate)', isTotalRow: true }
             ];
 
             // Append Total Summary Row at the bottom of Sheet 1
@@ -638,18 +629,6 @@ const FollowUp1 = () => {
                     </div>
                     <span className="text-[10px] text-emerald-600/80 mt-1 font-medium">Success Rate</span>
                 </div>
-
-                {/* Contracts Created */}
-                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
-                        <span>បង្កើតកុងត្រា</span>
-                        <FaPlusCircle className="text-purple-500" size={13} />
-                    </div>
-                    <div className="mt-2 text-xl font-bold text-purple-600 dark:text-purple-400">
-                        {(summary.totalCreated || 0).toLocaleString()}
-                    </div>
-                    <span className="text-[10px] text-purple-600/80 mt-1 font-medium">Created</span>
-                </div>
             </div>
 
             {/* Filter Controls */}
@@ -776,7 +755,6 @@ const FollowUp1 = () => {
                                 <th className="py-3 px-2.5 text-center min-w-[75px]">Review</th>
                                 <th className="py-3 px-2.5 text-center min-w-[75px]">បរាជ័យ</th>
                                 <th className="py-3 px-2.5 text-center min-w-[75px]">ជោគជ័យ</th>
-                                <th className="py-3 px-2.5 text-center min-w-[75px]">បង្កើតកុងត្រា</th>
                                 <th className="py-3 px-2.5 text-center min-w-[75px]">អត្រា %</th>
                                 <th className="py-3 px-4 min-w-[150px]">មូលហេតុ</th>
                                 <th className="py-3 px-2.5 text-center min-w-[65px]">Brand</th>
@@ -807,7 +785,6 @@ const FollowUp1 = () => {
                                     const rev = Number(item.review) || 0;
                                     const fail = Number(item.failed) || 0;
                                     const succ = Number(item.success) || 0;
-                                    const created = Number(item.contractCreated) || 0;
                                     const rate = req > 0 ? ((succ / req) * 100).toFixed(1) : '0.0';
 
                                     return (
@@ -854,11 +831,6 @@ const FollowUp1 = () => {
                                             <td className="py-3 px-2.5 text-center">
                                                 <span className="inline-block px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
                                                     {succ.toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-2.5 text-center">
-                                                <span className="inline-block px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold">
-                                                    {created.toLocaleString()}
                                                 </span>
                                             </td>
                                             <td className="py-3 px-2.5 text-center font-bold text-sky-600">
@@ -1047,8 +1019,8 @@ const FollowUp1 = () => {
                                 </div>
                             </div>
 
-                            {/* Row 2: កំពុងពិនិត្យ (Review), បង្កើតកុងត្រា (Created) */}
-                            <div className="grid grid-cols-2 gap-3">
+                            {/* Row 2: កំពុងពិនិត្យ (Review) */}
+                            <div className="grid grid-cols-1 gap-3">
                                 <div>
                                     <label className="block text-xs font-bold text-cyan-700 dark:text-cyan-400 mb-1">
                                         កំពុងពិនិត្យ (Review)
@@ -1059,18 +1031,6 @@ const FollowUp1 = () => {
                                         value={formData.review}
                                         onChange={(e) => handleNumericChange('review', e.target.value)}
                                         className="w-full px-3 py-2 bg-cyan-500/5 border border-cyan-500/30 rounded-lg text-xs font-bold text-cyan-700 dark:text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 mb-1">
-                                        បង្កើតកុងត្រា (Created)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={formData.contractCreated}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, contractCreated: Math.max(0, parseInt(e.target.value, 10) || 0) }))}
-                                        className="w-full px-3 py-2 bg-purple-500/5 border border-purple-500/30 rounded-lg text-xs font-bold text-purple-700 dark:text-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                                     />
                                 </div>
                             </div>

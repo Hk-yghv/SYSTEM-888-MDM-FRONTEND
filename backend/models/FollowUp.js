@@ -10,7 +10,6 @@ const followUpSchema = new mongoose.Schema({
     review: { type: Number, default: 0 },
     failed: { type: Number, default: 0 },
     success: { type: Number, default: 0 },
-    contractCreated: { type: Number, default: 0 },
     reason: { type: String, default: '' },
     brand: { type: String, default: '' },
     createdBy: { type: String, default: 'Staff' },
