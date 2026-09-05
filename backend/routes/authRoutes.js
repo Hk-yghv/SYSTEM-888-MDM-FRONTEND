@@ -6,6 +6,7 @@ import LoginLog from '../models/LoginLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { parseUserAgent } from '../middleware/security.js';
+import { recordSystemAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
@@ -105,6 +106,20 @@ export default function createAuthRoutes(bot) {
                     status: 'Failed',
                     reason: 'User Not Found'
                 });
+                recordSystemAudit({
+                    category: 'Security',
+                    level: 'AuditFailure',
+                    action: 'USER_LOGIN_FAILED',
+                    taskCategory: 'Authentication',
+                    description: `Failed login attempt for nonexistent user "${username}" from IP ${ip} (${deviceInfo})`,
+                    username: username || 'Unknown',
+                    role: 'Guest',
+                    brand: 'SYSTEM',
+                    ip,
+                    deviceInfo,
+                    path: '/api/auth/login',
+                    payload: { reason: 'User Not Found' }
+                }).catch(() => {});
                 return res.status(401).json({ error: 'Invalid username or password', attempts: result.count, waitSeconds: result.waitSeconds });
             }
 
@@ -135,6 +150,22 @@ export default function createAuthRoutes(bot) {
                     status: 'Failed',
                     reason: 'Wrong Password'
                 });
+
+                recordSystemAudit({
+                    category: 'Security',
+                    level: 'AuditFailure',
+                    action: 'USER_LOGIN_FAILED',
+                    taskCategory: 'Authentication',
+                    description: `Failed login attempt for user "${user.username}" (Wrong Password) from IP ${ip} (${deviceInfo})`,
+                    username: user.username,
+                    name: user.name,
+                    role: user.role,
+                    brand: user.brand || 'SYSTEM',
+                    ip,
+                    deviceInfo,
+                    path: '/api/auth/login',
+                    payload: { reason: 'Wrong Password' }
+                }).catch(() => {});
 
                 return res.status(401).json({
                     error: 'Invalid username or password',
@@ -218,6 +249,22 @@ export default function createAuthRoutes(bot) {
                 deviceInfo,
                 status: 'Success'
             });
+
+            recordSystemAudit({
+                category: 'Security',
+                level: 'SuccessAudit',
+                action: 'USER_LOGIN_SUCCESS',
+                taskCategory: 'Authentication',
+                description: `User "${user.username}" (${user.name || user.role}) logged in successfully from IP ${ip} (${deviceInfo})`,
+                username: user.username,
+                name: user.name,
+                role: user.role,
+                brand: user.brand || 'SYSTEM',
+                ip,
+                deviceInfo,
+                path: '/api/auth/login',
+                payload: { role: user.role, brand: user.brand }
+            }).catch(() => {});
 
             if (bot && user.telegramId) {
                 const time = new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
@@ -332,6 +379,21 @@ export default function createAuthRoutes(bot) {
                 } catch (tErr) { }
             }
 
+            recordSystemAudit({
+                category: 'Security',
+                level: 'SuccessAudit',
+                action: 'OTP_VERIFY_SUCCESS',
+                taskCategory: 'Authentication',
+                description: `User "${user.username}" (${user.name}) verified 2FA / OTP code successfully from IP ${ip}`,
+                username: user.username,
+                name: user.name,
+                role: user.role,
+                brand: user.brand || 'SYSTEM',
+                ip,
+                deviceInfo: `${browser} on ${os}`,
+                path: '/api/auth/verify-otp'
+            }).catch(() => {});
+
             const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
             res.json({
                 token,
@@ -366,9 +428,11 @@ export default function createAuthRoutes(bot) {
             }
             if (username) {
                 const now = new Date();
+                let loggedUser = null;
                 if (isMongoConnected) {
                     const users = await queryAllDBs(User, (M) => M.find({ username }));
                     for (const u of users) {
+                        loggedUser = u;
                         u.status = 'Offline';
                         u.lastSeen = new Date(Date.now() - 90000);
                         if (Array.isArray(u.onlineHistory) && u.onlineHistory.length > 0) {
@@ -384,6 +448,7 @@ export default function createAuthRoutes(bot) {
                 }
                 const memUser = MEM_DB.users.find(u => u.username === username);
                 if (memUser) {
+                    loggedUser = loggedUser || memUser;
                     memUser.status = 'Offline';
                     memUser.lastSeen = new Date(Date.now() - 90000);
                     if (Array.isArray(memUser.onlineHistory) && memUser.onlineHistory.length > 0) {
@@ -395,6 +460,25 @@ export default function createAuthRoutes(bot) {
                         }
                     }
                 }
+
+                const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+                const ua = req.headers['user-agent'] || 'Unknown Browser';
+                const { os, browser } = parseUserAgent(ua);
+
+                recordSystemAudit({
+                    category: 'Security',
+                    level: 'Information',
+                    action: 'USER_LOGOUT',
+                    taskCategory: 'Authentication',
+                    description: `User "${username}" logged out from IP ${ip} (${browser} on ${os})`,
+                    username,
+                    name: loggedUser?.name || '',
+                    role: loggedUser?.role || 'Staff',
+                    brand: loggedUser?.brand || '',
+                    ip,
+                    deviceInfo: `${browser} on ${os}`,
+                    path: '/api/auth/logout'
+                }).catch(() => {});
             }
             res.json({ success: true });
         } catch (err) {

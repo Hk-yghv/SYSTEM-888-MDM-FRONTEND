@@ -860,6 +860,50 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
                                             </div>
                                         </div>
 
+                                        {/* Structured Field Modification Diff Table (Old vs New) */}
+                                        {selectedLog.payload?.diff && Array.isArray(selectedLog.payload.diff) && selectedLog.payload.diff.length > 0 && (
+                                            <div className="bg-white border border-amber-300 rounded overflow-hidden shadow-2xs">
+                                                <div className="bg-amber-50 px-3 py-1.5 border-b border-amber-200 flex items-center justify-between">
+                                                    <span className="text-[11px] font-bold text-amber-900 flex items-center gap-1.5">
+                                                        <span>🔄</span> កំណត់ត្រាបម្រែបម្រួលទិន្នន័យ (Field Modification Diff / Old vs New)
+                                                    </span>
+                                                    <span className="text-[10px] bg-amber-200/80 text-amber-800 px-1.5 py-0.5 rounded font-bold font-mono">
+                                                        {selectedLog.payload.diff.length} changes
+                                                    </span>
+                                                </div>
+                                                <div className="overflow-x-auto max-h-48">
+                                                    <table className="w-full text-[11px] text-left">
+                                                        <thead className="bg-slate-100 text-slate-600 uppercase text-[9px] font-bold border-b border-slate-200 sticky top-0">
+                                                            <tr>
+                                                                <th className="py-1.5 px-2.5">Field / Attribute</th>
+                                                                <th className="py-1.5 px-2.5 text-rose-700 bg-rose-50/50">តម្លៃចាស់ (Previous / Old Value)</th>
+                                                                <th className="py-1.5 px-2.5 text-emerald-700 bg-emerald-50/50">តម្លៃថ្មី (Updated / New Value)</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100 font-mono">
+                                                            {selectedLog.payload.diff.map((d, dIdx) => (
+                                                                <tr key={dIdx} className="hover:bg-slate-50 transition-colors">
+                                                                    <td className="py-1.5 px-2.5 font-bold text-slate-800 font-sans">
+                                                                        {d.field}
+                                                                    </td>
+                                                                    <td className="py-1.5 px-2.5 text-rose-600 bg-rose-50/20 font-medium">
+                                                                        <span className="line-through mr-1 opacity-70">
+                                                                            {d.oldValue !== undefined && d.oldValue !== null && d.oldValue !== '' ? String(d.oldValue) : '(empty)'}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="py-1.5 px-2.5 text-emerald-600 bg-emerald-50/20 font-bold">
+                                                                        <span>
+                                                                            {d.newValue !== undefined && d.newValue !== null && d.newValue !== '' ? String(d.newValue) : '(empty)'}
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {selectedLog.payload && Object.keys(selectedLog.payload).length > 0 && (
                                             <div className="p-2 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded border border-slate-800 overflow-x-auto">
                                                 <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Attached Payload:</div>

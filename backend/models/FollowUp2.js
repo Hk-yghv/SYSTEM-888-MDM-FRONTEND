@@ -7,6 +7,7 @@ const followUp2Schema = new mongoose.Schema({
     phone: { type: String, default: '' }, // Tel
     requestedAmount: { type: Number, default: 0 }, // ចំនួនស្នើបញ្ចាំ
     collateralType: { type: String, default: '' }, // ប្រភេទទ្រព្យបញ្ចាំ
+    model: { type: String, default: '' }, // Model ម៉ូឌែលឧបករណ៍
     responder: { type: String, default: '' }, // អ្នកឆ្លើយតបឆាត
     date: { type: String, required: true, default: () => new Date().toISOString().split('T')[0] }, // កាលបរិច្ឆេទឆ្នាំ
     valuationRange: { type: String, default: '' }, // វាយតម្លៃបានចន្លោះណាដល់ណា

@@ -49,6 +49,7 @@ const FollowUp2 = () => {
     const [filterStatus, setFilterStatus] = useState('');
     const [selectedBrand, setSelectedBrand] = useState('');
     const [brandsList, setBrandsList] = useState(['MDM', 'ECloud']);
+    const [modelsList, setModelsList] = useState([]);
 
     // Form modal state (Create & Edit)
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -59,6 +60,7 @@ const FollowUp2 = () => {
         phone: '',
         requestedAmount: '',
         collateralType: 'ទូរស័ព្ទ (Smart Phone)',
+        model: '',
         responder: user?.name || user?.username || '',
         date: new Date().toISOString().split('T')[0],
         valuationRange: '',
@@ -106,6 +108,45 @@ const FollowUp2 = () => {
         };
         fetchBrands();
     }, [API_BASE]);
+
+    // Fetch Models from Control System for dropdown
+    useEffect(() => {
+        const fetchModels = async () => {
+            try {
+                const targetBrand = formData.brand || user?.brand || '';
+                const res = await fetch(`${API_BASE}/controlsystem?brand=${targetBrand}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const cat = data.droplists?.find(d =>
+                        d.category === 'Device Models' ||
+                        d.category === 'Devices' ||
+                        d.category === 'Models'
+                    );
+                    if (cat && Array.isArray(cat.items) && cat.items.length > 0) {
+                        setModelsList(cat.items.map(m => typeof m === 'string' ? m : m.name || String(m)));
+                        return;
+                    }
+                }
+
+                // Fallback to global models
+                const gRes = await fetch(`${API_BASE}/controlsystem?brand=`);
+                if (gRes.ok) {
+                    const gData = await gRes.json();
+                    const gCat = gData.droplists?.find(d =>
+                        d.category === 'Device Models' ||
+                        d.category === 'Devices' ||
+                        d.category === 'Models'
+                    );
+                    if (gCat && Array.isArray(gCat.items)) {
+                        setModelsList(gCat.items.map(m => typeof m === 'string' ? m : m.name || String(m)));
+                    }
+                }
+            } catch (err) {
+                console.error('Fetch models error:', err);
+            }
+        };
+        fetchModels();
+    }, [API_BASE, formData.brand, user?.brand]);
 
     // Fetch Follow-up 2 records
     const fetchData = useCallback(async (pg = page, search = searchTerm, sDate = startDate, eDate = endDate, fDate = filterDate, stat = filterStatus, brd = selectedBrand) => {
@@ -203,6 +244,7 @@ const FollowUp2 = () => {
             phone: '',
             requestedAmount: '',
             collateralType: 'ទូរស័ព្ទ (Smart Phone)',
+            model: '',
             responder: user?.name || user?.username || '',
             date: new Date().toISOString().split('T')[0],
             valuationRange: '',
@@ -230,6 +272,7 @@ const FollowUp2 = () => {
             phone: item.phone || '',
             requestedAmount: item.requestedAmount !== undefined ? item.requestedAmount : '',
             collateralType: item.collateralType || 'ទូរស័ព្ទ (Smart Phone)',
+            model: item.model || '',
             responder: item.responder || user?.name || user?.username || '',
             date: item.date ? item.date.split('T')[0] : new Date().toISOString().split('T')[0],
             valuationRange: item.valuationRange || '',
@@ -518,6 +561,7 @@ const FollowUp2 = () => {
                         : ''
                 },
                 { header: 'ប្រភេទទ្រព្យបញ្ចាំ', accessor: (row) => row.collateralType || '' },
+                { header: 'Model (ម៉ូឌែល)', accessor: (row) => row.model || '' },
                 { header: 'អ្នកឆ្លើយតបឆាត', accessor: (row) => row.responder || '' },
                 { header: 'កាលបរិច្ឆេទឆ្នាំ', accessor: (row) => row.date ? row.date.split('T')[0] : '' },
                 { header: 'វាយតម្លៃបានចន្លោះណាដល់ណា', accessor: (row) => row.valuationRange || '' },
@@ -589,6 +633,33 @@ const FollowUp2 = () => {
                 exportToExcel(title, exportColumns, exportDataWithTotals, user?.brand || 'SYSTEM');
             } else {
                 exportToPDF(title, exportColumns, exportDataWithTotals, user?.brand || 'SYSTEM', 'landscape');
+            }
+
+            // Log export event to audit logs
+            try {
+                fetch(`${API_BASE}/audit-logs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        eventType: exportFormat === 'excel' ? 'FOLLOW_UP_2_EXPORT_EXCEL' : 'FOLLOW_UP_2_EXPORT_PDF',
+                        action: `Exported Follow-Up 2 (${exportFormat.toUpperCase()}) - ${items.length} records [${range.label}]`,
+                        username: user?.username || 'SYSTEM',
+                        brand: user?.brand || 'SYSTEM',
+                        ip: '127.0.0.1',
+                        payload: {
+                            format: exportFormat,
+                            scope: exportScope,
+                            recordCount: items.length,
+                            dateRange: range,
+                            totalAmount,
+                            successCount: totalSucc,
+                            failedCount: totalFail,
+                            successRate: overallRate
+                        }
+                    })
+                }).catch(() => { });
+            } catch (auditErr) {
+                console.warn('Audit log trigger error:', auditErr);
             }
 
             setIsExportModalOpen(false);
@@ -779,6 +850,7 @@ const FollowUp2 = () => {
                     >
                         <option value="">ស្ថានភាពទាំងអស់</option>
                         <option value="ជោគជ័យ">ជោគជ័យ</option>
+                        <option value="Review">Review (ពិនិត្យ / រង់ចាំពិនិត្យ)</option>
                         <option value="បរាជ័យ">បរាជ័យ</option>
                     </select>
                 </div>
@@ -861,6 +933,7 @@ const FollowUp2 = () => {
                                 <th className="py-3 px-3 min-w-[100px]">Tel</th>
                                 <th className="py-3 px-3 text-right min-w-[100px]">ចំនួនស្នើបញ្ចាំ</th>
                                 <th className="py-3 px-3 min-w-[120px]">ប្រភេទទ្រព្យ</th>
+                                <th className="py-3 px-3 min-w-[110px]">Model</th>
                                 <th className="py-3 px-3 min-w-[90px] text-center">រូបភាព</th>
                                 <th className="py-3 px-3 min-w-[110px]">អ្នកឆ្លើយតប</th>
                                 <th className="py-3 px-3 min-w-[95px]">កាលបរិច្ឆេទ</th>
@@ -873,7 +946,7 @@ const FollowUp2 = () => {
                         <tbody className="divide-y divide-[var(--app-border,#e2e8f0)] text-xs font-medium text-[var(--app-text,#0f172a)]">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="13" className="py-12 text-center text-slate-400">
+                                    <td colSpan="14" className="py-12 text-center text-slate-400">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <MdOutlineSync size={24} className="animate-spin text-indigo-600" />
                                             <span>កំពុងទាញយកទិន្នន័យ Follow up 2...</span>
@@ -882,7 +955,7 @@ const FollowUp2 = () => {
                                 </tr>
                             ) : dataList.length === 0 ? (
                                 <tr>
-                                    <td colSpan="13" className="py-12 text-center text-slate-400 font-normal">
+                                    <td colSpan="14" className="py-12 text-center text-slate-400 font-normal">
                                         មិនមានទិន្នន័យ Follow up 2 នៅឡើយទេ! សូមចុចប៊ូតុង "Create Entry" ដើម្បីបញ្ចូលទិន្នន័យថ្មី។
                                     </td>
                                 </tr>
@@ -932,6 +1005,9 @@ const FollowUp2 = () => {
                                                         <td className="py-3 px-3 text-slate-700 dark:text-slate-300">
                                                             {item.collateralType || '-'}
                                                         </td>
+                                                        <td className="py-3 px-3 font-semibold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                                                            {item.model || '-'}
+                                                        </td>
                                                         {/* Photo thumbnail cell */}
                                                         <td className="py-3 px-3 text-center">
                                                             {imgList.length > 0 ? (
@@ -947,7 +1023,7 @@ const FollowUp2 = () => {
                                                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
                                                                         />
                                                                         {imgList.length > 1 && (
-                                                                            <span className="absolute bottom-0 right-0 bg-indigo-600 text-white text-[9px] font-bold px-1 rounded-tl">
+                                                                            <span className="absolute bottom-0 right-0 bg-indigo-600 text-white text-[9px] font-bold px-1 rounded-[4]">
                                                                                 +{imgList.length - 1}
                                                                             </span>
                                                                         )}
@@ -1018,29 +1094,33 @@ const FollowUp2 = () => {
                                             })}
 
                                             {/* Total តាមថ្ងៃ (Daily Subtotal Row) */}
-                                            <td
-                                                colSpan="5"
-                                                className="py-2.5 px-3 text-right text-[11px] font-bold text-slate-700 dark:text-slate-300"
-                                            >
-                                                ជោគជ័យ:{' '}
-                                                <span className="text-emerald-600 font-extrabold">
-                                                    {group.summary.success}
-                                                </span>
-
-                                                {' '} &bull; {' '}
-
-                                                បរាជ័យ:{' '}
-                                                <span className="text-rose-600 font-extrabold">
-                                                    {group.summary.failed}
-                                                </span>
-
-                                                {' '} &bull; {' '}
-
-                                                Review:{' '}
-                                                <span className="text-amber-600 dark:text-amber-400 font-extrabold">
-                                                    {group.summary.review || 0}
-                                                </span>
-                                            </td>
+                                            <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-[var(--app-border,#e2e8f0)] text-xs font-semibold">
+                                                <td colSpan="4" className="py-2.5 px-4 text-slate-500">
+                                                    សរុបប្រចាំថ្ងៃ ({group.date})
+                                                </td>
+                                                <td className="py-2.5 px-3 text-right font-bold text-amber-600 dark:text-amber-400">
+                                                    ${(group.summary.totalAmount || 0).toLocaleString()}
+                                                </td>
+                                                <td
+                                                    colSpan="9"
+                                                    className="py-2.5 px-3 text-right text-[11px] font-bold text-slate-700 dark:text-slate-300"
+                                                >
+                                                    ជោគជ័យ:{' '}
+                                                    <span className="text-emerald-600 font-extrabold">
+                                                        {group.summary.success}
+                                                    </span>
+                                                    {' '} &bull; {' '}
+                                                    បរាជ័យ:{' '}
+                                                    <span className="text-rose-600 font-extrabold">
+                                                        {group.summary.failed}
+                                                    </span>
+                                                    {' '} &bull; {' '}
+                                                    Review:{' '}
+                                                    <span className="text-amber-600 dark:text-amber-400 font-extrabold">
+                                                        {group.summary.review || 0}
+                                                    </span>
+                                                </td>
+                                            </tr>
                                         </React.Fragment>
                                     ));
                                 })()
@@ -1066,7 +1146,7 @@ const FollowUp2 = () => {
                                     </td>
 
                                     <td
-                                        colSpan="5"
+                                        colSpan="6"
                                         className="py-3.5 px-3 text-right font-semibold text-slate-600 dark:text-slate-300"
                                     >
                                         ជោគជ័យ:{' '}
@@ -1204,7 +1284,7 @@ const FollowUp2 = () => {
                                 </div>
                             </div>
 
-                            {/* Row 3: ប្រភេទទ្រព្យបញ្ចាំ & អ្នកឆ្លើយតបឆាត */}
+                            {/* Row 3: ប្រភេទទ្រព្យបញ្ចាំ & Model ឧបករណ៍ */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
@@ -1225,6 +1305,29 @@ const FollowUp2 = () => {
                                     </datalist>
                                 </div>
                                 <div>
+                                    <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5 flex items-center justify-between">
+                                        <span>Model (ម៉ូឌែលឧបករណ៍)</span>
+                                        <span className="text-[10px] font-normal text-indigo-600 dark:text-indigo-400">Control System</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        list="modelsDatalistOptions"
+                                        placeholder="ជ្រើសរើស ឬ វាយបញ្ចូល Model..."
+                                        value={formData.model}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
+                                        className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                                    />
+                                    <datalist id="modelsDatalistOptions">
+                                        {modelsList.map((m, idx) => (
+                                            <option key={idx} value={m} />
+                                        ))}
+                                    </datalist>
+                                </div>
+                            </div>
+
+                            {/* Row 4: អ្នកឆ្លើយតបឆាត & វាយតម្លៃបានចន្លោះណាដល់ណា */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
                                         អ្នកឆ្លើយតបឆាត (Responder)
                                     </label>
@@ -1233,22 +1336,6 @@ const FollowUp2 = () => {
                                         placeholder="ឈ្មោះបុគ្គលិកឆ្លើយតប..."
                                         value={formData.responder}
                                         onChange={(e) => setFormData(prev => ({ ...prev, responder: e.target.value }))}
-                                        className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Row 4: កាលបរិច្ឆេទឆ្នាំ & វាយតម្លៃបានចន្លោះណាដល់ណា */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                        កាលបរិច្ឆេទឆ្នាំ (Date) <span className="text-rose-500">*</span>
-                                    </label>
-                                    <input
-                                        type="date"
-                                        required
-                                        value={formData.date}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                                     />
                                 </div>
@@ -1264,6 +1351,20 @@ const FollowUp2 = () => {
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                                     />
                                 </div>
+                            </div>
+
+                            {/* Row 5: កាលបរិច្ឆេទឆ្នាំ */}
+                            <div>
+                                <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
+                                    កាលបរិច្ឆេទឆ្នាំ (Date) <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={formData.date}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                                    className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                                />
                             </div>
 
                             {/* Multiple Images Upload Box */}

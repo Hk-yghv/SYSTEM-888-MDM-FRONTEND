@@ -32,14 +32,19 @@ router.get('/', async (req, res) => {
 
         const filter = {};
 
-        // Scope access: Non-admin users can ONLY see their own logs
+        // Scope access: Non-admin users can see their own activity logs
         if (!isMasterAdmin) {
-            filter.username = requestingUser;
-            if (userBrand) filter.brand = userBrand;
+            if (requestingUser) {
+                const cleanUser = requestingUser.replace(/^@/, '');
+                filter.username = new RegExp(`^@?${cleanUser}$`, 'i');
+            }
         } else {
             // Master Admin filters
             if (brand) filter.brand = brand;
-            if (targetUser) filter.username = targetUser;
+            if (targetUser) {
+                const cleanTarget = targetUser.replace(/^@/, '');
+                filter.username = new RegExp(`^@?${cleanTarget}$`, 'i');
+            }
         }
 
         if (category && category !== 'All') filter.category = category;
@@ -86,8 +91,13 @@ router.get('/', async (req, res) => {
             logs = Array.from(logMap.values());
             total = Math.max(...countResults, logs.length);
         } else {
+            const cleanReqUser = (requestingUser || '').replace(/^@/, '').toLowerCase();
+            const cleanTargetUser = (targetUser || '').replace(/^@/, '').toLowerCase();
+
             const memLogs = (MEM_DB.systemAuditLogs || []).filter(item => {
-                if (filter.username && item.username !== filter.username) return false;
+                const itemCleanUser = (item.username || '').replace(/^@/, '').toLowerCase();
+                if (!isMasterAdmin && cleanReqUser && itemCleanUser !== cleanReqUser) return false;
+                if (isMasterAdmin && cleanTargetUser && itemCleanUser !== cleanTargetUser) return false;
                 if (filter.brand && item.brand !== filter.brand) return false;
                 if (filter.category && item.category !== filter.category) return false;
                 if (filter.level && item.level !== filter.level) return false;
@@ -156,9 +166,9 @@ router.get('/stats', async (req, res) => {
             userRole === 'Admin';
 
         const filter = {};
-        if (!isMasterAdmin) {
-            filter.username = requestingUser;
-            if (userBrand) filter.brand = userBrand;
+        if (!isMasterAdmin && requestingUser) {
+            const cleanUser = requestingUser.replace(/^@/, '');
+            filter.username = new RegExp(`^@?${cleanUser}$`, 'i');
         }
 
         let total = 0;

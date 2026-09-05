@@ -10,7 +10,7 @@ import {
     FaCommentSlash
 } from 'react-icons/fa';
 import { MdOutlineSync, MdPictureAsPdf, MdOutlineRateReview, MdOutlineAssignment } from 'react-icons/md';
-import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import { exportToExcel, exportToPDF, exportMultiSheetExcel, exportFollowUp1PDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 
 const LIMIT = 15;
@@ -32,8 +32,10 @@ const FollowUp1 = () => {
         totalMessages: 0,
         totalNoResponse: 0,
         totalRequested: 0,
+        totalReview: 0,
         totalFailed: 0,
         totalSuccess: 0,
+        totalCreated: 0,
         successRate: 0
     });
 
@@ -54,8 +56,10 @@ const FollowUp1 = () => {
         totalMessages: 0,
         noResponse: 0,
         requested: 0,
+        review: 0,
         failed: 0,
         success: 0,
+        contractCreated: 0,
         reason: '',
         brand: user?.brand || 'MDM',
         notes: ''
@@ -154,8 +158,10 @@ const FollowUp1 = () => {
             totalMessages: 0,
             noResponse: 0,
             requested: 0,
+            review: 0,
             failed: 0,
             success: 0,
+            contractCreated: 0,
             reason: '',
             brand: user?.brand || 'MDM',
             notes: ''
@@ -171,8 +177,10 @@ const FollowUp1 = () => {
             totalMessages: item.totalMessages !== undefined ? item.totalMessages : (item.requested || 0),
             noResponse: item.noResponse !== undefined ? item.noResponse : 0,
             requested: item.requested !== undefined ? item.requested : 0,
+            review: item.review !== undefined ? item.review : 0,
             failed: item.failed !== undefined ? item.failed : 0,
             success: item.success !== undefined ? item.success : 0,
+            contractCreated: item.contractCreated !== undefined ? item.contractCreated : 0,
             reason: item.reason || '',
             brand: item.brand || user?.brand || 'MDM',
             notes: item.notes || ''
@@ -193,11 +201,12 @@ const FollowUp1 = () => {
                 next.noResponse = Math.max(0, totalM - req);
             }
 
-            if (field === 'requested' || field === 'success') {
+            if (field === 'requested' || field === 'success' || field === 'review') {
                 const req = field === 'requested' ? numVal : (Number(prev.requested) || 0);
                 const succ = field === 'success' ? numVal : (Number(prev.success) || 0);
-                // បរាជ័យ = បានស្នើរ - ជោគជ័យ (auto-calculate)
-                next.failed = Math.max(0, req - succ);
+                const rev = field === 'review' ? numVal : (Number(prev.review) || 0);
+                // បរាជ័យ = បានស្នើរ - ជោគជ័យ - Review (auto-calculate)
+                next.failed = Math.max(0, req - succ - rev);
             }
 
             return next;
@@ -227,8 +236,10 @@ const FollowUp1 = () => {
                 totalMessages: Number(formData.totalMessages) || 0,
                 noResponse: Number(formData.noResponse) || 0,
                 requested: Number(formData.requested) || 0,
+                review: Number(formData.review) || 0,
                 failed: Number(formData.failed) || 0,
                 success: Number(formData.success) || 0,
+                contractCreated: Number(formData.contractCreated) || 0,
                 brand: formData.brand || user?.brand || 'MDM',
                 username: user?.username || ''
             };
@@ -351,9 +362,23 @@ const FollowUp1 = () => {
             const totalMsg = items.reduce((sum, it) => sum + (Number(it.totalMessages) || 0), 0);
             const totalNoResp = items.reduce((sum, it) => sum + (Number(it.noResponse) || 0), 0);
             const totalReq = items.reduce((sum, it) => sum + (Number(it.requested) || 0), 0);
+            const totalRev = items.reduce((sum, it) => sum + (Number(it.review) || 0), 0);
             const totalFail = items.reduce((sum, it) => sum + (Number(it.failed) || 0), 0);
             const totalSucc = items.reduce((sum, it) => sum + (Number(it.success) || 0), 0);
+            const totalCreate = items.reduce((sum, it) => sum + (Number(it.contractCreated) || 0), 0);
             const overallRate = totalReq > 0 ? ((totalSucc / totalReq) * 100).toFixed(1) : '0.0';
+
+            const exportSummaryObj = {
+                totalRecords: items.length,
+                totalMessages: totalMsg,
+                totalNoResponse: totalNoResp,
+                totalRequested: totalReq,
+                totalReview: totalRev,
+                totalFailed: totalFail,
+                totalSuccess: totalSucc,
+                totalCreated: totalCreate,
+                successRate: overallRate
+            };
 
             // Define Export Table Columns
             const exportColumns = [
@@ -363,15 +388,37 @@ const FollowUp1 = () => {
                 { header: 'Message សរុប', accessor: (row) => String(row.totalMessages !== undefined ? row.totalMessages : 0) },
                 { header: 'មិនឆ្លើយតប', accessor: (row) => String(row.noResponse !== undefined ? row.noResponse : 0) },
                 { header: 'Requested (បានស្នើរ)', accessor: (row) => String(row.requested !== undefined ? row.requested : 0) },
+                { header: 'Review (ពិនិត្យ)', accessor: (row) => String(row.review !== undefined ? row.review : 0) },
                 { header: 'Failed (បរាជ័យ)', accessor: (row) => String(row.failed !== undefined ? row.failed : 0) },
                 { header: 'Success (ជោគជ័យ)', accessor: (row) => String(row.success !== undefined ? row.success : 0) },
+                { header: 'Created (បង្កើតកុងត្រា)', accessor: (row) => String(row.contractCreated !== undefined ? row.contractCreated : 0) },
                 { header: 'Success Rate (%)', accessor: (row) => `${row.successRate || 0}%` },
                 { header: 'Reason (មូលហេតុ)', accessor: (row) => row.reason || '' },
                 { header: 'Brand', accessor: (row) => row.brand || '' },
                 { header: 'Created By', accessor: (row) => row.createdBy || '' }
             ];
 
-            // Append Total Summary Row at the bottom
+            // Summary Sheet Columns & Rows for Sheet 2
+            const summarySheetColumns = [
+                { header: '#', accessor: 'no' },
+                { header: 'សូចនាករ (KPI Metric)', accessor: 'metric' },
+                { header: 'ចំនួនសរុប (Total Count)', accessor: 'count' },
+                { header: 'ភាគរយ / អត្រា (%)', accessor: 'rate' },
+                { header: 'ការពិពណ៌នា (Description)', accessor: 'desc' }
+            ];
+
+            const summarySheetRows = [
+                { no: '1', metric: 'កំណត់ត្រាសរុប (Total Entries)', count: String(items.length), rate: '100%', desc: 'ចំនួនជួរទិន្នន័យដែលបាន Export ទាំងអស់' },
+                { no: '2', metric: 'Message សាកសួរ សរុប (Total Messages)', count: String(totalMsg), rate: '100%', desc: 'ចំនួនសារឆាតសាកសួរទៅកាន់អតិថិជនសរុប' },
+                { no: '3', metric: 'មិនឆ្លើយតប (No Response)', count: String(totalNoResp), rate: `${totalMsg > 0 ? ((totalNoResp / totalMsg) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនមិនបានឆ្លើយតបសារ' },
+                { no: '4', metric: 'បានស្នើរ (Requested Loans)', count: String(totalReq), rate: `${totalMsg > 0 ? ((totalReq / totalMsg) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនបានឆ្លើយតប និងស្នើសុំបញ្ចាំ' },
+                { no: '5', metric: 'កំពុងពិនិត្យ (In Review)', count: String(totalRev), rate: `${totalReq > 0 ? ((totalRev / totalReq) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនស្ថិតក្នុងដំណាក់កាលពិនិត្យឯកសារ/វាយតម្លៃ' },
+                { no: '6', metric: 'បរាជ័យ (Failed)', count: String(totalFail), rate: `${totalReq > 0 ? ((totalFail / totalReq) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនមិនត្រូវតាមលក្ខខណ្ឌ ឬបដិសេធ' },
+                { no: '7', metric: 'ជោគជ័យ (Success)', count: String(totalSucc), rate: `${overallRate}%`, desc: 'អតិថិជនជោគជ័យក្នុងការស្នើបញ្ចាំ (Success Rate)', isTotalRow: true },
+                { no: '8', metric: 'បានបង្កើតកុងត្រា (Created Contracts)', count: String(totalCreate), rate: `${totalSucc > 0 ? ((totalCreate / totalSucc) * 100).toFixed(1) : 0}%`, desc: 'កុងត្រាដែលបានបង្កើតចូលប្រព័ន្ធរួចរាល់' }
+            ];
+
+            // Append Total Summary Row at the bottom of Sheet 1
             const dataWithSummaryRow = [
                 ...items,
                 {
@@ -382,8 +429,10 @@ const FollowUp1 = () => {
                     totalMessages: totalMsg,
                     noResponse: totalNoResp,
                     requested: totalReq,
+                    review: totalRev,
                     failed: totalFail,
                     success: totalSucc,
+                    contractCreated: totalCreate,
                     successRate: overallRate,
                     reason: 'Summary Totals',
                     brand: '',
@@ -394,10 +443,44 @@ const FollowUp1 = () => {
             const title = `Follow_Up_1_Report_${exportScope}_${range.start || 'all'}_to_${range.end || 'all'}`;
 
             if (exportFormat === 'excel') {
-                exportToExcel(title, exportColumns, dataWithSummaryRow, user?.brand || 'SYSTEM');
+                // Multi-Sheet Export: Sheet 1 = Details, Sheet 2 = Summary Table
+                exportMultiSheetExcel(title, [
+                    {
+                        name: 'Follow Up 1 Details',
+                        title: `Follow Up 1 Detailed Records (${range.label})`,
+                        columns: exportColumns,
+                        data: dataWithSummaryRow
+                    },
+                    {
+                        name: 'Summary Totals',
+                        title: `Follow Up 1 Executive Summary Totals (${range.label})`,
+                        columns: summarySheetColumns,
+                        data: summarySheetRows
+                    }
+                ], user?.brand || 'SYSTEM');
             } else {
-                exportToPDF(title, exportColumns, dataWithSummaryRow, user?.brand || 'SYSTEM', 'landscape');
+                // Multi-Page Print-Ready PDF: Page 1 = Details, Page 2 = Executive Summary
+                exportFollowUp1PDF(title, exportColumns, dataWithSummaryRow, exportSummaryObj, range.label, user?.brand || 'SYSTEM');
             }
+
+            // Record System Audit Log for Export Activity
+            fetch(`${API_BASE}/audit-logs`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    category: 'Contract',
+                    level: 'Information',
+                    action: 'FOLLOW_UP_1_EXPORT',
+                    taskCategory: 'Follow Up 1',
+                    description: `Exported Follow-Up 1 report (${exportFormat.toUpperCase()}) for range: ${range.label || 'All'} (${items.length} records)`,
+                    username: user?.username || 'Staff',
+                    name: user?.name || '',
+                    role: user?.role || 'Staff',
+                    brand: user?.brand || '',
+                    path: '/follow-up/follow-up-1',
+                    payload: { format: exportFormat, scope: exportScope, count: items.length, range }
+                })
+            }).catch(() => {});
 
             setIsExportModalOpen(false);
         } catch (err) {
@@ -473,78 +556,102 @@ const FollowUp1 = () => {
             </div>
 
             {/* KPI Summary Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 {/* Total Records */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>កំណត់ត្រាសរុប</span>
-                        <FaListUl className="text-indigo-500" size={14} />
+                        <FaListUl className="text-slate-500" size={13} />
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-[var(--app-text,#0f172a)]">
+                    <div className="mt-2 text-xl font-bold text-[var(--app-text,#0f172a)]">
                         {summary.totalRecords.toLocaleString()}
                     </div>
-                    <span className="text-[11px] text-indigo-600 mt-1 font-medium">Total Entries</span>
+                    <span className="text-[10px] text-slate-500 mt-1 font-medium">Total Entries</span>
                 </div>
 
                 {/* Total Messages */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalMessages') || 'Message សរុប'}</span>
-                        <FaComments className="text-blue-500" size={14} />
+                        <FaComments className="text-blue-500" size={13} />
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    <div className="mt-2 text-xl font-bold text-blue-600 dark:text-blue-400">
                         {(summary.totalMessages || 0).toLocaleString()}
                     </div>
-                    <span className="text-[11px] text-blue-600/80 mt-1 font-medium">Total Messages</span>
+                    <span className="text-[10px] text-blue-600/80 mt-1 font-medium">Total Messages</span>
                 </div>
 
                 {/* No Response */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('noResponse') || 'មិនឆ្លើយតប'}</span>
-                        <FaCommentSlash className="text-slate-500" size={14} />
+                        <FaCommentSlash className="text-slate-500" size={13} />
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-slate-600 dark:text-slate-400">
+                    <div className="mt-2 text-xl font-bold text-slate-600 dark:text-slate-400">
                         {(summary.totalNoResponse || 0).toLocaleString()}
                     </div>
-                    <span className="text-[11px] text-slate-500 mt-1 font-medium">No Response</span>
+                    <span className="text-[10px] text-slate-500 mt-1 font-medium">No Response</span>
                 </div>
 
                 {/* Total Requested */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalRequested') || 'សរុបបានស្នើរ'}</span>
-                        <FaQuestionCircle className="text-amber-500" size={14} />
+                        <FaQuestionCircle className="text-amber-500" size={13} />
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">
+                    <div className="mt-2 text-xl font-bold text-amber-600 dark:text-amber-400">
                         {summary.totalRequested.toLocaleString()}
                     </div>
-                    <span className="text-[11px] text-amber-600/80 mt-1 font-medium">Total Requested</span>
+                    <span className="text-[10px] text-amber-600/80 mt-1 font-medium">Total Requested</span>
+                </div>
+
+                {/* Review */}
+                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
+                        <span>កំពុងពិនិត្យ</span>
+                        <MdOutlineRateReview className="text-indigo-500" size={15} />
+                    </div>
+                    <div className="mt-2 text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                        {(summary.totalReview || 0).toLocaleString()}
+                    </div>
+                    <span className="text-[10px] text-indigo-600/80 mt-1 font-medium">In Review</span>
                 </div>
 
                 {/* Total Failed */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalFailed') || 'សរុបបរាជ័យ'}</span>
-                        <FaTimesCircle className="text-rose-500" size={14} />
+                        <FaTimesCircle className="text-rose-500" size={13} />
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-rose-600 dark:text-rose-400">
+                    <div className="mt-2 text-xl font-bold text-rose-600 dark:text-rose-400">
                         {summary.totalFailed.toLocaleString()}
                     </div>
-                    <span className="text-[11px] text-rose-600/80 mt-1 font-medium">Total Failed</span>
+                    <span className="text-[10px] text-rose-600/80 mt-1 font-medium">Total Failed</span>
                 </div>
 
                 {/* Total Success & Rate */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalSuccess') || 'សរុបជោគជ័យ'}</span>
-                        <FaCheckCircle className="text-emerald-500" size={14} />
+                        <FaCheckCircle className="text-emerald-500" size={13} />
                     </div>
-                    <div className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400 flex items-baseline gap-1.5">
+                    <div className="mt-2 text-xl font-bold text-emerald-600 dark:text-emerald-400 flex items-baseline gap-1">
                         <span>{summary.totalSuccess.toLocaleString()}</span>
-                        <span className="text-xs font-semibold text-sky-600">({summary.successRate}%)</span>
+                        <span className="text-[10px] font-semibold text-sky-600">({summary.successRate}%)</span>
                     </div>
-                    <span className="text-[11px] text-emerald-600/80 mt-1 font-medium">Success Rate</span>
+                    <span className="text-[10px] text-emerald-600/80 mt-1 font-medium">Success Rate</span>
+                </div>
+
+                {/* Contracts Created */}
+                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
+                        <span>បង្កើតកុងត្រា</span>
+                        <FaPlusCircle className="text-purple-500" size={13} />
+                    </div>
+                    <div className="mt-2 text-xl font-bold text-purple-600 dark:text-purple-400">
+                        {(summary.totalCreated || 0).toLocaleString()}
+                    </div>
+                    <span className="text-[10px] text-purple-600/80 mt-1 font-medium">Created</span>
                 </div>
             </div>
 
@@ -555,7 +662,7 @@ const FollowUp1 = () => {
                     <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
                     <input
                         type="text"
-                        placeholder="ស្វែងរកតាម Message ឬមូលហេតុ..."
+                        placeholder="ស្វែងរកតាម Message, មូលហេតុ, Brand ឬ Created By..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
@@ -643,7 +750,7 @@ const FollowUp1 = () => {
                             type="button"
                             onClick={() => handleOpenExportModal('excel')}
                             className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
-                            title="Export Excel"
+                            title="Export Excel (2 Sheets)"
                         >
                             <FaFileExcel size={13} />
                             <span>Export Excel</span>
@@ -652,7 +759,7 @@ const FollowUp1 = () => {
                             type="button"
                             onClick={() => handleOpenExportModal('pdf')}
                             className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
-                            title="Export PDF"
+                            title="Export PDF (Multi-Page)"
                         >
                             <MdPictureAsPdf size={14} />
                             <span>Export PDF</span>
@@ -664,23 +771,25 @@ const FollowUp1 = () => {
                         <thead>
                             <tr className="bg-[var(--app-bg,#f8fafc)] border-b border-[var(--app-border,#e2e8f0)] text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted,#64748b)]">
                                 <th className="py-3 px-3 w-10 text-center">#</th>
-                                <th className="py-3 px-3 min-w-[100px]">កាលបរិច្ឆេទ</th>
-                                <th className="py-3 px-4 min-w-[200px]">Message សាកសួរ</th>
-                                <th className="py-3 px-3 text-center min-w-[80px]">Message សរុប</th>
-                                <th className="py-3 px-3 text-center min-w-[80px]">មិនឆ្លើយតប</th>
-                                <th className="py-3 px-3 text-center min-w-[80px]">បានស្នើរ</th>
-                                <th className="py-3 px-3 text-center min-w-[80px]">បរាជ័យ</th>
-                                <th className="py-3 px-3 text-center min-w-[80px]">ជោគជ័យ</th>
-                                <th className="py-3 px-3 text-center min-w-[80px]">អត្រា %</th>
-                                <th className="py-3 px-4 min-w-[160px]">មូលហេតុ</th>
-                                <th className="py-3 px-3 text-center min-w-[70px]">Brand</th>
-                                <th className="py-3 px-3 text-center min-w-[90px]">សកម្មភាព</th>
+                                <th className="py-3 px-3 min-w-[95px]">កាលបរិច្ឆេទ</th>
+                                <th className="py-3 px-4 min-w-[180px]">Message សាកសួរ</th>
+                                <th className="py-3 px-2.5 text-center min-w-[75px]">Message សរុប</th>
+                                <th className="py-3 px-2.5 text-center min-w-[75px]">មិនឆ្លើយតប</th>
+                                <th className="py-3 px-2.5 text-center min-w-[75px]">បានស្នើរ</th>
+                                <th className="py-3 px-2.5 text-center min-w-[75px]">Review</th>
+                                <th className="py-3 px-2.5 text-center min-w-[75px]">បរាជ័យ</th>
+                                <th className="py-3 px-2.5 text-center min-w-[75px]">ជោគជ័យ</th>
+                                <th className="py-3 px-2.5 text-center min-w-[75px]">បង្កើតកុងត្រា</th>
+                                <th className="py-3 px-2.5 text-center min-w-[75px]">អត្រា %</th>
+                                <th className="py-3 px-4 min-w-[150px]">មូលហេតុ</th>
+                                <th className="py-3 px-2.5 text-center min-w-[65px]">Brand</th>
+                                <th className="py-3 px-3 text-center min-w-[85px]">សកម្មភាព</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--app-border,#e2e8f0)] text-xs font-medium text-[var(--app-text,#0f172a)]">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="12" className="py-12 text-center text-slate-400">
+                                    <td colSpan="14" className="py-12 text-center text-slate-400">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <MdOutlineSync size={24} className="animate-spin text-emerald-600" />
                                             <span>កំពុងទាញយកទិន្នន័យ Follow up...</span>
@@ -689,7 +798,7 @@ const FollowUp1 = () => {
                                 </tr>
                             ) : dataList.length === 0 ? (
                                 <tr>
-                                    <td colSpan="12" className="py-12 text-center text-slate-400 font-normal">
+                                    <td colSpan="14" className="py-12 text-center text-slate-400 font-normal">
                                         មិនមានទិន្នន័យ Follow up នៅឡើយទេ! សូមចុចប៊ូតុង "Create Entry" ដើម្បីបញ្ចូលទិន្នន័យថ្មី។
                                     </td>
                                 </tr>
@@ -698,8 +807,10 @@ const FollowUp1 = () => {
                                     const totalMsg = Number(item.totalMessages) || 0;
                                     const noResp = Number(item.noResponse) || 0;
                                     const req = Number(item.requested) || 0;
+                                    const rev = Number(item.review) || 0;
                                     const fail = Number(item.failed) || 0;
                                     const succ = Number(item.success) || 0;
+                                    const created = Number(item.contractCreated) || 0;
                                     const rate = req > 0 ? ((succ / req) * 100).toFixed(1) : '0.0';
 
                                     return (
@@ -718,32 +829,42 @@ const FollowUp1 = () => {
                                                     {item.message || '-'}
                                                 </p>
                                             </td>
-                                            <td className="py-3 px-3 text-center">
-                                                <span className="inline-block px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
+                                            <td className="py-3 px-2.5 text-center">
+                                                <span className="inline-block px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
                                                     {totalMsg.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-3 text-center">
-                                                <span className="inline-block px-2.5 py-1 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 font-bold">
+                                            <td className="py-3 px-2.5 text-center">
+                                                <span className="inline-block px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 font-bold">
                                                     {noResp.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-3 text-center">
-                                                <span className="inline-block px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
+                                            <td className="py-3 px-2.5 text-center">
+                                                <span className="inline-block px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
                                                     {req.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-3 text-center">
-                                                <span className="inline-block px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">
+                                            <td className="py-3 px-2.5 text-center">
+                                                <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold">
+                                                    {rev.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-2.5 text-center">
+                                                <span className="inline-block px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">
                                                     {fail.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-3 text-center">
-                                                <span className="inline-block px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+                                            <td className="py-3 px-2.5 text-center">
+                                                <span className="inline-block px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
                                                     {succ.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-3 text-center font-bold text-sky-600">
+                                            <td className="py-3 px-2.5 text-center">
+                                                <span className="inline-block px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold">
+                                                    {created.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-2.5 text-center font-bold text-sky-600">
                                                 {rate}%
                                             </td>
                                             <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
@@ -751,7 +872,7 @@ const FollowUp1 = () => {
                                                     {item.reason || '-'}
                                                 </p>
                                             </td>
-                                            <td className="py-3 px-3 text-center">
+                                            <td className="py-3 px-2.5 text-center">
                                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                                                     {item.brand || 'MDM'}
                                                 </span>
@@ -759,64 +880,70 @@ const FollowUp1 = () => {
                                             <td className="py-3 px-3 text-center">
                                                 <div className="flex items-center justify-center gap-1.5">
                                                     {hasPermission('/follow-up/follow-up-1', 'edit') && (
-                                                        <button
-                                                            onClick={() => handleOpenEdit(item)}
-                                                            className="p-1.5 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
-                                                            title="កែប្រែ"
-                                                        >
-                                                            <FaEdit size={14} />
-                                                        </button>
-                                                    )}
-                                                    {hasPermission('/follow-up/follow-up-1', 'delete') && (
-                                                        <button
-                                                            onClick={() => handleDelete(item)}
-                                                            className="p-1.5 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
-                                                            title="លុប"
-                                                        >
-                                                            <FaTrashAlt size={13} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-
-                        {/* Summary Total Sticky/Footer Row */}
-                        {dataList.length > 0 && (
-                            <tfoot>
-                                <tr className="bg-emerald-500/10 dark:bg-emerald-950/40 border-t-2 border-emerald-500/30 text-xs font-bold text-[var(--app-text,#0f172a)]">
-                                    <td colSpan="3" className="py-3.5 px-4 text-left font-bold text-emerald-800 dark:text-emerald-300">
-                                        <span className="uppercase tracking-wider">សរុបទាំងអស់ (Overall Totals):</span>
-                                    </td>
-                                    <td className="py-3.5 px-3 text-center font-extrabold text-blue-700 dark:text-blue-300 text-sm">
-                                        {(summary.totalMessages || 0).toLocaleString()}
-                                    </td>
-                                    <td className="py-3.5 px-3 text-center font-extrabold text-slate-700 dark:text-slate-300 text-sm">
-                                        {(summary.totalNoResponse || 0).toLocaleString()}
-                                    </td>
-                                    <td className="py-3.5 px-3 text-center font-extrabold text-amber-700 dark:text-amber-300 text-sm">
-                                        {summary.totalRequested.toLocaleString()}
-                                    </td>
-                                    <td className="py-3.5 px-3 text-center font-extrabold text-rose-700 dark:text-rose-300 text-sm">
-                                        {summary.totalFailed.toLocaleString()}
-                                    </td>
-                                    <td className="py-3.5 px-3 text-center font-extrabold text-emerald-700 dark:text-emerald-300 text-sm">
-                                        {summary.totalSuccess.toLocaleString()}
-                                    </td>
-                                    <td className="py-3.5 px-3 text-center font-extrabold text-sky-700 dark:text-sky-300 text-sm">
-                                        {summary.successRate}%
-                                    </td>
-                                    <td colSpan="3" className="py-3.5 px-4 text-right text-xs text-slate-500 font-semibold">
-                                        Total Records: {total}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        )}
-                    </table>
-                </div>
+                                                         <button
+                                                             onClick={() => handleOpenEdit(item)}
+                                                             className="p-1.5 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
+                                                             title="កែប្រែ"
+                                                         >
+                                                             <FaEdit size={14} />
+                                                         </button>
+                                                     )}
+                                                     {hasPermission('/follow-up/follow-up-1', 'delete') && (
+                                                         <button
+                                                             onClick={() => handleDelete(item)}
+                                                             className="p-1.5 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
+                                                             title="លុប"
+                                                         >
+                                                             <FaTrashAlt size={13} />
+                                                         </button>
+                                                     )}
+                                                 </div>
+                                             </td>
+                                         </tr>
+                                     );
+                                 })
+                             )}
+                         </tbody>
+ 
+                         {/* Summary Total Sticky/Footer Row */}
+                         {dataList.length > 0 && (
+                             <tfoot>
+                                 <tr className="bg-emerald-500/10 dark:bg-emerald-950/40 border-t-2 border-emerald-500/30 text-xs font-bold text-[var(--app-text,#0f172a)]">
+                                     <td colSpan="3" className="py-3.5 px-4 text-left font-bold text-emerald-800 dark:text-emerald-300">
+                                         <span className="uppercase tracking-wider">សរុបទាំងអស់ (Overall Totals):</span>
+                                     </td>
+                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-blue-700 dark:text-blue-300 text-xs">
+                                         {(summary.totalMessages || 0).toLocaleString()}
+                                     </td>
+                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-slate-700 dark:text-slate-300 text-xs">
+                                         {(summary.totalNoResponse || 0).toLocaleString()}
+                                     </td>
+                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-amber-700 dark:text-amber-300 text-xs">
+                                         {summary.totalRequested.toLocaleString()}
+                                     </td>
+                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-indigo-700 dark:text-indigo-300 text-xs">
+                                         {(summary.totalReview || 0).toLocaleString()}
+                                     </td>
+                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-rose-700 dark:text-rose-300 text-xs">
+                                         {summary.totalFailed.toLocaleString()}
+                                     </td>
+                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-emerald-700 dark:text-emerald-300 text-xs">
+                                         {summary.totalSuccess.toLocaleString()}
+                                     </td>
+                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-purple-700 dark:text-purple-300 text-xs">
+                                         {(summary.totalCreated || 0).toLocaleString()}
+                                     </td>
+                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-sky-700 dark:text-sky-300 text-xs">
+                                         {summary.successRate}%
+                                     </td>
+                                     <td colSpan="3" className="py-3.5 px-4 text-right text-xs text-slate-500 font-semibold">
+                                         Total Records: {total}
+                                     </td>
+                                 </tr>
+                             </tfoot>
+                         )}
+                     </table>
+                 </div>
 
                 {/* Pagination */}
                 <div className="p-4 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
@@ -923,7 +1050,35 @@ const FollowUp1 = () => {
                                 </div>
                             </div>
 
-                            {/* Row 2: ជោគជ័យ, បរាជ័យ */}
+                            {/* Row 2: កំពុងពិនិត្យ (Review), បង្កើតកុងត្រា (Created) */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-bold text-cyan-700 dark:text-cyan-400 mb-1">
+                                        កំពុងពិនិត្យ (Review)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={formData.review}
+                                        onChange={(e) => handleNumericChange('review', e.target.value)}
+                                        className="w-full px-3 py-2 bg-cyan-500/5 border border-cyan-500/30 rounded-lg text-xs font-bold text-cyan-700 dark:text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 mb-1">
+                                        បង្កើតកុងត្រា (Created)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={formData.contractCreated}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, contractCreated: Math.max(0, parseInt(e.target.value, 10) || 0) }))}
+                                        className="w-full px-3 py-2 bg-purple-500/5 border border-purple-500/30 rounded-lg text-xs font-bold text-purple-700 dark:text-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Row 3: ជោគជ័យ, បរាជ័យ */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">
@@ -948,7 +1103,7 @@ const FollowUp1 = () => {
                                         value={formData.failed}
                                         onChange={(e) => setFormData(prev => ({ ...prev, failed: Math.max(0, parseInt(e.target.value, 10) || 0) }))}
                                         className="w-full px-3 py-2 bg-rose-500/5 border border-rose-500/30 rounded-lg text-xs font-bold text-rose-700 dark:text-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
-                                        title="បានស្នើរ - ជោគជ័យ (អាចកែបាន)"
+                                        title="បានស្នើរ - ជោគជ័យ - Review (អាចកែបាន)"
                                     />
                                 </div>
                             </div>

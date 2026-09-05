@@ -90,8 +90,10 @@ router.get('/', async (req, res) => {
         const totalMessages = allRecords.reduce((sum, r) => sum + (Number(r.totalMessages) || 0), 0);
         const totalNoResponse = allRecords.reduce((sum, r) => sum + (Number(r.noResponse) || 0), 0);
         const totalRequested = allRecords.reduce((sum, r) => sum + (Number(r.requested) || 0), 0);
+        const totalReview = allRecords.reduce((sum, r) => sum + (Number(r.review) || 0), 0);
         const totalFailed = allRecords.reduce((sum, r) => sum + (Number(r.failed) || 0), 0);
         const totalSuccess = allRecords.reduce((sum, r) => sum + (Number(r.success) || 0), 0);
+        const totalCreated = allRecords.reduce((sum, r) => sum + (Number(r.contractCreated) || 0), 0);
         const totalRecords = allRecords.length;
         const successRate = totalRequested > 0 ? ((totalSuccess / totalRequested) * 100).toFixed(1) : 0;
 
@@ -99,8 +101,10 @@ router.get('/', async (req, res) => {
             totalMessages,
             totalNoResponse,
             totalRequested,
+            totalReview,
             totalFailed,
             totalSuccess,
+            totalCreated,
             totalRecords,
             successRate
         };
@@ -135,12 +139,15 @@ router.post('/', async (req, res) => {
             totalMessages = 0,
             noResponse = 0,
             requested = 0,
+            review = 0,
             failed = 0,
             success = 0,
+            contractCreated = 0,
             reason = '',
             brand = '',
             notes = '',
-            createdBy = 'Staff'
+            createdBy = 'Staff',
+            username = ''
         } = req.body;
 
         if (!message) {
@@ -149,6 +156,7 @@ router.post('/', async (req, res) => {
 
         const currentYear = new Date().getFullYear();
         const autoId = `FU-${currentYear}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const userActor = username || createdBy || 'Staff';
 
         const newDoc = {
             followUpId: autoId,
@@ -157,12 +165,14 @@ router.post('/', async (req, res) => {
             totalMessages: Number(totalMessages) || 0,
             noResponse: Number(noResponse) || 0,
             requested: Number(requested) || 0,
+            review: Number(review) || 0,
             failed: Number(failed) || 0,
             success: Number(success) || 0,
+            contractCreated: Number(contractCreated) || 0,
             reason: reason || '',
             brand: brand || '',
             notes: notes || '',
-            createdBy
+            createdBy: userActor
         };
 
         let saved = newDoc;
@@ -179,10 +189,10 @@ router.post('/', async (req, res) => {
         recordSystemAudit({
             category: 'Contract',
             level: 'Information',
-            action: 'FOLLOW_UP_CREATE',
+            action: 'FOLLOW_UP_1_CREATE',
             taskCategory: 'Follow Up 1',
-            description: `Created follow-up record ${autoId} (${date}): TotalMessages=${totalMessages}, NoResponse=${noResponse}, Requested=${requested}, Success=${success}, Failed=${failed}`,
-            username: createdBy,
+            description: `Created Follow-Up 1 record ${autoId} (${date}): TotalMessages=${newDoc.totalMessages}, Requested=${newDoc.requested}, Review=${newDoc.review}, Success=${newDoc.success}, Created=${newDoc.contractCreated}`,
+            username: userActor,
             brand: brand || '',
             payload: newDoc
         }).catch(() => {});
@@ -206,8 +216,32 @@ router.put('/:id', async (req, res) => {
         if (updateData.totalMessages !== undefined) updateData.totalMessages = Number(updateData.totalMessages) || 0;
         if (updateData.noResponse !== undefined) updateData.noResponse = Number(updateData.noResponse) || 0;
         if (updateData.requested !== undefined) updateData.requested = Number(updateData.requested) || 0;
+        if (updateData.review !== undefined) updateData.review = Number(updateData.review) || 0;
         if (updateData.failed !== undefined) updateData.failed = Number(updateData.failed) || 0;
         if (updateData.success !== undefined) updateData.success = Number(updateData.success) || 0;
+        if (updateData.contractCreated !== undefined) updateData.contractCreated = Number(updateData.contractCreated) || 0;
+
+        // Fetch previous record for diff
+        let existing = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(FollowUp, (M) => M.findOne({ $or: [{ _id: id }, { followUpId: id }] }));
+            existing = results[0] || null;
+        } else {
+            existing = MEM_DB.followUps.find(f => f._id === id || f.followUpId === id);
+        }
+
+        const prevObj = existing ? (existing.toObject ? existing.toObject() : { ...existing }) : {};
+        const changedFields = [];
+        const diff = {};
+        for (const key in updateData) {
+            if (key === 'username' || key === 'lastModifiedBy') continue;
+            const oldVal = prevObj[key];
+            const newVal = updateData[key];
+            if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+                changedFields.push(key);
+                diff[key] = { old: oldVal !== undefined ? oldVal : '', new: newVal !== undefined ? newVal : '' };
+            }
+        }
 
         let updated = null;
         if (isMongoConnected) {
@@ -237,6 +271,18 @@ router.put('/:id', async (req, res) => {
         }
 
         if (updated) {
+            const diffSummary = changedFields.map(f => `${f}: "${diff[f]?.old}" ➔ "${diff[f]?.new}"`).join(', ');
+            recordSystemAudit({
+                category: 'Contract',
+                level: 'Information',
+                action: 'FOLLOW_UP_1_UPDATE',
+                taskCategory: 'Follow Up 1',
+                description: `Updated Follow-Up 1 record ${updated.followUpId || id}: ${diffSummary || 'General Update'}`,
+                username: req.body.username || req.body.createdBy || 'Staff',
+                brand: updated.brand || '',
+                payload: { diff, changedFields, previousData: prevObj, updatedData: updateData }
+            }).catch(() => {});
+
             return res.json(updated);
         }
 
@@ -251,15 +297,33 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        const username = req.query.username || 'Staff';
+        
+        let deletedItem = null;
         if (isMongoConnected) {
+            const results = await queryAllDBs(FollowUp, (M) => M.findOne({ $or: [{ _id: id }, { followUpId: id }] }));
+            deletedItem = results[0] || null;
             await queryAllDBs(FollowUp, async (BoundM) => {
                 try { await BoundM.findByIdAndDelete(id); } catch {}
                 try { await BoundM.deleteMany({ followUpId: id }); } catch {}
                 return [];
             });
+        } else {
+            deletedItem = MEM_DB.followUps.find(f => f._id === id || f.followUpId === id);
         }
 
         MEM_DB.followUps = MEM_DB.followUps.filter(f => f._id !== id && f.followUpId !== id);
+
+        recordSystemAudit({
+            category: 'Contract',
+            level: 'Warning',
+            action: 'FOLLOW_UP_1_DELETE',
+            taskCategory: 'Follow Up 1',
+            description: `Deleted Follow-Up 1 record ${deletedItem?.followUpId || id} (Date: ${deletedItem?.date || 'N/A'}, Message: ${deletedItem?.message || '-'})`,
+            username,
+            brand: deletedItem?.brand || '',
+            payload: deletedItem || { id }
+        }).catch(() => {});
 
         res.json({ message: 'Follow up record deleted successfully' });
     } catch (err) {

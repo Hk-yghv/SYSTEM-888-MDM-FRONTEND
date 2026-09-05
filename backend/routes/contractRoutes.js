@@ -414,12 +414,18 @@ router.put('/:id', async (req, res) => {
         }
 
         const changedFields = [];
+        const diff = {};
+        let prevObj = {};
         if (existingContract) {
-            const prevObj = existingContract.toObject ? existingContract.toObject() : existingContract;
+            prevObj = existingContract.toObject ? existingContract.toObject() : { ...existingContract };
             for (const key in updateData) {
                 if (key === 'editHistory' || key === 'lastModifiedBy' || key === 'modifiedByAdmin') continue;
                 if (JSON.stringify(prevObj[key]) !== JSON.stringify(updateData[key])) {
                     changedFields.push(key);
+                    diff[key] = {
+                        old: prevObj[key] !== undefined && prevObj[key] !== null ? prevObj[key] : '',
+                        new: updateData[key] !== undefined && updateData[key] !== null ? updateData[key] : ''
+                    };
                 }
             }
 
@@ -433,6 +439,7 @@ router.put('/:id', async (req, res) => {
                     editedBy: req.body.lastModifiedBy || req.user?.username || 'Staff',
                     reason: `Updated ${changedFields.join(', ')}`,
                     changedFields,
+                    diff,
                     previousData: previousSnapshot
                 });
 
@@ -478,17 +485,20 @@ router.put('/:id', async (req, res) => {
         }
 
         if (updatedDoc) {
-            // Record Audit Log
+            // Record Audit Log with detailed Before vs After field diffs
+            const diffSummary = changedFields.slice(0, 5).map(f => `${f}: "${typeof diff[f]?.old === 'object' ? JSON.stringify(diff[f]?.old) : diff[f]?.old}" ➔ "${typeof diff[f]?.new === 'object' ? JSON.stringify(diff[f]?.new) : diff[f]?.new}"`).join(', ');
+            const custName = updatedDoc.customerNameEn || updatedDoc.customerNameKh || '';
             recordSystemAudit({
                 category: 'Contract',
                 level: 'Information',
                 action: 'CONTRACT_UPDATE',
                 taskCategory: 'Contract Modification',
-                description: `Updated contract ${updatedDoc.contractId || req.params.id} (${changedFields.length > 0 ? changedFields.join(', ') : 'Details'})`,
+                description: `Updated contract ${updatedDoc.contractId || req.params.id}${custName ? ` (${custName})` : ''}: ${diffSummary || 'General Update'}${changedFields.length > 5 ? ` (+${changedFields.length - 5} more fields)` : ''}`,
                 username: req.user?.username || req.body.lastModifiedBy || 'Staff',
                 brand: updatedDoc.brand || '',
                 contractId: updatedDoc.contractId || req.params.id,
-                payload: { changedFields, updatedFields: updateData }
+                customerId: updatedDoc.customerId || '',
+                payload: { diff, changedFields, updatedFields: updateData, previousData: prevObj }
             }).catch(() => {});
 
             return res.json(sanitizeAndDecryptContract(updatedDoc));

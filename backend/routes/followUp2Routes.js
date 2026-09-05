@@ -53,7 +53,11 @@ router.get('/', async (req, res) => {
         }
 
         if (status) {
-            filter.status = status;
+            if (status === 'Review' || status === 'កំពុងពិនិត្យ' || status === 'រង់ចាំពិនិត្យ') {
+                filter.status = { $in: ['Review', 'កំពុងពិនិត្យ', 'រង់ចាំពិនិត្យ'] };
+            } else {
+                filter.status = status;
+            }
         }
 
         if (search) {
@@ -63,6 +67,7 @@ router.get('/', async (req, res) => {
                 { source: regex },
                 { phone: regex },
                 { collateralType: regex },
+                { model: regex },
                 { responder: regex },
                 { valuationRange: regex },
                 { reason: regex },
@@ -89,10 +94,16 @@ router.get('/', async (req, res) => {
                 if (date && item.date !== date) return false;
                 if (startDate && item.date < startDate) return false;
                 if (endDate && item.date > endDate) return false;
-                if (status && item.status !== status) return false;
+                if (status) {
+                    if (status === 'Review' || status === 'កំពុងពិនិត្យ' || status === 'រង់ចាំពិនិត្យ') {
+                        if (item.status !== 'Review' && item.status !== 'កំពុងពិនិត្យ' && item.status !== 'រង់ចាំពិនិត្យ') return false;
+                    } else if (item.status !== status) {
+                        return false;
+                    }
+                }
                 if (search) {
                     const s = search.toLowerCase();
-                    const combined = `${item.customerName} ${item.source} ${item.phone} ${item.collateralType} ${item.responder} ${item.valuationRange} ${item.reason} ${item.followUpId} ${item.brand} ${item.createdBy}`.toLowerCase();
+                    const combined = `${item.customerName} ${item.source} ${item.phone} ${item.collateralType} ${item.model || ''} ${item.responder} ${item.valuationRange} ${item.reason} ${item.followUpId} ${item.brand} ${item.createdBy}`.toLowerCase();
                     if (!combined.includes(s)) return false;
                 }
                 return true;
@@ -148,6 +159,7 @@ router.post('/', async (req, res) => {
             phone = '',
             requestedAmount = 0,
             collateralType = '',
+            model = '',
             responder = '',
             date = new Date().toISOString().split('T')[0],
             valuationRange = '',
@@ -173,6 +185,7 @@ router.post('/', async (req, res) => {
             phone: phone || '',
             requestedAmount: Number(requestedAmount) || 0,
             collateralType: collateralType || '',
+            model: model || '',
             responder: responder || '',
             date,
             valuationRange: valuationRange || '',
@@ -226,6 +239,28 @@ router.put('/:id', async (req, res) => {
             updateData.requestedAmount = Number(updateData.requestedAmount) || 0;
         }
 
+        // Fetch previous record for diff
+        let existing = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(FollowUp2, (M) => M.findOne({ $or: [{ _id: id }, { followUpId: id }] }));
+            existing = results[0] || null;
+        } else {
+            existing = MEM_DB.followUps2.find(f => f._id === id || f.followUpId === id);
+        }
+
+        const prevObj = existing ? (existing.toObject ? existing.toObject() : { ...existing }) : {};
+        const changedFields = [];
+        const diff = {};
+        for (const key in updateData) {
+            if (key === 'username' || key === 'lastModifiedBy') continue;
+            const oldVal = prevObj[key];
+            const newVal = updateData[key];
+            if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+                changedFields.push(key);
+                diff[key] = { old: oldVal !== undefined ? oldVal : '', new: newVal !== undefined ? newVal : '' };
+            }
+        }
+
         let updated = null;
         if (isMongoConnected) {
             const results = await queryAllDBs(FollowUp2, async (BoundM) => {
@@ -254,6 +289,18 @@ router.put('/:id', async (req, res) => {
         }
 
         if (updated) {
+            const diffSummary = changedFields.map(f => `${f}: "${diff[f]?.old}" ➔ "${diff[f]?.new}"`).join(', ');
+            recordSystemAudit({
+                category: 'Contract',
+                level: 'Information',
+                action: 'FOLLOW_UP_2_UPDATE',
+                taskCategory: 'Follow Up 2',
+                description: `Updated Follow-Up 2 record ${updated.followUpId || id} (${updated.customerName}): ${diffSummary || 'General Update'}`,
+                username: req.body.username || req.body.createdBy || 'Staff',
+                brand: updated.brand || '',
+                payload: { diff, changedFields, previousData: prevObj, updatedData: updateData }
+            }).catch(() => {});
+
             return res.json(updated);
         }
 
@@ -268,15 +315,33 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        const username = req.query.username || 'Staff';
+
+        let deletedItem = null;
         if (isMongoConnected) {
+            const results = await queryAllDBs(FollowUp2, (M) => M.findOne({ $or: [{ _id: id }, { followUpId: id }] }));
+            deletedItem = results[0] || null;
             await queryAllDBs(FollowUp2, async (BoundM) => {
                 try { await BoundM.findByIdAndDelete(id); } catch {}
                 try { await BoundM.deleteMany({ followUpId: id }); } catch {}
                 return [];
             });
+        } else {
+            deletedItem = MEM_DB.followUps2.find(f => f._id === id || f.followUpId === id);
         }
 
         MEM_DB.followUps2 = MEM_DB.followUps2.filter(f => f._id !== id && f.followUpId !== id);
+
+        recordSystemAudit({
+            category: 'Contract',
+            level: 'Warning',
+            action: 'FOLLOW_UP_2_DELETE',
+            taskCategory: 'Follow Up 2',
+            description: `Deleted Follow-Up 2 record ${deletedItem?.followUpId || id} (${deletedItem?.customerName || 'N/A'}, Phone: ${deletedItem?.phone || '-'})`,
+            username,
+            brand: deletedItem?.brand || '',
+            payload: deletedItem || { id }
+        }).catch(() => {});
 
         res.json({ message: 'Follow up 2 record deleted successfully' });
     } catch (err) {
