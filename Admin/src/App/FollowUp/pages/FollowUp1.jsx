@@ -423,7 +423,6 @@ const FollowUp1 = () => {
                     review: totalRev,
                     failed: totalFail,
                     success: totalSucc,
-                    contractCreated: totalCreate,
                     successRate: overallRate,
                     reason: 'Summary Totals',
                     brand: '',
@@ -898,9 +897,6 @@ const FollowUp1 = () => {
                                     </td>
                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-emerald-700 dark:text-emerald-300 text-xs">
                                         {summary.totalSuccess.toLocaleString()}
-                                    </td>
-                                    <td className="py-3.5 px-2.5 text-center font-extrabold text-purple-700 dark:text-purple-300 text-xs">
-                                        {(summary.totalCreated || 0).toLocaleString()}
                                     </td>
                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-sky-700 dark:text-sky-300 text-xs">
                                         {summary.successRate}%
