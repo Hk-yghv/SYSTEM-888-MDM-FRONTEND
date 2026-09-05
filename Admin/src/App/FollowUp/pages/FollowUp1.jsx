@@ -480,7 +480,7 @@ const FollowUp1 = () => {
                     path: '/follow-up/follow-up-1',
                     payload: { format: exportFormat, scope: exportScope, count: items.length, range }
                 })
-            }).catch(() => {});
+            }).catch(() => { });
 
             setIsExportModalOpen(false);
         } catch (err) {
@@ -506,9 +506,6 @@ const FollowUp1 = () => {
                                 {t('followUp1') || 'Follow up 1'}
                             </span>
                         </h1>
-                        <p className="text-xs text-[var(--app-text-muted,#64748b)] mt-0.5">
-                            គ្រប់គ្រង Message សាកសួរ, មិនឆ្លើយតប, ចំនួនបានស្នើរ, បរាជ័យ, ជោគជ័យ និងការទាញយករបាយការណ៍ Excel/PDF
-                        </p>
                     </div>
                 </div>
 
@@ -880,70 +877,70 @@ const FollowUp1 = () => {
                                             <td className="py-3 px-3 text-center">
                                                 <div className="flex items-center justify-center gap-1.5">
                                                     {hasPermission('/follow-up/follow-up-1', 'edit') && (
-                                                         <button
-                                                             onClick={() => handleOpenEdit(item)}
-                                                             className="p-1.5 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
-                                                             title="កែប្រែ"
-                                                         >
-                                                             <FaEdit size={14} />
-                                                         </button>
-                                                     )}
-                                                     {hasPermission('/follow-up/follow-up-1', 'delete') && (
-                                                         <button
-                                                             onClick={() => handleDelete(item)}
-                                                             className="p-1.5 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
-                                                             title="លុប"
-                                                         >
-                                                             <FaTrashAlt size={13} />
-                                                         </button>
-                                                     )}
-                                                 </div>
-                                             </td>
-                                         </tr>
-                                     );
-                                 })
-                             )}
-                         </tbody>
- 
-                         {/* Summary Total Sticky/Footer Row */}
-                         {dataList.length > 0 && (
-                             <tfoot>
-                                 <tr className="bg-emerald-500/10 dark:bg-emerald-950/40 border-t-2 border-emerald-500/30 text-xs font-bold text-[var(--app-text,#0f172a)]">
-                                     <td colSpan="3" className="py-3.5 px-4 text-left font-bold text-emerald-800 dark:text-emerald-300">
-                                         <span className="uppercase tracking-wider">សរុបទាំងអស់ (Overall Totals):</span>
-                                     </td>
-                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-blue-700 dark:text-blue-300 text-xs">
-                                         {(summary.totalMessages || 0).toLocaleString()}
-                                     </td>
-                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-slate-700 dark:text-slate-300 text-xs">
-                                         {(summary.totalNoResponse || 0).toLocaleString()}
-                                     </td>
-                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-amber-700 dark:text-amber-300 text-xs">
-                                         {summary.totalRequested.toLocaleString()}
-                                     </td>
-                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-indigo-700 dark:text-indigo-300 text-xs">
-                                         {(summary.totalReview || 0).toLocaleString()}
-                                     </td>
-                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-rose-700 dark:text-rose-300 text-xs">
-                                         {summary.totalFailed.toLocaleString()}
-                                     </td>
-                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-emerald-700 dark:text-emerald-300 text-xs">
-                                         {summary.totalSuccess.toLocaleString()}
-                                     </td>
-                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-purple-700 dark:text-purple-300 text-xs">
-                                         {(summary.totalCreated || 0).toLocaleString()}
-                                     </td>
-                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-sky-700 dark:text-sky-300 text-xs">
-                                         {summary.successRate}%
-                                     </td>
-                                     <td colSpan="3" className="py-3.5 px-4 text-right text-xs text-slate-500 font-semibold">
-                                         Total Records: {total}
-                                     </td>
-                                 </tr>
-                             </tfoot>
-                         )}
-                     </table>
-                 </div>
+                                                        <button
+                                                            onClick={() => handleOpenEdit(item)}
+                                                            className="p-1.5 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
+                                                            title="កែប្រែ"
+                                                        >
+                                                            <FaEdit size={14} />
+                                                        </button>
+                                                    )}
+                                                    {hasPermission('/follow-up/follow-up-1', 'delete') && (
+                                                        <button
+                                                            onClick={() => handleDelete(item)}
+                                                            className="p-1.5 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
+                                                            title="លុប"
+                                                        >
+                                                            <FaTrashAlt size={13} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+
+                        {/* Summary Total Sticky/Footer Row */}
+                        {dataList.length > 0 && (
+                            <tfoot>
+                                <tr className="bg-emerald-500/10 dark:bg-emerald-950/40 border-t-2 border-emerald-500/30 text-xs font-bold text-[var(--app-text,#0f172a)]">
+                                    <td colSpan="3" className="py-3.5 px-4 text-left font-bold text-emerald-800 dark:text-emerald-300">
+                                        <span className="uppercase tracking-wider">សរុបទាំងអស់ (Overall Totals):</span>
+                                    </td>
+                                    <td className="py-3.5 px-2.5 text-center font-extrabold text-blue-700 dark:text-blue-300 text-xs">
+                                        {(summary.totalMessages || 0).toLocaleString()}
+                                    </td>
+                                    <td className="py-3.5 px-2.5 text-center font-extrabold text-slate-700 dark:text-slate-300 text-xs">
+                                        {(summary.totalNoResponse || 0).toLocaleString()}
+                                    </td>
+                                    <td className="py-3.5 px-2.5 text-center font-extrabold text-amber-700 dark:text-amber-300 text-xs">
+                                        {summary.totalRequested.toLocaleString()}
+                                    </td>
+                                    <td className="py-3.5 px-2.5 text-center font-extrabold text-indigo-700 dark:text-indigo-300 text-xs">
+                                        {(summary.totalReview || 0).toLocaleString()}
+                                    </td>
+                                    <td className="py-3.5 px-2.5 text-center font-extrabold text-rose-700 dark:text-rose-300 text-xs">
+                                        {summary.totalFailed.toLocaleString()}
+                                    </td>
+                                    <td className="py-3.5 px-2.5 text-center font-extrabold text-emerald-700 dark:text-emerald-300 text-xs">
+                                        {summary.totalSuccess.toLocaleString()}
+                                    </td>
+                                    <td className="py-3.5 px-2.5 text-center font-extrabold text-purple-700 dark:text-purple-300 text-xs">
+                                        {(summary.totalCreated || 0).toLocaleString()}
+                                    </td>
+                                    <td className="py-3.5 px-2.5 text-center font-extrabold text-sky-700 dark:text-sky-300 text-xs">
+                                        {summary.successRate}%
+                                    </td>
+                                    <td colSpan="3" className="py-3.5 px-4 text-right text-xs text-slate-500 font-semibold">
+                                        Total Records: {total}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        )}
+                    </table>
+                </div>
 
                 {/* Pagination */}
                 <div className="p-4 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
