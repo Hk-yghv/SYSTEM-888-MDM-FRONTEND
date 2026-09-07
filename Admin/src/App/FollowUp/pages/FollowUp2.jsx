@@ -920,7 +920,7 @@ const FollowUp2 = () => {
                         </button>
                     </div>
                 </div>
-                <div className="overflow-auto h-[calc(100vh-400px)]">
+                <div className="overflow-auto h-[calc(100vh-200px)]">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[var(--app-bg,#f8fafc)] border-b border-[var(--app-border,#e2e8f0)] text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted,#64748b)]">
