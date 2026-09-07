@@ -14,6 +14,7 @@ import {
 import { MdOutlineSync, MdPictureAsPdf, MdOutlineRateReview, MdOutlineAssignment, MdCall, MdCloudUpload } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
+import CopyCell from '../../../components/CopyCell';
 
 const LIMIT = 15;
 
@@ -978,32 +979,29 @@ const FollowUp2 = () => {
                                                 return (
                                                     <tr key={item._id || itemIdx} className="hover:bg-slate-500/5 transition-colors">
                                                         <td className="py-3 px-3 text-center text-slate-400 font-mono text-[11px]">
-                                                            {runningIndex}
+                                                            <CopyCell value={runningIndex} />
                                                         </td>
                                                         <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                                                            {item.customerName || '-'}
+                                                            <CopyCell value={item.customerName || '-'} />
                                                         </td>
                                                         <td className="py-3 px-3 whitespace-nowrap">
                                                             <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                                                                {item.source || 'Facebook'}
+                                                                <CopyCell value={item.source || 'Facebook'} />
                                                             </span>
                                                         </td>
                                                         <td className="py-3 px-3 font-mono font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                                                             {item.phone ? (
-                                                                <a href={`tel:${item.phone}`} className="hover:text-emerald-600 flex items-center gap-1">
-                                                                    <FaPhoneAlt size={10} className="text-emerald-500" />
-                                                                    <span>{item.phone}</span>
-                                                                </a>
+                                                                <CopyCell value={item.phone} />
                                                             ) : '-'}
                                                         </td>
                                                         <td className="py-3 px-3 text-right font-extrabold text-amber-600 dark:text-amber-400">
-                                                            ${amount.toLocaleString()}
+                                                            <CopyCell value={`$${amount.toLocaleString()}`} />
                                                         </td>
                                                         <td className="py-3 px-3 text-slate-700 dark:text-slate-300">
-                                                            {item.collateralType || '-'}
+                                                            <CopyCell value={item.collateralType || '-'} />
                                                         </td>
                                                         <td className="py-3 px-3 font-semibold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
-                                                            {item.model || '-'}
+                                                            <CopyCell value={item.model || '-'} />
                                                         </td>
                                                         {/* Photo thumbnail cell */}
                                                         <td className="py-3 px-3 text-center">
@@ -1034,13 +1032,13 @@ const FollowUp2 = () => {
                                                             )}
                                                         </td>
                                                         <td className="py-3 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                                                            {item.responder || '-'}
+                                                            <CopyCell value={item.responder || '-'} />
                                                         </td>
                                                         <td className="py-3 px-3 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                                                            {item.date ? item.date.split('T')[0] : 'N/A'}
+                                                            <CopyCell value={item.date ? item.date.split('T')[0] : 'N/A'} />
                                                         </td>
                                                         <td className="py-3 px-3 text-indigo-600 dark:text-indigo-400 font-medium">
-                                                            {item.valuationRange || '-'}
+                                                            <CopyCell value={item.valuationRange || '-'} />
                                                         </td>
                                                         <td className="py-3 px-3 text-center whitespace-nowrap">
                                                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold ${isSuccess
@@ -1061,7 +1059,7 @@ const FollowUp2 = () => {
                                                         </td>
                                                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
                                                             <p className="line-clamp-2" title={item.reason}>
-                                                                {item.reason || '-'}
+                                                                <CopyCell value={item.reason || '-'} />
                                                             </p>
                                                         </td>
                                                         <td className="py-3 px-3 text-center">
