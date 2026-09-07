@@ -1528,7 +1528,7 @@ const FollowUp2 = () => {
 
             {/* Photo Lightbox / Preview Modal */}
             {isPreviewOpen && previewImages.length > 0 && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200 rounded-lg">
                     <button
                         onClick={() => setIsPreviewOpen(false)}
                         className="absolute top-4 right-4 p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer z-50"
@@ -1583,7 +1583,7 @@ const FollowUp2 = () => {
 
             {/* Export Range Props Modal */}
             {isExportModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto rounded-2xl">
                     <div className="bg-[var(--app-card,#ffffff)] w-full max-w-md rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
