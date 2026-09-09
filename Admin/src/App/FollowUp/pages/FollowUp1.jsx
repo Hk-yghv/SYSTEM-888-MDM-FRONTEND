@@ -215,8 +215,8 @@ const FollowUp1 = () => {
             alert('Please select a date (សូមជ្រើសរើសកាលបរិច្ឆេទ)');
             return;
         }
-        if (!formData.message.trim()) {
-            alert('Please enter inquiry message (សូមបញ្ចូល Message សាកសួរ)');
+        if (formData.message === '' || formData.message === null || formData.message === undefined || isNaN(Number(formData.message))) {
+            alert('Please enter the number of messages sent (សូមបញ្ចូលចំនួន Message សាកសួរ)');
             return;
         }
 
@@ -747,8 +747,9 @@ const FollowUp1 = () => {
                             <tr className="bg-[var(--app-bg,#f8fafc)] border-b border-[var(--app-border,#e2e8f0)] text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted,#64748b)]">
                                 <th className="py-3 px-3 w-10 text-center">#</th>
                                 <th className="py-3 px-3 min-w-[95px]">កាលបរិច្ឆេទ</th>
-                                <th className="py-3 px-4 min-w-[180px]">Message សាកសួរ</th>
                                 <th className="py-3 px-2.5 text-center min-w-[75px]">Message សរុប</th>
+                                <th className="py-3 px-4 min-w-[120px]">Message សាកសួរ</th>
+                                <th className="py-3 px-2.5 text-center min-w-[65px]">Brand</th>
                                 <th className="py-3 px-2.5 text-center min-w-[75px]">មិនឆ្លើយតប</th>
                                 <th className="py-3 px-2.5 text-center min-w-[75px]">បានស្នើរ</th>
                                 <th className="py-3 px-2.5 text-center min-w-[75px]">Review</th>
@@ -756,7 +757,6 @@ const FollowUp1 = () => {
                                 <th className="py-3 px-2.5 text-center min-w-[75px]">ជោគជ័យ</th>
                                 <th className="py-3 px-2.5 text-center min-w-[75px]">អត្រា %</th>
                                 <th className="py-3 px-4 min-w-[150px]">មូលហេតុ</th>
-                                <th className="py-3 px-2.5 text-center min-w-[65px]">Brand</th>
                                 <th className="py-3 px-3 text-center min-w-[85px]">សកម្មភាព</th>
                             </tr>
                         </thead>
@@ -797,14 +797,17 @@ const FollowUp1 = () => {
                                                     {item.date ? item.date.split('T')[0] : 'N/A'}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
-                                                <p className="line-clamp-2" title={item.message}>
-                                                    {item.message || '-'}
-                                                </p>
-                                            </td>
                                             <td className="py-3 px-2.5 text-center">
                                                 <span className="inline-block px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
                                                     {totalMsg.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-4 font-bold text-center font-mono text-[var(--app-text,#0f172a)]">
+                                                {item.message || '0'}
+                                            </td>
+                                            <td className="py-3 px-2.5 text-center">
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                                    {item.brand || 'MDM'}
                                                 </span>
                                             </td>
                                             <td className="py-3 px-2.5 text-center">
@@ -840,11 +843,6 @@ const FollowUp1 = () => {
                                                     {item.reason || '-'}
                                                 </p>
                                             </td>
-                                            <td className="py-3 px-2.5 text-center">
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                                                    {item.brand || 'MDM'}
-                                                </span>
-                                            </td>
                                             <td className="py-3 px-3 text-center">
                                                 <div className="flex items-center justify-center gap-1.5">
                                                     {hasPermission('/follow-up/follow-up-1', 'edit') && (
@@ -877,12 +875,14 @@ const FollowUp1 = () => {
                         {dataList.length > 0 && (
                             <tfoot>
                                 <tr className="bg-emerald-500/10 dark:bg-emerald-950/40 border-t-2 border-emerald-500/30 text-xs font-bold text-[var(--app-text,#0f172a)]">
-                                    <td colSpan="3" className="py-3.5 px-4 text-left font-bold text-emerald-800 dark:text-emerald-300">
-                                        <span className="uppercase tracking-wider">សរុបទាំងអស់ (Overall Totals):</span>
+                                    <td colSpan="2" className="py-3.5 px-4 text-left font-bold text-emerald-800 dark:text-emerald-300">
+                                        <span className="uppercase tracking-wider">សរុបទាំងអស់:</span>
                                     </td>
                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-blue-700 dark:text-blue-300 text-xs">
                                         {(summary.totalMessages || 0).toLocaleString()}
                                     </td>
+                                    <td className='py-3.5 px-2.5 text-center font-extrabold text-slate-700 dark:text-slate-300 text-xs'>{(summary.totalMsg || 0).toLocaleString()}</td>
+                                    <td></td>
                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-slate-700 dark:text-slate-300 text-xs">
                                         {(summary.totalNoResponse || 0).toLocaleString()}
                                     </td>
@@ -901,9 +901,10 @@ const FollowUp1 = () => {
                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-sky-700 dark:text-sky-300 text-xs">
                                         {summary.successRate}%
                                     </td>
-                                    <td colSpan="3" className="py-3.5 px-4 text-right text-xs text-slate-500 font-semibold">
+                                    <td colSpan="1" className="py-3.5 px-4 text-right text-xs text-slate-500 font-semibold">
                                         Total Records: {total}
                                     </td>
+                                    <td></td>
                                 </tr>
                             </tfoot>
                         )}
@@ -958,18 +959,19 @@ const FollowUp1 = () => {
                                 />
                             </div>
 
-                            {/* Inquiry Message */}
+                            {/* Inquiry Message (Number of messages sent) */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                    Message សាកសួរ (Inquiry Message) <span className="text-rose-500">*</span>
+                                    Message សាកសួរ (ចំនួនដែលបានស្នើ) <span className="text-rose-500">*</span>
                                 </label>
-                                <textarea
+                                <input
+                                    type="number"
                                     required
-                                    rows="2"
-                                    placeholder="បញ្ចូលអត្ថន័យ Message ដែលបានសាកសួរទៅកាន់ភ្ញៀវ..."
+                                    min="0"
+                                    placeholder="បញ្ចូលចំនួន Message ដែលបានសាកសួរ..."
                                     value={formData.message}
                                     onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                                    className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                                    className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-bold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 font-mono"
                                 />
                             </div>
 
