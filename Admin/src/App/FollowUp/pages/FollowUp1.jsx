@@ -778,96 +778,96 @@ const FollowUp1 = () => {
                                 </tr>
                             ) : (
                                 dataList.map((item, index) => {
-                                    const totalMsg = Number(item.totalMessages) || 0;
-                                    const noResp = Number(item.noResponse) || 0;
-                                    const req = Number(item.requested) || 0;
-                                    const rev = Number(item.review) || 0;
-                                    const fail = Number(item.failed) || 0;
-                                    const succ = Number(item.success) || 0;
-                                    const rate = req > 0 ? ((succ / req) * 100).toFixed(1) : '0.0';
+                                        const totalMsg = Number(item.totalMessages) || 0;
+                                        const noResp = Number(item.noResponse) || 0;
+                                        const req = Number(item.requested) || 0;
+                                        const rev = Number(item.review) || 0;
+                                        const fail = Number(item.failed) || 0;
+                                        const succ = Number(item.success) || 0;
+                                        const rate = req > 0 ? ((succ / req) * 100).toFixed(1) : '0.0';
 
-                                    return (
-                                        <tr key={item._id || index} className="hover:bg-slate-500/5 transition-colors">
-                                            <td className="py-3 px-3 text-center text-slate-400 font-mono text-[11px]">
-                                                {(page - 1) * LIMIT + index + 1}
-                                            </td>
-                                            <td className="py-3 px-3 font-semibold whitespace-nowrap">
-                                                <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                                                    <FaRegCalendarAlt className="text-emerald-500 text-[11px]" />
-                                                    {item.date ? item.date.split('T')[0] : 'N/A'}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-2.5 text-center">
-                                                <span className="inline-block px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
-                                                    {totalMsg.toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-4 font-bold text-center font-mono text-[var(--app-text,#0f172a)]">
-                                                {item.message || '0'}
-                                            </td>
-                                            <td className="py-3 px-2.5 text-center">
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                                                    {item.brand || 'MDM'}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-2.5 text-center">
-                                                <span className="inline-block px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 font-bold">
-                                                    {noResp.toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-2.5 text-center">
-                                                <span className="inline-block px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
-                                                    {req.toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-2.5 text-center">
-                                                <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold">
-                                                    {rev.toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-2.5 text-center">
-                                                <span className="inline-block px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">
-                                                    {fail.toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-2.5 text-center">
-                                                <span className="inline-block px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
-                                                    {succ.toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-2.5 text-center font-bold text-sky-600">
-                                                {rate}%
-                                            </td>
-                                            <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
-                                                <p className="line-clamp-2" title={item.reason}>
-                                                    {item.reason || '-'}
-                                                </p>
-                                            </td>
-                                            <td className="py-3 px-3 text-center">
-                                                <div className="flex items-center justify-center gap-1.5">
-                                                    {hasPermission('/follow-up/follow-up-1', 'edit') && (
-                                                        <button
-                                                            onClick={() => handleOpenEdit(item)}
-                                                            className="p-1.5 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
-                                                            title="កែប្រែ"
-                                                        >
-                                                            <FaEdit size={14} />
-                                                        </button>
-                                                    )}
-                                                    {hasPermission('/follow-up/follow-up-1', 'delete') && (
-                                                        <button
-                                                            onClick={() => handleDelete(item)}
-                                                            className="p-1.5 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
-                                                            title="លុប"
-                                                        >
-                                                            <FaTrashAlt size={13} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
+                                        return (
+                                            <tr key={item._id || index} className="hover:bg-slate-500/5 transition-colors">
+                                                <td className="py-3 px-3 text-center text-slate-400 font-mono text-[11px]">
+                                                    {(page - 1) * LIMIT + index + 1}
+                                                </td>
+                                                <td className="py-3 px-3 font-semibold whitespace-nowrap">
+                                                    <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                                                        <FaRegCalendarAlt className="text-emerald-500 text-[11px]" />
+                                                        {item.date ? item.date.split('T')[0] : 'N/A'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-2.5 text-center">
+                                                    <span className="inline-block px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
+                                                        {totalMsg.toLocaleString()}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-4 font-bold text-center font-mono text-[var(--app-text,#0f172a)]">
+                                                    {item.message || '0'}
+                                                </td>
+                                                <td className="py-3 px-2.5 text-center">
+                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                                        {item.brand || 'MDM'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-2.5 text-center">
+                                                    <span className="inline-block px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 font-bold">
+                                                        {noResp.toLocaleString()}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-2.5 text-center">
+                                                    <span className="inline-block px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
+                                                        {req.toLocaleString()}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-2.5 text-center">
+                                                    <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold">
+                                                        {rev.toLocaleString()}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-2.5 text-center">
+                                                    <span className="inline-block px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">
+                                                        {fail.toLocaleString()}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-2.5 text-center">
+                                                    <span className="inline-block px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+                                                        {succ.toLocaleString()}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-2.5 text-center font-bold text-sky-600">
+                                                    {rate}%
+                                                </td>
+                                                <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
+                                                    <p className="line-clamp-2" title={item.reason}>
+                                                        {item.reason || '-'}
+                                                    </p>
+                                                </td>
+                                                <td className="py-3 px-3 text-center">
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        {hasPermission('/follow-up/follow-up-1', 'edit') && (
+                                                            <button
+                                                                onClick={() => handleOpenEdit(item)}
+                                                                className="p-1.5 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
+                                                                title="កែប្រែ"
+                                                            >
+                                                                <FaEdit size={14} />
+                                                            </button>
+                                                        )}
+                                                        {hasPermission('/follow-up/follow-up-1', 'delete') && (
+                                                            <button
+                                                                onClick={() => handleDelete(item)}
+                                                                className="p-1.5 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
+                                                                title="លុប"
+                                                            >
+                                                                <FaTrashAlt size={13} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                             )}
                         </tbody>
 
@@ -881,7 +881,7 @@ const FollowUp1 = () => {
                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-blue-700 dark:text-blue-300 text-xs">
                                         {(summary.totalMessages || 0).toLocaleString()}
                                     </td>
-                                    <td className='py-3.5 px-2.5 text-center font-extrabold text-slate-700 dark:text-slate-300 text-xs'>{(summary.totalMsg || 0).toLocaleString()}</td>
+                                    <td className='py-3.5 px-2.5 text-center font-extrabold text-slate-700 dark:text-slate-300 text-xs'>{(summary.totalMessageInquiry || 0).toLocaleString()}</td>
                                     <td></td>
                                     <td className="py-3.5 px-2.5 text-center font-extrabold text-slate-700 dark:text-slate-300 text-xs">
                                         {(summary.totalNoResponse || 0).toLocaleString()}

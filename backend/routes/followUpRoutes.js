@@ -93,11 +93,13 @@ router.get('/', async (req, res) => {
         const totalReview = allRecords.reduce((sum, r) => sum + (Number(r.review) || 0), 0);
         const totalFailed = allRecords.reduce((sum, r) => sum + (Number(r.failed) || 0), 0);
         const totalSuccess = allRecords.reduce((sum, r) => sum + (Number(r.success) || 0), 0);
+        const totalMessageInquiry = allRecords.reduce((sum, r) => sum + (Number(r.message) || 0), 0);
         const totalRecords = allRecords.length;
         const successRate = totalRequested > 0 ? ((totalSuccess / totalRequested) * 100).toFixed(1) : 0;
 
         const summary = {
             totalMessages,
+            totalMessageInquiry,
             totalNoResponse,
             totalRequested,
             totalReview,
