@@ -749,110 +749,6 @@ const FollowUp2 = () => {
 
     return (
         <div className="p-4 md:p-6 space-y-6 max-w-full overflow-x-hidden">
-
-            {/* ── Alert Highlight Panel (ពេល navigate ពី Alert drawer) ── */}
-            {alertHighlightId && (
-                <div className="rounded-xl border-2 border-indigo-400 bg-indigo-50 shadow-lg overflow-hidden">
-                    {/* Banner */}
-                    <div className="flex items-center justify-between px-5 py-3 bg-indigo-600 text-white">
-                        <div className="flex items-center gap-2 text-sm font-black">
-                            <MdOutlineRateReview size={18} />
-                            <span>🔔 Alert Follow-up 2 Review — ព័ត៌មានលម្អិត</span>
-                        </div>
-                        <button
-                            onClick={() => window.history.replaceState({}, '', '/follow-up/follow-up-2')}
-                            className="text-white/80 hover:text-white text-xs font-bold px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 transition-all cursor-pointer"
-                        >
-                            ✕ បិទ Alert
-                        </button>
-                    </div>
-
-                    {alertHighlightRecord ? (
-                        <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {/* Customer */}
-                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
-                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">អតិថិជន</p>
-                                <p className="text-base font-black text-slate-900">{alertHighlightRecord.customerName || '—'}</p>
-                                <p className="text-xs font-mono text-indigo-600 font-bold">{alertHighlightRecord.phone || '—'}</p>
-                            </div>
-                            {/* Source */}
-                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
-                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">តាមរយៈ / Source</p>
-                                <p className="text-sm font-black text-slate-900">{alertHighlightRecord.source || '—'}</p>
-                                <p className="text-xs text-slate-500 font-semibold">{alertHighlightRecord.brand || '—'}</p>
-                            </div>
-                            {/* Amount */}
-                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
-                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">ចំនួនស្នើ</p>
-                                <p className="text-base font-black text-emerald-700">${Number(alertHighlightRecord.requestedAmount || 0).toLocaleString()}</p>
-                                <p className="text-xs text-slate-500">{alertHighlightRecord.collateralType || '—'}</p>
-                            </div>
-                            {/* Model */}
-                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
-                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">ម៉ូឌែល / Model</p>
-                                <p className="text-sm font-black text-slate-900">{alertHighlightRecord.model || '—'}</p>
-                                <p className="text-xs text-slate-500">{alertHighlightRecord.valuationRange || '—'}</p>
-                            </div>
-                            {/* Responder */}
-                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
-                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">អ្នកឆ្លើយតប</p>
-                                <p className="text-sm font-black text-slate-900">{alertHighlightRecord.responder || '—'}</p>
-                                <p className="text-xs text-slate-500 font-mono">{alertHighlightRecord.date ? alertHighlightRecord.date.split('T')[0] : '—'}</p>
-                            </div>
-                            {/* Status */}
-                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
-                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">ស្ថានភាព / Status</p>
-                                <span className="inline-block px-3 py-1 rounded-full text-xs font-black bg-amber-100 border border-amber-300 text-amber-800">
-                                    {alertHighlightRecord.status || '—'}
-                                </span>
-                                {alertHighlightRecord.reason && (
-                                    <p className="text-xs text-slate-500 mt-1">{alertHighlightRecord.reason}</p>
-                                )}
-                            </div>
-                            {/* Notes */}
-                            {alertHighlightRecord.notes && (
-                                <div className="bg-white rounded-xl border border-indigo-200 p-4 col-span-full shadow-xs">
-                                    <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">កំណត់សម្គាល់ / Notes</p>
-                                    <p className="text-xs text-slate-700 font-medium leading-relaxed">{alertHighlightRecord.notes}</p>
-                                </div>
-                            )}
-                            {/* Images */}
-                            {Array.isArray(alertHighlightRecord.images) && alertHighlightRecord.images.length > 0 && (
-                                <div className="bg-white rounded-xl border border-indigo-200 p-4 col-span-full shadow-xs">
-                                    <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">រូបភាព ({alertHighlightRecord.images.length})</p>
-                                    <div className="flex gap-2 flex-wrap">
-                                        {alertHighlightRecord.images.map((img, i) => (
-                                            <img
-                                                key={i}
-                                                src={img}
-                                                alt={`img-${i}`}
-                                                className="w-20 h-20 object-cover rounded-lg border border-indigo-200 cursor-pointer hover:scale-105 transition-transform shadow-sm"
-                                                onClick={() => handleOpenImageViewer(alertHighlightRecord.images, i)}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {/* Edit button */}
-                            {hasPermission('/follow-up/follow-up-2', 'edit') && (
-                                <div className="col-span-full flex justify-end">
-                                    <button
-                                        onClick={() => handleOpenEdit(alertHighlightRecord)}
-                                        className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md transition-all cursor-pointer active:scale-95"
-                                    >
-                                        <FaEdit size={13} /> កែប្រែ Record នេះ
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="p-8 text-center text-indigo-400 font-bold text-sm animate-pulse">
-                            ⏳ កំពុងទាញ record...
-                        </div>
-                    )}
-                </div>
-            )}
-
             {/* Header / Title Area */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[var(--app-card,#ffffff)] p-5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs">
                 <div className="flex items-center gap-3">
@@ -1197,11 +1093,6 @@ const FollowUp2 = () => {
                                                                             alt="Collateral"
                                                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
                                                                         />
-                                                                        {imgList.length > 1 && (
-                                                                            <span className="absolute bottom-0 right-0 bg-indigo-600 text-white text-[9px] font-bold px-1">
-                                                                                +{imgList.length - 1}
-                                                                            </span>
-                                                                        )}
                                                                     </div>
                                                                     <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
                                                                         {imgList.length} រូប
