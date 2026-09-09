@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import {
@@ -25,6 +26,11 @@ const FollowUp2 = () => {
     const { t } = useLanguage();
     const { API_BASE1, API_BASE2, user, hasPermission } = useAuth();
     const API_BASE = API_BASE1 || API_BASE2 || '/api';
+    const [searchParams] = useSearchParams();
+
+    // Alert highlight: when navigated from Alert drawer with ?alertId=xxx
+    const [alertHighlightId] = useState(() => searchParams.get('alertId') || '');
+    const [alertHighlightRecord, setAlertHighlightRecord] = useState(null);
 
     const [dataList, setDataList] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -73,6 +79,10 @@ const FollowUp2 = () => {
     });
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImages, setUploadingImages] = useState(false);
+
+    // Duplicate detection popup state
+    const [duplicateData, setDuplicateData] = useState(null); // existing record from server
+    const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
 
     // Lightbox / Image Viewer Modal
     const [previewImages, setPreviewImages] = useState([]);
@@ -189,6 +199,23 @@ const FollowUp2 = () => {
     useEffect(() => {
         fetchData(page);
     }, [fetchData, page]);
+
+    // When navigated from Alert with ?alertId=xxx → fetch & highlight that specific record
+    useEffect(() => {
+        if (!alertHighlightId) return;
+        const fetchAlertRecord = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/follow-up-2/${alertHighlightId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setAlertHighlightRecord(data);
+                }
+            } catch (err) {
+                console.error('Fetch alert record error:', err);
+            }
+        };
+        fetchAlertRecord();
+    }, [alertHighlightId, API_BASE]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
@@ -334,6 +361,43 @@ const FollowUp2 = () => {
         return finalUrls;
     };
 
+
+    // Auto-fill form from existing duplicate record
+    const handleAutoFillFromDuplicate = () => {
+        if (!duplicateData) return;
+        const existingImgs = Array.isArray(duplicateData.images)
+            ? duplicateData.images
+            : duplicateData.images ? [duplicateData.images] : [];
+
+        // Auto-fill image URLs (no re-upload needed)
+        setSelectedImages(existingImgs.map(url => ({
+            id: url,
+            type: 'url',
+            preview: url,
+            url
+        })));
+
+        setFormData(prev => ({
+            ...prev,
+            customerName: duplicateData.customerName || prev.customerName,
+            source: duplicateData.source || prev.source,
+            phone: duplicateData.phone || prev.phone,
+            requestedAmount: duplicateData.requestedAmount !== undefined ? duplicateData.requestedAmount : prev.requestedAmount,
+            collateralType: duplicateData.collateralType || prev.collateralType,
+            model: duplicateData.model || prev.model,
+            responder: duplicateData.responder || prev.responder,
+            valuationRange: duplicateData.valuationRange || prev.valuationRange,
+            status: duplicateData.status || prev.status,
+            reason: duplicateData.reason || prev.reason,
+            notes: duplicateData.notes || prev.notes,
+            brand: duplicateData.brand || prev.brand,
+            images: existingImgs
+        }));
+
+        setIsDuplicateModalOpen(false);
+        setDuplicateData(null);
+    };
+
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (!formData.customerName.trim()) {
@@ -374,7 +438,16 @@ const FollowUp2 = () => {
                 fetchData(page);
             } else {
                 const errData = await res.json().catch(() => ({}));
-                alert(errData.message || 'Error saving follow-up 2 record');
+                // ✅ Detect duplicate — server returns existing record
+                if (
+                    (res.status === 409 || errData.duplicate || errData.existing) &&
+                    (errData.existingRecord || errData.data)
+                ) {
+                    setDuplicateData(errData.existingRecord || errData.data);
+                    setIsDuplicateModalOpen(true);
+                } else {
+                    alert(errData.message || 'Error saving follow-up 2 record');
+                }
             }
         } catch (err) {
             console.error('Save follow up 2 error:', err);
@@ -384,6 +457,7 @@ const FollowUp2 = () => {
             setUploadingImages(false);
         }
     };
+
 
     const handleDelete = async (item) => {
         if (!window.confirm(`Are you sure you want to delete entry for customer: ${item.customerName}?`)) {
@@ -672,13 +746,119 @@ const FollowUp2 = () => {
         }
     };
 
+
     return (
         <div className="p-4 md:p-6 space-y-6 max-w-full overflow-x-hidden">
+
+            {/* ── Alert Highlight Panel (ពេល navigate ពី Alert drawer) ── */}
+            {alertHighlightId && (
+                <div className="rounded-xl border-2 border-indigo-400 bg-indigo-50 shadow-lg overflow-hidden">
+                    {/* Banner */}
+                    <div className="flex items-center justify-between px-5 py-3 bg-indigo-600 text-white">
+                        <div className="flex items-center gap-2 text-sm font-black">
+                            <MdOutlineRateReview size={18} />
+                            <span>🔔 Alert Follow-up 2 Review — ព័ត៌មានលម្អិត</span>
+                        </div>
+                        <button
+                            onClick={() => window.history.replaceState({}, '', '/follow-up/follow-up-2')}
+                            className="text-white/80 hover:text-white text-xs font-bold px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 transition-all cursor-pointer"
+                        >
+                            ✕ បិទ Alert
+                        </button>
+                    </div>
+
+                    {alertHighlightRecord ? (
+                        <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {/* Customer */}
+                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
+                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">អតិថិជន</p>
+                                <p className="text-base font-black text-slate-900">{alertHighlightRecord.customerName || '—'}</p>
+                                <p className="text-xs font-mono text-indigo-600 font-bold">{alertHighlightRecord.phone || '—'}</p>
+                            </div>
+                            {/* Source */}
+                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
+                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">តាមរយៈ / Source</p>
+                                <p className="text-sm font-black text-slate-900">{alertHighlightRecord.source || '—'}</p>
+                                <p className="text-xs text-slate-500 font-semibold">{alertHighlightRecord.brand || '—'}</p>
+                            </div>
+                            {/* Amount */}
+                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
+                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">ចំនួនស្នើ</p>
+                                <p className="text-base font-black text-emerald-700">${Number(alertHighlightRecord.requestedAmount || 0).toLocaleString()}</p>
+                                <p className="text-xs text-slate-500">{alertHighlightRecord.collateralType || '—'}</p>
+                            </div>
+                            {/* Model */}
+                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
+                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">ម៉ូឌែល / Model</p>
+                                <p className="text-sm font-black text-slate-900">{alertHighlightRecord.model || '—'}</p>
+                                <p className="text-xs text-slate-500">{alertHighlightRecord.valuationRange || '—'}</p>
+                            </div>
+                            {/* Responder */}
+                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
+                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">អ្នកឆ្លើយតប</p>
+                                <p className="text-sm font-black text-slate-900">{alertHighlightRecord.responder || '—'}</p>
+                                <p className="text-xs text-slate-500 font-mono">{alertHighlightRecord.date ? alertHighlightRecord.date.split('T')[0] : '—'}</p>
+                            </div>
+                            {/* Status */}
+                            <div className="bg-white rounded-xl border border-indigo-200 p-4 space-y-1 shadow-xs">
+                                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">ស្ថានភាព / Status</p>
+                                <span className="inline-block px-3 py-1 rounded-full text-xs font-black bg-amber-100 border border-amber-300 text-amber-800">
+                                    {alertHighlightRecord.status || '—'}
+                                </span>
+                                {alertHighlightRecord.reason && (
+                                    <p className="text-xs text-slate-500 mt-1">{alertHighlightRecord.reason}</p>
+                                )}
+                            </div>
+                            {/* Notes */}
+                            {alertHighlightRecord.notes && (
+                                <div className="bg-white rounded-xl border border-indigo-200 p-4 col-span-full shadow-xs">
+                                    <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">កំណត់សម្គាល់ / Notes</p>
+                                    <p className="text-xs text-slate-700 font-medium leading-relaxed">{alertHighlightRecord.notes}</p>
+                                </div>
+                            )}
+                            {/* Images */}
+                            {Array.isArray(alertHighlightRecord.images) && alertHighlightRecord.images.length > 0 && (
+                                <div className="bg-white rounded-xl border border-indigo-200 p-4 col-span-full shadow-xs">
+                                    <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">រូបភាព ({alertHighlightRecord.images.length})</p>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {alertHighlightRecord.images.map((img, i) => (
+                                            <img
+                                                key={i}
+                                                src={img}
+                                                alt={`img-${i}`}
+                                                className="w-20 h-20 object-cover rounded-lg border border-indigo-200 cursor-pointer hover:scale-105 transition-transform shadow-sm"
+                                                onClick={() => handleOpenImageViewer(alertHighlightRecord.images, i)}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {/* Edit button */}
+                            {hasPermission('/follow-up/follow-up-2', 'edit') && (
+                                <div className="col-span-full flex justify-end">
+                                    <button
+                                        onClick={() => handleOpenEdit(alertHighlightRecord)}
+                                        className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md transition-all cursor-pointer active:scale-95"
+                                    >
+                                        <FaEdit size={13} /> កែប្រែ Record នេះ
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="p-8 text-center text-indigo-400 font-bold text-sm animate-pulse">
+                            ⏳ កំពុងទាញ record...
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Header / Title Area */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[var(--app-card,#ffffff)] p-5 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-500/20">
                         <FaUserTie size={28} />
+
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
@@ -1751,6 +1931,96 @@ const FollowUp2 = () => {
                                         <span>ទាញយករបាយការណ៍ ({exportFormat.toUpperCase()})</span>
                                     </>
                                 )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Duplicate Detection Modal */}
+            {isDuplicateModalOpen && duplicateData && (
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl border border-amber-400/50 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="flex items-center gap-3 px-5 py-4 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-700">
+                            <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center text-amber-600 text-lg flex-shrink-0">
+                                ⚠️
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">រកឃើញទិន្នន័យដែលបានរក្សាទុករួចហើយ!</h3>
+                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Found existing record with similar data</p>
+                            </div>
+                        </div>
+
+                        {/* Body — show existing record summary */}
+                        <div className="px-5 py-4 space-y-3">
+                            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                                ទិន្នន័យខាងក្រោមត្រូវបានរក្សាទុករួចហើយ។ តើអ្នកចង់បញ្ចូលអូតូពីទិន្នន័យនេះ?
+                            </p>
+                            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-200 dark:divide-slate-700 text-xs">
+                                {duplicateData.customerName && (
+                                    <div className="flex justify-between px-3 py-2">
+                                        <span className="text-slate-500 font-medium">ឈ្មោះ</span>
+                                        <span className="font-bold text-slate-800 dark:text-slate-200">{duplicateData.customerName}</span>
+                                    </div>
+                                )}
+                                {duplicateData.phone && (
+                                    <div className="flex justify-between px-3 py-2">
+                                        <span className="text-slate-500 font-medium">ទូរស័ព្ទ</span>
+                                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{duplicateData.phone}</span>
+                                    </div>
+                                )}
+                                {duplicateData.model && (
+                                    <div className="flex justify-between px-3 py-2">
+                                        <span className="text-slate-500 font-medium">Model</span>
+                                        <span className="font-bold text-slate-800 dark:text-slate-200">{duplicateData.model}</span>
+                                    </div>
+                                )}
+                                {duplicateData.date && (
+                                    <div className="flex justify-between px-3 py-2">
+                                        <span className="text-slate-500 font-medium">កាលបរិច្ឆេទ</span>
+                                        <span className="font-mono text-slate-700 dark:text-slate-300">{String(duplicateData.date).split('T')[0]}</span>
+                                    </div>
+                                )}
+                                {duplicateData.status && (
+                                    <div className="flex justify-between px-3 py-2">
+                                        <span className="text-slate-500 font-medium">ស្ថានភាព</span>
+                                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{duplicateData.status}</span>
+                                    </div>
+                                )}
+                                {/* Image preview if exists */}
+                                {Array.isArray(duplicateData.images) && duplicateData.images.length > 0 && (
+                                    <div className="flex items-center justify-between px-3 py-2">
+                                        <span className="text-slate-500 font-medium">រូបភាព</span>
+                                        <div className="flex gap-1">
+                                            {duplicateData.images.slice(0, 3).map((img, i) => (
+                                                <img key={i} src={img} alt="" className="w-8 h-8 rounded object-cover border border-slate-300" />
+                                            ))}
+                                            {duplicateData.images.length > 3 && (
+                                                <span className="w-8 h-8 rounded bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-500">+{duplicateData.images.length - 3}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
+                                ចុច <strong>"បញ្ចូលអូតូ"</strong> ដើម្បីបំពេញ form ដោយស្វ័យប្រវត្តិ (រូបភាពនឹងបញ្ចូលជា URL ដោយមិនបាច់ upload ម្ដងទៀត)
+                            </p>
+                        </div>
+
+                        {/* Footer Buttons */}
+                        <div className="flex gap-2 px-5 pb-5">
+                            <button
+                                onClick={() => { setIsDuplicateModalOpen(false); setDuplicateData(null); }}
+                                className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                            >
+                                បោះបង់
+                            </button>
+                            <button
+                                onClick={handleAutoFillFromDuplicate}
+                                className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
+                            >
+                                បញ្ចូលអូតូ
                             </button>
                         </div>
                     </div>

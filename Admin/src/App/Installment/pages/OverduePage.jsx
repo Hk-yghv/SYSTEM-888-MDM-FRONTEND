@@ -323,13 +323,13 @@ const OverduePage = () => {
                     {!loading && overdueContracts.length > 0 && (
                         <tfoot className='border-t-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50/40'>
                             <tr>
-                                <td colSpan={7} className='px-4 py-3 text-center text-xs font-extrabold text-red-700 uppercase tracking-wide'>Total Overdue ({overdueContracts.length} records)</td>
+                                <td colSpan={7} />
                                 <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-700 text-sm border-l border-red-100'>${totals.loanAmount.toLocaleString()}</td>
                                 <td className='px-4 py-3 text-right font-mono font-extrabold text-amber-600 text-sm'>${totals.penalty.toLocaleString()}</td>
                                 <td className='px-4 py-3 text-right font-mono font-extrabold text-sky-700 text-sm'>${totals.scheduled.toLocaleString()}</td>
                                 <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-600 text-sm'>${totals.total.toLocaleString()}</td>
                                 <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-700 text-sm'>${totals.paid.toLocaleString()}</td>
-                                <td colSpan={3} />
+                                <td colSpan={3} className='px-4 py-3 text-center text-xs font-extrabold text-red-700 uppercase tracking-wide'>Total Overdue ({overdueContracts.length} records)</td>
                             </tr>
                         </tfoot>
                     )}

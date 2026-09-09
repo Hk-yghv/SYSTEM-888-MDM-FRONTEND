@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaBell, FaTimes, FaPhone, FaExclamationTriangle, FaCalendarCheck, FaSync, FaSearch, FaLock, FaUnlock, FaShieldAlt, FaCheckDouble, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaBell, FaTimes, FaPhone, FaExclamationTriangle, FaCalendarCheck, FaSync, FaSearch, FaLock, FaUnlock, FaShieldAlt, FaCheckDouble, FaExternalLinkAlt, FaComments } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import CopyCell from './CopyCell';
@@ -16,6 +16,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     const [overdue3DaysList, setOverdue3DaysList] = useState([]);
     const [overdue7DaysList, setOverdue7DaysList] = useState([]);
     const [overdueList, setOverdueList] = useState([]);
+    const [followUp2ReviewList, setFollowUp2ReviewList] = useState([]); // FollowUp2 Review alerts
     const [summary, setSummary] = useState({ dueTodayCount: 0, dueIn3DaysCount: 0, overdue3DaysCount: 0, overdue7DaysCount: 0, overdueCount: 0, totalAlerts: 0 });
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -34,8 +35,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         return String(stableId).trim();
     };
 
-    const updateUnreadCount = useCallback((dueList, dueIn3DaysList, overdue3DaysList, overdue7DaysList, overdueList, seenKeys) => {
-        const allItems = [...dueList, ...dueIn3DaysList, ...overdue3DaysList, ...overdue7DaysList, ...overdueList];
+    const updateUnreadCount = useCallback((dueList, dueIn3DaysList, overdue3DaysList, overdue7DaysList, overdueList, fu2ReviewList, seenKeys) => {
+        const allItems = [...dueList, ...dueIn3DaysList, ...overdue3DaysList, ...overdue7DaysList, ...overdueList, ...fu2ReviewList];
         const unreadItems = allItems.filter(item => !seenKeys.has(getItemKey(item)));
         if (setAlertCount) {
             setAlertCount(unreadItems.length);
@@ -53,6 +54,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
             });
 
             const baseUrl = API_BASE1 || API_BASE;
+
+            // Fetch payment alerts
             const res = await fetch(`${baseUrl}/contracts/payment-alerts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
@@ -89,7 +92,42 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     setActiveTab('overdue7Days');
                 }
 
-                updateUnreadCount(dueList, due3List, overdue3List, overdue7List, ovList, seenAlertKeys);
+                // ── Fetch FollowUp2 Review alerts (only yesterday's records) ──
+                try {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    const yesterdayStr = yesterday.toISOString().split('T')[0];
+                    const fu2Params = new URLSearchParams({
+                        userBrand: user?.brand || '',
+                        userRole: user?.role || '',
+                        username: user?.username || '',
+                        isImmutable: user?.isImmutable ? 'true' : 'false',
+                        status: 'Review',
+                        startDate: yesterdayStr,
+                        endDate: yesterdayStr,
+                        page: 1,
+                        limit: 200
+                    });
+                    const fu2Res = await fetch(`${baseUrl}/follow-up-2?${fu2Params.toString()}`);
+                    if (fu2Res.ok) {
+                        const fu2Data = await fu2Res.json();
+                        const reviewList = (fu2Data.data || []).filter(item =>
+                            item.status === 'Review' ||
+                            item.status === 'review' ||
+                            item.status === 'ពិនិត្យ' ||
+                            item.status === 'កំពុងពិនិត្យ'
+                        );
+                        setFollowUp2ReviewList(reviewList);
+                        if (reviewList.length > 0 && ovList.length === 0 && dueList.length === 0) {
+                            setActiveTab('followUp2Review');
+                        }
+                        updateUnreadCount(dueList, due3List, overdue3List, overdue7List, ovList, reviewList, seenAlertKeys);
+                    } else {
+                        updateUnreadCount(dueList, due3List, overdue3List, overdue7List, ovList, [], seenAlertKeys);
+                    }
+                } catch {
+                    updateUnreadCount(dueList, due3List, overdue3List, overdue7List, ovList, [], seenAlertKeys);
+                }
             }
         } catch (err) {
             console.error('Fetch payment alerts error:', err);
@@ -109,7 +147,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     }, [isOpen]);
 
     const handleMarkAllAsRead = () => {
-        const allItems = [...dueTodayList, ...dueIn3DaysList, ...overdue3DaysList, ...overdue7DaysList, ...overdueList];
+        const allItems = [...dueTodayList, ...dueIn3DaysList, ...overdue3DaysList, ...overdue7DaysList, ...overdueList, ...followUp2ReviewList];
         const newSeen = new Set(seenAlertKeys);
         allItems.forEach(item => newSeen.add(getItemKey(item)));
         setSeenAlertKeys(newSeen);
@@ -130,7 +168,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         try {
             localStorage.setItem(storageKey, JSON.stringify(Array.from(newSeen)));
         } catch { }
-        updateUnreadCount(dueTodayList, dueIn3DaysList, overdue3DaysList, overdue7DaysList, overdueList, newSeen);
+        updateUnreadCount(dueTodayList, dueIn3DaysList, overdue3DaysList, overdue7DaysList, overdueList, followUp2ReviewList, newSeen);
     };
 
     if (!isOpen) return null;
@@ -157,6 +195,21 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         navigate(target);
     };
 
+    // Navigate to FollowUp2 page and show specific record by id
+    const handleFollowUp2Navigation = (item) => {
+        handleMarkSingleAsRead(item);
+        onClose();
+        const recordId = item?._id || '';
+        const customerName = item?.customerName || '';
+        if (recordId) {
+            navigate(`/follow-up/follow-up-2?alertId=${encodeURIComponent(recordId)}`);
+        } else if (customerName) {
+            navigate(`/follow-up/follow-up-2?search=${encodeURIComponent(customerName)}`);
+        } else {
+            navigate('/follow-up/follow-up-2');
+        }
+    };
+
     const filterItems = (list) => {
         if (!searchTerm.trim()) return list;
         const q = searchTerm.toLowerCase();
@@ -176,12 +229,18 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     const filteredOverdue3DaysList = filterItems(overdue3DaysList);
     const filteredOverdue7DaysList = filterItems(overdue7DaysList);
     const filteredOverdueList = filterItems(overdueList);
+    const filteredFollowUp2ReviewList = filterItems(followUp2ReviewList.map(item => ({
+        ...item,
+        customerNameEn: item.customerName || '',
+        customerNameKh: item.customerName || ''
+    })));
 
     const unreadCountDue = dueTodayList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
     const unreadCountDueIn3Days = dueIn3DaysList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
     const unreadCountOverdue3Days = overdue3DaysList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
     const unreadCountOverdue7Days = overdue7DaysList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
     const unreadCountOverdue = overdueList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
+    const unreadCountFollowUp2Review = followUp2ReviewList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
 
     return (
         <div className="fixed inset-0 z-[999] flex justify-end bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 select-none">
@@ -310,6 +369,25 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                 </span>
                             )}
                         </button>
+
+                        {/* Follow-up 2 Review Tab */}
+                        {followUp2ReviewList.length > 0 && (
+                            <button
+                                onClick={() => setActiveTab('followUp2Review')}
+                                className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'followUp2Review'
+                                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-md shadow-indigo-600/25'
+                                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
+                                    }`}
+                            >
+                                <FaComments className={activeTab === 'followUp2Review' ? 'text-white' : 'text-indigo-600'} />
+                                <span>Follow-up 2 Review ({followUp2ReviewList.length})</span>
+                                {unreadCountFollowUp2Review > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-pulse shadow-xs">
+                                        {unreadCountFollowUp2Review} NEW
+                                    </span>
+                                )}
+                            </button>
+                        )}
                     </div>
 
                     {/* Search box */}
@@ -802,11 +880,111 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             )}
                         </div>
                     )}
+
+                    {/* ── Follow-up 2 Review Tab ──────────────────────────────── */}
+                    {activeTab === 'followUp2Review' && (
+                        <div>
+                            <div className="mb-3 flex items-center justify-between">
+                                <h3 className="text-xs font-black text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <FaComments className="text-indigo-600" /> Follow-up 2 Review — ម្សិលមិញ ({filteredFollowUp2ReviewList.length})
+                                </h3>
+                                <span className="text-[11px] text-slate-500 font-bold bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                                    ត្រូវ Review ថ្ងៃនេះ
+                                </span>
+                            </div>
+
+                            {filteredFollowUp2ReviewList.length === 0 ? (
+                                <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
+                                    <FaComments className="text-3xl text-indigo-300 mx-auto mb-2" />
+                                    <p className="text-slate-500 text-xs font-bold">មិនមាន Follow-up 2 ដែលត្រូវ Review</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-md">
+                                    <table className="w-full text-left text-xs border-collapse">
+                                        <thead className="bg-indigo-50 text-indigo-900 border-b border-indigo-200 font-black uppercase tracking-wider text-[11px]">
+                                            <tr>
+                                                <th className="px-3.5 py-3.5 text-center">ល.រ</th>
+                                                <th className="px-3.5 py-3.5 text-center">ស្ថានភាព</th>
+                                                <th className="px-3.5 py-3.5">ឈ្មោះអតិថិជន</th>
+                                                <th className="px-3.5 py-3.5">ទូរស័ព្ទ</th>
+                                                <th className="px-3.5 py-3.5">Source</th>
+                                                <th className="px-3.5 py-3.5">Model / ប្រភេទ</th>
+                                                <th className="px-3.5 py-3.5 text-center">ថ្ងៃ</th>
+                                                <th className="px-3.5 py-3.5">Brand</th>
+                                                <th className="px-3.5 py-3.5">ចូលទំព័រ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200 font-semibold">
+                                            {filteredFollowUp2ReviewList.map((item, idx) => {
+                                                const isUnread = !seenAlertKeys.has(getItemKey(item));
+                                                return (
+                                                    <tr
+                                                        key={item._id || idx}
+                                                        onClick={() => handleMarkSingleAsRead(item)}
+                                                        className={`transition-colors cursor-pointer ${isUnread ? 'bg-indigo-50/60 hover:bg-indigo-100/60' : 'hover:bg-slate-50'}`}
+                                                    >
+                                                        <td className="px-3.5 py-3 text-center font-bold text-slate-700">{idx + 1}</td>
+                                                        <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                                                            {isUnread ? (
+                                                                <span className="px-2.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-black shadow-xs animate-pulse border border-indigo-500">
+                                                                    NEW
+                                                                </span>
+                                                            ) : (
+                                                                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-300 text-[10px] font-bold">
+                                                                    {t('seenBadge')}
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3.5 py-3 font-black text-slate-900 whitespace-nowrap">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleFollowUp2Navigation(item); }}
+                                                                className="flex items-center gap-1.5 text-left hover:text-indigo-600 transition-colors cursor-pointer group"
+                                                                title="ចូលទៅ Follow-up 2"
+                                                            >
+                                                                <span>{item.customerName || '—'}</span>
+                                                                <FaExternalLinkAlt className="text-[9px] text-indigo-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
+                                                            </button>
+                                                        </td>
+                                                        <td className="px-3.5 py-3 whitespace-nowrap font-mono text-indigo-700 font-bold">
+                                                            {item.phone ? (
+                                                                <CopyCell text={item.phone} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
+                                                            ) : '—'}
+                                                        </td>
+                                                        <td className="px-3.5 py-3 whitespace-nowrap text-slate-700">{item.source || '—'}</td>
+                                                        <td className="px-3.5 py-3 whitespace-nowrap">
+                                                            <div className="text-slate-900 font-black">{item.model || '—'}</div>
+                                                            <div className="text-[11px] text-slate-500">{item.collateralType || ''}</div>
+                                                        </td>
+                                                        <td className="px-3.5 py-3 text-center whitespace-nowrap font-mono text-slate-700">
+                                                            {item.date ? String(item.date).split('T')[0] : '—'}
+                                                        </td>
+                                                        <td className="px-3.5 py-3 whitespace-nowrap">
+                                                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-300 font-bold text-[10px]">
+                                                                {item.brand || '—'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-3.5 py-3 text-center">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleFollowUp2Navigation(item); }}
+                                                                className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-1 transition-colors shadow-xs text-[11px] cursor-pointer"
+                                                            >
+                                                                <FaExternalLinkAlt className="text-[9px]" /> ចូលទំព័រ
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer (Clean Light Panel) */}
                 <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 font-bold shadow-xs">
-                    <span>{t('paymentDueAlerts')}: <strong className="text-slate-900">{summary.totalAlerts}</strong> ({unreadCountDue + unreadCountDueIn3Days + unreadCountOverdue3Days + unreadCountOverdue7Days + unreadCountOverdue} {t('newBadge')})</span>
+                    <span>{t('paymentDueAlerts')}: <strong className="text-slate-900">{summary.totalAlerts}</strong> ({unreadCountDue + unreadCountDueIn3Days + unreadCountOverdue3Days + unreadCountOverdue7Days + unreadCountOverdue + unreadCountFollowUp2Review} {t('newBadge')})</span>
                     <button
                         onClick={onClose}
                         className="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition-colors border border-slate-300"

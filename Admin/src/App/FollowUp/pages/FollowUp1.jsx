@@ -973,20 +973,22 @@ const FollowUp1 = () => {
                                 />
                             </div>
 
-                            {/* Row 1: Message សរុប, បានស្នើរ, មិនឆ្លើយតប */}
-                            <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                    <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 mb-1">
-                                        Message សរុប
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={formData.totalMessages}
-                                        onChange={(e) => handleNumericChange('totalMessages', e.target.value)}
-                                        className="w-full px-3 py-2 bg-blue-500/5 border border-blue-500/30 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                                    />
-                                </div>
+                            {/* Message សរុប - directly below Message សាកសួរ */}
+                            <div>
+                                <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 mb-1">
+                                    Message សរុប
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={formData.totalMessages}
+                                    onChange={(e) => handleNumericChange('totalMessages', e.target.value)}
+                                    className="w-full px-3 py-2 bg-blue-500/5 border border-blue-500/30 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                />
+                            </div>
+
+                            {/* Row 1: បានស្នើរ, មិនឆ្លើយតប */}
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">
                                         បានស្នើរ

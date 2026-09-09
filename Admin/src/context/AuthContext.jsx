@@ -74,11 +74,11 @@ export const AuthProvider = ({ children }) => {
         };
     }, [user?.username, token]);
 
-    // ── 30-Minute Inactivity Auto Logout
+    // ── 15 Minute Inactivity Auto Logout
     useEffect(() => {
         if (!user || !token) return;
 
-        const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in ms
+        const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes in ms
 
         const resetActivity = () => {
             lastActivityRef.current = Date.now();

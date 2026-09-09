@@ -123,15 +123,28 @@ router.get('/phonelogs', async (req, res) => {
 // GET Device Action History
 router.get('/history/device-actions', async (req, res) => {
     try {
-        const { userBrand, userRole, username, isImmutable, page = 1, limit = 10 } = req.query;
+        const { userBrand, userRole, username, isImmutable, page = 1, limit = 10, status, actionType, search } = req.query;
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
         const skip = (parseInt(page) - 1) * parseInt(limit);
         let filter = {};
+
         if (userBrand && !isMasterAdmin) {
             const matchedContracts = isMongoConnected
                 ? await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'))
                 : MEM_DB.contracts.filter(c => c.brand === userBrand);
             filter.contractId = { $in: matchedContracts.map(c => c.contractId) };
+        }
+
+        // Apply status / actionType filters
+        if (status) filter.status = status;
+        if (actionType) filter.actionType = actionType;
+        if (search) {
+            filter.$or = [
+                { customerName: { $regex: search, $options: 'i' } },
+                { model: { $regex: search, $options: 'i' } },
+                { serialNumber: { $regex: search, $options: 'i' } },
+                { contractId: { $regex: search, $options: 'i' } }
+            ];
         }
 
         if (isMongoConnected) {
@@ -141,10 +154,22 @@ router.get('/history/device-actions', async (req, res) => {
             return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
 
+        // MEM_DB fallback with filters
         let filtered = MEM_DB.deviceActionLogs || [];
         if (userBrand && !isMasterAdmin) {
             const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
             filtered = filtered.filter(l => contractIds.includes(l.contractId));
+        }
+        if (status) filtered = filtered.filter(l => l.status === status);
+        if (actionType) filtered = filtered.filter(l => l.actionType === actionType);
+        if (search) {
+            const s = search.toLowerCase();
+            filtered = filtered.filter(l =>
+                (l.customerName && l.customerName.toLowerCase().includes(s)) ||
+                (l.model && l.model.toLowerCase().includes(s)) ||
+                (l.serialNumber && l.serialNumber.toLowerCase().includes(s)) ||
+                (l.contractId && l.contractId.toLowerCase().includes(s))
+            );
         }
         const total = filtered.length;
         const data = filtered.slice(skip, skip + parseInt(limit));
@@ -157,7 +182,7 @@ router.get('/history/device-actions', async (req, res) => {
 // POST Device Action History
 router.post('/history/device-actions', async (req, res) => {
     try {
-        const { contractId, actionType, performedBy, reason } = req.body;
+        const { contractId, actionType, performedBy, reason, status: reqStatus } = req.body;
         let contract = null;
         if (isMongoConnected) {
             const results = await queryAllDBs(Contract, (M) => M.find({ contractId }));
@@ -169,18 +194,18 @@ router.post('/history/device-actions', async (req, res) => {
 
         const now = new Date();
         const actionLog = {
-            actionId: 'ACT-' + Date.now(),
+            logId: 'ACT-' + Date.now(),
             contractId: contract.contractId,
             customerName: `${contract.customerNameEn} (${contract.customerNameKh || ''})`,
             model: contract.model,
             serialNumber: contract.serialNumber,
             brand: contract.brand || '',
             actionType,
-            status: 'Success',
+            status: reqStatus || 'Pending',
             performedBy: performedBy || 'Administrator',
             date: now.toISOString().split('T')[0],
             time: now.toLocaleTimeString(),
-            reason: reason || `${actionType} action executed successfully`
+            reason: reason || `${actionType} action requested`
         };
 
         if (isMongoConnected) {
@@ -194,6 +219,38 @@ router.post('/history/device-actions', async (req, res) => {
 
         res.status(201).json(actionLog);
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT Mark Device Action as Done (Success)
+router.put('/history/device-actions/:id/done', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (isMongoConnected) {
+            const DeviceActionLogWrite = getWriteModel(DeviceActionLog) || DeviceActionLog;
+            // Try by MongoDB _id first
+            let updated = null;
+            try {
+                updated = await DeviceActionLogWrite.findByIdAndUpdate(id, { status: 'Success' }, { new: true });
+            } catch (_) { /* not a valid ObjectId */ }
+            // Fallback: try by logId field
+            if (!updated) {
+                updated = await DeviceActionLogWrite.findOneAndUpdate({ logId: id }, { status: 'Success' }, { new: true });
+            }
+            if (!updated) return res.status(404).json({ error: 'Device action log not found' });
+            return res.json(updated);
+        }
+
+        // MEM_DB fallback
+        if (!MEM_DB.deviceActionLogs) MEM_DB.deviceActionLogs = [];
+        const idx = MEM_DB.deviceActionLogs.findIndex(l => l.logId === id || String(l._id) === id);
+        if (idx === -1) return res.status(404).json({ error: 'Device action log not found' });
+        MEM_DB.deviceActionLogs[idx].status = 'Success';
+        res.json(MEM_DB.deviceActionLogs[idx]);
+    } catch (err) {
+        console.error('Mark device action done error:', err);
         res.status(500).json({ error: err.message });
     }
 });

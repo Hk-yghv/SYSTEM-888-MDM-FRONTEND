@@ -226,6 +226,25 @@ router.post('/', async (req, res) => {
     }
 });
 
+// GET single follow up 2 record by _id or followUpId
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        let record = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(FollowUp2, (M) => M.findOne({ $or: [{ _id: id }, { followUpId: id }] }));
+            record = results[0] || null;
+        } else {
+            record = MEM_DB.followUps2.find(f => f._id === id || f.followUpId === id) || null;
+        }
+        if (!record) return res.status(404).json({ error: 'Follow up 2 record not found' });
+        res.json(record);
+    } catch (err) {
+        console.error('Get follow up 2 by id error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // UPDATE follow up 2 record
 router.put('/:id', async (req, res) => {
     try {
