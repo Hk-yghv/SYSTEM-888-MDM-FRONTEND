@@ -56,6 +56,7 @@ const SalaryPage = () => {
     // Form State
     const initialForm = {
         staffName: '',
+        joinDate: '',
         amount: '',
         date: new Date().toISOString().split('T')[0],
         category: 'Basic Salary',
@@ -150,6 +151,7 @@ const SalaryPage = () => {
         setEditingItem(null);
         setFormData({
             ...initialForm,
+            joinDate: '',
             brand: user?.brand || '',
             date: new Date().toISOString().split('T')[0]
         });
@@ -161,6 +163,7 @@ const SalaryPage = () => {
         setEditingItem(item);
         setFormData({
             staffName: item.staffName || '',
+            joinDate: item.joinDate || '',
             amount: item.amount || '',
             date: item.date ? item.date.split('T')[0] : new Date().toISOString().split('T')[0],
             category: item.category || 'Basic Salary',
@@ -313,6 +316,7 @@ const SalaryPage = () => {
             'No': idx + 1,
             'Date (កាលបរិច្ឆេទ)': item.date || '',
             'Staff Name (ឈ្មោះបុគ្គលិក)': item.staffName || '',
+            'Join Date (ថ្ងៃខែឆ្នាំចូលបម្រើការងារ)': item.joinDate || '',
             'Amount ($) (ចំនួនទឹកប្រាក់)': item.amount || 0,
             'Category (ប្រភេទ)': item.category || 'Basic Salary',
             'Payment Method (វិធីសាស្ត្រទូទាត់)': item.paymentMethod || 'ABA Bank',
@@ -328,6 +332,7 @@ const SalaryPage = () => {
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Date', accessor: 'date' },
             { header: 'Staff Name', accessor: 'staffName' },
+            { header: 'Join Date', accessor: 'joinDate' },
             { header: 'Amount ($)', cell: (r) => `$${Number(r.amount || 0).toLocaleString()}` },
             { header: 'Method', accessor: 'paymentMethod' },
             { header: 'Category', accessor: 'category' },
@@ -535,6 +540,7 @@ const SalaryPage = () => {
                             <th className="px-4 py-3 text-center">No</th>
                             <th className="px-4 py-3">កាលបរិច្ឆេទ (Date)</th>
                             <th className="px-4 py-3">ឈ្មោះបុគ្គលិក (Staff Name)</th>
+                            <th className="px-4 py-3">ថ្ងៃចូលបម្រើការងារ (Join Date)</th>
                             <th className="px-4 py-3 text-right">ចំនួនទឹកប្រាក់ (Amount)</th>
                             <th className="px-4 py-3 text-center">វិធីសាស្ត្រទូទាត់</th>
                             <th className="px-4 py-3">ប្រភេទ (Category)</th>
@@ -547,13 +553,13 @@ const SalaryPage = () => {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-[var(--app-text,#0f172a)]">
                         {loading ? (
                             <tr>
-                                <td colSpan={10} className="text-center py-10 text-slate-400 italic">
+                                <td colSpan={11} className="text-center py-10 text-slate-400 italic">
                                     កំពុងទាញយកទិន្នន័យប្រាក់ខែ...
                                 </td>
                             </tr>
                         ) : salaries.length === 0 ? (
                             <tr>
-                                <td colSpan={10} className="text-center py-12 text-slate-400 italic">
+                                <td colSpan={11} className="text-center py-12 text-slate-400 italic">
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <FaReceipt className="text-3xl opacity-30 text-slate-400" />
                                         <span>មិនមានទិន្នន័យប្រាក់ខែនៅឡើយទេ។ សូមចុចប៊ូតុង "បញ្ចូលប្រាក់ខែ" ដើម្បីបង្កើតថ្មី!</span>
@@ -571,6 +577,9 @@ const SalaryPage = () => {
                                     </td>
                                     <td className="px-4 py-3">
                                         <CopyCell text={item.staffName || '—'} className="font-bold text-[var(--app-text,#0f172a)]" />
+                                    </td>
+                                    <td className="px-4 py-3 font-mono text-slate-600 dark:text-slate-400">
+                                        {item.joinDate || '—'}
                                     </td>
                                     <td className="px-4 py-3 text-right font-mono font-black text-emerald-600 text-sm">
                                         ${Number(item.amount || 0).toLocaleString()}
@@ -717,6 +726,21 @@ const SalaryPage = () => {
                                     />
                                 </div>
 
+                                {/* Join Date (ថ្ងៃខែឆ្នាំចូលបម្រើការងារ) */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                        ថ្ងៃខែឆ្នាំចូលបម្រើការងារ (Join Date)
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={formData.joinDate || ''}
+                                        onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg font-mono text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
                                 {/* Category */}
                                 <div>
                                     <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -734,9 +758,7 @@ const SalaryPage = () => {
                                         <option value="Other">Other (ផ្សេងៗ)</option>
                                     </select>
                                 </div>
-                            </div>
 
-                            <div className="grid grid-cols-2 gap-3">
                                 {/* Payment Method */}
                                 <div>
                                     <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -755,20 +777,20 @@ const SalaryPage = () => {
                                         <option value="Other">Other</option>
                                     </select>
                                 </div>
+                            </div>
 
+                            <div>
                                 {/* Brand */}
-                                <div>
-                                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                        Brand / សាខា
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.brand}
-                                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                                        placeholder="e.g. MDM / ECloud"
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
-                                    />
-                                </div>
+                                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                    Brand / សាខា
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.brand}
+                                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                                    placeholder="e.g. MDM / ECloud"
+                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
+                                />
                             </div>
 
                             {/* Evidence / Proof Photo Upload */}

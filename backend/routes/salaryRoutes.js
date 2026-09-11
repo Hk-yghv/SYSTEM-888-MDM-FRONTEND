@@ -61,6 +61,7 @@ router.get('/', async (req, res) => {
                 if (search) {
                     const searchConditions = [
                         { staffName: { $regex: search, $options: 'i' } },
+                        { joinDate: { $regex: search, $options: 'i' } },
                         { note: { $regex: search, $options: 'i' } },
                         { category: { $regex: search, $options: 'i' } },
                         { paymentMethod: { $regex: search, $options: 'i' } },
@@ -98,6 +99,7 @@ router.get('/', async (req, res) => {
                 const s = search.toLowerCase();
                 list = list.filter(item =>
                     (item.staffName && item.staffName.toLowerCase().includes(s)) ||
+                    (item.joinDate && item.joinDate.toLowerCase().includes(s)) ||
                     (item.note && item.note.toLowerCase().includes(s)) ||
                     (item.category && item.category.toLowerCase().includes(s)) ||
                     (item.paymentMethod && item.paymentMethod.toLowerCase().includes(s)) ||
@@ -248,6 +250,7 @@ router.post('/', async (req, res) => {
     try {
         const {
             staffName = '',
+            joinDate = '',
             amount,
             date,
             proofPhoto = '',
@@ -272,6 +275,7 @@ router.post('/', async (req, res) => {
 
         const salaryData = {
             staffName: String(staffName).trim(),
+            joinDate: String(joinDate || '').trim(),
             amount: Number(amount),
             date: dateStr,
             month,
