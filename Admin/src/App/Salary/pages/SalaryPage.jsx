@@ -8,6 +8,7 @@ import {
     FaSync,
     FaDollarSign,
     FaCalendarCheck,
+    FaCalendarAlt,
     FaReceipt,
     FaEye,
     FaEdit,
@@ -17,12 +18,41 @@ import {
     FaFilter,
     FaCloudUploadAlt,
     FaUserTie,
-    FaMoneyBillWave
+    FaMoneyBillWave,
+    FaSave,
+    FaCheckCircle,
+    FaLock
 } from 'react-icons/fa';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import SalaryBarChart from '../../../components/SalaryBarChart';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
+
+const KHMER_DAYS = ['ថ្ងៃអាទិត្យ', 'ថ្ងៃចន្ទ', 'ថ្ងៃអង្គារ', 'ថ្ងៃពុធ', 'ថ្ងៃព្រហស្បតិ៍', 'ថ្ងៃសុក្រ', 'ថ្ងៃសៅរ៍'];
+const KHMER_MONTH_NAMES = [
+    'មករា (Jan)', 'កុម្ភៈ (Feb)', 'មីនា (Mar)', 'មេសា (Apr)', 'ឧសភា (May)', 'មិថុនា (Jun)',
+    'កក្កដា (Jul)', 'សីហា (Aug)', 'កញ្ញា (Sep)', 'តុលា (Oct)', 'វិច្ឆិកា (Nov)', 'ធ្នូ (Dec)'
+];
+
+const getKhmerDateDetails = (dateStr) => {
+    if (!dateStr) return { dayName: '—', day: '—', monthName: '—', month: '—', year: '—', formatted: 'មិនទាន់កំណត់' };
+    const parts = dateStr.split('-');
+    if (parts.length < 3) return { dayName: '—', day: '—', monthName: '—', month: '—', year: '—', formatted: dateStr };
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    const dateObj = new Date(y, m - 1, d);
+    const dayName = KHMER_DAYS[dateObj.getDay()] || 'ថ្ងៃ';
+    const monthName = KHMER_MONTH_NAMES[m - 1] ? KHMER_MONTH_NAMES[m - 1].split(' ')[0] : `ខែ ${m}`;
+    return {
+        dayName,
+        day: d,
+        monthName,
+        month: m,
+        year: y,
+        formatted: `${dayName} ទី ${d} ខែ${monthName} ឆ្នាំ ${y}`
+    };
+};
 
 const SalaryPage = () => {
     const { t } = useLanguage();
@@ -53,8 +83,65 @@ const SalaryPage = () => {
     const [photoUploading, setPhotoUploading] = useState(false);
     const [previewImage, setPreviewImage] = useState(null);
 
-    // Global Join Date (ថ្ងៃខែឆ្នាំចូលបម្រើការងារ - កំណត់នៅខាងលើគេជាមុន)
-    const [globalJoinDate, setGlobalJoinDate] = useState(() => localStorage.getItem('salary_global_join_date') || '');
+    // Global Saved Join Date (ថ្ងៃខែឆ្នាំចូលបម្រើការងារ - កំណត់នៅខាងលើគេ រួចចុច Save)
+    const [savedJoinDate, setSavedJoinDate] = useState(() => localStorage.getItem('salary_saved_join_date') || '');
+    const [tempDay, setTempDay] = useState(() => {
+        const saved = localStorage.getItem('salary_saved_join_date');
+        if (saved) {
+            const parts = saved.split('-');
+            if (parts[2]) return parseInt(parts[2], 10);
+        }
+        return new Date().getDate();
+    });
+    const [tempMonth, setTempMonth] = useState(() => {
+        const saved = localStorage.getItem('salary_saved_join_date');
+        if (saved) {
+            const parts = saved.split('-');
+            if (parts[1]) return parseInt(parts[1], 10);
+        }
+        return new Date().getMonth() + 1;
+    });
+    const [tempYear, setTempYear] = useState(() => {
+        const saved = localStorage.getItem('salary_saved_join_date');
+        if (saved) {
+            const parts = saved.split('-');
+            if (parts[0]) return parseInt(parts[0], 10);
+        }
+        return new Date().getFullYear();
+    });
+    const [isEditingDate, setIsEditingDate] = useState(() => !localStorage.getItem('salary_saved_join_date'));
+
+    const computeTempDateString = (y, m, d) => {
+        const yy = String(y);
+        const mm = String(m).padStart(2, '0');
+        const dd = String(d).padStart(2, '0');
+        return `${yy}-${mm}-${dd}`;
+    };
+
+    const handleSaveDate = () => {
+        const dateStr = computeTempDateString(tempYear, tempMonth, tempDay);
+        setSavedJoinDate(dateStr);
+        localStorage.setItem('salary_saved_join_date', dateStr);
+        setIsEditingDate(false);
+    };
+
+    const handleEditDate = () => {
+        if (savedJoinDate) {
+            const parts = savedJoinDate.split('-');
+            if (parts.length >= 3) {
+                setTempYear(parseInt(parts[0], 10));
+                setTempMonth(parseInt(parts[1], 10));
+                setTempDay(parseInt(parts[2], 10));
+            }
+        }
+        setIsEditingDate(true);
+    };
+
+    const handleClearDate = () => {
+        setSavedJoinDate('');
+        localStorage.removeItem('salary_saved_join_date');
+        setIsEditingDate(true);
+    };
 
     // Form State
     const initialForm = {
@@ -151,14 +238,14 @@ const SalaryPage = () => {
 
     // Open Create Modal
     const handleOpenCreate = () => {
-        if (!globalJoinDate) {
-            alert('សូមជ្រើសរើស "ថ្ងៃខែឆ្នាំចូលបម្រើការងារ" នៅប្រអប់ខាងលើគេជាមុនសិន ទើបអាចបង្កើតកំណត់ត្រាប្រាក់ខែបាន!');
+        if (!savedJoinDate) {
+            alert('សូមជ្រើសរើស និងចុច "រក្សាទុក (Save Date)" ថ្ងៃខែឆ្នាំចូលបម្រើការងារនៅខាងលើជាមុនសិន!');
             return;
         }
         setEditingItem(null);
         setFormData({
             ...initialForm,
-            joinDate: globalJoinDate,
+            joinDate: savedJoinDate,
             brand: user?.brand || '',
             date: new Date().toISOString().split('T')[0]
         });
@@ -170,7 +257,7 @@ const SalaryPage = () => {
         setEditingItem(item);
         setFormData({
             staffName: item.staffName || '',
-            joinDate: item.joinDate || globalJoinDate || '',
+            joinDate: item.joinDate || savedJoinDate || '',
             amount: item.amount || '',
             date: item.date ? item.date.split('T')[0] : new Date().toISOString().split('T')[0],
             category: item.category || 'Basic Salary',
@@ -256,7 +343,7 @@ const SalaryPage = () => {
         try {
             const payload = {
                 ...formData,
-                joinDate: formData.joinDate || globalJoinDate || '',
+                joinDate: formData.joinDate || savedJoinDate || '',
                 amount: Number(formData.amount),
                 createdBy: user?.username || 'Administrator'
             };
@@ -385,15 +472,10 @@ const SalaryPage = () => {
                             </button>
                         </>
                     )}
-                    {hasPermission('/salary', 'create') && (
+                    {hasPermission('/salary', 'create') && savedJoinDate && (
                         <button
                             onClick={handleOpenCreate}
-                            className={`flex items-center gap-2 px-4 py-2 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md transition-all active:scale-95 ${
-                                globalJoinDate
-                                    ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
-                                    : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 opacity-90'
-                            }`}
-                            title={!globalJoinDate ? 'សូមបញ្ចូលថ្ងៃខែឆ្នាំចូលបម្រើការងារនៅខាងលើជាមុនសិន' : 'បញ្ចូលប្រាក់ខែថ្មី'}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all active:scale-95 animate-in fade-in"
                         >
                             <FaPlus />
                             <span>បញ្ចូលប្រាក់ខែ (Create Salary)</span>
@@ -410,75 +492,182 @@ const SalaryPage = () => {
                 </div>
             </header>
 
-            {/* Top Global Join Date Setup Banner (ប្រអប់បញ្ចូលថ្ងៃខែឆ្នាំចូលបម្រើការងារនៅខាងលើគេ) */}
-            <div className="p-3.5 w-full border border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-r from-emerald-50/90 via-teal-50/70 to-emerald-50/90 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-teal-950/40 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-sm transition-all ${
-                        globalJoinDate
-                            ? 'bg-emerald-600 text-white shadow-emerald-600/30'
-                            : 'bg-rose-500 text-white shadow-rose-500/30 animate-pulse'
-                    }`}>
-                        <FaCalendarCheck />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                                ថ្ងៃខែឆ្នាំចូលបម្រើការងារ (Employment / Join Date) <span className="text-rose-500">*</span>
+            {/* Top Employment Date Configuration Card (តារាងកំណត់ថ្ងៃខែឆ្នាំចូលបម្រើការងារ) */}
+            {savedJoinDate && !isEditingDate ? (
+                /* Saved State Card */
+                <div className="p-4 w-full border border-emerald-300/80 dark:border-emerald-700/60 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-cyan-950/30 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex flex-col items-center justify-center shadow-lg shadow-emerald-600/30 shrink-0">
+                            <span className="text-[10px] uppercase font-bold tracking-wider opacity-90">
+                                {getKhmerDateDetails(savedJoinDate).dayName}
                             </span>
-                            {globalJoinDate ? (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-900/50 dark:text-emerald-300">
-                                    ✓ បានកំណត់រួចរាល់ (Ready to Create)
-                                </span>
-                            ) : (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300 dark:bg-rose-900/50 dark:text-rose-300 animate-pulse">
-                                    ⚠ តម្រូវឱ្យបំពេញកន្លែងនេះសិន ទើបអាច Create បាន
-                                </span>
-                            )}
+                            <span className="text-xl font-black font-mono leading-none mt-0.5">
+                                {getKhmerDateDetails(savedJoinDate).day}
+                            </span>
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            {globalJoinDate 
-                                ? `កាលបរិច្ឆេទកំណត់បច្ចុប្បន្ន៖ ${globalJoinDate} — រាល់ការបង្កើតប្រាក់ខែនឹងភ្ជាប់ជាមួយថ្ងៃនេះដោយស្វ័យប្រវត្តិ` 
-                                : 'សូមជ្រើសរើសថ្ងៃខែឆ្នាំចូលបម្រើការងារនៅទីនេះជាមុនសិន ដើម្បីអាចបញ្ចូលទិន្នន័យប្រាក់ខែបាន!'}
-                        </p>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                                    ថ្ងៃខែឆ្នាំចូលបម្រើការងារ (Date of Joining)
+                                </span>
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-900/60 dark:text-emerald-200">
+                                    <FaCheckCircle className="text-emerald-600 dark:text-emerald-400" />
+                                    <span>បានរក្សាទុក (Saved & Active)</span>
+                                </span>
+                            </div>
+                            {/* Formatted Date Display */}
+                            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-0.5 flex items-center gap-2 flex-wrap font-mono">
+                                <span className="text-emerald-700 dark:text-emerald-300">{getKhmerDateDetails(savedJoinDate).formatted}</span>
+                                <span className="text-xs font-normal text-slate-500 dark:text-slate-400 font-mono bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                                    ({savedJoinDate})
+                                </span>
+                            </h2>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                ប្រព័ន្ធបានភ្ជាប់ថ្ងៃចូលបម្រើការងារនេះរួចរាល់ — អ្នកអាចចុចប៊ូតុង <strong>"បញ្ចូលប្រាក់ខែ (Create Salary)"</strong> បានហើយ!
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 shadow-xs">
-                        <span className="text-slate-500 text-[11px] font-bold">ថ្ងៃចូលការងារ:</span>
-                        <input
-                            type="date"
-                            required
-                            value={globalJoinDate}
-                            onChange={(e) => {
-                                const val = e.target.value;
-                                setGlobalJoinDate(val);
-                                if (val) {
-                                    localStorage.setItem('salary_global_join_date', val);
-                                } else {
-                                    localStorage.removeItem('salary_global_join_date');
-                                }
-                            }}
-                            className={`px-2 py-1 bg-transparent text-xs font-mono font-bold outline-none text-[var(--app-text,#0f172a)] ${
-                                !globalJoinDate ? 'text-rose-600' : ''
-                            }`}
-                        />
-                    </div>
-                    {globalJoinDate && (
+                    <div className="flex items-center gap-2 flex-wrap self-end md:self-center">
                         <button
                             type="button"
-                            onClick={() => {
-                                setGlobalJoinDate('');
-                                localStorage.removeItem('salary_global_join_date');
-                            }}
-                            title="លុបកាលបរិច្ឆេទ"
-                            className="px-2.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                            onClick={handleEditDate}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
                         >
-                            សម្អាត
+                            <FaEdit />
+                            <span>កែប្រែថ្ងៃខែ</span>
                         </button>
-                    )}
+
+                        {hasPermission('/salary', 'create') && (
+                            <button
+                                type="button"
+                                onClick={handleOpenCreate}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-xl text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all active:scale-95 animate-in fade-in"
+                            >
+                                <FaPlus />
+                                <span>បញ្ចូលប្រាក់ខែ (Create Salary)</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
-            </div>
+            ) : (
+                /* Edit & Setup State Card */
+                <div className="p-4 w-full border border-amber-300/80 dark:border-amber-700/60 bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-amber-50/90 dark:from-amber-950/30 dark:via-slate-900/60 dark:to-orange-950/20 rounded-2xl shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex items-start sm:items-center gap-3.5">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-amber-500/30 shrink-0">
+                            <FaCalendarAlt />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-black text-amber-900 dark:text-amber-300 uppercase tracking-wider">
+                                    ជ្រើសរើសថ្ងៃខែឆ្នាំចូលបម្រើការងារ (Select Date of Joining) <span className="text-rose-500">*</span>
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/60 dark:text-amber-200 animate-pulse">
+                                    សូមជ្រើសថ្ងៃខែ រួចចុច Save
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                                ជ្រើសរើស ថ្ងៃ ទី ខែ ឆ្នាំ រួចចុច <strong>"រក្សាទុក (Save)"</strong> ទើបប៊ូតុងបង្កើតប្រាក់ខែបង្ហាញឡើង!
+                            </p>
+                            {/* Live Preview */}
+                            <div className="text-xs font-bold text-amber-800 dark:text-amber-300 font-mono mt-1">
+                                មើលសាកល្បង៖ {getKhmerDateDetails(computeTempDateString(tempYear, tempMonth, tempDay)).formatted}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Dropdowns for Day, Month, Year + Direct Date input */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {/* Day Select */}
+                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs">
+                            <span className="text-[11px] font-bold text-slate-500">ទី:</span>
+                            <select
+                                value={tempDay}
+                                onChange={(e) => setTempDay(parseInt(e.target.value, 10))}
+                                className="bg-transparent text-xs font-mono font-bold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+                            >
+                                {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                                    <option key={d} value={d} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                                        {String(d).padStart(2, '0')}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Month Select */}
+                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs">
+                            <span className="text-[11px] font-bold text-slate-500">ខែ:</span>
+                            <select
+                                value={tempMonth}
+                                onChange={(e) => setTempMonth(parseInt(e.target.value, 10))}
+                                className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+                            >
+                                {KHMER_MONTH_NAMES.map((m, idx) => (
+                                    <option key={idx + 1} value={idx + 1} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                                        {m}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Year Select */}
+                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs">
+                            <span className="text-[11px] font-bold text-slate-500">ឆ្នាំ:</span>
+                            <select
+                                value={tempYear}
+                                onChange={(e) => setTempYear(parseInt(e.target.value, 10))}
+                                className="bg-transparent text-xs font-mono font-bold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+                            >
+                                {Array.from({ length: 16 }, (_, i) => 2020 + i).map(y => (
+                                    <option key={y} value={y} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                                        {y}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Calendar Picker Sync */}
+                        <div className="flex items-center bg-white dark:bg-slate-800 px-2 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs" title="ឬជ្រើសពី Calendar">
+                            <input
+                                type="date"
+                                value={computeTempDateString(tempYear, tempMonth, tempDay)}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val) {
+                                        const parts = val.split('-');
+                                        if (parts.length >= 3) {
+                                            setTempYear(parseInt(parts[0], 10));
+                                            setTempMonth(parseInt(parts[1], 10));
+                                            setTempDay(parseInt(parts[2], 10));
+                                        }
+                                    }
+                                }}
+                                className="bg-transparent text-xs font-mono font-bold text-emerald-600 outline-none cursor-pointer"
+                            />
+                        </div>
+
+                        {/* Save Button */}
+                        <button
+                            type="button"
+                            onClick={handleSaveDate}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/30 transition-all active:scale-95"
+                        >
+                            <FaSave />
+                            <span>រក្សាទុក (Save)</span>
+                        </button>
+
+                        {savedJoinDate && (
+                            <button
+                                type="button"
+                                onClick={() => setIsEditingDate(false)}
+                                className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                            >
+                                បោះបង់
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Summary Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -623,7 +812,6 @@ const SalaryPage = () => {
                             <th className="px-4 py-3 text-center">No</th>
                             <th className="px-4 py-3">កាលបរិច្ឆេទ (Date)</th>
                             <th className="px-4 py-3">ឈ្មោះបុគ្គលិក (Staff Name)</th>
-                            <th className="px-4 py-3">ថ្ងៃចូលបម្រើការងារ (Join Date)</th>
                             <th className="px-4 py-3 text-right">ចំនួនទឹកប្រាក់ (Amount)</th>
                             <th className="px-4 py-3 text-center">វិធីសាស្ត្រទូទាត់</th>
                             <th className="px-4 py-3">ប្រភេទ (Category)</th>
@@ -636,16 +824,16 @@ const SalaryPage = () => {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-[var(--app-text,#0f172a)]">
                         {loading ? (
                             <tr>
-                                <td colSpan={11} className="text-center py-10 text-slate-400 italic">
+                                <td colSpan={10} className="text-center py-10 text-slate-400 italic">
                                     កំពុងទាញយកទិន្នន័យប្រាក់ខែ...
                                 </td>
                             </tr>
                         ) : salaries.length === 0 ? (
                             <tr>
-                                <td colSpan={11} className="text-center py-12 text-slate-400 italic">
+                                <td colSpan={10} className="text-center py-12 text-slate-400 italic">
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <FaReceipt className="text-3xl opacity-30 text-slate-400" />
-                                        <span>មិនមានទិន្នន័យប្រាក់ខែនៅឡើយទេ។ សូមចុចប៊ូតុង "បញ្ចូលប្រាក់ខែ" ដើម្បីបង្កើតថ្មី!</span>
+                                        <span>មិនមានទិន្នន័យប្រាក់ខែនៅឡើយទេ។ {savedJoinDate && 'សូមចុចប៊ូតុង "បញ្ចូលប្រាក់ខែ" ដើម្បីបង្កើតថ្មី!'}</span>
                                     </div>
                                 </td>
                             </tr>
@@ -660,9 +848,6 @@ const SalaryPage = () => {
                                     </td>
                                     <td className="px-4 py-3">
                                         <CopyCell text={item.staffName || '—'} className="font-bold text-[var(--app-text,#0f172a)]" />
-                                    </td>
-                                    <td className="px-4 py-3 font-mono text-slate-600 dark:text-slate-400">
-                                        {item.joinDate || '—'}
                                     </td>
                                     <td className="px-4 py-3 text-right font-mono font-black text-emerald-600 text-sm">
                                         ${Number(item.amount || 0).toLocaleString()}
@@ -745,17 +930,10 @@ const SalaryPage = () => {
                     <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--app-border,#e2e8f0)] bg-emerald-600 text-white">
-                            <div>
-                                <h3 className="text-sm font-bold flex items-center gap-2">
-                                    <FaMoneyBillWave />
-                                    <span>{editingItem ? 'កែប្រែកំណត់ត្រាប្រាក់ខែ (Edit Salary)' : 'បញ្ចូលប្រាក់ខែថ្មី (Create Salary Entry)'}</span>
-                                </h3>
-                                {(formData.joinDate || globalJoinDate) && (
-                                    <p className="text-[11px] text-emerald-100 mt-0.5">
-                                        ថ្ងៃចូលបម្រើការងារ៖ <span className="font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded">{formData.joinDate || globalJoinDate}</span>
-                                    </p>
-                                )}
-                            </div>
+                            <h3 className="text-sm font-bold flex items-center gap-2">
+                                <FaMoneyBillWave />
+                                <span>{editingItem ? 'កែប្រែកំណត់ត្រាប្រាក់ខែ (Edit Salary)' : 'បញ្ចូលប្រាក់ខែថ្មី (Create Salary Entry)'}</span>
+                            </h3>
                             <button
                                 onClick={() => setOpenModal(false)}
                                 className="text-white/80 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
