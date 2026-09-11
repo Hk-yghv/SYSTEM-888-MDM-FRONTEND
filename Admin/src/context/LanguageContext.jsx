@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import dict from '../json/languages/dict.json';
+import dict from '../json/languages';
 
 const LanguageContext = createContext();
 
