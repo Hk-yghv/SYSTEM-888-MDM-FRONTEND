@@ -147,11 +147,74 @@ const FollowUp1 = () => {
         fetchData(1, '', '', '', '', '');
     };
 
+    // State for Follow Up 2 auto-fetch
+    const [fetchingFu2, setFetchingFu2] = useState(false);
+    const [fu2StatsFound, setFu2StatsFound] = useState(null);
+
+    // Fetch stats from Follow Up 2 for a specific date and brand
+    const fetchFu2DataForDate = async (targetDate, targetBrand) => {
+        if (!targetDate) return;
+        setFetchingFu2(true);
+        try {
+            const params = new URLSearchParams({
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                date: targetDate,
+                fetchAll: 'true'
+            });
+            if (targetBrand) params.append('brand', targetBrand);
+
+            const res = await fetch(`${API_BASE}/follow-up-2?${params.toString()}`);
+            if (res.ok) {
+                const jsonRes = await res.json();
+                const totalReq = jsonRes.summary?.totalRecords ?? (jsonRes.data?.length || 0);
+                const totalSucc = jsonRes.summary?.totalSuccess ?? (jsonRes.data?.filter(r => r.status === 'ជោគជ័យ' || r.status === 'Success').length || 0);
+                const totalFail = jsonRes.summary?.totalFailed ?? (jsonRes.data?.filter(r => r.status === 'បរាជ័យ' || r.status === 'Failed').length || 0);
+                const totalRev = jsonRes.summary?.totalReview ?? (jsonRes.data?.filter(r => r.status === 'Review' || r.status === 'កំពុងពិនិត្យ' || r.status === 'រង់ចាំពិនិត្យ').length || 0);
+
+                // Collect reasons from failed records if available
+                const failedReasons = (jsonRes.data || [])
+                    .filter(r => (r.status === 'បរាជ័យ' || r.status === 'Failed') && r.reason)
+                    .map(r => r.reason.trim())
+                    .filter((v, i, a) => v && a.indexOf(v) === i);
+
+                const reasonText = failedReasons.join(', ');
+
+                setFormData(prev => ({
+                    ...prev,
+                    requested: totalReq,
+                    success: totalSucc,
+                    failed: totalFail,
+                    review: totalRev,
+                    ...(reasonText && !prev.reason ? { reason: reasonText } : {})
+                }));
+
+                setFu2StatsFound({
+                    date: targetDate,
+                    total: totalReq,
+                    success: totalSucc,
+                    failed: totalFail,
+                    review: totalRev,
+                    hasData: (jsonRes.data?.length || 0) > 0
+                });
+            }
+        } catch (err) {
+            console.error('Fetch FollowUp2 stats error:', err);
+        } finally {
+            setFetchingFu2(false);
+        }
+    };
+
     // Form Handlers
     const handleOpenCreate = () => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const initialBrand = user?.brand || 'MDM';
         setEditingItem(null);
+        setFu2StatsFound(null);
         setFormData({
-            date: new Date().toISOString().split('T')[0],
+            date: todayStr,
             message: '',
             totalMessages: 0,
             noResponse: 0,
@@ -160,14 +223,17 @@ const FollowUp1 = () => {
             failed: 0,
             success: 0,
             reason: '',
-            brand: user?.brand || 'MDM',
+            brand: initialBrand,
             notes: ''
         });
         setIsFormOpen(true);
+        // Automatically fetch and populate data from Follow Up 2
+        fetchFu2DataForDate(todayStr, initialBrand);
     };
 
     const handleOpenEdit = (item) => {
         setEditingItem(item);
+        setFu2StatsFound(null);
         setFormData({
             date: item.date ? item.date.split('T')[0] : new Date().toISOString().split('T')[0],
             message: item.message || '',
@@ -184,29 +250,13 @@ const FollowUp1 = () => {
         setIsFormOpen(true);
     };
 
-    // Auto calculate helper on change
+    // Numeric change helper without auto-subtraction
     const handleNumericChange = (field, val) => {
         const numVal = Math.max(0, parseInt(val, 10) || 0);
-        setFormData(prev => {
-            const next = { ...prev, [field]: numVal };
-
-            if (field === 'totalMessages' || field === 'requested') {
-                const totalM = field === 'totalMessages' ? numVal : (Number(prev.totalMessages) || 0);
-                const req = field === 'requested' ? numVal : (Number(prev.requested) || 0);
-                // មិនឆ្លើយតប = Message - សាកសួរ/បានស្នើរ (auto-calculate)
-                next.noResponse = Math.max(0, totalM - req);
-            }
-
-            if (field === 'requested' || field === 'success' || field === 'review') {
-                const req = field === 'requested' ? numVal : (Number(prev.requested) || 0);
-                const succ = field === 'success' ? numVal : (Number(prev.success) || 0);
-                const rev = field === 'review' ? numVal : (Number(prev.review) || 0);
-                // បរាជ័យ = បានស្នើរ - ជោគជ័យ - Review (auto-calculate)
-                next.failed = Math.max(0, req - succ - rev);
-            }
-
-            return next;
-        });
+        setFormData(prev => ({
+            ...prev,
+            [field]: numVal
+        }));
     };
 
     const handleFormSubmit = async (e) => {
@@ -945,6 +995,31 @@ const FollowUp1 = () => {
 
                         {/* Modal Body */}
                         <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
+                            {/* Follow Up 2 Sync Banner */}
+                            {!editingItem && (
+                                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
+                                        <MdOutlineSync className={`text-emerald-600 text-base shrink-0 ${fetchingFu2 ? 'animate-spin' : ''}`} />
+                                        <span>
+                                            {fetchingFu2
+                                                ? 'កំពុងទាញទិន្នន័យពី Follow up 2...'
+                                                : fu2StatsFound?.hasData
+                                                    ? `ទិន្នន័យ Follow up 2 សម្រាប់ ${formData.date}៖ ស្នើ (${fu2StatsFound.total}), ជោគជ័យ (${fu2StatsFound.success}), បរាជ័យ (${fu2StatsFound.failed}), Review (${fu2StatsFound.review})`
+                                                    : `មិនមានទិន្នន័យ Follow up 2 សម្រាប់ថ្ងៃ ${formData.date} ទេ (បានកំណត់ 0)`}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        disabled={fetchingFu2}
+                                        onClick={() => fetchFu2DataForDate(formData.date, formData.brand)}
+                                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold shrink-0 transition-all cursor-pointer disabled:opacity-50"
+                                        title="ទាញទិន្នន័យពី Follow up 2 ម្តងទៀត"
+                                    >
+                                        Sync ឡើងវិញ
+                                    </button>
+                                </div>
+                            )}
+
                             {/* Date Field */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
@@ -954,7 +1029,13 @@ const FollowUp1 = () => {
                                     type="date"
                                     required
                                     value={formData.date}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                                    onChange={(e) => {
+                                        const newDate = e.target.value;
+                                        setFormData(prev => ({ ...prev, date: newDate }));
+                                        if (!editingItem) {
+                                            fetchFu2DataForDate(newDate, formData.brand);
+                                        }
+                                    }}
                                     className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                                 />
                             </div>
@@ -992,8 +1073,9 @@ const FollowUp1 = () => {
                             {/* Row 1: បានស្នើរ, មិនឆ្លើយតប */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">
-                                        បានស្នើរ
+                                    <label className="block text-xs font-bold text-amber-700 dark:text-amber-400 mb-1 flex items-center justify-between">
+                                        <span>បានស្នើរ</span>
+                                        <span className="text-[10px] font-medium text-amber-600 dark:text-amber-300 bg-amber-500/10 px-1.5 py-0.2 rounded">Follow up 2</span>
                                     </label>
                                     <input
                                         type="number"
@@ -1004,17 +1086,15 @@ const FollowUp1 = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-400 mb-1 flex items-center justify-between">
-                                        <span>មិនឆ្លើយតប</span>
-                                        <span className="text-[10px] font-normal text-slate-400">(Auto)</span>
+                                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-400 mb-1">
+                                        មិនឆ្លើយតប
                                     </label>
                                     <input
                                         type="number"
                                         min="0"
                                         value={formData.noResponse}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, noResponse: Math.max(0, parseInt(e.target.value, 10) || 0) }))}
+                                        onChange={(e) => handleNumericChange('noResponse', e.target.value)}
                                         className="w-full px-3 py-2 bg-slate-500/5 border border-slate-500/30 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500/30"
-                                        title="Message សរុប - បានស្នើរ (អាចកែបាន)"
                                     />
                                 </div>
                             </div>
@@ -1022,8 +1102,9 @@ const FollowUp1 = () => {
                             {/* Row 2: កំពុងពិនិត្យ (Review) */}
                             <div className="grid grid-cols-1 gap-3">
                                 <div>
-                                    <label className="block text-xs font-bold text-cyan-700 dark:text-cyan-400 mb-1">
-                                        កំពុងពិនិត្យ (Review)
+                                    <label className="block text-xs font-bold text-cyan-700 dark:text-cyan-400 mb-1 flex items-center justify-between">
+                                        <span>កំពុងពិនិត្យ (Review)</span>
+                                        <span className="text-[10px] font-medium text-cyan-600 dark:text-cyan-300 bg-cyan-500/10 px-1.5 py-0.2 rounded">Follow up 2</span>
                                     </label>
                                     <input
                                         type="number"
@@ -1038,8 +1119,9 @@ const FollowUp1 = () => {
                             {/* Row 3: ជោគជ័យ, បរាជ័យ */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">
-                                        ជោគជ័យ
+                                    <label className="block text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1 flex items-center justify-between">
+                                        <span>ជោគជ័យ</span>
+                                        <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.2 rounded">Follow up 2</span>
                                     </label>
                                     <input
                                         type="number"
@@ -1052,15 +1134,14 @@ const FollowUp1 = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-rose-700 dark:text-rose-400 mb-1 flex items-center justify-between">
                                         <span>បរាជ័យ</span>
-                                        <span className="text-[10px] font-normal text-rose-400">(Auto)</span>
+                                        <span className="text-[10px] font-medium text-rose-600 dark:text-rose-300 bg-rose-500/10 px-1.5 py-0.2 rounded">Follow up 2</span>
                                     </label>
                                     <input
                                         type="number"
                                         min="0"
                                         value={formData.failed}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, failed: Math.max(0, parseInt(e.target.value, 10) || 0) }))}
+                                        onChange={(e) => handleNumericChange('failed', e.target.value)}
                                         className="w-full px-3 py-2 bg-rose-500/5 border border-rose-500/30 rounded-lg text-xs font-bold text-rose-700 dark:text-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
-                                        title="បានស្នើរ - ជោគជ័យ - Review (អាចកែបាន)"
                                     />
                                 </div>
                             </div>
@@ -1087,7 +1168,13 @@ const FollowUp1 = () => {
                                     </label>
                                     <select
                                         value={formData.brand}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
+                                        onChange={(e) => {
+                                            const newBrand = e.target.value;
+                                            setFormData(prev => ({ ...prev, brand: newBrand }));
+                                            if (!editingItem) {
+                                                fetchFu2DataForDate(formData.date, newBrand);
+                                            }
+                                        }}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-bold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                                     >
                                         {brandsList.map((b, idx) => (
