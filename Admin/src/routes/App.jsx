@@ -8,7 +8,7 @@ import Left from "../App/components/Left";
 import Loading from "../utils/Loading";
 
 import { LanguageProvider } from "../context/LanguageContext";
-import { AuthProvider } from "../context/AuthContext";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import ProtectRoute from "../services/ProtectRoute";
 import SignIn from "../services/SignIn";
@@ -142,6 +142,14 @@ const MainLayout = ({ children }) => {
 };
 
 
+const RootRedirect = () => {
+  const { user } = useAuth();
+  if (user?.role?.toLowerCase() === 'salary') {
+    return <Navigate to={json.salary || '/salary'} replace />;
+  }
+  return <Navigate to={json.dashboard || '/dashboard'} replace />;
+};
+
 const App = () => {
   return (
     <DesktopOnlyGuard>
@@ -154,7 +162,7 @@ const App = () => {
                   {/* Sign In Route */}
                   <Route path={json.signin} element={<SignIn />} />
                   {/* Protected System Routes */}
-                  <Route path={json.start} element={<Navigate to={json.dashboard} replace />} />
+                  <Route path={json.start} element={<RootRedirect />} />
                   <Route path={json.dashboard} element={<ProtectRoute pagePath={json.dashboard}> <MainLayout><Dashboard /></MainLayout> </ProtectRoute>} />
                   {/* Customer */}
                   <Route path={json.customer} element={<ProtectRoute pagePath={json.customer}> <MainLayout><Customer /></MainLayout> </ProtectRoute>} />
@@ -219,7 +227,7 @@ const App = () => {
                   <Route path={json.settings.profile} element={<ProtectRoute pagePath={json.settings.profile}> <MainLayout><Profile /></MainLayout> </ProtectRoute>} />
 
                   {/* Fallback */}
-                  <Route path={json.start} element={<Navigate to={json.dashboard} replace />} />
+                  <Route path="*" element={<RootRedirect />} />
                 </Routes>
               </BrowserRouter>
             </LanguageProvider>

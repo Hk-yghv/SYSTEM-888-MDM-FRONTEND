@@ -85,7 +85,7 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
             }}
         >
             <div className='flex items-center gap-4'>
-                <Link to="/dashboard" className='flex items-center gap-2.5 group'>
+                <Link to={user?.role?.toLowerCase() === 'salary' ? "/salary" : "/dashboard"} className='flex items-center gap-2.5 group'>
                     <h1 className="text-xl font-extrabold tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors">
                         {(!user || user.isImmutable || user.username === '@hakyonghouv' || !user.brand)
                             ? 'SYSTEM'

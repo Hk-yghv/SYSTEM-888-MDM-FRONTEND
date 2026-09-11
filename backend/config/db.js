@@ -51,7 +51,7 @@ export const MEM_DB = {
         lockphone_display_text: 'ប្រព័ន្ធ SYSTEM MDM — ទូរស័ព្ទនេះត្រូវបានចាក់សោ ហេតុថាមានបំណុលជំពាក់',
         lockphone_phone_number: '+855 12 903 120',
         lockphone_user_template: 'User: {{username}} — Role: {{role}}',
-        roles: ['Administrator', 'Manager', 'Staff', 'Viewer']
+        roles: ['Administrator', 'Manager', 'Staff', 'Viewer', 'Salary']
     }
 };
 

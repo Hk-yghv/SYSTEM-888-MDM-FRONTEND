@@ -84,9 +84,18 @@ router.get('/status-check', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const { name, username, email, password, role, permissions, brand } = req.body;
+        const isSalary = role && role.toLowerCase() === 'salary';
         const hashedPassword = await bcrypt.hash(password || '123456', 10);
         const memId = 'u-' + Date.now();
         const userId = 'USR-' + Math.floor(100000 + Math.random() * 900000);
+
+        let finalBrand = isSalary ? '' : (brand || '');
+        let finalPermissions = permissions || {};
+        if (isSalary && (!permissions || Object.keys(permissions).length === 0)) {
+            finalPermissions = {
+                '/salary': { read: true, create: true, edit: true, delete: true, export: true }
+            };
+        }
 
         if (isMongoConnected) {
             const UserWrite = getWriteModel(User) || User;
@@ -97,10 +106,10 @@ router.post('/', async (req, res) => {
                 email,
                 password: hashedPassword,
                 secondPassword: '',
-                brand: brand || '',
+                brand: finalBrand,
                 role: role || 'Staff',
                 status: 'Offline',
-                permissions: permissions || {}
+                permissions: finalPermissions
             });
             await doc.save();
             const saved = doc.toObject();
@@ -116,10 +125,10 @@ router.post('/', async (req, res) => {
             email,
             password: hashedPassword,
             secondPassword: '',
-            brand: brand || '',
+            brand: finalBrand,
             role: role || 'Staff',
             status: 'Offline',
-            permissions: permissions || {}
+            permissions: finalPermissions
         };
         MEM_DB.users.push(newUser);
         res.status(201).json(newUser);
@@ -152,11 +161,17 @@ router.put('/:id', async (req, res) => {
             return res.status(403).json({ error: 'Master Admin account (@hakyonghouv) is protected and CANNOT be edited!' });
         }
 
+        const isSalary = (role && role.toLowerCase() === 'salary') || (!role && user.role && user.role.toLowerCase() === 'salary');
+
         if (name) user.name = name;
         if (username) user.username = username;
         if (email) user.email = email;
         if (role) user.role = role;
-        if (brand !== undefined) user.brand = brand;
+        if (isSalary) {
+            user.brand = '';
+        } else if (brand !== undefined) {
+            user.brand = brand;
+        }
         if (permissions !== undefined) {
             user.permissions = permissions;
             if (typeof user.markModified === 'function') {

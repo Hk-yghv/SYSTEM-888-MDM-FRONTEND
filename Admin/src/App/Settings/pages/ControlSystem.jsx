@@ -27,7 +27,7 @@ const ControlSystem = () => {
         subtext: 'Contact support for instant phone lock or payment inquiry'
     });
 
-    const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer']);
+    const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer', 'Salary']);
     const [lockphoneDisplayText, setLockphoneDisplayText] = useState('ប្រព័ន្ធ SYSTEM MDM — ទូរស័ព្ទនេះត្រូវបានចាក់សោ ហេតុថាមានបំណុលជំពាក់');
     const [lockphonePhoneNumber, setLockphonePhoneNumber] = useState('+855 12 903 120');
     const [latePenaltyRules, setLatePenaltyRules] = useState([]);

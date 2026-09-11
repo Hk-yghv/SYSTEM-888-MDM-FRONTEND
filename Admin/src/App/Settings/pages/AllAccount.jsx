@@ -65,7 +65,7 @@ const AllAccount = () => {
     const { API_BASE, hasPermission } = useAuth();
 
     const [users, setUsers] = useState([]);
-    const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer']);
+    const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer', 'Salary']);
     const [brandsList, setBrandsList] = useState([['MDM', 'ECloud']]);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
@@ -87,6 +87,17 @@ const AllAccount = () => {
         return parts.join(' ');
     };
 
+    // Helper to get fully ticked permissions for Salary system
+    const getSalaryPermissions = () => {
+        const salaryPage = ALL_SYSTEM_PAGES.find(pg => pg.path === '/salary');
+        const salaryActions = salaryPage?.actions || ['read', 'create', 'edit', 'delete', 'export'];
+        const salaryPerms = {};
+        salaryActions.forEach(act => {
+            salaryPerms[act] = true;
+        });
+        return { '/salary': salaryPerms };
+    };
+
     // New / Edit User Form State
     const [editingUser, setEditingUser] = useState(null);
     const [formData, setFormData] = useState({
@@ -99,11 +110,29 @@ const AllAccount = () => {
         permissions: {}
     });
 
+    const handleRoleChange = (newRole) => {
+        const isSalary = newRole?.toLowerCase() === 'salary';
+        if (isSalary) {
+            setFormData(prev => ({
+                ...prev,
+                role: newRole,
+                brand: '', // Auto disable brand (no brand)
+                permissions: getSalaryPermissions() // Auto tick all Salary permissions
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                role: newRole
+            }));
+        }
+    };
+
     const handleOpenEditUserModal = (userObj) => {
         if (userObj.isImmutable || userObj.username === '@hakyonghouv') {
             alert('Master Admin account (@hakyonghouv) is protected and CANNOT be edited!');
             return;
         }
+        const isSalary = userObj.role?.toLowerCase() === 'salary';
         setEditingUser(userObj);
         setFormData({
             name: userObj.name || '',
@@ -111,8 +140,10 @@ const AllAccount = () => {
             email: userObj.email || '',
             password: '',
             role: userObj.role || 'Staff',
-            brand: userObj.brand || '',
-            permissions: userObj.permissions || {}
+            brand: isSalary ? '' : (userObj.brand || ''),
+            permissions: isSalary
+                ? (userObj.permissions && Object.keys(userObj.permissions).length > 0 ? userObj.permissions : getSalaryPermissions())
+                : (userObj.permissions || {})
         });
     };
 
@@ -127,7 +158,10 @@ const AllAccount = () => {
             const cRes = await fetch(`${API_BASE}/controlsystem?brand=`);
             if (cRes.ok) {
                 const cData = await cRes.json();
-                if (cData.roles) setRoles(cData.roles);
+                if (cData.roles) {
+                    const rSet = new Set([...cData.roles, 'Salary']);
+                    setRoles(Array.from(rSet));
+                }
                 const brandCat = cData.droplists?.find(d => d.category === 'Brands');
                 if (brandCat) setBrandsList(brandCat.items);
             }
@@ -165,6 +199,14 @@ const AllAccount = () => {
     };
 
     const handleGrantAllPermissions = () => {
+        const isSalary = formData.role?.toLowerCase() === 'salary';
+        if (isSalary) {
+            setFormData(prev => ({
+                ...prev,
+                permissions: getSalaryPermissions()
+            }));
+            return;
+        }
         setFormData(prev => {
             const newPerms = {};
             ALL_SYSTEM_PAGES.forEach(pg => {
@@ -179,8 +221,10 @@ const AllAccount = () => {
     };
 
     const handleToggleAllAction = (action) => {
+        const isSalary = formData.role?.toLowerCase() === 'salary';
+        const pagesToUse = isSalary ? ALL_SYSTEM_PAGES.filter(pg => pg.path === '/salary') : ALL_SYSTEM_PAGES;
         setFormData(prev => {
-            const relevantPages = ALL_SYSTEM_PAGES.filter(pg => (pg.actions || ['read', 'create', 'edit', 'delete']).includes(action));
+            const relevantPages = pagesToUse.filter(pg => (pg.actions || ['read', 'create', 'edit', 'delete']).includes(action));
             const allChecked = relevantPages.every(pg => prev.permissions[pg.path]?.[action]);
             const newPerms = { ...prev.permissions };
             relevantPages.forEach(pg => {
@@ -380,7 +424,11 @@ const AllAccount = () => {
                                         </span>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
-                                        {item.brand ? (
+                                        {item.role?.toLowerCase() === 'salary' ? (
+                                            <span className="px-2 py-0.5 bg-purple-50 border border-purple-300 text-purple-800 rounded-full font-bold text-[10px]">
+                                                No Brand (Salary)
+                                            </span>
+                                        ) : item.brand ? (
                                             <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px]">
                                                 {item.brand}
                                             </span>
@@ -706,7 +754,7 @@ const AllAccount = () => {
                                     <label className="block text-gray-300 font-semibold mb-1">Assign System Role (Configured in Control System)</label>
                                     <select
                                         value={formData.role}
-                                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                        onChange={(e) => handleRoleChange(e.target.value)}
                                         className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold"
                                     >
                                         {roles.map((r, rIdx) => (
@@ -716,17 +764,40 @@ const AllAccount = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-gray-300 font-semibold mb-1">Assigned Brand (ម៉ាកទូរស័ព្ទ)</label>
+                                    <label className="block text-gray-300 font-semibold mb-1">
+                                        Assigned Brand (ម៉ាកទូរស័ព្ទ)
+                                        {formData.role?.toLowerCase() === 'salary' && (
+                                            <span className="text-[10px] text-amber-400 font-normal ml-2">
+                                                (បិទ Brand ដោយស្វ័យប្រវត្តិ)
+                                            </span>
+                                        )}
+                                    </label>
                                     <select
-                                        value={formData.brand}
+                                        value={formData.role?.toLowerCase() === 'salary' ? '' : formData.brand}
+                                        disabled={formData.role?.toLowerCase() === 'salary'}
                                         onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold"
+                                        className={`w-full h-10 px-3 border rounded-xl font-semibold transition-all ${
+                                            formData.role?.toLowerCase() === 'salary'
+                                                ? 'bg-gray-800/60 border-gray-700/60 text-gray-400 cursor-not-allowed italic'
+                                                : 'bg-gray-900 border-gray-700 text-gray-100'
+                                        }`}
                                     >
-                                        <option value="">All Brands (គ្រប់ម៉ាកទាំងអស់)</option>
-                                        {brandsList.map((b, bIdx) => (
-                                            <option key={bIdx} value={b}>{b}</option>
-                                        ))}
+                                        {formData.role?.toLowerCase() === 'salary' ? (
+                                            <option value="">No Brand (គ្មាន Brand / មិនកំណត់ម៉ាក)</option>
+                                        ) : (
+                                            <>
+                                                <option value="">All Brands (គ្រប់ម៉ាកទាំងអស់)</option>
+                                                {brandsList.map((b, bIdx) => (
+                                                    <option key={bIdx} value={b}>{b}</option>
+                                                ))}
+                                            </>
+                                        )}
                                     </select>
+                                    {formData.role?.toLowerCase() === 'salary' && (
+                                        <p className="text-[10px] text-amber-400/80 mt-1">
+                                            ⚡ តួនាទី Salary មិនស្ថិតក្នុង Brand ណាទាំងអស់ (No Brand)
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -735,44 +806,71 @@ const AllAccount = () => {
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                     <div>
                                         <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
-                                            Page & Action Permissions Matrix (Check to Grant Access)
+                                            {formData.role?.toLowerCase() === 'salary'
+                                                ? 'Salary Permissions (សិទ្ធិប្រើប្រាស់សម្រាប់ Salary)'
+                                                : 'Page & Action Permissions Matrix (Check to Grant Access)'}
                                         </h4>
                                         <p className="text-[11px] text-gray-400">
-                                            If a page is un-ticked, the user will be blocked from accessing it by URL and the sidebar link will be hidden!
+                                            {formData.role?.toLowerCase() === 'salary'
+                                                ? 'តួនាទី Salary ត្រូវបានកំណត់សិទ្ធិតែលើការគ្រប់គ្រងប្រាក់ខែ (Salary Management) ប៉ុណ្ណោះ'
+                                                : 'If a page is un-ticked, the user will be blocked from accessing it by URL and the sidebar link will be hidden!'}
                                         </p>
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
+                                    {formData.role?.toLowerCase() !== 'salary' && (
+                                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
+                                            <button
+                                                type="button"
+                                                onClick={handleGrantAllPermissions}
+                                                className="px-2.5 py-1 bg-emerald-900/80 hover:bg-emerald-800 text-emerald-300 border border-emerald-600 rounded-lg transition-all"
+                                            >
+                                                ⭐ Grant All Access
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleClearAllPermissions}
+                                                className="px-2.5 py-1 bg-red-900/80 hover:bg-red-800 text-red-300 border border-red-600 rounded-lg transition-all"
+                                            >
+                                                ✕ Clear All
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {formData.role?.toLowerCase() === 'salary' && (
+                                    <div className="p-2.5 bg-emerald-950/40 border border-emerald-600/40 rounded-xl text-xs text-emerald-300 flex items-center justify-between gap-2">
+                                        <span className="flex items-center gap-2">
+                                            <span>💼</span>
+                                            <span><strong>Salary Mode:</strong> បង្ហាញ និងបើកសិទ្ធិតែលើប្រព័ន្ធ Salary (គ្រប់គ្រងប្រាក់ខែ) តែប៉ុណ្ណោះ ហើយមុខងារផ្សេងទៀតទាំងអស់ត្រូវបានបិទ។</span>
+                                        </span>
                                         <button
                                             type="button"
                                             onClick={handleGrantAllPermissions}
-                                            className="px-2.5 py-1 bg-emerald-900/80 hover:bg-emerald-800 text-emerald-300 border border-emerald-600 rounded-lg transition-all"
+                                            className="px-2 py-0.5 bg-emerald-800 hover:bg-emerald-700 text-white rounded text-[11px] font-bold cursor-pointer transition-all"
                                         >
-                                            ⭐ Grant All Access
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleClearAllPermissions}
-                                            className="px-2.5 py-1 bg-red-900/80 hover:bg-red-800 text-red-300 border border-red-600 rounded-lg transition-all"
-                                        >
-                                            ✕ Clear All
+                                            ✓ Tick All Salary Actions
                                         </button>
                                     </div>
-                                </div>
+                                )}
 
                                 {/* Quick Batch Toggles */}
-                                <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-950/80 border border-gray-800 rounded-xl text-[11px] font-semibold text-gray-300">
-                                    <span className="text-gray-400 text-[10px] font-bold uppercase mr-1">Batch Toggles:</span>
-                                    <button type="button" onClick={() => handleToggleAllAction('read')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-indigo-300 rounded border border-gray-700 cursor-pointer">✓ All Read</button>
-                                    <button type="button" onClick={() => handleToggleAllAction('create')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-300 rounded border border-gray-700 cursor-pointer">✓ All Create</button>
-                                    <button type="button" onClick={() => handleToggleAllAction('edit')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-purple-300 rounded border border-gray-700 cursor-pointer">✓ All Edit</button>
-                                    <button type="button" onClick={() => handleToggleAllAction('delete')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-red-300 rounded border border-gray-700 cursor-pointer">✓ All Delete</button>
-                                    <button type="button" onClick={() => handleToggleAllAction('export')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-400 rounded border border-gray-700 cursor-pointer">✓ All Export</button>
-                                    <button type="button" onClick={() => handleToggleAllAction('information')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-blue-300 rounded border border-gray-700 cursor-pointer">✓ All Info</button>
-                                </div>
+                                {formData.role?.toLowerCase() !== 'salary' && (
+                                    <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-950/80 border border-gray-800 rounded-xl text-[11px] font-semibold text-gray-300">
+                                        <span className="text-gray-400 text-[10px] font-bold uppercase mr-1">Batch Toggles:</span>
+                                        <button type="button" onClick={() => handleToggleAllAction('read')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-indigo-300 rounded border border-gray-700 cursor-pointer">✓ All Read</button>
+                                        <button type="button" onClick={() => handleToggleAllAction('create')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-300 rounded border border-gray-700 cursor-pointer">✓ All Create</button>
+                                        <button type="button" onClick={() => handleToggleAllAction('edit')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-purple-300 rounded border border-gray-700 cursor-pointer">✓ All Edit</button>
+                                        <button type="button" onClick={() => handleToggleAllAction('delete')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-red-300 rounded border border-gray-700 cursor-pointer">✓ All Delete</button>
+                                        <button type="button" onClick={() => handleToggleAllAction('export')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-400 rounded border border-gray-700 cursor-pointer">✓ All Export</button>
+                                        <button type="button" onClick={() => handleToggleAllAction('information')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-blue-300 rounded border border-gray-700 cursor-pointer">✓ All Info</button>
+                                    </div>
+                                )}
 
                                 <div className="max-h-72 overflow-y-auto rounded-2xl border border-gray-800 bg-gray-900/60 p-3 space-y-3">
                                     {Object.entries(
-                                        ALL_SYSTEM_PAGES.reduce((acc, pg) => {
+                                        (formData.role?.toLowerCase() === 'salary'
+                                            ? ALL_SYSTEM_PAGES.filter(pg => pg.path === '/salary' || pg.category === 'Salary System')
+                                            : ALL_SYSTEM_PAGES
+                                        ).reduce((acc, pg) => {
                                              const cat = pg.category || 'Other';
                                              if (!acc[cat]) acc[cat] = [];
                                              acc[cat].push(pg);

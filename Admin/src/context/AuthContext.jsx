@@ -175,7 +175,7 @@ export const AuthProvider = ({ children }) => {
             setToken(data.token);
             sessionStorage.setItem('mdm_user', JSON.stringify(data.user));
             sessionStorage.setItem('mdm_token', data.token);
-            return { success: true, deviceInfo: data.deviceInfo };
+            return { success: true, user: data.user, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
             throw err;
@@ -201,7 +201,7 @@ export const AuthProvider = ({ children }) => {
             setToken(data.token);
             sessionStorage.setItem('mdm_user', JSON.stringify(data.user));
             sessionStorage.setItem('mdm_token', data.token);
-            return { success: true, deviceInfo: data.deviceInfo };
+            return { success: true, user: data.user, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
             throw err;

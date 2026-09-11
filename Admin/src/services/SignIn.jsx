@@ -56,7 +56,12 @@ const SignIn = () => {
                     sessionStorage.setItem('recent_login_device', JSON.stringify(res.deviceInfo));
                     sessionStorage.setItem('show_login_toast', 'true');
                 }
-                navigate('/dashboard');
+                const loggedRole = res.user?.role?.toLowerCase();
+                if (loggedRole === 'salary') {
+                    navigate('/salary');
+                } else {
+                    navigate('/dashboard');
+                }
             }
         } catch (err) {
             setLoading(false);
@@ -92,7 +97,12 @@ const SignIn = () => {
                     sessionStorage.setItem('recent_login_device', JSON.stringify(res.deviceInfo));
                     sessionStorage.setItem('show_login_toast', 'true');
                 }
-                navigate('/dashboard');
+                const loggedRole = res.user?.role?.toLowerCase();
+                if (loggedRole === 'salary') {
+                    navigate('/salary');
+                } else {
+                    navigate('/dashboard');
+                }
             }
         } catch (err) {
             setLoading(false);
