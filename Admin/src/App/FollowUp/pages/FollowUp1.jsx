@@ -52,7 +52,7 @@ const FollowUp1 = () => {
     const [formData, setFormData] = useState({
         date: new Date().toISOString().split('T')[0],
         message: '',
-        totalMessages: 0,
+        totalMessages: '',
         noResponse: 0,
         requested: 0,
         review: 0,
@@ -210,21 +210,23 @@ const FollowUp1 = () => {
                 const totalFail = records.filter(r => isFailedStatus(r.status)).length || jsonRes.summary?.totalFailed || 0;
                 const totalRev = records.filter(r => isReviewStatus(r.status)).length || jsonRes.summary?.totalReview || 0;
 
-                // Collect reasons from failed records if available
-                const failedReasons = records
-                    .filter(r => isFailedStatus(r.status) && r.reason)
-                    .map(r => r.reason.trim())
-                    .filter((v, i, a) => v && a.indexOf(v) === i);
-
-                const reasonText = failedReasons.join(', ');
+                // Collect unique reasons from all records (top to bottom, deduplicated)
+                const reasonsList = [];
+                records.forEach(r => {
+                    if (r.reason && typeof r.reason === 'string') {
+                        const lines = r.reason.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                        lines.forEach(line => {
+                            if (!reasonsList.includes(line)) {
+                                reasonsList.push(line);
+                            }
+                        });
+                    }
+                });
+                const reasonText = reasonsList.join('\n');
 
                 setFormData(prev => {
-                    const prevMsgNum = Number(prev.message) || 0;
-                    const prevTotalNum = Number(prev.totalMessages) || 0;
-                    const autoMsg = prevMsgNum > 0 ? prev.message : (totalReq > 0 ? totalReq : '');
-                    const autoTotalMsg = prevTotalNum > 0 ? prevTotalNum : (totalReq > 0 ? totalReq : 0);
-                    const currentTotal = Number(autoTotalMsg) || Number(autoMsg) || 0;
-                    const autoNoResp = Math.max(0, currentTotal - totalReq);
+                    const currentTotal = Number(prev.totalMessages) || 0;
+                    const autoNoResp = currentTotal > 0 ? Math.max(0, currentTotal - totalReq) : (prev.noResponse || 0);
 
                     return {
                         ...prev,
@@ -232,10 +234,9 @@ const FollowUp1 = () => {
                         success: totalSucc,
                         failed: totalFail,
                         review: totalRev,
-                        totalMessages: autoTotalMsg,
-                        message: autoMsg,
-                        noResponse: prev.noResponse !== 0 ? prev.noResponse : autoNoResp,
-                        ...(reasonText && !prev.reason ? { reason: reasonText } : {})
+                        // Do NOT auto-fill message or totalMessages
+                        noResponse: autoNoResp,
+                        ...((reasonText && (!prev.reason || !editingItem)) ? { reason: reasonText } : {})
                     };
                 });
 
@@ -264,7 +265,7 @@ const FollowUp1 = () => {
         setFormData({
             date: todayStr,
             message: '',
-            totalMessages: 0,
+            totalMessages: '',
             noResponse: 0,
             requested: 0,
             review: 0,
@@ -302,15 +303,15 @@ const FollowUp1 = () => {
 
     // Numeric change helper with auto calculation of noResponse
     const handleNumericChange = (field, val) => {
-        const numVal = Math.max(0, parseInt(val, 10) || 0);
+        const numVal = val === '' ? '' : Math.max(0, parseInt(val, 10) || 0);
         setFormData(prev => {
             const next = {
                 ...prev,
                 [field]: numVal
             };
             if (field === 'totalMessages' || field === 'requested') {
-                const tot = field === 'totalMessages' ? numVal : (Number(prev.totalMessages) || 0);
-                const req = field === 'requested' ? numVal : (Number(prev.requested) || 0);
+                const tot = field === 'totalMessages' ? (Number(numVal) || 0) : (Number(prev.totalMessages) || 0);
+                const req = field === 'requested' ? (Number(numVal) || 0) : (Number(prev.requested) || 0);
                 next.noResponse = Math.max(0, tot - req);
             }
             return next;
@@ -319,17 +320,10 @@ const FollowUp1 = () => {
 
     // Inquiry Message change helper
     const handleMessageChange = (val) => {
-        setFormData(prev => {
-            const numVal = parseInt(val, 10);
-            const req = Number(prev.requested) || 0;
-            const currentTotal = Number(prev.totalMessages) || 0;
-            const next = { ...prev, message: val };
-            if (!isNaN(numVal) && (currentTotal === 0 || currentTotal === Number(prev.message))) {
-                next.totalMessages = numVal;
-                next.noResponse = Math.max(0, numVal - req);
-            }
-            return next;
-        });
+        setFormData(prev => ({
+            ...prev,
+            message: val
+        }));
     };
 
     const handleFormSubmit = async (e) => {
@@ -962,7 +956,7 @@ const FollowUp1 = () => {
                                                     {rate}%
                                                 </td>
                                                 <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
-                                                    <p className="line-clamp-2" title={item.reason}>
+                                                    <p className="line-clamp-3 whitespace-pre-line text-xs" title={item.reason}>
                                                         {item.reason || '-'}
                                                     </p>
                                                 </td>
@@ -1133,9 +1127,10 @@ const FollowUp1 = () => {
                                 <input
                                     type="number"
                                     min="0"
+                                    placeholder="បញ្ចូលចំនួន Message សរុប..."
                                     value={formData.totalMessages}
                                     onChange={(e) => handleNumericChange('totalMessages', e.target.value)}
-                                    className="w-full px-3 py-2 bg-blue-500/5 border border-blue-500/30 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                    className="w-full px-3 py-2 bg-blue-500/5 border border-blue-500/30 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-mono"
                                 />
                             </div>
 
@@ -1221,11 +1216,11 @@ const FollowUp1 = () => {
                                     មូលហេតុ (Reason / Feedback)
                                 </label>
                                 <textarea
-                                    rows="2"
-                                    placeholder="បញ្ចូលមូលហេតុបរាជ័យ ឬកំណត់ហេតុផ្សេងៗ..."
+                                    rows="4"
+                                    placeholder="បញ្ចូលមូលហេតុបរាជ័យ ឬកំណត់ហេតុផ្សេងៗ (ចុះបន្ទាត់ម្តងមួយៗ)..."
                                     value={formData.reason}
                                     onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
-                                    className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                                    className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 whitespace-pre-wrap leading-relaxed"
                                 />
                             </div>
 
