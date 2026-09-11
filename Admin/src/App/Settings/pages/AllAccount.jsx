@@ -70,6 +70,9 @@ const AllAccount = () => {
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
 
+    // Selected account for detail view
+    const [selectedAccount, setSelectedAccount] = useState(null);
+
     const [openCreateModal, setOpenCreateModal] = useState(false);
     const [selectedHistoryUser, setSelectedHistoryUser] = useState(null);
     const [historyModalTab, setHistoryModalTab] = useState('online'); // 'online', 'otp', 'login'
@@ -387,159 +390,207 @@ const AllAccount = () => {
                 </div>
             </header>
 
-            {/* Users Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-180px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
-                <table className='w-full text-left text-xs'>
-                    <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
-                        <tr>
-                            <th className='px-4 py-3 text-center'>No</th>
-                            <th className='px-4 py-3'>{t('username')} & ID</th>
-                            <th className='px-4 py-3'>Full Name & Email</th>
-                            <th className='px-4 py-3 text-center'>{t('role')}</th>
-                            <th className='px-4 py-3 text-center'>Brand</th>
-                            <th className='px-4 py-3 text-center'>Status</th>
-                            <th className='px-4 py-3 text-center'>Last OTP Code</th>
-                            <th className='px-4 py-3 text-center'>Login History</th>
-                            <th className='px-4 py-3 text-center'>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
-                        {users.map((item, idx) => {
-                            const isMaster = item.isImmutable || item.username === '@hakyonghouv';
-                            const isBlockedUser = !!item.isBlocked;
-                            return (
-                                <tr key={item._id || idx} className={`transition-colors ${isMaster ? 'bg-emerald-50/50 hover:bg-emerald-50' : 'hover:bg-emerald-50/40'} ${isBlockedUser ? 'bg-red-50/60 border-l-2 border-red-400' : ''}`}>
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{idx + 1}</td>
-                                    <td className='px-4 py-3'>
-                                        <span className='font-bold text-emerald-700 font-mono block'>{item.username}</span>
-                                        <span className='text-[10px] text-slate-500 font-mono block'>ID: {item.userId || '001290312'}</span>
-                                    </td>
-                                    <td className='px-4 py-3'>
-                                        <span className='font-bold text-slate-900 block'>{item.name}</span>
-                                        <span className='text-slate-500 font-mono text-[11px] block'>{item.email}</span>
-                                    </td>
-                                    <td className='px-4 py-3 text-center'>
-                                        <span className={`px-2.5 py-0.5 rounded-md font-bold text-[10px] uppercase border ${isMaster ? 'bg-purple-50 text-purple-700 border-purple-300' : 'bg-slate-100 text-slate-700 border-slate-300'}`}>
-                                            {item.role || 'Staff'}
-                                        </span>
-                                    </td>
-                                    <td className='px-4 py-3 text-center'>
-                                        {item.role?.toLowerCase() === 'salary' ? (
-                                            <span className="px-2 py-0.5 bg-purple-50 border border-purple-300 text-purple-800 rounded-full font-bold text-[10px]">
-                                                No Brand (Salary)
-                                            </span>
-                                        ) : item.brand ? (
-                                            <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px]">
-                                                {item.brand}
-                                            </span>
-                                        ) : (
-                                            <span className="px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-600 rounded-full font-bold text-[10px]">
-                                                All Brands
+            {/* Account Cards Grid — shown when no account is selected */}
+            {!selectedAccount ? (
+                <div className='w-full'>
+                    {loading ? (
+                        <div className='flex items-center justify-center py-20 text-slate-400 italic text-sm'>កំពុងទាញយកទិន្នន័យ...</div>
+                    ) : (
+                        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+                            {users.map((item, idx) => {
+                                const isMaster = item.isImmutable || item.username === '@hakyonghouv';
+                                const isBlocked = !!item.isBlocked;
+                                const isSalary = item.role?.toLowerCase() === 'salary';
+                                return (
+                                    <div
+                                        key={item._id || idx}
+                                        onClick={() => setSelectedAccount(item)}
+                                        className={`relative cursor-pointer rounded-2xl border p-4 flex flex-col gap-3 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5 select-none
+                                            ${isMaster ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-300' : isBlocked ? 'bg-red-50/70 border-red-300' : 'bg-white border-slate-200 hover:border-emerald-400'}`}
+                                    >
+                                        {/* Master badge */}
+                                        {isMaster && (
+                                            <span className='absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-300 flex items-center gap-1'>
+                                                <FaLock size={8} /> Master
                                             </span>
                                         )}
-                                    </td>
-                                    <td className='px-4 py-3 text-center'>
-                                        {item.status === 'Online' ? (
-                                            <div className="flex flex-col items-center gap-0.5">
-                                                <span className="px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-xs">
-                                                    <span className="relative flex h-2 w-2">
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                                    </span>
-                                                    Online
-                                                </span>
-                                                <span className="text-[9px] text-emerald-600 font-medium">Active now</span>
+                                        {isBlocked && !isMaster && (
+                                            <span className='absolute top-3 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300'>Blocked</span>
+                                        )}
+                                        {/* Avatar */}
+                                        <div className='flex items-center gap-3'>
+                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-md
+                                                ${isMaster ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : isSalary ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-500 to-slate-700'}`}>
+                                                {(item.name || item.username || '?')[0].toUpperCase()}
                                             </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-0.5">
-                                                <span className="px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1 bg-slate-100 text-slate-500 border border-slate-300">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                                    Offline
-                                                </span>
-                                                {item.lastSeen && (
-                                                    <span className="text-[9px] text-slate-400 font-mono">
-                                                        {new Date(item.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                )}
+                                            <div className='flex-1 min-w-0'>
+                                                <p className='text-sm font-black text-slate-900 truncate'>{item.name || '—'}</p>
+                                                <p className='text-[11px] text-emerald-600 font-mono truncate'>{item.username}</p>
                                             </div>
-                                        )}
-                                    </td>
-                                    <td className='px-4 py-3 text-center'>
-                                        {item.lastOtp ? (
-                                            <button
-                                                onClick={() => { setSelectedHistoryUser(item); setHistoryModalTab('otp'); }}
-                                                className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-mono font-bold text-xs inline-flex items-center gap-1.5 mx-auto cursor-pointer transition-all shadow-xs"
-                                                title="Click to view all OTP History"
-                                            >
-                                                <span className="tracking-wider">{item.lastOtp}</span>
-                                                {item.otpHistory?.length > 1 && (
-                                                    <span className="text-[9px] bg-amber-200 text-amber-800 px-1 py-0.2 rounded-full">
-                                                        +{item.otpHistory.length - 1}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        ) : (
-                                            <span className="text-slate-400 font-normal text-[11px]">-</span>
-                                        )}
-                                    </td>
-                                    <td className='px-4 py-3 text-center'>
+                                        </div>
+                                        {/* Role & Brand */}
+                                        <div className='flex items-center gap-2 flex-wrap'>
+                                            <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] uppercase border
+                                                ${isMaster ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                                {item.role || 'Staff'}
+                                            </span>
+                                            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] border
+                                                ${isSalary ? 'bg-purple-50 text-purple-700 border-purple-200' : item.brand ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                                {isSalary ? 'No Brand' : item.brand || 'All Brands'}
+                                            </span>
+                                        </div>
+                                        {/* Status */}
+                                        <div className='flex items-center justify-between text-[11px]'>
+                                            <span className={`flex items-center gap-1.5 font-bold ${item.status === 'Online' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                <span className={`w-2 h-2 rounded-full ${item.status === 'Online' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></span>
+                                                {item.status === 'Online' ? 'Online' : 'Offline'}
+                                            </span>
+                                            <span className='text-slate-400 font-mono text-[10px]'>ID: {item.userId || '—'}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            ) : (
+                /* Account Detail Panel */
+                <div className='w-full bg-white border border-slate-200 rounded-2xl shadow-md overflow-hidden'>
+                    {/* Detail Header */}
+                    <div className='flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50'>
+                        <div className='flex items-center gap-3'>
+                            <button
+                                onClick={() => setSelectedAccount(null)}
+                                className='flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 text-slate-600 hover:text-slate-900 rounded-xl text-xs font-bold cursor-pointer shadow-xs transition-all'
+                            >
+                                ← ត្រឡប់ (Back)
+                            </button>
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black text-white shadow-md
+                                ${selectedAccount.isImmutable ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : selectedAccount.role?.toLowerCase() === 'salary' ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-500 to-slate-700'}`}>
+                                {(selectedAccount.name || selectedAccount.username || '?')[0].toUpperCase()}
+                            </div>
+                            <div>
+                                <p className='text-sm font-black text-slate-900'>{selectedAccount.name}</p>
+                                <p className='text-[11px] text-emerald-600 font-mono'>{selectedAccount.username} &bull; {selectedAccount.role}</p>
+                            </div>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                            {!selectedAccount.isImmutable && selectedAccount.username !== '@hakyonghouv' && (
+                                <>
+                                    {hasPermission('/settings/all-account', 'edit') && (
                                         <button
-                                            onClick={() => { setSelectedHistoryUser(item); setHistoryModalTab('online'); }}
-                                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 mx-auto cursor-pointer transition-all shadow-xs"
+                                            onClick={() => handleOpenEditUserModal(selectedAccount)}
+                                            className='flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-xl text-xs font-bold cursor-pointer'
                                         >
-                                            <FaHistory className="text-indigo-600" />
-                                            <span>Sessions & Logs</span>
+                                            <MdEdit size={14} /> Edit
                                         </button>
-                                    </td>
-                                    <td className='px-4 py-3 text-center'>
-                                        {isMaster ? (
-                                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-300 px-2 py-1 rounded-lg inline-flex items-center gap-1">
-                                                <FaLock size={9} /> Immutable Master Admin
-                                            </span>
-                                        ) : (
-                                            <div className="flex items-center justify-center gap-1.5">
-                                                {/* Edit User */}
-                                                {hasPermission('/settings/all-account', 'edit') && (
-                                                    <button
-                                                        onClick={() => handleOpenEditUserModal(item)}
-                                                        className="p-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-lg cursor-pointer transition-all text-[11px] font-bold flex items-center gap-1 px-2"
-                                                        title="Edit User Info & Permissions"
-                                                    >
-                                                        <MdEdit size={14} /> Edit
-                                                    </button>
-                                                )}
-                                                {/* Block / Unblock */}
-                                                {hasPermission('/settings/all-account', 'edit') && (
-                                                    <button
-                                                        onClick={() => handleToggleBlock(item)}
-                                                        className={`p-1.5 border rounded-lg cursor-pointer transition-all text-[11px] font-bold flex items-center gap-1 px-2 ${item.isBlocked
-                                                            ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700'
-                                                            : 'bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-700'
-                                                            }`}
-                                                        title={item.isBlocked ? 'Unblock User' : 'Block User'}
-                                                    >
-                                                        {item.isBlocked ? <><FaUnlock size={11} /> Unblock</> : <><FaBan size={11} /> Block</>}
-                                                    </button>
-                                                )}
-                                                {/* Delete */}
-                                                {hasPermission('/settings/all-account', 'delete') && (
-                                                    <button
-                                                        onClick={() => handleDeleteUser(item)}
-                                                        className="p-1.5 bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 rounded-lg cursor-pointer transition-all"
-                                                        title="Delete Account"
-                                                    >
-                                                        <MdDelete size={16} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                                    )}
+                                    {hasPermission('/settings/all-account', 'edit') && (
+                                        <button
+                                            onClick={() => { handleToggleBlock(selectedAccount); setSelectedAccount(prev => prev ? {...prev, isBlocked: !prev.isBlocked} : null); }}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-xl text-xs font-bold cursor-pointer
+                                                ${selectedAccount.isBlocked ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-orange-50 border-orange-300 text-orange-700'}`}
+                                        >
+                                            {selectedAccount.isBlocked ? <><FaUnlock size={11} /> Unblock</> : <><FaBan size={11} /> Block</>}
+                                        </button>
+                                    )}
+                                    {hasPermission('/settings/all-account', 'delete') && (
+                                        <button
+                                            onClick={() => { handleDeleteUser(selectedAccount); setSelectedAccount(null); }}
+                                            className='flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 rounded-xl text-xs font-bold cursor-pointer'
+                                        >
+                                            <MdDelete size={14} /> Delete
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                            <button
+                                onClick={() => { setSelectedHistoryUser(selectedAccount); setHistoryModalTab('online'); }}
+                                className='flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-300 text-indigo-700 rounded-xl text-xs font-bold cursor-pointer'
+                            >
+                                <FaHistory size={12} /> Sessions &amp; Logs
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Detail Body */}
+                    <div className='p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs'>
+                        <div className='space-y-1'>
+                            <p className='text-[10px] font-bold text-slate-400 uppercase tracking-wider'>Full Name</p>
+                            <p className='font-black text-slate-800'>{selectedAccount.name || '—'}</p>
+                        </div>
+                        <div className='space-y-1'>
+                            <p className='text-[10px] font-bold text-slate-400 uppercase tracking-wider'>Username</p>
+                            <p className='font-mono font-bold text-emerald-600'>{selectedAccount.username}</p>
+                        </div>
+                        <div className='space-y-1'>
+                            <p className='text-[10px] font-bold text-slate-400 uppercase tracking-wider'>Email</p>
+                            <p className='font-mono text-slate-700'>{selectedAccount.email || '—'}</p>
+                        </div>
+                        <div className='space-y-1'>
+                            <p className='text-[10px] font-bold text-slate-400 uppercase tracking-wider'>Role</p>
+                            <span className={`inline-block px-2.5 py-0.5 rounded-md font-bold text-[10px] uppercase border
+                                ${selectedAccount.isImmutable ? 'bg-purple-50 text-purple-700 border-purple-300' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                {selectedAccount.role || 'Staff'}
+                            </span>
+                        </div>
+                        <div className='space-y-1'>
+                            <p className='text-[10px] font-bold text-slate-400 uppercase tracking-wider'>Brand</p>
+                            <span className={`inline-block px-2 py-0.5 rounded-full font-bold text-[10px] border
+                                ${selectedAccount.role?.toLowerCase() === 'salary' ? 'bg-purple-50 text-purple-700 border-purple-200' : selectedAccount.brand ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                {selectedAccount.role?.toLowerCase() === 'salary' ? 'No Brand (Salary)' : selectedAccount.brand || 'All Brands'}
+                            </span>
+                        </div>
+                        <div className='space-y-1'>
+                            <p className='text-[10px] font-bold text-slate-400 uppercase tracking-wider'>Status</p>
+                            <span className={`flex items-center gap-1.5 font-bold w-fit ${selectedAccount.status === 'Online' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                <span className={`w-2 h-2 rounded-full ${selectedAccount.status === 'Online' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></span>
+                                {selectedAccount.status === 'Online' ? 'Online' : 'Offline'}
+                            </span>
+                        </div>
+                        <div className='space-y-1'>
+                            <p className='text-[10px] font-bold text-slate-400 uppercase tracking-wider'>User ID</p>
+                            <p className='font-mono text-slate-500'>{selectedAccount.userId || '—'}</p>
+                        </div>
+                        <div className='space-y-1'>
+                            <p className='text-[10px] font-bold text-slate-400 uppercase tracking-wider'>Last OTP Code</p>
+                            {selectedAccount.lastOtp ? (
+                                <button
+                                    onClick={() => { setSelectedHistoryUser(selectedAccount); setHistoryModalTab('otp'); }}
+                                    className='px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-mono font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer'
+                                >
+                                    {selectedAccount.lastOtp}
+                                </button>
+                            ) : <span className='text-slate-400'>—</span>}
+                        </div>
+                        <div className='space-y-1'>
+                            <p className='text-[10px] font-bold text-slate-400 uppercase tracking-wider'>Last Seen</p>
+                            <p className='font-mono text-slate-500 text-[11px]'>
+                                {selectedAccount.lastSeen ? new Date(selectedAccount.lastSeen).toLocaleString('en-GB') : '—'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Permissions Summary */}
+                    {selectedAccount.permissions && Object.keys(selectedAccount.permissions).length > 0 && (
+                        <div className='px-5 pb-5'>
+                            <p className='text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2'>Page Permissions</p>
+                            <div className='flex flex-wrap gap-1.5'>
+                                {Object.entries(selectedAccount.permissions).map(([path, actions]) => {
+                                    const grantedActions = Object.entries(actions).filter(([, v]) => v).map(([k]) => k);
+                                    if (grantedActions.length === 0) return null;
+                                    return (
+                                        <span key={path} className='inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg text-[10px] font-semibold'>
+                                            <span className='font-mono'>{path}</span>
+                                            <span className='text-indigo-400'>({grantedActions.join(', ')})</span>
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* 3-in-1 Audit History Modal: Online Sessions, 6-Digit OTP History, and Login Logs */}
             {selectedHistoryUser && (

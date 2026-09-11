@@ -145,7 +145,8 @@ const SalaryPage = () => {
 
     // Form State
     const initialForm = {
-        staffName: '',
+        staffNameKh: '',
+        staffNameEn: '',
         joinDate: '',
         amount: '',
         date: new Date().toISOString().split('T')[0],
@@ -256,7 +257,8 @@ const SalaryPage = () => {
     const handleOpenEdit = (item) => {
         setEditingItem(item);
         setFormData({
-            staffName: item.staffName || '',
+            staffNameKh: item.staffNameKh || '',
+            staffNameEn: item.staffNameEn || item.staffName || '',
             joinDate: item.joinDate || savedJoinDate || '',
             amount: item.amount || '',
             date: item.date ? item.date.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -343,6 +345,7 @@ const SalaryPage = () => {
         try {
             const payload = {
                 ...formData,
+                staffName: formData.staffNameEn || formData.staffNameKh || '',
                 joinDate: formData.joinDate || savedJoinDate || '',
                 amount: Number(formData.amount),
                 createdBy: user?.username || 'Administrator'
@@ -799,7 +802,9 @@ const SalaryPage = () => {
                         <tr>
                             <th className="px-4 py-3 text-center">No</th>
                             <th className="px-4 py-3">កាលបរិច្ឆេទ (Date)</th>
-                            <th className="px-4 py-3">ឈ្មោះបុគ្គលិក (Staff Name)</th>
+                            <th className="px-4 py-3">ឈ្មោះខ្មែរ</th>
+                            <th className="px-4 py-3">ឈ្មោះអង់គ្លេស</th>
+                            <th className="px-4 py-3">ថ្ងៃចូលការ</th>
                             <th className="px-4 py-3 text-right">ចំនួនទឹកប្រាក់ (Amount)</th>
                             <th className="px-4 py-3 text-center">វិធីសាស្ត្រទូទាត់</th>
                             <th className="px-4 py-3">ប្រភេទ (Category)</th>
@@ -835,7 +840,13 @@ const SalaryPage = () => {
                                         {item.date}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <CopyCell text={item.staffName || '—'} className="font-bold text-[var(--app-text,#0f172a)]" />
+                                        <CopyCell text={item.staffNameKh || '—'} className="font-bold text-[var(--app-text,#0f172a)] text-emerald-700" />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <CopyCell text={item.staffNameEn || item.staffName || '—'} className="font-bold text-[var(--app-text,#0f172a)]" />
+                                    </td>
+                                    <td className="px-4 py-3 font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                                        {item.joinDate || '—'}
                                     </td>
                                     <td className="px-4 py-3 text-right font-mono font-black text-emerald-600 text-sm">
                                         ${Number(item.amount || 0).toLocaleString()}
@@ -968,17 +979,46 @@ const SalaryPage = () => {
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
-                                {/* Staff Name */}
+                                {/* Staff Name Khmer */}
                                 <div>
                                     <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                        ឈ្មោះបុគ្គលិក (Staff Name)
+                                        ឈ្មោះខ្មែរ (Khmer Name)
                                     </label>
                                     <input
                                         type="text"
-                                        value={formData.staffName}
-                                        onChange={(e) => setFormData({ ...formData, staffName: e.target.value })}
-                                        placeholder="បញ្ចូលឈ្មោះបុគ្គលិក..."
+                                        value={formData.staffNameKh}
+                                        onChange={(e) => setFormData({ ...formData, staffNameKh: e.target.value })}
+                                        placeholder="ឧ. ហាគីយ៉ុងហូ..."
                                         className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
+                                    />
+                                </div>
+
+                                {/* Staff Name English */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                        ឈ្មោះអង់គ្លេស (English Name)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.staffNameEn}
+                                        onChange={(e) => setFormData({ ...formData, staffNameEn: e.target.value })}
+                                        placeholder="e.g. Ha Kyonghov..."
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* Join Date */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                        ថ្ងៃខែចូលបម្រើការងារ (Join Date)
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={formData.joinDate}
+                                        onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg font-mono text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
                                     />
                                 </div>
 

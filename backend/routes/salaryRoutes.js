@@ -250,6 +250,8 @@ router.post('/', async (req, res) => {
     try {
         const {
             staffName = '',
+            staffNameKh = '',
+            staffNameEn = '',
             joinDate = '',
             amount,
             date,
@@ -274,7 +276,9 @@ router.post('/', async (req, res) => {
         const month = parts.length >= 2 ? `${parts[0]}-${parts[1]}` : dateStr.slice(0, 7);
 
         const salaryData = {
-            staffName: String(staffName).trim(),
+            staffName: String(staffName || staffNameEn || staffNameKh || '').trim(),
+            staffNameKh: String(staffNameKh).trim(),
+            staffNameEn: String(staffNameEn || staffName || '').trim(),
             joinDate: String(joinDate || '').trim(),
             amount: Number(amount),
             date: dateStr,

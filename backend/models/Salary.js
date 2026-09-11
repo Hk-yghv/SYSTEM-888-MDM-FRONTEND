@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 
 const salarySchema = new mongoose.Schema({
     staffName: { type: String, default: '' },
+    staffNameKh: { type: String, default: '' }, // ឈ្មោះជាភាសាខ្មែរ
+    staffNameEn: { type: String, default: '' }, // ឈ្មោះជាភាសាអង់គ្លេស
     joinDate: { type: String, default: '' }, // Format: YYYY-MM-DD (ថ្ងៃខែឆ្នាំចូលបម្រើការងារ)
     amount: { type: Number, required: true },
     date: { type: String, required: true }, // Format: YYYY-MM-DD

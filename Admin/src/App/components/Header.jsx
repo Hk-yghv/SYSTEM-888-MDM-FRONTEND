@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaShieldAlt, FaBell, FaExpand, FaCompress } from 'react-icons/fa';
+import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaBell, FaExpand, FaCompress } from 'react-icons/fa';
 
 const Header = ({ onOpenAlerts, alertCount = 0 }) => {
     const [accountOpen, setAccountOpen] = useState(false);
@@ -93,40 +93,44 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                     </h1>
                 </Link>
 
-                {/* Financial Summary Widget */}
-                <div className='hidden lg:flex items-center gap-3 pl-4 border-l border-slate-200'>
-                    {/* Loan */}
-                    <div className='flex flex-col items-center px-3 py-1 rounded-[5px] bg-slate-50 border border-slate-200/80'>
-                        <span className='text-[9px] font-bold text-slate-500 uppercase tracking-wider'>Loan Out</span>
-                        <span className='text-sm font-black text-slate-700 font-mono leading-tight'>${balance.totalLoanAmount.toLocaleString()}</span>
+                {/* Financial Summary Widget — hide for master/salary accounts */}
+                {!user?.isImmutable && user?.username !== '@hakyonghouv' && user?.role?.toLowerCase() !== 'salary' && (
+                    <div className='hidden lg:flex items-center gap-3 pl-4 border-l border-slate-200'>
+                        {/* Loan */}
+                        <div className='flex flex-col items-center px-3 py-1 rounded-[5px] bg-slate-50 border border-slate-200/80'>
+                            <span className='text-[9px] font-bold text-slate-500 uppercase tracking-wider'>Loan Out</span>
+                            <span className='text-sm font-black text-slate-700 font-mono leading-tight'>${balance.totalLoanAmount.toLocaleString()}</span>
+                        </div>
+                        {/* Collected */}
+                        <div className='flex flex-col items-center px-3 py-1 rounded-[5px] bg-emerald-50 border border-emerald-200/80'>
+                            <span className='text-[9px] font-bold text-emerald-600 uppercase tracking-wider'>Collected</span>
+                            <span className='text-sm font-black text-emerald-700 font-mono leading-tight'>${balance.totalRevenue.toLocaleString()}</span>
+                        </div>
+                        {/* Total requested */}
+                        <div className='flex flex-col items-center px-3 py-1 rounded-[5px] bg-amber-50 border border-amber-200/80'>
+                            <span className='text-[9px] font-bold text-amber-600 uppercase tracking-wider'>Requested</span>
+                            <span className='text-sm font-black text-amber-700 font-mono leading-tight'>${balance.totalLoanAmount.toLocaleString()}</span>
+                        </div>
                     </div>
-                    {/* Collected */}
-                    <div className='flex flex-col items-center px-3 py-1 rounded-[5px] bg-emerald-50 border border-emerald-200/80'>
-                        <span className='text-[9px] font-bold text-emerald-600 uppercase tracking-wider'>Collected</span>
-                        <span className='text-sm font-black text-emerald-700 font-mono leading-tight'>${balance.totalRevenue.toLocaleString()}</span>
-                    </div>
-                    {/* Total requested */}
-                    <div className='flex flex-col items-center px-3 py-1 rounded-[5px] bg-amber-50 border border-amber-200/80'>
-                        <span className='text-[9px] font-bold text-amber-600 uppercase tracking-wider'>Requested</span>
-                        <span className='text-sm font-black text-amber-700 font-mono leading-tight'>${balance.totalLoanAmount.toLocaleString()}</span>
-                    </div>
-                </div>
+                )}
             </div>
 
             <div className='flex items-center gap-3'>
-                {/* Payment Alerts Button */}
-                <button
-                    onClick={onOpenAlerts}
-                    className='relative flex items-center gap-2 px-3 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
-                    title='ការជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)'
-                >
-                    <FaBell className='text-sm animate-pulse text-slate-950' />
-                    {alertCount > 0 && (
-                        <span className='absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black shadow-md shadow-rose-600/40 border border-white flex items-center justify-center min-w-[18px]'>
-                            {alertCount}
-                        </span>
-                    )}
-                </button>
+                {/* Payment Alerts Button — hide for master/salary accounts */}
+                {!user?.isImmutable && user?.username !== '@hakyonghouv' && user?.role?.toLowerCase() !== 'salary' && (
+                    <button
+                        onClick={onOpenAlerts}
+                        className='relative flex items-center gap-2 px-3 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
+                        title='ការជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)'
+                    >
+                        <FaBell className='text-sm animate-pulse text-slate-950' />
+                        {alertCount > 0 && (
+                            <span className='absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black shadow-md shadow-rose-600/40 border border-white flex items-center justify-center min-w-[18px]'>
+                                {alertCount}
+                            </span>
+                        )}
+                    </button>
+                )}
 
                 {/* Fullscreen Button */}
                 {/* Fullscreen Button */}
@@ -217,14 +221,6 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                                 <p>{t('profile')}</p>
                             </Link>
 
-                            <Link
-                                to="/settings/all-account"
-                                onClick={() => setAccountOpen(false)}
-                                className='w-full h-[40px] flex items-center gap-3 px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-xl transition-all cursor-pointer text-xs font-medium'
-                            >
-                                <FaShieldAlt className='text-base text-emerald-600' />
-                                <p>{t('allAccount')}</p>
-                            </Link>
 
                             <button
                                 onClick={handleLogout}
