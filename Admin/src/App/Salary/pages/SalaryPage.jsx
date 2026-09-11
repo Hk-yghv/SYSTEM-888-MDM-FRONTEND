@@ -53,6 +53,9 @@ const SalaryPage = () => {
     const [photoUploading, setPhotoUploading] = useState(false);
     const [previewImage, setPreviewImage] = useState(null);
 
+    // Global Join Date (ថ្ងៃខែឆ្នាំចូលបម្រើការងារ - កំណត់នៅខាងលើគេជាមុន)
+    const [globalJoinDate, setGlobalJoinDate] = useState(() => localStorage.getItem('salary_global_join_date') || '');
+
     // Form State
     const initialForm = {
         staffName: '',
@@ -148,10 +151,14 @@ const SalaryPage = () => {
 
     // Open Create Modal
     const handleOpenCreate = () => {
+        if (!globalJoinDate) {
+            alert('សូមជ្រើសរើស "ថ្ងៃខែឆ្នាំចូលបម្រើការងារ" នៅប្រអប់ខាងលើគេជាមុនសិន ទើបអាចបង្កើតកំណត់ត្រាប្រាក់ខែបាន!');
+            return;
+        }
         setEditingItem(null);
         setFormData({
             ...initialForm,
-            joinDate: '',
+            joinDate: globalJoinDate,
             brand: user?.brand || '',
             date: new Date().toISOString().split('T')[0]
         });
@@ -163,7 +170,7 @@ const SalaryPage = () => {
         setEditingItem(item);
         setFormData({
             staffName: item.staffName || '',
-            joinDate: item.joinDate || '',
+            joinDate: item.joinDate || globalJoinDate || '',
             amount: item.amount || '',
             date: item.date ? item.date.split('T')[0] : new Date().toISOString().split('T')[0],
             category: item.category || 'Basic Salary',
@@ -249,6 +256,7 @@ const SalaryPage = () => {
         try {
             const payload = {
                 ...formData,
+                joinDate: formData.joinDate || globalJoinDate || '',
                 amount: Number(formData.amount),
                 createdBy: user?.username || 'Administrator'
             };
@@ -380,7 +388,12 @@ const SalaryPage = () => {
                     {hasPermission('/salary', 'create') && (
                         <button
                             onClick={handleOpenCreate}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all active:scale-95"
+                            className={`flex items-center gap-2 px-4 py-2 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md transition-all active:scale-95 ${
+                                globalJoinDate
+                                    ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
+                                    : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20 opacity-90'
+                            }`}
+                            title={!globalJoinDate ? 'សូមបញ្ចូលថ្ងៃខែឆ្នាំចូលបម្រើការងារនៅខាងលើជាមុនសិន' : 'បញ្ចូលប្រាក់ខែថ្មី'}
                         >
                             <FaPlus />
                             <span>បញ្ចូលប្រាក់ខែ (Create Salary)</span>
@@ -396,6 +409,76 @@ const SalaryPage = () => {
                     </button>
                 </div>
             </header>
+
+            {/* Top Global Join Date Setup Banner (ប្រអប់បញ្ចូលថ្ងៃខែឆ្នាំចូលបម្រើការងារនៅខាងលើគេ) */}
+            <div className="p-3.5 w-full border border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-r from-emerald-50/90 via-teal-50/70 to-emerald-50/90 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-teal-950/40 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-sm transition-all ${
+                        globalJoinDate
+                            ? 'bg-emerald-600 text-white shadow-emerald-600/30'
+                            : 'bg-rose-500 text-white shadow-rose-500/30 animate-pulse'
+                    }`}>
+                        <FaCalendarCheck />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                                ថ្ងៃខែឆ្នាំចូលបម្រើការងារ (Employment / Join Date) <span className="text-rose-500">*</span>
+                            </span>
+                            {globalJoinDate ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-900/50 dark:text-emerald-300">
+                                    ✓ បានកំណត់រួចរាល់ (Ready to Create)
+                                </span>
+                            ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300 dark:bg-rose-900/50 dark:text-rose-300 animate-pulse">
+                                    ⚠ តម្រូវឱ្យបំពេញកន្លែងនេះសិន ទើបអាច Create បាន
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            {globalJoinDate 
+                                ? `កាលបរិច្ឆេទកំណត់បច្ចុប្បន្ន៖ ${globalJoinDate} — រាល់ការបង្កើតប្រាក់ខែនឹងភ្ជាប់ជាមួយថ្ងៃនេះដោយស្វ័យប្រវត្តិ` 
+                                : 'សូមជ្រើសរើសថ្ងៃខែឆ្នាំចូលបម្រើការងារនៅទីនេះជាមុនសិន ដើម្បីអាចបញ្ចូលទិន្នន័យប្រាក់ខែបាន!'}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 shadow-xs">
+                        <span className="text-slate-500 text-[11px] font-bold">ថ្ងៃចូលការងារ:</span>
+                        <input
+                            type="date"
+                            required
+                            value={globalJoinDate}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setGlobalJoinDate(val);
+                                if (val) {
+                                    localStorage.setItem('salary_global_join_date', val);
+                                } else {
+                                    localStorage.removeItem('salary_global_join_date');
+                                }
+                            }}
+                            className={`px-2 py-1 bg-transparent text-xs font-mono font-bold outline-none text-[var(--app-text,#0f172a)] ${
+                                !globalJoinDate ? 'text-rose-600' : ''
+                            }`}
+                        />
+                    </div>
+                    {globalJoinDate && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setGlobalJoinDate('');
+                                localStorage.removeItem('salary_global_join_date');
+                            }}
+                            title="លុបកាលបរិច្ឆេទ"
+                            className="px-2.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                        >
+                            សម្អាត
+                        </button>
+                    )}
+                </div>
+            </div>
 
             {/* Summary Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -662,10 +745,17 @@ const SalaryPage = () => {
                     <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--app-border,#e2e8f0)] bg-emerald-600 text-white">
-                            <h3 className="text-sm font-bold flex items-center gap-2">
-                                <FaMoneyBillWave />
-                                <span>{editingItem ? 'កែប្រែកំណត់ត្រាប្រាក់ខែ (Edit Salary)' : 'បញ្ចូលប្រាក់ខែថ្មី (Create Salary Entry)'}</span>
-                            </h3>
+                            <div>
+                                <h3 className="text-sm font-bold flex items-center gap-2">
+                                    <FaMoneyBillWave />
+                                    <span>{editingItem ? 'កែប្រែកំណត់ត្រាប្រាក់ខែ (Edit Salary)' : 'បញ្ចូលប្រាក់ខែថ្មី (Create Salary Entry)'}</span>
+                                </h3>
+                                {(formData.joinDate || globalJoinDate) && (
+                                    <p className="text-[11px] text-emerald-100 mt-0.5">
+                                        ថ្ងៃចូលបម្រើការងារ៖ <span className="font-mono font-bold bg-white/20 px-1.5 py-0.5 rounded">{formData.joinDate || globalJoinDate}</span>
+                                    </p>
+                                )}
+                            </div>
                             <button
                                 onClick={() => setOpenModal(false)}
                                 className="text-white/80 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
@@ -699,7 +789,7 @@ const SalaryPage = () => {
                                 {/* Date */}
                                 <div>
                                     <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                        កាលបរិច្ឆេទ (Date) <span className="text-rose-500">*</span>
+                                        កាលបរិច្ឆេទបើក (Date) <span className="text-rose-500">*</span>
                                     </label>
                                     <input
                                         type="date"
@@ -726,21 +816,6 @@ const SalaryPage = () => {
                                     />
                                 </div>
 
-                                {/* Join Date (ថ្ងៃខែឆ្នាំចូលបម្រើការងារ) */}
-                                <div>
-                                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                        ថ្ងៃខែឆ្នាំចូលបម្រើការងារ (Join Date)
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={formData.joinDate || ''}
-                                        onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg font-mono text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
                                 {/* Category */}
                                 <div>
                                     <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -758,7 +833,9 @@ const SalaryPage = () => {
                                         <option value="Other">Other (ផ្សេងៗ)</option>
                                     </select>
                                 </div>
+                            </div>
 
+                            <div className="grid grid-cols-2 gap-3">
                                 {/* Payment Method */}
                                 <div>
                                     <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -777,20 +854,20 @@ const SalaryPage = () => {
                                         <option value="Other">Other</option>
                                     </select>
                                 </div>
-                            </div>
 
-                            <div>
                                 {/* Brand */}
-                                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                    Brand / សាខា
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.brand}
-                                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                                    placeholder="e.g. MDM / ECloud"
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
-                                />
+                                <div>
+                                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                        Brand / សាខា
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.brand}
+                                        onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                                        placeholder="e.g. MDM / ECloud"
+                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
+                                    />
+                                </div>
                             </div>
 
                             {/* Evidence / Proof Photo Upload */}
