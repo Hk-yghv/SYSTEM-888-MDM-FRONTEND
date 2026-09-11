@@ -282,6 +282,7 @@ const Left = () => {
                             {(hasPermission(json.report?.followUpReport || '/report/follow-up', 'read') || hasPermission('/follow-up/report', 'read')) && (
                                 <Link to={json.report?.followUpReport || '/report/follow-up'} className={subItemClass(json.report?.followUpReport || '/report/follow-up')}>{t('followUpReport') || 'Follow Up Report'}</Link>
                             )}
+
                         </div>
                     </div>
                 )}
@@ -315,40 +316,36 @@ const Left = () => {
                 hasPermission(json.followUp?.followUp3 || '/follow-up/follow-up-3', 'read') ||
                 hasPermission('/follow-up/sen-sok', 'read') ||
                 hasPermission(json.followUp?.followUpReport || '/report/follow-up', 'read')) && (
-                <div className="flex-shrink-0">
-                    <div onClick={() => toggleMenu("followUp")} className={dropdownHeaderClass("followUp")}>
-                        <p className="flex items-center gap-3">
-                            <FaClipboardCheck size={18} className="text-emerald-600" />
-                            <span>{t('followUp') || 'Follow up'}</span>
-                        </p>
-                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "followUp" ? "rotate-180" : ""}`} />
-                    </div>
+                    <div className="flex-shrink-0">
+                        <div onClick={() => toggleMenu("followUp")} className={dropdownHeaderClass("followUp")}>
+                            <p className="flex items-center gap-3">
+                                <FaClipboardCheck size={18} className="text-emerald-600" />
+                                <span>{t('followUp') || 'Follow up'}</span>
+                            </p>
+                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "followUp" ? "rotate-180" : ""}`} />
+                        </div>
 
-                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "followUp" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
-                        {hasPermission(json.followUp?.followUp1 || '/follow-up/follow-up-1', 'read') && (
-                            <Link to={json.followUp?.followUp1 || '/follow-up/follow-up-1'} className={subItemClass(json.followUp?.followUp1 || '/follow-up/follow-up-1')}>
-                                {t('followUp1') || 'Follow up 1'}
-                            </Link>
-                        )}
-                        {hasPermission(json.followUp?.followUp2 || '/follow-up/follow-up-2', 'read') && (
-                            <Link to={json.followUp?.followUp2 || '/follow-up/follow-up-2'} className={subItemClass(json.followUp?.followUp2 || '/follow-up/follow-up-2')}>
-                                {t('followUp2') || 'Follow up 2'}
-                            </Link>
-                        )}
-                        {(hasPermission(json.followUp?.followUp3 || '/follow-up/follow-up-3', 'read') ||
-                            hasPermission('/follow-up/sen-sok', 'read')) && (
-                            <Link to={json.followUp?.followUp3 || '/follow-up/follow-up-3'} className={subItemClass(json.followUp?.followUp3 || '/follow-up/follow-up-3')}>
-                                {t('followUp3') || 'Follow up 3'}
-                            </Link>
-                        )}
-                        {(hasPermission(json.followUp?.followUpReport || '/report/follow-up', 'read') || hasPermission('/follow-up/report', 'read')) && (
-                            <Link to={json.followUp?.followUpReport || '/report/follow-up'} className={subItemClass(json.followUp?.followUpReport || '/report/follow-up')}>
-                                {t('followUpReport') || 'Follow Up Report'}
-                            </Link>
-                        )}
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "followUp" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                            {hasPermission(json.followUp?.followUp1 || '/follow-up/follow-up-1', 'read') && (
+                                <Link to={json.followUp?.followUp1 || '/follow-up/follow-up-1'} className={subItemClass(json.followUp?.followUp1 || '/follow-up/follow-up-1')}>
+                                    {t('followUp1') || 'Follow up 1'}
+                                </Link>
+                            )}
+                            {hasPermission(json.followUp?.followUp2 || '/follow-up/follow-up-2', 'read') && (
+                                <Link to={json.followUp?.followUp2 || '/follow-up/follow-up-2'} className={subItemClass(json.followUp?.followUp2 || '/follow-up/follow-up-2')}>
+                                    {t('followUp2') || 'Follow up 2'}
+                                </Link>
+                            )}
+                            {(hasPermission(json.followUp?.followUp3 || '/follow-up/follow-up-3', 'read') ||
+                                hasPermission('/follow-up/sen-sok', 'read')) && (
+                                    <Link to={json.followUp?.followUp3 || '/follow-up/follow-up-3'} className={subItemClass(json.followUp?.followUp3 || '/follow-up/follow-up-3')}>
+                                        {t('followUp3') || 'Follow up 3'}
+                                    </Link>
+                                )}
+
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
             {/* Setting */}
             <div className="flex-shrink-0">
