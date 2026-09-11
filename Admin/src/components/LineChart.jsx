@@ -193,7 +193,7 @@ const LineChart = ({
                     ពុំមានទិន្នន័យសម្រាប់បង្ហាញ (No chart data available)
                 </div>
             ) : (
-                <div className="relative w-full overflow-hidden bg-slate-50/40 rounded-2xl border border-slate-100 p-2">
+                <div className="relative w-full overflow-visible bg-slate-50/40 rounded-2xl border border-slate-100 p-2">
                     <svg
                         viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
                         className="w-full h-auto overflow-visible"
@@ -314,34 +314,53 @@ const LineChart = ({
                         })}
                     </svg>
 
-                    {/* Rich Hover Floating Tooltip */}
-                    {hoveredIndex !== null && pointsData[hoveredIndex] && (
-                        <div
-                            className="absolute pointer-events-none z-30 bg-slate-900 text-white text-xs p-3 rounded-2xl shadow-2xl border border-slate-700 space-y-1 transform -translate-x-1/2 -translate-y-full transition-all"
-                            style={{
-                                left: `${(pointsData[hoveredIndex].x / viewBoxWidth) * 100}%`,
-                                top: '35%'
-                            }}
-                        >
-                            <div className="font-bold border-b border-slate-700 pb-1 font-mono text-emerald-400">
-                                📅 {pointsData[hoveredIndex].label}
+                    {/* 2D Smart Adaptive Hover Floating Tooltip */}
+                    {hoveredIndex !== null && pointsData[hoveredIndex] && (() => {
+                        const xRatio = pointsData[hoveredIndex].x / viewBoxWidth;
+                        let transformX = '-translate-x-1/2';
+                        if (xRatio > 0.68) {
+                            transformX = '-translate-x-[96%]'; // Flip left when near right end
+                        } else if (xRatio < 0.28) {
+                            transformX = '-translate-x-[4%]';  // Flip right when near left end
+                        }
+
+                        // Check vertical position of the highest dot in active series
+                        const minY = Math.min(...series.map(s => pointsData[hoveredIndex].seriesCoords[s.key]?.y ?? 100));
+                        const yRatio = minY / viewBoxHeight;
+                        
+                        // If dot is high (upper 48% of chart) or near top border, drop tooltip DOWN; otherwise float UP
+                        const isNearTop = yRatio < 0.48;
+                        const transformY = isNearTop ? 'translate-y-4' : '-translate-y-[112%]';
+                        const topPosition = `${(minY / viewBoxHeight) * 100}%`;
+
+                        return (
+                            <div
+                                className={`absolute pointer-events-none z-50 bg-slate-950/95 text-white text-xs p-3 rounded-xl shadow-2xl border-2 border-emerald-400 space-y-1.5 transform ${transformX} ${transformY} transition-all duration-150 animate-in fade-in zoom-in-95 backdrop-blur-md min-w-[200px] whitespace-nowrap`}
+                                style={{
+                                    left: `${(pointsData[hoveredIndex].x / viewBoxWidth) * 100}%`,
+                                    top: topPosition
+                                }}
+                            >
+                                <div className="font-bold border-b border-slate-700 pb-1 font-mono text-emerald-400 text-xs flex justify-between items-center">
+                                    <span>📅 {pointsData[hoveredIndex].label}</span>
+                                </div>
+                                {series.map(s => {
+                                    const val = pointsData[hoveredIndex].seriesCoords[s.key].val;
+                                    return (
+                                        <div key={s.key} className="flex justify-between items-center gap-4 text-xs">
+                                            <span className="flex items-center gap-1.5 text-slate-200">
+                                                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                                                {s.label}:
+                                            </span>
+                                            <span className="font-mono font-black" style={{ color: s.color }}>
+                                                {s.isCurrency ? `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : val.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                            {series.map(s => {
-                                const val = pointsData[hoveredIndex].seriesCoords[s.key].val;
-                                return (
-                                    <div key={s.key} className="flex justify-between items-center gap-4 text-[11px]">
-                                        <span className="flex items-center gap-1.5 text-slate-300">
-                                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
-                                            {s.label}:
-                                        </span>
-                                        <span className="font-mono font-bold" style={{ color: s.color }}>
-                                            {s.isCurrency ? `$${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : val.toLocaleString()}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
+                        );
+                    })()}
                 </div>
             )}
         </div>

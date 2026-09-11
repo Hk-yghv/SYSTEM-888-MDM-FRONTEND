@@ -210,11 +210,10 @@ const CalculateSchedule1 = () => {
                         <button
                             type="button"
                             onClick={handleCopySummary}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
-                                copiedText
-                                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300'
-                            }`}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${copiedText
+                                ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                                : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300'
+                                }`}
                         >
                             {copiedText ? <FaCheckCircle className="text-white" /> : <FaCopy className="text-slate-500" />}
                             {copiedText ? 'បានចម្លងរួចរាល់!' : 'ចម្លងព័ត៌មាន (Copy)'}
@@ -275,11 +274,10 @@ const CalculateSchedule1 = () => {
                                         key={amt}
                                         type="button"
                                         onClick={() => setPrincipalInput(String(amt))}
-                                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold border transition-colors cursor-pointer ${
-                                            principalInput === String(amt)
-                                                ? 'bg-emerald-600 text-white border-emerald-600'
-                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                                        }`}
+                                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold border transition-colors cursor-pointer ${principalInput === String(amt)
+                                            ? 'bg-emerald-600 text-white border-emerald-600'
+                                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                            }`}
                                     >
                                         ${amt.toLocaleString()}
                                     </button>
@@ -318,11 +316,10 @@ const CalculateSchedule1 = () => {
                                         key={r}
                                         type="button"
                                         onClick={() => setRateInput(r)}
-                                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold border transition-colors cursor-pointer ${
-                                            rateInput === r
-                                                ? 'bg-emerald-600 text-white border-emerald-600'
-                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                                        }`}
+                                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold border transition-colors cursor-pointer ${rateInput === r
+                                            ? 'bg-emerald-600 text-white border-emerald-600'
+                                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                            }`}
                                     >
                                         {r}
                                     </button>
@@ -340,22 +337,20 @@ const CalculateSchedule1 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setDurationUnit('months')}
-                                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${
-                                            durationUnit === 'months'
-                                                ? 'bg-white text-emerald-700 shadow-xs'
-                                                : 'text-slate-500 hover:text-slate-800'
-                                        }`}
+                                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${durationUnit === 'months'
+                                            ? 'bg-white text-emerald-700 shadow-xs'
+                                            : 'text-slate-500 hover:text-slate-800'
+                                            }`}
                                     >
                                         ខែ (Months)
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setDurationUnit('days')}
-                                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${
-                                            durationUnit === 'days'
-                                                ? 'bg-white text-emerald-700 shadow-xs'
-                                                : 'text-slate-500 hover:text-slate-800'
-                                        }`}
+                                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all ${durationUnit === 'days'
+                                            ? 'bg-white text-emerald-700 shadow-xs'
+                                            : 'text-slate-500 hover:text-slate-800'
+                                            }`}
                                     >
                                         ថ្ងៃ (Days)
                                     </button>
@@ -382,11 +377,10 @@ const CalculateSchedule1 = () => {
                                         key={m}
                                         type="button"
                                         onClick={() => setDurationInput(String(m))}
-                                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold border transition-colors cursor-pointer ${
-                                            durationInput === String(m)
-                                                ? 'bg-emerald-600 text-white border-emerald-600'
-                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                                        }`}
+                                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold border transition-colors cursor-pointer ${durationInput === String(m)
+                                            ? 'bg-emerald-600 text-white border-emerald-600'
+                                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                            }`}
                                     >
                                         {m} ខែ
                                     </button>
@@ -568,10 +562,10 @@ const CalculateSchedule1 = () => {
                                         <th className="px-4 py-3.5 text-center w-16">ល.រ</th>
                                         <th className="px-4 py-3.5">ដំណាក់កាល / ខែទី</th>
                                         <th className="px-4 py-3.5 text-center">កាលបរិច្ឆេទត្រូវបង់</th>
-                                        <th className="px-4 py-3.5 text-right font-mono">ប្រាក់ដើមត្រូវបង់ ($)</th>
-                                        <th className="px-4 py-3.5 text-right font-mono">ការប្រាក់ត្រូវបង់ ($)</th>
-                                        <th className="px-4 py-3.5 text-right font-mono font-black text-emerald-800">សរុបត្រូវបង់ក្នុងខែ ($)</th>
-                                        <th className="px-4 py-3.5 text-right font-mono text-slate-600">សមតុល្យដើមនៅសល់ ($)</th>
+                                        <th className="px-4 py-3.5 text-right font-khmer">ប្រាក់ដើមត្រូវបង់</th>
+                                        <th className="px-4 py-3.5 text-right font-khmer">ការប្រាក់ត្រូវបង់</th>
+                                        <th className="px-4 py-3.5 text-right font-khmer font-black text-emerald-800">សរុបត្រូវបង់ក្នុងខែ</th>
+                                        <th className="px-4 py-3.5 text-right font-khmer text-slate-600">សមតុល្យដើមនៅសល់</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-200/70 text-slate-800 font-medium">

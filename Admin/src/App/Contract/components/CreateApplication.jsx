@@ -89,7 +89,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         birthAddress: '', currentAddress: '',
         phone: '', relativePhone: '',
         facebookName: '', telegramName: '', urlFb: '', mosyleUrl: '',
-        customerPhoto: '', googleDrivePhotoUrl: '',
+        customerPhoto: '', googleDrivePhotoUrl: '', photos: [],
         model: '', serialNumber: '', imei1: '', imei2: '', meid: '', color: '', version: '',
         deviceProblem: '', capacity: '',
         amount: 1000, interest: '14%', adminFee: 20, duration: '12 Months',
@@ -315,42 +315,95 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         }
     };
 
-    // Cloudinary photo upload with Base64 fallback
+    const [inputPhotoUrl, setInputPhotoUrl] = useState('');
+
+    // Cloudinary multi-photo upload with Base64 fallback
     const handlePhotoFileUpload = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
         setPhotoUploading(true);
         try {
             const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
             const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('upload_preset', CLOUDINARY_PRESET);
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                method: 'POST',
-                body: formData
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setForm(prev => ({ ...prev, googleDrivePhotoUrl: data.secure_url, customerPhoto: data.secure_url }));
-            } else {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setForm(prev => ({ ...prev, googleDrivePhotoUrl: reader.result, customerPhoto: reader.result }));
-                };
-                reader.readAsDataURL(file);
+            const uploadedUrls = [];
+
+            for (const file of files) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('upload_preset', CLOUDINARY_PRESET);
+                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.secure_url) uploadedUrls.push(data.secure_url);
+                    } else {
+                        const base64 = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(file);
+                        });
+                        if (base64) uploadedUrls.push(base64);
+                    }
+                } catch (err) {
+                    const base64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(file);
+                    });
+                    if (base64) uploadedUrls.push(base64);
+                }
+            }
+
+            if (uploadedUrls.length > 0) {
+                setForm(prev => {
+                    const existing = Array.isArray(prev.photos) ? prev.photos : (prev.googleDrivePhotoUrl ? [prev.googleDrivePhotoUrl] : []);
+                    const combined = [...existing, ...uploadedUrls];
+                    return {
+                        ...prev,
+                        photos: combined,
+                        googleDrivePhotoUrl: combined[0] || '',
+                        customerPhoto: combined[0] || ''
+                    };
+                });
             }
         } catch (err) {
-            console.error('Cloudinary upload error:', err);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setForm(prev => ({ ...prev, googleDrivePhotoUrl: reader.result, customerPhoto: reader.result }));
-            };
-            reader.readAsDataURL(file);
+            console.error('Cloudinary multi-upload error:', err);
         } finally {
             setPhotoUploading(false);
             if (photoFileRef.current) photoFileRef.current.value = '';
         }
+    };
+
+    const handleAddDirectPhotoUrl = () => {
+        if (!inputPhotoUrl || !inputPhotoUrl.trim()) return;
+        const cleanUrl = inputPhotoUrl.trim();
+        setForm(prev => {
+            const existing = Array.isArray(prev.photos) ? prev.photos : (prev.googleDrivePhotoUrl ? [prev.googleDrivePhotoUrl] : []);
+            const combined = [...existing, cleanUrl];
+            return {
+                ...prev,
+                photos: combined,
+                googleDrivePhotoUrl: combined[0] || '',
+                customerPhoto: combined[0] || ''
+            };
+        });
+        setInputPhotoUrl('');
+    };
+
+    const handleRemovePhoto = (removeIndex) => {
+        setForm(prev => {
+            const existing = Array.isArray(prev.photos) ? prev.photos : [];
+            const updated = existing.filter((_, idx) => idx !== removeIndex);
+            return {
+                ...prev,
+                photos: updated,
+                googleDrivePhotoUrl: updated[0] || '',
+                customerPhoto: updated[0] || ''
+            };
+        });
     };
 
     const handleDocumentParsed = (parsedData) => {
@@ -381,7 +434,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         e.preventDefault();
         setSubmitting(true);
         const isAdmin = user?.role === 'Administrator';
-        const photo = form.googleDrivePhotoUrl || form.customerPhoto || '';
+        const allPhotos = Array.isArray(form.photos) && form.photos.length > 0
+            ? form.photos
+            : (form.googleDrivePhotoUrl ? [form.googleDrivePhotoUrl] : (form.customerPhoto ? [form.customerPhoto] : []));
+        const primaryPhoto = allPhotos[0] || '';
 
         const currentBrand = (form.brand || editData?.brand || user?.brand || 'M8').trim();
         const rawSuffix = String(form.contractSuffix || '').trim();
@@ -402,8 +458,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             contractIid: fullContractIid,
             deviceProblem: form.deviceProblem || '',
             capacity: form.capacity || '',
-            customerPhoto: photo,
-            googleDrivePhotoUrl: photo,
+            photos: allPhotos,
+            evidencePhotos: allPhotos,
+            customerPhoto: primaryPhoto,
+            googleDrivePhotoUrl: primaryPhoto,
             mosyleUrl: form.mosyleUrl || '',
             urlFb: form.urlFb || '',
             inputDate: form.inputDate || editData?.inputDate || new Date().toISOString().split('T')[0],
@@ -525,35 +583,73 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                         <div className="grid grid-cols-3 gap-3">
                             <Field label="URL Facebook"><input className={inp} type="text" id="urlFb" value={form.urlFb || ''} onChange={handleChange} placeholder="URL Facebook" /></Field>
                             <Field label="URL Mosyle"><input className={`${inp} font-mono`} type="text" id="mosyleUrl" value={form.mosyleUrl || ''} onChange={handleChange} placeholder="https://" /></Field>
-                            <Field label="Photo" accent>
-                                <div className="flex flex-col gap-1.5">
+                            <Field label="រូបភាពភស្តុតាង (Evidence / Proof Photos - អាចដាក់បានច្រើន)" accent>
+                                <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-1.5">
                                         <input
                                             className="flex-1 p-2 bg-gray-800/80 border border-amber-600/50 focus:border-amber-500 rounded-[5px] text-gray-100 font-mono text-xs outline-none transition-colors"
-                                            type="text" id="googleDrivePhotoUrl" value={form.googleDrivePhotoUrl || ''} onChange={handleChange} placeholder="https://... or upload file" />
+                                            type="text"
+                                            value={inputPhotoUrl}
+                                            onChange={(e) => setInputPhotoUrl(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddDirectPhotoUrl(); } }}
+                                            placeholder="Paste image URL and click Add, or Upload files..."
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleAddDirectPhotoUrl}
+                                            className="px-2.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[5px] text-[10px] font-bold flex items-center gap-1 cursor-pointer whitespace-nowrap transition-all"
+                                        >
+                                            Add URL
+                                        </button>
                                         <button
                                             type="button"
                                             onClick={() => photoFileRef.current?.click()}
                                             disabled={photoUploading}
                                             className="px-2.5 py-2 bg-amber-600/80 hover:bg-amber-500 disabled:opacity-50 text-white rounded-[5px] text-[10px] font-bold flex items-center gap-1 cursor-pointer whitespace-nowrap transition-all"
                                         >
-                                            {photoUploading ? 'Uploading...' : 'Upload'}
+                                            {photoUploading ? 'Uploading...' : 'Upload Files'}
                                         </button>
                                         <input
                                             ref={photoFileRef}
                                             type="file"
                                             accept="image/*"
+                                            multiple
                                             className="hidden"
                                             onChange={handlePhotoFileUpload}
                                         />
                                     </div>
-                                    {form.googleDrivePhotoUrl && (
-                                        <img
-                                            src={form.googleDrivePhotoUrl}
-                                            alt="Preview"
-                                            className="w-16 h-16 object-cover rounded-xl border border-amber-600/40"
-                                            onError={(e) => { e.target.style.display = 'none'; }}
-                                        />
+
+                                    {/* Multi-Photo Thumbnail Grid */}
+                                    {((form.photos && form.photos.length > 0) || form.googleDrivePhotoUrl) && (
+                                        <div className="p-2 bg-gray-800/90 border border-amber-600/30 rounded-xl">
+                                            <div className="text-[10px] text-amber-300 font-bold mb-1.5 flex items-center justify-between">
+                                                <span>រូបភាពភស្តុតាងបានភ្ជាប់ ({form.photos?.length || 1} រូប)</span>
+                                                <span className="text-[9px] text-gray-400 font-normal">អាចចុច Upload បន្ថែមរូបទៀតបាន</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-wrap max-h-36 overflow-y-auto p-1">
+                                                {(Array.isArray(form.photos) && form.photos.length > 0 ? form.photos : [form.googleDrivePhotoUrl]).filter(Boolean).map((imgUrl, pIdx) => (
+                                                    <div key={pIdx} className="relative group border-2 border-amber-600/40 rounded-lg overflow-hidden bg-gray-900 p-0.5 shadow-sm">
+                                                        <img
+                                                            src={imgUrl}
+                                                            alt={`Evidence ${pIdx + 1}`}
+                                                            className="w-14 h-14 object-cover rounded-md"
+                                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemovePhoto(pIdx)}
+                                                            className="absolute top-0.5 right-0.5 bg-rose-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold hover:bg-rose-500 cursor-pointer shadow-md opacity-90 group-hover:opacity-100"
+                                                            title="Remove photo"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                        <span className="absolute bottom-0 left-0 text-[8px] bg-black/70 text-amber-300 px-1 rounded-tr font-mono">
+                                                            #{pIdx + 1}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
                             </Field>

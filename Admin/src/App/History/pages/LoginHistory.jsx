@@ -30,8 +30,9 @@ const LoginHistory = () => {
     const fetchLoginHistory = useCallback(async (pg = page, search = searchTerm, role = roleFilter, status = statusFilter) => {
         setReloading(true);
         try {
+            const pageToFetch = typeof pg === 'number' ? pg : 1;
             const params = new URLSearchParams({
-                page: pg,
+                page: pageToFetch,
                 limit: LIMIT,
                 userUsername: user?.username || '',
                 userRole: user?.role || ''
@@ -52,7 +53,7 @@ const LoginHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE2, page, searchTerm, roleFilter, statusFilter, user]);
+    }, [API_BASE2, user]);
 
     const [targetTimestamp, setTargetTimestamp] = useState(null);
 
@@ -75,11 +76,8 @@ const LoginHistory = () => {
     }, [page]);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setPage(1);
-            fetchLoginHistory(1, searchTerm, roleFilter, statusFilter);
-        }, 300);
-        return () => clearTimeout(timer);
+        setPage(1);
+        fetchLoginHistory(1, searchTerm, roleFilter, statusFilter);
     }, [searchTerm, roleFilter, statusFilter]);
 
     // Initial fetch of report schedule and periodic sync
@@ -295,7 +293,10 @@ const LoginHistory = () => {
                     <input
                         type='text'
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setPage(1);
+                        }}
                         placeholder={t('search')}
                         className='w-full pl-9 pr-3 py-2 border border-slate-300 rounded-[5px] text-xs font-medium focus:outline-none focus:border-indigo-500 bg-slate-50'
                     />

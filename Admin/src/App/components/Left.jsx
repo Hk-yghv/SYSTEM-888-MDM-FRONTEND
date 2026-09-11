@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave } from "react-icons/fa";
 
 
 const Left = () => {
@@ -346,6 +346,14 @@ const Left = () => {
                         </div>
                     </div>
                 )}
+
+            {/* Salary */}
+            {hasPermission(json.salary || '/salary', 'read') && (
+                <Link to={json.salary || '/salary'} className={navItemClass(json.salary || '/salary')}>
+                    <FaMoneyBillWave size={19} className={isActive(json.salary || '/salary') ? "text-white" : "text-emerald-600"} />
+                    {t('salary') || 'Salary'}
+                </Link>
+            )}
 
             {/* Setting */}
             <div className="flex-shrink-0">

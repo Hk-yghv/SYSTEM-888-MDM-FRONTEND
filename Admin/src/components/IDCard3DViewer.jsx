@@ -14,14 +14,7 @@ const IDCard3DViewer = ({ customer }) => {
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-                <img
-                    src={customer.customerPhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300'}
-                    alt="Customer"
-                    className="w-24 h-28 object-cover rounded-xl border-2 border-indigo-500/50 shadow-md"
-                />
-
-                <div className="flex-1 w-full space-y-2 text-xs font-khmer">
+            <div className="w-full space-y-2 text-xs font-khmer">
                     <div className="grid grid-cols-2 gap-2">
                         <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800">
                             <span className="text-[9px] text-slate-400 block">ឈ្មោះ អង់គ្លេស</span>
@@ -51,7 +44,6 @@ const IDCard3DViewer = ({ customer }) => {
                         </div>
                     )}
                 </div>
-            </div>
         </div>
     );
 };

@@ -166,12 +166,13 @@ const FollowUp2 = () => {
     const fetchData = useCallback(async (pg = page, search = searchTerm, sDate = startDate, eDate = endDate, fDate = filterDate, stat = filterStatus, brd = selectedBrand) => {
         setReloading(true);
         try {
+            const pageToFetch = typeof pg === 'number' ? pg : 1;
             const params = new URLSearchParams({
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false',
-                page: pg,
+                page: pageToFetch,
                 limit: LIMIT
             });
 
@@ -197,11 +198,16 @@ const FollowUp2 = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 300);
         }
-    }, [API_BASE, page, searchTerm, startDate, endDate, filterDate, filterStatus, selectedBrand, user]);
+    }, [API_BASE, startDate, endDate, filterDate, filterStatus, selectedBrand, user]);
 
     useEffect(() => {
-        fetchData(page);
-    }, [fetchData, page]);
+        fetchData(page, searchTerm, startDate, endDate, filterDate, filterStatus, selectedBrand);
+    }, [page, startDate, endDate, filterDate, filterStatus, selectedBrand]);
+
+    useEffect(() => {
+        setPage(1);
+        fetchData(1, searchTerm, startDate, endDate, filterDate, filterStatus, selectedBrand);
+    }, [searchTerm]);
 
     // When navigated from Alert with ?search=xxx or ?alertId=xxx → auto-fill search and filter that specific record
     useEffect(() => {
@@ -945,7 +951,10 @@ const FollowUp2 = () => {
                         type="text"
                         placeholder="ស្វែងរកតាម ឈ្មោះ, Tel, អ្នកឆ្លើយតប, ទ្រព្យ, មូលហេតុ..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setPage(1);
+                        }}
                         className="w-full pl-9 pr-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
                     />
                 </div>

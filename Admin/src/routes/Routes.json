@@ -58,6 +58,7 @@
         "followUp3": "/follow-up/follow-up-3",
         "followUpSenSok": "/follow-up/follow-up-3"
     },
+    "salary": "/salary",
     "settings": {
         "controlSystem": "/settings/control-system",
         "systemLogs": "/settings/system-logs",

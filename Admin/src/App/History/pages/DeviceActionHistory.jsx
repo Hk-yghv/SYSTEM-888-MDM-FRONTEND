@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
-import { FaLock, FaUnlock, FaFileExcel, FaSearch, FaCheckCircle, FaClock, FaPlus, FaMobileAlt } from 'react-icons/fa';
+import { FaLock, FaUnlock, FaFileExcel, FaSearch, FaCheckCircle, FaClock, FaPlus, FaMobileAlt, FaTimesCircle, FaBan } from 'react-icons/fa';
 import { MdOutlineSync, MdPictureAsPdf, MdOutlineWallpaper } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
-
 
 const LIMIT = 10;
 
@@ -24,21 +23,18 @@ const DeviceActionHistory = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [actionFilter, setActionFilter] = useState('');
 
-    // Modal state for triggering new device action
-    const [openActionModal, setOpenActionModal] = useState(false);
-    const [activatedContracts, setActivatedContracts] = useState([]);
-    const [selectedContractId, setSelectedContractId] = useState('');
-    const [actionType, setActionType] = useState('Lock Phone');
-    const [actionStatus, setActionStatus] = useState('Pending');
-    const [reasonInput, setReasonInput] = useState('');
-    const [submittingAction, setSubmittingAction] = useState(false);
-    const [markingDoneId, setMarkingDoneId] = useState(null);
+    // Action handling state (Done / Reject)
+    const [actionLoadingId, setActionLoadingId] = useState(null);
+    const [rejectingItem, setRejectingItem] = useState(null);
+    const [rejectReason, setRejectReason] = useState('');
+    const [submittingReject, setSubmittingReject] = useState(false);
 
     const fetchDeviceActionLogs = useCallback(async (pg = page, search = searchTerm, st = statusFilter, act = actionFilter) => {
         setReloading(true);
         try {
+            const pageToFetch = typeof pg === 'number' ? pg : 1;
             const params = new URLSearchParams({
-                page: pg,
+                page: pageToFetch,
                 limit: LIMIT,
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
@@ -61,23 +57,7 @@ const DeviceActionHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE2, page, searchTerm, statusFilter, actionFilter, user]);
-
-    // Fetch activated contracts list for modal select dropdown
-    const fetchActivatedContracts = async () => {
-        try {
-            const res = await fetch(`${API_BASE1}/contracts?status=Activated`);
-            if (res.ok) {
-                const data = await res.json();
-                setActivatedContracts(data.data || []);
-                if (data.data && data.data.length > 0) {
-                    setSelectedContractId(data.data[0].contractId);
-                }
-            }
-        } catch (err) {
-            console.error('Fetch activated contracts error:', err);
-        }
-    };
+    }, [API_BASE2, user]);
 
     useEffect(() => {
         fetchDeviceActionLogs(page, searchTerm, statusFilter, actionFilter);
@@ -88,44 +68,10 @@ const DeviceActionHistory = () => {
         fetchDeviceActionLogs(1, searchTerm, statusFilter, actionFilter);
     }, [searchTerm, statusFilter, actionFilter]);
 
-    useEffect(() => {
-        fetchActivatedContracts();
-    }, []);
-
-    const handleCreateActionLog = async (e) => {
-        e.preventDefault();
-        if (!selectedContractId) return;
-
-        setSubmittingAction(true);
-        try {
-            const res = await fetch(`${API_BASE2}/history/device-actions`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contractId: selectedContractId,
-                    actionType,
-                    status: actionStatus,
-                    performedBy: user?.name || user?.username || 'Administrator',
-                    reason: reasonInput || `${actionType} requested on Activated device`
-                })
-            });
-
-            if (res.ok) {
-                setOpenActionModal(false);
-                setReasonInput('');
-                fetchDeviceActionLogs(1, searchTerm, statusFilter, actionFilter);
-            }
-        } catch (err) {
-            console.error('Create action log error:', err);
-        } finally {
-            setSubmittingAction(false);
-        }
-    };
-
     const handleMarkDone = async (item) => {
-        setMarkingDoneId(item._id || item.logId);
+        const targetId = item._id || item.logId;
+        setActionLoadingId(targetId);
         try {
-            const targetId = item._id || item.logId;
             const res = await fetch(`${API_BASE2}/history/device-actions/${targetId}/done`, {
                 method: 'PUT'
             });
@@ -135,7 +81,33 @@ const DeviceActionHistory = () => {
         } catch (err) {
             console.error('Mark done error:', err);
         } finally {
-            setMarkingDoneId(null);
+            setActionLoadingId(null);
+        }
+    };
+
+    const handleConfirmReject = async (e) => {
+        e?.preventDefault();
+        if (!rejectingItem) return;
+
+        const targetId = rejectingItem._id || rejectingItem.logId;
+        setSubmittingReject(true);
+        try {
+            const res = await fetch(`${API_BASE2}/history/device-actions/${targetId}/reject`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    reason: rejectReason.trim() || 'បដិសេធដោយ Administrator'
+                })
+            });
+            if (res.ok) {
+                setRejectingItem(null);
+                setRejectReason('');
+                fetchDeviceActionLogs(page, searchTerm, statusFilter, actionFilter);
+            }
+        } catch (err) {
+            console.error('Reject action error:', err);
+        } finally {
+            setSubmittingReject(false);
         }
     };
 
@@ -211,13 +183,6 @@ const DeviceActionHistory = () => {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                        onClick={() => { fetchActivatedContracts(); setOpenActionModal(true); }}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/20'
-                    >
-                        <FaPlus size={12} />
-                        <span>{t('create')} / ដាក់ Lock ឬ Wallpaper</span>
-                    </button>
                     <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
                     </button>
@@ -238,7 +203,10 @@ const DeviceActionHistory = () => {
                     <input
                         type='text'
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setPage(1);
+                        }}
                         placeholder={t('search')}
                         className='w-full pl-9 pr-3 py-2 border border-slate-300 rounded-[5px] text-xs font-medium focus:outline-none focus:border-amber-500 bg-slate-50'
                     />
@@ -254,7 +222,8 @@ const DeviceActionHistory = () => {
                         >
                             <option value=''>All Status</option>
                             <option value='Pending'>Pending (រង់ចាំ)</option>
-                            <option value='Success'>Success (ជោគជ័យ)</option>
+                            <option value='Success'>Success (ជោគជ័យ / រួចរាល់)</option>
+                            <option value='Rejected'>Rejected (បដិសេធ)</option>
                         </select>
                     </div>
 
@@ -290,7 +259,7 @@ const DeviceActionHistory = () => {
                             <th className='px-4 py-3 text-center'>Action Type</th>
                             <th className='px-4 py-3 text-center'>{t('status')}</th>
                             <th className='px-4 py-3'>Performed By</th>
-                            <th className='px-4 py-3 text-center'>Complete Action</th>
+                            <th className='px-4 py-3 text-center'>Actions (អនុម័ត / បដិសេធ)</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -307,11 +276,14 @@ const DeviceActionHistory = () => {
                         ) : (
                             logs.map((item, idx) => {
                                 const isPending = item.status === 'Pending';
+                                const isRejected = item.status === 'Rejected';
                                 const isLock = item.actionType?.includes('Lock Phone');
                                 const isWallpaper = item.actionType?.includes('Wallpaper');
+                                const currentId = item._id || item.logId;
+                                const isItemLoading = actionLoadingId === currentId;
 
                                 return (
-                                    <tr key={item._id || item.logId || idx} className='hover:bg-amber-50/40 transition-colors'>
+                                    <tr key={currentId || idx} className='hover:bg-amber-50/40 transition-colors'>
                                         <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>
                                             {(page - 1) * LIMIT + idx + 1}
                                         </td>
@@ -347,6 +319,11 @@ const DeviceActionHistory = () => {
                                                     <FaClock size={10} />
                                                     {t('pending')}
                                                 </span>
+                                            ) : isRejected ? (
+                                                <span className='px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-red-100 border border-red-300 text-red-800 inline-flex items-center gap-1' title={item.reason || ''}>
+                                                    <FaTimesCircle size={10} />
+                                                    បដិសេធ
+                                                </span>
                                             ) : (
                                                 <span className='px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 border border-emerald-300 text-emerald-800 inline-flex items-center gap-1'>
                                                     <FaCheckCircle size={10} />
@@ -360,20 +337,42 @@ const DeviceActionHistory = () => {
                                         <td className='px-4 py-3 text-center whitespace-nowrap'>
                                             {isPending ? (
                                                 hasPermission('/history/device-history', 'edit') ? (
-                                                    <button
-                                                        onClick={() => handleMarkDone(item)}
-                                                        disabled={markingDoneId === (item._id || item.logId)}
-                                                        className='px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] font-bold text-xs shadow-md shadow-emerald-600/20 inline-flex items-center gap-1 cursor-pointer transition-all'
-                                                    >
-                                                        <FaCheckCircle size={12} />
-                                                        <span>{t('done')} (រួចរាល់)</span>
-                                                    </button>
+                                                    <div className="inline-flex items-center gap-1.5 justify-center">
+                                                        {/* 1. Done / Lock / Approve Button */}
+                                                        <button
+                                                            onClick={() => handleMarkDone(item)}
+                                                            disabled={isItemLoading}
+                                                            className='px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[5px] font-bold text-xs shadow-xs inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95'
+                                                            title="អនុម័ត / ចាក់សោរួចរាល់ (Mark Done)"
+                                                        >
+                                                            <FaCheckCircle size={11} />
+                                                            <span>{t('done')} (រួចរាល់)</span>
+                                                        </button>
+
+                                                        {/* 2. Reject Button (បដិសេធ) */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setRejectingItem(item);
+                                                                setRejectReason('');
+                                                            }}
+                                                            disabled={isItemLoading}
+                                                            className='px-2.5 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-[5px] font-bold text-xs shadow-xs inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95'
+                                                            title="បដិសេធសំណើនេះ (Reject)"
+                                                        >
+                                                            <FaTimesCircle size={11} />
+                                                            <span>បដិសេធ</span>
+                                                        </button>
+                                                    </div>
                                                 ) : (
                                                     <span className="text-amber-700 font-semibold text-xs italic">Pending (Read Only)</span>
                                                 )
+                                            ) : isRejected ? (
+                                                <span className='text-xs text-red-600 font-bold inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-red-50 rounded-full border border-red-200' title={item.reason || ''}>
+                                                    <FaTimesCircle /> បដិសេធ (Rejected)
+                                                </span>
                                             ) : (
-                                                <span className='text-xs text-emerald-700 font-bold flex items-center justify-center gap-1'>
-                                                    <FaCheckCircle /> Completed
+                                                <span className='text-xs text-emerald-700 font-bold inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-emerald-50 rounded-full border border-emerald-200'>
+                                                    <FaCheckCircle /> Completed (រួចរាល់)
                                                 </span>
                                             )}
                                         </td>
@@ -385,103 +384,69 @@ const DeviceActionHistory = () => {
                 </table>
             </div>
 
-            {/* Modal for Creating New Action History */}
-            {openActionModal && (
+            {/* Modal for Reject Confirmation */}
+            {rejectingItem && (
                 <div className='fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 select-none'>
-                    <div className='bg-white rounded-2xl border border-slate-200 w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200'>
-                        <div className='p-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white flex items-center justify-between'>
+                    <div className='bg-white rounded-2xl border border-slate-200 w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200'>
+                        <div className='p-4 bg-gradient-to-r from-red-600 to-red-700 text-white flex items-center justify-between'>
                             <h2 className='text-base font-bold flex items-center gap-2'>
-                                <FaMobileAlt />
-                                Create Device Action (Lock / Wallpaper)
+                                <FaBan />
+                                បដិសេធសំណើ Device Action (Reject)
                             </h2>
                             <button
-                                onClick={() => setOpenActionModal(false)}
+                                onClick={() => setRejectingItem(null)}
                                 className='w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold cursor-pointer transition-colors'
                             >
                                 ✕
                             </button>
                         </div>
 
-                        <form onSubmit={handleCreateActionLog} className='p-5 space-y-4 text-xs'>
-                            <div>
-                                <label className='block font-bold text-slate-700 mb-1'>Select Activated Device / Contract</label>
-                                {activatedContracts.length === 0 ? (
-                                    <p className='text-amber-700 italic font-semibold'>No activated contracts available.</p>
-                                ) : (
-                                    <select
-                                        value={selectedContractId}
-                                        onChange={(e) => setSelectedContractId(e.target.value)}
-                                        className='w-full px-3 py-2 border border-slate-300 rounded-[5px] font-semibold bg-slate-50 text-slate-800 focus:outline-none focus:border-amber-500'
-                                    >
-                                        {activatedContracts.map((c) => (
-                                            <option key={c._id || c.contractId} value={c.contractId}>
-                                                {c.customerNameEn} ({c.model} - S/N: {c.serialNumber})
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
-                            </div>
-
-                            <div className='grid grid-cols-2 gap-3'>
-                                <div>
-                                    <label className='block font-bold text-slate-700 mb-1'>Action Type</label>
-                                    <select
-                                        value={actionType}
-                                        onChange={(e) => setActionType(e.target.value)}
-                                        className='w-full px-3 py-2 border border-slate-300 rounded-[5px] font-semibold bg-slate-50 text-slate-800 focus:outline-none focus:border-amber-500'
-                                    >
-                                        <option value='Lock Phone'>Lock Phone (ចាក់សោទូរស័ព្ទ)</option>
-                                        <option value='Unlock Phone'>Unlock Phone (ដោះសោទូរស័ព្ទ)</option>
-                                        <option value='Set Wallpaper'>Set Wallpaper (ដាក់ Wallpaper)</option>
-                                        <option value='Lock Wallpaper'>Lock Wallpaper (លាក់ Wallpaper)</option>
-                                        <option value='Unlock Wallpaper'>Unlock Wallpaper (បើក Wallpaper)</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className='block font-bold text-slate-700 mb-1'>Initial Status</label>
-                                    <select
-                                        value={actionStatus}
-                                        onChange={(e) => setActionStatus(e.target.value)}
-                                        className='w-full px-3 py-2 border border-slate-300 rounded-[5px] font-semibold bg-slate-50 text-slate-800 focus:outline-none focus:border-amber-500'
-                                    >
-                                        <option value='Pending'>Pending (រង់ចាំអ្នកចុច Done)</option>
-                                        <option value='Success'>Success (ជោគជ័យភ្លាមៗ)</option>
-                                    </select>
-                                </div>
+                        <form onSubmit={handleConfirmReject} className='p-5 space-y-4 text-xs'>
+                            <div className='p-3 bg-red-50 border border-red-100 rounded-xl space-y-1'>
+                                <p className='font-bold text-slate-800 text-sm'>
+                                    {rejectingItem.customerName}
+                                </p>
+                                <p className='text-slate-600'>
+                                    Action: <span className='font-bold text-red-700'>{rejectingItem.actionType}</span> | Model: <span className='font-semibold'>{rejectingItem.model}</span>
+                                </p>
+                                <p className='text-slate-500 font-mono text-[11px]'>
+                                    S/N: {rejectingItem.serialNumber}
+                                </p>
                             </div>
 
                             <div>
-                                <label className='block font-bold text-slate-700 mb-1'>Reason / Description</label>
-                                <input
-                                    type='text'
-                                    value={reasonInput}
-                                    onChange={(e) => setReasonInput(e.target.value)}
-                                    placeholder='E.g. Lock device due to overdue payment'
-                                    className='w-full px-3 py-2 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-amber-500 bg-slate-50'
+                                <label className='block font-bold text-slate-700 mb-1'>មូលហេតុបដិសេធ (Reason for Rejection)</label>
+                                <textarea
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                    rows={3}
+                                    placeholder='ឧទាហរណ៍៖ អតិថិជនបានបង់ប្រាក់រួចរាល់ ឬមិនអនុវត្ត...'
+                                    className='w-full px-3 py-2 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-red-500 bg-slate-50 resize-none'
                                 />
                             </div>
 
                             <div className='pt-3 flex items-center justify-end gap-2 border-t border-slate-100'>
                                 <button
                                     type='button'
-                                    onClick={() => setOpenActionModal(false)}
+                                    onClick={() => setRejectingItem(null)}
                                     className='px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[5px] font-bold transition-all cursor-pointer'
                                 >
                                     {t('cancel')}
                                 </button>
                                 <button
                                     type='submit'
-                                    disabled={submittingAction || !selectedContractId}
-                                    className='px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-[5px] font-bold shadow-lg shadow-amber-600/20 transition-all cursor-pointer'
+                                    disabled={submittingReject}
+                                    className='px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-[5px] font-bold shadow-lg shadow-red-600/20 transition-all cursor-pointer'
                                 >
-                                    {submittingAction ? 'Saving...' : 'Record History'}
+                                    {submittingReject ? 'កំពុងបដិសេធ...' : 'បញ្ជាក់បដិសេធ (Reject)'}
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
+
+
 
             {/* Pagination */}
             <Pagination

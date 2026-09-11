@@ -74,6 +74,9 @@ import FollowUp1 from "../App/FollowUp/pages/FollowUp1";
 import FollowUp2 from "../App/FollowUp/pages/FollowUp2";
 import FollowUp3 from "../App/FollowUp/pages/FollowUp3";
 
+// Salary
+import SalaryPage from "../App/Salary/pages/SalaryPage";
+
 // Settings & Profile
 import ControlSystem from "../App/Settings/pages/ControlSystem";
 import SystemAuditLogs from "../App/Settings/pages/SystemAuditLogs";
@@ -205,6 +208,9 @@ const App = () => {
                   <Route path={json.followUp?.followUp2 || '/follow-up/follow-up-2'} element={<ProtectRoute pagePath={json.followUp?.followUp2 || '/follow-up/follow-up-2'}> <MainLayout><FollowUp2 /></MainLayout> </ProtectRoute>} />
                   <Route path={json.followUp?.followUp3 || '/follow-up/follow-up-3'} element={<ProtectRoute pagePath={json.followUp?.followUp3 || '/follow-up/follow-up-3'}> <MainLayout><FollowUp3 /></MainLayout> </ProtectRoute>} />
                   <Route path="/follow-up/sen-sok" element={<ProtectRoute pagePath="/follow-up/follow-up-3"> <MainLayout><FollowUp3 /></MainLayout> </ProtectRoute>} />
+
+                  {/* Salary */}
+                  <Route path={json.salary || '/salary'} element={<ProtectRoute pagePath={json.salary || '/salary'}> <MainLayout><SalaryPage /></MainLayout> </ProtectRoute>} />
 
                   {/* Settings */}
                   <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />

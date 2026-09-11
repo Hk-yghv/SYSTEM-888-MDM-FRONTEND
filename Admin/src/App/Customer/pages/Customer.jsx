@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { IoIosContact } from 'react-icons/io';
 import { MdOutlineSync, MdSearch, MdInfo, MdPictureAsPdf, MdTableChart, MdQrCode2, MdClose } from 'react-icons/md';
-import { FaFileExcel, FaQrcode } from 'react-icons/fa';
+import { FaFileExcel, FaQrcode, FaFileImage } from 'react-icons/fa';
 import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
@@ -36,6 +36,17 @@ const Customer = () => {
     const [customerPayments, setCustomerPayments] = useState([]);
     const [loadingPayments, setLoadingPayments] = useState(false);
     const [exportingCustomerPdfId, setExportingCustomerPdfId] = useState(null);
+
+    // Action droplist & Photo Gallery modal states
+    const [openMenuId, setOpenMenuId] = useState(null);
+    const [photoGalleryCustomer, setPhotoGalleryCustomer] = useState(null);
+
+    // Close action menu on window click
+    useEffect(() => {
+        const handleClickOutside = () => setOpenMenuId(null);
+        window.addEventListener('click', handleClickOutside);
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, []);
 
     const handleDirectExportPdf = async (customer) => {
         if (!customer || exportingCustomerPdfId) return;
@@ -93,12 +104,13 @@ const Customer = () => {
         loadPayments();
     }, [selectedCustomer, API_BASE1]);
 
-    const fetchCustomers = async (pg = currentPage, search = searchTerm) => {
+    const fetchCustomers = useCallback(async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
         try {
+            const pageToFetch = typeof pg === 'number' ? pg : 1;
             const params = new URLSearchParams({
                 status: 'Activated',
-                page: pg,
+                page: pageToFetch,
                 limit: itemsPerPage,
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
@@ -118,10 +130,16 @@ const Customer = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    };
+    }, [API_BASE1, user, itemsPerPage, searchTerm]);
 
-    useEffect(() => { fetchCustomers(currentPage, searchTerm); }, [currentPage]);
-    useEffect(() => { fetchCustomers(1, searchTerm); setCurrentPage(1); }, [searchTerm]);
+    useEffect(() => {
+        fetchCustomers(currentPage, searchTerm);
+    }, [currentPage]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+        fetchCustomers(1, searchTerm);
+    }, [searchTerm]);
 
     const filteredCustomers = customers; // server already filters+paginates
 
@@ -242,7 +260,10 @@ const Customer = () => {
                         <input
                             type="text"
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
                             placeholder="Search name, phone, model..."
                             className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
                         />
@@ -270,7 +291,7 @@ const Customer = () => {
                     <button
                         onClick={fetchCustomers}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-baclk hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs cursor-pointer border border-slate-300 transition-all font-bold shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs cursor-pointer border border-slate-300 transition-all font-bold shadow-xs'
                     >
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
@@ -295,7 +316,7 @@ const Customer = () => {
                             <th className='px-4 py-3 text-center'>Actions</th>
                         </tr>
                     </thead>
-                    <tbody className='divide-y divide-baclk font-medium text-slate-800'>
+                    <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredCustomers.length === 0 ? (
                             <tr>
                                 <td colSpan={10} className="text-center py-8 text-slate-500 italic font-medium">
@@ -317,7 +338,7 @@ const Customer = () => {
                                     <td className='px-4 py-3 font-mono text-slate-600 text-[11px]'><CopyCell text={item.idCardNumber || '-'} className='font-mono text-slate-600 text-[11px]' /></td>
                                     <td className='px-4 py-3 font-mono text-slate-700 font-medium'><CopyCell text={item.phone || '-'} className='font-mono text-slate-700 font-medium' /></td>
                                     <td className='px-4 py-3'>
-                                        <span className='px-2 py-0.5 bg-baclk border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
+                                        <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
                                             {item.brand || '—'}
                                         </span>
                                     </td>
@@ -328,32 +349,78 @@ const Customer = () => {
                                         <span className='px-2.5 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>Activated</span>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
-                                        <div className="flex items-center justify-center gap-1.5">
-                                            {/* Export PDF Button */}
+                                        <div className="relative inline-block text-left">
                                             <button
-                                                onClick={() => handleDirectExportPdf(item)}
-                                                disabled={exportingCustomerPdfId === (item._id || item.contractId)}
-                                                className={`w-8 h-8 rounded-xl ${exportingCustomerPdfId === (item._id || item.contractId) ? 'bg-red-100 text-red-400' : 'bg-red-50 hover:bg-red-100 text-red-600'} border border-red-200 flex items-center justify-center text-sm transition-all cursor-pointer`}
-                                                title="Export Complete Customer PDF Dossier"
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenMenuId(openMenuId === (item._id || item.contractId) ? null : (item._id || item.contractId));
+                                                }}
+                                                className="px-2.5 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-300 text-slate-700 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                                             >
-                                                <MdPictureAsPdf className={exportingCustomerPdfId === (item._id || item.contractId) ? 'animate-pulse' : ''} />
+                                                <span>Actions</span>
+                                                <span className="text-[9px]">▼</span>
                                             </button>
-                                            {/* Details Info Button */}
-                                            <button
-                                                onClick={() => setSelectedCustomer(item)}
-                                                className="w-8 h-8 rounded-xl bg-baclk hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-600 text-sm transition-all cursor-pointer"
-                                                title="View Full Details & Payment History"
-                                            >
-                                                <MdInfo />
-                                            </button>
-                                            {/* QR Code Profile Button */}
-                                            <button
-                                                onClick={() => handleOpenQrModal(item)}
-                                                className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 text-sm transition-all cursor-pointer"
-                                                title="Scan Customer QR Profile"
-                                            >
-                                                <FaQrcode />
-                                            </button>
+
+                                            {openMenuId === (item._id || item.contractId) && (
+                                                <div
+                                                    className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    {/* See Photo */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setPhotoGalleryCustomer(item);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-semibold cursor-pointer transition-colors"
+                                                    >
+                                                        <FaFileImage className="text-emerald-600" />
+                                                        <span>See Photo (មើលរូប)</span>
+                                                    </button>
+
+                                                    {/* Details Info */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedCustomer(item);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+                                                    >
+                                                        <MdInfo className="text-slate-500" />
+                                                        <span>Details (ព័ត៌មានលម្អិត)</span>
+                                                    </button>
+
+                                                    {/* QR Code Profile */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            handleOpenQrModal(item);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+                                                    >
+                                                        <FaQrcode className="text-indigo-600" />
+                                                        <span>QR Code (ស្កេន QR)</span>
+                                                    </button>
+
+                                                    {/* Export PDF */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            handleDirectExportPdf(item);
+                                                            setOpenMenuId(null);
+                                                        }}
+                                                        disabled={exportingCustomerPdfId === (item._id || item.contractId)}
+                                                        className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+                                                    >
+                                                        <MdPictureAsPdf className="text-red-600" />
+                                                        <span>{exportingCustomerPdfId === (item._id || item.contractId) ? 'Exporting...' : 'Export PDF'}</span>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -379,35 +446,24 @@ const Customer = () => {
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-5 border-b border-gray-200 sticky top-0 bg-white rounded-t-[26px] z-10">
 
-                            <div className="flex items-center gap-4">
-                                <img
-                                    src={
-                                        selectedCustomer.customerPhoto ||
-                                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
-                                    }
-                                    alt="avatar"
-                                    className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500"
-                                />
+                            <div>
+                                <h3 className="text-base font-black text-gray-900 tracking-wide flex items-center gap-2">
+                                    <CopyCell text={selectedCustomer.customerNameEn} className="text-gray-900 font-bold" />
+                                    <CopyCell text={selectedCustomer.customerNameKh ? `(${selectedCustomer.customerNameKh})` : ''} copyValue={selectedCustomer.customerNameKh} className="text-xs text-emerald-600 font-khmer font-normal" />
+                                </h3>
 
-                                <div>
-                                    <h3 className="text-base font-black text-gray-900 tracking-wide flex items-center gap-2">
-                                        <CopyCell text={selectedCustomer.customerNameEn} className="text-gray-900 font-bold" />
-                                        <CopyCell text={selectedCustomer.customerNameKh ? `(${selectedCustomer.customerNameKh})` : ''} copyValue={selectedCustomer.customerNameKh} className="text-xs text-emerald-600 font-khmer font-normal" />
-                                    </h3>
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        Activated
+                                    </span>
 
-                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                            Activated
-                                        </span>
+                                    <span className="text-[10px] text-gray-500 font-bold">
+                                        Contract: <CopyCell text={selectedCustomer.contractIid || selectedCustomer.contractId} className="text-gray-700 font-mono" />
+                                    </span>
 
-                                        <span className="text-[10px] text-gray-500 font-bold">
-                                            Contract: <CopyCell text={selectedCustomer.contractIid || selectedCustomer.contractId} className="text-gray-700 font-mono" />
-                                        </span>
-
-                                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                            <CopyCell text={selectedCustomer.brand || 'Device'} className="text-emerald-700 font-bold" />
-                                        </span>
-                                    </div>
+                                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                        <CopyCell text={selectedCustomer.brand || 'Device'} className="text-emerald-700 font-bold" />
+                                    </span>
                                 </div>
                             </div>
 
@@ -1277,27 +1333,12 @@ const Customer = () => {
 
                         {/* Customer Summary */}
                         <div className="
-                flex items-center gap-3
                 bg-gray-50
                 p-3
                 rounded-2xl
                 border border-gray-200
                 text-left
             ">
-                            <img
-                                src={
-                                    qrCustomer.customerPhoto ||
-                                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
-                                }
-                                alt="avatar"
-                                className="
-                        w-12 h-12
-                        rounded-xl
-                        object-cover
-                        border border-gray-200
-                    "
-                            />
-
                             <div className="min-w-0">
                                 <h4 className="
                         text-xs
@@ -1443,6 +1484,91 @@ const Customer = () => {
 
                         </div>
 
+                    </div>
+                </div>
+            )}
+
+            {/* Photo Gallery Modal for "See Photo" */}
+            {photoGalleryCustomer && (
+                <div
+                    className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4 animate-in fade-in duration-150"
+                    onClick={() => setPhotoGalleryCustomer(null)}
+                >
+                    <div
+                        className="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-800 text-white bg-slate-950">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-base">
+                                    <FaFileImage />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                                        <span className='text-black'>រូបភាពភស្តុតាង (Evidence Photos)</span>
+                                        <span className="text-xs text-emerald-400 font-mono font-bold">
+                                            {photoGalleryCustomer.customerNameEn} {photoGalleryCustomer.customerNameKh ? `(${photoGalleryCustomer.customerNameKh})` : ''}
+                                        </span>
+                                    </h3>
+                                    <p className="text-[11px] text-slate-400 font-mono">
+                                        Contract: {photoGalleryCustomer.contractIid || photoGalleryCustomer.contractId}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setPhotoGalleryCustomer(null)}
+                                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer transition-colors"
+                            >
+                                <MdClose size={20} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body / Gallery Grid */}
+                        <div className="p-5 overflow-y-auto max-h-[75vh]">
+                            {(() => {
+                                const photosList = (Array.isArray(photoGalleryCustomer.photos) && photoGalleryCustomer.photos.length > 0)
+                                    ? photoGalleryCustomer.photos
+                                    : (Array.isArray(photoGalleryCustomer.evidencePhotos) && photoGalleryCustomer.evidencePhotos.length > 0)
+                                        ? photoGalleryCustomer.evidencePhotos
+                                        : [photoGalleryCustomer.googleDrivePhotoUrl, photoGalleryCustomer.customerPhoto].filter(Boolean);
+
+                                if (photosList.length === 0) {
+                                    return (
+                                        <div className="py-16 text-center text-slate-400 space-y-2">
+                                            <FaFileImage className="text-4xl mx-auto opacity-30 text-slate-400" />
+                                            <p className="text-xs font-semibold">គ្មានរូបភាពភស្តុតាងដែលបានភ្ជាប់សម្រាប់អតិថិជននេះទេ</p>
+                                            <p className="text-[11px] text-slate-500">No evidence photos attached for this application.</p>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {photosList.map((pUrl, pIdx) => (
+                                            <div key={pIdx} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-2 flex flex-col items-center shadow-lg">
+                                                <img
+                                                    src={pUrl}
+                                                    alt={`Evidence ${pIdx + 1}`}
+                                                    className="w-full max-h-[50vh] object-contain rounded-lg"
+                                                />
+                                                <div className="w-full flex items-center justify-between pt-2 px-1 text-[11px] text-slate-400 font-mono">
+                                                    <span>រូបភាពទី #{pIdx + 1}</span>
+                                                    <a
+                                                        href={pUrl}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="text-emerald-400 hover:underline font-bold"
+                                                    >
+                                                        View Fullscreen ↗
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
+                        </div>
                     </div>
                 </div>
             )}

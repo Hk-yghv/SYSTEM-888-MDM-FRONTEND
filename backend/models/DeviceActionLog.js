@@ -15,7 +15,7 @@ const deviceActionLogSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ['Pending', 'Success'],
+        enum: ['Pending', 'Success', 'Rejected'],
         default: 'Pending'
     },
 

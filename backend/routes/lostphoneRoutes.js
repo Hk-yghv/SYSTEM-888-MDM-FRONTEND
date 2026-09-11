@@ -120,9 +120,42 @@ router.get('/phonelogs', async (req, res) => {
     }
 });
 
+// Helper: Auto-cleanup any Rejected DeviceActionLog older than 7 days
+const cleanupOldRejectedLogs = async () => {
+    try {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+
+        if (isMongoConnected) {
+            const DeviceActionLogWrite = getWriteModel(DeviceActionLog) || DeviceActionLog;
+            await DeviceActionLogWrite.deleteMany({
+                status: 'Rejected',
+                $or: [
+                    { createdAt: { $lt: sevenDaysAgo } },
+                    { date: { $lt: sevenDaysAgoStr } }
+                ]
+            });
+        }
+
+        if (MEM_DB.deviceActionLogs && MEM_DB.deviceActionLogs.length > 0) {
+            MEM_DB.deviceActionLogs = MEM_DB.deviceActionLogs.filter(l => {
+                if (l.status !== 'Rejected') return true;
+                const logTime = l.createdAt ? new Date(l.createdAt).getTime() : (l.date ? new Date(l.date).getTime() : 0);
+                if (!logTime) return true;
+                return (Date.now() - logTime) <= (7 * 24 * 60 * 60 * 1000);
+            });
+        }
+    } catch (e) {
+        console.error('Failed to cleanup old rejected logs:', e?.message || e);
+    }
+};
+
 // GET Device Action History
 router.get('/history/device-actions', async (req, res) => {
     try {
+        // Auto purge old rejected alerts older than 7 days
+        await cleanupOldRejectedLogs();
+
         const { userBrand, userRole, username, isImmutable, page = 1, limit = 10, status, actionType, search } = req.query;
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
         const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -150,8 +183,14 @@ router.get('/history/device-actions', async (req, res) => {
         if (isMongoConnected) {
             const allLogs = await queryAllDBs(DeviceActionLog, (M) => M.find(filter).sort({ createdAt: -1 }));
             const total = allLogs.length;
-            const data = allLogs.slice(skip, skip + parseInt(limit));
-            return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+            let actualSkip = skip;
+            let actualPage = parseInt(page) || 1;
+            if (actualSkip >= total && total > 0) {
+                actualSkip = 0;
+                actualPage = 1;
+            }
+            const data = allLogs.slice(actualSkip, actualSkip + parseInt(limit));
+            return res.json({ data, total, page: actualPage, totalPages: Math.ceil(total / parseInt(limit)) });
         }
 
         // MEM_DB fallback with filters
@@ -172,8 +211,14 @@ router.get('/history/device-actions', async (req, res) => {
             );
         }
         const total = filtered.length;
-        const data = filtered.slice(skip, skip + parseInt(limit));
-        res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+        let actualSkip = skip;
+        let actualPage = parseInt(page) || 1;
+        if (actualSkip >= total && total > 0) {
+            actualSkip = 0;
+            actualPage = 1;
+        }
+        const data = filtered.slice(actualSkip, actualSkip + parseInt(limit));
+        res.json({ data, total, page: actualPage, totalPages: Math.ceil(total / parseInt(limit)) });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -251,6 +296,41 @@ router.put('/history/device-actions/:id/done', async (req, res) => {
         res.json(MEM_DB.deviceActionLogs[idx]);
     } catch (err) {
         console.error('Mark device action done error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT Mark Device Action as Rejected (បដិសេធ)
+router.put('/history/device-actions/:id/reject', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason } = req.body || {};
+
+        if (isMongoConnected) {
+            const DeviceActionLogWrite = getWriteModel(DeviceActionLog) || DeviceActionLog;
+            const updateFields = { status: 'Rejected' };
+            if (reason) updateFields.reason = reason;
+
+            let updated = null;
+            try {
+                updated = await DeviceActionLogWrite.findByIdAndUpdate(id, updateFields, { new: true });
+            } catch (_) { /* not a valid ObjectId */ }
+            if (!updated) {
+                updated = await DeviceActionLogWrite.findOneAndUpdate({ logId: id }, updateFields, { new: true });
+            }
+            if (!updated) return res.status(404).json({ error: 'Device action log not found' });
+            return res.json(updated);
+        }
+
+        // MEM_DB fallback
+        if (!MEM_DB.deviceActionLogs) MEM_DB.deviceActionLogs = [];
+        const idx = MEM_DB.deviceActionLogs.findIndex(l => l.logId === id || String(l._id) === id);
+        if (idx === -1) return res.status(404).json({ error: 'Device action log not found' });
+        MEM_DB.deviceActionLogs[idx].status = 'Rejected';
+        if (reason) MEM_DB.deviceActionLogs[idx].reason = reason;
+        res.json(MEM_DB.deviceActionLogs[idx]);
+    } catch (err) {
+        console.error('Reject device action error:', err);
         res.status(500).json({ error: err.message });
     }
 });

@@ -1,23 +1,42 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaBell, FaTimes, FaPhone, FaExclamationTriangle, FaCalendarCheck, FaSync, FaSearch, FaLock, FaUnlock, FaShieldAlt, FaCheckDouble, FaExternalLinkAlt, FaComments } from 'react-icons/fa';
+import {
+    FaBell,
+    FaTimes,
+    FaPhone,
+    FaExclamationTriangle,
+    FaCalendarCheck,
+    FaSync,
+    FaSearch,
+    FaLock,
+    FaUnlock,
+    FaShieldAlt,
+    FaCheckDouble,
+    FaExternalLinkAlt,
+    FaComments,
+    FaListAlt,
+    FaChevronDown
+} from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import CopyCell from './CopyCell';
 
 const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
-    const { user, API_BASE1, API_BASE } = useAuth();
+    const { user, API_BASE1, API_BASE2, API_BASE } = useAuth();
     const { t } = useLanguage();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('overdue'); // Default to overdue list
+
+    const [activeTab, setActiveTab] = useState('overdue'); // 'overdue', 'dueToday', 'dueIn1Day', 'dueIn3Days', 'overdue3Days', 'overdue7Days', 'followUp2Review', 'others'
     const [loading, setLoading] = useState(false);
     const [dueTodayList, setDueTodayList] = useState([]);
+    const [dueIn1DayList, setDueIn1DayList] = useState([]);
     const [dueIn3DaysList, setDueIn3DaysList] = useState([]);
     const [overdue3DaysList, setOverdue3DaysList] = useState([]);
     const [overdue7DaysList, setOverdue7DaysList] = useState([]);
     const [overdueList, setOverdueList] = useState([]);
-    const [followUp2ReviewList, setFollowUp2ReviewList] = useState([]); // FollowUp2 Review alerts
-    const [summary, setSummary] = useState({ dueTodayCount: 0, dueIn3DaysCount: 0, overdue3DaysCount: 0, overdue7DaysCount: 0, overdueCount: 0, totalAlerts: 0 });
+    const [followUp2ReviewList, setFollowUp2ReviewList] = useState([]);
+    const [othersRejectedList, setOthersRejectedList] = useState([]);
+    const [summary, setSummary] = useState({ dueTodayCount: 0, dueIn1DayCount: 0, dueIn3DaysCount: 0, overdue3DaysCount: 0, overdue7DaysCount: 0, overdueCount: 0, totalAlerts: 0 });
     const [searchTerm, setSearchTerm] = useState('');
 
     const storageKey = `mdm_seen_alerts_${user?.username || 'global'}`;
@@ -31,12 +50,12 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     });
 
     const getItemKey = (item) => {
-        const stableId = item?.contractId || item?._id || item?.customerNameEn || item?.phone || item?.serialNumber || item?.dueDate || 'unknown';
+        const stableId = item?.logId || item?.contractId || item?._id || item?.customerNameEn || item?.phone || item?.serialNumber || item?.dueDate || 'unknown';
         return String(stableId).trim();
     };
 
-    const updateUnreadCount = useCallback((dueList, dueIn3DaysList, overdue3DaysList, overdue7DaysList, overdueList, fu2ReviewList, seenKeys) => {
-        const allItems = [...dueList, ...dueIn3DaysList, ...overdue3DaysList, ...overdue7DaysList, ...overdueList, ...fu2ReviewList];
+    const updateUnreadCount = useCallback((dueList, due1List, due3List, overdue3DaysList, overdue7DaysList, ovList, fu2ReviewList, othersList, seenKeys) => {
+        const allItems = [...dueList, ...(due1List || []), ...due3List, ...overdue3DaysList, ...overdue7DaysList, ...ovList, ...fu2ReviewList, ...(othersList || [])];
         const unreadItems = allItems.filter(item => !seenKeys.has(getItemKey(item)));
         if (setAlertCount) {
             setAlertCount(unreadItems.length);
@@ -54,45 +73,64 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
             });
 
             const baseUrl = API_BASE1 || API_BASE;
+            let currentOthersList = [];
 
-            // Fetch payment alerts
+            // 1. Fetch Rejected Device Actions for "ផ្សេងៗ" category (filtered <= 7 days)
+            try {
+                const devParams = new URLSearchParams({
+                    userBrand: user?.brand || '',
+                    username: user?.username || '',
+                    userRole: user?.role || '',
+                    isImmutable: user?.isImmutable ? 'true' : 'false',
+                    status: 'Rejected',
+                    page: 1,
+                    limit: 200
+                });
+                const devRes = await fetch(`${API_BASE2}/history/device-actions?${devParams.toString()}`);
+                if (devRes.ok) {
+                    const devData = await devRes.json();
+                    const now = Date.now();
+                    // Keep items within 7 days
+                    currentOthersList = (devData.data || []).filter(item => {
+                        const itemTime = item.createdAt ? new Date(item.createdAt).getTime() : (item.date ? new Date(item.date).getTime() : now);
+                        return (now - itemTime) <= (7 * 24 * 60 * 60 * 1000);
+                    });
+                    setOthersRejectedList(currentOthersList);
+                }
+            } catch (devErr) {
+                console.error('Fetch rejected device actions error:', devErr);
+            }
+
+            // 2. Fetch payment alerts
             const res = await fetch(`${baseUrl}/contracts/payment-alerts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 const dueList = data.dueTodayList || [];
+                const due1List = data.dueIn1DayList || [];
                 const due3List = data.dueIn3DaysList || [];
                 const overdue3List = data.overdue3DaysList || [];
                 const overdue7List = data.overdue7DaysList || [];
                 const ovList = data.overdueList || [];
+
                 setDueTodayList(dueList);
+                setDueIn1DayList(due1List);
                 setDueIn3DaysList(due3List);
                 setOverdue3DaysList(overdue3List);
                 setOverdue7DaysList(overdue7List);
                 setOverdueList(ovList);
+
                 const sum = data.summary || {
                     dueTodayCount: dueList.length,
+                    dueIn1DayCount: due1List.length,
                     dueIn3DaysCount: due3List.length,
                     overdue3DaysCount: overdue3List.length,
                     overdue7DaysCount: overdue7List.length,
                     overdueCount: ovList.length,
-                    totalAlerts: dueList.length + due3List.length + overdue3List.length + overdue7List.length + ovList.length
+                    totalAlerts: dueList.length + due1List.length + due3List.length + overdue3List.length + overdue7List.length + ovList.length
                 };
                 setSummary(sum);
 
-                // Auto switch tab if needed
-                if (ovList.length > 0) {
-                    setActiveTab('overdue');
-                } else if (dueList.length > 0) {
-                    setActiveTab('dueToday');
-                } else if (due3List.length > 0) {
-                    setActiveTab('dueIn3Days');
-                } else if (overdue3List.length > 0) {
-                    setActiveTab('overdue3Days');
-                } else if (overdue7List.length > 0) {
-                    setActiveTab('overdue7Days');
-                }
-
-                // ── Fetch FollowUp2 Review alerts (only yesterday's records) ──
+                // 3. Fetch FollowUp2 Review alerts
                 try {
                     const yesterday = new Date();
                     yesterday.setDate(yesterday.getDate() - 1);
@@ -118,15 +156,12 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             item.status === 'កំពុងពិនិត្យ'
                         );
                         setFollowUp2ReviewList(reviewList);
-                        if (reviewList.length > 0 && ovList.length === 0 && dueList.length === 0) {
-                            setActiveTab('followUp2Review');
-                        }
-                        updateUnreadCount(dueList, due3List, overdue3List, overdue7List, ovList, reviewList, seenAlertKeys);
+                        updateUnreadCount(dueList, due1List, due3List, overdue3List, overdue7List, ovList, reviewList, currentOthersList, seenAlertKeys);
                     } else {
-                        updateUnreadCount(dueList, due3List, overdue3List, overdue7List, ovList, [], seenAlertKeys);
+                        updateUnreadCount(dueList, due1List, due3List, overdue3List, overdue7List, ovList, [], currentOthersList, seenAlertKeys);
                     }
                 } catch {
-                    updateUnreadCount(dueList, due3List, overdue3List, overdue7List, ovList, [], seenAlertKeys);
+                    updateUnreadCount(dueList, due1List, due3List, overdue3List, overdue7List, ovList, [], currentOthersList, seenAlertKeys);
                 }
             }
         } catch (err) {
@@ -134,7 +169,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         } finally {
             setLoading(false);
         }
-    }, [API_BASE, API_BASE1, user, seenAlertKeys, updateUnreadCount]);
+    }, [API_BASE, API_BASE1, API_BASE2, user, seenAlertKeys, updateUnreadCount]);
 
     useEffect(() => {
         fetchAlerts();
@@ -147,7 +182,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     }, [isOpen]);
 
     const handleMarkAllAsRead = () => {
-        const allItems = [...dueTodayList, ...dueIn3DaysList, ...overdue3DaysList, ...overdue7DaysList, ...overdueList, ...followUp2ReviewList];
+        const allItems = [...dueTodayList, ...dueIn1DayList, ...dueIn3DaysList, ...overdue3DaysList, ...overdue7DaysList, ...overdueList, ...followUp2ReviewList, ...othersRejectedList];
         const newSeen = new Set(seenAlertKeys);
         allItems.forEach(item => newSeen.add(getItemKey(item)));
         setSeenAlertKeys(newSeen);
@@ -168,43 +203,53 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         try {
             localStorage.setItem(storageKey, JSON.stringify(Array.from(newSeen)));
         } catch { }
-        updateUnreadCount(dueTodayList, dueIn3DaysList, overdue3DaysList, overdue7DaysList, overdueList, followUp2ReviewList, newSeen);
+        updateUnreadCount(dueTodayList, dueIn1DayList, dueIn3DaysList, overdue3DaysList, overdue7DaysList, overdueList, followUp2ReviewList, othersRejectedList, newSeen);
     };
-
-    if (!isOpen) return null;
-
-    const userBrandName = user?.brand || 'ទូទាំងប្រព័ន្ធ (All Brands)';
 
     // Filter helper
     const handleCustomerNavigation = (item) => {
-        const queryName = item?.customerNameEn || item?.customerNameKh || '';
-        const route = activeTab === 'overdue'
-            ? '/installment/overdue'
-            : activeTab === 'dueToday'
-                ? '/installment/due-today'
-                : activeTab === 'dueIn3Days'
-                    ? '/installment/due-in-3-days'
-                    : activeTab === 'overdue3Days'
-                        ? '/installment/overdue-3-days'
-                        : activeTab === 'overdue7Days'
-                            ? '/installment/overdue-7-days'
-                            : '/installment/overdue';
-        const target = queryName ? `${route}?search=${encodeURIComponent(queryName)}` : route;
+        const queryName = item?.customerNameEn || item?.customerNameKh || item?.customerName || item?.phone || '';
+        let route = '/installment/overdue';
+        let target = '';
+
+        if (activeTab === 'overdue') {
+            route = '/installment/overdue';
+            target = queryName ? `${route}?search=${encodeURIComponent(queryName)}` : route;
+        } else if (activeTab === 'dueToday') {
+            route = '/installment/due-today';
+            target = queryName ? `${route}?search=${encodeURIComponent(queryName)}` : route;
+        } else if (activeTab === 'dueIn1Day') {
+            route = '/installment/schedule';
+            target = queryName ? `${route}?search=${encodeURIComponent(queryName)}&urgency=dueIn1Day` : `${route}?urgency=dueIn1Day`;
+        } else if (activeTab === 'dueIn3Days') {
+            route = '/installment/due-in-3-days';
+            target = queryName ? `${route}?search=${encodeURIComponent(queryName)}` : route;
+        } else if (activeTab === 'overdue3Days') {
+            route = '/installment/overdue-3-days';
+            target = queryName ? `${route}?search=${encodeURIComponent(queryName)}` : route;
+        } else if (activeTab === 'overdue7Days') {
+            route = '/installment/overdue-7-days';
+            target = queryName ? `${route}?search=${encodeURIComponent(queryName)}` : route;
+        } else if (activeTab === 'others') {
+            route = '/history/device-history?status=Rejected';
+            target = queryName ? `${route}&search=${encodeURIComponent(queryName)}` : route;
+        } else {
+            route = '/installment/schedule';
+            target = queryName ? `${route}?search=${encodeURIComponent(queryName)}` : route;
+        }
+
         handleMarkSingleAsRead(item);
         onClose();
         navigate(target);
     };
 
-    // Navigate to FollowUp2 page and show specific record by id
+    // Navigate to FollowUp2
     const handleFollowUp2Navigation = (item) => {
         handleMarkSingleAsRead(item);
         onClose();
-        const recordId = item?._id || '';
         const customerName = item?.customerName || '';
         if (customerName) {
-            navigate(`/follow-up/follow-up-2?search=${encodeURIComponent(customerName)}${recordId ? `&alertId=${encodeURIComponent(recordId)}` : ''}`);
-        } else if (recordId) {
-            navigate(`/follow-up/follow-up-2?alertId=${encodeURIComponent(recordId)}`);
+            navigate(`/follow-up/follow-up-2?search=${encodeURIComponent(customerName)}`);
         } else {
             navigate('/follow-up/follow-up-2');
         }
@@ -216,44 +261,157 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         return list.filter(item =>
             (item.customerNameEn || '').toLowerCase().includes(q) ||
             (item.customerNameKh || '').toLowerCase().includes(q) ||
+            (item.customerName || '').toLowerCase().includes(q) ||
             (item.phone || '').toLowerCase().includes(q) ||
             (item.serialNumber || '').toLowerCase().includes(q) ||
             (item.model || '').toLowerCase().includes(q) ||
             (item.contractId || '').toLowerCase().includes(q) ||
+            (item.contractIid || '').toLowerCase().includes(q) ||
+            (item.reason || '').toLowerCase().includes(q) ||
+            (item.actionType || '').toLowerCase().includes(q) ||
             (item.brand || '').toLowerCase().includes(q)
         );
     };
 
-    const filteredDueList = filterItems(dueTodayList);
-    const filteredDueIn3DaysList = filterItems(dueIn3DaysList);
-    const filteredOverdue3DaysList = filterItems(overdue3DaysList);
-    const filteredOverdue7DaysList = filterItems(overdue7DaysList);
-    const filteredOverdueList = filterItems(overdueList);
-    const filteredFollowUp2ReviewList = filterItems(followUp2ReviewList.map(item => ({
-        ...item,
-        customerNameEn: item.customerName || '',
-        customerNameKh: item.customerName || ''
-    })));
-
     const unreadCountDue = dueTodayList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
+    const unreadCountDueIn1Day = dueIn1DayList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
     const unreadCountDueIn3Days = dueIn3DaysList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
     const unreadCountOverdue3Days = overdue3DaysList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
     const unreadCountOverdue7Days = overdue7DaysList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
     const unreadCountOverdue = overdueList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
     const unreadCountFollowUp2Review = followUp2ReviewList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
+    const unreadCountOthers = othersRejectedList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
+
+    const totalUnreadCount = unreadCountDue + unreadCountDueIn1Day + unreadCountDueIn3Days + unreadCountOverdue3Days + unreadCountOverdue7Days + unreadCountOverdue + unreadCountFollowUp2Review + unreadCountOthers;
+
+    // Category Droplist Options Config
+    const alertCategories = [
+        {
+            key: 'overdue',
+            label: '🔴 ហួសកាលកំណត់ (Overdue Customers)',
+            shortLabel: 'Overdue (ហួសកំណត់)',
+            count: summary.overdueCount,
+            unread: unreadCountOverdue,
+            color: 'rose',
+            badgeBg: 'bg-rose-500',
+            route: '/installment/overdue'
+        },
+        {
+            key: 'dueToday',
+            label: '🟡 ដល់ថ្ងៃបង់ថ្ងៃនេះ (Due Today)',
+            shortLabel: 'Due Today (ថ្ងៃនេះ)',
+            count: summary.dueTodayCount,
+            unread: unreadCountDue,
+            color: 'amber',
+            badgeBg: 'bg-amber-500',
+            route: '/installment/due-today'
+        },
+        {
+            key: 'dueIn1Day',
+            label: '🟠 សល់ ១ ថ្ងៃត្រូវបង់ (Due in 1 Day)',
+            shortLabel: 'Due in 1 Day (សល់ ១ ថ្ងៃ)',
+            count: summary.dueIn1DayCount || dueIn1DayList.length,
+            unread: unreadCountDueIn1Day,
+            color: 'orange',
+            badgeBg: 'bg-orange-500',
+            route: '/installment/schedule?urgency=dueIn1Day'
+        },
+        {
+            key: 'dueIn3Days',
+            label: '🔵 ដល់ថ្ងៃក្នុង 3 ថ្ងៃ (Due in 3 Days)',
+            shortLabel: 'Due in 3 Days',
+            count: summary.dueIn3DaysCount,
+            unread: unreadCountDueIn3Days,
+            color: 'sky',
+            badgeBg: 'bg-sky-500',
+            route: '/installment/due-in-3-days'
+        },
+        {
+            key: 'overdue3Days',
+            label: '🟠 ហួស 3 ថ្ងៃ (Overdue 3 Days)',
+            shortLabel: 'Overdue 3 Days',
+            count: summary.overdue3DaysCount,
+            unread: unreadCountOverdue3Days,
+            color: 'orange',
+            badgeBg: 'bg-orange-500',
+            route: '/installment/overdue-3-days'
+        },
+        {
+            key: 'overdue7Days',
+            label: '🟣 ហួស 7 ថ្ងៃ (Overdue 7 Days)',
+            shortLabel: 'Overdue 7 Days',
+            count: summary.overdue7DaysCount,
+            unread: unreadCountOverdue7Days,
+            color: 'violet',
+            badgeBg: 'bg-violet-500',
+            route: '/installment/overdue-7-days'
+        },
+        {
+            key: 'followUp2Review',
+            label: '🟣 Follow-up 2 Review (ម្សិលមិញ)',
+            shortLabel: 'Follow-up 2 Review',
+            count: followUp2ReviewList.length,
+            unread: unreadCountFollowUp2Review,
+            color: 'indigo',
+            badgeBg: 'bg-indigo-500',
+            route: '/follow-up/follow-up-2'
+        },
+        {
+            key: 'others',
+            label: '📋 ផ្សេងៗ (ការបដិសេធ / Rejections)',
+            shortLabel: 'ផ្សេងៗ (Rejections)',
+            count: othersRejectedList.length,
+            unread: unreadCountOthers,
+            color: 'rose',
+            badgeBg: 'bg-rose-500',
+            route: '/history/device-history?status=Rejected'
+        }
+    ];
+
+    const currentCategory = alertCategories.find(c => c.key === activeTab) || alertCategories[0];
+
+    // Get active list
+    const activeList = useMemo(() => {
+        let list = [];
+        if (activeTab === 'overdue') list = overdueList;
+        else if (activeTab === 'dueToday') list = dueTodayList;
+        else if (activeTab === 'dueIn1Day') list = dueIn1DayList;
+        else if (activeTab === 'dueIn3Days') list = dueIn3DaysList;
+        else if (activeTab === 'overdue3Days') list = overdue3DaysList;
+        else if (activeTab === 'overdue7Days') list = overdue7DaysList;
+        else if (activeTab === 'followUp2Review') list = followUp2ReviewList;
+        else if (activeTab === 'others') list = othersRejectedList;
+        return filterItems(list);
+    }, [activeTab, overdueList, dueTodayList, dueIn1DayList, dueIn3DaysList, overdue3DaysList, overdue7DaysList, followUp2ReviewList, othersRejectedList, searchTerm]);
+
+    if (!isOpen) return null;
+
+    const userBrandName = user?.brand || 'ទូទាំងប្រព័ន្ធ (All Brands)';
 
     return (
         <div className="fixed inset-0 z-[999] flex justify-end bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 select-none">
-            <div className="w-[95vw] max-w-8xl text-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-300 animate-in slide-in-from-right duration-300">
-                {/* Header (Clean Light Theme) */}
-                <div className="p-5 bg-white border-b border-slate-200 flex items-center justify-between gap-3 shadow-xs">
+            <div className="w-[96vw] max-w-7xl bg-white text-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-300 animate-in slide-in-from-right duration-300">
+
+                {/* ── HEADER ── */}
+                <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between gap-3 shadow-md border-b border-slate-800">
                     <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-base relative shadow-inner">
+                            <FaBell />
+                            {totalUnreadCount > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
+                                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+                                </span>
+                            )}
+                        </div>
                         <div>
-                            <h2 className="text-lg font-black tracking-wide text-slate-900 flex items-center gap-2 font-khmer">
-                                {t('paymentDueAlerts')}
+                            <h2 className="text-sm font-bold tracking-wide text-slate-100 flex items-center gap-2 font-khmer">
+                                <span className='text-black'>{t('paymentDueAlerts') || 'ការជូនដំណឹងការបង់ប្រាក់ & Follow Up'}</span>
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 border border-slate-700">
+                                    {summary.totalAlerts + followUp2ReviewList.length + othersRejectedList.length} Total
+                                </span>
                             </h2>
-                            <p className="text-xs text-slate-600 font-bold mt-2">
-                                {t('brandLabel')}: <strong className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">{userBrandName}</strong>
+                            <p className="text-[11px] text-slate-400">
+                                Brand: <strong className="text-amber-300">{userBrandName}</strong>
                             </p>
                         </div>
                     </div>
@@ -261,24 +419,23 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleMarkAllAsRead}
-                            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer text-xs flex items-center gap-1.5 font-bold shadow-sm"
-                            title={t('markAllRead')}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer text-xs flex items-center gap-1.5 font-bold shadow-xs active:scale-95"
+                            title={t('markAllRead') || 'សម្គាល់ថាបានអានទាំងអស់'}
                         >
                             <FaCheckDouble className="text-xs" />
-                            <span>{t('markAllRead')}</span>
+                            <span className="hidden sm:inline">{t('markAllRead') || 'អានទាំងអស់'}</span>
                         </button>
                         <button
                             onClick={fetchAlerts}
                             disabled={loading}
-                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer text-xs flex items-center gap-1 font-bold border border-slate-300"
-                            title={t('refresh')}
+                            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer text-xs flex items-center gap-1 font-bold border border-slate-700 active:scale-95"
+                            title={t('refresh') || 'ទាញយកឡើងវិញ'}
                         >
-                            <FaSync className={`text-xs ${loading ? 'animate-spin' : ''}`} />
-                            <span className="hidden sm:inline">{t('refresh')}</span>
+                            <FaSync className={`text-xs ${loading ? 'animate-spin text-amber-400' : ''}`} />
                         </button>
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 transition-colors cursor-pointer text-sm border border-slate-300"
+                            className="p-2 rounded-lg bg-slate-800 hover:bg-rose-900/80 text-slate-300 hover:text-rose-200 transition-colors cursor-pointer text-sm border border-slate-700"
                             title={t('close')}
                         >
                             <FaTimes />
@@ -286,712 +443,410 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     </div>
                 </div>
 
-                {/* Summary Counters & Filter Bar */}
-                <div className="p-4 bg-slate-100 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    {/* Tabs */}
-                    <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                        <button
-                            onClick={() => setActiveTab('overdue')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'overdue'
-                                ? 'bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-600/25'
-                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
-                                }`}
-                        >
-                            <FaExclamationTriangle className={activeTab === 'overdue' ? 'text-white' : 'text-rose-600'} />
-                            <span>{t('overdueCustomers')} ({summary.overdueCount})</span>
-                            {unreadCountOverdue > 0 && (
-                                <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-pulse shadow-xs">
-                                    {unreadCountOverdue} {t('newBadge')}
-                                </span>
-                            )}
-                        </button>
+                {/* ── SPACE-SAVING DROPLIST CATEGORY & FILTER TOOLBAR ── */}
+                <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
 
-                        <button
-                            onClick={() => setActiveTab('dueToday')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'dueToday'
-                                ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-md shadow-amber-500/25'
-                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
-                                }`}
-                        >
-                            <FaCalendarCheck className={activeTab === 'dueToday' ? 'text-slate-950' : 'text-amber-600'} />
-                            <span>{t('dueToday')} ({summary.dueTodayCount})</span>
-                            {unreadCountDue > 0 && (
-                                <span className="px-2 py-0.5 rounded-full bg-slate-900 text-amber-300 text-[10px] font-black">
-                                    {unreadCountDue} {t('newBadge')}
-                                </span>
-                            )}
-                        </button>
+                    {/* Left: Category Droplist + Active Stat Badge */}
+                    <div className="flex items-center gap-2.5 flex-1 min-w-[280px]">
+                        <span className="text-xs font-bold text-slate-600 flex items-center gap-1 flex-shrink-0">
+                            <FaListAlt className="text-emerald-600" />
+                            <span>ប្រភេទ Alert:</span>
+                        </span>
 
-                        <button
-                            onClick={() => setActiveTab('dueIn3Days')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'dueIn3Days'
-                                ? 'bg-sky-600 text-white border-sky-700 shadow-md shadow-sky-600/25'
-                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
-                                }`}
-                        >
-                            <FaCalendarCheck className={activeTab === 'dueIn3Days' ? 'text-white' : 'text-sky-600'} />
-                            <span>{t('dueIn3Days')} ({summary.dueIn3DaysCount})</span>
-                            {unreadCountDueIn3Days > 0 && (
-                                <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-pulse shadow-xs">
-                                    {unreadCountDueIn3Days} {t('newBadge')}
-                                </span>
-                            )}
-                        </button>
-
-                        <button
-                            onClick={() => setActiveTab('overdue3Days')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'overdue3Days'
-                                ? 'bg-orange-600 text-white border-orange-700 shadow-md shadow-orange-600/25'
-                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
-                                }`}
-                        >
-                            <FaExclamationTriangle className={activeTab === 'overdue3Days' ? 'text-white' : 'text-orange-600'} />
-                            <span>{t('overdue3Days')} ({summary.overdue3DaysCount})</span>
-                            {unreadCountOverdue3Days > 0 && (
-                                <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-pulse shadow-xs">
-                                    {unreadCountOverdue3Days} {t('newBadge')}
-                                </span>
-                            )}
-                        </button>
-
-                        <button
-                            onClick={() => setActiveTab('overdue7Days')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'overdue7Days'
-                                ? 'bg-violet-600 text-white border-violet-700 shadow-md shadow-violet-600/25'
-                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
-                                }`}
-                        >
-                            <FaExclamationTriangle className={activeTab === 'overdue7Days' ? 'text-white' : 'text-violet-600'} />
-                            <span>{t('overdue7Days')} ({summary.overdue7DaysCount})</span>
-                            {unreadCountOverdue7Days > 0 && (
-                                <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-pulse shadow-xs">
-                                    {unreadCountOverdue7Days} {t('newBadge')}
-                                </span>
-                            )}
-                        </button>
-
-                        {/* Follow-up 2 Review Tab */}
-                        {followUp2ReviewList.length > 0 && (
-                            <button
-                                onClick={() => setActiveTab('followUp2Review')}
-                                className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer border ${activeTab === 'followUp2Review'
-                                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-md shadow-indigo-600/25'
-                                    : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
-                                    }`}
+                        {/* THE DROPLIST SELECT MENU */}
+                        <div className="relative flex-1 max-w-sm">
+                            <select
+                                value={activeTab}
+                                onChange={(e) => setActiveTab(e.target.value)}
+                                className="w-full pl-3 pr-8 py-2 bg-white border-2 border-emerald-500/40 hover:border-emerald-500 rounded-xl text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer appearance-none transition-all"
                             >
-                                <FaComments className={activeTab === 'followUp2Review' ? 'text-white' : 'text-indigo-600'} />
-                                <span>Follow-up 2 Review ({followUp2ReviewList.length})</span>
-                                {unreadCountFollowUp2Review > 0 && (
-                                    <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-pulse shadow-xs">
-                                        {unreadCountFollowUp2Review} NEW
-                                    </span>
-                                )}
-                            </button>
-                        )}
+                                {alertCategories.map((cat) => (
+                                    <option key={cat.key} value={cat.key}>
+                                        {cat.label} ({cat.count}) {cat.unread > 0 ? `• [${cat.unread} NEW]` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                            <FaChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs" />
+                        </div>
+
+                        {/* Active Category Counter Pill */}
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                            <span className="text-[11px] font-bold text-slate-700">ចំនួន:</span>
+                            <span className="font-mono text-xs font-black text-emerald-600">
+                                {activeList.length}
+                            </span>
+                            {currentCategory.unread > 0 && (
+                                <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-mono text-[9px] font-bold animate-pulse">
+                                    {currentCategory.unread} NEW
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Search box */}
-                    <div className="relative w-full sm:w-72">
-                        <FaSearch className="absolute left-3 top-2.5 text-slate-400 text-xs" />
-                        <input
-                            type="text"
-                            placeholder={t('searchCustomerPhoneSerial')}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
-                        />
+                    {/* Right: Quick Search Box & Direct Page Link */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="relative flex-1 sm:w-64">
+                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                            <input
+                                type="text"
+                                placeholder="ស្វែងរកឈ្មោះ, ទូរស័ព្ទ, Serial..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                            />
+                        </div>
+
+                        {/* Direct Page Link Button */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onClose();
+                                navigate(currentCategory.route);
+                            }}
+                            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-all shadow-2xs"
+                            title="ចូលទៅកាន់ទំព័រពេញលេញ"
+                        >
+                            <FaExternalLinkAlt className="text-[10px]" />
+                            <span className="hidden md:inline">ចូលទំព័រពេញ</span>
+                        </button>
                     </div>
                 </div>
 
-                {/* Main Content Area (High Contrast Text & Clean Panels) */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                {/* ── MAIN CONTENT AREA (DATA TABLE) ── */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-100/60">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-slate-600 gap-3">
-                            <FaSync className="animate-spin text-3xl text-amber-500" />
-                            <p className="text-xs font-bold">{t('loadingAlertData')}</p>
+                        <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-3">
+                            <FaSync className="animate-spin text-3xl text-emerald-600" />
+                            <p className="text-xs font-bold">កំពុងទាញយកទិន្នន័យ Alert...</p>
                         </div>
-                    ) : activeTab === 'overdue' ? (
-                        /* Section 1: Overdue List (High Contrast Clear Table) */
-                        <div>
-                            <div className="mb-3 flex items-center justify-between">
-                                <h3 className="text-xs font-black text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
-                                    <FaExclamationTriangle className="text-rose-600" /> {t('overdueCustomers')} ({filteredOverdueList.length})
-                                </h3>
-                                <span className="text-[11px] text-slate-600 font-bold">{t('overdueCustomers')}</span>
-                            </div>
-
-                            {filteredOverdueList.length === 0 ? (
-                                <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
-                                    <p className="text-slate-600 text-xs font-bold">{t('noOverdueCustomers')}</p>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-md">
-                                    <table className="w-full text-left text-xs border-collapse">
-                                        <thead className="bg-slate-100 text-slate-900 border-b border-slate-300 font-black uppercase tracking-wider text-[11px]">
-                                            <tr>
-                                                <th className="px-3.5 py-3.5 text-center">ល.រ</th>
-                                                <th className="px-3.5 py-3.5 text-center">ស្ថានភាព ALERT</th>
-                                                <th className="px-3.5 py-3.5">ឈ្មោះអតិថិជន</th>
-                                                <th className="px-3.5 py-3.5">លេខទូរស័ព្ទ</th>
-                                                <th className="px-3.5 py-3.5">ម៉ាក (BRAND)</th>
-                                                <th className="px-3.5 py-3.5">ម៉ូឌែល / SERIAL</th>
-                                                <th className="px-3.5 py-3.5 text-center">ថ្ងៃត្រូវបង់</th>
-                                                <th className="px-3.5 py-3.5 text-center">រយៈពេលលើសថ្ងៃ</th>
-                                                <th className="px-3.5 py-3.5 text-center">LOCK STATUS</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-200 font-semibold">
-                                            {filteredOverdueList.map((item, idx) => {
-                                                const isUnread = !seenAlertKeys.has(getItemKey(item));
-                                                return (
-                                                    <tr
-                                                        key={idx}
-                                                        onClick={() => handleMarkSingleAsRead(item)}
-                                                        className={`transition-colors cursor-pointer ${isUnread ? 'bg-amber-50/70 hover:bg-amber-100/70' : 'hover:bg-slate-50 text-slate-900'
-                                                            }`}
-                                                    >
-                                                        <td className="px-3.5 py-3 text-center font-bold text-slate-700">{idx + 1}</td>
-                                                        <td className="px-3.5 py-3 whitespace-nowrap text-center">
-                                                            {isUnread ? (
-                                                                <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black shadow-xs animate-pulse border border-rose-500">
-                                                                    {t('newBadge')}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-300 text-[10px] font-bold">
-                                                                    {t('seenBadge')}
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-3.5 py-3 font-black text-slate-900 whitespace-nowrap text-sm">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
-                                                                className="flex items-center gap-1.5 text-left hover:text-rose-600 transition-colors cursor-pointer group"
-                                                                title="ចូលទៅ Overdue Page"
-                                                            >
-                                                                <span>{item.customerNameKh || item.customerNameEn}</span>
-                                                                <FaExternalLinkAlt className="text-[9px] text-rose-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                                                            </button>
-                                                        </td>
-                                                        <td className="px-3.5 py-3 whitespace-nowrap font-mono text-indigo-700 font-bold">
-                                                            <CopyCell text={item.phone} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
-                                                        </td>
-                                                        <td className="px-3.5 py-3 whitespace-nowrap">
-                                                            <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 border border-slate-300 font-black text-[11px]">
-                                                                {item.brand}
+                    ) : activeTab === 'followUp2Review' ? (
+                        /* ── FollowUp2 Review Table ── */
+                        <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-md">
+                            <table className="w-full text-left text-xs border-collapse">
+                                <thead className="bg-indigo-50 text-indigo-900 border-b border-indigo-200 font-bold uppercase tracking-wider text-[10px]">
+                                    <tr>
+                                        <th className="px-3.5 py-3 text-center">ល.រ</th>
+                                        <th className="px-3.5 py-3 text-center">ស្ថានភាព</th>
+                                        <th className="px-3.5 py-3">ឈ្មោះអតិថិជន</th>
+                                        <th className="px-3.5 py-3">ទូរស័ព្ទ</th>
+                                        <th className="px-3.5 py-3">Source</th>
+                                        <th className="px-3.5 py-3">Model / ប្រភេទ</th>
+                                        <th className="px-3.5 py-3 text-center">កាលបរិច្ឆេទ</th>
+                                        <th className="px-3.5 py-3">Brand</th>
+                                        <th className="px-3.5 py-3 text-center">ចូលទំព័រ</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                                    {activeList.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={9} className="py-16 text-center text-slate-400 italic font-semibold">
+                                                <FaComments className="text-3xl text-indigo-300 mx-auto mb-2 opacity-50" />
+                                                <span>មិនមានទិន្នន័យ Follow-up 2 ដែលត្រូវ Review នៅឡើយទេ</span>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        activeList.map((item, idx) => {
+                                            const isUnread = !seenAlertKeys.has(getItemKey(item));
+                                            return (
+                                                <tr
+                                                    key={item._id || idx}
+                                                    onClick={() => handleMarkSingleAsRead(item)}
+                                                    className={`transition-colors cursor-pointer ${isUnread ? 'bg-indigo-50/70 hover:bg-indigo-100/70' : 'hover:bg-slate-50'}`}
+                                                >
+                                                    <td className="px-3.5 py-2.5 text-center font-bold text-slate-500">{idx + 1}</td>
+                                                    <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                        {isUnread ? (
+                                                            <span className="px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[9px] font-black animate-pulse shadow-2xs">
+                                                                NEW
                                                             </span>
-                                                        </td>
-                                                        <td className="px-3.5 py-3 whitespace-nowrap">
-                                                            <div className="text-slate-900 font-black">{item.model}</div>
-                                                            <div className="text-[11px] text-slate-500 font-mono font-medium">{item.serialNumber}</div>
-                                                        </td>
-                                                        <td className="px-3.5 py-3 text-center whitespace-nowrap text-slate-800 font-bold font-mono">
-                                                            {item.dueDate}
-                                                        </td>
-                                                        <td className="px-3.5 py-3 text-center whitespace-nowrap">
-                                                            <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300 text-xs font-black shadow-xs">
-                                                                {item.overdueText || `លើស ${item.overdueDays} ថ្ងៃ`}
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[9px] font-bold">
+                                                                Seen
                                                             </span>
-                                                        </td>
-                                                        <td className="px-3.5 py-3 text-center whitespace-nowrap">
-                                                            {item.lockPhoneStatus === 'Locked' ? (
-                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold">
-                                                                    <FaLock /> {t('locked')}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
-                                                                    <FaUnlock /> {t('unlocked')}
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    ) : activeTab === 'dueToday' ? (
-                        /* Section 2: Due Today List */
-                        <div>
-                            <div className="mb-3 flex items-center justify-between">
-                                <h3 className="text-xs font-black text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
-                                    <FaCalendarCheck className="text-amber-600" /> {t('dueToday')} ({filteredDueList.length})
-                                </h3>
-                                <span className="text-[11px] text-slate-600 font-bold">{t('dueToday')}</span>
-                            </div>
-
-                            {filteredDueList.length === 0 ? (
-                                <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
-                                    <p className="text-slate-600 text-xs font-bold">{t('noDueTodayCustomers')}</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                                    {filteredDueList.map((item, idx) => {
-                                        const isUnread = !seenAlertKeys.has(getItemKey(item));
-                                        return (
-                                            <div
-                                                key={idx}
-                                                onClick={() => handleMarkSingleAsRead(item)}
-                                                className={`p-5 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3.5 cursor-pointer ${isUnread ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-slate-200'
-                                                    }`}
-                                            >
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            {isUnread && (
-                                                                <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">
-                                                                    {t('newBadge')}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <h4 className="text-[15px] font-black text-slate-900">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
-                                                                className="flex items-center gap-1.5 hover:text-amber-700 transition-colors cursor-pointer group text-left"
-                                                                title={t('dueToday')}
-                                                            >
-                                                                <span>{item.customerNameKh || item.customerNameEn}</span>
-                                                                <FaExternalLinkAlt className="text-[9px] text-amber-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                                                            </button>
-                                                        </h4>
-                                                        <p className="text-xs text-indigo-700 font-mono font-bold mt-0.5 flex items-center gap-1">
-                                                            <FaPhone className="text-[10px]" />
-                                                            <CopyCell value={item.phone} label={item.phone} />
-                                                        </p>
-                                                    </div>
-                                                    <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-black">
-                                                        {item.brand}
-                                                    </span>
-                                                </div>
-
-                                                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm space-y-2 font-semibold text-slate-800">
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('modelLabel')}:</span>
-                                                        <span className="font-black text-slate-900 text-right">{item.model}</span>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('serialNumberLabel')}:</span>
-                                                        <code className="text-slate-900 font-mono text-[12px] font-bold text-right">{item.serialNumber}</code>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('dueDateLabel')}:</span>
-                                                        <span className="font-black text-amber-700 font-mono text-right">{item.dueDate}</span>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3 pt-1.5 border-t border-slate-200 font-black text-[15px]">
-                                                        <span className="text-slate-700">{t('monthlyPaymentLabel')}:</span>
-                                                        <span className="text-emerald-700 font-mono">${Number(item.monthlyPayment).toFixed(2)}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center justify-between text-[12px] pt-1">
-                                                    <span className="text-slate-500 font-medium flex items-center gap-1">
-                                                        <FaShieldAlt className="text-slate-400" /> {t('contractIdLabel')}: <code className="text-slate-800 font-bold">{item.contractId}</code>
-                                                    </span>
-                                                    {item.phone && (
-                                                        <a
-                                                            href={`tel:${item.phone}`}
-                                                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1 transition-colors shadow-xs"
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 font-bold text-slate-900 whitespace-nowrap">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleFollowUp2Navigation(item); }}
+                                                            className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors text-left cursor-pointer"
                                                         >
-                                                            <FaPhone className="text-[10px]" /> {t('callNow')}
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    ) : activeTab === 'dueIn3Days' ? (
-                        /* Section 3: Due In 3 Days List */
-                        <div>
-                            <div className="mb-3 flex items-center justify-between">
-                                <h3 className="text-xs font-black text-sky-700 uppercase tracking-wider flex items-center gap-1.5">
-                                    <FaCalendarCheck className="text-sky-600" /> {t('dueIn3Days')} ({filteredDueIn3DaysList.length})
-                                </h3>
-                                <span className="text-[11px] text-slate-600 font-bold">{t('dueIn3Days')}</span>
-                            </div>
-
-                            {filteredDueIn3DaysList.length === 0 ? (
-                                <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
-                                    <p className="text-slate-600 text-xs font-bold">{t('noDueIn3DaysCustomers')}</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                                    {filteredDueIn3DaysList.map((item, idx) => {
-                                        const isUnread = !seenAlertKeys.has(getItemKey(item));
-                                        return (
-                                            <div
-                                                key={idx}
-                                                onClick={() => handleMarkSingleAsRead(item)}
-                                                className={`p-5 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3.5 cursor-pointer ${isUnread ? 'border-sky-400 ring-2 ring-sky-400/20' : 'border-slate-200'
-                                                    }`}
-                                            >
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            {isUnread && (
-                                                                <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">
-                                                                    {t('newBadge')}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <h4 className="text-[15px] font-black text-slate-900">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
-                                                                className="flex items-center gap-1.5 hover:text-sky-700 transition-colors cursor-pointer group text-left"
-                                                                title={t('dueIn3Days')}
-                                                            >
-                                                                <span>{item.customerNameKh || item.customerNameEn}</span>
-                                                                <FaExternalLinkAlt className="text-[9px] text-sky-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                                                            </button>
-                                                        </h4>
-                                                        <p className="text-xs text-indigo-700 font-mono font-bold mt-0.5 flex items-center gap-1">
-                                                            <FaPhone className="text-[10px]" />
-                                                            <CopyCell value={item.phone} label={item.phone} />
-                                                        </p>
-                                                    </div>
-                                                    <span className="px-2.5 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-300 text-[10px] font-black">
-                                                        {item.brand}
-                                                    </span>
-                                                </div>
-
-                                                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm space-y-2 font-semibold text-slate-800">
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('modelLabel')}:</span>
-                                                        <span className="font-black text-slate-900 text-right">{item.model}</span>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('serialNumberLabel')}:</span>
-                                                        <code className="text-slate-900 font-mono text-[12px] font-bold text-right">{item.serialNumber}</code>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('dueDateLabel')}:</span>
-                                                        <span className="font-black text-sky-700 font-mono text-right">{item.dueDate}</span>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3 pt-1.5 border-t border-slate-200 font-black text-[15px]">
-                                                        <span className="text-slate-700">{t('monthlyPaymentLabel')}:</span>
-                                                        <span className="text-emerald-700 font-mono">${Number(item.monthlyPayment).toFixed(2)}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center justify-between text-[12px] pt-1">
-                                                    <span className="text-slate-500 font-medium flex items-center gap-1">
-                                                        <FaShieldAlt className="text-slate-400" /> {t('contractIdLabel')}: <code className="text-slate-800 font-bold">{item.contractId}</code>
-                                                    </span>
-                                                    {item.phone && (
-                                                        <a
-                                                            href={`tel:${item.phone}`}
-                                                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1 transition-colors shadow-xs"
+                                                            <span>{item.customerName || '—'}</span>
+                                                            <FaExternalLinkAlt className="text-[9px] text-indigo-400 opacity-60" />
+                                                        </button>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 font-mono text-indigo-700 font-bold whitespace-nowrap">
+                                                        {item.phone ? <CopyCell text={item.phone} className="text-slate-900 hover:text-emerald-600" /> : '—'}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 whitespace-nowrap text-slate-600">{item.source || '—'}</td>
+                                                    <td className="px-3.5 py-2.5 whitespace-nowrap">
+                                                        <span className="font-bold text-slate-900">{item.model || '—'}</span>
+                                                        {item.collateralType && <span className="block text-[10px] text-slate-400">{item.collateralType}</span>}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-center font-mono text-slate-600 whitespace-nowrap">
+                                                        {item.date ? String(item.date).split('T')[0] : '—'}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 whitespace-nowrap">
+                                                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-200">
+                                                            {item.brand || '—'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-center">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleFollowUp2Navigation(item); }}
+                                                            className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] flex items-center gap-1 mx-auto cursor-pointer shadow-2xs"
                                                         >
-                                                            <FaPhone className="text-[10px]" /> {t('callNow')}
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                                                            <FaExternalLinkAlt /> ចូល
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
-                    ) : activeTab === 'overdue3Days' ? (
-                        /* Section 4: Overdue 3 Days List */
-                        <div>
-                            <div className="mb-3 flex items-center justify-between">
-                                <h3 className="text-xs font-black text-orange-700 uppercase tracking-wider flex items-center gap-1.5">
-                                    <FaExclamationTriangle className="text-orange-600" /> {t('overdue3Days')} ({filteredOverdue3DaysList.length})
-                                </h3>
-                                <span className="text-[11px] text-slate-600 font-bold">{t('overdue3Days')}</span>
-                            </div>
+                    ) : activeTab === 'others' ? (
+                        /* ── Others (Rejected Device Actions) Table with 7-Day Auto Purge ── */
+                        <div className="overflow-x-auto rounded-2xl border border-rose-200 bg-white shadow-md">
+                            <table className="w-full text-left text-xs border-collapse">
+                                <thead className="bg-rose-50 text-rose-900 border-b border-rose-200 font-bold uppercase tracking-wider text-[10px]">
+                                    <tr>
+                                        <th className="px-3.5 py-3 text-center">ល.រ</th>
+                                        <th className="px-3.5 py-3 text-center">ស្ថានភាព</th>
+                                        <th className="px-3.5 py-3">ឈ្មោះអតិថិជន</th>
+                                        <th className="px-3.5 py-3 text-center">ប្រភេទ Action</th>
+                                        <th className="px-3.5 py-3">ម៉ូឌែល / Serial</th>
+                                        <th className="px-3.5 py-3">មូលហេតុបដិសេធ</th>
+                                        <th className="px-3.5 py-3 text-center">កាលបរិច្ឆេទ</th>
+                                        <th className="px-3.5 py-3">រៀបចំដោយ</th>
+                                        <th className="px-3.5 py-3 text-center">អាយុកាល Alert (៧ថ្ងៃ)</th>
+                                        <th className="px-3.5 py-3 text-center">ចូលទំព័រ</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                                    {activeList.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={10} className="py-16 text-center text-slate-400 italic font-semibold">
+                                                <FaExclamationTriangle className="text-3xl text-rose-300 mx-auto mb-2 opacity-50" />
+                                                <span>មិនមានទិន្នន័យបដិសេធនៅក្នុង «ផ្សេងៗ» ឡើយ (ស្អាត)</span>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        activeList.map((item, idx) => {
+                                            const isUnread = !seenAlertKeys.has(getItemKey(item));
+                                            const itemTime = item.createdAt ? new Date(item.createdAt).getTime() : (item.date ? new Date(item.date).getTime() : Date.now());
+                                            const ageDays = Math.floor((Date.now() - itemTime) / (86400000));
+                                            const daysRemaining = Math.max(1, 7 - ageDays);
 
-                            {filteredOverdue3DaysList.length === 0 ? (
-                                <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
-                                    <p className="text-slate-600 text-xs font-bold">{t('noOverdue3DaysCustomers')}</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                                    {filteredOverdue3DaysList.map((item, idx) => {
-                                        const isUnread = !seenAlertKeys.has(getItemKey(item));
-                                        return (
-                                            <div
-                                                key={idx}
-                                                onClick={() => handleMarkSingleAsRead(item)}
-                                                className={`p-5 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3.5 cursor-pointer ${isUnread ? 'border-orange-400 ring-2 ring-orange-400/20' : 'border-slate-200'
-                                                    }`}
-                                            >
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            {isUnread && (
-                                                                <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">
-                                                                    {t('newBadge')}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <h4 className="text-[15px] font-black text-slate-900">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
-                                                                className="flex items-center gap-1.5 hover:text-orange-700 transition-colors cursor-pointer group text-left"
-                                                                title={t('overdueCustomers')}
-                                                            >
-                                                                <span>{item.customerNameKh || item.customerNameEn}</span>
-                                                                <FaExternalLinkAlt className="text-[9px] text-orange-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                                                            </button>
-                                                        </h4>
-                                                        <p className="text-xs text-indigo-700 font-mono font-bold mt-0.5 flex items-center gap-1">
-                                                            <FaPhone className="text-[10px]" />
-                                                            <CopyCell value={item.phone} label={item.phone} />
-                                                        </p>
-                                                    </div>
-                                                    <span className="px-2.5 py-0.5 rounded-md bg-orange-50 text-orange-800 border border-orange-300 text-[10px] font-black">
-                                                        {item.brand}
-                                                    </span>
-                                                </div>
-
-                                                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm space-y-2 font-semibold text-slate-800">
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('modelLabel')}:</span>
-                                                        <span className="font-black text-slate-900 text-right">{item.model}</span>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('serialNumberLabel')}:</span>
-                                                        <code className="text-slate-900 font-mono text-[12px] font-bold text-right">{item.serialNumber}</code>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('dueDateLabel')}:</span>
-                                                        <span className="font-black text-orange-700 font-mono text-right">{item.dueDate}</span>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3 pt-1.5 border-t border-slate-200 font-black text-[15px]">
-                                                        <span className="text-slate-700">{t('overdueCustomers')}:</span>
-                                                        <span className="text-orange-700 font-mono">{item.overdueText || `លើស ${item.overdueDays} ថ្ងៃ`}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center justify-between text-[12px] pt-1">
-                                                    <span className="text-slate-500 font-medium flex items-center gap-1">
-                                                        <FaShieldAlt className="text-slate-400" /> {t('contractIdLabel')}: <code className="text-slate-800 font-bold">{item.contractId}</code>
-                                                    </span>
-                                                    {item.phone && (
-                                                        <a
-                                                            href={`tel:${item.phone}`}
-                                                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1 transition-colors shadow-xs"
+                                            return (
+                                                <tr
+                                                    key={item._id || item.logId || idx}
+                                                    onClick={() => handleMarkSingleAsRead(item)}
+                                                    className={`transition-colors cursor-pointer ${isUnread ? 'bg-rose-50/70 hover:bg-rose-100/70' : 'hover:bg-slate-50'}`}
+                                                >
+                                                    <td className="px-3.5 py-2.5 text-center font-bold text-slate-500">{idx + 1}</td>
+                                                    <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                        <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[9px] font-black shadow-2xs">
+                                                            ✕ បដិសេធ
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 font-bold text-slate-900 whitespace-nowrap">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
+                                                            className="flex items-center gap-1.5 hover:text-rose-700 transition-colors text-left cursor-pointer"
                                                         >
-                                                            <FaPhone className="text-[10px]" /> {t('callNow')}
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                                                            <span>{item.customerName || item.customerNameEn || '—'}</span>
+                                                            <FaExternalLinkAlt className="text-[9px] text-rose-400 opacity-60" />
+                                                        </button>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                        <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-800 text-[10px] font-bold border border-slate-200">
+                                                            {item.actionType || 'Device Action'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 whitespace-nowrap">
+                                                        <span className="font-bold text-slate-900">{item.model || '—'}</span>
+                                                        <span className="block text-[10px] text-slate-500 font-mono">{item.serialNumber}</span>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-rose-800 max-w-xs truncate" title={item.reason || ''}>
+                                                        <span className="font-semibold text-[11px]">{item.reason || 'បដិសេធដោយ Administrator'}</span>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-center font-mono text-slate-600 whitespace-nowrap text-[11px]">
+                                                        <div>{item.date || '—'}</div>
+                                                        <div className="text-[10px] text-slate-400">{item.time || ''}</div>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 whitespace-nowrap text-slate-700 font-semibold">
+                                                        {item.performedBy || 'Admin'}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                        <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
+                                                            លុបអូតូក្នុង {daysRemaining} ថ្ងៃ
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-center">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
+                                                            className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] flex items-center gap-1 mx-auto cursor-pointer shadow-2xs"
+                                                        >
+                                                            <FaExternalLinkAlt /> ចូល
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     ) : (
-                        /* Section 5: Overdue 7 Days List */
-                        <div>
-                            <div className="mb-3 flex items-center justify-between">
-                                <h3 className="text-xs font-black text-violet-700 uppercase tracking-wider flex items-center gap-1.5">
-                                    <FaExclamationTriangle className="text-violet-600" /> {t('overdue7Days')} ({filteredOverdue7DaysList.length})
-                                </h3>
-                                <span className="text-[11px] text-slate-600 font-bold">{t('overdue7Days')}</span>
-                            </div>
-
-                            {filteredOverdue7DaysList.length === 0 ? (
-                                <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
-                                    <p className="text-slate-600 text-xs font-bold">{t('noOverdue7DaysCustomers')}</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                                    {filteredOverdue7DaysList.map((item, idx) => {
-                                        const isUnread = !seenAlertKeys.has(getItemKey(item));
-                                        return (
-                                            <div
-                                                key={idx}
-                                                onClick={() => handleMarkSingleAsRead(item)}
-                                                className={`p-5 bg-white border rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3.5 cursor-pointer ${isUnread ? 'border-violet-400 ring-2 ring-violet-400/20' : 'border-slate-200'
-                                                    }`}
-                                            >
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            {isUnread && (
-                                                                <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">
-                                                                    {t('newBadge')}
-                                                                </span>
+                        /* ── Standard Contract Payment Alert Table ── */
+                        <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-md">
+                            <table className="w-full text-left text-xs border-collapse">
+                                <thead className="bg-slate-100 text-slate-800 border-b border-slate-300 font-bold uppercase tracking-wider text-[10px]">
+                                    <tr>
+                                        <th className="px-3.5 py-3 text-center">ល.រ</th>
+                                        <th className="px-3.5 py-3 text-center">Alert Status</th>
+                                        <th className="px-3.5 py-3">ឈ្មោះអតិថិជន</th>
+                                        <th className="px-3.5 py-3">លេខទូរស័ព្ទ</th>
+                                        <th className="px-3.5 py-3">ម៉ាក (Brand)</th>
+                                        <th className="px-3.5 py-3">ម៉ូឌែល / Serial</th>
+                                        <th className="px-3.5 py-3 text-center">ថ្ងៃត្រូវបង់</th>
+                                        <th className="px-3.5 py-3 text-center">ស្ថានភាពលើស/ដល់ថ្ងៃ</th>
+                                        <th className="px-3.5 py-3 text-center">Lock Status</th>
+                                        <th className="px-3.5 py-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                                    {activeList.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={10} className="py-16 text-center text-slate-400 italic font-semibold">
+                                                <FaCalendarCheck className="text-3xl text-slate-300 mx-auto mb-2 opacity-50" />
+                                                <span>មិនមានទិន្នន័យ Alert សម្រាប់ផ្នែកនេះឡើយ</span>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        activeList.map((item, idx) => {
+                                            const isUnread = !seenAlertKeys.has(getItemKey(item));
+                                            return (
+                                                <tr
+                                                    key={item._id || item.contractId || idx}
+                                                    onClick={() => handleMarkSingleAsRead(item)}
+                                                    className={`transition-colors cursor-pointer ${isUnread
+                                                        ? 'bg-amber-50/70 hover:bg-amber-100/70'
+                                                        : 'hover:bg-slate-50/80'
+                                                        }`}
+                                                >
+                                                    <td className="px-3.5 py-2.5 text-center font-bold text-slate-500 font-mono">{idx + 1}</td>
+                                                    <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                        {isUnread ? (
+                                                            <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[9px] font-black animate-pulse shadow-2xs">
+                                                                NEW
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[9px] font-bold">
+                                                                Seen
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 font-bold text-slate-900 whitespace-nowrap">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
+                                                            className="flex items-center gap-1.5 hover:text-emerald-700 transition-colors text-left cursor-pointer"
+                                                        >
+                                                            <span>{item.customerNameKh || item.customerNameEn}</span>
+                                                            <FaExternalLinkAlt className="text-[9px] text-slate-400 opacity-60" />
+                                                        </button>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 font-mono text-indigo-700 font-bold whitespace-nowrap">
+                                                        <CopyCell text={item.phone || '—'} className="text-slate-900 hover:text-emerald-600" />
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 whitespace-nowrap">
+                                                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-200">
+                                                            {item.brand || '—'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 whitespace-nowrap">
+                                                        <span className="font-bold text-slate-900">{item.model || '—'}</span>
+                                                        <span className="block text-[10px] text-slate-400 font-mono">{item.serialNumber}</span>
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-center font-mono font-bold text-slate-800 whitespace-nowrap">
+                                                        {item.dueDate || '—'}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                        {activeTab === 'overdue' || activeTab === 'overdue3Days' || activeTab === 'overdue7Days' ? (
+                                                            <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black">
+                                                                {item.overdueText || `លើស ${item.overdueDays} ថ្ងៃ`}
+                                                            </span>
+                                                        ) : activeTab === 'dueToday' ? (
+                                                            <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-black">
+                                                                ដល់ថ្ងៃថ្ងៃនេះ
+                                                            </span>
+                                                        ) : activeTab === 'dueIn1Day' ? (
+                                                            <span className="px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-800 border border-orange-200 text-[10px] font-black">
+                                                                សល់ ១ ថ្ងៃត្រូវបង់
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 text-[10px] font-black">
+                                                                {item.daysLeft ? `នៅសល់ ${item.daysLeft} ថ្ងៃ` : 'ជិតដល់ថ្ងៃ'}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                        {item.lockPhoneStatus === 'Locked' ? (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">
+                                                                <FaLock size={10} /> Locked
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                                                <FaUnlock size={10} /> Normal
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                        <div className="flex items-center justify-center gap-1.5">
+                                                            {item.phone && (
+                                                                <a
+                                                                    href={`tel:${item.phone}`}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs transition-colors"
+                                                                    title="Call Customer"
+                                                                >
+                                                                    <FaPhone size={10} />
+                                                                </a>
                                                             )}
-                                                        </div>
-                                                        <h4 className="text-[15px] font-black text-slate-900">
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
-                                                                className="flex items-center gap-1.5 hover:text-violet-700 transition-colors cursor-pointer group text-left"
-                                                                title={t('overdue7Days')}
+                                                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
                                                             >
-                                                                <span>{item.customerNameKh || item.customerNameEn}</span>
-                                                                <FaExternalLinkAlt className="text-[9px] text-violet-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
+                                                                <FaExternalLinkAlt size={9} /> មើល
                                                             </button>
-                                                        </h4>
-                                                        <p className="text-xs text-indigo-700 font-mono font-bold mt-0.5 flex items-center gap-1">
-                                                            <FaPhone className="text-[10px]" />
-                                                            <CopyCell value={item.phone} label={item.phone} />
-                                                        </p>
-                                                    </div>
-                                                    <span className="px-2.5 py-0.5 rounded-md bg-violet-50 text-violet-800 border border-violet-300 text-[10px] font-black">
-                                                        {item.brand}
-                                                    </span>
-                                                </div>
-
-                                                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-sm space-y-2 font-semibold text-slate-800">
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('modelLabel')}:</span>
-                                                        <span className="font-black text-slate-900 text-right">{item.model}</span>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('serialNumberLabel')}:</span>
-                                                        <code className="text-slate-900 font-mono text-[12px] font-bold text-right">{item.serialNumber}</code>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3">
-                                                        <span className="text-slate-600">{t('dueDateLabel')}:</span>
-                                                        <span className="font-black text-violet-700 font-mono text-right">{item.dueDate}</span>
-                                                    </div>
-                                                    <div className="flex justify-between gap-3 pt-1.5 border-t border-slate-200 font-black text-[15px]">
-                                                        <span className="text-slate-700">{t('overdueCustomers')}:</span>
-                                                        <span className="text-violet-700 font-mono">{item.overdueText || `លើស ${item.overdueDays} ថ្ងៃ`}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center justify-between text-[12px] pt-1">
-                                                    <span className="text-slate-500 font-medium flex items-center gap-1">
-                                                        <FaShieldAlt className="text-slate-400" /> {t('contractIdLabel')}: <code className="text-slate-800 font-bold">{item.contractId}</code>
-                                                    </span>
-                                                    {item.phone && (
-                                                        <a
-                                                            href={`tel:${item.phone}`}
-                                                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1 transition-colors shadow-xs"
-                                                        >
-                                                            <FaPhone className="text-[10px]" /> {t('callNow')}
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* ── Follow-up 2 Review Tab ──────────────────────────────── */}
-                    {activeTab === 'followUp2Review' && (
-                        <div>
-                            <div className="mb-3 flex items-center justify-between">
-                                <h3 className="text-xs font-black text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
-                                    <FaComments className="text-indigo-600" /> Follow-up 2 Review — ម្សិលមិញ ({filteredFollowUp2ReviewList.length})
-                                </h3>
-                                <span className="text-[11px] text-slate-500 font-bold bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
-                                    ត្រូវ Review ថ្ងៃនេះ
-                                </span>
-                            </div>
-
-                            {filteredFollowUp2ReviewList.length === 0 ? (
-                                <div className="py-16 text-center border-2 border-dashed border-slate-300 rounded-2xl bg-white shadow-xs">
-                                    <FaComments className="text-3xl text-indigo-300 mx-auto mb-2" />
-                                    <p className="text-slate-500 text-xs font-bold">មិនមាន Follow-up 2 ដែលត្រូវ Review</p>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-md">
-                                    <table className="w-full text-left text-xs border-collapse">
-                                        <thead className="bg-indigo-50 text-indigo-900 border-b border-indigo-200 font-black uppercase tracking-wider text-[11px]">
-                                            <tr>
-                                                <th className="px-3.5 py-3.5 text-center">ល.រ</th>
-                                                <th className="px-3.5 py-3.5 text-center">ស្ថានភាព</th>
-                                                <th className="px-3.5 py-3.5">ឈ្មោះអតិថិជន</th>
-                                                <th className="px-3.5 py-3.5">ទូរស័ព្ទ</th>
-                                                <th className="px-3.5 py-3.5">Source</th>
-                                                <th className="px-3.5 py-3.5">Model / ប្រភេទ</th>
-                                                <th className="px-3.5 py-3.5 text-center">ថ្ងៃ</th>
-                                                <th className="px-3.5 py-3.5">Brand</th>
-                                                <th className="px-3.5 py-3.5">ចូលទំព័រ</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-200 font-semibold">
-                                            {filteredFollowUp2ReviewList.map((item, idx) => {
-                                                const isUnread = !seenAlertKeys.has(getItemKey(item));
-                                                return (
-                                                    <tr
-                                                        key={item._id || idx}
-                                                        onClick={() => handleMarkSingleAsRead(item)}
-                                                        className={`transition-colors cursor-pointer ${isUnread ? 'bg-indigo-50/60 hover:bg-indigo-100/60' : 'hover:bg-slate-50'}`}
-                                                    >
-                                                        <td className="px-3.5 py-3 text-center font-bold text-slate-700">{idx + 1}</td>
-                                                        <td className="px-3.5 py-3 text-center whitespace-nowrap">
-                                                            {isUnread ? (
-                                                                <span className="px-2.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-black shadow-xs animate-pulse border border-indigo-500">
-                                                                    NEW
-                                                                </span>
-                                                            ) : (
-                                                                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-300 text-[10px] font-bold">
-                                                                    {t('seenBadge')}
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-3.5 py-3 font-black text-slate-900 whitespace-nowrap">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleFollowUp2Navigation(item); }}
-                                                                className="flex items-center gap-1.5 text-left hover:text-indigo-600 transition-colors cursor-pointer group"
-                                                                title="ចូលទៅ Follow-up 2"
-                                                            >
-                                                                <span>{item.customerName || '—'}</span>
-                                                                <FaExternalLinkAlt className="text-[9px] text-indigo-400 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                                                            </button>
-                                                        </td>
-                                                        <td className="px-3.5 py-3 whitespace-nowrap font-mono text-indigo-700 font-bold">
-                                                            {item.phone ? (
-                                                                <CopyCell text={item.phone} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
-                                                            ) : '—'}
-                                                        </td>
-                                                        <td className="px-3.5 py-3 whitespace-nowrap text-slate-700">{item.source || '—'}</td>
-                                                        <td className="px-3.5 py-3 whitespace-nowrap">
-                                                            <div className="text-slate-900 font-black">{item.model || '—'}</div>
-                                                            <div className="text-[11px] text-slate-500">{item.collateralType || ''}</div>
-                                                        </td>
-                                                        <td className="px-3.5 py-3 text-center whitespace-nowrap font-mono text-slate-700">
-                                                            {item.date ? String(item.date).split('T')[0] : '—'}
-                                                        </td>
-                                                        <td className="px-3.5 py-3 whitespace-nowrap">
-                                                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-300 font-bold text-[10px]">
-                                                                {item.brand || '—'}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-3.5 py-3 text-center">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleFollowUp2Navigation(item); }}
-                                                                className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-1 transition-colors shadow-xs text-[11px] cursor-pointer"
-                                                            >
-                                                                <FaExternalLinkAlt className="text-[9px]" /> ចូលទំព័រ
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     )}
                 </div>
 
-                {/* Footer (Clean Light Panel) */}
-                <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 font-bold shadow-xs">
-                    <span>{t('paymentDueAlerts')}: <strong className="text-slate-900">{summary.totalAlerts}</strong> ({unreadCountDue + unreadCountDueIn3Days + unreadCountOverdue3Days + unreadCountOverdue7Days + unreadCountOverdue + unreadCountFollowUp2Review} {t('newBadge')})</span>
+                {/* ── FOOTER ── */}
+                <div className="px-5 py-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 font-bold shadow-xs">
+                    <div className="flex items-center gap-2">
+                        <span>សរុប Alert: <strong className="text-slate-900">{summary.totalAlerts + followUp2ReviewList.length + othersRejectedList.length}</strong></span>
+                        <span>•</span>
+                        <span className="text-rose-600">មិនទាន់អាន: <strong>{totalUnreadCount}</strong></span>
+                    </div>
                     <button
                         onClick={onClose}
                         className="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition-colors border border-slate-300"
                     >
-                        {t('close')}
+                        {t('close') || 'បិទ'}
                     </button>
                 </div>
+
             </div>
         </div>
     );

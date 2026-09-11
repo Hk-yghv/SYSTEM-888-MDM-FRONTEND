@@ -20,6 +20,8 @@ const contractSchema = new mongoose.Schema({
     urlFb: { type: String, default: '' },
     mosyleUrl: { type: String, default: '' },
     customerPhoto: { type: String, default: '' },
+    photos: { type: [String], default: [] },
+    evidencePhotos: { type: [String], default: [] },
 
     // Device Information
     model: { type: String, required: true },

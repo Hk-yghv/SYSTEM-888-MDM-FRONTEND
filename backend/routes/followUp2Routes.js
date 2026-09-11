@@ -167,12 +167,18 @@ router.get('/', async (req, res) => {
         }
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
-        const pagedData = allRecords.slice(skip, skip + parseInt(limit));
+        let actualSkip = skip;
+        let actualPage = parseInt(page) || 1;
+        if (actualSkip >= totalRecords && totalRecords > 0) {
+            actualSkip = 0;
+            actualPage = 1;
+        }
+        const pagedData = allRecords.slice(actualSkip, actualSkip + parseInt(limit));
 
         res.json({
             data: pagedData,
             total: totalRecords,
-            page: parseInt(page),
+            page: actualPage,
             limit: parseInt(limit),
             totalPages: Math.ceil(totalRecords / parseInt(limit)),
             summary

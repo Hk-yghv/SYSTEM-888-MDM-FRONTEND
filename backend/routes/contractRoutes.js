@@ -68,9 +68,15 @@ router.get('/', async (req, res) => {
         if (isMongoConnected) {
             const allContracts = await queryAllDBs(Contract, (M) => M.find(query).sort({ createdAt: -1 }));
             const total = allContracts.length;
-            const contracts = allContracts.slice(skip, skip + parseInt(limit));
+            let actualSkip = skip;
+            let actualPage = parseInt(page) || 1;
+            if (actualSkip >= total && total > 0) {
+                actualSkip = 0;
+                actualPage = 1;
+            }
+            const contracts = allContracts.slice(actualSkip, actualSkip + parseInt(limit));
             const data = contracts.map(sanitizeAndDecryptContract);
-            return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+            return res.json({ data, total, page: actualPage, totalPages: Math.ceil(total / parseInt(limit)) });
         }
 
         let filtered = MEM_DB.contracts;
@@ -103,8 +109,14 @@ router.get('/', async (req, res) => {
             filtered = filtered.filter(c => Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0);
         }
         const total = filtered.length;
-        const data = filtered.slice(skip, skip + parseInt(limit)).map(sanitizeAndDecryptContract);
-        res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+        let actualSkip = skip;
+        let actualPage = parseInt(page) || 1;
+        if (actualSkip >= total && total > 0) {
+            actualSkip = 0;
+            actualPage = 1;
+        }
+        const data = filtered.slice(actualSkip, actualSkip + parseInt(limit)).map(sanitizeAndDecryptContract);
+        res.json({ data, total, page: actualPage, totalPages: Math.ceil(total / parseInt(limit)) });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -632,6 +644,7 @@ router.get('/payment-alerts', async (req, res) => {
 
         const now = new Date();
         const dueTodayList = [];
+        const dueIn1DayList = [];
         const dueIn3DaysList = [];
         const overdue3DaysList = [];
         const overdue7DaysList = [];
@@ -693,18 +706,14 @@ router.get('/payment-alerts', async (req, res) => {
                 remainingBalance,
                 dueDate: formattedDueDate,
                 overdueDays: Math.max(0, diffDays),
+                daysLeft: diffDays < 0 ? Math.abs(diffDays) : 0,
                 overdueText,
                 lockPhoneStatus: sanitized.lockPhoneStatus || 'Unlocked',
                 lockWallpaperStatus: sanitized.lockWallpaperStatus || 'Unlocked',
                 status: sanitized.status || 'Activated'
             };
 
-            // Categorize months/days remaining correctly:
-            // overdue = already past due date
-            // dueToday = exactly due today
-            // dueIn3Days = 1 to 3 days remaining before due date
-            // overdue3Days = 3 days after due date
-            // overdue7Days = 7 days after due date
+            // Categorize alerts
             if (diffDays > 0) {
                 overdueList.push(alertItem);
                 if (diffDays >= 3 && diffDays <= 6) {
@@ -715,30 +724,36 @@ router.get('/payment-alerts', async (req, res) => {
                 }
             } else if (diffDays === 0) {
                 dueTodayList.push(alertItem);
+            } else if (diffDays === -1) {
+                dueIn1DayList.push(alertItem);
+                dueIn3DaysList.push(alertItem);
             } else if (diffDays >= -3) {
                 dueIn3DaysList.push(alertItem);
             }
         }
 
-        // Sort overdue list by overdue days descending (most overdue first)
+        // Sort lists
         overdueList.sort((a, b) => b.overdueDays - a.overdueDays);
         overdue3DaysList.sort((a, b) => b.overdueDays - a.overdueDays);
         overdue7DaysList.sort((a, b) => b.overdueDays - a.overdueDays);
-        dueTodayList.sort((a, b) => a.overdueDays - b.overdueDays);
-        dueIn3DaysList.sort((a, b) => a.overdueDays - b.overdueDays);
+        dueTodayList.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+        dueIn1DayList.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+        dueIn3DaysList.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
         res.json({
             success: true,
             brand: userBrand || 'ALL',
             summary: {
                 dueTodayCount: dueTodayList.length,
+                dueIn1DayCount: dueIn1DayList.length,
                 dueIn3DaysCount: dueIn3DaysList.length,
                 overdue3DaysCount: overdue3DaysList.length,
                 overdue7DaysCount: overdue7DaysList.length,
                 overdueCount: overdueList.length,
-                totalAlerts: dueTodayList.length + dueIn3DaysList.length + overdue3DaysList.length + overdue7DaysList.length + overdueList.length
+                totalAlerts: dueTodayList.length + dueIn1DayList.length + dueIn3DaysList.length + overdue3DaysList.length + overdue7DaysList.length + overdueList.length
             },
             dueTodayList,
+            dueIn1DayList,
             dueIn3DaysList,
             overdue3DaysList,
             overdue7DaysList,

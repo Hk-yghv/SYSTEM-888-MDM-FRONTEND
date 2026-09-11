@@ -35,12 +35,13 @@ const Activated = () => {
     // UI Custom Modal alert state
     const [uiModal, setUiModal] = useState({ open: false, title: '', message: '', type: 'info' });
 
-    const fetchActivatedContracts = async (pg = currentPage, search = searchTerm) => {
+    const fetchActivatedContracts = React.useCallback(async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
         try {
+            const pageToFetch = typeof pg === 'number' ? pg : 1;
             const params = new URLSearchParams({
                 status: 'Activated',
-                page: pg,
+                page: pageToFetch,
                 limit: itemsPerPage,
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
@@ -60,10 +61,16 @@ const Activated = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    };
+    }, [API_BASE1, user, itemsPerPage, searchTerm]);
 
-    useEffect(() => { fetchActivatedContracts(currentPage, searchTerm); }, [currentPage]);
-    useEffect(() => { fetchActivatedContracts(1, searchTerm); setCurrentPage(1); }, [searchTerm]);
+    useEffect(() => {
+        fetchActivatedContracts(currentPage, searchTerm);
+    }, [currentPage]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+        fetchActivatedContracts(1, searchTerm);
+    }, [searchTerm]);
 
     const filteredContracts = activatedContracts; // server already filters+paginates
 

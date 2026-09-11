@@ -53,6 +53,8 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Follow Up System', path: '/follow-up/follow-up-3', label: 'Follow up 3 (ការតាមដាន Leads & Follow Up 3)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/report', label: 'Follow Up Report (របាយការណ៍ Follow Up)', actions: ['read', 'export'] },
 
+    { category: 'Salary System', path: '/salary', label: 'Salary Management (គ្រប់គ្រងប្រាក់ខែ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+
     { category: 'Settings & Profile', path: '/profile', label: 'User Profile', actions: ['read', 'edit'] },
     { category: 'Settings & Profile', path: '/settings/all-account', label: 'All Account Management', actions: ['read', 'create', 'edit', 'delete'] },
     { category: 'Settings & Profile', path: '/settings/control-system', label: 'Control System Settings', actions: ['read', 'edit'] },

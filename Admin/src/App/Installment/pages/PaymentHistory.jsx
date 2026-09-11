@@ -24,8 +24,9 @@ const PaymentHistory = () => {
     const fetchPayments = useCallback(async (pg = 1, search = searchTerm) => {
         setReloading(true);
         try {
+            const pageToFetch = typeof pg === 'number' ? pg : 1;
             const params = new URLSearchParams({
-                page: pg,
+                page: pageToFetch,
                 limit: LIMIT,
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
@@ -45,16 +46,17 @@ const PaymentHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE1, searchTerm, user]);
+    }, [API_BASE1, user]);
 
-    useEffect(() => { fetchPayments(page); }, [page]);
-    useEffect(() => { fetchPayments(1, searchTerm); setPage(1); }, [searchTerm]);
+    useEffect(() => { fetchPayments(page, searchTerm); }, [page]);
+    useEffect(() => { setPage(1); fetchPayments(1, searchTerm); }, [searchTerm]);
 
     const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
     const handleSearch = (e) => {
         e.preventDefault();
         setSearchTerm(searchInput);
+        setPage(1);
     };
 
     const fetchAllForExport = async () => {

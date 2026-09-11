@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
@@ -93,6 +94,102 @@ const statusTextClass = (status) => {
     return 'text-amber-700';
 };
 
+// ─── Row Urgency Highlight Calculation ─────────────────────────────────────────
+const getRowUrgency = (displayRow, isAllDone) => {
+    if (isAllDone || ['Paid', 'PayOff', 'Settled'].includes(displayRow?.status)) {
+        return {
+            type: 'done',
+            rowClass: 'bg-emerald-50/20 hover:bg-emerald-50/50 border-l-4 border-l-emerald-500',
+            dueBadgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold',
+            badgeText: '✓ បានបង់ចប់'
+        };
+    }
+    if (!displayRow?.dueDate) {
+        return {
+            type: 'normal',
+            rowClass: 'hover:bg-slate-50',
+            dueBadgeClass: 'text-slate-700',
+            badgeText: null
+        };
+    }
+
+    const due = new Date(`${displayRow.dueDate}T00:00:00`);
+    if (isNaN(due.getTime())) {
+        return {
+            type: 'normal',
+            rowClass: 'hover:bg-slate-50',
+            dueBadgeClass: 'text-slate-700',
+            badgeText: null
+        };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        // Overdue (លើសថ្ងៃកំណត់) -> Formatted in months & days (e.g., លើស ១ ខែ ៥ ថ្ងៃ)
+        const overdueDays = Math.abs(diffDays);
+        let overdueText = '';
+        if (overdueDays >= 30) {
+            const months = Math.floor(overdueDays / 30);
+            const remDays = overdueDays % 30;
+            overdueText = remDays > 0 ? `លើស ${months} ខែ ${remDays} ថ្ងៃ` : `លើស ${months} ខែ`;
+        } else {
+            overdueText = `លើស ${overdueDays} ថ្ងៃ`;
+        }
+
+        return {
+            type: 'overdue',
+            diffDays,
+            rowClass: 'bg-red-50/70 hover:bg-red-100/80 border-l-4 border-l-red-600',
+            dueBadgeClass: 'bg-red-100 text-red-800 border-red-300 font-black',
+            badgeText: `⚠️ ${overdueText}`
+        };
+    }
+
+    if (diffDays === 0) {
+        // Due Today (ដល់ថ្ងៃកំណត់) -> Amber/Yellow border & background highlight
+        return {
+            type: 'dueToday',
+            diffDays,
+            rowClass: 'bg-amber-50/70 hover:bg-amber-100/80 border-l-4 border-l-amber-500',
+            dueBadgeClass: 'bg-amber-100 text-amber-900 border-amber-300 font-black animate-pulse',
+            badgeText: '⏰ ដល់ថ្ងៃថ្ងៃនេះ'
+        };
+    }
+
+    if (diffDays === 1) {
+        // Remaining 1 day (សល់ពេល ១ ថ្ងៃ) -> Orange border & background highlight
+        return {
+            type: 'dueIn1Day',
+            diffDays,
+            rowClass: 'bg-orange-50/60 hover:bg-orange-100/70 border-l-4 border-l-orange-500',
+            dueBadgeClass: 'bg-orange-100 text-orange-900 border-orange-300 font-bold',
+            badgeText: '⏳ សល់ ១ ថ្ងៃ'
+        };
+    }
+
+    if (diffDays <= 3) {
+        // Remaining 2-3 days (សល់ពេល ៣ ថ្ងៃ) -> Sky/Blue border & background highlight
+        return {
+            type: 'dueIn3Days',
+            diffDays,
+            rowClass: 'bg-sky-50/60 hover:bg-sky-100/70 border-l-4 border-l-sky-500',
+            dueBadgeClass: 'bg-sky-100 text-sky-900 border-sky-300 font-bold',
+            badgeText: `📅 សល់ ${diffDays} ថ្ងៃ`
+        };
+    }
+
+    return {
+        type: 'normal',
+        diffDays,
+        rowClass: 'hover:bg-indigo-50/40',
+        dueBadgeClass: 'text-indigo-700 font-semibold',
+        badgeText: null
+    };
+};
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Portal dropdown — renders outside DOM tree to escape overflow clipping
 // ──────────────────────────────────────────────────────────────────────────────
@@ -176,17 +273,33 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
 const InstallmentPage = () => {
     const { t } = useLanguage();
     const { API_BASE1, user } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+    const [urgencyFilter, setUrgencyFilter] = useState(searchParams.get('urgency') || 'all');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [limit, setLimit] = useState(10);
     const [latePenaltyRules, setLatePenaltyRules] = useState([]);
+
+    // Sync search param from URL when URL changes
+    useEffect(() => {
+        const q = searchParams.get('search');
+        if (q !== null && q !== searchTerm) {
+            setSearchTerm(q);
+            setCurrentPage(1);
+        }
+        const u = searchParams.get('urgency');
+        if (u !== null && u !== urgencyFilter) {
+            setUrgencyFilter(u);
+            setCurrentPage(1);
+        }
+    }, [searchParams]);
 
     // Dropdown state — { id: string|null, pos: { left, bottom } }
     const [openMenu, setOpenMenu] = useState({ id: null, pos: { left: 0, bottom: 0 } });
@@ -226,9 +339,10 @@ const InstallmentPage = () => {
     const fetchContracts = useCallback(async (pg = 1, search = searchTerm, lim = limit, from = dateFrom, to = dateTo) => {
         setReloading(true);
         try {
+            const pageToFetch = typeof pg === 'number' ? pg : 1;
             const params = new URLSearchParams({
                 status: 'Activated',
-                page: pg,
+                page: pageToFetch,
                 limit: lim,
                 requireSchedule: 'true',
                 userBrand: user?.brand || '',
@@ -251,15 +365,35 @@ const InstallmentPage = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE1, user, dateFrom, dateTo, limit, searchTerm]);
+    }, [API_BASE1, user, limit, dateFrom, dateTo, searchTerm]);
 
-    useEffect(() => { fetchContracts(currentPage, searchTerm, limit, dateFrom, dateTo); }, [currentPage, dateFrom, dateTo, limit, searchTerm, fetchContracts]);
-    useEffect(() => { fetchContracts(1, searchTerm, limit, dateFrom, dateTo); setCurrentPage(1); }, [searchTerm, dateFrom, dateTo, limit, fetchContracts]);
+    useEffect(() => {
+        fetchContracts(currentPage, searchTerm, limit, dateFrom, dateTo);
+    }, [currentPage, limit, dateFrom, dateTo]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+        fetchContracts(1, searchTerm, limit, dateFrom, dateTo);
+    }, [searchTerm]);
+
+    // ── Visible Contracts after Urgency Droplist Filter ──────────────────────
+    const visibleContracts = useMemo(() => {
+        if (urgencyFilter === 'all') return contracts;
+        return contracts.filter((item, idx) => {
+            const schedule = item.repaymentSchedule || [];
+            const itemId = item._id || item.contractId || String(idx);
+            const displayRow = getDisplayValues(getDisplayRow(schedule, selectedMonthByContract[itemId] ?? null), item, latePenaltyRules);
+            const activeIdx = getActiveRowIdx(schedule);
+            const isAllDone = activeIdx === -1;
+            const urgency = getRowUrgency(displayRow, isAllDone);
+            return urgency.type === urgencyFilter;
+        });
+    }, [contracts, urgencyFilter, selectedMonthByContract, latePenaltyRules]);
 
     // ── Computed totals (visible page) ────────────────────────────────────────
     const totals = useMemo(() => {
         let loanAmount = 0, penalty = 0, scheduled = 0, totalSum = 0, paid = 0;
-        contracts.forEach(c => {
+        visibleContracts.forEach(c => {
             const contractId = c._id || c.contractId;
             const row = getDisplayValues(getDisplayRow(c.repaymentSchedule || [], selectedMonthByContract[contractId] ?? null), c, latePenaltyRules);
             if (!row) return;
@@ -270,7 +404,7 @@ const InstallmentPage = () => {
             paid += Number(row.paidAmount || 0);
         });
         return { loanAmount, penalty, scheduled, total: totalSum, paid };
-    }, [contracts, latePenaltyRules, selectedMonthByContract]);
+    }, [visibleContracts, latePenaltyRules, selectedMonthByContract]);
 
     // ── Pagination ────────────────────────────────────────────────────────────
     const totalPages = Math.ceil(total / limit) || 1;
@@ -314,7 +448,7 @@ const InstallmentPage = () => {
 
     // ── Export ────────────────────────────────────────────────────────────────
     const handleExportExcel = () => {
-        const data = contracts.map((c, i) => {
+        const data = visibleContracts.map((c, i) => {
             const row = getDisplayRow(c.repaymentSchedule || []);
             return {
                 'No': i + 1,
@@ -343,7 +477,7 @@ const InstallmentPage = () => {
             { header: 'Brand', accessor: 'brand' },
             { header: 'Loan Date', accessor: 'inputDate' },
         ];
-        exportToPDF('Installment Schedule', columns, contracts);
+        exportToPDF('Installment Schedule', columns, visibleContracts);
     };
 
     // ── Get the contract object for the currently-open menu ───────────────────
@@ -391,7 +525,7 @@ const InstallmentPage = () => {
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2 flex-wrap'>
                         <span>Installment</span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-normal">
-                            {contracts.length} Records
+                            {visibleContracts.length} Records
                         </span>
                         {user?.brand && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800 font-semibold">
@@ -401,15 +535,46 @@ const InstallmentPage = () => {
                     </h1>
                 </div>
 
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                    {/* Compact Space-Saving Urgency Filter Droplist */}
+                    <div className="flex items-center gap-1.5">
+                        <select
+                            value={urgencyFilter}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setUrgencyFilter(val);
+                                const newParams = new URLSearchParams(searchParams);
+                                if (val === 'all') newParams.delete('urgency');
+                                else newParams.set('urgency', val);
+                                setSearchParams(newParams);
+                            }}
+                            className="px-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs font-bold text-slate-800 outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
+                        >
+                            <option value="all">ទាំងអស់ (All Status)</option>
+                            <option value="overdue">🔴 លើសកំណត់ (Overdue)</option>
+                            <option value="dueToday">🟡 ដល់ថ្ងៃបង់ (Due Today)</option>
+                            <option value="dueIn1Day">🟠 សល់ពេល ១ ថ្ងៃ (Due 1 Day)</option>
+                            <option value="dueIn3Days">🔵 សល់ពេល ៣ ថ្ងៃ (Due 3 Days)</option>
+                            <option value="done">🟢 បង់រួចរាល់ (Paid Off)</option>
+                        </select>
+                    </div>
+
                     <div className="relative">
                         <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
                         <input
                             type="text"
                             value={searchTerm}
-                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setSearchTerm(val);
+                                setCurrentPage(1);
+                                const newParams = new URLSearchParams(searchParams);
+                                if (!val) newParams.delete('search');
+                                else newParams.set('search', val);
+                                setSearchParams(newParams);
+                            }}
                             placeholder="Search name, model, serial..."
-                            className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
+                            className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-48 sm:w-52 outline-none font-medium shadow-xs"
                         />
                     </div>
                     <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5">
@@ -480,22 +645,23 @@ const InstallmentPage = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
                             <tr><td colSpan={14} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
-                        ) : contracts.length === 0 ? (
+                        ) : visibleContracts.length === 0 ? (
                             <tr><td colSpan={14} className="text-center py-8 text-slate-500 italic font-medium">
-                                {searchTerm ? `No results found for "${searchTerm}"` : 'No installment records found. Contracts must be Activated and have a repayment schedule.'}
+                                {searchTerm ? `No results found for "${searchTerm}"` : 'No installment records found matching this filter.'}
                             </td></tr>
                         ) : (
-                            contracts.map((item, idx) => {
+                            visibleContracts.map((item, idx) => {
                                 const schedule = item.repaymentSchedule || [];
                                 const itemId = item._id || item.contractId || String(idx);
                                 const displayRow = getDisplayValues(getDisplayRow(schedule, selectedMonthByContract[itemId] ?? null), item, latePenaltyRules);
                                 const activeIdx = getActiveRowIdx(schedule);
                                 const isAllDone = activeIdx === -1;
                                 const menuKey = itemId;
+                                const urgency = getRowUrgency(displayRow, isAllDone);
 
                                 return (
                                     <tr key={menuKey}
-                                        className={`hover:bg-indigo-50/40 transition-colors ${isAllDone ? 'bg-emerald-50/30' : ''}`}>
+                                        className={`transition-colors ${urgency.rowClass}`}>
 
                                         <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>
                                             {(currentPage - 1) * limit + idx + 1}
@@ -515,10 +681,17 @@ const InstallmentPage = () => {
                                         </td>
 
                                         {/* ថ្ងៃខែត្រូវបង់ */}
-                                        <td className='px-4 py-3 font-mono text-slate-700'>
-                                            {displayRow?.dueDate
-                                                ? <span className={`font-bold ${isAllDone ? 'text-emerald-600' : 'text-indigo-700'}`}>{displayRow.dueDate}</span>
-                                                : '—'}
+                                        <td className='px-4 py-3 font-mono text-slate-700 whitespace-nowrap'>
+                                            {displayRow?.dueDate ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-slate-900">{displayRow.dueDate}</span>
+                                                    {urgency.badgeText && (
+                                                        <span className={`px-2 py-0.5 rounded text-[10px] border inline-flex items-center gap-1 ${urgency.dueBadgeClass}`}>
+                                                            {urgency.badgeText}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : '—'}
                                         </td>
 
                                         {/* Total Loan Amount */}
