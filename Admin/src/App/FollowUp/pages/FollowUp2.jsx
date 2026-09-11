@@ -49,7 +49,7 @@ const FollowUp2 = () => {
     });
 
     // Filters
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') || '');
     const [filterDate, setFilterDate] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -83,6 +83,9 @@ const FollowUp2 = () => {
     // Duplicate detection popup state
     const [duplicateData, setDuplicateData] = useState(null); // existing record from server
     const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+
+    // Live auto-match detection state
+    const [detectedMatch, setDetectedMatch] = useState(null);
 
     // Lightbox / Image Viewer Modal
     const [previewImages, setPreviewImages] = useState([]);
@@ -200,22 +203,35 @@ const FollowUp2 = () => {
         fetchData(page);
     }, [fetchData, page]);
 
-    // When navigated from Alert with ?alertId=xxx → fetch & highlight that specific record
+    // When navigated from Alert with ?search=xxx or ?alertId=xxx → auto-fill search and filter that specific record
     useEffect(() => {
-        if (!alertHighlightId) return;
-        const fetchAlertRecord = async () => {
-            try {
-                const res = await fetch(`${API_BASE}/follow-up-2/${alertHighlightId}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setAlertHighlightRecord(data);
+        const qSearch = searchParams.get('search');
+        const qAlertId = searchParams.get('alertId');
+
+        if (qSearch) {
+            setSearchTerm(qSearch);
+            setPage(1);
+            fetchData(1, qSearch, startDate, endDate, filterDate, filterStatus, selectedBrand);
+        } else if (qAlertId) {
+            const fetchAlertRecord = async () => {
+                try {
+                    const res = await fetch(`${API_BASE}/follow-up-2/${qAlertId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setAlertHighlightRecord(data);
+                        if (data && data.customerName) {
+                            setSearchTerm(data.customerName);
+                            setPage(1);
+                            fetchData(1, data.customerName, startDate, endDate, filterDate, filterStatus, selectedBrand);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Fetch alert record error:', err);
                 }
-            } catch (err) {
-                console.error('Fetch alert record error:', err);
-            }
-        };
-        fetchAlertRecord();
-    }, [alertHighlightId, API_BASE]);
+            };
+            fetchAlertRecord();
+        }
+    }, [searchParams, API_BASE]);
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
@@ -266,17 +282,18 @@ const FollowUp2 = () => {
     const handleOpenCreate = () => {
         setEditingItem(null);
         setSelectedImages([]);
+        setDetectedMatch(null);
         setFormData({
             customerName: '',
-            source: 'Facebook',
+            source: '',
             phone: '',
             requestedAmount: '',
-            collateralType: 'ទូរស័ព្ទ (Smart Phone)',
+            collateralType: '',
             model: '',
-            responder: user?.name || user?.username || '',
+            responder: '',
             date: new Date().toISOString().split('T')[0],
             valuationRange: '',
-            status: 'ជោគជ័យ',
+            status: '',
             reason: '',
             images: [],
             brand: user?.brand || 'MDM',
@@ -287,6 +304,7 @@ const FollowUp2 = () => {
 
     const handleOpenEdit = (item) => {
         setEditingItem(item);
+        setDetectedMatch(null);
         const existingImgs = Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []);
         setSelectedImages(existingImgs.map(url => ({
             id: url,
@@ -362,40 +380,86 @@ const FollowUp2 = () => {
     };
 
 
-    // Auto-fill form from existing duplicate record
-    const handleAutoFillFromDuplicate = () => {
-        if (!duplicateData) return;
-        const existingImgs = Array.isArray(duplicateData.images)
-            ? duplicateData.images
-            : duplicateData.images ? [duplicateData.images] : [];
+    // Live auto-match search on customerName or phone input
+    const checkForExistingMatch = useCallback(async (queryName, queryPhone) => {
+        const cleanName = queryName ? queryName.trim().toLowerCase() : '';
+        const cleanPhone = queryPhone ? queryPhone.trim().replace(/\D/g, '') : '';
 
-        // Auto-fill image URLs (no re-upload needed)
+        if (!cleanName && !cleanPhone) {
+            setDetectedMatch(null);
+            return;
+        }
+
+        // 1. Local list search
+        const localMatch = dataList.find(item => {
+            if (editingItem && (item._id === editingItem._id || item.followUpId === editingItem.followUpId)) return false;
+            const itemPhoneClean = (item.phone || '').replace(/\D/g, '');
+            const itemNameClean = (item.customerName || '').trim().toLowerCase();
+
+            if (cleanPhone && cleanPhone.length >= 7 && itemPhoneClean.includes(cleanPhone)) return true;
+            if (cleanName && cleanName.length >= 2 && itemNameClean === cleanName) return true;
+            return false;
+        });
+
+        if (localMatch) {
+            setDetectedMatch(localMatch);
+            return;
+        }
+
+        // 2. Fetch from backend
+        const searchTerm = cleanPhone.length >= 7 ? cleanPhone : (cleanName.length >= 2 ? cleanName : '');
+        if (!searchTerm) {
+            setDetectedMatch(null);
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/follow-up-2?search=${encodeURIComponent(searchTerm)}&limit=5`);
+            if (res.ok) {
+                const resJson = await res.json();
+                const matches = resJson.data || [];
+                const found = matches.find(m => !editingItem || (m._id !== editingItem._id && m.followUpId !== editingItem.followUpId));
+                setDetectedMatch(found || null);
+            }
+        } catch {}
+    }, [API_BASE, dataList, editingItem]);
+
+    const handleFieldChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        if (field === 'customerName' || field === 'phone') {
+            checkForExistingMatch(
+                field === 'customerName' ? value : formData.customerName,
+                field === 'phone' ? value : formData.phone
+            );
+        }
+    };
+
+    const handleAutoFillFromMatch = (record) => {
+        if (!record) return;
+        const existingImgs = Array.isArray(record.images) ? record.images : (record.images ? [record.images] : []);
         setSelectedImages(existingImgs.map(url => ({
             id: url,
             type: 'url',
             preview: url,
             url
         })));
-
         setFormData(prev => ({
             ...prev,
-            customerName: duplicateData.customerName || prev.customerName,
-            source: duplicateData.source || prev.source,
-            phone: duplicateData.phone || prev.phone,
-            requestedAmount: duplicateData.requestedAmount !== undefined ? duplicateData.requestedAmount : prev.requestedAmount,
-            collateralType: duplicateData.collateralType || prev.collateralType,
-            model: duplicateData.model || prev.model,
-            responder: duplicateData.responder || prev.responder,
-            valuationRange: duplicateData.valuationRange || prev.valuationRange,
-            status: duplicateData.status || prev.status,
-            reason: duplicateData.reason || prev.reason,
-            notes: duplicateData.notes || prev.notes,
-            brand: duplicateData.brand || prev.brand,
+            customerName: record.customerName || prev.customerName,
+            source: record.source || prev.source,
+            phone: record.phone || prev.phone,
+            requestedAmount: record.requestedAmount !== undefined ? record.requestedAmount : prev.requestedAmount,
+            collateralType: record.collateralType || prev.collateralType,
+            model: record.model || prev.model,
+            responder: record.responder || prev.responder,
+            valuationRange: record.valuationRange || prev.valuationRange,
+            status: record.status || prev.status,
+            reason: record.reason || prev.reason,
+            notes: record.notes || prev.notes,
+            brand: record.brand || prev.brand,
             images: existingImgs
         }));
-
-        setIsDuplicateModalOpen(false);
-        setDuplicateData(null);
+        setDetectedMatch(null);
     };
 
     const handleFormSubmit = async (e) => {
@@ -1286,6 +1350,36 @@ const FollowUp2 = () => {
 
                         {/* Modal Body */}
                         <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                            {/* ⚡ Auto-Fill Notification Banner when previous match detected */}
+                            {detectedMatch && (
+                                <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex items-center justify-between gap-3 animate-in fade-in">
+                                    <div>
+                                        <p className="text-xs font-bold text-emerald-900">
+                                            ⚡ រកឃើញទិន្នន័យអតិថិជនធ្លាប់បញ្ចូលពីមុន៖ {detectedMatch.customerName} {detectedMatch.phone ? `(${detectedMatch.phone})` : ''}
+                                        </p>
+                                        <p className="text-[11px] text-emerald-700">
+                                            តាមរយៈ: {detectedMatch.source || '—'} | ទ្រព្យ: {detectedMatch.collateralType || '—'} | ម៉ូឌែល: {detectedMatch.model || '—'}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAutoFillFromMatch(detectedMatch)}
+                                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                                        >
+                                            បំពេញស្វ័យប្រវត្តិ
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDetectedMatch(null)}
+                                            className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Row 1: ឈ្មោះអតិថិជន & តាមរយៈ */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
@@ -1297,7 +1391,7 @@ const FollowUp2 = () => {
                                         required
                                         placeholder="បញ្ចូលឈ្មោះអតិថិជន..."
                                         value={formData.customerName}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
+                                        onChange={(e) => handleFieldChange('customerName', e.target.value)}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                                     />
                                 </div>
@@ -1310,7 +1404,7 @@ const FollowUp2 = () => {
                                         list="sourceList"
                                         placeholder="ឧ. Facebook, Telegram, Walk-in..."
                                         value={formData.source}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
+                                        onChange={(e) => handleFieldChange('source', e.target.value)}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                                     />
                                     <datalist id="sourceList">
@@ -1331,7 +1425,7 @@ const FollowUp2 = () => {
                                         type="text"
                                         placeholder="012 345 678..."
                                         value={formData.phone}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                                        onChange={(e) => handleFieldChange('phone', e.target.value)}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                                     />
                                 </div>

@@ -65,9 +65,13 @@ import UnlockWallpaper from "../App/Wallpaper/pages/UnlockWallpaper";
 import LoginHistory from "../App/History/pages/LoginHistory";
 import DeviceActionHistory from "../App/History/pages/DeviceActionHistory";
 
+// Calculate
+import CalculateSchedule1 from "../App/Calculate/pages/CalculateSchedule1";
+
 // Follow Up
 import FollowUp1 from "../App/FollowUp/pages/FollowUp1";
 import FollowUp2 from "../App/FollowUp/pages/FollowUp2";
+import FollowUp3 from "../App/FollowUp/pages/FollowUp3";
 
 // Settings & Profile
 import ControlSystem from "../App/Settings/pages/ControlSystem";
@@ -168,6 +172,8 @@ const App = () => {
                   <Route path={json.contract.redeem} element={<ProtectRoute pagePath={json.contract.redeem}> <MainLayout><Redeem /></MainLayout> </ProtectRoute>} />
                   <Route path={json.contract.comments} element={<ProtectRoute pagePath={json.contract.comments}> <MainLayout><Comments /></MainLayout> </ProtectRoute>} />
                   <Route path={json.contract.blacklist} element={<ProtectRoute pagePath={json.contract.blacklist}> <MainLayout><BlackList /></MainLayout> </ProtectRoute>} />
+                  {/* Calculate */}
+                  <Route path={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'} element={<ProtectRoute pagePath={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'}> <MainLayout><CalculateSchedule1 /></MainLayout> </ProtectRoute>} />
                   {/* Installment */}
                   <Route path={json.installment.installmentPage} element={<ProtectRoute pagePath={json.installment.installmentPage}> <MainLayout><InstallmentPage /></MainLayout> </ProtectRoute>} />
                   <Route path={json.installment.paymentHistory} element={<ProtectRoute pagePath={json.installment.paymentHistory}> <MainLayout><PaymentHistory /></MainLayout> </ProtectRoute>} />
@@ -194,6 +200,8 @@ const App = () => {
                   {/* Follow Up */}
                   <Route path={json.followUp?.followUp1 || '/follow-up/follow-up-1'} element={<ProtectRoute pagePath={json.followUp?.followUp1 || '/follow-up/follow-up-1'}> <MainLayout><FollowUp1 /></MainLayout> </ProtectRoute>} />
                   <Route path={json.followUp?.followUp2 || '/follow-up/follow-up-2'} element={<ProtectRoute pagePath={json.followUp?.followUp2 || '/follow-up/follow-up-2'}> <MainLayout><FollowUp2 /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.followUp?.followUp3 || '/follow-up/follow-up-3'} element={<ProtectRoute pagePath={json.followUp?.followUp3 || '/follow-up/follow-up-3'}> <MainLayout><FollowUp3 /></MainLayout> </ProtectRoute>} />
+                  <Route path="/follow-up/sen-sok" element={<ProtectRoute pagePath="/follow-up/follow-up-3"> <MainLayout><FollowUp3 /></MainLayout> </ProtectRoute>} />
 
                   {/* Settings */}
                   <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />

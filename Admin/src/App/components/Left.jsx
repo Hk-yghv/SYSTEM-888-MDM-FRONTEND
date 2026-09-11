@@ -4,7 +4,7 @@ import json from "../../routes/Routes.json";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 
-import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart } from "react-icons/md";
+import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
 import { FaHistory, FaClipboardCheck } from "react-icons/fa";
 
@@ -107,6 +107,27 @@ const Left = () => {
                         </div>
                     </div>
                 )}
+
+            {/* Calculate */}
+            {(hasPermission(json.calculate?.calculateSchedule1 || '/calculate/schedule-1', 'read')) && (
+                <div className="flex-shrink-0">
+                    <div onClick={() => toggleMenu("calculate")} className={dropdownHeaderClass("calculate")}>
+                        <p className="flex items-center gap-3">
+                            <MdCalculate size={20} className="text-emerald-600" />
+                            {t('calculate')}
+                        </p>
+                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "calculate" ? "rotate-180" : ""}`} />
+                    </div>
+
+                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "calculate" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                        {hasPermission(json.calculate?.calculateSchedule1 || '/calculate/schedule-1', 'read') && (
+                            <Link to={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'} className={subItemClass(json.calculate?.calculateSchedule1 || '/calculate/schedule-1')}>
+                                {t('calculateSchedule1')}
+                            </Link>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Installment */}
             {(hasPermission(json.installment.installmentPage, 'read') ||
@@ -286,7 +307,9 @@ const Left = () => {
 
             {/* Follow up Droplist */}
             {(hasPermission(json.followUp?.followUp1 || '/follow-up/follow-up-1', 'read') ||
-                hasPermission(json.followUp?.followUp2 || '/follow-up/follow-up-2', 'read')) && (
+                hasPermission(json.followUp?.followUp2 || '/follow-up/follow-up-2', 'read') ||
+                hasPermission(json.followUp?.followUp3 || '/follow-up/follow-up-3', 'read') ||
+                hasPermission('/follow-up/sen-sok', 'read')) && (
                 <div className="flex-shrink-0">
                     <div onClick={() => toggleMenu("followUp")} className={dropdownHeaderClass("followUp")}>
                         <p className="flex items-center gap-3">
@@ -305,6 +328,12 @@ const Left = () => {
                         {hasPermission(json.followUp?.followUp2 || '/follow-up/follow-up-2', 'read') && (
                             <Link to={json.followUp?.followUp2 || '/follow-up/follow-up-2'} className={subItemClass(json.followUp?.followUp2 || '/follow-up/follow-up-2')}>
                                 {t('followUp2') || 'Follow up 2'}
+                            </Link>
+                        )}
+                        {(hasPermission(json.followUp?.followUp3 || '/follow-up/follow-up-3', 'read') ||
+                            hasPermission('/follow-up/sen-sok', 'read')) && (
+                            <Link to={json.followUp?.followUp3 || '/follow-up/follow-up-3'} className={subItemClass(json.followUp?.followUp3 || '/follow-up/follow-up-3')}>
+                                {t('followUp3') || 'Follow up 3'}
                             </Link>
                         )}
                     </div>

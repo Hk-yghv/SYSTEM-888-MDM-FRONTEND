@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#059669">
+    <title>MDM Calculate Schedule</title>
+    <style>
+        :root {
+            --primary: #059669;
+            --primary-dark: #047857;
+            --primary-light: #10b981;
+            --primary-bg: #ecfdf5;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode {
+            --bg-body: #090d16;
+            --bg-card: #131b2e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
+            --primary-bg: #064e3b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Khmer OS Battambang", "Battambang", "Kantumruy Pro", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 40px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* App Header */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: linear-gradient(135deg, #059669, #0d9488);
+            color: white;
+            padding: 16px 20px;
+            box-shadow: 0 4px 20px rgba(5, 150, 105, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .header-text h1 {
+            font-size: 17px;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.2px;
+        }
+
+        .header-text p {
+            font-size: 11px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--primary-bg);
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            border: 1px solid rgba(5, 150, 105, 0.2);
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Card Box */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 46px;
+            padding: 0 14px 0 34px;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+        }
+
+        /* Quick Preset Chips */
+        .chips-scroll {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 6px 0 2px 0;
+            scrollbar-width: none;
+        }
+
+        .chips-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chip {
+            flex-shrink: 0;
+            padding: 5px 11px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .chip:active {
+            transform: scale(0.94);
+        }
+
+        /* Duration Unit Switch */
+        .unit-switch {
+            display: flex;
+            background: rgba(0,0,0,0.05);
+            padding: 3px;
+            border-radius: 10px;
+            gap: 2px;
+        }
+
+        .unit-btn {
+            flex: 1;
+            padding: 6px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .unit-btn.active {
+            background: var(--bg-card);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Action Buttons */
+        .btn-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .btn-calc {
+            height: 48px;
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            font-size: 15px;
+            font-weight: 800;
+            border: none;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+            transition: all 0.2s;
+        }
+
+        .btn-calc:active {
+            transform: scale(0.97);
+        }
+
+        .btn-reset {
+            height: 48px;
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-reset:active {
+            transform: scale(0.97);
+        }
+
+        /* Results Overview Grid */
+        .results-section {
+            margin-top: 16px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .kpi-card.highlight-emerald {
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.12), rgba(16, 185, 129, 0.05));
+            border-color: rgba(5, 150, 105, 0.3);
+        }
+
+        .kpi-card.highlight-indigo {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(129, 140, 248, 0.05));
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .kpi-value {
+            font-size: 17px;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        .kpi-value.emerald { color: #059669; }
+        .kpi-value.indigo { color: #4f46e5; }
+        .kpi-value.amber { color: #d97706; }
+        .kpi-value.rose { color: #e11d48; }
+
+        .kpi-sub {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Schedule Tabs & View */
+        .tab-box {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 12px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-muted);
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2.5px;
+            background: var(--primary);
+            border-radius: 4px 4px 0 0;
+        }
+
+        /* Schedule Card List */
+        .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .schedule-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .schedule-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .period-tag {
+            background: var(--primary-bg);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .due-date {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .schedule-body-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.02);
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 11px;
+        }
+
+        .s-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s-lbl {
+            font-size: 9px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .s-val {
+            font-weight: 800;
+            font-size: 12px;
+            color: var(--text-main);
+        }
+
+        /* Action Toolbar */
+        .action-toolbar {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .tool-btn {
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+        }
+
+        .tool-btn:active {
+            transform: scale(0.96);
+            background: rgba(0,0,0,0.05);
+        }
+
+        .tool-btn.primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #0f172a;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            z-index: 999;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- App Header -->
+    <header class="app-header">
+        <div class="header-title-box">
+            <div class="app-icon">🧮</div>
+            <div class="header-text">
+                <h1>MDM Calculate</h1>
+                <p>គណនាការប្រាក់ & កាលវិភាគបង់ប្រាក់</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="icon-btn" id="btnThemeToggle" title="Dark / Light Mode">🌓</button>
+            <button class="icon-btn" id="btnShareApp" title="Share">📤</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Status Indicator -->
+        <div class="status-badge">
+            <span class="pulse-dot"></span>
+            100% Offline App (ដំណើរការគ្មានអ៊ីនធឺណិត)
+        </div>
+
+        <!-- Calculator Input Card -->
+        <div class="card">
+            <div class="card-title">
+                <span>📝</span> បញ្ចូលទិន្នន័យគណនា (Inputs)
+            </div>
+
+            <form id="calcForm">
+                <!-- 1. Principal Amount -->
+                <div class="form-group">
+                    <label>ប្រាក់ដើមកម្ចី (Principal Amount $)</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">$</span>
+                        <input type="number" id="inpPrincipal" class="form-input" placeholder="ឧ. 1000" value="1000" step="any" min="0" required>
+                    </div>
+                    <div class="chips-scroll">
+                        <button type="button" class="chip" onclick="setPrincipal(100)">$100</button>
+                        <button type="button" class="chip" onclick="setPrincipal(200)">$200</button>
+                        <button type="button" class="chip" onclick="setPrincipal(300)">$300</button>
+                        <button type="button" class="chip" onclick="setPrincipal(500)">$500</button>
+                        <button type="button" class="chip active" onclick="setPrincipal(1000)">$1,000</button>
+                        <button type="button" class="chip" onclick="setPrincipal(2000)">$2,000</button>
+                        <button type="button" class="chip" onclick="setPrincipal(5000)">$5,000</button>
+                    </div>
+                </div>
+
+                <!-- 2. Interest Rate -->
+                <div class="form-group">
+                    <label>អត្រាការប្រាក់ (Interest Rate %)</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">%</span>
+                        <input type="text" id="inpRate" class="form-input" list="rateList" placeholder="ឧ. 11.5%" value="11.5%" required>
+                        <datalist id="rateList">
+                            <option value="11.5%">
+                            <option value="10%">
+                            <option value="12%">
+                            <option value="15%">
+                            <option value="8%">
+                            <option value="5%">
+                            <option value="3%">
+                            <option value="1%">
+                        </datalist>
+                    </div>
+                    <div class="chips-scroll">
+                        <button type="button" class="chip active" onclick="setRate('11.5%')">11.5%</button>
+                        <button type="button" class="chip" onclick="setRate('10%')">10%</button>
+                        <button type="button" class="chip" onclick="setRate('12%')">12%</button>
+                        <button type="button" class="chip" onclick="setRate('15%')">15%</button>
+                        <button type="button" class="chip" onclick="setRate('8%')">8%</button>
+                    </div>
+                </div>
+
+                <!-- 3. Duration -->
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="margin: 0;">រយៈពេលកម្ចី (Duration)</label>
+                        <div class="unit-switch">
+                            <button type="button" class="unit-btn active" id="btnUnitMonth" onclick="setDurationUnit('months')">ខែ (Month)</button>
+                            <button type="button" class="unit-btn" id="btnUnitDay" onclick="setDurationUnit('days')">ថ្ងៃ (Day)</button>
+                        </div>
+                    </div>
+                    <div class="input-wrapper">
+                        <span class="input-icon">#</span>
+                        <input type="number" id="inpDuration" class="form-input" placeholder="ឧ. 4" value="4" min="1" required>
+                    </div>
+                    <div class="chips-scroll" id="durationChips">
+                        <button type="button" class="chip" onclick="setDuration(1)">1 ខែ</button>
+                        <button type="button" class="chip" onclick="setDuration(2)">2 ខែ</button>
+                        <button type="button" class="chip" onclick="setDuration(3)">3 ខែ</button>
+                        <button type="button" class="chip active" onclick="setDuration(4)">4 ខែ</button>
+                        <button type="button" class="chip" onclick="setDuration(6)">6 ខែ</button>
+                        <button type="button" class="chip" onclick="setDuration(12)">12 ខែ</button>
+                    </div>
+                </div>
+
+                <!-- 4. Start Date -->
+                <div class="form-group">
+                    <label>កាលបរិច្ឆេទចាប់ផ្ដើម (Start Date)</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">📅</span>
+                        <input type="date" id="inpStartDate" class="form-input">
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="btn-row">
+                    <button type="submit" class="btn-calc">⚡ គណនា (Calculate)</button>
+                    <button type="button" class="btn-reset" onclick="resetForm()">🔄 កំណត់ថ្មី</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Calculation Results Section -->
+        <div id="resultsSection" class="results-section" style="display: none;">
+            <div class="card-title" style="margin-bottom: 8px;">
+                <span>📊</span> លទ្ធផលគណនា (Results Overview)
+            </div>
+
+            <!-- KPI Cards Grid -->
+            <div class="kpi-grid">
+                <!-- 1. Principal -->
+                <div class="kpi-card">
+                    <div class="kpi-label">ប្រាក់ដើមកម្ចី</div>
+                    <div class="kpi-value" id="resPrincipal">$0.00</div>
+                    <div class="kpi-sub">Principal Amount</div>
+                </div>
+
+                <!-- 2. Rate -->
+                <div class="kpi-card">
+                    <div class="kpi-label">អត្រាការប្រាក់</div>
+                    <div class="kpi-value indigo" id="resRate">0%</div>
+                    <div class="kpi-sub">Rate per Month</div>
+                </div>
+
+                <!-- 3. Monthly Interest USD -->
+                <div class="kpi-card">
+                    <div class="kpi-label">ការប្រាក់ក្នុង ១ ខែ</div>
+                    <div class="kpi-value amber" id="resMonthlyInterest">$0.00</div>
+                    <div class="kpi-sub" id="resInterestFormula">$0 × 0%</div>
+                </div>
+
+                <!-- 4. Monthly Payment -->
+                <div class="kpi-card highlight-emerald">
+                    <div class="kpi-label" style="color: #047857;">ត្រូវបង់ក្នុង ១ ខែ</div>
+                    <div class="kpi-value emerald" id="resMonthlyPayment">$0.00</div>
+                    <div class="kpi-sub" id="resPaymentFormula">ដើម + ការប្រាក់</div>
+                </div>
+
+                <!-- 5. Total Interest -->
+                <div class="kpi-card">
+                    <div class="kpi-label">សរុបការប្រាក់ទាំងអស់</div>
+                    <div class="kpi-value rose" id="resTotalInterest">$0.00</div>
+                    <div class="kpi-sub" id="resTotalInterestSub">Total Interest</div>
+                </div>
+
+                <!-- 6. Total Repayment -->
+                <div class="kpi-card highlight-indigo">
+                    <div class="kpi-label" style="color: #4338ca;">សរុបត្រូវបង់មកវិញ</div>
+                    <div class="kpi-value indigo" id="resTotalRepayment">$0.00</div>
+                    <div class="kpi-sub">Total Repayment Return</div>
+                </div>
+            </div>
+
+            <!-- Schedule View Box -->
+            <div class="card" style="padding: 14px;">
+                <div class="tab-box">
+                    <button class="tab-btn active" onclick="switchView('cards')">កាលវិភាគតាមខែ (Schedule)</button>
+                </div>
+
+                <div id="scheduleContainer" class="schedule-list">
+                    <!-- Dynamic Month Cards -->
+                </div>
+            </div>
+
+            <!-- Action Toolbar -->
+            <div class="action-toolbar">
+                <button class="tool-btn primary" onclick="copySummaryText()">
+                    📋 ចម្លងព័ត៌មាន (Copy)
+                </button>
+                <button class="tool-btn" onclick="shareSummaryText()">
+                    📤 ចែករំលែក (Share)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast message -->
+    <div id="toast" class="toast">
+        <span>✅</span> <span id="toastMsg">បានចម្លងរួចរាល់!</span>
+    </div>
+
+    <script>
+        // State
+        let currentDurationUnit = 'months';
+        let lastCalculation = null;
+
+        // Init default date
+        document.getElementById('inpStartDate').value = new Date().toISOString().split('T')[0];
+
+        // Theme toggle
+        const btnTheme = document.getElementById('btnThemeToggle');
+        btnTheme.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('mdm_calc_theme', isDark ? 'dark' : 'light');
+        });
+
+        if (localStorage.getItem('mdm_calc_theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+
+        // Quick Preset Setters
+        function setPrincipal(val) {
+            document.getElementById('inpPrincipal').value = val;
+            updateChips('inpPrincipal', val);
+            calculate();
+        }
+
+        function setRate(val) {
+            document.getElementById('inpRate').value = val;
+            calculate();
+        }
+
+        function setDuration(val) {
+            document.getElementById('inpDuration').value = val;
+            calculate();
+        }
+
+        function setDurationUnit(unit) {
+            currentDurationUnit = unit;
+            document.getElementById('btnUnitMonth').classList.toggle('active', unit === 'months');
+            document.getElementById('btnUnitDay').classList.toggle('active', unit === 'days');
+
+            const chipsBox = document.getElementById('durationChips');
+            if (unit === 'days') {
+                chipsBox.innerHTML = `
+                    <button type="button" class="chip" onclick="setDuration(30)">30 ថ្ងៃ</button>
+                    <button type="button" class="chip" onclick="setDuration(60)">60 ថ្ងៃ</button>
+                    <button type="button" class="chip" onclick="setDuration(90)">90 ថ្ងៃ</button>
+                    <button type="button" class="chip active" onclick="setDuration(120)">120 ថ្ងៃ</button>
+                    <button type="button" class="chip" onclick="setDuration(180)">180 ថ្ងៃ</button>
+                `;
+                document.getElementById('inpDuration').value = '120';
+            } else {
+                chipsBox.innerHTML = `
+                    <button type="button" class="chip" onclick="setDuration(1)">1 ខែ</button>
+                    <button type="button" class="chip" onclick="setDuration(2)">2 ខែ</button>
+                    <button type="button" class="chip" onclick="setDuration(3)">3 ខែ</button>
+                    <button type="button" class="chip active" onclick="setDuration(4)">4 ខែ</button>
+                    <button type="button" class="chip" onclick="setDuration(6)">6 ខែ</button>
+                    <button type="button" class="chip" onclick="setDuration(12)">12 ខែ</button>
+                `;
+                document.getElementById('inpDuration').value = '4';
+            }
+            calculate();
+        }
+
+        function updateChips(inputId, val) {
+            // Highlight visual feedback
+        }
+
+        function parseRate(str) {
+            if (!str) return 0;
+            const clean = String(str).replace(/%/g, '').trim();
+            const num = parseFloat(clean);
+            return isNaN(num) ? 0 : num;
+        }
+
+        function formatMoney(num) {
+            return '$' + Number(num || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Calculate Schedule
+        function calculate() {
+            const principal = parseFloat(document.getElementById('inpPrincipal').value) || 0;
+            const ratePercent = parseRate(document.getElementById('inpRate').value);
+            const duration = parseInt(document.getElementById('inpDuration').value, 10) || 1;
+            const startDateStr = document.getElementById('inpStartDate').value;
+
+            if (principal <= 0 || duration <= 0) return;
+
+            // Formulas:
+            // Monthly interest in USD = Principal * (Rate% / 100)
+            const monthlyInterestUSD = principal * (ratePercent / 100);
+            const monthsCount = currentDurationUnit === 'days' ? Math.max(1, Math.ceil(duration / 30)) : duration;
+            const principalPerMonth = principal / monthsCount;
+            const paymentPerMonth = principalPerMonth + monthlyInterestUSD;
+
+            const totalInterest = monthlyInterestUSD * monthsCount;
+            const totalRepayment = paymentPerMonth * monthsCount;
+
+            // Generate Schedule
+            const schedule = [];
+            let remainingPrincipal = principal;
+            const baseDate = startDateStr ? new Date(`${startDateStr}T00:00:00`) : new Date();
+
+            for (let i = 1; i <= monthsCount; i++) {
+                const dueDate = new Date(baseDate);
+                if (currentDurationUnit === 'days') {
+                    const daysPerPeriod = Math.floor(duration / monthsCount);
+                    dueDate.setDate(dueDate.getDate() + (daysPerPeriod * i));
+                } else {
+                    dueDate.setMonth(dueDate.getMonth() + i);
+                }
+
+                remainingPrincipal = Math.max(0, remainingPrincipal - principalPerMonth);
+
+                schedule.push({
+                    monthIndex: i,
+                    dueDate: dueDate.toISOString().split('T')[0],
+                    principalDue: principalPerMonth,
+                    interestDue: monthlyInterestUSD,
+                    totalDueMonth: paymentPerMonth,
+                    remainingPrincipal: remainingPrincipal
+                });
+            }
+
+            lastCalculation = {
+                principal,
+                ratePercent,
+                monthsCount,
+                duration,
+                currentDurationUnit,
+                monthlyInterestUSD,
+                principalPerMonth,
+                paymentPerMonth,
+                totalInterest,
+                totalRepayment,
+                schedule
+            };
+
+            // Render Output
+            document.getElementById('resPrincipal').innerText = formatMoney(principal);
+            document.getElementById('resRate').innerText = ratePercent + '%';
+            document.getElementById('resMonthlyInterest').innerText = formatMoney(monthlyInterestUSD);
+            document.getElementById('resInterestFormula').innerText = `$${principal} × ${ratePercent}%`;
+
+            document.getElementById('resMonthlyPayment').innerText = formatMoney(paymentPerMonth);
+            document.getElementById('resPaymentFormula').innerText = `ដើម (${formatMoney(principalPerMonth)}) + ការ (${formatMoney(monthlyInterestUSD)})`;
+
+            document.getElementById('resTotalInterest').innerText = formatMoney(totalInterest);
+            document.getElementById('resTotalInterestSub').innerText = `សរុប ${monthsCount} ខែ`;
+
+            document.getElementById('resTotalRepayment').innerText = formatMoney(totalRepayment);
+
+            // Render Cards
+            const container = document.getElementById('scheduleContainer');
+            container.innerHTML = schedule.map(row => `
+                <div class="schedule-card">
+                    <div class="schedule-header">
+                        <span class="period-tag">ខែទី ${row.monthIndex}</span>
+                        <span class="due-date">📅 ថ្ងៃត្រូវបង់: ${row.dueDate}</span>
+                    </div>
+                    <div class="schedule-body-grid">
+                        <div class="s-col">
+                            <span class="s-lbl">ដើមត្រូវបង់</span>
+                            <span class="s-val">${formatMoney(row.principalDue)}</span>
+                        </div>
+                        <div class="s-col">
+                            <span class="s-lbl">ការប្រាក់</span>
+                            <span class="s-val" style="color: #d97706;">${formatMoney(row.interestDue)}</span>
+                        </div>
+                        <div class="s-col">
+                            <span class="s-lbl">សរុបបង់ខែនេះ</span>
+                            <span class="s-val" style="color: #059669;">${formatMoney(row.totalDueMonth)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        // Form Submit
+        document.getElementById('calcForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            calculate();
+            showToast('⚡ បានគណនាលទ្ធផលរួចរាល់!');
+        });
+
+        function resetForm() {
+            document.getElementById('inpPrincipal').value = '1000';
+            document.getElementById('inpRate').value = '11.5%';
+            document.getElementById('inpDuration').value = '4';
+            setDurationUnit('months');
+            document.getElementById('inpStartDate').value = new Date().toISOString().split('T')[0];
+            calculate();
+            showToast('🔄 បានកំណត់ឡើងវិញ!');
+        }
+
+        function getSummaryText() {
+            if (!lastCalculation) return '';
+            const { principal, ratePercent, monthsCount, monthlyInterestUSD, paymentPerMonth, totalInterest, totalRepayment } = lastCalculation;
+
+            return `📋 តារាងគណនាការប្រាក់ & កាលវិភាគបង់ប្រាក់
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+💵 ប្រាក់ដើមកម្ចី: $${principal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+📊 អត្រាការប្រាក់: ${ratePercent}% / ខែ
+⏳ រយៈពេលកម្ចី: ${monthsCount} ខែ
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 ការប្រាក់ក្នុង ១ ខែ: $${monthlyInterestUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+💳 ត្រូវបង់ក្នុង ១ ខែ: $${paymentPerMonth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+💵 សរុបការប្រាក់ទាំងអស់ (${monthsCount}ខែ): $${totalInterest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+✨ សរុបប្រាក់ត្រូវបង់ត្រឡប់មកវិញ: $${totalRepayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+        }
+
+        function copySummaryText() {
+            const text = getSummaryText();
+            if (!text) return;
+
+            // Check if Android Native Bridge exists
+            if (window.AndroidBridge && typeof window.AndroidBridge.copyToClipboard === 'function') {
+                window.AndroidBridge.copyToClipboard(text);
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(text);
+                showToast('✅ បានចម្លងរួចរាល់! Copied');
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('✅ បានចម្លងរួចរាល់! Copied');
+            }
+        }
+
+        function shareSummaryText() {
+            const text = getSummaryText();
+            if (!text) return;
+
+            if (window.AndroidBridge && typeof window.AndroidBridge.shareText === 'function') {
+                window.AndroidBridge.shareText('តារាងគណនាការប្រាក់ MDM', text);
+            } else if (navigator.share) {
+                navigator.share({
+                    title: 'តារាងគណនាការប្រាក់ MDM',
+                    text: text
+                }).catch(() => {});
+            } else {
+                copySummaryText();
+            }
+        }
+
+        document.getElementById('btnShareApp').addEventListener('click', shareSummaryText);
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => {
+                t.classList.remove('show');
+            }, 2500);
+        }
+
+        // Calculate on first load
+        calculate();
+    </script>
+</body>
+</html>

@@ -271,6 +271,48 @@ const Dashboard = () => {
     const collectionPct = customerReceivedAmt > 0 ? Math.round((weCollectedAmt / customerReceivedAmt) * 100) : 0;
     const isProfit = netProfitLoss >= 0;
 
+    // Expected Repayment Metrics (Summing all installment months + penalty across all customers)
+    const repaymentMetrics = useMemo(() => {
+        let totalExpected = 0;
+        let totalScheduled = 0;
+        let totalPenalty = 0;
+
+        if (rawContracts.length > 0) {
+            rawContracts.forEach(c => {
+                if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
+                    c.repaymentSchedule.forEach(row => {
+                        const scheduled = Number(row.scheduledAmount) || Number(row.amount) || Number(c.monthlyPayment) || 0;
+                        const penalty = Number(row.penalty) || 0;
+                        totalScheduled += scheduled;
+                        totalPenalty += penalty;
+                        totalExpected += (scheduled + penalty);
+                    });
+                } else {
+                    const durationStr = String(c.duration || '').toLowerCase();
+                    const matched = durationStr.match(/\d+/);
+                    const count = matched ? parseInt(matched[0], 10) : 1;
+                    const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ');
+                    const monthly = Number(c.monthlyPayment) || 0;
+                    const scheduled = isDays
+                        ? (monthly || Number(c.amount) || 0)
+                        : (monthly > 0 ? (monthly * count) : (Number(c.amount) || 0));
+                    totalScheduled += scheduled;
+                    totalExpected += scheduled;
+                }
+            });
+        } else {
+            totalExpected = stats.totalRepaymentExpected || 0;
+            totalScheduled = stats.totalScheduledRepayment || 0;
+            totalPenalty = stats.totalPenaltyRepayment || 0;
+        }
+
+        return {
+            totalExpected: totalExpected || stats.totalRepaymentExpected || 0,
+            totalScheduled: totalScheduled || stats.totalScheduledRepayment || 0,
+            totalPenalty: totalPenalty || stats.totalPenaltyRepayment || 0
+        };
+    }, [rawContracts, stats]);
+
     // Bar Chart Comparative Data
     const barChartData = useMemo(() => {
         const filteredContracts = rawContracts;
@@ -551,8 +593,8 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* ── 2. Executive Financial Scorecard (4 Hero KPI Cards) ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* ── 2. Executive Financial Scorecard (5 Hero KPI Cards) ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 {/* Card 1: Loan Disbursed */}
                 <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-3 relative overflow-hidden group hover:border-blue-300 transition-all">
                     <div className="flex items-center justify-between">
@@ -571,7 +613,41 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Card 2: Revenue Collected */}
+                {/* Card 2: Total Expected Repayment (សរុបទឹកប្រាក់ត្រូវបង់មកវិញ) */}
+                <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-3 relative overflow-hidden group hover:border-purple-300 transition-all">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-purple-800">
+                            {t('totalRepaymentDue') || 'សរុបត្រូវបង់មកវិញ'}
+                        </span>
+                        <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform">
+                            <IoMdWallet />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-2xl font-black font-mono text-purple-700">
+                            ${(repaymentMetrics.totalExpected || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <p className="text-[11px] font-semibold text-slate-500 mt-0.5">
+                            {t('totalExpectedRepaymentSub') || 'សរុបទឹកលុយត្រូវបង់មកវិញ'}
+                        </p>
+                    </div>
+                    <div className="pt-2 border-t border-slate-100 text-[11px] font-semibold space-y-1">
+                        <div className="flex items-center justify-between text-slate-600">
+                            <span>{t('totalScheduledAmountLabel') || 'សរុបប្រាក់ត្រូវបង់'}:</span>
+                            <strong className="text-slate-900 font-mono">
+                                ${(repaymentMetrics.totalScheduled || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </strong>
+                        </div>
+                        <div className="flex items-center justify-between text-rose-600">
+                            <span>{t('totalPenaltyAmountLabel') || 'សរុបពិន័យ'}:</span>
+                            <strong className="font-mono font-bold">
+                                ${(repaymentMetrics.totalPenalty || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Card 3: Revenue Collected */}
                 <div className="p-6 bg-white border border-slate-200/80 rounded-3xl shadow-xs space-y-3 relative overflow-hidden group hover:border-emerald-300 transition-all">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{t('totalRevenueCollected')}</span>

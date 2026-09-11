@@ -201,10 +201,10 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         onClose();
         const recordId = item?._id || '';
         const customerName = item?.customerName || '';
-        if (recordId) {
+        if (customerName) {
+            navigate(`/follow-up/follow-up-2?search=${encodeURIComponent(customerName)}${recordId ? `&alertId=${encodeURIComponent(recordId)}` : ''}`);
+        } else if (recordId) {
             navigate(`/follow-up/follow-up-2?alertId=${encodeURIComponent(recordId)}`);
-        } else if (customerName) {
-            navigate(`/follow-up/follow-up-2?search=${encodeURIComponent(customerName)}`);
         } else {
             navigate('/follow-up/follow-up-2');
         }

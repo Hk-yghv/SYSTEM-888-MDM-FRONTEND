@@ -52,6 +52,12 @@ router.get('/stats', async (req, res) => {
             totalLoanAmount = activatedList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
             totalCustomerReceived = activatedList.reduce((sum, c) => sum + (Number(c.monthlyPayment) || 0), 0);
             totalBorrowers = activatedList.length;
+
+            // Repayment metrics across active contracts
+            const repaymentMetrics = calculateRepayments(allContracts.filter(c => c.status === 'Activated' || c.status === 'Application' || c.status === 'Check'));
+            var totalRepaymentExpected = repaymentMetrics.totalRepaymentExpected;
+            var totalScheduledRepayment = repaymentMetrics.totalScheduledRepayment;
+            var totalPenaltyRepayment = repaymentMetrics.totalPenaltyRepayment;
         } else {
             // MEM_DB fallback
             const contracts = MEM_DB.contracts.filter(c => {
@@ -83,6 +89,12 @@ router.get('/stats', async (req, res) => {
             totalLoanAmount = activatedList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
             totalCustomerReceived = activatedList.reduce((sum, c) => sum + (Number(c.monthlyPayment) || 0), 0);
             totalBorrowers = activatedList.length;
+
+            // Repayment metrics across active contracts
+            const repaymentMetrics = calculateRepayments(contracts.filter(c => c.status === 'Activated' || c.status === 'Application' || c.status === 'Check'));
+            var totalRepaymentExpected = repaymentMetrics.totalRepaymentExpected;
+            var totalScheduledRepayment = repaymentMetrics.totalScheduledRepayment;
+            var totalPenaltyRepayment = repaymentMetrics.totalPenaltyRepayment;
         }
 
         const outstandingBalance = Math.max((totalLoanAmount || 0) - (totalRevenue || 0), 0);
@@ -95,12 +107,46 @@ router.get('/stats', async (req, res) => {
             totalLoanAmount: totalLoanAmount || 0,
             totalCustomerReceived: totalCustomerReceived || 0,
             totalBorrowers: totalBorrowers || 0,
-            outstandingBalance
+            outstandingBalance,
+            totalRepaymentExpected: totalRepaymentExpected || 0,
+            totalScheduledRepayment: totalScheduledRepayment || 0,
+            totalPenaltyRepayment: totalPenaltyRepayment || 0
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
+function calculateRepayments(contractsList) {
+    let totalRepaymentExpected = 0;
+    let totalScheduledRepayment = 0;
+    let totalPenaltyRepayment = 0;
+
+    contractsList.forEach(c => {
+        if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
+            c.repaymentSchedule.forEach(row => {
+                const scheduled = Number(row.scheduledAmount) || Number(row.amount) || Number(c.monthlyPayment) || 0;
+                const penalty = Number(row.penalty) || 0;
+                totalScheduledRepayment += scheduled;
+                totalPenaltyRepayment += penalty;
+                totalRepaymentExpected += (scheduled + penalty);
+            });
+        } else {
+            const durationStr = String(c.duration || '').toLowerCase();
+            const matched = durationStr.match(/\d+/);
+            const count = matched ? parseInt(matched[0], 10) : 1;
+            const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ');
+            const monthly = Number(c.monthlyPayment) || 0;
+            const scheduled = isDays
+                ? (monthly || Number(c.amount) || 0)
+                : (monthly > 0 ? (monthly * count) : (Number(c.amount) || 0));
+            totalScheduledRepayment += scheduled;
+            totalRepaymentExpected += scheduled;
+        }
+    });
+
+    return { totalRepaymentExpected, totalScheduledRepayment, totalPenaltyRepayment };
+}
 
 export default router;
 

@@ -49,6 +49,7 @@ import historyRoutes, { createHistoryRoutes } from './routes/historyRoutes.js';
 import cashTransactionRoutes from './routes/cashTransactionRoutes.js';
 import followUpRoutes from './routes/followUpRoutes.js';
 import followUp2Routes from './routes/followUp2Routes.js';
+import followUpSenSokRoutes from './routes/followUpSenSokRoutes.js';
 import { initTelegramBotService } from './services/telegramBotService.js';
 
 const app = express();
@@ -153,6 +154,11 @@ app.use('/api', cashTransactionRoutes);
 app.use('/api/follow-up', followUpRoutes);
 app.use('/api/follow-up-2', followUp2Routes);
 app.use('/api/followup2', followUp2Routes);
+app.use('/api/follow-up-3', followUpSenSokRoutes);
+app.use('/api/followup-3', followUpSenSokRoutes);
+app.use('/api/followup3', followUpSenSokRoutes);
+app.use('/api/follow-up-sen-sok', followUpSenSokRoutes);
+app.use('/api/followup-sensok', followUpSenSokRoutes);
 app.use((err, req, res, next) => {
     console.error('Unhandled System Error:', err);
     res.status(err.status || 500).json({

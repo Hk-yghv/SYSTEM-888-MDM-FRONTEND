@@ -22,6 +22,9 @@
         "comments": "/contract/comments",
         "blacklist": "/contract/blacklist"
     },
+    "calculate": {
+        "calculateSchedule1": "/calculate/schedule-1"
+    },
     "installment": {
         "installmentPage": "/installment/schedule",
         "paymentHistory": "/installment/paymentHistory",
@@ -50,7 +53,9 @@
     },
     "followUp": {
         "followUp1": "/follow-up/follow-up-1",
-        "followUp2": "/follow-up/follow-up-2"
+        "followUp2": "/follow-up/follow-up-2",
+        "followUp3": "/follow-up/follow-up-3",
+        "followUpSenSok": "/follow-up/follow-up-3"
     },
     "settings": {
         "controlSystem": "/settings/control-system",

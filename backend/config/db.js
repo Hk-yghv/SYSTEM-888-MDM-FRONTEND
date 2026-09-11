@@ -33,6 +33,9 @@ export const MEM_DB = {
     wallpaperLogs: [],
     deviceActionLogs: [],
     controlSystems: [],
+    followUps: [],
+    followUps2: [],
+    followUpsSenSok: [],
     controlSystem: {
         droplists: [
             { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
@@ -63,6 +66,7 @@ const SYSTEM_PAGES = [
     '/installment/schedule', '/installment/paymentHistory', '/lostphone/actions', '/lostphone/lockphone', '/lostphone/unlockphone',
     '/wallpaper/actions', '/wallpaper/lockphone', '/wallpaper/unlockphone',
     '/history/login-history', '/history/device-history',
+    '/follow-up/follow-up-1', '/follow-up/follow-up-2', '/follow-up/follow-up-3', '/follow-up/sen-sok',
     '/settings/all-account', '/settings/control-system', '/profile'
 ];
 
