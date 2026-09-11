@@ -12,7 +12,7 @@ const LIMIT = 10;
 
 const LockPhone = () => {
     const { t } = useLanguage();
-    const { API_BASE, API_BASE2, user } = useAuth();
+    const { API_BASE, API_BASE2, user, hasPermission } = useAuth();
 
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -135,12 +135,16 @@ const LockPhone = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
-                    </button>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
-                    </button>
+                    {hasPermission('/lost-phone/lock-phone', 'export') && (
+                        <>
+                            <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                                <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
+                            </button>
+                            <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                                <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
+                            </button>
+                        </>
+                    )}
                     <button onClick={() => fetchLockLogs(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>

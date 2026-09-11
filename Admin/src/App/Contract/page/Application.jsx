@@ -164,20 +164,25 @@ const Application = () => {
                     </h1>
                 </div>
                 <div className='flex items-center gap-3'>
-                    <button
-                        onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                    >
-                        <FaFileExcel className="text-emerald-600 text-sm" />
-                        <span>Excel</span>
-                    </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                    >
-                        <MdPictureAsPdf className="text-red-600 text-sm" />
-                        <span>PDF</span>
-                    </button>
+                    {/* Export to Excel & PDF */}
+                    {hasPermission('/contract/application', 'export') && (
+                        <>
+                            <button
+                                onClick={handleExportExcel}
+                                className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                            >
+                                <FaFileExcel className="text-emerald-600 text-sm" />
+                                <span>Excel</span>
+                            </button>
+                            <button
+                                onClick={handleExportPDF}
+                                className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                            >
+                                <MdPictureAsPdf className="text-red-600 text-sm" />
+                                <span>PDF</span>
+                            </button>
+                        </>
+                    )}
                     {hasPermission('/contract/application', 'create') && (
                         <button
                             onClick={handleOpenCreate}
@@ -222,7 +227,14 @@ const Application = () => {
                                 </td>
                             </tr>
                         ) : (
-                            contracts.map((item, idx) => (
+                            contracts.map((item, idx) => {
+                                const canInfo = hasPermission('/contract/application', 'information');
+                                const canActivate = hasPermission('/contract/application', 'activate');
+                                const canEdit = hasPermission('/contract/application', 'edit');
+                                const canDelete = hasPermission('/contract/application', 'delete');
+                                const hasAnyAction = canInfo || canActivate || canEdit || canDelete;
+
+                                return (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
                                     <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                                     <td className='px-4 py-3 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
@@ -251,60 +263,67 @@ const Application = () => {
                                     </td>
                                     <td className='px-4 py-3 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber || 'Pending'} className='font-mono text-slate-600 font-medium' /></td>
                                     <td className="px-4 py-3 text-center relative">
-                                        <div className="relative inline-block text-left">
-                                            <button
-                                                onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
-                                                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs"
-                                            >
-                                                <AiOutlineMenu size={16} />
-                                            </button>
+                                        {hasAnyAction ? (
+                                            <div className="relative inline-block text-left">
+                                                <button
+                                                    onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
+                                                    className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs"
+                                                >
+                                                    <AiOutlineMenu size={16} />
+                                                </button>
 
-                                            {openMenuId === item._id && (
-                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
-                                                    <button
-                                                        onClick={() => { setInfoData(item); setOpenMenuId(null); }}
-                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <span>{t('information')}</span>
-                                                    </button>
-                                                    {hasPermission('/contract/application', 'edit') && (
-                                                        <button
-                                                            onClick={() => handleActivateContract(item._id)}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <span>Set to Activated</span>
-                                                        </button>
-                                                    )}
-                                                    {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
-                                                        <button
-                                                            onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
-                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <span>Open Mosyle</span>
-                                                        </button>
-                                                    )}
-                                                    {hasPermission('/contract/application', 'edit') && (
-                                                        <button
-                                                            onClick={() => handleOpenEdit(item)}
-                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <span>{t('edit')}</span>
-                                                        </button>
-                                                    )}
-                                                    {hasPermission('/contract/application', 'delete') && (
-                                                        <button
-                                                            onClick={() => handleDeleteContract(item._id)}
-                                                            className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <span>{t('delete')}</span>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
+                                                {openMenuId === item._id && (
+                                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                        {canInfo && (
+                                                            <button
+                                                                onClick={() => { setInfoData(item); setOpenMenuId(null); }}
+                                                                className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                            >
+                                                                <span>{t('information')}</span>
+                                                            </button>
+                                                        )}
+                                                        {canActivate && (
+                                                            <button
+                                                                onClick={() => handleActivateContract(item._id)}
+                                                                className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                            >
+                                                                <span>Set to Activated</span>
+                                                            </button>
+                                                        )}
+                                                        {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
+                                                            <button
+                                                                onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
+                                                                className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                            >
+                                                                <span>Open Mosyle</span>
+                                                            </button>
+                                                        )}
+                                                        {canEdit && (
+                                                            <button
+                                                                onClick={() => handleOpenEdit(item)}
+                                                                className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                            >
+                                                                <span>{t('edit')}</span>
+                                                            </button>
+                                                        )}
+                                                        {canDelete && (
+                                                            <button
+                                                                onClick={() => handleDeleteContract(item._id)}
+                                                                className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                            >
+                                                                <span>{t('delete')}</span>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="text-slate-400 font-mono text-[11px]">—</span>
+                                        )}
                                     </td>
                                 </tr>
-                            ))
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

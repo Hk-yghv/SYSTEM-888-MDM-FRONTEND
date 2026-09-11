@@ -14,7 +14,7 @@ const LIMIT = 10;
 
 const Device = () => {
     const { t } = useLanguage();
-    const { API_BASE, API_BASE1, API_BASE2, user } = useAuth();
+    const { API_BASE, API_BASE1, API_BASE2, user, hasPermission } = useAuth();
     const navigate = useNavigate();
 
     // Lock/Wallpaper action state
@@ -169,20 +169,25 @@ const Device = () => {
                 </div>
 
                 <div className='flex items-center gap-3 flex-wrap'>
-                    <button
-                        onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                    >
-                        <FaFileExcel className="text-emerald-600 text-sm" />
-                        <span>Excel</span>
-                    </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                    >
-                        <MdPictureAsPdf className="text-red-600 text-sm" />
-                        <span>PDF</span>
-                    </button>
+                    {/* Export to Excel & PDF */}
+                    {hasPermission('/device', 'export') && (
+                        <>
+                            <button
+                                onClick={handleExportExcel}
+                                className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                            >
+                                <FaFileExcel className="text-emerald-600 text-sm" />
+                                <span>Excel</span>
+                            </button>
+                            <button
+                                onClick={handleExportPDF}
+                                className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                            >
+                                <MdPictureAsPdf className="text-red-600 text-sm" />
+                                <span>PDF</span>
+                            </button>
+                        </>
+                    )}
 
                     {/* Brand Filter Dropdown — Administrator only */}
                     {user?.role === 'Administrator' && (
@@ -265,13 +270,17 @@ const Device = () => {
                                         </span>
                                     </td>
                                     <td className='px-4 py-3 text-center'>
-                                        <button
-                                            onClick={() => setSelectedDevice(item)}
-                                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 mx-auto cursor-pointer"
-                                        >
-                                            <FaMobileAlt />
-                                            <span>Info</span>
-                                        </button>
+                                        {hasPermission('/device', 'information') ? (
+                                            <button
+                                                onClick={() => setSelectedDevice(item)}
+                                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 mx-auto cursor-pointer"
+                                            >
+                                                <FaMobileAlt />
+                                                <span>Info</span>
+                                            </button>
+                                        ) : (
+                                            <span className="text-slate-400 font-mono text-[11px]">—</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))
@@ -662,136 +671,138 @@ const Device = () => {
 
 
                             {/* ================= LOCK / WALLPAPER ACTIONS ================= */}
-                            <div className="p-4 bg-white border border-indigo-200 rounded-2xl">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <span className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs">🔧</span>
-                                    <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Device Actions (Lock / Wallpaper)</h4>
+                            {hasPermission('/device', 'deviceAction') && (
+                                <div className="p-4 bg-white border border-indigo-200 rounded-2xl">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs">🔧</span>
+                                        <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Device Actions (Lock / Wallpaper)</h4>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {/* Lock Phone */}
+                                        <button
+                                            disabled={actionLoading}
+                                            onClick={async () => {
+                                                if (!window.confirm(`ចង់ Lock Phone លើ "${selectedDevice.customerNameEn}" មែនទេ?`)) return;
+                                                setActionLoading(true);
+                                                try {
+                                                    const res = await fetch(`${API_BASE2}/history/device-actions`, {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            contractId: selectedDevice.contractId || selectedDevice.contractIid,
+                                                            actionType: 'Lock Phone',
+                                                            status: 'Pending',
+                                                            performedBy: user?.name || user?.username || 'Administrator',
+                                                            reason: 'Lock Phone requested from Activate Device page'
+                                                        })
+                                                    });
+                                                    if (res.ok) {
+                                                        setSelectedDevice(null);
+                                                        navigate('/history/device-history');
+                                                    } else {
+                                                        alert('Failed to create Lock Phone action');
+                                                    }
+                                                } catch (err) {
+                                                    console.error('Lock phone action error:', err);
+                                                    alert('Network error');
+                                                } finally {
+                                                    setActionLoading(false);
+                                                }
+                                            }}
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-red-600/20 transition-all cursor-pointer active:scale-95"
+                                        >
+                                            <FaLock size={12} />
+                                            <span>Lock Phone</span>
+                                        </button>
+
+                                        {/* Unlock Phone */}
+                                        <button
+                                            disabled={actionLoading}
+                                            onClick={async () => {
+                                                if (!window.confirm(`ចង់ Unlock Phone លើ "${selectedDevice.customerNameEn}" មែនទេ?`)) return;
+                                                setActionLoading(true);
+                                                try {
+                                                    const res = await fetch(`${API_BASE2}/history/device-actions`, {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            contractId: selectedDevice.contractId || selectedDevice.contractIid,
+                                                            actionType: 'Unlock Phone',
+                                                            status: 'Pending',
+                                                            performedBy: user?.name || user?.username || 'Administrator',
+                                                            reason: 'Unlock Phone requested from Activate Device page'
+                                                        })
+                                                    });
+                                                    if (res.ok) {
+                                                        setSelectedDevice(null);
+                                                        navigate('/history/device-history');
+                                                    } else {
+                                                        alert('Failed to create Unlock Phone action');
+                                                    }
+                                                } catch (err) {
+                                                    console.error('Unlock phone action error:', err);
+                                                    alert('Network error');
+                                                } finally {
+                                                    setActionLoading(false);
+                                                }
+                                            }}
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-95"
+                                        >
+                                            <FaUnlock size={12} />
+                                            <span>Unlock Phone</span>
+                                        </button>
+
+                                        {/* Set Wallpaper */}
+                                        <button
+                                            disabled={actionLoading}
+                                            onClick={async () => {
+                                                if (!window.confirm(`ចង់ Set Wallpaper លើ "${selectedDevice.customerNameEn}" មែនទេ?`)) return;
+                                                setActionLoading(true);
+                                                try {
+                                                    const res = await fetch(`${API_BASE2}/history/device-actions`, {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            contractId: selectedDevice.contractId || selectedDevice.contractIid,
+                                                            actionType: 'Set Wallpaper',
+                                                            status: 'Pending',
+                                                            performedBy: user?.name || user?.username || 'Administrator',
+                                                            reason: 'Set Wallpaper requested from Activate Device page'
+                                                        })
+                                                    });
+                                                    if (res.ok) {
+                                                        setSelectedDevice(null);
+                                                        navigate('/history/device-history');
+                                                    } else {
+                                                        alert('Failed to create Set Wallpaper action');
+                                                    }
+                                                } catch (err) {
+                                                    console.error('Set wallpaper action error:', err);
+                                                    alert('Network error');
+                                                } finally {
+                                                    setActionLoading(false);
+                                                }
+                                            }}
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/20 transition-all cursor-pointer active:scale-95"
+                                        >
+                                            <MdOutlineWallpaper size={14} />
+                                            <span>Set Wallpaper</span>
+                                        </button>
+
+                                        {/* View History */}
+                                        <button
+                                            onClick={() => { setSelectedDevice(null); navigate('/history/device-history'); }}
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold shadow-md shadow-slate-700/20 transition-all cursor-pointer active:scale-95"
+                                        >
+                                            <FaHistory size={11} />
+                                            <span>View History</span>
+                                        </button>
+                                    </div>
+                                    {actionLoading && (
+                                        <p className="text-center text-indigo-600 font-bold text-xs mt-2 animate-pulse">⏳ កំពុងដំណើរការ...</p>
+                                    )}
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {/* Lock Phone */}
-                                    <button
-                                        disabled={actionLoading}
-                                        onClick={async () => {
-                                            if (!window.confirm(`ចង់ Lock Phone លើ "${selectedDevice.customerNameEn}" មែនទេ?`)) return;
-                                            setActionLoading(true);
-                                            try {
-                                                const res = await fetch(`${API_BASE2}/history/device-actions`, {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        contractId: selectedDevice.contractId || selectedDevice.contractIid,
-                                                        actionType: 'Lock Phone',
-                                                        status: 'Pending',
-                                                        performedBy: user?.name || user?.username || 'Administrator',
-                                                        reason: 'Lock Phone requested from Activate Device page'
-                                                    })
-                                                });
-                                                if (res.ok) {
-                                                    setSelectedDevice(null);
-                                                    navigate('/history/device-history');
-                                                } else {
-                                                    alert('Failed to create Lock Phone action');
-                                                }
-                                            } catch (err) {
-                                                console.error('Lock phone action error:', err);
-                                                alert('Network error');
-                                            } finally {
-                                                setActionLoading(false);
-                                            }
-                                        }}
-                                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-red-600/20 transition-all cursor-pointer active:scale-95"
-                                    >
-                                        <FaLock size={12} />
-                                        <span>Lock Phone</span>
-                                    </button>
-
-                                    {/* Unlock Phone */}
-                                    <button
-                                        disabled={actionLoading}
-                                        onClick={async () => {
-                                            if (!window.confirm(`ចង់ Unlock Phone លើ "${selectedDevice.customerNameEn}" មែនទេ?`)) return;
-                                            setActionLoading(true);
-                                            try {
-                                                const res = await fetch(`${API_BASE2}/history/device-actions`, {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        contractId: selectedDevice.contractId || selectedDevice.contractIid,
-                                                        actionType: 'Unlock Phone',
-                                                        status: 'Pending',
-                                                        performedBy: user?.name || user?.username || 'Administrator',
-                                                        reason: 'Unlock Phone requested from Activate Device page'
-                                                    })
-                                                });
-                                                if (res.ok) {
-                                                    setSelectedDevice(null);
-                                                    navigate('/history/device-history');
-                                                } else {
-                                                    alert('Failed to create Unlock Phone action');
-                                                }
-                                            } catch (err) {
-                                                console.error('Unlock phone action error:', err);
-                                                alert('Network error');
-                                            } finally {
-                                                setActionLoading(false);
-                                            }
-                                        }}
-                                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-95"
-                                    >
-                                        <FaUnlock size={12} />
-                                        <span>Unlock Phone</span>
-                                    </button>
-
-                                    {/* Set Wallpaper */}
-                                    <button
-                                        disabled={actionLoading}
-                                        onClick={async () => {
-                                            if (!window.confirm(`ចង់ Set Wallpaper លើ "${selectedDevice.customerNameEn}" មែនទេ?`)) return;
-                                            setActionLoading(true);
-                                            try {
-                                                const res = await fetch(`${API_BASE2}/history/device-actions`, {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        contractId: selectedDevice.contractId || selectedDevice.contractIid,
-                                                        actionType: 'Set Wallpaper',
-                                                        status: 'Pending',
-                                                        performedBy: user?.name || user?.username || 'Administrator',
-                                                        reason: 'Set Wallpaper requested from Activate Device page'
-                                                    })
-                                                });
-                                                if (res.ok) {
-                                                    setSelectedDevice(null);
-                                                    navigate('/history/device-history');
-                                                } else {
-                                                    alert('Failed to create Set Wallpaper action');
-                                                }
-                                            } catch (err) {
-                                                console.error('Set wallpaper action error:', err);
-                                                alert('Network error');
-                                            } finally {
-                                                setActionLoading(false);
-                                            }
-                                        }}
-                                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/20 transition-all cursor-pointer active:scale-95"
-                                    >
-                                        <MdOutlineWallpaper size={14} />
-                                        <span>Set Wallpaper</span>
-                                    </button>
-
-                                    {/* View History */}
-                                    <button
-                                        onClick={() => { setSelectedDevice(null); navigate('/history/device-history'); }}
-                                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold shadow-md shadow-slate-700/20 transition-all cursor-pointer active:scale-95"
-                                    >
-                                        <FaHistory size={11} />
-                                        <span>View History</span>
-                                    </button>
-                                </div>
-                                {actionLoading && (
-                                    <p className="text-center text-indigo-600 font-bold text-xs mt-2 animate-pulse">⏳ កំពុងដំណើរការ...</p>
-                                )}
-                            </div>
+                            )}
 
 
                             {/* ================= DEVICE PROBLEM ================= */}

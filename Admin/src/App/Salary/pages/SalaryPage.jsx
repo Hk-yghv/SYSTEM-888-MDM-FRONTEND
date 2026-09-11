@@ -354,20 +354,24 @@ const SalaryPage = () => {
 
                 {/* Header Action Buttons */}
                 <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                        onClick={handleExportExcel}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
-                    >
-                        <FaFileExcel className="text-emerald-600 text-sm" />
-                        <span>Excel</span>
-                    </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
-                    >
-                        <FaFilePdf className="text-red-600 text-sm" />
-                        <span>PDF</span>
-                    </button>
+                    {hasPermission('/salary', 'export') && (
+                        <>
+                            <button
+                                onClick={handleExportExcel}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
+                            >
+                                <FaFileExcel className="text-emerald-600 text-sm" />
+                                <span>Excel</span>
+                            </button>
+                            <button
+                                onClick={handleExportPDF}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
+                            >
+                                <FaFilePdf className="text-red-600 text-sm" />
+                                <span>PDF</span>
+                            </button>
+                        </>
+                    )}
                     {hasPermission('/salary', 'create') && (
                         <button
                             onClick={handleOpenCreate}

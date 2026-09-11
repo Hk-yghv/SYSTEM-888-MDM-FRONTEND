@@ -105,20 +105,24 @@ const Comments = () => {
                     </h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                    >
-                        <FaFileExcel className="text-emerald-600 text-sm" />
-                        <span>Excel</span>
-                    </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                    >
-                        <MdPictureAsPdf className="text-red-600 text-sm" />
-                        <span>PDF</span>
-                    </button>
+                    {hasPermission('/contract/comments', 'export') && (
+                        <>
+                            <button
+                                onClick={handleExportExcel}
+                                className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                            >
+                                <FaFileExcel className="text-emerald-600 text-sm" />
+                                <span>Excel</span>
+                            </button>
+                            <button
+                                onClick={handleExportPDF}
+                                className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                            >
+                                <MdPictureAsPdf className="text-red-600 text-sm" />
+                                <span>PDF</span>
+                            </button>
+                        </>
+                    )}
                     <button
                         onClick={fetchCommentsContracts}
                         disabled={reloading}
@@ -176,9 +180,11 @@ const Comments = () => {
 
                                             {openMenuId === item._id && (
                                                 <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
-                                                    <button onClick={() => { setSelectedInfo(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2">
-                                                        <MdInfo className="text-indigo-600" /> Details
-                                                    </button>
+                                                    {hasPermission('/contract/comments', 'information') && (
+                                                        <button onClick={() => { setSelectedInfo(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2">
+                                                            <MdInfo className="text-indigo-600" /> Details
+                                                        </button>
+                                                    )}
                                                     {hasPermission('/contract/comments', 'edit') && (
                                                         <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2">
                                                             <MdEdit className="text-amber-600" /> Edit

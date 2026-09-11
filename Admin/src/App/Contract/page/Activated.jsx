@@ -355,20 +355,25 @@ const Activated = () => {
                         />
                     </div>
 
-                    <button
-                        onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                    >
-                        <FaFileExcel className="text-emerald-600 text-sm" />
-                        <span>Excel</span>
-                    </button>
-                    <button
-                        onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                    >
-                        <MdPictureAsPdf className="text-red-600 text-sm" />
-                        <span>PDF</span>
-                    </button>
+                    {/* Export to Excel & PDF */}
+                    {hasPermission('/contract/activated', 'export') && (
+                        <>
+                            <button
+                                onClick={handleExportExcel}
+                                className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                            >
+                                <FaFileExcel className="text-emerald-600 text-sm" />
+                                <span>Excel</span>
+                            </button>
+                            <button
+                                onClick={handleExportPDF}
+                                className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                            >
+                                <MdPictureAsPdf className="text-red-600 text-sm" />
+                                <span>PDF</span>
+                            </button>
+                        </>
+                    )}
 
                     <button
                         onClick={() => fetchActivatedContracts(currentPage, searchTerm)}
@@ -406,7 +411,18 @@ const Activated = () => {
                                 </td>
                             </tr>
                         ) : (
-                            filteredContracts.map((item, idx) => (
+                            filteredContracts.map((item, idx) => {
+                                const canOpenMosyle = !!(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL);
+                                const canOpenFb = hasPermission('/contract/activated', 'openFacebook') && !!item.urlFb;
+                                const canHistory = hasPermission('/contract/activated', 'history');
+                                const canComment = hasPermission('/contract/activated', 'comment');
+                                const canLock = hasPermission('/contract/activated', 'lockDevice');
+                                const canWallpaper = hasPermission('/contract/activated', 'setWallpaper');
+                                const canCheck = hasPermission('/contract/activated', 'check');
+                                const canBlacklist = hasPermission('/contract/activated', 'blacklist');
+                                const hasAnyAction = canOpenMosyle || canOpenFb || canHistory || canComment || canLock || canWallpaper || canCheck || canBlacklist;
+
+                                return (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
                                     <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                                     <td className='px-4 py-3 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
@@ -436,78 +452,88 @@ const Activated = () => {
                                     <td className='px-4 py-3 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
                                     <td className="px-4 py-3 text-center relative">
                                         <div className="flex items-center justify-center gap-2">
-                                            <div className="relative inline-block text-left">
-                                                <button
-                                                    onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
-                                                    className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs"
-                                                >
-                                                    <AiOutlineMenu size={16} />
-                                                </button>
+                                            {hasAnyAction ? (
+                                                <div className="relative inline-block text-left">
+                                                    <button
+                                                        onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
+                                                        className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs"
+                                                    >
+                                                        <AiOutlineMenu size={16} />
+                                                    </button>
 
-                                                {openMenuId === item._id && (
-                                                    <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
-                                                        {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
-                                                            <button
-                                                                onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
-                                                                className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                            >
-                                                                <span>Open Mosyle</span>
-                                                            </button>
-                                                        )}
-                                                        {(item.urlFb) && (
-                                                            <button
-                                                                onClick={() => window.open(item.urlFb, '_blank')}
-                                                                className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                            >
-                                                                <span>Open Facebook</span>
-                                                            </button>
-                                                        )}
+                                                    {openMenuId === item._id && (
+                                                        <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                            {canOpenMosyle && (
+                                                                <button
+                                                                    onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <span>Open Mosyle</span>
+                                                                </button>
+                                                            )}
+                                                            {canOpenFb && (
+                                                                <button
+                                                                    onClick={() => window.open(item.urlFb, '_blank')}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <span>Open Facebook</span>
+                                                                </button>
+                                                            )}
 
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedHistoryItem(item);
-                                                                setOpenMenuId(null);
-                                                            }}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                        >
-                                                            <FaHistory className="text-indigo-600 text-sm" />
-                                                            <span>History (ប្រវត្តិសកម្មភាព)</span>
-                                                        </button>
+                                                            {canHistory && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedHistoryItem(item);
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <FaHistory className="text-indigo-600 text-sm" />
+                                                                    <span>History (ប្រវត្តិសកម្មភាព)</span>
+                                                                </button>
+                                                            )}
 
-                                                        {hasPermission('/contract/activated', 'edit') && (
-                                                            <>
+                                                            {canComment && (
                                                                 <button
                                                                     onClick={() => {
                                                                         setSelectedCommentItem(item);
                                                                         setCommentInput(item.notes || '');
                                                                         setOpenMenuId(null);
                                                                     }}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rended-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdComment className="text-cyan-600 text-base" />
                                                                     <span>Comment</span>
                                                                 </button>
+                                                            )}
+                                                            {canLock && (
                                                                 <button
                                                                     onClick={() => handleQuickDeviceAction(item, 'Lock Phone')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rended-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <FaLock className="text-red-600 text-sm" />
                                                                     <span>Lock Device</span>
                                                                 </button>
+                                                            )}
+                                                            {canWallpaper && (
                                                                 <button
                                                                     onClick={() => handleQuickDeviceAction(item, 'Set Wallpaper')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rended-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdOutlineWallpaper className="text-amber-600 text-sm" />
                                                                     <span>Set Wallpaper</span>
                                                                 </button>
+                                                            )}
+                                                            {canCheck && (
                                                                 <button
                                                                     onClick={() => handleChangeStatus(item, 'Check')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rended-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <MdSwapHoriz className="text-blue-600 text-base" />
                                                                     <span>Check</span>
                                                                 </button>
+                                                            )}
+                                                            {canBlacklist && (
                                                                 <button
                                                                     onClick={() => handleChangeStatus(item, 'Blacklist')}
                                                                     className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
@@ -515,15 +541,18 @@ const Activated = () => {
                                                                     <MdSwapHoriz className="text-red-600 text-base" />
                                                                     <span>Blacklist</span>
                                                                 </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-400 font-mono text-[11px]">—</span>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
-                            ))
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

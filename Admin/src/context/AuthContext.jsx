@@ -208,19 +208,20 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // Granular RBAC Check Function
+    // Granular RBAC Check Function — Strict Deny-by-Default
     const hasPermission = (pagePath, action = 'read') => {
         if (!user) return false;
-        // Profile and Phone App pages are always public & accessible to any logged-in user role
-        if (pagePath === '/profile' || pagePath === '/settings/phone-app') return true;
-        // Master Admin has full access to all pages and actions
-        if (user.username === '@hakyonghouv' || user.role === 'Administrator' || user.isImmutable) {
+        // Master Admin (@hakyonghouv or isImmutable) has full access to all pages and actions
+        if (user.username === '@hakyonghouv' || user.isImmutable) {
             return true;
         }
-        if (!user.permissions) return true;
+        // Profile and Phone App pages are accessible to any authenticated user
+        if (pagePath === '/profile' || pagePath === '/settings/phone-app') return true;
 
-        const pagePerms = user.permissions[pagePath] || user.permissions.get?.(pagePath);
-        if (!pagePerms) return true; // Default allow for newly created modules/pages
+        if (!user.permissions) return false;
+
+        const pagePerms = user.permissions[pagePath] || (user.permissions instanceof Map ? user.permissions.get(pagePath) : user.permissions.get?.(pagePath));
+        if (!pagePerms) return false; // Strict RBAC: Deny if not specifically granted
         return !!pagePerms[action];
     };
 

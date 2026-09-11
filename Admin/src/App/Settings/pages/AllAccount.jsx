@@ -6,19 +6,19 @@ import { MdOutlineSync, MdDelete, MdEdit } from 'react-icons/md';
 
 const ALL_SYSTEM_PAGES = [
     { category: 'Main Systems', path: '/dashboard', label: 'Dashboard Analysis', actions: ['read', 'export'] },
-    { category: 'Main Systems', path: '/customer', label: 'Customer Directory', actions: ['read', 'create', 'edit', 'delete', 'information'] },
-    { category: 'Main Systems', path: '/device', label: 'Device List', actions: ['read', 'edit', 'delete', 'information', 'lockDevice', 'setWallpaper'] },
+    { category: 'Main Systems', path: '/customer', label: 'Customer Directory', actions: ['read', 'export', 'seePhoto', 'detail', 'qrcode'] },
+    { category: 'Main Systems', path: '/device', label: 'Device List & Actions', actions: ['read', 'export', 'information', 'deviceAction'] },
 
-    { category: 'Contract Management', path: '/contract/application', label: 'Contract Application', actions: ['read', 'create', 'edit', 'delete', 'activate', 'information'] },
-    { category: 'Contract Management', path: '/contract/activated', label: 'Contract Activated', actions: ['read', 'edit', 'delete', 'information', 'lockDevice', 'setWallpaper', 'redeem'] },
-    { category: 'Contract Management', path: '/contract/check', label: 'Contract Check', actions: ['read', 'edit', 'information'] },
-    { category: 'Contract Management', path: '/contract/redeem', label: 'Contract Redeem', actions: ['read', 'edit', 'information'] },
-    { category: 'Contract Management', path: '/contract/comments', label: 'Contract Comments', actions: ['read', 'create', 'edit', 'delete'] },
-    { category: 'Contract Management', path: '/contract/blacklist', label: 'Contract Blacklist', actions: ['read', 'create', 'delete'] },
+    { category: 'Contract Management', path: '/contract/application', label: 'Contract Application', actions: ['read', 'export', 'create', 'edit', 'delete', 'information', 'activate'] },
+    { category: 'Contract Management', path: '/contract/activated', label: 'Contract Activated', actions: ['read', 'export', 'openFacebook', 'history', 'comment', 'lockDevice', 'setWallpaper', 'check', 'blacklist'] },
+    { category: 'Contract Management', path: '/contract/check', label: 'Contract Check', actions: ['read', 'export', 'edit', 'delete'] },
+    { category: 'Contract Management', path: '/contract/redeem', label: 'Contract Redeem', actions: ['read', 'export', 'edit', 'delete'] },
+    { category: 'Contract Management', path: '/contract/comments', label: 'Contract Comments', actions: ['read', 'export', 'create', 'edit', 'delete', 'information'] },
+    { category: 'Contract Management', path: '/contract/blacklist', label: 'Contract Blacklist', actions: ['read', 'export', 'create', 'edit', 'delete'] },
     { category: 'Calculation & Tools', path: '/calculate/schedule-1', label: 'Calculate Schedule 1 (គណនាការប្រាក់ & កាលវិភាគ)', actions: ['read', 'export'] },
 
     { category: 'Installment & Payment', path: '/installment/schedule', label: 'Installment Schedule (តារាងបង់ប្រាក់)', actions: ['read', 'edit', 'export'] },
-    { category: 'Installment & Payment', path: '/installment/paymentHistory', label: 'Payment History', actions: ['read', 'create', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/paymentHistory', label: 'Payment History', actions: ['read', 'create', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/cash-out', label: 'Cash Out (ប្រាក់ចេញ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/cash-in', label: 'Cash In (ប្រាក់ចូល)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/overdue', label: 'Overdue Customers (ភ្ញៀវយឺត)', actions: ['read', 'export'] },
@@ -51,7 +51,6 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Follow Up System', path: '/follow-up/follow-up-1', label: 'Follow up 1 (ការតាមដាន Message)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-2', label: 'Follow up 2 (បញ្ចាំ & ឆ្លើយតបឆាត)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-3', label: 'Follow up 3 (ការតាមដាន Leads & Follow Up 3)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
-    { category: 'Follow Up System', path: '/follow-up/report', label: 'Follow Up Report (របាយការណ៍ Follow Up)', actions: ['read', 'export'] },
 
     { category: 'Salary System', path: '/salary', label: 'Salary Management (គ្រប់គ្រងប្រាក់ខែ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 
@@ -763,44 +762,54 @@ const AllAccount = () => {
                                 {/* Quick Batch Toggles */}
                                 <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-950/80 border border-gray-800 rounded-xl text-[11px] font-semibold text-gray-300">
                                     <span className="text-gray-400 text-[10px] font-bold uppercase mr-1">Batch Toggles:</span>
-                                    <button type="button" onClick={() => handleToggleAllAction('read')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-indigo-300 rounded border border-gray-700">✓ All Read</button>
-                                    <button type="button" onClick={() => handleToggleAllAction('create')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-300 rounded border border-gray-700">✓ All Create</button>
-                                    <button type="button" onClick={() => handleToggleAllAction('edit')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-purple-300 rounded border border-gray-700">✓ All Edit</button>
-                                    <button type="button" onClick={() => handleToggleAllAction('delete')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-red-300 rounded border border-gray-700">✓ All Delete</button>
-                                    <button type="button" onClick={() => handleToggleAllAction('export')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-400 rounded border border-gray-700">✓ All Export</button>
+                                    <button type="button" onClick={() => handleToggleAllAction('read')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-indigo-300 rounded border border-gray-700 cursor-pointer">✓ All Read</button>
+                                    <button type="button" onClick={() => handleToggleAllAction('create')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-300 rounded border border-gray-700 cursor-pointer">✓ All Create</button>
+                                    <button type="button" onClick={() => handleToggleAllAction('edit')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-purple-300 rounded border border-gray-700 cursor-pointer">✓ All Edit</button>
+                                    <button type="button" onClick={() => handleToggleAllAction('delete')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-red-300 rounded border border-gray-700 cursor-pointer">✓ All Delete</button>
+                                    <button type="button" onClick={() => handleToggleAllAction('export')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-400 rounded border border-gray-700 cursor-pointer">✓ All Export</button>
+                                    <button type="button" onClick={() => handleToggleAllAction('information')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-blue-300 rounded border border-gray-700 cursor-pointer">✓ All Info</button>
                                 </div>
 
                                 <div className="max-h-72 overflow-y-auto rounded-2xl border border-gray-800 bg-gray-900/60 p-3 space-y-3">
                                     {Object.entries(
                                         ALL_SYSTEM_PAGES.reduce((acc, pg) => {
-                                            const cat = pg.category || 'Other';
-                                            if (!acc[cat]) acc[cat] = [];
-                                            acc[cat].push(pg);
-                                            return acc;
-                                        }, {})
-                                    ).map(([category, pages]) => (
-                                        <div key={category} className="space-y-1.5">
-                                            <div className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider px-1 pt-1 flex items-center justify-between border-b border-gray-800/80 pb-1">
-                                                <span>{category}</span>
-                                                <span className="text-[10px] text-gray-500 font-mono">({pages.length} Pages)</span>
-                                            </div>
-                                            {pages.map((pg) => {
-                                                const pState = formData.permissions[pg.path] || {};
-                                                const availableActions = pg.actions || ['read', 'create', 'edit', 'delete'];
-                                                const ACTION_LABELS = {
-                                                    read: { label: 'Read', color: 'text-indigo-300' },
-                                                    create: { label: 'Create', color: 'text-emerald-300' },
-                                                    edit: { label: 'Edit', color: 'text-purple-300' },
-                                                    delete: { label: 'Delete', color: 'text-red-400' },
-                                                    information: { label: 'Info', color: 'text-blue-300' },
-                                                    lockDevice: { label: 'Lock Device', color: 'text-rose-400' },
-                                                    unlockPhone: { label: 'Unlock Phone', color: 'text-teal-300' },
-                                                    setWallpaper: { label: 'Set Wallpaper', color: 'text-amber-300' },
-                                                    unlockWallpaper: { label: 'Unlock WP', color: 'text-lime-300' },
-                                                    redeem: { label: 'Redeem', color: 'text-orange-300' },
-                                                    activate: { label: 'Activate', color: 'text-cyan-300' },
-                                                    export: { label: 'Export', color: 'text-emerald-400' }
-                                                };
+                                             const cat = pg.category || 'Other';
+                                             if (!acc[cat]) acc[cat] = [];
+                                             acc[cat].push(pg);
+                                             return acc;
+                                         }, {})
+                                     ).map(([category, pages]) => (
+                                         <div key={category} className="space-y-1.5">
+                                             <div className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider px-1 pt-1 flex items-center justify-between border-b border-gray-800/80 pb-1">
+                                                 <span>{category}</span>
+                                                 <span className="text-[10px] text-gray-500 font-mono">({pages.length} Pages)</span>
+                                             </div>
+                                             {pages.map((pg) => {
+                                                 const pState = formData.permissions[pg.path] || {};
+                                                 const availableActions = pg.actions || ['read', 'create', 'edit', 'delete'];
+                                                 const ACTION_LABELS = {
+                                                     read: { label: 'Read (មើលទំព័រ)', color: 'text-indigo-300' },
+                                                     export: { label: 'Export', color: 'text-emerald-400' },
+                                                     seePhoto: { label: 'See Photo (រូប)', color: 'text-pink-300' },
+                                                     detail: { label: 'Detail (ព័ត៌មាន)', color: 'text-blue-300' },
+                                                     qrcode: { label: 'QR Code', color: 'text-violet-300' },
+                                                     information: { label: 'Info (ព័ត៌មាន)', color: 'text-sky-300' },
+                                                     deviceAction: { label: 'Device Actions (Lock/WP)', color: 'text-rose-400' },
+                                                     openFacebook: { label: 'Open FB', color: 'text-blue-400' },
+                                                     history: { label: 'History (ប្រវត្តិ)', color: 'text-amber-300' },
+                                                     comment: { label: 'Comment (មតិ)', color: 'text-cyan-300' },
+                                                     lockDevice: { label: 'Lock Device', color: 'text-red-400' },
+                                                     unlockPhone: { label: 'Unlock Phone', color: 'text-teal-300' },
+                                                     setWallpaper: { label: 'Set Wallpaper', color: 'text-amber-400' },
+                                                     unlockWallpaper: { label: 'Unlock WP', color: 'text-lime-300' },
+                                                     check: { label: 'Check', color: 'text-blue-300' },
+                                                     blacklist: { label: 'Blacklist', color: 'text-red-500' },
+                                                     activate: { label: 'Activate (ដំណើរការ)', color: 'text-emerald-300' },
+                                                     create: { label: 'Create (បង្កើត)', color: 'text-emerald-300' },
+                                                     edit: { label: 'Edit (កែប្រែ)', color: 'text-purple-300' },
+                                                     delete: { label: 'Delete (លុប)', color: 'text-red-400' },
+                                                     redeem: { label: 'Redeem', color: 'text-orange-300' }
+                                                 };
                                                 return (
                                                     <div key={pg.path} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-xl bg-gray-950/60 border border-gray-800/80 hover:border-gray-700 text-xs transition-colors">
                                                         <span className="font-bold text-gray-200">{pg.label} <span className="text-[10px] text-indigo-400 font-mono">({pg.path})</span></span>

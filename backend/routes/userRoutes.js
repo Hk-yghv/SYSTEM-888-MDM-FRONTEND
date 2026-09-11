@@ -10,6 +10,13 @@ const router = express.Router();
 // GET all users — merged from all 3 DBs
 const OFFLINE_THRESHOLD_MS = 90 * 1000; // 90 seconds threshold
 
+const formatPermissions = (perms) => {
+    if (!perms) return {};
+    if (perms instanceof Map) return Object.fromEntries(perms);
+    if (typeof perms.toObject === 'function') return perms.toObject();
+    return perms;
+};
+
 const formatUserStatus = (u) => {
     const rawObj = u.toObject ? u.toObject() : { ...u };
     const lastSeenMs = rawObj.lastSeen ? new Date(rawObj.lastSeen).getTime() : 0;
@@ -19,6 +26,7 @@ const formatUserStatus = (u) => {
     rawObj.otpHistory = rawObj.otpHistory || [];
     rawObj.onlineHistory = rawObj.onlineHistory || [];
     rawObj.loginHistory = rawObj.loginHistory || [];
+    rawObj.permissions = formatPermissions(rawObj.permissions);
     return rawObj;
 };
 
@@ -149,7 +157,12 @@ router.put('/:id', async (req, res) => {
         if (email) user.email = email;
         if (role) user.role = role;
         if (brand !== undefined) user.brand = brand;
-        if (permissions) user.permissions = permissions;
+        if (permissions !== undefined) {
+            user.permissions = permissions;
+            if (typeof user.markModified === 'function') {
+                user.markModified('permissions');
+            }
+        }
         if (password && password.trim() !== '') {
             user.password = await bcrypt.hash(password, 10);
         }

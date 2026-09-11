@@ -38,13 +38,7 @@ const userSchema = new mongoose.Schema({
         status: { type: String, default: 'Success' }
     }],
     permissions: {
-        type: Map,
-        of: {
-            read: { type: Boolean, default: true },
-            edit: { type: Boolean, default: false },
-            create: { type: Boolean, default: false },
-            delete: { type: Boolean, default: false }
-        },
+        type: mongoose.Schema.Types.Mixed,
         default: {}
     }
 }, { timestamps: true });
