@@ -32,9 +32,6 @@ router.get('/', async (req, res) => {
         const isMasterAdmin = (
             username === '@hakyonghouv' ||
             username === 'hakyonghouv' ||
-        const isMasterAdmin = (
-            username === '@hakyonghouv' ||
-            username === 'hakyonghouv' ||
             isImmutable === 'true' ||
             userRole === 'Administrator' ||
             userRole === 'Admin'
