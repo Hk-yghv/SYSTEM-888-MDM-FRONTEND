@@ -30,6 +30,7 @@ import RedeemReport from "../App/Report/pages/RedeemReport";
 import LockPhoneReport from "../App/Report/pages/LockPhoneReport";
 import SetWallpaperReport from "../App/Report/pages/SetWallpaperReport";
 import InstallmentReport from "../App/Report/pages/InstallmentReport";
+import FollowUpReport from "../App/Report/pages/FollowUpReport";
 
 // Contract 
 import Application from "../App/Contract/page/Application";
@@ -165,6 +166,8 @@ const App = () => {
                   <Route path={json.report?.lockPhone} element={<ProtectRoute pagePath={json.report?.lockPhone}> <MainLayout><LockPhoneReport /></MainLayout> </ProtectRoute>} />
                   <Route path={json.report?.setWallpaper} element={<ProtectRoute pagePath={json.report?.setWallpaper}> <MainLayout><SetWallpaperReport /></MainLayout> </ProtectRoute>} />
                   <Route path={json.report?.installment} element={<ProtectRoute pagePath={json.report?.installment}> <MainLayout><InstallmentReport /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.report?.followUpReport || '/report/follow-up'} element={<ProtectRoute pagePath={json.report?.followUpReport || '/report/follow-up'}> <MainLayout><FollowUpReport /></MainLayout> </ProtectRoute>} />
+                  <Route path="/follow-up/report" element={<ProtectRoute pagePath={json.report?.followUpReport || '/report/follow-up'}> <MainLayout><FollowUpReport /></MainLayout> </ProtectRoute>} />
                   {/* Contract */}
                   <Route path={json.contract.application} element={<ProtectRoute pagePath={json.contract.application}> <MainLayout><Application /></MainLayout> </ProtectRoute>} />
                   <Route path={json.contract.activated} element={<ProtectRoute pagePath={json.contract.activated}> <MainLayout><Activated /></MainLayout> </ProtectRoute>} />

@@ -43,6 +43,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Reports & Analytics', path: '/report/lock-phone', label: 'Lock Phone Report', actions: ['read', 'export'] },
     { category: 'Reports & Analytics', path: '/report/set-wallpaper', label: 'Set Wallpaper Report', actions: ['read', 'export'] },
     { category: 'Reports & Analytics', path: '/report/installment', label: 'Installment Payment Report', actions: ['read', 'export'] },
+    { category: 'Reports & Analytics', path: '/report/follow-up', label: 'Follow Up Report (របាយការណ៍ Follow Up)', actions: ['read', 'export'] },
 
     { category: 'Audit & History Logs', path: '/history/login-history', label: 'Login History Log', actions: ['read', 'export'] },
     { category: 'Audit & History Logs', path: '/history/device-history', label: 'Device Action Log', actions: ['read', 'export'] },
@@ -50,6 +51,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Follow Up System', path: '/follow-up/follow-up-1', label: 'Follow up 1 (ការតាមដាន Message)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-2', label: 'Follow up 2 (បញ្ចាំ & ឆ្លើយតបឆាត)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-3', label: 'Follow up 3 (ការតាមដាន Leads & Follow Up 3)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Follow Up System', path: '/follow-up/report', label: 'Follow Up Report (របាយការណ៍ Follow Up)', actions: ['read', 'export'] },
 
     { category: 'Settings & Profile', path: '/profile', label: 'User Profile', actions: ['read', 'edit'] },
     { category: 'Settings & Profile', path: '/settings/all-account', label: 'All Account Management', actions: ['read', 'create', 'edit', 'delete'] },

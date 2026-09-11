@@ -12,7 +12,8 @@
         "redeem": "/report/redeem",
         "lockPhone": "/report/lock-phone",
         "setWallpaper": "/report/set-wallpaper",
-        "installment": "/report/installment"
+        "installment": "/report/installment",
+        "followUpReport": "/report/follow-up"
     },
     "contract": {
         "application": "/contract/application",
@@ -55,7 +56,8 @@
         "followUp1": "/follow-up/follow-up-1",
         "followUp2": "/follow-up/follow-up-2",
         "followUp3": "/follow-up/follow-up-3",
-        "followUpSenSok": "/follow-up/follow-up-3"
+        "followUpSenSok": "/follow-up/follow-up-3",
+        "followUpReport": "/report/follow-up"
     },
     "settings": {
         "controlSystem": "/settings/control-system",

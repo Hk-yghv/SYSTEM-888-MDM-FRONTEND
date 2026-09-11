@@ -246,7 +246,8 @@ const Left = () => {
                 hasPermission(json.report.redeem, 'read') ||
                 hasPermission(json.report.lockPhone, 'read') ||
                 hasPermission(json.report.setWallpaper, 'read') ||
-                hasPermission(json.report.installment, 'read')) && (
+                hasPermission(json.report.installment, 'read') ||
+                hasPermission(json.report?.followUpReport || '/report/follow-up', 'read')) && (
                     <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("report")} className={dropdownHeaderClass("report")}>
                             <p className="flex items-center gap-3">
@@ -277,6 +278,9 @@ const Left = () => {
                             )}
                             {hasPermission(json.report.installment, 'read') && (
                                 <Link to={json.report.installment} className={subItemClass(json.report.installment)}>{t('installmentReport')}</Link>
+                            )}
+                            {(hasPermission(json.report?.followUpReport || '/report/follow-up', 'read') || hasPermission('/follow-up/report', 'read')) && (
+                                <Link to={json.report?.followUpReport || '/report/follow-up'} className={subItemClass(json.report?.followUpReport || '/report/follow-up')}>{t('followUpReport') || 'Follow Up Report'}</Link>
                             )}
                         </div>
                     </div>
@@ -309,7 +313,8 @@ const Left = () => {
             {(hasPermission(json.followUp?.followUp1 || '/follow-up/follow-up-1', 'read') ||
                 hasPermission(json.followUp?.followUp2 || '/follow-up/follow-up-2', 'read') ||
                 hasPermission(json.followUp?.followUp3 || '/follow-up/follow-up-3', 'read') ||
-                hasPermission('/follow-up/sen-sok', 'read')) && (
+                hasPermission('/follow-up/sen-sok', 'read') ||
+                hasPermission(json.followUp?.followUpReport || '/report/follow-up', 'read')) && (
                 <div className="flex-shrink-0">
                     <div onClick={() => toggleMenu("followUp")} className={dropdownHeaderClass("followUp")}>
                         <p className="flex items-center gap-3">
@@ -334,6 +339,11 @@ const Left = () => {
                             hasPermission('/follow-up/sen-sok', 'read')) && (
                             <Link to={json.followUp?.followUp3 || '/follow-up/follow-up-3'} className={subItemClass(json.followUp?.followUp3 || '/follow-up/follow-up-3')}>
                                 {t('followUp3') || 'Follow up 3'}
+                            </Link>
+                        )}
+                        {(hasPermission(json.followUp?.followUpReport || '/report/follow-up', 'read') || hasPermission('/follow-up/report', 'read')) && (
+                            <Link to={json.followUp?.followUpReport || '/report/follow-up'} className={subItemClass(json.followUp?.followUpReport || '/report/follow-up')}>
+                                {t('followUpReport') || 'Follow Up Report'}
                             </Link>
                         )}
                     </div>
