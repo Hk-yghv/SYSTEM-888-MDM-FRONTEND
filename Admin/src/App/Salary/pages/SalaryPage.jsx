@@ -472,15 +472,6 @@ const SalaryPage = () => {
                             </button>
                         </>
                     )}
-                    {hasPermission('/salary', 'create') && savedJoinDate && (
-                        <button
-                            onClick={handleOpenCreate}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all active:scale-95 animate-in fade-in"
-                        >
-                            <FaPlus />
-                            <span>បញ្ចូលប្រាក់ខែ (Create Salary)</span>
-                        </button>
-                    )}
                     <button
                         onClick={() => { fetchSalaries(currentPage); fetchStats(); }}
                         disabled={reloading}
@@ -522,9 +513,6 @@ const SalaryPage = () => {
                                     ({savedJoinDate})
                                 </span>
                             </h2>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                ប្រព័ន្ធបានភ្ជាប់ថ្ងៃចូលបម្រើការងារនេះរួចរាល់ — អ្នកអាចចុចប៊ូតុង <strong>"បញ្ចូលប្រាក់ខែ (Create Salary)"</strong> បានហើយ!
-                            </p>
                         </div>
                     </div>
 
