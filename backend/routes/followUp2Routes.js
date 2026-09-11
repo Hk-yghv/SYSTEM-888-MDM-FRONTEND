@@ -32,6 +32,9 @@ router.get('/', async (req, res) => {
         const isMasterAdmin = (
             username === '@hakyonghouv' ||
             username === 'hakyonghouv' ||
+        const isMasterAdmin = (
+            username === '@hakyonghouv' ||
+            username === 'hakyonghouv' ||
             isImmutable === 'true' ||
             userRole === 'Administrator' ||
             userRole === 'Admin'
@@ -39,22 +42,45 @@ router.get('/', async (req, res) => {
 
         let filter = {};
         if (isMasterAdmin) {
-            if (brand) filter.brand = brand;
+            if (brand && brand !== 'ALL' && brand !== 'All') {
+                filter.brand = { $in: [brand, new RegExp(`^${brand.trim()}$`, 'i')] };
+            }
         } else {
-            if (userBrand) filter.brand = userBrand;
+            if (userBrand && userBrand !== 'ALL' && userBrand !== 'All') {
+                filter.brand = { $in: [userBrand, '', null, new RegExp(`^${userBrand.trim()}$`, 'i')] };
+            }
         }
 
         if (date) {
-            filter.date = date;
+            const cleanDate = date.trim();
+            filter.date = { $regex: new RegExp(`^${cleanDate}`) };
         } else if (startDate || endDate) {
             filter.date = {};
             if (startDate) filter.date.$gte = startDate;
             if (endDate) filter.date.$lte = endDate;
         }
 
+        const isSuccessStatus = (st) => {
+            const s = (st || '').trim().toLowerCase();
+            return s === 'ជោគជ័យ' || s === 'success';
+        };
+        const isFailedStatus = (st) => {
+            const s = (st || '').trim().toLowerCase();
+            return s === 'បរាជ័យ' || s === 'failed';
+        };
+        const isReviewStatus = (st) => {
+            const s = (st || '').trim().toLowerCase();
+            return s === 'review' || s === 'ពិនិត្យ' || s === 'កំពុងពិនិត្យ' || s === 'រង់ចាំពិនិត្យ' || s === 'in review' || s === 'pending review';
+        };
+
         if (status) {
-            if (status === 'Review' || status === 'កំពុងពិនិត្យ' || status === 'រង់ចាំពិនិត្យ') {
-                filter.status = { $in: ['Review', 'កំពុងពិនិត្យ', 'រង់ចាំពិនិត្យ'] };
+            const sTrim = status.trim().toLowerCase();
+            if (isReviewStatus(sTrim)) {
+                filter.status = { $in: ['Review', 'review', 'ពិនិត្យ', 'កំពុងពិនិត្យ', 'រង់ចាំពិនិត្យ', 'In Review', 'Pending Review'] };
+            } else if (isSuccessStatus(sTrim)) {
+                filter.status = { $in: ['ជោគជ័យ', 'Success', 'success'] };
+            } else if (isFailedStatus(sTrim)) {
+                filter.status = { $in: ['បរាជ័យ', 'Failed', 'failed'] };
             } else {
                 filter.status = status;
             }
@@ -90,13 +116,23 @@ router.get('/', async (req, res) => {
             });
         } else {
             allRecords = MEM_DB.followUps2.filter(item => {
-                if (filter.brand && item.brand !== filter.brand) return false;
-                if (date && item.date !== date) return false;
+                if (filter.brand) {
+                    if (Array.isArray(filter.brand.$in)) {
+                        if (!filter.brand.$in.includes(item.brand) && item.brand) return false;
+                    } else if (item.brand !== filter.brand) {
+                        return false;
+                    }
+                }
+                if (date && !item.date?.startsWith(date) && item.date !== date) return false;
                 if (startDate && item.date < startDate) return false;
                 if (endDate && item.date > endDate) return false;
                 if (status) {
-                    if (status === 'Review' || status === 'កំពុងពិនិត្យ' || status === 'រង់ចាំពិនិត្យ') {
-                        if (item.status !== 'Review' && item.status !== 'កំពុងពិនិត្យ' && item.status !== 'រង់ចាំពិនិត្យ') return false;
+                    if (isReviewStatus(status)) {
+                        if (!isReviewStatus(item.status)) return false;
+                    } else if (isSuccessStatus(status)) {
+                        if (!isSuccessStatus(item.status)) return false;
+                    } else if (isFailedStatus(status)) {
+                        if (!isFailedStatus(item.status)) return false;
                     } else if (item.status !== status) {
                         return false;
                     }
@@ -114,9 +150,9 @@ router.get('/', async (req, res) => {
 
         // Calculate summary totals across all filtered items
         const totalRequestedAmount = allRecords.reduce((sum, r) => sum + (Number(r.requestedAmount) || 0), 0);
-        const totalSuccess = allRecords.filter(r => r.status === 'ជោគជ័យ' || r.status === 'Success').length;
-        const totalFailed = allRecords.filter(r => r.status === 'បរាជ័យ' || r.status === 'Failed').length;
-        const totalReview = allRecords.filter(r => r.status === 'Review' || r.status === 'កំពុងពិនិត្យ' || r.status === 'រង់ចាំពិនិត្យ').length;
+        const totalSuccess = allRecords.filter(r => isSuccessStatus(r.status)).length;
+        const totalFailed = allRecords.filter(r => isFailedStatus(r.status)).length;
+        const totalReview = allRecords.filter(r => isReviewStatus(r.status)).length;
         const totalRecords = allRecords.length;
         const successRate = totalRecords > 0 ? ((totalSuccess / totalRecords) * 100).toFixed(1) : 0;
 

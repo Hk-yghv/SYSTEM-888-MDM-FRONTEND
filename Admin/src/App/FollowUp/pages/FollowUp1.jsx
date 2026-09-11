@@ -147,6 +147,20 @@ const FollowUp1 = () => {
         fetchData(1, '', '', '', '', '');
     };
 
+    // Status helper checkers for Follow Up 2
+    const isSuccessStatus = (st) => {
+        const s = (st || '').trim().toLowerCase();
+        return s === 'ជោគជ័យ' || s === 'success';
+    };
+    const isFailedStatus = (st) => {
+        const s = (st || '').trim().toLowerCase();
+        return s === 'បរាជ័យ' || s === 'failed';
+    };
+    const isReviewStatus = (st) => {
+        const s = (st || '').trim().toLowerCase();
+        return s === 'review' || s === 'ពិនិត្យ' || s === 'កំពុងពិនិត្យ' || s === 'រង់ចាំពិនិត្យ' || s === 'in review' || s === 'pending review';
+    };
+
     // State for Follow Up 2 auto-fetch
     const [fetchingFu2, setFetchingFu2] = useState(false);
     const [fu2StatsFound, setFu2StatsFound] = useState(null);
@@ -164,32 +178,66 @@ const FollowUp1 = () => {
                 date: targetDate,
                 fetchAll: 'true'
             });
-            if (targetBrand) params.append('brand', targetBrand);
+            if (targetBrand && targetBrand !== 'ALL' && targetBrand !== 'All') {
+                params.append('brand', targetBrand);
+            }
 
-            const res = await fetch(`${API_BASE}/follow-up-2?${params.toString()}`);
-            if (res.ok) {
-                const jsonRes = await res.json();
-                const totalReq = jsonRes.summary?.totalRecords ?? (jsonRes.data?.length || 0);
-                const totalSucc = jsonRes.summary?.totalSuccess ?? (jsonRes.data?.filter(r => r.status === 'ជោគជ័យ' || r.status === 'Success').length || 0);
-                const totalFail = jsonRes.summary?.totalFailed ?? (jsonRes.data?.filter(r => r.status === 'បរាជ័យ' || r.status === 'Failed').length || 0);
-                const totalRev = jsonRes.summary?.totalReview ?? (jsonRes.data?.filter(r => r.status === 'Review' || r.status === 'កំពុងពិនិត្យ' || r.status === 'រង់ចាំពិនិត្យ').length || 0);
+            let res = await fetch(`${API_BASE}/follow-up-2?${params.toString()}`);
+            let jsonRes = res.ok ? await res.json() : null;
+
+            // Fallback: If 0 records found with targetBrand, try fetching all for date in case brand wasn't assigned
+            if ((!jsonRes?.data || jsonRes.data.length === 0) && targetBrand && targetBrand !== 'ALL') {
+                const fallbackParams = new URLSearchParams({
+                    userRole: user?.role || '',
+                    username: user?.username || '',
+                    isImmutable: user?.isImmutable ? 'true' : 'false',
+                    date: targetDate,
+                    fetchAll: 'true'
+                });
+                const fbRes = await fetch(`${API_BASE}/follow-up-2?${fallbackParams.toString()}`);
+                if (fbRes.ok) {
+                    const fbJson = await fbRes.json();
+                    if (fbJson.data && fbJson.data.length > 0) {
+                        jsonRes = fbJson;
+                    }
+                }
+            }
+
+            if (jsonRes) {
+                const records = jsonRes.data || [];
+                const totalReq = records.length || jsonRes.summary?.totalRecords || 0;
+                const totalSucc = records.filter(r => isSuccessStatus(r.status)).length || jsonRes.summary?.totalSuccess || 0;
+                const totalFail = records.filter(r => isFailedStatus(r.status)).length || jsonRes.summary?.totalFailed || 0;
+                const totalRev = records.filter(r => isReviewStatus(r.status)).length || jsonRes.summary?.totalReview || 0;
 
                 // Collect reasons from failed records if available
-                const failedReasons = (jsonRes.data || [])
-                    .filter(r => (r.status === 'បរាជ័យ' || r.status === 'Failed') && r.reason)
+                const failedReasons = records
+                    .filter(r => isFailedStatus(r.status) && r.reason)
                     .map(r => r.reason.trim())
                     .filter((v, i, a) => v && a.indexOf(v) === i);
 
                 const reasonText = failedReasons.join(', ');
 
-                setFormData(prev => ({
-                    ...prev,
-                    requested: totalReq,
-                    success: totalSucc,
-                    failed: totalFail,
-                    review: totalRev,
-                    ...(reasonText && !prev.reason ? { reason: reasonText } : {})
-                }));
+                setFormData(prev => {
+                    const prevMsgNum = Number(prev.message) || 0;
+                    const prevTotalNum = Number(prev.totalMessages) || 0;
+                    const autoMsg = prevMsgNum > 0 ? prev.message : (totalReq > 0 ? totalReq : '');
+                    const autoTotalMsg = prevTotalNum > 0 ? prevTotalNum : (totalReq > 0 ? totalReq : 0);
+                    const currentTotal = Number(autoTotalMsg) || Number(autoMsg) || 0;
+                    const autoNoResp = Math.max(0, currentTotal - totalReq);
+
+                    return {
+                        ...prev,
+                        requested: totalReq,
+                        success: totalSucc,
+                        failed: totalFail,
+                        review: totalRev,
+                        totalMessages: autoTotalMsg,
+                        message: autoMsg,
+                        noResponse: prev.noResponse !== 0 ? prev.noResponse : autoNoResp,
+                        ...(reasonText && !prev.reason ? { reason: reasonText } : {})
+                    };
+                });
 
                 setFu2StatsFound({
                     date: targetDate,
@@ -197,7 +245,7 @@ const FollowUp1 = () => {
                     success: totalSucc,
                     failed: totalFail,
                     review: totalRev,
-                    hasData: (jsonRes.data?.length || 0) > 0
+                    hasData: records.length > 0
                 });
             }
         } catch (err) {
@@ -234,9 +282,11 @@ const FollowUp1 = () => {
     const handleOpenEdit = (item) => {
         setEditingItem(item);
         setFu2StatsFound(null);
+        const itemDate = item.date ? item.date.split('T')[0] : new Date().toISOString().split('T')[0];
+        const itemBrand = item.brand || user?.brand || 'MDM';
         setFormData({
-            date: item.date ? item.date.split('T')[0] : new Date().toISOString().split('T')[0],
-            message: item.message || '',
+            date: itemDate,
+            message: item.message !== undefined ? item.message : '',
             totalMessages: item.totalMessages !== undefined ? item.totalMessages : (item.requested || 0),
             noResponse: item.noResponse !== undefined ? item.noResponse : 0,
             requested: item.requested !== undefined ? item.requested : 0,
@@ -244,19 +294,42 @@ const FollowUp1 = () => {
             failed: item.failed !== undefined ? item.failed : 0,
             success: item.success !== undefined ? item.success : 0,
             reason: item.reason || '',
-            brand: item.brand || user?.brand || 'MDM',
+            brand: itemBrand,
             notes: item.notes || ''
         });
         setIsFormOpen(true);
     };
 
-    // Numeric change helper without auto-subtraction
+    // Numeric change helper with auto calculation of noResponse
     const handleNumericChange = (field, val) => {
         const numVal = Math.max(0, parseInt(val, 10) || 0);
-        setFormData(prev => ({
-            ...prev,
-            [field]: numVal
-        }));
+        setFormData(prev => {
+            const next = {
+                ...prev,
+                [field]: numVal
+            };
+            if (field === 'totalMessages' || field === 'requested') {
+                const tot = field === 'totalMessages' ? numVal : (Number(prev.totalMessages) || 0);
+                const req = field === 'requested' ? numVal : (Number(prev.requested) || 0);
+                next.noResponse = Math.max(0, tot - req);
+            }
+            return next;
+        });
+    };
+
+    // Inquiry Message change helper
+    const handleMessageChange = (val) => {
+        setFormData(prev => {
+            const numVal = parseInt(val, 10);
+            const req = Number(prev.requested) || 0;
+            const currentTotal = Number(prev.totalMessages) || 0;
+            const next = { ...prev, message: val };
+            if (!isNaN(numVal) && (currentTotal === 0 || currentTotal === Number(prev.message))) {
+                next.totalMessages = numVal;
+                next.noResponse = Math.max(0, numVal - req);
+            }
+            return next;
+        });
     };
 
     const handleFormSubmit = async (e) => {
@@ -996,29 +1069,27 @@ const FollowUp1 = () => {
                         {/* Modal Body */}
                         <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
                             {/* Follow Up 2 Sync Banner */}
-                            {!editingItem && (
-                                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
-                                        <MdOutlineSync className={`text-emerald-600 text-base shrink-0 ${fetchingFu2 ? 'animate-spin' : ''}`} />
-                                        <span>
-                                            {fetchingFu2
-                                                ? 'កំពុងទាញទិន្នន័យពី Follow up 2...'
-                                                : fu2StatsFound?.hasData
-                                                    ? `ទិន្នន័យ Follow up 2 សម្រាប់ ${formData.date}៖ ស្នើ (${fu2StatsFound.total}), ជោគជ័យ (${fu2StatsFound.success}), បរាជ័យ (${fu2StatsFound.failed}), Review (${fu2StatsFound.review})`
-                                                    : `មិនមានទិន្នន័យ Follow up 2 សម្រាប់ថ្ងៃ ${formData.date} ទេ (បានកំណត់ 0)`}
-                                        </span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        disabled={fetchingFu2}
-                                        onClick={() => fetchFu2DataForDate(formData.date, formData.brand)}
-                                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold shrink-0 transition-all cursor-pointer disabled:opacity-50"
-                                        title="ទាញទិន្នន័យពី Follow up 2 ម្តងទៀត"
-                                    >
-                                        Sync ឡើងវិញ
-                                    </button>
+                            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
+                                    <MdOutlineSync className={`text-emerald-600 text-base shrink-0 ${fetchingFu2 ? 'animate-spin' : ''}`} />
+                                    <span>
+                                        {fetchingFu2
+                                            ? 'កំពុងទាញទិន្នន័យពី Follow up 2...'
+                                            : fu2StatsFound?.hasData
+                                                ? `ទិន្នន័យ Follow up 2 សម្រាប់ ${formData.date}៖ ស្នើ (${fu2StatsFound.total}), ជោគជ័យ (${fu2StatsFound.success}), បរាជ័យ (${fu2StatsFound.failed}), Review (${fu2StatsFound.review})`
+                                                : `ទិន្នន័យ Follow up 2 សម្រាប់ថ្ងៃ ${formData.date}៖ 0 Record`}
+                                    </span>
                                 </div>
-                            )}
+                                <button
+                                    type="button"
+                                    disabled={fetchingFu2}
+                                    onClick={() => fetchFu2DataForDate(formData.date, formData.brand)}
+                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold shrink-0 transition-all cursor-pointer disabled:opacity-50"
+                                    title="ទាញទិន្នន័យពី Follow up 2 ម្តងទៀត"
+                                >
+                                    Sync ឡើងវិញ
+                                </button>
+                            </div>
 
                             {/* Date Field */}
                             <div>
@@ -1032,9 +1103,7 @@ const FollowUp1 = () => {
                                     onChange={(e) => {
                                         const newDate = e.target.value;
                                         setFormData(prev => ({ ...prev, date: newDate }));
-                                        if (!editingItem) {
-                                            fetchFu2DataForDate(newDate, formData.brand);
-                                        }
+                                        fetchFu2DataForDate(newDate, formData.brand);
                                     }}
                                     className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                                 />
@@ -1051,7 +1120,7 @@ const FollowUp1 = () => {
                                     min="0"
                                     placeholder="បញ្ចូលចំនួន Message ដែលបានសាកសួរ..."
                                     value={formData.message}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                                    onChange={(e) => handleMessageChange(e.target.value)}
                                     className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-bold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 font-mono"
                                 />
                             </div>
@@ -1171,9 +1240,7 @@ const FollowUp1 = () => {
                                         onChange={(e) => {
                                             const newBrand = e.target.value;
                                             setFormData(prev => ({ ...prev, brand: newBrand }));
-                                            if (!editingItem) {
-                                                fetchFu2DataForDate(formData.date, newBrand);
-                                            }
+                                            fetchFu2DataForDate(formData.date, newBrand);
                                         }}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-bold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                                     >
