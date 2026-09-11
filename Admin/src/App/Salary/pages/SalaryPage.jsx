@@ -83,30 +83,25 @@ const SalaryPage = () => {
     const [photoUploading, setPhotoUploading] = useState(false);
     const [previewImage, setPreviewImage] = useState(null);
 
-    // Global Saved Join Date (ថ្ងៃខែឆ្នាំចូលបម្រើការងារ - កំណត់នៅខាងលើគេ រួចចុច Save)
+    // Global Saved Join Date + Staff Names (saved outside, persisted in localStorage)
     const [savedJoinDate, setSavedJoinDate] = useState(() => localStorage.getItem('salary_saved_join_date') || '');
+    const [savedStaffNameKh, setSavedStaffNameKh] = useState(() => localStorage.getItem('salary_saved_name_kh') || '');
+    const [savedStaffNameEn, setSavedStaffNameEn] = useState(() => localStorage.getItem('salary_saved_name_en') || '');
+    const [tempNameKh, setTempNameKh] = useState(() => localStorage.getItem('salary_saved_name_kh') || '');
+    const [tempNameEn, setTempNameEn] = useState(() => localStorage.getItem('salary_saved_name_en') || '');
     const [tempDay, setTempDay] = useState(() => {
         const saved = localStorage.getItem('salary_saved_join_date');
-        if (saved) {
-            const parts = saved.split('-');
-            if (parts[2]) return parseInt(parts[2], 10);
-        }
+        if (saved) { const parts = saved.split('-'); if (parts[2]) return parseInt(parts[2], 10); }
         return new Date().getDate();
     });
     const [tempMonth, setTempMonth] = useState(() => {
         const saved = localStorage.getItem('salary_saved_join_date');
-        if (saved) {
-            const parts = saved.split('-');
-            if (parts[1]) return parseInt(parts[1], 10);
-        }
+        if (saved) { const parts = saved.split('-'); if (parts[1]) return parseInt(parts[1], 10); }
         return new Date().getMonth() + 1;
     });
     const [tempYear, setTempYear] = useState(() => {
         const saved = localStorage.getItem('salary_saved_join_date');
-        if (saved) {
-            const parts = saved.split('-');
-            if (parts[0]) return parseInt(parts[0], 10);
-        }
+        if (saved) { const parts = saved.split('-'); if (parts[0]) return parseInt(parts[0], 10); }
         return new Date().getFullYear();
     });
     const [isEditingDate, setIsEditingDate] = useState(() => !localStorage.getItem('salary_saved_join_date'));
@@ -121,7 +116,11 @@ const SalaryPage = () => {
     const handleSaveDate = () => {
         const dateStr = computeTempDateString(tempYear, tempMonth, tempDay);
         setSavedJoinDate(dateStr);
+        setSavedStaffNameKh(tempNameKh);
+        setSavedStaffNameEn(tempNameEn);
         localStorage.setItem('salary_saved_join_date', dateStr);
+        localStorage.setItem('salary_saved_name_kh', tempNameKh);
+        localStorage.setItem('salary_saved_name_en', tempNameEn);
         setIsEditingDate(false);
     };
 
@@ -134,12 +133,20 @@ const SalaryPage = () => {
                 setTempDay(parseInt(parts[2], 10));
             }
         }
+        setTempNameKh(savedStaffNameKh);
+        setTempNameEn(savedStaffNameEn);
         setIsEditingDate(true);
     };
 
     const handleClearDate = () => {
         setSavedJoinDate('');
+        setSavedStaffNameKh('');
+        setSavedStaffNameEn('');
         localStorage.removeItem('salary_saved_join_date');
+        localStorage.removeItem('salary_saved_name_kh');
+        localStorage.removeItem('salary_saved_name_en');
+        setTempNameKh('');
+        setTempNameEn('');
         setIsEditingDate(true);
     };
 
@@ -246,6 +253,8 @@ const SalaryPage = () => {
         setEditingItem(null);
         setFormData({
             ...initialForm,
+            staffNameKh: savedStaffNameKh || '',
+            staffNameEn: savedStaffNameEn || '',
             joinDate: savedJoinDate,
             brand: user?.brand || '',
             date: new Date().toISOString().split('T')[0]
@@ -444,7 +453,7 @@ const SalaryPage = () => {
             {/* Header Bar */}
             <header className="p-3 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-md shadow-emerald-600/30">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-green-500 flex items-center justify-center text-xl shadow-md shadow-emerald-600/30">
                         <FaMoneyBillWave />
                     </div>
                     <div>
@@ -486,7 +495,7 @@ const SalaryPage = () => {
                 </div>
             </header>
 
-            {/* Top Employment Date Configuration Card (តារាងកំណត់ថ្ងៃខែឆ្នាំចូលបម្រើការងារ) */}
+            {/* Top Employment Card: Names + Join Date */}
             {savedJoinDate && !isEditingDate ? (
                 /* Saved State Card */
                 <div className="p-4 w-full border border-emerald-300/80 dark:border-emerald-700/60 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-cyan-950/30 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -501,17 +510,19 @@ const SalaryPage = () => {
                         </div>
                         <div>
                             <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
-                                    ថ្ងៃខែឆ្នាំចូលបម្រើការងារ (Date of Joining)
-                                </span>
+                                {savedStaffNameKh && (
+                                    <span className="text-sm font-black text-emerald-800 dark:text-emerald-200">{savedStaffNameKh}</span>
+                                )}
+                                {savedStaffNameEn && (
+                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">({savedStaffNameEn})</span>
+                                )}
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-900/60 dark:text-emerald-200">
                                     <FaCheckCircle className="text-emerald-600 dark:text-emerald-400" />
-                                    <span>បានរក្សាទុក (Saved & Active)</span>
+                                    <span>បានរក្សាទុក (Saved)</span>
                                 </span>
                             </div>
-                            {/* Formatted Date Display */}
-                            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-0.5 flex items-center gap-2 flex-wrap font-mono">
-                                <span className="text-emerald-700 dark:text-emerald-300">{getKhmerDateDetails(savedJoinDate).formatted}</span>
+                            <h2 className="text-sm font-black text-slate-900 dark:text-white mt-0.5 flex items-center gap-2 flex-wrap font-mono">
+                                <span className="text-emerald-700 dark:text-emerald-300">ចូលបម្រើ: {getKhmerDateDetails(savedJoinDate).formatted}</span>
                                 <span className="text-xs font-normal text-slate-500 dark:text-slate-400 font-mono bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
                                     ({savedJoinDate})
                                 </span>
@@ -526,7 +537,7 @@ const SalaryPage = () => {
                             className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
                         >
                             <FaEdit />
-                            <span>កែប្រែថ្ងៃខែ</span>
+                            <span>កែប្រែ</span>
                         </button>
 
                         {hasPermission('/salary', 'create') && (
@@ -543,7 +554,7 @@ const SalaryPage = () => {
                 </div>
             ) : (
                 /* Edit & Setup State Card */
-                <div className="p-4 w-full border border-amber-300/80 dark:border-amber-700/60 bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-amber-50/90 dark:from-amber-950/30 dark:via-slate-900/60 dark:to-orange-950/20 rounded-2xl shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="p-4 w-full border border-amber-300/80 dark:border-amber-700/60 bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-amber-50/90 dark:from-amber-950/30 dark:via-slate-900/60 dark:to-orange-950/20 rounded-2xl shadow-sm flex flex-col gap-4">
                     <div className="flex items-start sm:items-center gap-3.5">
                         <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-amber-500/30 shrink-0">
                             <FaCalendarAlt />
@@ -551,23 +562,43 @@ const SalaryPage = () => {
                         <div>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-xs font-black text-amber-900 dark:text-amber-300 uppercase tracking-wider">
-                                    ជ្រើសរើសថ្ងៃខែឆ្នាំចូលបម្រើការងារ (Select Date of Joining) <span className="text-rose-500">*</span>
+                                    បំពេញព័ត៌មានបុគ្គលិក + ថ្ងៃចូលបម្រើការងារ <span className="text-rose-500">*</span>
                                 </span>
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/60 dark:text-amber-200 animate-pulse">
-                                    សូមជ្រើសថ្ងៃខែ រួចចុច Save
+                                    សូមបំពេញ រួចចុច Save
                                 </span>
                             </div>
-                            <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
-                                ជ្រើសរើស ថ្ងៃ ទី ខែ ឆ្នាំ រួចចុច <strong>"រក្សាទុក (Save)"</strong> ទើបប៊ូតុងបង្កើតប្រាក់ខែបង្ហាញឡើង!
-                            </p>
-                            {/* Live Preview */}
                             <div className="text-xs font-bold text-amber-800 dark:text-amber-300 font-mono mt-1">
-                                មើលសាកល្បង៖ {getKhmerDateDetails(computeTempDateString(tempYear, tempMonth, tempDay)).formatted}
+                                មើលសាកល្បង: {getKhmerDateDetails(computeTempDateString(tempYear, tempMonth, tempDay)).formatted}
                             </div>
                         </div>
                     </div>
 
-                    {/* Dropdowns for Day, Month, Year + Direct Date input */}
+                    {/* Name Fields Row */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs flex-1 min-w-[160px]">
+                            <FaUserTie className="text-emerald-600 text-xs shrink-0" />
+                            <input
+                                type="text"
+                                value={tempNameKh}
+                                onChange={(e) => setTempNameKh(e.target.value)}
+                                placeholder="ឈ្មោះខ្មែរ..."
+                                className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 outline-none w-full"
+                            />
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs flex-1 min-w-[160px]">
+                            <FaUserTie className="text-indigo-500 text-xs shrink-0" />
+                            <input
+                                type="text"
+                                value={tempNameEn}
+                                onChange={(e) => setTempNameEn(e.target.value)}
+                                placeholder="English Name..."
+                                className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 outline-none w-full"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Date Fields Row */}
                     <div className="flex items-center gap-2 flex-wrap">
                         {/* Day Select */}
                         <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs">
@@ -802,9 +833,7 @@ const SalaryPage = () => {
                         <tr>
                             <th className="px-4 py-3 text-center">No</th>
                             <th className="px-4 py-3">កាលបរិច្ឆេទ (Date)</th>
-                            <th className="px-4 py-3">ឈ្មោះខ្មែរ</th>
-                            <th className="px-4 py-3">ឈ្មោះអង់គ្លេស</th>
-                            <th className="px-4 py-3">ថ្ងៃចូលការ</th>
+                            <th className="px-4 py-3">ឈ្មោះបុគ្គលិក (Staff Name)</th>
                             <th className="px-4 py-3 text-right">ចំនួនទឹកប្រាក់ (Amount)</th>
                             <th className="px-4 py-3 text-center">វិធីសាស្ត្រទូទាត់</th>
                             <th className="px-4 py-3">ប្រភេទ (Category)</th>
@@ -840,13 +869,7 @@ const SalaryPage = () => {
                                         {item.date}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <CopyCell text={item.staffNameKh || '—'} className="font-bold text-[var(--app-text,#0f172a)] text-emerald-700" />
-                                    </td>
-                                    <td className="px-4 py-3">
                                         <CopyCell text={item.staffNameEn || item.staffName || '—'} className="font-bold text-[var(--app-text,#0f172a)]" />
-                                    </td>
-                                    <td className="px-4 py-3 font-mono text-[11px] text-slate-600 dark:text-slate-400">
-                                        {item.joinDate || '—'}
                                     </td>
                                     <td className="px-4 py-3 text-right font-mono font-black text-emerald-600 text-sm">
                                         ${Number(item.amount || 0).toLocaleString()}
@@ -979,24 +1002,11 @@ const SalaryPage = () => {
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
-                                {/* Staff Name Khmer */}
-                                <div>
-                                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                        ឈ្មោះខ្មែរ (Khmer Name)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.staffNameKh}
-                                        onChange={(e) => setFormData({ ...formData, staffNameKh: e.target.value })}
-                                        placeholder="ឧ. ហាគីយ៉ុងហូ..."
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
-                                    />
-                                </div>
-
-                                {/* Staff Name English */}
-                                <div>
+                                {/* Staff Name English — auto-filled from outside, editable */}
+                                <div className="col-span-2">
                                     <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                                         ឈ្មោះអង់គ្លេស (English Name)
+                                        {savedStaffNameEn && <span className="ml-2 text-[10px] text-emerald-600 font-normal">(Auto-filled ពីខាងក្រៅ)</span>}
                                     </label>
                                     <input
                                         type="text"
@@ -1009,19 +1019,6 @@ const SalaryPage = () => {
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
-                                {/* Join Date */}
-                                <div>
-                                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                        ថ្ងៃខែចូលបម្រើការងារ (Join Date)
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={formData.joinDate}
-                                        onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg font-mono text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
-                                    />
-                                </div>
-
                                 {/* Category */}
                                 <div>
                                     <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
