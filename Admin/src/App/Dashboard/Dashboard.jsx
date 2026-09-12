@@ -157,7 +157,6 @@ const Dashboard = () => {
 
     const loanOutAmt = stats.totalLoanAmount || 0;
     const weCollectedAmt = stats.totalRevenue || 0;
-    const outstandingBal = stats.outstandingBalance || 0;
     const customerReceivedAmt = stats.totalCustomerReceived || 0;
     const collectionPct = customerReceivedAmt > 0 ? ((weCollectedAmt / customerReceivedAmt) * 100).toFixed(2) : '0.00';
 
@@ -415,7 +414,7 @@ const Dashboard = () => {
                     </div>
                     <div className="mt-2">
                         <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-amber-800">
-                            ${formatMoney(outstandingBal)}
+                            ${formatMoney(Math.max(repaymentMetrics.totalExpected - weCollectedAmt, 0))}
                         </div>
                         <div className="flex items-center justify-between text-xs mt-2.5 pt-2.5 border-t-2 border-slate-200 text-slate-800 font-bold">
                             <span>Lock Phone: <strong className="text-rose-700 font-mono font-black">{stats.lockedPhones}</strong></span>
@@ -547,7 +546,7 @@ const Dashboard = () => {
                                 </tr>
                             ) : (
                                 summaryTableData.map((row, idx) => {
-                                    const netBal = Math.max(row.loanDisbursed - row.revenueCollected, 0);
+                                    const netBal = Math.max(row.monthlyCollectionEst - row.revenueCollected, 0);
                                     const isHealthy = row.revenueCollected >= row.monthlyCollectionEst && row.revenueCollected > 0;
                                     return (
                                         <tr key={row.brand} className="hover:bg-slate-100/90 transition-colors">
@@ -621,7 +620,7 @@ const Dashboard = () => {
                                         ${formatMoney(summaryTableData.reduce((s, r) => s + r.revenueCollected, 0))}
                                     </td>
                                     <td className="px-3 py-3.5 text-right font-mono font-black text-rose-300">
-                                        ${formatMoney(Math.max(summaryTableData.reduce((s, r) => s + r.loanDisbursed - r.revenueCollected, 0), 0))}
+                                        ${formatMoney(Math.max(summaryTableData.reduce((s, r) => s + r.monthlyCollectionEst - r.revenueCollected, 0), 0))}
                                     </td>
                                     <td className="px-3 py-3.5 text-center font-mono font-black text-rose-400">
                                         {summaryTableData.reduce((s, r) => s + r.phoneLocked, 0)} L
