@@ -93,8 +93,8 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                     </h1>
                 </Link>
 
-                {/* Financial Summary Widget — hide for master/salary accounts */}
-                {!user?.isImmutable && user?.username !== '@hakyonghouv' && user?.role?.toLowerCase() !== 'salary' && (
+                {/* Financial Summary Widget — only hide for salary accounts */}
+                {user?.role?.toLowerCase() !== 'salary' && (
                     <div className='hidden lg:flex items-center gap-3 pl-4 border-l border-slate-200'>
                         {/* Loan */}
                         <div className='flex flex-col items-center px-3 py-1 rounded-[5px] bg-slate-50 border border-slate-200/80'>
@@ -116,8 +116,8 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
             </div>
 
             <div className='flex items-center gap-3'>
-                {/* Payment Alerts Button — hide for master/salary accounts */}
-                {!user?.isImmutable && user?.username !== '@hakyonghouv' && user?.role?.toLowerCase() !== 'salary' && (
+                {/* Payment Alerts Button — only hide for salary accounts */}
+                {user?.role?.toLowerCase() !== 'salary' && (
                     <button
                         onClick={onOpenAlerts}
                         className='relative flex items-center gap-2 px-3 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
