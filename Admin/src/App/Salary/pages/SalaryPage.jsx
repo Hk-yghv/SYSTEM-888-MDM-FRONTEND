@@ -534,8 +534,10 @@ const SalaryPage = () => {
         exportToPDF(`Salary Management Report - ${selectedStaff ? selectedStaff.staffName : 'All'}`, columns, allData);
     };
 
-    // Filtered Staff Directory for Admin View
+    // Filtered Staff Directory for Admin View (strictly only accounts with role salary)
     const filteredStaffDirectory = staffDirectory.filter(s => {
+        const r = (s.role || '').toLowerCase();
+        if (r !== 'salary') return false;
         if (!staffSearchTerm.trim()) return true;
         const term = staffSearchTerm.toLowerCase();
         return (
@@ -552,8 +554,9 @@ const SalaryPage = () => {
     // VIEW 1: ADMIN STAFF DIRECTORY SCREEN (Account ធំ initial page view)
     // ─────────────────────────────────────────────────────────────────────────────
     if (isAdmin && !selectedStaff) {
-        const totalDisbursedAll = staffDirectory.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-        const totalRecordsAll = staffDirectory.reduce((sum, s) => sum + (Number(s.recordsCount) || 0), 0);
+        const salaryOnlyStaff = staffDirectory.filter(s => (s.role || '').toLowerCase() === 'salary');
+        const totalDisbursedAll = salaryOnlyStaff.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
+        const totalRecordsAll = salaryOnlyStaff.reduce((sum, s) => sum + (Number(s.recordsCount) || 0), 0);
 
         return (
             <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-4 select-none space-y-5 relative min-h-screen">
@@ -602,8 +605,8 @@ const SalaryPage = () => {
                     <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">បុគ្គលិកសរុប (Total Staff)</p>
-                            <h3 className="text-2xl font-black text-slate-800 dark:text-white font-mono mt-1">
-                                {staffDirectory.length} នាក់
+                            <h3 className="text-2xl font-black text-slate-800 dark:text-white font-khmer mt-1">
+                                {salaryOnlyStaff.length} នាក់
                             </h3>
                             <p className="text-[10px] text-slate-400 mt-0.5">គណនី និងបុគ្គលិកទាំងអស់</p>
                         </div>
@@ -744,7 +747,7 @@ const SalaryPage = () => {
                                             </div>
                                             <div className="text-right">
                                                 <span className="text-[10px] text-slate-400 block font-medium">កំណត់ត្រា</span>
-                                                <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+                                                <span className="font-khmer font-bold text-slate-700 dark:text-slate-300">
                                                     {staff.recordsCount || 0} លើក
                                                 </span>
                                             </div>

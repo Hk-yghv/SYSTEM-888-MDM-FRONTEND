@@ -33,10 +33,10 @@ router.get('/staff-list', async (req, res) => {
         // Map of staff members
         const staffMap = new Map();
 
-        // 1. Seed with registered users having role 'salary' or staff
+        // 1. Strictly include registered users having role 'salary'
         allUsers.forEach(u => {
             const uRole = (u.role || '').toLowerCase();
-            if (uRole === 'salary' || isMasterAdmin) {
+            if (uRole === 'salary') {
                 const key = (u.username || u.name || '').trim();
                 if (key && !staffMap.has(key)) {
                     staffMap.set(key, {
@@ -57,19 +57,20 @@ router.get('/staff-list', async (req, res) => {
             }
         });
 
-        // 2. Aggregate from all Salary records
+        // 2. Aggregate salary amounts only for the matched salary accounts
         allSalaries.forEach(item => {
-            const rawKey = (item.staffName || item.staffNameEn || item.staffNameKh || item.createdBy || 'Unknown').trim();
+            const rawKey = (item.staffName || item.staffNameEn || item.staffNameKh || item.createdBy || '').trim();
             if (!rawKey) return;
 
             let entry = staffMap.get(rawKey);
             if (!entry) {
-                // Check if matches by English or Khmer name
+                // Check if matches by English or Khmer name or username
                 for (const existing of staffMap.values()) {
                     if (
                         (item.staffNameEn && existing.staffNameEn && existing.staffNameEn.toLowerCase() === item.staffNameEn.toLowerCase()) ||
                         (item.staffNameKh && existing.staffNameKh && existing.staffNameKh === item.staffNameKh) ||
-                        (item.staffName && existing.staffName && existing.staffName.toLowerCase() === item.staffName.toLowerCase())
+                        (item.staffName && existing.staffName && existing.staffName.toLowerCase() === item.staffName.toLowerCase()) ||
+                        (item.createdBy && existing.staffName && existing.staffName.toLowerCase() === item.createdBy.toLowerCase())
                     ) {
                         entry = existing;
                         break;
@@ -77,34 +78,18 @@ router.get('/staff-list', async (req, res) => {
                 }
             }
 
-            if (!entry) {
-                entry = {
-                    key: rawKey,
-                    staffName: item.staffName || item.staffNameEn || item.staffNameKh || rawKey,
-                    staffNameKh: item.staffNameKh || '',
-                    staffNameEn: item.staffNameEn || item.staffName || '',
-                    joinDate: item.joinDate || '',
-                    role: 'Staff',
-                    brand: item.brand || '',
-                    avatar: '',
-                    totalAmount: 0,
-                    recordsCount: 0,
-                    latestDate: '',
-                    isUserAccount: false
-                };
-                staffMap.set(rawKey, entry);
-            }
+            if (entry) {
+                if (!entry.staffNameKh && item.staffNameKh) entry.staffNameKh = item.staffNameKh;
+                if (!entry.staffNameEn && (item.staffNameEn || item.staffName)) entry.staffNameEn = item.staffNameEn || item.staffName;
+                if (!entry.joinDate && item.joinDate) entry.joinDate = item.joinDate;
+                if (!entry.brand && item.brand) entry.brand = item.brand;
 
-            if (!entry.staffNameKh && item.staffNameKh) entry.staffNameKh = item.staffNameKh;
-            if (!entry.staffNameEn && (item.staffNameEn || item.staffName)) entry.staffNameEn = item.staffNameEn || item.staffName;
-            if (!entry.joinDate && item.joinDate) entry.joinDate = item.joinDate;
-            if (!entry.brand && item.brand) entry.brand = item.brand;
+                entry.totalAmount += Number(item.amount) || 0;
+                entry.recordsCount += 1;
 
-            entry.totalAmount += Number(item.amount) || 0;
-            entry.recordsCount += 1;
-
-            if (item.date && (!entry.latestDate || item.date > entry.latestDate)) {
-                entry.latestDate = item.date;
+                if (item.date && (!entry.latestDate || item.date > entry.latestDate)) {
+                    entry.latestDate = item.date;
+                }
             }
         });
 
