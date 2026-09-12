@@ -176,7 +176,7 @@ const FollowUpReport = () => {
     const uniqueFu3Descriptions = useMemo(() => {
         const descSet = new Set();
         fu3List.forEach(item => {
-            const desc = (item.description || '').trim();
+            const desc = (item.description || item.notes || '').trim();
             if (desc) {
                 descSet.add(desc);
             }
@@ -208,6 +208,7 @@ const FollowUpReport = () => {
             (item.date && item.date.toLowerCase().includes(term)) ||
             (item.location && item.location.toLowerCase().includes(term)) ||
             (item.description && item.description.toLowerCase().includes(term)) ||
+            (item.notes && item.notes.toLowerCase().includes(term)) ||
             (item.responder && item.responder.toLowerCase().includes(term)) ||
             (item.username && item.username.toLowerCase().includes(term))
         );
@@ -278,7 +279,7 @@ const FollowUpReport = () => {
             record.fu3.total += 1;
             record.fu3.amount += Number(item.requestedAmount) || 0;
 
-            const desc = (item.description || '').trim() || '(គ្មានបរិយាយ)';
+            const desc = (item.description || item.notes || '').trim() || '(គ្មានបរិយាយ)';
             record.fu3.descCounts[desc] = (record.fu3.descCounts[desc] || 0) + 1;
         });
 
