@@ -10,11 +10,13 @@ if (!MEM_DB.salaries) {
     MEM_DB.salaries = [];
 }
 
+const norm = (str) => (str || '').toString().trim().replace(/^@/, '').toLowerCase();
+
 // GET /api/salary/staff-list - Directory of all staff with salary records & salary accounts for Admin
 router.get('/staff-list', async (req, res) => {
     try {
         const { userBrand = '', userRole = '', username = '', isImmutable = 'false' } = req.query;
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator');
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin');
 
         let allSalaries = [];
         let allUsers = [];
@@ -30,47 +32,58 @@ router.get('/staff-list', async (req, res) => {
             allUsers = [...(MEM_DB.users || [])];
         }
 
-        // Map of staff members
+        // Map of staff members keyed by normalized username/name
         const staffMap = new Map();
 
-        // 1. Strictly include registered users having role 'salary'
+        // 1. Include registered users (especially role 'salary' or staff accounts)
         allUsers.forEach(u => {
             const uRole = (u.role || '').toLowerCase();
-            if (uRole === 'salary') {
-                const key = (u.username || u.name || '').trim();
-                if (key && !staffMap.has(key)) {
-                    staffMap.set(key, {
-                        key,
-                        staffName: u.username || u.name || '',
-                        staffNameKh: u.nameKh || '',
-                        staffNameEn: u.name || u.username || '',
-                        joinDate: u.joinDate || '',
-                        role: u.role || 'Salary',
-                        brand: u.brand || '',
-                        avatar: u.avatar || '',
-                        totalAmount: 0,
-                        recordsCount: 0,
-                        latestDate: '',
-                        isUserAccount: true
-                    });
-                }
+            const rawKey = (u.username || u.name || '').trim();
+            const nKey = norm(rawKey);
+            if (!nKey) return;
+
+            if (uRole === 'salary' || !staffMap.has(nKey)) {
+                staffMap.set(nKey, {
+                    key: rawKey,
+                    staffName: u.username || u.name || '',
+                    staffNameKh: u.nameKh || '',
+                    staffNameEn: u.name || u.username || '',
+                    joinDate: u.joinDate || '',
+                    role: u.role || 'Salary',
+                    brand: u.brand || '',
+                    avatar: u.avatar || '',
+                    totalAmount: 0,
+                    recordsCount: 0,
+                    latestDate: '',
+                    isUserAccount: true
+                });
             }
         });
 
-        // 2. Aggregate salary amounts only for the matched salary accounts
+        // 2. Aggregate salary amounts and incorporate any staff from salary records
         allSalaries.forEach(item => {
             const rawKey = (item.staffName || item.staffNameEn || item.staffNameKh || item.createdBy || '').trim();
             if (!rawKey) return;
 
-            let entry = staffMap.get(rawKey);
+            const nStaffName = norm(item.staffName);
+            const nStaffNameEn = norm(item.staffNameEn);
+            const nStaffNameKh = (item.staffNameKh || '').trim();
+            const nCreatedBy = norm(item.createdBy);
+
+            // Find matching entry in staffMap
+            let entry = staffMap.get(nStaffName) || staffMap.get(nStaffNameEn) || staffMap.get(nCreatedBy);
             if (!entry) {
-                // Check if matches by English or Khmer name or username
                 for (const existing of staffMap.values()) {
+                    const exName = norm(existing.staffName);
+                    const exNameEn = norm(existing.staffNameEn);
+                    const exKey = norm(existing.key);
+                    const exKh = (existing.staffNameKh || '').trim();
+
                     if (
-                        (item.staffNameEn && existing.staffNameEn && existing.staffNameEn.toLowerCase() === item.staffNameEn.toLowerCase()) ||
-                        (item.staffNameKh && existing.staffNameKh && existing.staffNameKh === item.staffNameKh) ||
-                        (item.staffName && existing.staffName && existing.staffName.toLowerCase() === item.staffName.toLowerCase()) ||
-                        (item.createdBy && existing.staffName && existing.staffName.toLowerCase() === item.createdBy.toLowerCase())
+                        (nStaffName && (exName === nStaffName || exNameEn === nStaffName || exKey === nStaffName)) ||
+                        (nStaffNameEn && (exName === nStaffNameEn || exNameEn === nStaffNameEn || exKey === nStaffNameEn)) ||
+                        (nCreatedBy && (exName === nCreatedBy || exKey === nCreatedBy)) ||
+                        (nStaffNameKh && exKh && exKh === nStaffNameKh)
                     ) {
                         entry = existing;
                         break;
@@ -78,22 +91,50 @@ router.get('/staff-list', async (req, res) => {
                 }
             }
 
-            if (entry) {
-                if (!entry.staffNameKh && item.staffNameKh) entry.staffNameKh = item.staffNameKh;
-                if (!entry.staffNameEn && (item.staffNameEn || item.staffName)) entry.staffNameEn = item.staffNameEn || item.staffName;
-                if (!entry.joinDate && item.joinDate) entry.joinDate = item.joinDate;
-                if (!entry.brand && item.brand) entry.brand = item.brand;
+            // If still no entry exists in staffMap, create one from salary record
+            if (!entry) {
+                const primaryKey = nStaffName || nStaffNameEn || nCreatedBy || rawKey;
+                entry = {
+                    key: rawKey,
+                    staffName: item.staffName || item.staffNameEn || item.staffNameKh || item.createdBy || 'Staff',
+                    staffNameKh: item.staffNameKh || '',
+                    staffNameEn: item.staffNameEn || item.staffName || '',
+                    joinDate: item.joinDate || '',
+                    role: 'Salary',
+                    brand: item.brand || '',
+                    avatar: '',
+                    totalAmount: 0,
+                    recordsCount: 0,
+                    latestDate: '',
+                    isUserAccount: false
+                };
+                staffMap.set(primaryKey, entry);
+            }
 
-                entry.totalAmount += Number(item.amount) || 0;
-                entry.recordsCount += 1;
+            // Update entry details from salary record if missing or newer
+            if (!entry.staffNameKh && item.staffNameKh) entry.staffNameKh = item.staffNameKh;
+            if (!entry.staffNameEn && (item.staffNameEn || item.staffName)) entry.staffNameEn = item.staffNameEn || item.staffName;
+            if ((!entry.joinDate || entry.joinDate === '—') && item.joinDate) entry.joinDate = item.joinDate;
+            if (!entry.brand && item.brand) entry.brand = item.brand;
 
-                if (item.date && (!entry.latestDate || item.date > entry.latestDate)) {
-                    entry.latestDate = item.date;
+            entry.totalAmount += Number(item.amount) || 0;
+            entry.recordsCount += 1;
+
+            if (item.date && (!entry.latestDate || item.date > entry.latestDate)) {
+                entry.latestDate = item.date;
+                if (item.joinDate && (!entry.joinDate || entry.joinDate === '—')) {
+                    entry.joinDate = item.joinDate;
                 }
             }
         });
 
-        const staffList = Array.from(staffMap.values()).sort((a, b) => b.recordsCount - a.recordsCount || a.staffName.localeCompare(b.staffName));
+        // Filter and sort staff directory
+        const staffList = Array.from(staffMap.values())
+            .filter(s => {
+                const r = (s.role || '').toLowerCase();
+                return r === 'salary' || s.recordsCount > 0 || isMasterAdmin;
+            })
+            .sort((a, b) => b.recordsCount - a.recordsCount || a.staffName.localeCompare(b.staffName));
 
         res.json({
             data: staffList,
@@ -121,34 +162,45 @@ router.get('/', async (req, res) => {
             month = '',
             year = '',
             paymentMethod = '',
-            staffName = ''
+            staffName = '',
+            staffNameKh = '',
+            staffNameEn = ''
         } = req.query;
 
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator');
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin');
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const pageSize = parseInt(limit);
 
         let filter = {};
         // If not Master Admin, strictly isolate to the user's own salary records only
         if (!isMasterAdmin) {
+            const cleanUser = username.trim().replace(/^@/, '');
+            const uRegex = new RegExp(`^@?${cleanUser.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
             filter.$or = [
-                { createdBy: username },
-                { staffName: username },
-                { staffNameEn: username },
+                { createdBy: uRegex },
+                { staffName: uRegex },
+                { staffNameEn: uRegex },
                 { staffNameKh: username }
             ];
             if (userBrand) filter.brand = userBrand;
-        } else if (staffName) {
-            // Master Admin filtering by specific staff
-            filter.$or = [
-                { staffName: staffName },
-                { staffNameEn: staffName },
-                { staffNameKh: staffName },
-                { createdBy: staffName }
-            ];
+        } else if (staffName || staffNameKh || staffNameEn) {
+            const staffQueries = [];
+            if (staffName) {
+                const clean = staffName.trim().replace(/^@/, '');
+                const sRegex = new RegExp(`^@?${clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+                staffQueries.push({ staffName: sRegex }, { staffNameEn: sRegex }, { staffNameKh: staffName }, { createdBy: sRegex });
+            }
+            if (staffNameKh) {
+                staffQueries.push({ staffNameKh });
+            }
+            if (staffNameEn) {
+                const cleanEn = staffNameEn.trim().replace(/^@/, '');
+                const enRegex = new RegExp(`^@?${cleanEn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+                staffQueries.push({ staffNameEn: enRegex }, { staffName: enRegex });
+            }
+            filter.$or = staffQueries;
             if (userBrand) filter.brand = userBrand;
         } else if (userBrand) {
-            // Master Admin can optionally filter by brand if provided
             filter.brand = userBrand;
         }
 
@@ -197,20 +249,28 @@ router.get('/', async (req, res) => {
         } else {
             let list = [...MEM_DB.salaries];
             if (!isMasterAdmin) {
+                const cleanUser = username.trim().replace(/^@/, '').toLowerCase();
                 list = list.filter(item =>
-                    item.createdBy === username ||
-                    item.staffName === username ||
-                    item.staffNameEn === username ||
-                    item.staffNameKh === username
+                    norm(item.createdBy) === cleanUser ||
+                    norm(item.staffName) === cleanUser ||
+                    norm(item.staffNameEn) === cleanUser ||
+                    (item.staffNameKh && item.staffNameKh === username)
                 );
                 if (userBrand) list = list.filter(item => item.brand === userBrand);
-            } else if (staffName) {
-                list = list.filter(item =>
-                    item.staffName === staffName ||
-                    item.staffNameEn === staffName ||
-                    item.staffNameKh === staffName ||
-                    item.createdBy === staffName
-                );
+            } else if (staffName || staffNameKh || staffNameEn) {
+                const cleanStaff = (staffName || '').trim().replace(/^@/, '').toLowerCase();
+                const cleanEn = (staffNameEn || '').trim().replace(/^@/, '').toLowerCase();
+                list = list.filter(item => {
+                    const iStaff = norm(item.staffName);
+                    const iEn = norm(item.staffNameEn);
+                    const iCreated = norm(item.createdBy);
+                    const iKh = (item.staffNameKh || '').trim();
+                    return (
+                        (cleanStaff && (iStaff === cleanStaff || iEn === cleanStaff || iCreated === cleanStaff || iKh === staffName)) ||
+                        (cleanEn && (iEn === cleanEn || iStaff === cleanEn)) ||
+                        (staffNameKh && iKh === staffNameKh)
+                    );
+                });
                 if (userBrand) list = list.filter(item => item.brand === userBrand);
             } else if (userBrand) {
                 list = list.filter(item => item.brand === userBrand);
@@ -280,27 +340,40 @@ router.get('/stats', async (req, res) => {
             username = '',
             isImmutable = 'false',
             year = '',
-            staffName = ''
+            staffName = '',
+            staffNameKh = '',
+            staffNameEn = ''
         } = req.query;
 
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator');
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin');
 
         let filter = {};
         if (!isMasterAdmin) {
+            const cleanUser = username.trim().replace(/^@/, '');
+            const uRegex = new RegExp(`^@?${cleanUser.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
             filter.$or = [
-                { createdBy: username },
-                { staffName: username },
-                { staffNameEn: username },
+                { createdBy: uRegex },
+                { staffName: uRegex },
+                { staffNameEn: uRegex },
                 { staffNameKh: username }
             ];
             if (userBrand) filter.brand = userBrand;
-        } else if (staffName) {
-            filter.$or = [
-                { staffName: staffName },
-                { staffNameEn: staffName },
-                { staffNameKh: staffName },
-                { createdBy: staffName }
-            ];
+        } else if (staffName || staffNameKh || staffNameEn) {
+            const staffQueries = [];
+            if (staffName) {
+                const clean = staffName.trim().replace(/^@/, '');
+                const sRegex = new RegExp(`^@?${clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+                staffQueries.push({ staffName: sRegex }, { staffNameEn: sRegex }, { staffNameKh: staffName }, { createdBy: sRegex });
+            }
+            if (staffNameKh) {
+                staffQueries.push({ staffNameKh });
+            }
+            if (staffNameEn) {
+                const cleanEn = staffNameEn.trim().replace(/^@/, '');
+                const enRegex = new RegExp(`^@?${cleanEn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+                staffQueries.push({ staffNameEn: enRegex }, { staffName: enRegex });
+            }
+            filter.$or = staffQueries;
             if (userBrand) filter.brand = userBrand;
         } else if (userBrand) {
             filter.brand = userBrand;
@@ -315,20 +388,28 @@ router.get('/stats', async (req, res) => {
         } else {
             let list = [...MEM_DB.salaries];
             if (!isMasterAdmin) {
+                const cleanUser = username.trim().replace(/^@/, '').toLowerCase();
                 list = list.filter(item =>
-                    item.createdBy === username ||
-                    item.staffName === username ||
-                    item.staffNameEn === username ||
-                    item.staffNameKh === username
+                    norm(item.createdBy) === cleanUser ||
+                    norm(item.staffName) === cleanUser ||
+                    norm(item.staffNameEn) === cleanUser ||
+                    (item.staffNameKh && item.staffNameKh === username)
                 );
                 if (userBrand) list = list.filter(item => item.brand === userBrand);
-            } else if (staffName) {
-                list = list.filter(item =>
-                    item.staffName === staffName ||
-                    item.staffNameEn === staffName ||
-                    item.staffNameKh === staffName ||
-                    item.createdBy === staffName
-                );
+            } else if (staffName || staffNameKh || staffNameEn) {
+                const cleanStaff = (staffName || '').trim().replace(/^@/, '').toLowerCase();
+                const cleanEn = (staffNameEn || '').trim().replace(/^@/, '').toLowerCase();
+                list = list.filter(item => {
+                    const iStaff = norm(item.staffName);
+                    const iEn = norm(item.staffNameEn);
+                    const iCreated = norm(item.createdBy);
+                    const iKh = (item.staffNameKh || '').trim();
+                    return (
+                        (cleanStaff && (iStaff === cleanStaff || iEn === cleanStaff || iCreated === cleanStaff || iKh === staffName)) ||
+                        (cleanEn && (iEn === cleanEn || iStaff === cleanEn)) ||
+                        (staffNameKh && iKh === staffNameKh)
+                    );
+                });
                 if (userBrand) list = list.filter(item => item.brand === userBrand);
             } else if (userBrand) {
                 list = list.filter(item => item.brand === userBrand);
@@ -390,6 +471,93 @@ router.get('/stats', async (req, res) => {
         });
     } catch (err) {
         console.error('Fetch salary stats error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/salary/save-staff-info - Save or update staff profile info (Khmer/English names & Join Date)
+router.post('/save-staff-info', async (req, res) => {
+    try {
+        const { staffKey = '', username = '', staffNameKh = '', staffNameEn = '', joinDate = '' } = req.body;
+        const targetUsername = (username || staffKey || '').trim().replace(/^@/, '');
+        const targetKey = (staffKey || username || '').trim();
+
+        if (!targetKey && !targetUsername && !staffNameKh && !staffNameEn) {
+            return res.status(400).json({ error: 'Staff identifier is required' });
+        }
+
+        // 1. Update User if found
+        if (isMongoConnected) {
+            const UserWrite = getWriteModel(User) || User;
+            const userFilter = {
+                $or: [
+                    { username: targetUsername },
+                    { username: `@${targetUsername}` },
+                    { username: targetKey },
+                    { name: targetKey },
+                    { name: staffNameEn }
+                ].filter(c => Object.values(c)[0])
+            };
+            if (userFilter.$or.length > 0) {
+                await UserWrite.updateMany(userFilter, {
+                    $set: {
+                        ...(staffNameKh ? { nameKh: staffNameKh } : {}),
+                        ...(staffNameEn ? { name: staffNameEn } : {}),
+                        ...(joinDate ? { joinDate } : {})
+                    }
+                });
+            }
+
+            // 2. Update all existing Salary records for this staff
+            const SalaryWrite = getWriteModel(Salary) || Salary;
+            const salaryFilter = {
+                $or: [
+                    { staffName: targetKey },
+                    { staffName: targetUsername },
+                    { staffName: `@${targetUsername}` },
+                    { staffNameEn: staffNameEn || targetKey },
+                    { staffNameKh: staffNameKh },
+                    { createdBy: targetUsername },
+                    { createdBy: `@${targetUsername}` }
+                ].filter(c => Object.values(c)[0])
+            };
+            if (salaryFilter.$or.length > 0) {
+                const updateDoc = {
+                    ...(staffNameKh ? { staffNameKh } : {}),
+                    ...(staffNameEn ? { staffNameEn, staffName: staffNameEn } : {}),
+                    ...(joinDate ? { joinDate } : {})
+                };
+                if (Object.keys(updateDoc).length > 0) {
+                    await SalaryWrite.updateMany(salaryFilter, { $set: updateDoc });
+                }
+            }
+        }
+
+        // Update MEM_DB if needed
+        (MEM_DB.users || []).forEach(u => {
+            const uUser = (u.username || '').replace(/^@/, '');
+            if (uUser === targetUsername || u.name === targetKey) {
+                if (staffNameKh) u.nameKh = staffNameKh;
+                if (staffNameEn) u.name = staffNameEn;
+                if (joinDate) u.joinDate = joinDate;
+            }
+        });
+        (MEM_DB.salaries || []).forEach(s => {
+            const sStaff = (s.staffName || '').replace(/^@/, '');
+            const sCreated = (s.createdBy || '').replace(/^@/, '');
+            if (sStaff === targetUsername || sCreated === targetUsername || (staffNameKh && s.staffNameKh === staffNameKh)) {
+                if (staffNameKh) s.staffNameKh = staffNameKh;
+                if (staffNameEn) { s.staffNameEn = staffNameEn; s.staffName = staffNameEn; }
+                if (joinDate) s.joinDate = joinDate;
+            }
+        });
+
+        res.json({
+            message: 'Staff profile updated successfully',
+            data: { staffNameKh, staffNameEn, joinDate }
+        });
+    } catch (err) {
+        console.error('Save staff info error:', err);
         res.status(500).json({ error: err.message });
     }
 });

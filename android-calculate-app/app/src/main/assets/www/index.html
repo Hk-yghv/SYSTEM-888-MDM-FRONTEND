@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="km">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#059669">
     <title>MDM Calculate Schedule</title>
     <style>
@@ -151,9 +153,20 @@
         }
 
         @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
         }
 
         /* Card Box */
@@ -262,7 +275,7 @@
         /* Duration Unit Switch */
         .unit-switch {
             display: flex;
-            background: rgba(0,0,0,0.05);
+            background: rgba(0, 0, 0, 0.05);
             padding: 3px;
             border-radius: 10px;
             gap: 2px;
@@ -343,8 +356,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .kpi-grid {
@@ -387,10 +407,21 @@
             color: var(--text-main);
         }
 
-        .kpi-value.emerald { color: #059669; }
-        .kpi-value.indigo { color: #4f46e5; }
-        .kpi-value.amber { color: #d97706; }
-        .kpi-value.rose { color: #e11d48; }
+        .kpi-value.emerald {
+            color: #059669;
+        }
+
+        .kpi-value.indigo {
+            color: #4f46e5;
+        }
+
+        .kpi-value.amber {
+            color: #d97706;
+        }
+
+        .kpi-value.rose {
+            color: #e11d48;
+        }
 
         .kpi-sub {
             font-size: 10px;
@@ -525,7 +556,7 @@
 
         .tool-btn:active {
             transform: scale(0.96);
-            background: rgba(0,0,0,0.05);
+            background: rgba(0, 0, 0, 0.05);
         }
 
         .tool-btn.primary {
@@ -562,12 +593,12 @@
         }
     </style>
 </head>
+
 <body>
 
     <!-- App Header -->
     <header class="app-header">
         <div class="header-title-box">
-            <div class="app-icon">🧮</div>
             <div class="header-text">
                 <h1>MDM Calculate</h1>
                 <p>គណនាការប្រាក់ & កាលវិភាគបង់ប្រាក់</p>
@@ -580,25 +611,21 @@
     </header>
 
     <div class="container">
-        <!-- Status Indicator -->
-        <div class="status-badge">
-            <span class="pulse-dot"></span>
-            100% Offline App (ដំណើរការគ្មានអ៊ីនធឺណិត)
-        </div>
 
         <!-- Calculator Input Card -->
         <div class="card">
             <div class="card-title">
-                <span>📝</span> បញ្ចូលទិន្នន័យគណនា (Inputs)
+                <span>📝</span> បញ្ចូលទិន្នន័យគណនា
             </div>
 
             <form id="calcForm">
                 <!-- 1. Principal Amount -->
                 <div class="form-group">
-                    <label>ប្រាក់ដើមកម្ចី (Principal Amount $)</label>
+                    <label>ប្រាក់ដើមកម្ចី</label>
                     <div class="input-wrapper">
                         <span class="input-icon">$</span>
-                        <input type="number" id="inpPrincipal" class="form-input" placeholder="ឧ. 1000" value="1000" step="any" min="0" required>
+                        <input type="number" id="inpPrincipal" class="form-input" placeholder="ឧ. 1000" value="1000"
+                            step="any" min="0" required>
                     </div>
                     <div class="chips-scroll">
                         <button type="button" class="chip" onclick="setPrincipal(100)">$100</button>
@@ -613,10 +640,11 @@
 
                 <!-- 2. Interest Rate -->
                 <div class="form-group">
-                    <label>អត្រាការប្រាក់ (Interest Rate %)</label>
+                    <label>អត្រាការប្រាក់</label>
                     <div class="input-wrapper">
                         <span class="input-icon">%</span>
-                        <input type="text" id="inpRate" class="form-input" list="rateList" placeholder="ឧ. 11.5%" value="11.5%" required>
+                        <input type="text" id="inpRate" class="form-input" list="rateList" placeholder="ឧ. 11.5%"
+                            value="11.5%" required>
                         <datalist id="rateList">
                             <option value="11.5%">
                             <option value="10%">
@@ -639,16 +667,20 @@
 
                 <!-- 3. Duration -->
                 <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <label style="margin: 0;">រយៈពេលកម្ចី (Duration)</label>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="margin: 0;">រយៈពេលកម្ចី</label>
                         <div class="unit-switch">
-                            <button type="button" class="unit-btn active" id="btnUnitMonth" onclick="setDurationUnit('months')">ខែ (Month)</button>
-                            <button type="button" class="unit-btn" id="btnUnitDay" onclick="setDurationUnit('days')">ថ្ងៃ (Day)</button>
+                            <button type="button" class="unit-btn active" id="btnUnitMonth"
+                                onclick="setDurationUnit('months')">ខែ</button>
+                            <button type="button" class="unit-btn" id="btnUnitDay"
+                                onclick="setDurationUnit('days')">ថ្ងៃ</button>
                         </div>
                     </div>
                     <div class="input-wrapper">
                         <span class="input-icon">#</span>
-                        <input type="number" id="inpDuration" class="form-input" placeholder="ឧ. 4" value="4" min="1" required>
+                        <input type="number" id="inpDuration" class="form-input" placeholder="ឧ. 4" value="4" min="1"
+                            required>
                     </div>
                     <div class="chips-scroll" id="durationChips">
                         <button type="button" class="chip" onclick="setDuration(1)">1 ខែ</button>
@@ -662,7 +694,7 @@
 
                 <!-- 4. Start Date -->
                 <div class="form-group">
-                    <label>កាលបរិច្ឆេទចាប់ផ្ដើម (Start Date)</label>
+                    <label>កាលបរិច្ឆេទចាប់ផ្ដើម</label>
                     <div class="input-wrapper">
                         <span class="input-icon">📅</span>
                         <input type="date" id="inpStartDate" class="form-input">
@@ -671,8 +703,8 @@
 
                 <!-- Action Buttons -->
                 <div class="btn-row">
-                    <button type="submit" class="btn-calc">⚡ គណនា (Calculate)</button>
-                    <button type="button" class="btn-reset" onclick="resetForm()">🔄 កំណត់ថ្មី</button>
+                    <button type="submit" class="btn-calc">គណនា</button>
+                    <button type="button" class="btn-reset" onclick="resetForm()">កំណត់ថ្មី</button>
                 </div>
             </form>
         </div>
@@ -680,7 +712,7 @@
         <!-- Calculation Results Section -->
         <div id="resultsSection" class="results-section" style="display: none;">
             <div class="card-title" style="margin-bottom: 8px;">
-                <span>📊</span> លទ្ធផលគណនា (Results Overview)
+                <span>📊</span> លទ្ធផលគណនា
             </div>
 
             <!-- KPI Cards Grid -->
@@ -731,7 +763,7 @@
             <!-- Schedule View Box -->
             <div class="card" style="padding: 14px;">
                 <div class="tab-box">
-                    <button class="tab-btn active" onclick="switchView('cards')">កាលវិភាគតាមខែ (Schedule)</button>
+                    <button class="tab-btn active" onclick="switchView('cards')">កាលវិភាគតាមខែ</button>
                 </div>
 
                 <div id="scheduleContainer" class="schedule-list">
@@ -742,10 +774,10 @@
             <!-- Action Toolbar -->
             <div class="action-toolbar">
                 <button class="tool-btn primary" onclick="copySummaryText()">
-                    📋 ចម្លងព័ត៌មាន (Copy)
+                    ចម្លងព័ត៌មាន
                 </button>
                 <button class="tool-btn" onclick="shareSummaryText()">
-                    📤 ចែករំលែក (Share)
+                    ចែករំលែក
                 </button>
             </div>
         </div>
@@ -1003,7 +1035,7 @@
                 navigator.share({
                     title: 'តារាងគណនាការប្រាក់ MDM',
                     text: text
-                }).catch(() => {});
+                }).catch(() => { });
             } else {
                 copySummaryText();
             }
@@ -1024,4 +1056,5 @@
         calculate();
     </script>
 </body>
+
 </html>
