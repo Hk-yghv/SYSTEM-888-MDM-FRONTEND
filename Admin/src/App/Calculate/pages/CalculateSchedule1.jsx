@@ -66,18 +66,31 @@ const CalculateSchedule1 = () => {
         const totalInterest = monthlyInterestUSD * monthsCount;
         const totalRepayment = paymentPerMonth * monthsCount; // or principal + totalInterest
 
+        // Safe addMonths: clamps day to last valid day of target month (prevents overflow)
+        const addMonthsSafe = (date, months) => {
+            const d = new Date(date);
+            const originalDay = d.getDate();
+            d.setDate(1); // Reset to 1st to avoid overflow when changing month
+            d.setMonth(d.getMonth() + months);
+            // Clamp to last day of target month
+            const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+            d.setDate(Math.min(originalDay, lastDay));
+            return d;
+        };
+
         // Generate schedule table rows
         const schedule = [];
         let remainingPrincipal = principal;
         const baseDate = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
 
         for (let i = 1; i <= monthsCount; i++) {
-            const dueDate = new Date(baseDate);
+            let dueDate;
             if (durationUnit === 'days') {
+                dueDate = new Date(baseDate);
                 const daysPerPeriod = Math.floor(duration / monthsCount);
                 dueDate.setDate(dueDate.getDate() + (daysPerPeriod * i));
             } else {
-                dueDate.setMonth(dueDate.getMonth() + i);
+                dueDate = addMonthsSafe(baseDate, i);
             }
 
             const currentPrincipalDue = principalPerMonth;
