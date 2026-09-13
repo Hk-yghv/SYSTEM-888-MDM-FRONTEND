@@ -5,16 +5,16 @@ const followUpSenSokSchema = new mongoose.Schema({
     date: { type: String, required: true, default: () => new Date().toISOString().split('T')[0] }, // កាលបរិច្ឆេទ (YYYY-MM-DD)
     customerName: { type: String, required: true }, // ឈ្មោះអតិថិជន
     phone: { type: String, default: '' }, // លេខទូរស័ព្ទ
-    location: { type: String, default: 'សែនសុខ' }, // ទីតាំង
+    location: { type: String, default: 'ភ្នំពេញ' }, // ទីតាំង
     source: { type: String, default: 'Facebook' }, // តាមរយៈ (Facebook, Telegram, TikTok, Phone Call, Walk-in, etc.)
     requestedAmount: { type: Number, default: 0 }, // ចំនួនស្នើបញ្ចាំ ($)
     collateralType: { type: String, default: '' }, // ប្រភេទទ្រព្យ
     description: { type: String, default: '' }, // បរិយាយ
     link: { type: String, default: '' }, // link
-    username: { type: String, default: 'Staff' }, // username
+    username: { type: String, default: '' }, // username
     responder: { type: String, default: '' }, // អ្នកឆ្លើយតប
-    brand: { type: String, default: 'MDM' },
-    status: { type: String, default: 'ជោគជ័យ' }, // ស្ថានភាព
+    brand: { type: String, default: '' },
+    status: { type: String, default: '' }, // ស្ថានភាព
     images: { type: [String], default: [] },
     notes: { type: String, default: '' }
 }, { timestamps: true });

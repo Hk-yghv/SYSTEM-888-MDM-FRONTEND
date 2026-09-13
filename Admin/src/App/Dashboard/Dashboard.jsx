@@ -160,6 +160,22 @@ const Dashboard = () => {
     const customerReceivedAmt = stats.totalCustomerReceived || 0;
     const collectionPct = customerReceivedAmt > 0 ? ((weCollectedAmt / customerReceivedAmt) * 100).toFixed(2) : '0.00';
 
+    // ── Total Customer Paid: sum of paidAmount from all repaymentSchedule rows ──
+    const totalCustomerPaid = useMemo(() => {
+        let total = 0;
+        rawContracts.forEach(c => {
+            if (Array.isArray(c.repaymentSchedule)) {
+                c.repaymentSchedule.forEach(row => {
+                    total += Number(row.paidAmount || 0);
+                });
+            }
+        });
+        return total;
+    }, [rawContracts]);
+
+    // Lock Device & Other fees = totalRevenue - customerPaid
+    const lockDeviceAmt = Math.max(weCollectedAmt - totalCustomerPaid, 0);
+
     // ── Repayment Calculations ──
     const repaymentMetrics = useMemo(() => {
         let totalExpected = 0;
@@ -414,11 +430,17 @@ const Dashboard = () => {
                     </div>
                     <div className="mt-2">
                         <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-amber-800">
-                            ${formatMoney(Math.max(repaymentMetrics.totalExpected - weCollectedAmt, 0))}
+                            ${formatMoney(Math.max(repaymentMetrics.totalExpected - totalCustomerPaid, 0))}
                         </div>
-                        <div className="flex items-center justify-between text-xs mt-2.5 pt-2.5 border-t-2 border-slate-200 text-slate-800 font-bold">
-                            <span>Lock Phone: <strong className="text-rose-700 font-mono font-black">{stats.lockedPhones}</strong></span>
-                            <span className="font-mono text-amber-950 font-black text-[11px] bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">ACTIVE</span>
+                        <div className="mt-2.5 pt-2.5 border-t-2 border-slate-200 space-y-1">
+                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                                <span>ភ្ញៀវបានបង់:</span>
+                                <span className="font-mono text-emerald-700 font-black">${formatMoney(totalCustomerPaid)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                                <span>Lock Device & Other:</span>
+                                <span className="font-mono text-rose-600 font-black">${formatMoney(lockDeviceAmt)}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
