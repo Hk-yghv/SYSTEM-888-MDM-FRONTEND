@@ -152,7 +152,7 @@ router.post('/', async (req, res) => {
             reason = '',
             brand = '',
             notes = '',
-            createdBy = 'Staff',
+            createdBy = '',
             username = ''
         } = req.body;
 
@@ -162,7 +162,7 @@ router.post('/', async (req, res) => {
 
         const currentYear = new Date().getFullYear();
         const autoId = `FU-${currentYear}-${Math.floor(1000 + Math.random() * 9000)}`;
-        const userActor = username || createdBy || 'Staff';
+        const userActor = username || createdBy || '';
 
         const newDoc = {
             followUpId: autoId,
@@ -284,7 +284,7 @@ router.put('/:id', async (req, res) => {
                 action: 'FOLLOW_UP_1_UPDATE',
                 taskCategory: 'Follow Up 1',
                 description: `Updated Follow-Up 1 record ${updated.followUpId || id}: ${diffSummary || 'General Update'}`,
-                username: req.body.username || req.body.createdBy || 'Staff',
+                username: req.body.username || req.body.createdBy || '',
                 brand: updated.brand || '',
                 payload: { diff, changedFields, previousData: prevObj, updatedData: updateData }
             }).catch(() => { });
@@ -303,7 +303,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const username = req.query.username || 'Staff';
+        const username = req.query.username || '';
 
         let deletedItem = null;
         if (isMongoConnected) {
