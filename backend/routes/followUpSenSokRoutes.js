@@ -238,16 +238,16 @@ router.post('/', async (req, res) => {
             date: date || new Date().toISOString().split('T')[0],
             customerName: customerName.trim(),
             phone: phone ? phone.trim() : '',
-            location: location ? location.trim() : 'សែនសុខ',
+            location: location ? location.trim() : 'ភ្នំពេញ',
             source: source ? source.trim() : 'Facebook',
             requestedAmount: Number(requestedAmount) || 0,
             collateralType: collateralType ? collateralType.trim() : '',
             description: description ? description.trim() : '',
             link: link ? link.trim() : '',
-            username: username ? username.trim() : 'Staff',
+            username: username ? username.trim() : '',
             responder: responder ? responder.trim() : '',
-            brand: brand || 'MDM',
-            status: status || 'ជោគជ័យ',
+            brand: brand || '',
+            status: status || '',
             images: Array.isArray(images) ? images : (images ? [images] : []),
             notes: notes || ''
         };
@@ -269,7 +269,7 @@ router.post('/', async (req, res) => {
             action: 'FOLLOW_UP_SEN_SOK_CREATE',
             taskCategory: 'Follow Up Sen Sok',
             description: `Created Follow Up Sen Sok entry ${autoId} for ${customerName} (${phone}): Location=${location}, Amount=$${requestedAmount}, Responder=${responder}, User=${username}`,
-            username: username || 'Staff',
+            username: username || '',
             brand: brand || '',
             payload: newDoc
         }).catch(() => { });
@@ -366,7 +366,7 @@ router.put('/:id', async (req, res) => {
                 action: 'FOLLOW_UP_SEN_SOK_UPDATE',
                 taskCategory: 'Follow Up Sen Sok',
                 description: `Updated Follow Up Sen Sok entry ${updated.followUpId || id} for ${updated.customerName || ''}`,
-                username: req.query.username || username || 'Staff',
+                username: req.query.username || username || '',
                 brand: updated.brand || '',
                 payload: { old: existing, new: updated }
             }).catch(() => { });
@@ -385,7 +385,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const operatorUsername = req.query.username || 'Staff';
+        const operatorUsername = req.query.username || '';
 
         let existing = null;
         if (isMongoConnected) {
