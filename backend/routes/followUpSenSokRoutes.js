@@ -212,16 +212,16 @@ router.post('/', async (req, res) => {
             date = new Date().toISOString().split('T')[0],
             customerName,
             phone = '',
-            location = 'សែនសុខ',
+            location = 'ភ្នំពេញ',
             source = 'Facebook',
             requestedAmount = 0,
             collateralType = '',
             description = '',
             link = '',
-            username = 'Staff',
+            username = '',
             responder = '',
             brand = '',
-            status = 'ជោគជ័យ',
+            status = '',
             images = [],
             notes = ''
         } = req.body;
@@ -272,7 +272,7 @@ router.post('/', async (req, res) => {
             username: username || 'Staff',
             brand: brand || '',
             payload: newDoc
-        }).catch(() => {});
+        }).catch(() => { });
 
         res.status(201).json(saved);
     } catch (err) {
@@ -369,7 +369,7 @@ router.put('/:id', async (req, res) => {
                 username: req.query.username || username || 'Staff',
                 brand: updated.brand || '',
                 payload: { old: existing, new: updated }
-            }).catch(() => {});
+            }).catch(() => { });
 
             return res.json(updated);
         }
@@ -413,7 +413,7 @@ router.delete('/:id', async (req, res) => {
             username: operatorUsername,
             brand: existing?.brand || '',
             payload: existing
-        }).catch(() => {});
+        }).catch(() => { });
 
         res.json({ message: 'Record deleted successfully', id });
     } catch (err) {
