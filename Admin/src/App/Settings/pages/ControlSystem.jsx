@@ -446,7 +446,7 @@ const ControlSystem = () => {
                             {t('controlSystem')} Dynamic Configurations
                         </h1>
                         <p className='text-xs text-indigo-400 font-semibold'>
-                            Define dropdown options, Call Phone display texts, and roles stored in MongoDB
+                            Define dropdown options, Call Phone display texts and roles.
                         </p>
                     </div>
                 </div>
@@ -572,7 +572,7 @@ const ControlSystem = () => {
                                 disabled={saving}
                                 className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-lg shadow-red-600/30"
                             >
-                                <MdSave size={16} /> Save Lock Config to MongoDB
+                                <MdSave size={16} /> Save Lock Config
                             </button>
                         </div>
                     </div>
