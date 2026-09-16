@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { FaCopy, FaCheck } from 'react-icons/fa';
 
-const CopyCell = ({ text, copyValue, className = '' }) => {
+const CopyCell = ({ text, value, children, copyValue, className = '' }) => {
     const [copied, setCopied] = useState(false);
 
-    if (text === null || text === undefined || text === '') return <span className={className}>-</span>;
+    const rawContent = text !== undefined && text !== null ? text : (value !== undefined && value !== null ? value : children);
+    if (rawContent === null || rawContent === undefined || rawContent === '') return <span className={className}>-</span>;
 
     const handleCopy = (e) => {
         e.stopPropagation();
-        const valueToCopy = copyValue !== undefined ? String(copyValue) : String(text);
+        const valueToCopy = copyValue !== undefined ? String(copyValue) : String(rawContent);
         if (valueToCopy && valueToCopy !== '-') {
             navigator.clipboard.writeText(valueToCopy);
             setCopied(true);
@@ -22,7 +23,7 @@ const CopyCell = ({ text, copyValue, className = '' }) => {
             className={`inline-flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${className}`}
             title="ចុចដើម្បីចម្លង (Click to copy)"
         >
-            <span>{text}</span>
+            <span>{rawContent}</span>
             {copied ? (
                 <FaCheck className="text-emerald-500 text-[10px] flex-shrink-0" />
             ) : (

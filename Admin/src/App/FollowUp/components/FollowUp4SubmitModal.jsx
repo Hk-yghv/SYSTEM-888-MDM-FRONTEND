@@ -89,10 +89,9 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">NAME *</label>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">NAME</label>
                             <input
                                 type="text"
-                                required
                                 placeholder="បញ្ចូលឈ្មោះ"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}

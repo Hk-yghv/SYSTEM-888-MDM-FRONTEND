@@ -101,7 +101,7 @@ router.post('/submit', async (req, res) => {
     try {
         const {
             date,
-            name,
+            name = '',
             userName = '',
             phone = '',
             nameTelegram = '',
@@ -119,8 +119,8 @@ router.post('/submit', async (req, res) => {
             createdBy = ''
         } = req.body;
 
-        if (!name || !brand || !date) {
-            return res.status(400).json({ success: false, message: 'Date, Name and Brand are required' });
+        if (!brand || !date) {
+            return res.status(400).json({ success: false, message: 'Date and Brand are required' });
         }
 
         const recordData = {

@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 // 1. Follow Up 4 Lead Submission Schema (FOLLOW UP SUBMIT tab)
 const followUp4SubmitSchema = new mongoose.Schema({
     date: { type: String, required: true }, // ថ្ងៃខែឆ្នាំ (YYYY-MM-DD)
-    name: { type: String, required: true }, // NAME
+    name: { type: String, default: '' }, // NAME
     userName: { type: String, default: '' }, // USER NAME
     phone: { type: String, default: '' }, // PHONE NUMBER
     nameTelegram: { type: String, default: '' }, // NAME TELEGRAM

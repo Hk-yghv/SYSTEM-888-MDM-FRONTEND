@@ -205,10 +205,6 @@ const FollowUp4 = () => {
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.name.trim()) {
-            alert('សូមបញ្ចូល NAME');
-            return;
-        }
 
         setSubmitFormSaving(true);
         try {
@@ -241,6 +237,48 @@ const FollowUp4 = () => {
             setSubmitFormSaving(false);
         }
     };
+
+    const parseCurrencyOrNumber = (val) => {
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
+        const cleaned = String(val).replace(/[^0-9.-]/g, '');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? 0 : num;
+    };
+
+    const submitTotals = useMemo(() => {
+        let totalAppraisal = 0;
+        let totalRequested = 0;
+        let successCount = 0;
+        let rejectCount = 0;
+        let reviewCount = 0;
+        let pendingCount = 0;
+
+        submitList.forEach(item => {
+            totalAppraisal += parseCurrencyOrNumber(item.appraisal);
+            totalRequested += parseCurrencyOrNumber(item.requested);
+            const st = (item.status || '').toUpperCase();
+            if (st.includes('SUCCESS') || st === 'SUCCESS 1' || st === 'SUCCESS 2') {
+                successCount++;
+            } else if (st === 'REJECT') {
+                rejectCount++;
+            } else if (st === 'REVIEW') {
+                reviewCount++;
+            } else {
+                pendingCount++;
+            }
+        });
+
+        return {
+            count: submitList.length,
+            totalAppraisal,
+            totalRequested,
+            successCount,
+            rejectCount,
+            reviewCount,
+            pendingCount
+        };
+    }, [submitList]);
 
     const handleDeleteSubmit = async () => {
         if (!deleteModalItem) return;
@@ -930,13 +968,13 @@ const FollowUp4 = () => {
                                             <tr key={item._id || idx} className="hover:bg-slate-700/30 transition-colors">
                                                 <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{idx + 1}</td>
                                                 <td className="py-2.5 px-3 whitespace-nowrap font-mono text-emerald-300">{item.date}</td>
-                                                <td className="py-2.5 px-3 font-semibold text-white"><CopyCell value={item.name} /></td>
-                                                <td className="py-2.5 px-3 text-slate-300"><CopyCell value={item.userName} /></td>
-                                                <td className="py-2.5 px-3 font-mono text-cyan-300"><CopyCell value={item.phone} /></td>
-                                                <td className="py-2.5 px-3 text-sky-400"><CopyCell value={item.nameTelegram} /></td>
+                                                <td className="py-2.5 px-3 font-semibold text-white"><CopyCell text={item.name} /></td>
+                                                <td className="py-2.5 px-3 text-slate-300"><CopyCell text={item.userName} /></td>
+                                                <td className="py-2.5 px-3 font-mono text-cyan-300"><CopyCell text={item.phone} /></td>
+                                                <td className="py-2.5 px-3 text-sky-400"><CopyCell text={item.nameTelegram} /></td>
                                                 <td className="py-2.5 px-3"><span className="bg-slate-700/80 px-2 py-0.5 rounded text-[11px] text-amber-300">{item.fromSource}</span></td>
                                                 <td className="py-2.5 px-3 text-slate-300">{item.namePgTlFrom}</td>
-                                                <td className="py-2.5 px-3"><span className="bg-slate-700/80 px-2 py-0.5 rounded text-[11px] text-indigo-300">{item.contactType}</span></td>
+                                                <td className="py-2.5 px-3"><span className="px-2 py-0.5 rounded text-[11px] text-indigo-300">{item.contactType}</span></td>
                                                 <td className="py-2.5 px-3 text-slate-300">{item.namePgTlContact}</td>
                                                 <td className="py-2.5 px-3 text-amber-400 font-mono">{item.appraisal}</td>
                                                 <td className="py-2.5 px-3 text-emerald-400 font-mono">{item.requested}</td>
@@ -979,6 +1017,35 @@ const FollowUp4 = () => {
                                         ))
                                     )}
                                 </tbody>
+                                {submitList.length > 0 && (
+                                    <tfoot className="bg-slate-900/95 font-bold border-t-2 border-slate-700 text-xs">
+                                        <tr className="text-slate-200">
+                                            <td colSpan="10" className="py-3 px-3 font-bold text-emerald-400 uppercase tracking-wider">
+                                                <div className="flex items-center gap-2">
+                                                    <span>សរុប (TOTAL):</span>
+                                                    <span className="bg-slate-800 text-slate-300 font-mono text-[11px] px-2 py-0.5 rounded border border-slate-700">
+                                                        {submitTotals.count} កំណត់ត្រា
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-3 font-mono font-bold text-amber-400">
+                                                ${submitTotals.totalAppraisal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="py-3 px-3 font-mono font-bold text-emerald-400">
+                                                ${submitTotals.totalRequested.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="py-3 px-3 text-slate-400 text-center">-</td>
+                                            <td className="py-3 px-3 text-slate-400 text-center">-</td>
+                                            <td className="py-3 px-3">
+                                                <div className="flex flex-col gap-0.5 text-[10px] font-mono">
+                                                    <span className="text-emerald-400">ជោគជ័យ: {submitTotals.successCount}</span>
+                                                    <span className="text-rose-400">REJECT: {submitTotals.rejectCount}</span>
+                                                </div>
+                                            </td>
+                                            <td colSpan="2" className="py-3 px-3 text-slate-500 font-mono text-center">-</td>
+                                        </tr>
+                                    </tfoot>
+                                )}
                             </table>
                         </div>
                     </div>
