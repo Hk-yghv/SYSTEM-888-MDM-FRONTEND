@@ -52,35 +52,42 @@ const FollowUp4 = () => {
     // Fetch Brands and Control System Droplists dynamically from Database
     const fetchControlSystemData = useCallback(async () => {
         try {
-            const brandQuery = selectedBrand ? `?brand=${encodeURIComponent(selectedBrand)}` : '?brand=';
+            const effectiveBrand = selectedBrand || user?.brand || '';
+            const brandQuery = effectiveBrand ? `?brand=${encodeURIComponent(effectiveBrand)}` : '?brand=';
             const res = await fetch(`${API_BASE}/controlsystem${brandQuery}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.droplists && Array.isArray(data.droplists)) {
-                    const src = data.droplists.find(d => d.category === 'Follow Up 4 Sources')?.items;
-                    const ct = data.droplists.find(d => d.category === 'Follow Up 4 Contact Types')?.items;
-                    const st = data.droplists.find(d => d.category === 'Follow Up 4 Statuses')?.items;
-                    const ast = data.droplists.find(d => d.category === 'Follow Up 4 Asset Types' || d.category === 'Asset Types')?.items;
-                    const rsr = data.droplists.find(d => d.category === 'Reject Submit Reasons')?.items;
-                    const rcr = data.droplists.find(d => d.category === 'Reject CS Reasons')?.items;
-                    const bList = data.droplists.find(d => d.category === 'Brands')?.items;
+                    const findCat = (names) => {
+                        const targets = names.map(n => n.toLowerCase().trim());
+                        const found = data.droplists.find(d => d && d.category && targets.includes(d.category.toLowerCase().trim()));
+                        return (found && Array.isArray(found.items)) ? found.items : null;
+                    };
+
+                    const src = findCat(['Follow Up 4 Sources', 'Sources', 'ប្រភព']);
+                    const ct = findCat(['Follow Up 4 Contact Types', 'Contact Types', 'ប្រភេទទំនាក់ទំនង', 'ទាក់ទង']);
+                    const st = findCat(['Follow Up 4 Statuses', 'Statuses', 'ស្ថានភាព']);
+                    const ast = findCat(['Follow Up 4 Asset Types', 'Asset Types', 'ប្រភេទទ្រព្យ']);
+                    const rsr = findCat(['Reject Submit Reasons', 'Reject Submit', 'មូលហេតុ Reject Submit']);
+                    const rcr = findCat(['Reject CS Reasons', 'Reject CS', 'មូលហេតុ Reject CS']);
+                    const bList = findCat(['Brands', 'Brand']);
 
                     if (bList && Array.isArray(bList) && bList.length > 0) setBrandsList(bList);
 
                     setDroplists(prev => ({
-                        sources: (src && src.length) ? src : prev.sources,
-                        contactTypes: (ct && ct.length) ? ct : prev.contactTypes,
-                        statuses: (st && st.length) ? st : prev.statuses,
-                        assetTypes: (ast && ast.length) ? ast : prev.assetTypes,
-                        rejectSubmitReasons: Array.isArray(rsr) ? rsr : [],
-                        rejectCsReasons: Array.isArray(rcr) ? rcr : []
+                        sources: (src && src.length > 0) ? src : prev.sources,
+                        contactTypes: (ct && ct.length > 0) ? ct : prev.contactTypes,
+                        statuses: (st && st.length > 0) ? st : prev.statuses,
+                        assetTypes: (ast && ast.length > 0) ? ast : prev.assetTypes,
+                        rejectSubmitReasons: (rsr && Array.isArray(rsr)) ? rsr : [],
+                        rejectCsReasons: (rcr && Array.isArray(rcr)) ? rcr : []
                     }));
                 }
             }
         } catch (err) {
             console.error('Fetch Control System Error in FollowUp4:', err);
         }
-    }, [API_BASE, selectedBrand]);
+    }, [API_BASE, selectedBrand, user?.brand]);
 
     useEffect(() => {
         fetchControlSystemData();
