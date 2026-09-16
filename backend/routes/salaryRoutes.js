@@ -609,8 +609,8 @@ router.post('/', async (req, res) => {
             createdBy: createdBy || 'Administrator'
         };
 
-        if (isMongoConnected) {
-            const WriteSalary = getWriteModel(Salary);
+        if (isMongoConnected()) {
+            const WriteSalary = getWriteModel(Salary) || Salary;
             const newSalary = new WriteSalary(salaryData);
             const saved = await newSalary.save();
             return res.status(201).json({ message: 'Salary recorded successfully', data: saved });
@@ -647,25 +647,32 @@ router.put('/:id', async (req, res) => {
             updateFields.month = parts.length >= 2 ? `${parts[0]}-${parts[1]}` : dateStr.slice(0, 7);
         }
 
-        if (isMongoConnected) {
-            const WriteSalary = getWriteModel(Salary);
-            const updated = await WriteSalary.findByIdAndUpdate(id, { $set: updateFields }, { new: true });
+        if (isMongoConnected()) {
+            const WriteSalary = getWriteModel(Salary) || Salary;
+            let updated = null;
+            if (id.match(/^[0-9a-fA-F]{24}$/)) {
+                updated = await WriteSalary.findByIdAndUpdate(id, { $set: updateFields }, { new: true });
+            }
             if (!updated) {
-                return res.status(404).json({ error: 'Salary entry not found' });
+                // Try searching by custom id field
+                updated = await WriteSalary.findOneAndUpdate({ _id: id }, { $set: updateFields }, { new: true });
             }
-            return res.json({ message: 'Salary entry updated successfully', data: updated });
-        } else {
-            const index = MEM_DB.salaries.findIndex(s => s._id === id || s.id === id);
-            if (index === -1) {
-                return res.status(404).json({ error: 'Salary entry not found' });
+            if (updated) {
+                return res.json({ message: 'Salary entry updated successfully', data: updated });
             }
-            MEM_DB.salaries[index] = {
-                ...MEM_DB.salaries[index],
-                ...updateFields,
-                updatedAt: new Date().toISOString()
-            };
-            return res.json({ message: 'Salary entry updated successfully', data: MEM_DB.salaries[index] });
         }
+        
+        // Memory fallback
+        const index = MEM_DB.salaries.findIndex(s => String(s._id) === String(id) || String(s.id) === String(id));
+        if (index === -1) {
+            return res.status(404).json({ error: 'Salary entry not found' });
+        }
+        MEM_DB.salaries[index] = {
+            ...MEM_DB.salaries[index],
+            ...updateFields,
+            updatedAt: new Date().toISOString()
+        };
+        return res.json({ message: 'Salary entry updated successfully', data: MEM_DB.salaries[index] });
     } catch (err) {
         console.error('Update salary error:', err);
         res.status(500).json({ error: err.message });
@@ -676,21 +683,27 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        if (isMongoConnected) {
-            const WriteSalary = getWriteModel(Salary);
-            const deleted = await WriteSalary.findByIdAndDelete(id);
+        if (isMongoConnected()) {
+            const WriteSalary = getWriteModel(Salary) || Salary;
+            let deleted = null;
+            if (id.match(/^[0-9a-fA-F]{24}$/)) {
+                deleted = await WriteSalary.findByIdAndDelete(id);
+            }
             if (!deleted) {
-                return res.status(404).json({ error: 'Salary entry not found' });
+                deleted = await WriteSalary.findOneAndDelete({ _id: id });
             }
-            return res.json({ message: 'Salary entry deleted successfully' });
-        } else {
-            const index = MEM_DB.salaries.findIndex(s => s._id === id || s.id === id);
-            if (index === -1) {
-                return res.status(404).json({ error: 'Salary entry not found' });
+            if (deleted) {
+                return res.json({ message: 'Salary entry deleted successfully' });
             }
-            MEM_DB.salaries.splice(index, 1);
-            return res.json({ message: 'Salary entry deleted successfully' });
         }
+        
+        // Memory fallback
+        const index = MEM_DB.salaries.findIndex(s => String(s._id) === String(id) || String(s.id) === String(id));
+        if (index === -1) {
+            return res.status(404).json({ error: 'Salary entry not found' });
+        }
+        MEM_DB.salaries.splice(index, 1);
+        return res.json({ message: 'Salary entry deleted successfully' });
     } catch (err) {
         console.error('Delete salary error:', err);
         res.status(500).json({ error: err.message });

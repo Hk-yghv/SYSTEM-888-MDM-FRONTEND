@@ -21,6 +21,12 @@ const checkMasterAdmin = (username, userRole, isImmutable) => {
     );
 };
 
+// Memory fallback arrays
+const MEM_SUBMITS = [];
+const MEM_REJECT_SUBMITS = [];
+const MEM_REJECT_CS = [];
+const MEM_DETAILS = [];
+
 // ==========================================
 // 1. FOLLOW UP SUBMIT ENDPOINTS
 // ==========================================
@@ -75,7 +81,13 @@ router.get('/submit', async (req, res) => {
 
         let items = [];
         if (isMongoConnected()) {
-            items = await queryAllDBs(FollowUp4Submit, filter, { sort: { date: -1, createdAt: -1 } });
+            items = await queryAllDBs(FollowUp4Submit, (M) => M.find(filter).sort({ date: -1, createdAt: -1 }));
+        } else {
+            items = MEM_SUBMITS.filter(item => {
+                if (filter.brand && item.brand !== filter.brand) return false;
+                if (date && item.date !== date) return false;
+                return true;
+            });
         }
         res.json({ success: true, data: items });
     } catch (err) {
@@ -111,8 +123,7 @@ router.post('/submit', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Date, Name and Brand are required' });
         }
 
-        const WriteModel = getWriteModel(FollowUp4Submit);
-        const newRecord = new WriteModel({
+        const recordData = {
             date,
             name,
             userName,
@@ -130,12 +141,19 @@ router.post('/submit', async (req, res) => {
             description,
             brand,
             createdBy
-        });
+        };
 
-        await newRecord.save();
-        recordSystemAudit(req, 'CREATE_FOLLOWUP4_SUBMIT', `Created FollowUp4 submit record for ${name} (${brand})`);
-
-        res.json({ success: true, data: newRecord });
+        if (isMongoConnected()) {
+            const WriteModel = getWriteModel(FollowUp4Submit) || FollowUp4Submit;
+            const newRecord = new WriteModel(recordData);
+            await newRecord.save();
+            recordSystemAudit(req, 'CREATE_FOLLOWUP4_SUBMIT', `Created FollowUp4 submit record for ${name} (${brand})`);
+            return res.json({ success: true, data: newRecord });
+        } else {
+            const memRecord = { _id: 'fu4_' + Date.now(), ...recordData, createdAt: new Date() };
+            MEM_SUBMITS.unshift(memRecord);
+            return res.json({ success: true, data: memRecord });
+        }
     } catch (err) {
         console.error('Error creating FollowUp4 Submit:', err);
         res.status(500).json({ success: false, message: err.message });
@@ -146,10 +164,19 @@ router.post('/submit', async (req, res) => {
 router.put('/submit/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const WriteModel = getWriteModel(FollowUp4Submit);
-        const updated = await WriteModel.findByIdAndUpdate(id, req.body, { new: true });
-        recordSystemAudit(req, 'UPDATE_FOLLOWUP4_SUBMIT', `Updated FollowUp4 submit ID: ${id}`);
-        res.json({ success: true, data: updated });
+        if (isMongoConnected()) {
+            const WriteModel = getWriteModel(FollowUp4Submit) || FollowUp4Submit;
+            const updated = await WriteModel.findByIdAndUpdate(id, req.body, { new: true });
+            recordSystemAudit(req, 'UPDATE_FOLLOWUP4_SUBMIT', `Updated FollowUp4 submit ID: ${id}`);
+            return res.json({ success: true, data: updated });
+        } else {
+            const idx = MEM_SUBMITS.findIndex(s => s._id === id);
+            if (idx !== -1) {
+                MEM_SUBMITS[idx] = { ...MEM_SUBMITS[idx], ...req.body };
+                return res.json({ success: true, data: MEM_SUBMITS[idx] });
+            }
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
     } catch (err) {
         console.error('Error updating FollowUp4 Submit:', err);
         res.status(500).json({ success: false, message: err.message });
@@ -160,10 +187,16 @@ router.put('/submit/:id', async (req, res) => {
 router.delete('/submit/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const WriteModel = getWriteModel(FollowUp4Submit);
-        await WriteModel.findByIdAndDelete(id);
-        recordSystemAudit(req, 'DELETE_FOLLOWUP4_SUBMIT', `Deleted FollowUp4 submit ID: ${id}`);
-        res.json({ success: true, message: 'Deleted successfully' });
+        if (isMongoConnected()) {
+            const WriteModel = getWriteModel(FollowUp4Submit) || FollowUp4Submit;
+            await WriteModel.findByIdAndDelete(id);
+            recordSystemAudit(req, 'DELETE_FOLLOWUP4_SUBMIT', `Deleted FollowUp4 submit ID: ${id}`);
+            return res.json({ success: true, message: 'Deleted successfully' });
+        } else {
+            const idx = MEM_SUBMITS.findIndex(s => s._id === id);
+            if (idx !== -1) MEM_SUBMITS.splice(idx, 1);
+            return res.json({ success: true, message: 'Deleted successfully' });
+        }
     } catch (err) {
         console.error('Error deleting FollowUp4 Submit:', err);
         res.status(500).json({ success: false, message: err.message });
@@ -184,7 +217,9 @@ router.get('/reject-submit', async (req, res) => {
 
         let items = [];
         if (isMongoConnected()) {
-            items = await queryAllDBs(FollowUp4RejectSubmit, filter);
+            items = await queryAllDBs(FollowUp4RejectSubmit, (M) => M.find(filter));
+        } else {
+            items = MEM_REJECT_SUBMITS.filter(r => (!date || r.date === date) && (!brand || r.brand === brand));
         }
         res.json({ success: true, data: items });
     } catch (err) {
@@ -196,19 +231,27 @@ router.get('/reject-submit', async (req, res) => {
 // POST Batch Save Reject Submit counts for a date and brand
 router.post('/reject-submit/save', async (req, res) => {
     try {
-        const { date, brand, entries, createdBy = '' } = req.body; // entries: [{ reason: '...', count: 5 }]
+        const { date, brand, entries, createdBy = '' } = req.body;
         if (!date || !brand || !Array.isArray(entries)) {
             return res.status(400).json({ success: false, message: 'date, brand, and entries array required' });
         }
 
-        const WriteModel = getWriteModel(FollowUp4RejectSubmit);
-
-        for (const item of entries) {
-            await WriteModel.findOneAndUpdate(
-                { date, brand, reason: item.reason },
-                { date, brand, reason: item.reason, count: Number(item.count) || 0, createdBy },
-                { upsert: true, new: true }
-            );
+        if (isMongoConnected()) {
+            const WriteModel = getWriteModel(FollowUp4RejectSubmit) || FollowUp4RejectSubmit;
+            for (const item of entries) {
+                await WriteModel.findOneAndUpdate(
+                    { date, brand, reason: item.reason },
+                    { date, brand, reason: item.reason, count: Number(item.count) || 0, createdBy },
+                    { upsert: true, new: true }
+                );
+            }
+        } else {
+            for (const item of entries) {
+                const idx = MEM_REJECT_SUBMITS.findIndex(r => r.date === date && r.brand === brand && r.reason === item.reason);
+                const rec = { date, brand, reason: item.reason, count: Number(item.count) || 0, createdBy };
+                if (idx !== -1) MEM_REJECT_SUBMITS[idx] = rec;
+                else MEM_REJECT_SUBMITS.push(rec);
+            }
         }
 
         recordSystemAudit(req, 'SAVE_REJECT_SUBMIT', `Saved Reject Submit counts for ${date} brand ${brand}`);
@@ -233,7 +276,9 @@ router.get('/reject-cs', async (req, res) => {
 
         let items = [];
         if (isMongoConnected()) {
-            items = await queryAllDBs(FollowUp4RejectCS, filter);
+            items = await queryAllDBs(FollowUp4RejectCS, (M) => M.find(filter));
+        } else {
+            items = MEM_REJECT_CS.filter(r => (!date || r.date === date) && (!brand || r.brand === brand));
         }
         res.json({ success: true, data: items });
     } catch (err) {
@@ -245,19 +290,27 @@ router.get('/reject-cs', async (req, res) => {
 // POST Batch Save Reject CS counts for a date and brand
 router.post('/reject-cs/save', async (req, res) => {
     try {
-        const { date, brand, entries, createdBy = '' } = req.body; // entries: [{ reason: '...', count: 5 }]
+        const { date, brand, entries, createdBy = '' } = req.body;
         if (!date || !brand || !Array.isArray(entries)) {
             return res.status(400).json({ success: false, message: 'date, brand, and entries array required' });
         }
 
-        const WriteModel = getWriteModel(FollowUp4RejectCS);
-
-        for (const item of entries) {
-            await WriteModel.findOneAndUpdate(
-                { date, brand, reason: item.reason },
-                { date, brand, reason: item.reason, count: Number(item.count) || 0, createdBy },
-                { upsert: true, new: true }
-            );
+        if (isMongoConnected()) {
+            const WriteModel = getWriteModel(FollowUp4RejectCS) || FollowUp4RejectCS;
+            for (const item of entries) {
+                await WriteModel.findOneAndUpdate(
+                    { date, brand, reason: item.reason },
+                    { date, brand, reason: item.reason, count: Number(item.count) || 0, createdBy },
+                    { upsert: true, new: true }
+                );
+            }
+        } else {
+            for (const item of entries) {
+                const idx = MEM_REJECT_CS.findIndex(r => r.date === date && r.brand === brand && r.reason === item.reason);
+                const rec = { date, brand, reason: item.reason, count: Number(item.count) || 0, createdBy };
+                if (idx !== -1) MEM_REJECT_CS[idx] = rec;
+                else MEM_REJECT_CS.push(rec);
+            }
         }
 
         recordSystemAudit(req, 'SAVE_REJECT_CS', `Saved Reject CS counts for ${date} brand ${brand}`);
@@ -309,7 +362,9 @@ router.get('/detail', async (req, res) => {
 
         let items = [];
         if (isMongoConnected()) {
-            items = await queryAllDBs(FollowUp4Detail, filter, { sort: { date: -1 } });
+            items = await queryAllDBs(FollowUp4Detail, (M) => M.find(filter).sort({ date: -1 }));
+        } else {
+            items = MEM_DETAILS.filter(d => (!date || d.date === date) && (!brand || d.brand === brand));
         }
         res.json({ success: true, data: items });
     } catch (err) {
@@ -343,32 +398,39 @@ router.post('/detail/save', async (req, res) => {
             return res.status(400).json({ success: false, message: 'date and brand required' });
         }
 
-        const WriteModel = getWriteModel(FollowUp4Detail);
+        const metricsData = {
+            date,
+            brand,
+            page: Number(page) || 0,
+            telegram: Number(telegram) || 0,
+            noReply: Number(noReply) || 0,
+            inquire: Number(inquire) || 0,
+            rejectCs: Number(rejectCs) || 0,
+            more: Number(more) || 0,
+            pageSubmit: Number(pageSubmit) || 0,
+            telegramSubmit: Number(telegramSubmit) || 0,
+            review: Number(review) || 0,
+            reject: Number(reject) || 0,
+            success1: Number(success1) || 0,
+            success2: Number(success2) || 0,
+            createdBy
+        };
 
-        const updated = await WriteModel.findOneAndUpdate(
-            { date, brand },
-            {
-                date,
-                brand,
-                page: Number(page) || 0,
-                telegram: Number(telegram) || 0,
-                noReply: Number(noReply) || 0,
-                inquire: Number(inquire) || 0,
-                rejectCs: Number(rejectCs) || 0,
-                more: Number(more) || 0,
-                pageSubmit: Number(pageSubmit) || 0,
-                telegramSubmit: Number(telegramSubmit) || 0,
-                review: Number(review) || 0,
-                reject: Number(reject) || 0,
-                success1: Number(success1) || 0,
-                success2: Number(success2) || 0,
-                createdBy
-            },
-            { upsert: true, new: true }
-        );
-
-        recordSystemAudit(req, 'SAVE_FOLLOWUP4_DETAIL', `Saved Detail metrics for ${date} brand ${brand}`);
-        res.json({ success: true, data: updated });
+        if (isMongoConnected()) {
+            const WriteModel = getWriteModel(FollowUp4Detail) || FollowUp4Detail;
+            const updated = await WriteModel.findOneAndUpdate(
+                { date, brand },
+                metricsData,
+                { upsert: true, new: true }
+            );
+            recordSystemAudit(req, 'SAVE_FOLLOWUP4_DETAIL', `Saved Detail metrics for ${date} brand ${brand}`);
+            return res.json({ success: true, data: updated });
+        } else {
+            const idx = MEM_DETAILS.findIndex(d => d.date === date && d.brand === brand);
+            if (idx !== -1) MEM_DETAILS[idx] = metricsData;
+            else MEM_DETAILS.push(metricsData);
+            return res.json({ success: true, data: metricsData });
+        }
     } catch (err) {
         console.error('Error saving Detail metrics:', err);
         res.status(500).json({ success: false, message: err.message });

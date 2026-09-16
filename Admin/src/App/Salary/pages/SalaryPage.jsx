@@ -389,7 +389,6 @@ const SalaryPage = () => {
             const fd = new FormData();
             fd.append('file', file);
             fd.append('upload_preset', CLOUDINARY_PRESET);
-            fd.append('type', 'private');
 
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
                 method: 'POST',

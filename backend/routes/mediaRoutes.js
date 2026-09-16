@@ -6,12 +6,26 @@ const router = express.Router();
 // Allowed external image hosts for security proxying
 const ALLOWED_HOSTS = ['res.cloudinary.com', 'cloudinary.com', 'images.unsplash.com'];
 
+// CORS pre-flight for media proxy
+router.options('/proxy', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    return res.sendStatus(204);
+});
+
 /**
  * GET /api/media/proxy
  * Fetches private/authenticated images from Cloudinary or external origin server-side
  * and streams the image directly to the client under the backend domain.
  */
 router.get('/proxy', async (req, res) => {
+    // Set permissive CORS and Cross-Origin Resource Policy headers so browsers render images in <img> tags
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+
     try {
         const { src, url } = req.query;
         let targetUrl = url;
@@ -72,9 +86,10 @@ router.get('/proxy', async (req, res) => {
 
 /**
  * POST /api/media/upload
- * Backend proxy endpoint for uploading image files to Cloudinary as private images
+ * Backend proxy endpoint for uploading image files to Cloudinary
  */
 router.post('/upload', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
     try {
         const { file, upload_preset, folder = 'system_mdm_private' } = req.body;
         if (!file) {
@@ -87,7 +102,6 @@ router.post('/upload', async (req, res) => {
         const formData = new URLSearchParams();
         formData.append('file', file);
         formData.append('upload_preset', preset);
-        formData.append('type', 'private'); // Ensure image is stored as private on Cloudinary
         formData.append('folder', folder);
 
         const cloudinaryRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
@@ -100,7 +114,6 @@ router.post('/upload', async (req, res) => {
             return res.status(cloudinaryRes.status).json({ success: false, message: data.error?.message || 'Cloudinary upload failed' });
         }
 
-        // Return proxied URL instead of raw Cloudinary URL
         const rawUrl = data.secure_url || data.url;
         const encodedSrc = Buffer.from(rawUrl).toString('base64');
         const proxyUrl = `/api/media/proxy?src=${encodeURIComponent(encodedSrc)}`;

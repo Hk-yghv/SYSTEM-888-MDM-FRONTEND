@@ -353,7 +353,6 @@ const FollowUp2 = () => {
                     const bodyData = new FormData();
                     bodyData.append('file', item.file);
                     bodyData.append('upload_preset', CLOUDINARY_PRESET);
-                    bodyData.append('type', 'private');
 
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
                         method: 'POST',

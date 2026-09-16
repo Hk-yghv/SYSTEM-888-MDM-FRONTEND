@@ -333,7 +333,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('upload_preset', CLOUDINARY_PRESET);
-                    formData.append('type', 'private');
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
                         method: 'POST',
                         body: formData
