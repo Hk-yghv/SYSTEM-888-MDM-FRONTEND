@@ -246,6 +246,59 @@ const FollowUp4 = () => {
         return isNaN(num) ? 0 : num;
     };
 
+    const groupedSubmitByDate = useMemo(() => {
+        if (!submitList || submitList.length === 0) return [];
+
+        const map = new Map();
+
+        submitList.forEach(item => {
+            const d = item.date ? item.date.split('T')[0] : 'N/A';
+            if (!map.has(d)) {
+                map.set(d, []);
+            }
+            map.get(d).push(item);
+        });
+
+        const groups = [];
+        map.forEach((items, dateKey) => {
+            let totalAppraisal = 0;
+            let totalRequested = 0;
+            let successCount = 0;
+            let rejectCount = 0;
+            let reviewCount = 0;
+            let pendingCount = 0;
+
+            items.forEach(it => {
+                totalAppraisal += parseCurrencyOrNumber(it.appraisal);
+                totalRequested += parseCurrencyOrNumber(it.requested);
+                const st = (it.status || '').toUpperCase();
+                if (st.includes('SUCCESS') || st === 'SUCCESS 1' || st === 'SUCCESS 2') {
+                    successCount++;
+                } else if (st === 'REJECT') {
+                    rejectCount++;
+                } else if (st === 'REVIEW') {
+                    reviewCount++;
+                } else {
+                    pendingCount++;
+                }
+            });
+
+            groups.push({
+                date: dateKey,
+                items,
+                count: items.length,
+                totalAppraisal,
+                totalRequested,
+                successCount,
+                rejectCount,
+                reviewCount,
+                pendingCount
+            });
+        });
+
+        return groups.sort((a, b) => b.date.localeCompare(a.date));
+    }, [submitList]);
+
     const submitTotals = useMemo(() => {
         let totalAppraisal = 0;
         let totalRequested = 0;
@@ -964,85 +1017,155 @@ const FollowUp4 = () => {
                                             </td>
                                         </tr>
                                     ) : (
-                                        submitList.map((item, idx) => (
-                                            <tr key={item._id || idx} className="hover:bg-slate-700/30 transition-colors">
-                                                <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{idx + 1}</td>
-                                                <td className="py-2.5 px-3 whitespace-nowrap font-mono text-emerald-300">{item.date}</td>
-                                                <td className="py-2.5 px-3 font-semibold text-white"><CopyCell text={item.name} /></td>
-                                                <td className="py-2.5 px-3 text-slate-300"><CopyCell text={item.userName} /></td>
-                                                <td className="py-2.5 px-3 font-mono text-cyan-300"><CopyCell text={item.phone} /></td>
-                                                <td className="py-2.5 px-3 text-sky-400"><CopyCell text={item.nameTelegram} /></td>
-                                                <td className="py-2.5 px-3"><span className="bg-slate-700/80 px-2 py-0.5 rounded text-[11px] text-amber-300">{item.fromSource}</span></td>
-                                                <td className="py-2.5 px-3 text-slate-300">{item.namePgTlFrom}</td>
-                                                <td className="py-2.5 px-3"><span className="px-2 py-0.5 rounded text-[11px] text-indigo-300">{item.contactType}</span></td>
-                                                <td className="py-2.5 px-3 text-slate-300">{item.namePgTlContact}</td>
-                                                <td className="py-2.5 px-3 text-amber-400 font-mono">{item.appraisal}</td>
-                                                <td className="py-2.5 px-3 text-emerald-400 font-mono">{item.requested}</td>
-                                                <td className="py-2.5 px-3 text-slate-300">{item.assetType}</td>
-                                                <td className="py-2.5 px-3 font-medium text-slate-200">{item.model}</td>
-                                                <td className="py-2.5 px-3">
-                                                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${item.status === 'SUCCESS 1' || item.status === 'SUCCESS 2'
-                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                                                        : item.status === 'REJECT'
-                                                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
-                                                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                                                        }`}>
-                                                        {item.status}
-                                                    </span>
-                                                </td>
-                                                <td className="py-2.5 px-3 text-slate-400 truncate max-w-[150px]">{item.description}</td>
-                                                <td className="py-2.5 px-3 text-center">
-                                                    <div className="flex items-center justify-center gap-1.5">
-                                                        {hasPermission('/follow-up/follow-up-4', 'edit') && (
-                                                            <button
-                                                                onClick={() => handleOpenEditSubmitForm(item)}
-                                                                className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
-                                                                title="កែប្រែ"
-                                                            >
-                                                                <FaEdit size={14} />
-                                                            </button>
-                                                        )}
-                                                        {hasPermission('/follow-up/follow-up-4', 'delete') && (
-                                                            <button
-                                                                onClick={() => setDeleteModalItem(item)}
-                                                                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
-                                                                title="លុប"
-                                                            >
-                                                                <FaTrashAlt size={13} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
+                                        (() => {
+                                            let runningIdx = 0;
+                                            return groupedSubmitByDate.map((group) => (
+                                                <React.Fragment key={group.date}>
+                                                    {group.items.map((item) => {
+                                                        runningIdx++;
+                                                        return (
+                                                            <tr key={item._id || runningIdx} className="hover:bg-slate-700/30 transition-colors">
+                                                                <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{runningIdx}</td>
+                                                                <td className="py-2.5 px-3 whitespace-nowrap font-mono text-emerald-300">{item.date}</td>
+                                                                <td className="py-2.5 px-3 font-semibold text-white"><CopyCell text={item.name} /></td>
+                                                                <td className="py-2.5 px-3 text-slate-300"><CopyCell text={item.userName} /></td>
+                                                                <td className="py-2.5 px-3 font-mono text-cyan-300"><CopyCell text={item.phone} /></td>
+                                                                <td className="py-2.5 px-3 text-sky-400"><CopyCell text={item.nameTelegram} /></td>
+                                                                <td className="py-2.5 px-3"><span className="bg-slate-700/80 px-2 py-0.5 rounded text-[11px] text-amber-300">{item.fromSource}</span></td>
+                                                                <td className="py-2.5 px-3 text-slate-300">{item.namePgTlFrom}</td>
+                                                                <td className="py-2.5 px-3"><span className="px-2 py-0.5 rounded text-[11px] text-indigo-300">{item.contactType}</span></td>
+                                                                <td className="py-2.5 px-3 text-slate-300">{item.namePgTlContact}</td>
+                                                                <td className="py-2.5 px-3 text-amber-400 font-mono">{item.appraisal}</td>
+                                                                <td className="py-2.5 px-3 text-emerald-400 font-mono">{item.requested}</td>
+                                                                <td className="py-2.5 px-3 text-slate-300">{item.assetType}</td>
+                                                                <td className="py-2.5 px-3 font-medium text-slate-200">{item.model}</td>
+                                                                <td className="py-2.5 px-3">
+                                                                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${item.status === 'SUCCESS 1' || item.status === 'SUCCESS 2'
+                                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                                                                        : item.status === 'REJECT'
+                                                                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                                                                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                                                                        }`}>
+                                                                        {item.status}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="py-2.5 px-3 text-slate-400 truncate max-w-[150px]">{item.description}</td>
+                                                                <td className="py-2.5 px-3 text-center">
+                                                                    <div className="flex items-center justify-center gap-1.5">
+                                                                        {hasPermission('/follow-up/follow-up-4', 'edit') && (
+                                                                            <button
+                                                                                onClick={() => handleOpenEditSubmitForm(item)}
+                                                                                className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
+                                                                                title="កែប្រែ"
+                                                                            >
+                                                                                <FaEdit size={14} />
+                                                                            </button>
+                                                                        )}
+                                                                        {hasPermission('/follow-up/follow-up-4', 'delete') && (
+                                                                            <button
+                                                                                onClick={() => setDeleteModalItem(item)}
+                                                                                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
+                                                                                title="លុប"
+                                                                            >
+                                                                                <FaTrashAlt size={13} />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+
+                                                    {/* Daily Subtotal Row (Total តាមថ្ងៃ) */}
+                                                    <tr className="bg-slate-800/90 border-b-2 border-emerald-500/30 text-xs font-semibold">
+                                                        <td colSpan="10" className="py-2.5 px-3 text-emerald-300 font-bold">
+                                                            <div className="flex items-center gap-2">
+                                                                <span>សរុបប្រចាំថ្ងៃ ({group.date}):</span>
+                                                                <span className="bg-slate-900 text-slate-300 text-[11px] px-2 py-0.5 rounded border border-slate-700">
+                                                                    {group.count} កំណត់ត្រា
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2.5 px-3 font-mono font-bold text-amber-400">
+                                                            ${group.totalAppraisal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                                        </td>
+                                                        <td className="py-2.5 px-3 font-mono font-bold text-emerald-400">
+                                                            ${group.totalRequested.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                                        </td>
+                                                        <td className="py-2.5 px-3 text-slate-400 text-center">-</td>
+                                                        <td className="py-2.5 px-3 text-slate-400 text-center">-</td>
+                                                        <td className="py-2.5 px-3">
+                                                            <div className="flex flex-col gap-0.5 text-[10px] font-mono">
+                                                                <span className="text-emerald-400">ជោគជ័យ: {group.successCount}</span>
+                                                                <span className="text-rose-400">REJECT: {group.rejectCount}</span>
+                                                                {group.reviewCount > 0 && <span className="text-amber-400">REVIEW: {group.reviewCount}</span>}
+                                                            </div>
+                                                        </td>
+                                                        <td colSpan="2" className="py-2.5 px-3 text-slate-500 font-mono text-center">-</td>
+                                                    </tr>
+                                                </React.Fragment>
+                                            ));
+                                        })()
                                     )}
                                 </tbody>
                                 {submitList.length > 0 && (
-                                    <tfoot className="bg-gray-200 font-bold border-t-2 border-slate-700 text-xs">
-                                        <tr className="text-slate-200">
-                                            <td colSpan="10" className="py-3 px-3 font-bold text-emerald-400 uppercase tracking-wider">
+                                    <tfoot className="bg-slate-900/95 font-bold border-t-2 border-emerald-500/50 text-xs shadow-inner">
+                                        {/* If multiple days, also render daily breakdown rows in footer */}
+                                        {groupedSubmitByDate.length > 1 && groupedSubmitByDate.map((group) => (
+                                            <tr key={`tfoot-${group.date}`} className="border-b border-slate-800/80 text-slate-300 bg-slate-900/60">
+                                                <td colSpan="10" className="py-2.5 px-3 font-semibold text-emerald-400/90">
+                                                    <div className="flex items-center gap-2">
+                                                        <span>សរុប ({group.date}):</span>
+                                                        <span className="bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded border border-slate-700 font-mono">
+                                                            {group.count} កំណត់ត្រា
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-2.5 px-3 font-mono font-bold text-amber-400">
+                                                    ${group.totalAppraisal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="py-2.5 px-3 font-mono font-bold text-emerald-400">
+                                                    ${group.totalRequested.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="py-2.5 px-3 text-slate-500 text-center">-</td>
+                                                <td className="py-2.5 px-3 text-slate-500 text-center">-</td>
+                                                <td className="py-2.5 px-3">
+                                                    <div className="flex flex-col gap-0.5 text-[10px] font-mono">
+                                                        <span className="text-emerald-400">ជោគជ័យ: {group.successCount}</span>
+                                                        <span className="text-rose-400">REJECT: {group.rejectCount}</span>
+                                                        {group.reviewCount > 0 && <span className="text-amber-400">REVIEW: {group.reviewCount}</span>}
+                                                    </div>
+                                                </td>
+                                                <td colSpan="2" className="py-2.5 px-3 text-slate-500 font-mono text-center">-</td>
+                                            </tr>
+                                        ))}
+
+                                        {/* Overall Grand Total Row */}
+                                        <tr className="bg-slate-950 font-bold text-slate-100 border-t border-emerald-500/40">
+                                            <td colSpan="10" className="py-3.5 px-3 font-bold text-emerald-400 uppercase tracking-wider">
                                                 <div className="flex items-center gap-2">
-                                                    <span>សរុប (TOTAL):</span>
-                                                    <span className="bg-slate-800 text-slate-300 font-mono text-[11px] px-2 py-0.5 rounded border border-slate-700">
-                                                        {submitTotals.count} កំណត់ត្រា
+                                                    <span>សរុបរួមទាំងអស់ (GRAND TOTAL):</span>
+                                                    <span className="bg-emerald-950 text-emerald-300 text-[11px] px-2.5 py-0.5 rounded border border-emerald-500/40 font-bold">
+                                                        {submitTotals.count} កំណត់ត្រា {groupedSubmitByDate.length > 1 ? `(${groupedSubmitByDate.length} ថ្ងៃ)` : ''}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="py-3 px-3 font-mono font-bold text-amber-400">
+                                            <td className="py-3.5 px-3 font-mono font-black text-amber-400 text-sm">
                                                 ${submitTotals.totalAppraisal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                                             </td>
-                                            <td className="py-3 px-3 font-mono font-bold text-emerald-400">
+                                            <td className="py-3.5 px-3 font-mono font-black text-emerald-400 text-sm">
                                                 ${submitTotals.totalRequested.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                                             </td>
-                                            <td className="py-3 px-3 text-slate-400 text-center">-</td>
-                                            <td className="py-3 px-3 text-slate-400 text-center">-</td>
-                                            <td className="py-3 px-3">
-                                                <div className="flex flex-col gap-0.5 text-[10px] font-mono">
+                                            <td className="py-3.5 px-3 text-slate-400 text-center">-</td>
+                                            <td className="py-3.5 px-3 text-slate-400 text-center">-</td>
+                                            <td className="py-3.5 px-3">
+                                                <div className="flex flex-col gap-0.5 text-[10px] font-mono font-bold">
                                                     <span className="text-emerald-400">ជោគជ័យ: {submitTotals.successCount}</span>
                                                     <span className="text-rose-400">REJECT: {submitTotals.rejectCount}</span>
+                                                    {submitTotals.reviewCount > 0 && <span className="text-amber-400">REVIEW: {submitTotals.reviewCount}</span>}
                                                 </div>
                                             </td>
-                                            <td colSpan="2" className="py-3 px-3 text-slate-500 font-mono text-center">-</td>
+                                            <td colSpan="2" className="py-3.5 px-3 text-slate-500 font-mono text-center">-</td>
                                         </tr>
                                     </tfoot>
                                 )}
