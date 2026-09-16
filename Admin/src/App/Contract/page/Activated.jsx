@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
 import { AiOutlineMenu } from "react-icons/ai";
 import { MdOutlineSync, MdInfo, MdCheckCircle, MdSearch, MdSwapHoriz, MdComment, MdPictureAsPdf, MdOutlineWallpaper } from "react-icons/md";
-import { FaLock, FaFileExcel, FaHistory } from "react-icons/fa";
+import { FaLock, FaFileExcel, FaHistory, FaCalendarAlt } from "react-icons/fa";
 import CustomModal from '../../../components/CustomModal';
 import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
@@ -12,9 +13,11 @@ import ContractActivityHistoryModal from '../components/ContractActivityHistoryM
 
 const Activated = () => {
     const { t } = useLanguage();
-    const { API_BASE1, API_BASE2, hasPermission, user } = useAuth();
+    const { API_BASE, API_BASE1, API_BASE2, hasPermission, user } = useAuth();
+    const navigate = useNavigate();
 
     const [activatedContracts, setActivatedContracts] = useState([]);
+    const [calcSchedules, setCalcSchedules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +37,31 @@ const Activated = () => {
 
     // UI Custom Modal alert state
     const [uiModal, setUiModal] = useState({ open: false, title: '', message: '', type: 'info' });
+
+    // Fetch saved calculation schedules to link matching Khmer names
+    const fetchCalcSchedules = React.useCallback(async () => {
+        try {
+            const brand = user?.brand || '';
+            const username = user?.username || '';
+            const role = user?.role || '';
+            const isImmutable = user?.isImmutable ? 'true' : 'false';
+            const base = API_BASE || API_BASE1 || '';
+            const url = `${base}/calculate-schedules?userBrand=${encodeURIComponent(brand)}&username=${encodeURIComponent(username)}&userRole=${encodeURIComponent(role)}&isImmutable=${isImmutable}`;
+            const res = await fetch(url);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && Array.isArray(data.data)) {
+                    setCalcSchedules(data.data);
+                }
+            }
+        } catch (err) {
+            console.error('Fetch calculate schedules error in Activated:', err);
+        }
+    }, [API_BASE, API_BASE1, user]);
+
+    useEffect(() => {
+        fetchCalcSchedules();
+    }, [fetchCalcSchedules]);
 
     const fetchActivatedContracts = React.useCallback(async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
@@ -420,7 +448,13 @@ const Activated = () => {
                                 const canWallpaper = hasPermission('/contract/activated', 'setWallpaper');
                                 const canCheck = hasPermission('/contract/activated', 'check');
                                 const canBlacklist = hasPermission('/contract/activated', 'blacklist');
-                                const hasAnyAction = canOpenMosyle || canOpenFb || canHistory || canComment || canLock || canWallpaper || canCheck || canBlacklist;
+                                const matchingCalcSchedule = calcSchedules.find(s => {
+                                    const sKh = String(s.customerName || '').trim().toLowerCase();
+                                    const itemKh = String(item.customerNameKh || '').trim().toLowerCase();
+                                    const itemEn = String(item.customerNameEn || '').trim().toLowerCase();
+                                    return (itemKh && sKh === itemKh) || (itemEn && sKh === itemEn);
+                                });
+                                const hasAnyAction = canOpenMosyle || canOpenFb || canHistory || canComment || canLock || canWallpaper || canCheck || canBlacklist || !!matchingCalcSchedule;
 
                                 return (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
@@ -462,7 +496,19 @@ const Activated = () => {
                                                     </button>
 
                                                     {openMenuId === item._id && (
-                                                        <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                        <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                            {matchingCalcSchedule && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        navigate(`/calculate/schedule-2?customerName=${encodeURIComponent(matchingCalcSchedule.customerName || item.customerNameKh || '')}&id=${matchingCalcSchedule._id}`);
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50/80 hover:bg-emerald-100 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
+                                                                >
+                                                                    <FaCalendarAlt className="text-emerald-600 text-sm" />
+                                                                    <span>Payment Schedule</span>
+                                                                </button>
+                                                            )}
                                                             {canOpenMosyle && (
                                                                 <button
                                                                     onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}

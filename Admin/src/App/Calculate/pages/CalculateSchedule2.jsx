@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import {
@@ -98,9 +99,29 @@ const CalculateSchedule2 = () => {
         }
     };
 
+    const [searchParams] = useSearchParams();
+
     useEffect(() => {
         if (API_BASE) fetchHistory();
     }, [API_BASE, user?.brand]);
+
+    // ─── Auto load record from Query Parameters ─────────────────────
+    useEffect(() => {
+        const customerQuery = searchParams.get('customerName');
+        const idQuery = searchParams.get('id');
+        const contractNumQuery = searchParams.get('contractNumber');
+
+        if (savedHistory.length > 0 && (customerQuery || idQuery || contractNumQuery)) {
+            const found = savedHistory.find(item =>
+                (idQuery && item._id === idQuery) ||
+                (customerQuery && item.customerName && item.customerName.trim().toLowerCase() === customerQuery.trim().toLowerCase()) ||
+                (contractNumQuery && item.contractNumber && item.contractNumber.trim() === contractNumQuery.trim())
+            );
+            if (found) {
+                handleLoadRecord(found);
+            }
+        }
+    }, [savedHistory, searchParams]);
 
     // ─── Helpers ───────────────────────────────────────────────────
     const parseRate = (val) => {
@@ -348,7 +369,7 @@ const CalculateSchedule2 = () => {
                                 កាលវិភាគបញ្ចាំ — Schedule 2
                             </h1>
                             <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                                គណនាកាលវិភាគសងប្រាក់បញ្ចាំ ព្រីនឯកសារ និងរក្សាទុកក្នុង Database
+                                គណនាកាលវិភាគសងប្រាក់បញ្ចាំ
                             </p>
                         </div>
                     </div>

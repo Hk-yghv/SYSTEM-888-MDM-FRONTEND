@@ -23,10 +23,15 @@ const FollowUp4DetailModal = ({
 
     const handleMetricChange = (field, value) => {
         const val = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
-        setMetrics(prev => ({
-            ...prev,
-            [field]: val
-        }));
+        setMetrics(prev => {
+            const next = { ...prev, [field]: val };
+            if (field === 'page' || field === 'telegram') {
+                const p = Number(field === 'page' ? val : (next.page || 0)) || 0;
+                const tg = Number(field === 'telegram' ? val : (next.telegram || 0)) || 0;
+                next.message = p + tg;
+            }
+            return next;
+        });
     };
 
     return (
@@ -84,13 +89,14 @@ const FollowUp4DetailModal = ({
                     {/* Input Fields Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-xs">
                         <div className="bg-slate-900/70 p-3 rounded-xl border border-indigo-600/40">
-                            <label className="block text-indigo-300 font-semibold mb-1">MESSAGE (សារសរុប)</label>
+                            <label className="block text-indigo-300 font-semibold mb-1">MESSAGE (PG + TG)</label>
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.message !== undefined ? metrics.message : 0}
-                                onChange={(e) => handleMetricChange('message', e.target.value)}
-                                className="w-full bg-slate-800 text-right text-indigo-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-indigo-500 font-mono"
+                                readOnly
+                                value={Number(metrics.page || 0) + Number(metrics.telegram || 0)}
+                                className="w-full bg-slate-800/80 text-right text-indigo-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none cursor-not-allowed font-mono"
+                                title="MESSAGE = PG (Page) + TG (Telegram)"
                             />
                         </div>
 

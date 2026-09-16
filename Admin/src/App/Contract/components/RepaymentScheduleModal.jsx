@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo, FaFilePdf } from 'react-icons/fa';
+import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo, FaFilePdf, FaCalculator } from 'react-icons/fa';
 import { MdClose, MdSwapHoriz } from 'react-icons/md';
+
+const round2 = (val) => {
+    const num = Number(val);
+    if (isNaN(num)) return 0;
+    return Number(num.toFixed(2));
+};
+
+const formatMoney = (val) => {
+    const num = Number(val);
+    if (isNaN(num)) return '0';
+    return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+};
 
 const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', defaultMonthIdx = null, onSaved, onRedeem }) => {
     const { API_BASE1, user } = useAuth();
@@ -10,7 +22,8 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         user?.username === '@hakyonghouv' ||
         user?.username === 'hakyonghouv' ||
         user?.isImmutable === true ||
-        user?.role === 'Administrator'
+        user?.role === 'Administrator' ||
+        user?.role === 'Admin'
     );
 
     const [rows, setRows] = useState([]);
@@ -19,6 +32,104 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     const [downloadingPdf, setDownloadingPdf] = useState(false);
     const [activeDropdownIdx, setActiveDropdownIdx] = useState(null);
     const rowRefs = useRef([]);
+
+    const applyCalculateSchedule2 = () => {
+        if (!contract) return;
+
+        const principal = Number(contract.amount || contract.totalAmount || 0);
+        const rateStr = String(contract.interest || contract.interestType || '14%');
+        const ratePercent = parseFloat(rateStr.replace(/[^0-9.]/g, '')) || 0;
+        
+        const durationStr = String(contract.duration || '12 Months');
+        const matched = durationStr.match(/\d+/);
+        const months = matched ? Math.max(1, parseInt(matched[0], 10)) : 1;
+        const isDays = durationStr.toLowerCase().includes('day') || durationStr.toLowerCase().includes('ថ្ងៃ') || durationStr.toLowerCase().includes('d');
+
+        const baseDate = contract.inputDate ? new Date(`${contract.inputDate}T00:00:00`) : new Date();
+        const originalDay = isNaN(baseDate.getTime()) ? new Date().getDate() : baseDate.getDate();
+
+        if (isDays) {
+            const d = new Date(baseDate);
+            d.setDate(d.getDate() + months);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${y}-${m}-${day}`;
+            const monthlyInterest = round2(principal * (ratePercent / 100));
+            const totalDue = round2(principal + monthlyInterest);
+
+            const newRows = [{
+                monthIndex: 1,
+                labelName: `${months} ថ្ងៃ (${months} Days)`,
+                dueDate: dateStr,
+                loanAmount: principal,
+                interest: monthlyInterest,
+                penalty: 0,
+                scheduledAmount: totalDue,
+                totalAmount: totalDue,
+                paidAmount: 0,
+                comment: '',
+                paidDate: '',
+                status: 'Pending'
+            }];
+            setRows(newRows);
+        } else {
+            const monthlyInterest = round2(principal * (ratePercent / 100));
+            const monthlyPrincipal = round2(principal / months);
+            const monthlyTotalDue = round2(monthlyPrincipal + monthlyInterest);
+
+            const addMonthsSafe = (bDate, origDay, mOffset) => {
+                const d = new Date(bDate);
+                d.setDate(1);
+                d.setMonth(d.getMonth() + mOffset);
+                const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+                d.setDate(Math.min(origDay, lastDay));
+                return d;
+            };
+
+            const newRows = [];
+            for (let i = 1; i <= months; i++) {
+                const d = addMonthsSafe(baseDate, originalDay, i);
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const dateStr = `${y}-${m}-${day}`;
+
+                newRows.push({
+                    monthIndex: i,
+                    labelName: `ខែទី ${i} (Month ${i})`,
+                    dueDate: dateStr,
+                    loanAmount: principal,
+                    interest: monthlyInterest,
+                    penalty: 0,
+                    scheduledAmount: monthlyTotalDue,
+                    totalAmount: monthlyTotalDue,
+                    paidAmount: 0,
+                    comment: '',
+                    paidDate: '',
+                    status: 'Pending'
+                });
+            }
+            setRows(newRows);
+        }
+    };
+
+    const autoSaveRows = async (updatedRows) => {
+        if (!contract?._id) return;
+        try {
+            await fetch(`${API_BASE1}/contracts/${contract._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    repaymentSchedule: updatedRows,
+                    modifiedByAdmin: isMasterAdmin
+                })
+            });
+            if (onSaved) onSaved();
+        } catch (err) {
+            console.error('Auto-save repayment schedule error:', err);
+        }
+    };
 
     const handleDirectExportPdf = async () => {
         if (!contract || downloadingPdf) return;
@@ -118,21 +229,26 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         const { isDays, count } = parseDuration(ctr?.duration);
         const totalLoan = Number(ctr?.amount) || Number(ctr?.totalAmount) || 0;
         const startDate = ctr?.inputDate ? new Date(ctr.inputDate) : new Date();
+        const rateStr = String(ctr?.interest || ctr?.interestType || '14%');
+        const ratePercent = parseFloat(rateStr.replace(/[^0-9.]/g, '')) || 0;
+        const defaultInterest = round2(totalLoan * (ratePercent / 100));
 
         if (isDays) {
             // For DAYS (e.g. 15 Days): generate ONLY 1 ROW with due date N days later!
             const d = new Date(startDate);
             d.setDate(d.getDate() + count);
             const dateStr = d.toISOString().split('T')[0];
+            const totalDue = round2(totalLoan + defaultInterest);
 
             return [{
                 monthIndex: 1,
                 labelName: `${count} ថ្ងៃ (${count} Days)`,
                 dueDate: dateStr,
                 loanAmount: totalLoan,
+                interest: defaultInterest,
                 penalty: 0,
-                scheduledAmount: totalLoan,
-                totalAmount: totalLoan,
+                scheduledAmount: totalDue,
+                totalAmount: totalDue,
                 paidAmount: 0,
                 comment: '',
                 paidDate: '',
@@ -140,7 +256,8 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             }];
         } else {
             // For MONTHS (e.g. 3 Months): generate count rows (1 row per month)
-            const monthlyBase = Number(ctr?.monthlyPayment) || (totalLoan / count);
+            const monthlyPrincipal = round2(totalLoan / count);
+            const monthlyBase = Number(ctr?.monthlyPayment) || round2(monthlyPrincipal + defaultInterest);
             const generated = [];
             for (let i = 0; i < count; i++) {
                 const d = new Date(startDate);
@@ -152,9 +269,10 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                     labelName: `ខែទី ${i + 1} (Month ${i + 1})`,
                     dueDate: dateStr,
                     loanAmount: totalLoan,
+                    interest: defaultInterest,
                     penalty: 0,
-                    scheduledAmount: Math.round(monthlyBase),
-                    totalAmount: Math.round(monthlyBase),
+                    scheduledAmount: monthlyBase,
+                    totalAmount: monthlyBase,
                     paidAmount: 0,
                     comment: '',
                     paidDate: '',
@@ -168,6 +286,10 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     useEffect(() => {
         if (!open || !contract) return;
 
+        const rateStr = String(contract?.interest || contract?.interestType || '14%');
+        const ratePercent = parseFloat(rateStr.replace(/[^0-9.]/g, '')) || 0;
+        const totalLoan = Number(contract?.amount || contract?.totalAmount || 0);
+
         const baseRows = Array.isArray(contract.repaymentSchedule) && contract.repaymentSchedule.length > 0
             ? contract.repaymentSchedule
             : generateDefaultRows(contract);
@@ -178,12 +300,17 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 ? row
                 : { ...row, dueDate: generatedRows[index]?.dueDate || '' };
             const autoPenalty = computeLatePenalty(rowWithDueDate, latePenaltyRules);
-            const scheduledAmount = Number(row.scheduledAmount || 0);
-            const total = Number(row.totalAmount || 0) || scheduledAmount + Number(row.penalty || 0);
+            const scheduledAmount = round2(Number(row.scheduledAmount || 0));
+            const total = round2(Number(row.totalAmount || 0)) || round2(scheduledAmount + Number(row.penalty || 0));
+            const rowInterest = row.interest !== undefined && row.interest !== null && row.interest !== ''
+                ? round2(Number(row.interest))
+                : (generatedRows[index]?.interest ?? round2(totalLoan * (ratePercent / 100)));
+
             return {
                 ...rowWithDueDate,
-                penalty: autoPenalty > 0 ? autoPenalty : Number(row.penalty || 0),
-                totalAmount: autoPenalty > 0 ? scheduledAmount + autoPenalty : total
+                interest: rowInterest,
+                penalty: autoPenalty > 0 ? autoPenalty : round2(Number(row.penalty || 0)),
+                totalAmount: autoPenalty > 0 ? round2(scheduledAmount + autoPenalty) : total
             };
         });
 
@@ -221,7 +348,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             if (field === 'penalty' || field === 'scheduledAmount' || field === 'dueDate') {
                 const penaltyNum = Number(field === 'penalty' ? val : row.penalty) || 0;
                 const schedNum = Number(field === 'scheduledAmount' ? val : row.scheduledAmount) || 0;
-                row.totalAmount = penaltyNum + schedNum;
+                row.totalAmount = round2(penaltyNum + schedNum);
             }
 
             updated[idx] = row;
@@ -230,76 +357,72 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     };
 
     const handleSaveRowDraft = (idx) => {
-        setRows(prev => {
-            const updated = [...prev];
-            if (updated[idx].status === 'Pending') {
-                updated[idx].status = 'Saved';
-            }
-            return updated;
-        });
+        const updated = [...rows];
+        if (updated[idx].status === 'Pending') {
+            updated[idx].status = 'Saved';
+        }
+        setRows(updated);
         setActiveDropdownIdx(null);
+        autoSaveRows(updated);
     };
 
     const handleMarkPaid = (idx) => {
         const todayStr = new Date().toISOString().split('T')[0];
-        setRows(prev => {
-            const updated = [...prev];
-            const current = updated[idx];
-            const paidVal = Number(current.paidAmount) || Number(current.totalAmount) || 0;
+        const updated = [...rows];
+        const current = updated[idx];
+        const paidVal = Number(current.paidAmount) || Number(current.totalAmount) || 0;
 
-            updated[idx] = {
-                ...current,
-                paidAmount: paidVal,
-                paidDate: current.paidDate || todayStr,
-                status: 'Paid'
-            };
-            return updated;
-        });
+        updated[idx] = {
+            ...current,
+            paidAmount: round2(paidVal),
+            paidDate: current.paidDate || todayStr,
+            status: 'Paid'
+        };
+        setRows(updated);
         setActiveDropdownIdx(null);
+        autoSaveRows(updated);
     };
 
     const handleMarkPayOff = (idx) => {
         const todayStr = new Date().toISOString().split('T')[0];
-        setRows(prev => {
-            const updated = prev.map((r, i) => {
-                if (i === idx) {
-                    const paidVal = Number(r.paidAmount) || Number(r.totalAmount) || 0;
-                    return {
-                        ...r,
-                        paidAmount: paidVal,
-                        paidDate: r.paidDate || todayStr,
-                        status: 'PayOff'
-                    };
-                }
-                if (i > idx) {
-                    return {
-                        ...r,
-                        status: 'Settled'
-                    };
-                }
-                return r;
-            });
-            return updated;
+        const updated = rows.map((r, i) => {
+            if (i === idx) {
+                const paidVal = Number(r.paidAmount) || Number(r.totalAmount) || 0;
+                return {
+                    ...r,
+                    paidAmount: round2(paidVal),
+                    paidDate: r.paidDate || todayStr,
+                    status: 'PayOff'
+                };
+            }
+            if (i > idx) {
+                return {
+                    ...r,
+                    status: 'Settled'
+                };
+            }
+            return r;
         });
+        setRows(updated);
         setActiveDropdownIdx(null);
+        autoSaveRows(updated);
     };
 
     const handleRevertRow = (idx) => {
         if (!isMasterAdmin) return;
-        setRows(prev => {
-            const updated = prev.map((r, i) => {
-                if (i >= idx) {
-                    return {
-                        ...r,
-                        status: 'Pending',
-                        paidDate: r.status === 'Paid' || r.status === 'PayOff' ? '' : r.paidDate
-                    };
-                }
-                return r;
-            });
-            return updated;
+        const updated = rows.map((r, i) => {
+            if (i >= idx) {
+                return {
+                    ...r,
+                    status: 'Pending',
+                    paidDate: r.status === 'Paid' || r.status === 'PayOff' ? '' : r.paidDate
+                };
+            }
+            return r;
         });
+        setRows(updated);
         setActiveDropdownIdx(null);
+        autoSaveRows(updated);
     };
 
     const applyLatePenaltyToAllRows = () => {
@@ -309,7 +432,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             return {
                 ...row,
                 penalty,
-                totalAmount: scheduled + penalty
+                totalAmount: round2(scheduled + penalty)
             };
         }));
     };
@@ -379,38 +502,50 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     };
 
     return (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[99999] p-4 select-none">
-            <div className="bg-[#fff] border border-indigo-500/40 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-xs">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 select-none">
+            <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-xs text-slate-800">
 
                 {/* Header */}
-                <div className="px-5 py-3 border-b border-gray-800 bg-[#fff] flex items-center justify-between flex-shrink-0">
+                <div className="px-5 py-3 border-b border-slate-200 bg-white flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <div>
-                            <h3 className="text-sm font-bold text-gray-100 flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
                                 <span>តារាងព័ត៌មានបង់ប្រាក់កម្ចី</span>
-                                <span className="px-2.5 py-0.5 text-indigo-300 border border-indigo-700/60 rounded-full text-[10px] font-bold">
+                                <span className="px-2.5 py-0.5 text-indigo-700 bg-indigo-50 border border-indigo-300 rounded-full text-[10px] font-bold">
                                     {contract.contractId}
                                 </span>
                                 {isMasterAdmin && (
-                                    <span className="px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-600/60 rounded-full text-[9px] font-bold uppercase">
+                                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded-full text-[9px] font-bold uppercase">
                                         Master Admin Privilege
                                     </span>
                                 )}
                             </h3>
-                            <p className="text-[11px] text-gray-400">
-                                ភ្ញៀវ៖ <span className="text-emerald-500 font-bold">{contract.customerNameKh || contract.customerNameEn}</span> |
-                                ស្នើ៖ <span className="text-amber-300 font-bold">{contract.duration || '12 Months'}</span> |
-                                ប្រាក់កម្ចីសរុប៖ <span className="text-emerald-400 font-mono font-bold">${Number(contract.amount || 0).toLocaleString()}</span>
+                            <p className="text-[11px] text-slate-600 mt-0.5">
+                                ភ្ញៀវ៖ <span className="text-emerald-700 font-bold">{contract.customerNameKh || contract.customerNameEn}</span> |
+                                ស្នើ៖ <span className="text-indigo-700 font-bold">{contract.duration || '12 Months'}</span> |
+                                ប្រាក់កម្ចីសរុប៖ <span className="text-emerald-700 font-mono font-bold">${formatMoney(contract.amount || contract.totalAmount || 0)}</span>
+                                {contract.interest && <span> | ការប្រាក់៖ <span className="text-violet-700 font-bold">{contract.interest}</span></span>}
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {isSetupActivate && (
+                            <button
+                                type="button"
+                                onClick={applyCalculateSchedule2}
+                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
+                                title="គណនាដោយស្វ័យប្រវត្តិតាមរូបមន្ត Calculate Schedule 2"
+                            >
+                                <FaCalculator size={12} />
+                                <span>គណនាតាម Calculate Schedule 2</span>
+                            </button>
+                        )}
                         <button
                             type="button"
                             disabled={downloadingPdf}
                             onClick={handleDirectExportPdf}
-                            className={`px-3 py-1.5 ${downloadingPdf ? 'bg-rose-400 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 cursor-pointer'} text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 shadow-sm`}
+                            className={`px-3 py-1.5 ${downloadingPdf ? 'bg-rose-400 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 cursor-pointer'} text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm`}
                             title="Download Customer Dossier & Repayment Schedule as PDF directly"
                         >
                             <FaFilePdf size={12} className={downloadingPdf ? 'animate-pulse' : ''} />
@@ -419,11 +554,11 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         <button
                             type="button"
                             onClick={applyLatePenaltyToAllRows}
-                            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-gray-950 rounded-lg text-[10px] font-bold cursor-pointer transition-all"
+                            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-gray-950 rounded-lg text-xs font-bold cursor-pointer transition-all shadow-xs"
                         >
                             Auto Penalty
                         </button>
-                        <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-bold cursor-pointer transition-all flex items-center justify-center">
+                        <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer transition-all flex items-center justify-center">
                             <MdClose size={18} />
                         </button>
                     </div>
@@ -431,148 +566,187 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
                 {/* Schedule Table Container */}
                 <div className="flex-1 overflow-x-auto overflow-y-auto p-4 pb-32 min-h-[350px] space-y-3">
+                    {/* Top Prominent Action & Info Banner (Only when in setup & activate mode) */}
                     {isSetupActivate && (
-                        <div className="p-3 rounded-2xl bg-indigo-950/60 border border-indigo-600/40 text-indigo-200 text-xs font-medium flex items-center gap-2">
-                            <FaCalendarAlt className="text-indigo-400 text-base flex-shrink-0" />
-                            <span className='text-black'>
-                                សូមពិនិត្យ និងបញ្ចូលកាលបរិច្ឆេទថ្ងៃខែត្រូវបង់ត្រឡប់ និងទឹកប្រាក់សម្រាប់ខែនីមួយៗខាងក្រោមឱ្យបានគ្រប់គ្រាន់ រួចចុចប៊ូតុង <strong>"រក្សាទុក & Activate Contract"</strong> ដើម្បីដំណើរការ!
-                            </span>
+                        <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 text-slate-800 text-xs font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                            <div className="flex items-center gap-2">
+                                <FaCalendarAlt className="text-indigo-600 text-lg flex-shrink-0" />
+                                <span>
+                                    សូមកំណត់កាលបរិច្ឆេទថ្ងៃខែត្រូវបង់ និងទឹកប្រាក់សម្រាប់ខែនីមួយៗ ឬចុចប៊ូតុង <strong>"គណនាតាម Calculate Schedule 2"</strong> ដើម្បីបំពេញអូតូ រួចចុច <strong>"រក្សាទុក & Activate Contract"</strong>!
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={applyCalculateSchedule2}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-md flex-shrink-0"
+                            >
+                                <FaCalculator size={13} />
+                                <span>គណនាតាម Calculate Schedule 2</span>
+                            </button>
                         </div>
                     )}
 
-                    <table className="w-full text-left text-xs whitespace-nowrap border border-gray-800 rounded-xln">
-                        <thead className="text-gray-300 uppercase tracking-wider border-b border-gray-800">
+                    <table className="w-full text-left text-xs whitespace-nowrap border border-slate-200 rounded-xl overflow-hidden">
+                        <thead className="bg-slate-50 text-indigo-950 font-bold uppercase tracking-wider border-b border-slate-200">
                             <tr>
-                                <th className="px-3 py-2.5 text-center">ខែ/ថ្ងៃ</th>
-                                <th className="px-3 py-2.5">ថ្ងៃខែត្រូវបង់</th>
-                                <th className="px-3 py-2.5 font-mono text-emerald-400">Total loan amount</th>
-                                <th className="px-3 py-2.5 text-amber-400 font-bold">ពិន័យ</th>
-                                <th className="px-3 py-2.5 text-sky-400 font-bold">ត្រូវបង់</th>
-                                <th className="px-3 py-2.5 text-emerald-300 font-extrabold">Total</th>
-                                <th className="px-3 py-2.5 text-emerald-400">ភ្ញៀវបានបង់</th>
-                                <th className="px-3 py-2.5">Comment (Note)</th>
-                                <th className="px-3 py-2.5 text-purple-300">កាលបរិច្ឆេទបានបង់</th>
-                                {!isReadOnly && <th className="px-3 py-2.5 text-center">Action ($)</th>}
+                                <th className="px-3 py-3 text-center">ខែ/ថ្ងៃ</th>
+                                <th className="px-3 py-3">ថ្ងៃខែត្រូវបង់</th>
+                                <th className="px-3 py-3 font-mono text-emerald-700">Total loan amount</th>
+                                <th className="px-3 py-3 text-violet-700 font-mono font-bold">ការប្រាក់</th>
+                                <th className="px-3 py-3 text-amber-600 font-bold">ពិន័យ</th>
+                                <th className="px-3 py-3 text-sky-700 font-bold">ត្រូវបង់</th>
+                                <th className="px-3 py-3 text-emerald-700 font-extrabold">Total</th>
+                                <th className="px-3 py-3 text-emerald-800">ភ្ញៀវបានបង់</th>
+                                <th className="px-3 py-3">Comment (Note)</th>
+                                <th className="px-3 py-3 text-purple-700">កាលបរិច្ឆេទបានបង់</th>
+                                {!isReadOnly && <th className="px-3 py-3 text-center">Action ($)</th>}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-800/60 font-medium">
+                        <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                             {rows.map((row, idx) => {
-                                const isLocked = (!isMasterAdmin && (row.status === 'Paid' || row.status === 'PayOff' || row.status === 'Settled')) || isReadOnly;
+                                const isLocked = (!isMasterAdmin && !isSetupActivate && (row.status === 'Paid' || row.status === 'PayOff' || row.status === 'Settled')) || isReadOnly;
+                                const canEditDueDate = (isMasterAdmin || isSetupActivate) && !isReadOnly;
+                                const canEditScheduled = (isMasterAdmin || isSetupActivate || !isLocked) && !isReadOnly;
                                 const isCurrentActive = idx === activeRowIdx && !isReadOnly;
                                 const isLastMonth = idx === rows.length - 1;
+
+                                const displayInterest = row.interest !== undefined && row.interest !== null && row.interest !== ''
+                                    ? round2(row.interest)
+                                    : round2(Number(row.loanAmount || contract.amount || 0) * (parseFloat(String(contract.interest || '14%').replace(/[^0-9.]/g, '')) || 0) / 100);
 
                                 return (
                                     <tr
                                         key={idx}
                                         ref={el => rowRefs.current[idx] = el}
-                                        className={`transition-colors ${row.status === 'Paid' ? 'bg-emerald-950/20' : row.status === 'PayOff' ? 'bg-indigo-950/30' : isCurrentActive ? 'bg-amber-950/30 border-l-4 border-amber-500' : idx === defaultMonthIdx ? 'bg-indigo-950/20 border-l-4 border-indigo-400' : 'hover:bg-gray-900/50'}`}>
-                                        <td className="px-3 py-2 text-center font-bold text-white font-mono">
-                                            {row.labelName || `Month ${row.monthIndex}`}
+                                        className={`transition-colors ${row.status === 'Paid' ? 'bg-emerald-50/50' : row.status === 'PayOff' ? 'bg-indigo-50/50' : isCurrentActive ? 'bg-amber-50/70 border-l-4 border-amber-500' : idx === defaultMonthIdx ? 'bg-indigo-50/50 border-l-4 border-indigo-400' : 'hover:bg-slate-50'}`}>
+                                        <td className="px-3 py-2.5 text-center font-bold text-slate-900 font-mono">
+                                             {row.labelName || `Month ${row.monthIndex}`}
                                         </td>
 
                                         {/* Due Date */}
-                                        <td className="px-3 py-2 font-mono">
-                                            {isLocked ? (
-                                                <span className="font-bold text-gray-200">{row.dueDate || '—'}</span>
+                                        <td className="px-3 py-2.5 font-mono">
+                                             {!canEditDueDate ? (
+                                                <span className="font-bold text-slate-900">{row.dueDate || '—'}</span>
                                             ) : (
                                                 <input
                                                     type="date"
                                                     value={row.dueDate || ''}
                                                     onChange={(e) => handleRowChange(idx, 'dueDate', e.target.value)}
-                                                    className="px-2 py-1 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-lg text-gray-100 text-xs outline-none font-mono"
+                                                    className="px-2 py-1 bg-white border border-slate-300 focus:border-indigo-500 rounded-lg text-slate-900 text-xs outline-none font-mono shadow-2xs"
                                                 />
                                             )}
                                         </td>
 
                                         {/* Total Loan Amount */}
-                                        <td className="px-3 py-2 font-mono font-bold text-emerald-400">
-                                            ${Number(row.loanAmount || 0).toLocaleString()}
+                                        <td className="px-3 py-2.5 font-mono font-bold text-emerald-700">
+                                            ${formatMoney(row.loanAmount || 0)}
                                         </td>
 
-                                        {/* Penalty */}
-                                        <td className="px-3 py-2 font-mono">
+                                        {/* Interest */}
+                                        <td className="px-3 py-2.5 font-mono">
                                             {isLocked ? (
-                                                <span className="font-bold text-amber-400">${Number(row.penalty || 0).toLocaleString()}</span>
+                                                <span className="font-bold text-violet-700">
+                                                    ${formatMoney(displayInterest)}
+                                                </span>
                                             ) : (
                                                 <input
                                                     type="number"
+                                                    step="any"
+                                                    value={row.interest !== undefined && row.interest !== null ? row.interest : ''}
+                                                    onChange={(e) => handleRowChange(idx, 'interest', e.target.value)}
+                                                    className="w-20 px-2 py-1 bg-white border border-slate-300 focus:border-violet-500 rounded-lg text-violet-700 font-bold font-mono text-xs outline-none shadow-2xs"
+                                                    placeholder={String(displayInterest)}
+                                                />
+                                            )}
+                                        </td>
+
+                                        {/* Penalty */}
+                                        <td className="px-3 py-2.5 font-mono">
+                                            {isLocked ? (
+                                                <span className="font-bold text-amber-600">${formatMoney(row.penalty || 0)}</span>
+                                            ) : (
+                                                <input
+                                                    type="number"
+                                                    step="any"
                                                     value={row.penalty}
                                                     onChange={(e) => handleRowChange(idx, 'penalty', e.target.value)}
-                                                    className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 focus:border-amber-500 rounded-lg text-amber-300 font-bold font-mono text-xs outline-none"
+                                                    className="w-20 px-2 py-1 bg-white border border-slate-300 focus:border-amber-500 rounded-lg text-amber-700 font-bold font-mono text-xs outline-none shadow-2xs"
                                                     placeholder="0"
                                                 />
                                             )}
                                         </td>
 
                                         {/* Scheduled Monthly Due */}
-                                        <td className="px-3 py-2 font-mono">
-                                            {isLocked ? (
-                                                <span className="font-bold text-sky-300">${Number(row.scheduledAmount || 0).toLocaleString()}</span>
+                                        <td className="px-3 py-2.5 font-mono">
+                                            {!canEditScheduled ? (
+                                                <span className="font-bold text-sky-700">${formatMoney(row.scheduledAmount || 0)}</span>
                                             ) : (
                                                 <input
                                                     type="number"
+                                                    step="any"
                                                     value={row.scheduledAmount}
                                                     onChange={(e) => handleRowChange(idx, 'scheduledAmount', e.target.value)}
-                                                    className="w-24 px-2 py-1 bg-gray-900 border border-gray-700 focus:border-sky-500 rounded-lg text-sky-300 font-bold font-mono text-xs outline-none"
+                                                    className="w-24 px-2 py-1 bg-white border border-slate-300 focus:border-sky-500 rounded-lg text-sky-700 font-bold font-mono text-xs outline-none shadow-2xs"
                                                     placeholder="0"
                                                 />
                                             )}
                                         </td>
 
                                         {/* Total (Penalty + Scheduled) */}
-                                        <td className="px-3 py-2 font-mono font-extrabold text-emerald-300">
-                                            ${(Number(row.penalty || 0) + Number(row.scheduledAmount || 0)).toLocaleString()}
+                                        <td className="px-3 py-2.5 font-mono font-extrabold text-emerald-700">
+                                            ${formatMoney(round2(Number(row.penalty || 0) + Number(row.scheduledAmount || 0)))}
                                         </td>
 
                                         {/* Paid Amount */}
-                                        <td className="px-3 py-2 font-mono">
+                                        <td className="px-3 py-2.5 font-mono">
                                             {isLocked ? (
-                                                <span className="font-bold text-emerald-400">${Number(row.paidAmount || 0).toLocaleString()}</span>
+                                                <span className="font-bold text-emerald-700">${formatMoney(row.paidAmount || 0)}</span>
                                             ) : (
                                                 <input
                                                     type="number"
+                                                    step="any"
                                                     value={row.paidAmount}
                                                     onChange={(e) => handleRowChange(idx, 'paidAmount', e.target.value)}
-                                                    className="w-24 px-2 py-1 bg-gray-900 border border-gray-700 focus:border-emerald-500 rounded-lg text-emerald-400 font-bold font-mono text-xs outline-none"
+                                                    className="w-24 px-2 py-1 bg-white border border-slate-300 focus:border-emerald-500 rounded-lg text-emerald-700 font-bold font-mono text-xs outline-none shadow-2xs"
                                                     placeholder="0"
                                                 />
                                             )}
                                         </td>
 
                                         {/* Comment */}
-                                        <td className="px-3 py-2">
+                                        <td className="px-3 py-2.5">
                                             {isLocked ? (
-                                                <span className="text-gray-300 italic text-[11px]">{row.comment || '—'}</span>
+                                                <span className="text-slate-500 italic text-[11px]">{row.comment || '—'}</span>
                                             ) : (
                                                 <input
                                                     type="text"
                                                     value={row.comment || ''}
                                                     onChange={(e) => handleRowChange(idx, 'comment', e.target.value)}
                                                     placeholder="Note/comment..."
-                                                    className="w-36 px-2 py-1 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-lg text-gray-100 text-xs outline-none"
+                                                    className="w-36 px-2 py-1 bg-white border border-slate-300 focus:border-indigo-500 rounded-lg text-slate-800 text-xs outline-none shadow-2xs"
                                                 />
                                             )}
                                         </td>
 
                                         {/* Paid Date */}
-                                        <td className="px-3 py-2 font-mono">
-                                            {isReadOnly ? (
-                                                <span className="font-bold text-purple-300">{row.paidDate || '—'}</span>
+                                        <td className="px-3 py-2.5 font-mono">
+                                            {(!isMasterAdmin || isReadOnly) ? (
+                                                <span className="font-bold text-purple-700">{row.paidDate || '—'}</span>
                                             ) : (
                                                 <input
                                                     type="date"
                                                     value={row.paidDate || ''}
                                                     onChange={(e) => handleRowChange(idx, 'paidDate', e.target.value)}
-                                                    className="px-2 py-1 bg-gray-900 border border-gray-700 focus:border-purple-500 rounded-lg text-purple-300 font-bold font-mono text-xs outline-none"
+                                                    className="px-2 py-1 bg-white border border-slate-300 focus:border-purple-500 rounded-lg text-purple-700 font-bold font-mono text-xs outline-none shadow-2xs"
                                                 />
                                             )}
                                         </td>
 
                                         {/* Action ($ Dropdown) */}
                                         {!isReadOnly && (
-                                            <td className={`px-3 py-2 text-center relative ${activeDropdownIdx === idx ? 'z-[999]' : ''}`}>
+                                            <td className={`px-3 py-2.5 text-center relative ${activeDropdownIdx === idx ? 'z-[999]' : ''}`}>
                                                 {row.status === 'Settled' ? (
-                                                    <span className="text-gray-600 italic text-[10px]">Settled</span>
+                                                    <span className="text-slate-400 italic text-[10px]">Settled</span>
                                                 ) : isCurrentActive || isMasterAdmin ? (
                                                     <div className="relative inline-block text-left">
                                                         <button
@@ -584,15 +758,15 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                         </button>
 
                                                         {activeDropdownIdx === idx && (
-                                                            <div className={`absolute right-0 ${idx === rows.length - 1 && rows.length > 2 ? 'bottom-full mb-1' : 'top-full mt-1'} w-36 bg-gray-900 border border-indigo-500/80 rounded-xl shadow-2xl z-[99999] overflow-hidden animate-in zoom-in-95 duration-100`}>
-                                                                <div className="px-2.5 py-1 bg-indigo-950/80 border-b border-indigo-800 text-[9px] font-bold text-indigo-300 uppercase">
+                                                            <div className={`absolute right-0 ${idx === rows.length - 1 && rows.length > 2 ? 'bottom-full mb-1' : 'top-full mt-1'} w-36 bg-white border border-slate-200 rounded-xl shadow-2xl z-[99999] overflow-hidden animate-in zoom-in-95 duration-100`}>
+                                                                <div className="px-2.5 py-1 bg-indigo-50 border-b border-slate-200 text-[9px] font-bold text-indigo-700 uppercase">
                                                                     Payment Options
                                                                 </div>
 
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleSaveRowDraft(idx)}
-                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-emerald-500 hover:bg-gray-200 flex items-center gap-1.5 cursor-pointer"
+                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-emerald-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
                                                                 >
                                                                     <FaSave size={11} /> Save
                                                                 </button>
@@ -600,7 +774,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => { handleRowChange(idx, 'status', 'Pending'); setActiveDropdownIdx(null); }}
-                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-sky-300 hover:bg-gray-200 flex items-center gap-1.5 cursor-pointer"
+                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-sky-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
                                                                 >
                                                                     <FaEdit size={11} /> Edit
                                                                 </button>
@@ -609,7 +783,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleMarkPaid(idx)}
-                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-amber-300 hover:bg-gray-200 flex items-center gap-1.5 cursor-pointer border-t border-gray-800"
+                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-amber-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
                                                                     >
                                                                         <FaCheckCircle size={11} /> Paid
                                                                     </button>
@@ -618,7 +792,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleMarkPayOff(idx)}
-                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-indigo-300 hover:bg-gray-200 flex items-center gap-1.5 cursor-pointer border-t border-gray-800"
+                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-indigo-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
                                                                 >
                                                                     <FaLock size={11} /> Pay Off
                                                                 </button>
@@ -627,7 +801,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleRevertRow(idx)}
-                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-red-400 hover:bg-red-950/60 flex items-center gap-1.5 cursor-pointer border-t border-gray-800"
+                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
                                                                     >
                                                                         <FaUndo size={11} /> Revert / Unlock
                                                                     </button>
@@ -636,7 +810,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-gray-600 text-[10px]">—</span>
+                                                    <span className="text-slate-400 text-[10px]">—</span>
                                                 )}
                                             </td>
                                         )}
@@ -648,26 +822,30 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 </div>
 
                 {/* Footer Buttons */}
-                <div className="px-5 py-3 border-t border-gray-800 bg-[#0f1426] flex items-center justify-end gap-2 flex-shrink-0">
+                <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2 flex-shrink-0">
                     <button
                         type="button"
                         onClick={() => setOpen(false)}
-                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                        className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
                     >
                         បិទ (Close)
                     </button>
 
-                    <button
-                        type="button"
-                        onClick={handleRedeem}
-                        disabled={submitting}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5 transition-all"
-                    >
-                        <MdSwapHoriz size={16} />
-                        <span>Redeem</span>
-                    </button>
+                    {/* Redeem button ONLY visible if payoff exists and NOT in setup_activate */}
+                    {!isSetupActivate && mode !== 'setup_activate' && (rows.some(r => r.status === 'PayOff') || contract?.status === 'PayOff' || contract?.status === 'Redeem') && (
+                        <button
+                            type="button"
+                            onClick={handleRedeem}
+                            disabled={submitting}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5 transition-all"
+                        >
+                            <MdSwapHoriz size={16} />
+                            <span>Redeem</span>
+                        </button>
+                    )}
 
-                    {!isReadOnly && (
+                    {/* Save Schedule button ONLY visible for master admin or in setup mode */}
+                    {!isReadOnly && (isMasterAdmin || isSetupActivate) && (
                         <button
                             type="button"
                             onClick={() => handleSaveSchedule(isSetupActivate ? 'Activated' : null)}

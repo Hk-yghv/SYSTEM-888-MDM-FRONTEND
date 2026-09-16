@@ -488,7 +488,7 @@ const FollowUp4 = () => {
         const s1 = Number(detailMetrics.success1) || 0;
         const s2 = Number(detailMetrics.success2) || 0;
 
-        const totalInquiries = detailMetrics.message ? Number(detailMetrics.message) : (p + tg);
+        const totalInquiries = p + tg;
         const totalSubmits = ps + tgs;
         const totalProcessed = nr + inq + rcs + mr;
         const totalSuccess = s1 + s2;
@@ -524,15 +524,17 @@ const FollowUp4 = () => {
         };
 
         detailHistoryList.forEach(row => {
-            const msg = row.message !== undefined && row.message !== null ? Number(row.message) : (Number(row.page || 0) + Number(row.telegram || 0));
+            const p = Number(row.page || 0);
+            const tg = Number(row.telegram || 0);
+            const msg = p + tg;
             const ps = Number(row.pageSubmit || 0);
             const tgs = Number(row.telegramSubmit || 0);
             const s1 = Number(row.success1 || 0);
             const s2 = Number(row.success2 || 0);
 
             totals.message += msg;
-            totals.page += Number(row.page || 0);
-            totals.telegram += Number(row.telegram || 0);
+            totals.page += p;
+            totals.telegram += tg;
             totals.noReply += Number(row.noReply || 0);
             totals.inquire += Number(row.inquire || 0);
             totals.rejectCs += Number(row.rejectCs || 0);
@@ -790,11 +792,10 @@ const FollowUp4 = () => {
             <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-700/80 pb-2">
                 <button
                     onClick={() => setActiveTab('submit')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                        activeTab === 'submit'
-                            ? 'bg-emerald-600 text-white border-b-2 border-emerald-400 shadow-md'
-                            : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'submit'
+                        ? 'bg-emerald-600 text-white border-b-2 border-emerald-400 shadow-md'
+                        : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        }`}
                 >
                     <FaListUl />
                     <span>FOLLOW UP SUBMIT</span>
@@ -802,11 +803,10 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('rejectSubmit')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                        activeTab === 'rejectSubmit'
-                            ? 'bg-rose-600 text-white border-b-2 border-rose-400 shadow-md'
-                            : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'rejectSubmit'
+                        ? 'bg-rose-600 text-white border-b-2 border-rose-400 shadow-md'
+                        : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        }`}
                 >
                     <FaBan />
                     <span>REJECT SUBMIT</span>
@@ -814,11 +814,10 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('rejectCs')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                        activeTab === 'rejectCs'
-                            ? 'bg-amber-600 text-white border-b-2 border-amber-400 shadow-md'
-                            : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'rejectCs'
+                        ? 'bg-amber-600 text-white border-b-2 border-amber-400 shadow-md'
+                        : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        }`}
                 >
                     <FaBan />
                     <span>REJECT CS</span>
@@ -826,11 +825,10 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('detail')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                        activeTab === 'detail'
-                            ? 'bg-sky-600 text-white border-b-2 border-sky-400 shadow-md'
-                            : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'detail'
+                        ? 'bg-sky-600 text-white border-b-2 border-sky-400 shadow-md'
+                        : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        }`}
                 >
                     <FaCalculator />
                     <span>DETAIL</span>
@@ -945,13 +943,12 @@ const FollowUp4 = () => {
                                                 <td className="py-2.5 px-3 text-slate-300">{item.assetType}</td>
                                                 <td className="py-2.5 px-3 font-medium text-slate-200">{item.model}</td>
                                                 <td className="py-2.5 px-3">
-                                                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                                                        item.status === 'SUCCESS 1' || item.status === 'SUCCESS 2'
-                                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                                                            : item.status === 'REJECT'
+                                                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${item.status === 'SUCCESS 1' || item.status === 'SUCCESS 2'
+                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                                                        : item.status === 'REJECT'
                                                             ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
                                                             : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                                                    }`}>
+                                                        }`}>
                                                         {item.status}
                                                     </span>
                                                 </td>
@@ -1025,7 +1022,7 @@ const FollowUp4 = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-xs text-left text-slate-200">
                                 <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
-                                    <tr>
+                                    <tr className='text-white'>
                                         <th className="py-3 px-3 text-center w-10">#</th>
                                         <th className="py-3 px-3">កាលបរិច្ឆេទ</th>
                                         <th className="py-3 px-3 text-center font-bold text-rose-400">សរុប (TOTAL)</th>
@@ -1035,7 +1032,7 @@ const FollowUp4 = () => {
                                         <th className="py-3 px-3 text-center">សកម្មភាព</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-700/50">
+                                <tbody className="divide-y text-white divide-slate-700/50">
                                     {rejectSubmitLoading ? (
                                         <tr>
                                             <td colSpan={4 + droplists.rejectSubmitReasons.length} className="text-center py-8 text-slate-400">
@@ -1229,39 +1226,6 @@ const FollowUp4 = () => {
                         </div>
                     </div>
 
-                    {/* Automated Calculations Summary Cards */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                        <div className="bg-slate-800/90 p-4 rounded-2xl border border-sky-500/30 shadow-lg text-center">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase">TOTAL INQUIRIES</span>
-                            <p className="text-2xl font-black text-sky-400 font-mono mt-1">{calculatedFormulas.totalInquiries || 0}</p>
-                            <span className="text-[10px] text-slate-500">PAGE + TELEGRAM</span>
-                        </div>
-
-                        <div className="bg-slate-800/90 p-4 rounded-2xl border border-indigo-500/30 shadow-lg text-center">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase">TOTAL PROCESSED</span>
-                            <p className="text-2xl font-black text-indigo-400 font-mono mt-1">{calculatedFormulas.totalProcessed || 0}</p>
-                            <span className="text-[10px] text-slate-500">NO REPLY + INQUIRE + REJECT CS + MORE</span>
-                        </div>
-
-                        <div className="bg-slate-800/90 p-4 rounded-2xl border border-emerald-500/30 shadow-lg text-center">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase">TOTAL SUBMITS</span>
-                            <p className="text-2xl font-black text-emerald-400 font-mono mt-1">{calculatedFormulas.totalSubmits || 0}</p>
-                            <span className="text-[10px] text-slate-500">PAGE SUB + TG SUB</span>
-                        </div>
-
-                        <div className="bg-slate-800/90 p-4 rounded-2xl border border-teal-500/30 shadow-lg text-center">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase">TOTAL SUCCESS</span>
-                            <p className="text-2xl font-black text-teal-400 font-mono mt-1">{calculatedFormulas.totalSuccess || 0}</p>
-                            <span className="text-[10px] text-slate-500">SUCCESS 1 + SUCCESS 2</span>
-                        </div>
-
-                        <div className="bg-slate-800/90 p-4 rounded-2xl border border-emerald-500/50 shadow-lg text-center col-span-2 sm:col-span-1 bg-gradient-to-b from-emerald-950/40 to-slate-900/90">
-                            <span className="text-[11px] text-emerald-300 font-bold uppercase">CONVERSION RATE</span>
-                            <p className="text-2xl font-black text-emerald-400 font-mono mt-1">{calculatedFormulas.conversionRate || '0.0%'}</p>
-                            <span className="text-[10px] text-emerald-400/70">(SUCCESS / SUBMITS) * 100</span>
-                        </div>
-                    </div>
-
                     {/* History Table */}
                     <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
                         <div className="p-4 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
@@ -1283,12 +1247,12 @@ const FollowUp4 = () => {
                                         <th className="py-2.5 px-2 text-center">MORE</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-400">PAGE SUB</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-400">TG SUB</th>
-                                        <th className="py-2.5 px-2 text-center text-emerald-200 font-black bg-emerald-900/70 border-x border-emerald-600/50 shadow-inner">TOTAL SUBMIT</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-200 font-black bg-blue-200 border-x border-emerald-600/50 shadow-inner">TOTAL SUBMIT</th>
                                         <th className="py-2.5 px-2 text-center text-amber-400">REVIEW</th>
                                         <th className="py-2.5 px-2 text-center text-rose-400">REJECT</th>
                                         <th className="py-2.5 px-2 text-center text-teal-400">SUCC 1</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-300">SUCC 2</th>
-                                        <th className="py-2.5 px-2 text-center text-teal-200 font-black bg-teal-900/70 border-x border-teal-600/50 shadow-inner">TOTAL SUCCESS</th>
+                                        <th className="py-2.5 px-2 text-center text-teal-200 font-black bg-green-300 border-x border-teal-600/50 shadow-inner">TOTAL SUCCESS</th>
                                         <th className="py-2.5 px-2 text-center">សកម្មភាព</th>
                                     </tr>
                                 </thead>
@@ -1310,8 +1274,8 @@ const FollowUp4 = () => {
                                         detailHistoryList.map((row, idx) => (
                                             <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
                                                 <td className="py-2 px-3 font-mono font-bold text-sky-400 whitespace-nowrap">{row.date}</td>
-                                                <td className="py-2 px-2 text-center font-mono font-bold text-indigo-300 bg-indigo-950/20">
-                                                    {row.message !== undefined && row.message !== null ? row.message : ((Number(row.page || 0) + Number(row.telegram || 0)))}
+                                                <td className="py-2 px-2 text-center font-mono font-bold text-indigo-300 bg-gray-300">
+                                                    {(Number(row.page || 0) + Number(row.telegram || 0))}
                                                 </td>
                                                 <td className="py-2 px-2 text-center font-mono">{row.page || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono">{row.telegram || 0}</td>
@@ -1321,14 +1285,14 @@ const FollowUp4 = () => {
                                                 <td className="py-2 px-2 text-center font-mono">{row.more || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.pageSubmit || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.telegramSubmit || 0}</td>
-                                                <td className="py-2 px-2 text-center font-mono font-black text-emerald-200 bg-emerald-950/80 border-x border-emerald-700/60 shadow-inner">
+                                                <td className="py-2 px-2 text-center font-mono font-black text-emerald-200 bg-blue-200 border-x border-emerald-700/60 shadow-inner">
                                                     {Number(row.pageSubmit || 0) + Number(row.telegramSubmit || 0)}
                                                 </td>
                                                 <td className="py-2 px-2 text-center font-mono text-amber-400">{row.review || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-rose-400">{row.reject || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-teal-400">{row.success1 || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-300 font-bold">{row.success2 || 0}</td>
-                                                <td className="py-2 px-2 text-center font-mono font-black text-teal-200 bg-teal-950/80 border-x border-teal-700/60 shadow-inner">
+                                                <td className="py-2 px-2 text-center font-mono font-black text-teal-200 bg-green-200 border-x border-teal-700/60 shadow-inner">
                                                     {Number(row.success1 || 0) + Number(row.success2 || 0)}
                                                 </td>
                                                 <td className="py-2 px-2 text-center whitespace-nowrap">
@@ -1344,9 +1308,9 @@ const FollowUp4 = () => {
                                     )}
                                 </tbody>
                                 {detailHistoryList.length > 0 && (
-                                    <tfoot className="bg-slate-900/95 font-bold border-t-2 border-slate-600 text-[11px]">
+                                    <tfoot className="bg-gray-300 font-bold border-t-2 border-slate-600 text-[11px]">
                                         <tr className="divide-y divide-slate-700">
-                                            <td className="py-3 px-3 font-bold text-amber-400 uppercase font-mono tracking-wider">សរុប (TOTAL)</td>
+                                            <td className="py-3 px-3 font-bold text-amber-400 uppercase tracking-wider">សរុប (TOTAL)</td>
                                             <td className="py-3 px-2 text-center font-mono text-indigo-300 bg-indigo-950/30">{grandDetailTotals.message}</td>
                                             <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.page}</td>
                                             <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.telegram}</td>
@@ -1356,14 +1320,14 @@ const FollowUp4 = () => {
                                             <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.more}</td>
                                             <td className="py-3 px-2 text-center font-mono text-emerald-400">{grandDetailTotals.pageSubmit}</td>
                                             <td className="py-3 px-2 text-center font-mono text-emerald-400">{grandDetailTotals.telegramSubmit}</td>
-                                            <td className="py-3 px-2 text-center font-mono font-black text-emerald-200 bg-emerald-900/90 border-x border-emerald-600 text-xs shadow-inner">
+                                            <td className="py-3 px-2 text-center font-mono font-black text-emerald-200 bg-blue-300 border-x border-emerald-600 text-xs shadow-inner">
                                                 {grandDetailTotals.totalSubmit}
                                             </td>
                                             <td className="py-3 px-2 text-center font-mono text-amber-400">{grandDetailTotals.review}</td>
                                             <td className="py-3 px-2 text-center font-mono text-rose-400">{grandDetailTotals.reject}</td>
                                             <td className="py-3 px-2 text-center font-mono text-teal-400">{grandDetailTotals.success1}</td>
                                             <td className="py-3 px-2 text-center font-mono text-emerald-300">{grandDetailTotals.success2}</td>
-                                            <td className="py-3 px-2 text-center font-mono font-black text-teal-200 bg-teal-900/90 border-x border-teal-600 text-xs shadow-inner">
+                                            <td className="py-3 px-2 text-center font-mono font-black text-teal-200 bg-green-300 border-x border-teal-600 text-xs shadow-inner">
                                                 {grandDetailTotals.totalSuccess}
                                             </td>
                                             <td className="py-3 px-2 text-center text-slate-500 font-mono">-</td>

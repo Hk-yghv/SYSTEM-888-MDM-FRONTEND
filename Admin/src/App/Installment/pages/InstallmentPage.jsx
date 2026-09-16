@@ -80,6 +80,113 @@ const getDisplayValues = (row, contract, rules) => {
     return { ...rowWithDueDate, penalty, totalAmount: scheduledAmount + penalty };
 };
 
+const round2 = (val) => {
+    const num = Number(val);
+    if (isNaN(num)) return 0;
+    return Number(num.toFixed(2));
+};
+
+const formatMoney = (val) => {
+    const num = Number(val);
+    if (isNaN(num)) return '0';
+    return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+};
+
+// ─── Contract Interest Details Helper ──────────────────────────────────────────
+export const getContractInterestDetails = (c) => {
+    if (!c) return { monthlyInterest: 0, totalInterest: 0, months: 1, rate: 0 };
+    const principal = Number(c.amount) || Number(c.totalAmount) || 0;
+    const durationStr = String(c.duration || '12 Months').toLowerCase();
+    const matched = durationStr.match(/\d+/);
+    const months = matched ? Math.max(1, parseInt(matched[0], 10)) : 1;
+
+    const interestStr = String(c.interest || c.interestType || '14%').trim();
+    let rate = 0;
+    if (interestStr.includes('%')) {
+        rate = parseFloat(interestStr.replace(/[^0-9.]/g, '')) || 0;
+    } else {
+        const num = parseFloat(interestStr.replace(/[^0-9.]/g, ''));
+        if (!isNaN(num)) rate = num;
+    }
+
+    let monthlyInterest = 0;
+    if (rate > 0) {
+        monthlyInterest = round2(principal * (rate / 100));
+    } else if (c.monthlyInterest && !isNaN(Number(c.monthlyInterest))) {
+        monthlyInterest = round2(c.monthlyInterest);
+    }
+
+    let totalInterest = round2(monthlyInterest * months);
+    if (c.totalInterest && !isNaN(Number(c.totalInterest)) && Number(c.totalInterest) > 0) {
+        totalInterest = round2(c.totalInterest);
+    }
+
+    return {
+        monthlyInterest,
+        totalInterest,
+        months,
+        rate
+    };
+};
+
+export const calculateContractTotalInterest = (c) => {
+    return getContractInterestDetails(c).totalInterest;
+};
+
+// ─── Contract Complete Repayment Calculations Helper ─────────────────────────
+export const getContractRepaymentCalculations = (contract, latePenaltyRules = []) => {
+    const schedule = Array.isArray(contract?.repaymentSchedule) && contract.repaymentSchedule.length > 0
+        ? contract.repaymentSchedule
+        : [];
+
+    const principal = Number(contract?.amount) || Number(contract?.totalAmount) || 0;
+    const { monthlyInterest, totalInterest } = getContractInterestDetails(contract);
+
+    let totalScheduledNoPenalty = 0;
+    let totalPenalty = 0;
+    let totalPaid = 0;
+
+    if (schedule.length > 0) {
+        schedule.forEach(row => {
+            const rowWithDueDate = getRowWithDueDate(row, contract);
+            const penalty = getAutomaticPenalty(rowWithDueDate, contract, latePenaltyRules);
+            const sched = Number(row.scheduledAmount || 0);
+            const paid = Number(row.paidAmount || 0);
+
+            totalScheduledNoPenalty += sched;
+            totalPenalty += penalty;
+            totalPaid += paid;
+        });
+    } else {
+        const durationStr = String(contract?.duration || '12 Months').toLowerCase();
+        const matched = durationStr.match(/\d+/);
+        const months = matched ? Math.max(1, parseInt(matched[0], 10)) : 1;
+        const monthly = Number(contract?.monthlyPayment) || (principal / months);
+        totalScheduledNoPenalty = monthly * months;
+    }
+
+    totalScheduledNoPenalty = round2(totalScheduledNoPenalty);
+    totalPenalty = round2(totalPenalty);
+    totalPaid = round2(totalPaid);
+
+    const totalPayableWithPenalty = round2(totalScheduledNoPenalty + totalPenalty);
+    const percentPaidNum = totalPayableWithPenalty > 0
+        ? Math.min(100, Math.round((totalPaid / totalPayableWithPenalty) * 100))
+        : 0;
+
+    return {
+        principal,
+        monthlyInterest,
+        totalInterest,
+        totalScheduledNoPenalty,
+        totalPenalty,
+        totalPayableWithPenalty,
+        totalPaid,
+        percentPaidNum,
+        percentPaidStr: `${percentPaidNum}%`
+    };
+};
+
 // ─── Status badge colours ──────────────────────────────────────────────────────
 const statusBadgeClass = (status) => {
     if (status === 'Paid') return 'bg-emerald-50 border-emerald-300 text-emerald-700';
@@ -392,18 +499,39 @@ const InstallmentPage = () => {
 
     // ── Computed totals (visible page) ────────────────────────────────────────
     const totals = useMemo(() => {
-        let loanAmount = 0, penalty = 0, scheduled = 0, totalSum = 0, paid = 0;
+        let loanAmount = 0, monthlyInterest = 0, totalInterest = 0, scheduledNoPenalty = 0, penalty = 0, currentScheduled = 0, payableWithPenalty = 0, paid = 0;
+        let sumPercents = 0;
+
         visibleContracts.forEach(c => {
             const contractId = c._id || c.contractId;
-            const row = getDisplayValues(getDisplayRow(c.repaymentSchedule || [], selectedMonthByContract[contractId] ?? null), c, latePenaltyRules);
-            if (!row) return;
-            loanAmount += Number(row.loanAmount || c.amount || 0);
-            penalty += Number(row.penalty || 0);
-            scheduled += Number(row.scheduledAmount || 0);
-            totalSum += Number(row.penalty || 0) + Number(row.scheduledAmount || 0);
-            paid += Number(row.paidAmount || 0);
+            const schedule = c.repaymentSchedule || [];
+            const row = getDisplayValues(getDisplayRow(schedule, selectedMonthByContract[contractId] ?? null), c, latePenaltyRules);
+            const calcs = getContractRepaymentCalculations(c, latePenaltyRules);
+
+            loanAmount += Number(row?.loanAmount || c.amount || 0);
+            monthlyInterest += Number(calcs.monthlyInterest || 0);
+            totalInterest += Number(calcs.totalInterest || 0);
+            scheduledNoPenalty += Number(calcs.totalScheduledNoPenalty || 0);
+            penalty += Number(row?.penalty || 0);
+            currentScheduled += Number(row?.scheduledAmount || 0);
+            payableWithPenalty += Number(calcs.totalPayableWithPenalty || 0);
+            paid += Number(calcs.totalPaid || 0);
+            sumPercents += Number(calcs.percentPaidNum || 0);
         });
-        return { loanAmount, penalty, scheduled, total: totalSum, paid };
+
+        const avgPercentPaid = visibleContracts.length > 0 ? Math.round(sumPercents / visibleContracts.length) : 0;
+
+        return {
+            loanAmount,
+            monthlyInterest,
+            totalInterest,
+            scheduledNoPenalty,
+            penalty,
+            currentScheduled,
+            payableWithPenalty,
+            paid,
+            avgPercentPaid
+        };
     }, [visibleContracts, latePenaltyRules, selectedMonthByContract]);
 
     // ── Pagination ────────────────────────────────────────────────────────────
@@ -450,18 +578,23 @@ const InstallmentPage = () => {
     const handleExportExcel = () => {
         const data = visibleContracts.map((c, i) => {
             const row = getDisplayRow(c.repaymentSchedule || []);
+            const calcs = getContractRepaymentCalculations(c, latePenaltyRules);
             return {
                 'No': i + 1,
                 'Loan Date': c.inputDate || '',
-                'Customer Name': `${c.customerNameEn} (${c.customerNameKh})`,
+                'Customer Name': `${c.customerNameEn || ''} (${c.customerNameKh || ''})`,
                 'Brand': c.brand || '',
                 'Model': c.model || '',
                 'ថ្ងៃខែត្រូវបង់': row?.dueDate || '',
-                'Total Loan Amount ($)': row?.loanAmount || 0,
-                'ពិន័យ': row?.penalty || 0,
-                'ត្រូវបង់សរុប': row?.scheduledAmount || 0,
-                'Total': (Number(row?.penalty || 0) + Number(row?.scheduledAmount || 0)),
-                'ភ្ញៀវបានបង់': row?.paidAmount || 0,
+                'Total Loan Amount ($)': row?.loanAmount || c.amount || 0,
+                'ការប្រាក់គណនា ($)': calcs.monthlyInterest || 0,
+                'ការប្រាក់សរុប ($)': calcs.totalInterest || 0,
+                'សរុបត្រូវបង់ (គ្មានពិន័យ) ($)': calcs.totalScheduledNoPenalty || 0,
+                'ពិន័យ ($)': row?.penalty || 0,
+                'ត្រូវបង់ខែនេះ ($)': row?.scheduledAmount || 0,
+                'សរុបត្រូវបង់ទាំងអស់ (+ពិន័យ) ($)': calcs.totalPayableWithPenalty || 0,
+                'ភ្ញៀវបានបង់សរុប ($)': calcs.totalPaid || 0,
+                '% បានបង់': calcs.percentPaidStr,
                 'Comment': row?.comment || '',
                 'កាលបរិច្ឆេទបានបង់': row?.paidDate || '',
             };
@@ -476,6 +609,12 @@ const InstallmentPage = () => {
             { header: 'Model', accessor: 'model' },
             { header: 'Brand', accessor: 'brand' },
             { header: 'Loan Date', accessor: 'inputDate' },
+            { header: 'Loan Amount', accessor: (c) => `$${Number(c.amount || 0).toLocaleString()}` },
+            { header: 'Monthly Int', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).monthlyInterest).toLocaleString()}` },
+            { header: 'Total Int', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalInterest).toLocaleString()}` },
+            { header: 'Total Payable', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalPayableWithPenalty).toLocaleString()}` },
+            { header: 'Total Paid', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalPaid).toLocaleString()}` },
+            { header: '% Paid', accessor: (c) => getContractRepaymentCalculations(c, latePenaltyRules).percentPaidStr },
         ];
         exportToPDF('Installment Schedule', columns, visibleContracts);
     };
@@ -626,27 +765,31 @@ const InstallmentPage = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10'>
                         <tr>
-                            <th className='px-4 py-3 text-center'>No</th>
-                            <th className='px-4 py-3'>Loan Date</th>
-                            <th className='px-4 py-3'>Customer Name</th>
-                            <th className='px-4 py-3'>Brand</th>
-                            <th className='px-4 py-3'>Model</th>
-                            <th className='px-4 py-3'>ថ្ងៃខែត្រូវបង់</th>
-                            <th className='px-4 py-3 text-right font-mono text-emerald-700'>Total Loan Amount</th>
-                            <th className='px-4 py-3 text-right text-amber-600'>ពិន័យ</th>
-                            <th className='px-4 py-3 text-right text-sky-600'>ត្រូវបង់</th>
-                            <th className='px-4 py-3 text-right text-emerald-600 font-extrabold'>Total</th>
-                            <th className='px-4 py-3 text-right text-emerald-700'>ភ្ញៀវបានបង់</th>
-                            <th className='px-4 py-3'>Comment</th>
-                            <th className='px-4 py-3 text-purple-600'>កាលបរិច្ឆេទបានបង់</th>
-                            <th className='px-4 py-3 text-center'>Action</th>
+                            <th className='px-3 py-3 text-center'>No</th>
+                            <th className='px-3 py-3'>Loan Date</th>
+                            <th className='px-3 py-3'>Customer Name</th>
+                            <th className='px-3 py-3'>Brand</th>
+                            <th className='px-3 py-3'>Model</th>
+                            <th className='px-3 py-3'>ថ្ងៃខែត្រូវបង់</th>
+                            <th className='px-3 py-3 text-right font-mono text-emerald-700'>Total Loan Amount</th>
+                            <th className='px-3 py-3 text-right font-mono text-violet-700'>ការប្រាក់គណនា</th>
+                            <th className='px-3 py-3 text-right font-mono text-indigo-700'>ការប្រាក់សរុប</th>
+                            <th className='px-3 py-3 text-right font-mono text-blue-700'>សរុបត្រូវបង់ (គ្មានពិន័យ)</th>
+                            <th className='px-3 py-3 text-right text-amber-600'>ពិន័យ</th>
+                            <th className='px-3 py-3 text-right text-sky-600'>ត្រូវបង់ខែនេះ</th>
+                            <th className='px-3 py-3 text-right text-emerald-600 font-extrabold'>សរុបត្រូវបង់ទាំងអស់</th>
+                            <th className='px-3 py-3 text-right text-emerald-700 font-bold'>ភ្ញៀវបានបង់សរុប</th>
+                            <th className='px-3 py-3 text-center text-indigo-700 font-extrabold'>% បានបង់</th>
+                            <th className='px-3 py-3'>Comment</th>
+                            <th className='px-3 py-3 text-purple-600'>កាលបរិច្ឆេទបានបង់</th>
+                            <th className='px-3 py-3 text-center'>Action</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
-                            <tr><td colSpan={14} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
+                            <tr><td colSpan={18} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
                         ) : visibleContracts.length === 0 ? (
-                            <tr><td colSpan={14} className="text-center py-8 text-slate-500 italic font-medium">
+                            <tr><td colSpan={18} className="text-center py-8 text-slate-500 italic font-medium">
                                 {searchTerm ? `No results found for "${searchTerm}"` : 'No installment records found matching this filter.'}
                             </td></tr>
                         ) : (
@@ -654,6 +797,7 @@ const InstallmentPage = () => {
                                 const schedule = item.repaymentSchedule || [];
                                 const itemId = item._id || item.contractId || String(idx);
                                 const displayRow = getDisplayValues(getDisplayRow(schedule, selectedMonthByContract[itemId] ?? null), item, latePenaltyRules);
+                                const calcs = getContractRepaymentCalculations(item, latePenaltyRules);
                                 const activeIdx = getActiveRowIdx(schedule);
                                 const isAllDone = activeIdx === -1;
                                 const menuKey = itemId;
@@ -663,25 +807,25 @@ const InstallmentPage = () => {
                                     <tr key={menuKey}
                                         className={`transition-colors ${urgency.rowClass}`}>
 
-                                        <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>
+                                        <td className='px-3 py-3 text-center font-mono text-slate-600 font-semibold'>
                                             {(currentPage - 1) * limit + idx + 1}
                                         </td>
-                                        <td className='px-4 py-3 font-mono text-slate-700'>{item.inputDate || '—'}</td>
-                                        <td className='px-4 py-3'>
+                                        <td className='px-3 py-3 font-mono text-slate-700'>{item.inputDate || '—'}</td>
+                                        <td className='px-3 py-3'>
                                             <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
                                             <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' />
                                         </td>
-                                        <td className='px-4 py-3'>
+                                        <td className='px-3 py-3'>
                                             <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
                                                 {item.brand || '—'}
                                             </span>
                                         </td>
-                                        <td className='px-4 py-3 font-semibold text-slate-800'>
+                                        <td className='px-3 py-3 font-semibold text-slate-800'>
                                             <CopyCell text={item.model} className='font-semibold text-slate-800' />
                                         </td>
 
                                         {/* ថ្ងៃខែត្រូវបង់ */}
-                                        <td className='px-4 py-3 font-mono text-slate-700 whitespace-nowrap'>
+                                        <td className='px-3 py-3 font-mono text-slate-700 whitespace-nowrap'>
                                             {displayRow?.dueDate ? (
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-bold text-slate-900">{displayRow.dueDate}</span>
@@ -695,42 +839,69 @@ const InstallmentPage = () => {
                                         </td>
 
                                         {/* Total Loan Amount */}
-                                        <td className='px-4 py-3 text-right font-mono font-bold text-emerald-700'>
-                                            ${Number(displayRow?.loanAmount || item.amount || 0).toLocaleString()}
+                                        <td className='px-3 py-3 text-right font-mono font-bold text-emerald-700'>
+                                            ${formatMoney(displayRow?.loanAmount || item.amount || 0)}
+                                        </td>
+
+                                        {/* ការប្រាក់គណនា (Monthly Interest) */}
+                                        <td className='px-3 py-3 text-right font-mono font-bold text-violet-700'>
+                                            ${formatMoney(calcs.monthlyInterest || 0)}
+                                        </td>
+
+                                        {/* ការប្រាក់សរុប (Total Interest) */}
+                                        <td className='px-3 py-3 text-right font-mono font-bold text-indigo-700'>
+                                            ${formatMoney(calcs.totalInterest || 0)}
+                                        </td>
+
+                                        {/* សរុបត្រូវបង់ (គ្មានពិន័យ) */}
+                                        <td className='px-3 py-3 text-right font-mono font-bold text-blue-700'>
+                                            ${formatMoney(calcs.totalScheduledNoPenalty || 0)}
                                         </td>
 
                                         {/* ពិន័យ */}
-                                        <td className='px-4 py-3 text-right font-mono text-amber-600 font-bold'>
-                                            ${Number(displayRow?.penalty || 0).toLocaleString()}
+                                        <td className='px-3 py-3 text-right font-mono text-amber-600 font-bold'>
+                                            ${formatMoney(displayRow?.penalty || 0)}
                                         </td>
 
-                                        {/* ត្រូវបង់សរុប */}
-                                        <td className='px-4 py-3 text-right font-mono text-sky-700 font-bold'>
-                                            ${Number(displayRow?.scheduledAmount || 0).toLocaleString()}
+                                        {/* ត្រូវបង់ខែនេះ */}
+                                        <td className='px-3 py-3 text-right font-mono text-sky-700 font-bold'>
+                                            ${formatMoney(displayRow?.scheduledAmount || 0)}
                                         </td>
 
-                                        {/* Total */}
-                                        <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-600'>
-                                            ${(Number(displayRow?.penalty || 0) + Number(displayRow?.scheduledAmount || 0)).toLocaleString()}
+                                        {/* សរុបត្រូវបង់ទាំងអស់ (+ពិន័យ) */}
+                                        <td className='px-3 py-3 text-right font-mono font-extrabold text-emerald-600'>
+                                            ${formatMoney(calcs.totalPayableWithPenalty || 0)}
                                         </td>
 
-                                        {/* ភ្ញៀវបានបង់ */}
-                                        <td className='px-4 py-3 text-right font-mono font-bold text-emerald-700'>
-                                            ${Number(displayRow?.paidAmount || 0).toLocaleString()}
+                                        {/* ភ្ញៀវបានបង់សរុប */}
+                                        <td className='px-3 py-3 text-right font-mono font-bold text-emerald-700'>
+                                            ${formatMoney(calcs.totalPaid || 0)}
+                                        </td>
+
+                                        {/* % បានបង់ */}
+                                        <td className='px-3 py-3 text-center font-mono'>
+                                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold border inline-block ${
+                                                calcs.percentPaidNum >= 100 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                                                calcs.percentPaidNum >= 50 ? 'bg-indigo-100 text-indigo-800 border-indigo-300' :
+                                                calcs.percentPaidNum > 0 ? 'bg-amber-100 text-amber-800 border-amber-300' :
+                                                'bg-slate-100 text-slate-600 border-slate-300'
+                                            }`}>
+                                                {calcs.percentPaidStr}
+                                            </span>
                                         </td>
 
                                         {/* Comment */}
-                                        <td className='px-4 py-3 text-slate-500 italic text-[11px] max-w-[140px] truncate'>
+                                        <td className='px-3 py-3 text-slate-500 italic text-[11px] max-w-[140px] truncate'>
                                             {displayRow?.comment || '—'}
                                         </td>
 
                                         {/* កាលបរិច្ឆេទបានបង់ */}
-                                        <td className='px-4 py-3 font-mono text-purple-600 font-bold'>
+                                        <td className='px-3 py-3 font-mono text-purple-600 font-bold'>
                                             {displayRow?.paidDate || '—'}
                                         </td>
 
                                         {/* Action — opens portal dropdown */}
-                                        <td className="px-4 py-3 text-center">
+                                        <td className="px-3 py-3 text-center">
                                             <button
                                                 onClick={(e) => handleOpenMenu(e, menuKey)}
                                                 className={`w-8 h-8 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === menuKey
@@ -751,23 +922,35 @@ const InstallmentPage = () => {
                     {!loading && contracts.length > 0 && (
                         <tfoot className='border-t-2 border-slate-300 bg-gradient-to-r from-slate-50 to-emerald-50/40'>
                             <tr>
-                                <td colSpan={6} className='px-4 py-3 text-center text-xs font-extrabold text-slate-600 uppercase tracking-wide'>
-                                    សរុប ({contracts.length} records)
+                                <td colSpan={6} className='px-3 py-3 text-center text-xs font-extrabold text-slate-600 uppercase tracking-wide'>
+                                    សរុប ({visibleContracts.length} records)
                                 </td>
-                                <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-700 text-sm border-l border-slate-200'>
-                                    ${totals.loanAmount.toLocaleString()}
+                                <td className='px-3 py-3 text-right font-mono font-extrabold text-emerald-700 text-xs border-l border-slate-200'>
+                                    ${formatMoney(totals.loanAmount)}
                                 </td>
-                                <td className='px-4 py-3 text-right font-mono font-extrabold text-amber-600 text-sm'>
-                                    ${totals.penalty.toLocaleString()}
+                                <td className='px-3 py-3 text-right font-mono font-extrabold text-violet-700 text-xs'>
+                                    ${formatMoney(totals.monthlyInterest)}
                                 </td>
-                                <td className='px-4 py-3 text-right font-mono font-extrabold text-sky-700 text-sm'>
-                                    ${totals.scheduled.toLocaleString()}
+                                <td className='px-3 py-3 text-right font-mono font-extrabold text-indigo-700 text-xs'>
+                                    ${formatMoney(totals.totalInterest)}
                                 </td>
-                                <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-600 text-sm'>
-                                    ${totals.total.toLocaleString()}
+                                <td className='px-3 py-3 text-right font-mono font-extrabold text-blue-700 text-xs'>
+                                    ${formatMoney(totals.scheduledNoPenalty)}
                                 </td>
-                                <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-700 text-sm'>
-                                    ${totals.paid.toLocaleString()}
+                                <td className='px-3 py-3 text-right font-mono font-extrabold text-amber-600 text-xs'>
+                                    ${formatMoney(totals.penalty)}
+                                </td>
+                                <td className='px-3 py-3 text-right font-mono font-extrabold text-sky-700 text-xs'>
+                                    ${formatMoney(totals.currentScheduled)}
+                                </td>
+                                <td className='px-3 py-3 text-right font-mono font-extrabold text-emerald-600 text-xs'>
+                                    ${formatMoney(totals.payableWithPenalty)}
+                                </td>
+                                <td className='px-3 py-3 text-right font-mono font-extrabold text-emerald-700 text-xs'>
+                                    ${formatMoney(totals.paid)}
+                                </td>
+                                <td className='px-3 py-3 text-center font-mono font-extrabold text-indigo-700 text-xs'>
+                                    {totals.avgPercentPaid}%
                                 </td>
                                 <td colSpan={3} />
                             </tr>

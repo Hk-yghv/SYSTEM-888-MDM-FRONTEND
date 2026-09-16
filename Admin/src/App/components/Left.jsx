@@ -128,7 +128,7 @@ const Left = () => {
                             )}
                             {hasPermission(json.calculate?.calculateSchedule2 || '/calculate/schedule-2', 'read') && (
                                 <Link to={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'} className={subItemClass(json.calculate?.calculateSchedule2 || '/calculate/schedule-2')}>
-                                    {t('CalculateSchedule2') || 'Schedule 2 — កាលវិភាគបញ្ចាំ'}
+                                    {t('Calculate Schedule 2') || 'Schedule 2 — កាលវិភាគបញ្ចាំ'}
                                 </Link>
                             )}
                         </div>

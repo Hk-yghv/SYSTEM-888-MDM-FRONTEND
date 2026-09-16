@@ -20,10 +20,15 @@ const FollowUp4DetailCard = ({
 }) => {
     const handleMetricChange = (field, value) => {
         const val = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
-        setMetrics(prev => ({
-            ...prev,
-            [field]: val
-        }));
+        setMetrics(prev => {
+            const next = { ...prev, [field]: val };
+            if (field === 'page' || field === 'telegram') {
+                const p = Number(field === 'page' ? val : (next.page || 0)) || 0;
+                const tg = Number(field === 'telegram' ? val : (next.telegram || 0)) || 0;
+                next.message = p + tg;
+            }
+            return next;
+        });
     };
 
     return (
