@@ -449,6 +449,8 @@ const FollowUp4 = () => {
     // TAB 4: DETAIL STATE & AUTOMATED FORMULAS LOGIC
     // =========================================================
     const [detailDate, setDetailDate] = useState(new Date().toISOString().split('T')[0]);
+    const [detailStartDate, setDetailStartDate] = useState('');
+    const [detailEndDate, setDetailEndDate] = useState('');
     const [detailMetrics, setDetailMetrics] = useState({
         message: 0,
         page: 0,
@@ -469,7 +471,7 @@ const FollowUp4 = () => {
     const [detailHistoryList, setDetailHistoryList] = useState([]);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-    // AUTO-CALCULATED FORMULAS
+    // AUTO-CALCULATED FORMULAS (For Active Modal)
     const calculatedFormulas = useMemo(() => {
         const p = Number(detailMetrics.page) || 0;
         const tg = Number(detailMetrics.telegram) || 0;
@@ -501,6 +503,53 @@ const FollowUp4 = () => {
         };
     }, [detailMetrics]);
 
+    // GRAND TOTALS across all filtered history rows
+    const grandDetailTotals = useMemo(() => {
+        const totals = {
+            message: 0,
+            page: 0,
+            telegram: 0,
+            noReply: 0,
+            inquire: 0,
+            rejectCs: 0,
+            more: 0,
+            pageSubmit: 0,
+            telegramSubmit: 0,
+            totalSubmit: 0,
+            review: 0,
+            reject: 0,
+            success1: 0,
+            success2: 0,
+            totalSuccess: 0
+        };
+
+        detailHistoryList.forEach(row => {
+            const msg = row.message !== undefined && row.message !== null ? Number(row.message) : (Number(row.page || 0) + Number(row.telegram || 0));
+            const ps = Number(row.pageSubmit || 0);
+            const tgs = Number(row.telegramSubmit || 0);
+            const s1 = Number(row.success1 || 0);
+            const s2 = Number(row.success2 || 0);
+
+            totals.message += msg;
+            totals.page += Number(row.page || 0);
+            totals.telegram += Number(row.telegram || 0);
+            totals.noReply += Number(row.noReply || 0);
+            totals.inquire += Number(row.inquire || 0);
+            totals.rejectCs += Number(row.rejectCs || 0);
+            totals.more += Number(row.more || 0);
+            totals.pageSubmit += ps;
+            totals.telegramSubmit += tgs;
+            totals.totalSubmit += (ps + tgs);
+            totals.review += Number(row.review || 0);
+            totals.reject += Number(row.reject || 0);
+            totals.success1 += s1;
+            totals.success2 += s2;
+            totals.totalSuccess += (s1 + s2);
+        });
+
+        return totals;
+    }, [detailHistoryList]);
+
     const fetchDetailData = useCallback(async () => {
         setDetailLoading(true);
         try {
@@ -511,6 +560,8 @@ const FollowUp4 = () => {
             if (user?.username) params.append('username', user.username);
             if (user?.isImmutable) params.append('isImmutable', String(user.isImmutable));
             if (selectedBrand) params.append('brand', targetBrand);
+            if (detailStartDate) params.append('startDate', detailStartDate);
+            if (detailEndDate) params.append('endDate', detailEndDate);
 
             const res = await fetch(`${API_BASE}/follow-up-4/detail?${params.toString()}`);
             if (res.ok) {
@@ -535,12 +586,6 @@ const FollowUp4 = () => {
                         success1: currentDay.success1 || 0,
                         success2: currentDay.success2 || 0
                     });
-                } else {
-                    setDetailMetrics({
-                        message: 0, page: 0, telegram: 0, noReply: 0, inquire: 0,
-                        rejectCs: 0, more: 0, pageSubmit: 0, telegramSubmit: 0,
-                        review: 0, reject: 0, success1: 0, success2: 0
-                    });
                 }
             }
         } catch (err) {
@@ -548,16 +593,52 @@ const FollowUp4 = () => {
         } finally {
             setDetailLoading(false);
         }
-    }, [API_BASE, detailDate, selectedBrand, user]);
+    }, [API_BASE, detailDate, detailStartDate, detailEndDate, selectedBrand, user]);
 
     useEffect(() => {
         if (activeTab === 'detail') {
             fetchDetailData();
         }
-    }, [activeTab, detailDate, fetchDetailData]);
+    }, [activeTab, fetchDetailData]);
 
     const handleOpenCreateDetail = (targetDate = null) => {
-        if (targetDate) setDetailDate(targetDate);
+        const today = new Date().toISOString().split('T')[0];
+        const activeDate = targetDate || today;
+        setDetailDate(activeDate);
+
+        if (targetDate) {
+            const existing = detailHistoryList.find(d => d.date === targetDate);
+            if (existing) {
+                setDetailMetrics({
+                    message: existing.message !== undefined && existing.message !== null ? existing.message : (Number(existing.page || 0) + Number(existing.telegram || 0)),
+                    page: existing.page || 0,
+                    telegram: existing.telegram || 0,
+                    noReply: existing.noReply || 0,
+                    inquire: existing.inquire || 0,
+                    rejectCs: existing.rejectCs || 0,
+                    more: existing.more || 0,
+                    pageSubmit: existing.pageSubmit || 0,
+                    telegramSubmit: existing.telegramSubmit || 0,
+                    review: existing.review || 0,
+                    reject: existing.reject || 0,
+                    success1: existing.success1 || 0,
+                    success2: existing.success2 || 0
+                });
+            } else {
+                setDetailMetrics({
+                    message: 0, page: 0, telegram: 0, noReply: 0, inquire: 0,
+                    rejectCs: 0, more: 0, pageSubmit: 0, telegramSubmit: 0,
+                    review: 0, reject: 0, success1: 0, success2: 0
+                });
+            }
+        } else {
+            // Clean fresh form on new create
+            setDetailMetrics({
+                message: 0, page: 0, telegram: 0, noReply: 0, inquire: 0,
+                rejectCs: 0, more: 0, pageSubmit: 0, telegramSubmit: 0,
+                review: 0, reject: 0, success1: 0, success2: 0
+            });
+        }
         setIsDetailModalOpen(true);
     };
 
@@ -1097,7 +1178,7 @@ const FollowUp4 = () => {
             {activeTab === 'detail' && (
                 <div className="space-y-6">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-sky-400 flex items-center gap-2">
                                 <FaCalculator /> <span>DETAIL METRICS & AUTOMATED FORMULAS</span>
@@ -1107,15 +1188,45 @@ const FollowUp4 = () => {
                             </p>
                         </div>
 
-                        {hasPermission('/follow-up/follow-up-4', 'create') && (
-                            <button
-                                onClick={() => handleOpenCreateDetail()}
-                                className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-sky-600/20 cursor-pointer"
-                            >
-                                <FaPlusCircle size={15} />
-                                <span>+ បញ្ចូល DETAIL METRICS</span>
-                            </button>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                            {/* Date Filter */}
+                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700">
+                                <FaRegCalendarAlt className="text-sky-400 text-xs" />
+                                <input
+                                    type="date"
+                                    value={detailStartDate}
+                                    onChange={(e) => setDetailStartDate(e.target.value)}
+                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+                                    title="ចាប់ពីថ្ងៃ"
+                                />
+                                <span className="text-slate-500 text-xs">ដល់</span>
+                                <input
+                                    type="date"
+                                    value={detailEndDate}
+                                    onChange={(e) => setDetailEndDate(e.target.value)}
+                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+                                    title="ដល់ថ្ងៃ"
+                                />
+                                {(detailStartDate || detailEndDate) && (
+                                    <button
+                                        onClick={() => { setDetailStartDate(''); setDetailEndDate(''); }}
+                                        className="text-[11px] text-rose-400 hover:text-rose-300 ml-1 font-semibold cursor-pointer underline"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
+
+                            {hasPermission('/follow-up/follow-up-4', 'create') && (
+                                <button
+                                    onClick={() => handleOpenCreateDetail()}
+                                    className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-sky-600/20 cursor-pointer"
+                                >
+                                    <FaPlusCircle size={15} />
+                                    <span>+ បញ្ចូល DETAIL METRICS</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Automated Calculations Summary Cards */}
@@ -1172,12 +1283,12 @@ const FollowUp4 = () => {
                                         <th className="py-2.5 px-2 text-center">MORE</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-400">PAGE SUB</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-400">TG SUB</th>
-                                        <th className="py-2.5 px-2 text-center text-emerald-300 font-extrabold bg-emerald-950/50">TOTAL SUBMIT</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-200 font-black bg-emerald-900/70 border-x border-emerald-600/50 shadow-inner">TOTAL SUBMIT</th>
                                         <th className="py-2.5 px-2 text-center text-amber-400">REVIEW</th>
                                         <th className="py-2.5 px-2 text-center text-rose-400">REJECT</th>
                                         <th className="py-2.5 px-2 text-center text-teal-400">SUCC 1</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-300">SUCC 2</th>
-                                        <th className="py-2.5 px-2 text-center text-teal-300 font-extrabold bg-teal-950/50">TOTAL SUCCESS</th>
+                                        <th className="py-2.5 px-2 text-center text-teal-200 font-black bg-teal-900/70 border-x border-teal-600/50 shadow-inner">TOTAL SUCCESS</th>
                                         <th className="py-2.5 px-2 text-center">សកម្មភាព</th>
                                     </tr>
                                 </thead>
@@ -1210,14 +1321,14 @@ const FollowUp4 = () => {
                                                 <td className="py-2 px-2 text-center font-mono">{row.more || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.pageSubmit || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.telegramSubmit || 0}</td>
-                                                <td className="py-2 px-2 text-center font-mono font-black text-emerald-300 bg-emerald-950/40">
+                                                <td className="py-2 px-2 text-center font-mono font-black text-emerald-200 bg-emerald-950/80 border-x border-emerald-700/60 shadow-inner">
                                                     {Number(row.pageSubmit || 0) + Number(row.telegramSubmit || 0)}
                                                 </td>
                                                 <td className="py-2 px-2 text-center font-mono text-amber-400">{row.review || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-rose-400">{row.reject || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-teal-400">{row.success1 || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-300 font-bold">{row.success2 || 0}</td>
-                                                <td className="py-2 px-2 text-center font-mono font-black text-teal-300 bg-teal-950/40">
+                                                <td className="py-2 px-2 text-center font-mono font-black text-teal-200 bg-teal-950/80 border-x border-teal-700/60 shadow-inner">
                                                     {Number(row.success1 || 0) + Number(row.success2 || 0)}
                                                 </td>
                                                 <td className="py-2 px-2 text-center whitespace-nowrap">
@@ -1232,6 +1343,33 @@ const FollowUp4 = () => {
                                         ))
                                     )}
                                 </tbody>
+                                {detailHistoryList.length > 0 && (
+                                    <tfoot className="bg-slate-900/95 font-bold border-t-2 border-slate-600 text-[11px]">
+                                        <tr className="divide-y divide-slate-700">
+                                            <td className="py-3 px-3 font-bold text-amber-400 uppercase font-mono tracking-wider">សរុប (TOTAL)</td>
+                                            <td className="py-3 px-2 text-center font-mono text-indigo-300 bg-indigo-950/30">{grandDetailTotals.message}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.page}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.telegram}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.noReply}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.inquire}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-rose-400">{grandDetailTotals.rejectCs}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.more}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-emerald-400">{grandDetailTotals.pageSubmit}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-emerald-400">{grandDetailTotals.telegramSubmit}</td>
+                                            <td className="py-3 px-2 text-center font-mono font-black text-emerald-200 bg-emerald-900/90 border-x border-emerald-600 text-xs shadow-inner">
+                                                {grandDetailTotals.totalSubmit}
+                                            </td>
+                                            <td className="py-3 px-2 text-center font-mono text-amber-400">{grandDetailTotals.review}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-rose-400">{grandDetailTotals.reject}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-teal-400">{grandDetailTotals.success1}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-emerald-300">{grandDetailTotals.success2}</td>
+                                            <td className="py-3 px-2 text-center font-mono font-black text-teal-200 bg-teal-900/90 border-x border-teal-600 text-xs shadow-inner">
+                                                {grandDetailTotals.totalSuccess}
+                                            </td>
+                                            <td className="py-3 px-2 text-center text-slate-500 font-mono">-</td>
+                                        </tr>
+                                    </tfoot>
+                                )}
                             </table>
                         </div>
                     </div>
