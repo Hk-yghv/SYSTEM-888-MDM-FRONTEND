@@ -18,7 +18,12 @@ const ControlSystem = () => {
         { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
         { category: 'Contract Types', items: ['Standard Installment', 'VIP Premium', 'Corporate Plan'] },
         { category: 'Payment Methods', items: ['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer'] },
-        { category: 'Brands', items: ['MDM', 'ECloud'] }
+        { category: 'Brands', items: ['MDM', 'ECloud'] },
+        { category: 'Follow Up 4 Sources', items: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'] },
+        { category: 'Follow Up 4 Contact Types', items: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'] },
+        { category: 'Follow Up 4 Statuses', items: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'] },
+        { category: 'Reject Submit Reasons', items: ['ឯកសារមិនគ្រប់', 'ព័ត៌មានមិនច្បាស់', 'អតិថិជនប្តូរចិត្ត', 'ទាក់ទងមិនបាន', 'ផ្សេងៗ'] },
+        { category: 'Reject CS Reasons', items: ['តម្លៃមិនព្រម', 'គ្មានសមត្ថភាពបង់', 'លក្ខខណ្ឌមិនត្រូវ', 'មិនឆ្លើយតប', 'ផ្សេងៗ'] }
     ]);
 
     const [callPhoneDisplay, setCallPhoneDisplay] = useState({
@@ -111,7 +116,12 @@ const ControlSystem = () => {
                 { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
                 { category: 'Contract Types', items: ['Standard Installment', 'VIP Premium', 'Corporate Plan'] },
                 { category: 'Payment Methods', items: ['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer'] },
-                { category: 'Brands', items: ['888MDM', 'ECloud'] }
+                { category: 'Brands', items: ['888MDM', 'ECloud'] },
+                { category: 'Follow Up 4 Sources', items: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'] },
+                { category: 'Follow Up 4 Contact Types', items: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'] },
+                { category: 'Follow Up 4 Statuses', items: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'] },
+                { category: 'Reject Submit Reasons', items: ['ឯកសារមិនគ្រប់', 'ព័ត៌មានមិនច្បាស់', 'អតិថិជនប្តូរចិត្ត', 'ទាក់ទងមិនបាន', 'ផ្សេងៗ'] },
+                { category: 'Reject CS Reasons', items: ['តម្លៃមិនព្រម', 'គ្មានសមត្ថភាពបង់', 'លក្ខខណ្ឌមិនត្រូវ', 'មិនឆ្លើយតប', 'ផ្សេងៗ'] }
             ];
             const globalRes = await fetch(`${API_BASE}/controlsystem?brand=`);
             if (globalRes.ok) {

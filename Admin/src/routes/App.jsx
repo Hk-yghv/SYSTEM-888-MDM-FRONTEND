@@ -74,6 +74,7 @@ import CalculateSchedule2 from "../App/Calculate/pages/CalculateSchedule2";
 import FollowUp1 from "../App/FollowUp/pages/FollowUp1";
 import FollowUp2 from "../App/FollowUp/pages/FollowUp2";
 import FollowUp3 from "../App/FollowUp/pages/FollowUp3";
+import FollowUp4 from "../App/FollowUp/pages/FollowUp4";
 
 // Salary
 import SalaryPage from "../App/Salary/pages/SalaryPage";
@@ -217,6 +218,7 @@ const App = () => {
                   <Route path={json.followUp?.followUp1 || '/follow-up/follow-up-1'} element={<ProtectRoute pagePath={json.followUp?.followUp1 || '/follow-up/follow-up-1'}> <MainLayout><FollowUp1 /></MainLayout> </ProtectRoute>} />
                   <Route path={json.followUp?.followUp2 || '/follow-up/follow-up-2'} element={<ProtectRoute pagePath={json.followUp?.followUp2 || '/follow-up/follow-up-2'}> <MainLayout><FollowUp2 /></MainLayout> </ProtectRoute>} />
                   <Route path={json.followUp?.followUp3 || '/follow-up/follow-up-3'} element={<ProtectRoute pagePath={json.followUp?.followUp3 || '/follow-up/follow-up-3'}> <MainLayout><FollowUp3 /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.followUp?.followUp4 || '/follow-up/follow-up-4'} element={<ProtectRoute pagePath={json.followUp?.followUp4 || '/follow-up/follow-up-4'}> <MainLayout><FollowUp4 /></MainLayout> </ProtectRoute>} />
                   <Route path="/follow-up/sen-sok" element={<ProtectRoute pagePath="/follow-up/follow-up-3"> <MainLayout><FollowUp3 /></MainLayout> </ProtectRoute>} />
 
                   {/* Salary */}

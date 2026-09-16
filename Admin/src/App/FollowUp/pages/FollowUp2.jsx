@@ -16,6 +16,7 @@ import { MdOutlineSync, MdPictureAsPdf, MdOutlineRateReview, MdOutlineAssignment
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
+import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 const LIMIT = 15;
 
@@ -346,12 +347,13 @@ const FollowUp2 = () => {
 
         for (const item of items) {
             if (item.type === 'url' && item.url) {
-                finalUrls.push(item.url);
+                finalUrls.push(getProxyImageUrl(item.url));
             } else if (item.type === 'file' && item.file) {
                 try {
                     const bodyData = new FormData();
                     bodyData.append('file', item.file);
                     bodyData.append('upload_preset', CLOUDINARY_PRESET);
+                    bodyData.append('type', 'private');
 
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
                         method: 'POST',
@@ -360,7 +362,8 @@ const FollowUp2 = () => {
 
                     if (res.ok) {
                         const data = await res.json();
-                        finalUrls.push(data.secure_url);
+                        const rawUrl = data.secure_url || data.url;
+                        finalUrls.push(getProxyImageUrl(rawUrl));
                     } else {
                         // Fallback to Base64
                         const b64 = await new Promise((resolve) => {

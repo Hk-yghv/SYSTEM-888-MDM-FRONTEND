@@ -16,6 +16,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Contract Management', path: '/contract/comments', label: 'Contract Comments', actions: ['read', 'export', 'create', 'edit', 'delete', 'information'] },
     { category: 'Contract Management', path: '/contract/blacklist', label: 'Contract Blacklist', actions: ['read', 'export', 'create', 'edit', 'delete'] },
     { category: 'Calculation & Tools', path: '/calculate/schedule-1', label: 'Calculate Schedule 1 (គណនាការប្រាក់ & កាលវិភាគ)', actions: ['read', 'export'] },
+    { category: 'Calculation & Tools', path: '/calculate/schedule-2', label: 'Calculate Schedule 2 (គណនាការប្រាក់ Schedule 2)', actions: ['read', 'export', 'create', 'edit', 'delete'] },
 
     { category: 'Installment & Payment', path: '/installment/schedule', label: 'Installment Schedule (តារាងបង់ប្រាក់)', actions: ['read', 'edit', 'export'] },
     { category: 'Installment & Payment', path: '/installment/paymentHistory', label: 'Payment History', actions: ['read', 'create', 'delete', 'export'] },
@@ -51,6 +52,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Follow Up System', path: '/follow-up/follow-up-1', label: 'Follow up 1 (ការតាមដាន Message)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-2', label: 'Follow up 2 (បញ្ចាំ & ឆ្លើយតបឆាត)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-3', label: 'Follow up 3 (ការតាមដាន Leads & Follow Up 3)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Follow Up System', path: '/follow-up/follow-up-4', label: 'Follow up 4 (Follow Up 4 System)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 
     { category: 'Salary System', path: '/salary', label: 'Salary Management (គ្រប់គ្រងប្រាក់ខែ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 

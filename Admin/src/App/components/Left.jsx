@@ -111,29 +111,29 @@ const Left = () => {
             {/* Calculate */}
             {(hasPermission(json.calculate?.calculateSchedule1 || '/calculate/schedule-1', 'read') ||
                 hasPermission(json.calculate?.calculateSchedule2 || '/calculate/schedule-2', 'read')) && (
-                <div className="flex-shrink-0">
-                    <div onClick={() => toggleMenu("calculate")} className={dropdownHeaderClass("calculate")}>
-                        <p className="flex items-center gap-3">
-                            <MdCalculate size={20} className="text-emerald-600" />
-                            {t('calculate')}
-                        </p>
-                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "calculate" ? "rotate-180" : ""}`} />
-                    </div>
+                    <div className="flex-shrink-0">
+                        <div onClick={() => toggleMenu("calculate")} className={dropdownHeaderClass("calculate")}>
+                            <p className="flex items-center gap-3">
+                                <MdCalculate size={20} className="text-emerald-600" />
+                                {t('calculate')}
+                            </p>
+                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "calculate" ? "rotate-180" : ""}`} />
+                        </div>
 
-                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "calculate" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
-                        {hasPermission(json.calculate?.calculateSchedule1 || '/calculate/schedule-1', 'read') && (
-                            <Link to={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'} className={subItemClass(json.calculate?.calculateSchedule1 || '/calculate/schedule-1')}>
-                                {t('calculateSchedule1') || 'Schedule 1 — គណនាការប្រាក់'}
-                            </Link>
-                        )}
-                        {hasPermission(json.calculate?.calculateSchedule2 || '/calculate/schedule-2', 'read') && (
-                            <Link to={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'} className={subItemClass(json.calculate?.calculateSchedule2 || '/calculate/schedule-2')}>
-                                {t('calculateSchedule2') || 'Schedule 2 — កាលវិភាគបញ្ចាំ'}
-                            </Link>
-                        )}
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "calculate" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                            {hasPermission(json.calculate?.calculateSchedule1 || '/calculate/schedule-1', 'read') && (
+                                <Link to={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'} className={subItemClass(json.calculate?.calculateSchedule1 || '/calculate/schedule-1')}>
+                                    {t('calculateSchedule1') || 'Schedule 1 — គណនាការប្រាក់'}
+                                </Link>
+                            )}
+                            {hasPermission(json.calculate?.calculateSchedule2 || '/calculate/schedule-2', 'read') && (
+                                <Link to={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'} className={subItemClass(json.calculate?.calculateSchedule2 || '/calculate/schedule-2')}>
+                                    {t('CalculateSchedule2') || 'Schedule 2 — កាលវិភាគបញ្ចាំ'}
+                                </Link>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
 
             {/* Installment */}
@@ -321,6 +321,7 @@ const Left = () => {
             {(hasPermission(json.followUp?.followUp1 || '/follow-up/follow-up-1', 'read') ||
                 hasPermission(json.followUp?.followUp2 || '/follow-up/follow-up-2', 'read') ||
                 hasPermission(json.followUp?.followUp3 || '/follow-up/follow-up-3', 'read') ||
+                hasPermission(json.followUp?.followUp4 || '/follow-up/follow-up-4', 'read') ||
                 hasPermission('/follow-up/sen-sok', 'read') ||
                 hasPermission(json.followUp?.followUpReport || '/report/follow-up', 'read')) && (
                     <div className="flex-shrink-0">
@@ -349,6 +350,11 @@ const Left = () => {
                                         {t('followUp3') || 'Follow up 3'}
                                     </Link>
                                 )}
+                            {hasPermission(json.followUp?.followUp4 || '/follow-up/follow-up-4', 'read') && (
+                                <Link to={json.followUp?.followUp4 || '/follow-up/follow-up-4'} className={subItemClass(json.followUp?.followUp4 || '/follow-up/follow-up-4')}>
+                                    {t('followUp4') || 'Follow up 4'}
+                                </Link>
+                            )}
 
                         </div>
                     </div>

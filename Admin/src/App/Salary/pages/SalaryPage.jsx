@@ -30,6 +30,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import SalaryBarChart from '../../../components/SalaryBarChart';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
+import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 const KHMER_DAYS = ['ថ្ងៃអាទិត្យ', 'ថ្ងៃចន្ទ', 'ថ្ងៃអង្គារ', 'ថ្ងៃពុធ', 'ថ្ងៃព្រហស្បតិ៍', 'ថ្ងៃសុក្រ', 'ថ្ងៃសៅរ៍'];
 const KHMER_MONTH_NAMES = [
@@ -388,6 +389,7 @@ const SalaryPage = () => {
             const fd = new FormData();
             fd.append('file', file);
             fd.append('upload_preset', CLOUDINARY_PRESET);
+            fd.append('type', 'private');
 
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
                 method: 'POST',
@@ -395,7 +397,8 @@ const SalaryPage = () => {
             });
             if (res.ok) {
                 const data = await res.json();
-                setFormData(prev => ({ ...prev, proofPhoto: data.secure_url }));
+                const rawUrl = data.secure_url || data.url;
+                setFormData(prev => ({ ...prev, proofPhoto: getProxyImageUrl(rawUrl) }));
             } else {
                 const reader = new FileReader();
                 reader.onloadend = () => {
@@ -1398,7 +1401,7 @@ const SalaryPage = () => {
                             </button>
                         </div>
                         <img
-                            src={previewImage}
+                            src={getProxyImageUrl(previewImage)}
                             alt="Salary Proof"
                             className="max-h-[70vh] max-w-full object-contain rounded-lg"
                         />
@@ -1607,7 +1610,7 @@ const CreateEditSalaryModal = ({
                             {formData.proofPhoto && (
                                 <div className="relative inline-block border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden p-1 bg-slate-50 dark:bg-slate-800">
                                     <img
-                                        src={formData.proofPhoto}
+                                        src={getProxyImageUrl(formData.proofPhoto)}
                                         alt="Receipt Preview"
                                         className="w-24 h-24 object-cover rounded-lg"
                                         onError={(e) => { e.target.style.display = 'none'; }}

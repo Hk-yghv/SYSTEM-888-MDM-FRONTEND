@@ -3,6 +3,7 @@ import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
 import { formatIMEI } from '../../../utils/imeiFormatter';
+import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 
 /* ── Shared style tokens ── */
@@ -332,13 +333,17 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('upload_preset', CLOUDINARY_PRESET);
+                    formData.append('type', 'private');
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
                         method: 'POST',
                         body: formData
                     });
                     if (res.ok) {
                         const data = await res.json();
-                        if (data.secure_url) uploadedUrls.push(data.secure_url);
+                        if (data.secure_url || data.url) {
+                            const rawUrl = data.secure_url || data.url;
+                            uploadedUrls.push(getProxyImageUrl(rawUrl));
+                        }
                     } else {
                         const base64 = await new Promise((resolve) => {
                             const reader = new FileReader();
@@ -630,7 +635,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                                 {(Array.isArray(form.photos) && form.photos.length > 0 ? form.photos : [form.googleDrivePhotoUrl]).filter(Boolean).map((imgUrl, pIdx) => (
                                                     <div key={pIdx} className="relative group border-2 border-amber-600/40 rounded-lg overflow-hidden bg-gray-900 p-0.5 shadow-sm">
                                                         <img
-                                                            src={imgUrl}
+                                                            src={getProxyImageUrl(imgUrl)}
                                                             alt={`Evidence ${pIdx + 1}`}
                                                             className="w-14 h-14 object-cover rounded-md"
                                                             onError={(e) => { e.target.style.display = 'none'; }}

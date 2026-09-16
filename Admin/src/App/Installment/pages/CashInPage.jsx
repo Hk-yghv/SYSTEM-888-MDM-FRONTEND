@@ -10,6 +10,7 @@ import { MdOutlineSync, MdPictureAsPdf, MdPieChart, MdTableChart } from 'react-i
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import LineChart from '../../../components/LineChart';
+import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 const LIMIT = 10;
 
@@ -58,6 +59,7 @@ const CashInPage = () => {
             const bodyData = new FormData();
             bodyData.append('file', file);
             bodyData.append('upload_preset', CLOUDINARY_PRESET);
+            bodyData.append('type', 'private');
 
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
                 method: 'POST',
@@ -66,7 +68,8 @@ const CashInPage = () => {
 
             if (res.ok) {
                 const data = await res.json();
-                setFormData(prev => ({ ...prev, photoUrl: data.secure_url }));
+                const rawUrl = data.secure_url || data.url;
+                setFormData(prev => ({ ...prev, photoUrl: getProxyImageUrl(rawUrl) }));
             } else {
                 const reader = new FileReader();
                 reader.onloadend = () => {
@@ -584,7 +587,7 @@ const CashInPage = () => {
                                     />
                                     {formData.photoUrl && (
                                         <div className="flex items-center gap-2 pt-1">
-                                            <img src={formData.photoUrl} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs" />
+                                            <img src={getProxyImageUrl(formData.photoUrl)} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs" />
                                             <span className="text-[10px] text-emerald-700 font-bold">✓ រូបភាពបានបញ្ចូលរួចរាល់</span>
                                         </div>
                                     )}
@@ -608,7 +611,7 @@ const CashInPage = () => {
             {selectedImage && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-4" onClick={() => setSelectedImage(null)}>
                     <div className="relative bg-white rounded-2xl p-2 max-w-xl max-h-[85vh] overflow-hidden border border-slate-200 shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <img src={selectedImage} alt="Receipt" className="max-w-full max-h-[75vh] object-contain rounded-[5px]" />
+                        <img src={getProxyImageUrl(selectedImage)} alt="Receipt" className="max-w-full max-h-[75vh] object-contain rounded-[5px]" />
                         <button onClick={() => setSelectedImage(null)} className="mt-2 w-full py-1.5 bg-emerald-600 text-white font-bold rounded-[5px] text-xs">Close</button>
                     </div>
                 </div>
