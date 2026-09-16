@@ -379,6 +379,7 @@ router.post('/detail/save', async (req, res) => {
         const {
             date,
             brand,
+            message = 0,
             page = 0,
             telegram = 0,
             noReply = 0,
@@ -401,6 +402,7 @@ router.post('/detail/save', async (req, res) => {
         const metricsData = {
             date,
             brand,
+            message: Number(message) || 0,
             page: Number(page) || 0,
             telegram: Number(telegram) || 0,
             noReply: Number(noReply) || 0,

@@ -49,6 +49,7 @@ followUp4RejectCSSchema.index({ brand: 1, date: 1, reason: 1 }, { unique: true }
 const followUp4DetailSchema = new mongoose.Schema({
     date: { type: String, required: true }, // YYYY-MM-DD
     brand: { type: String, required: true },
+    message: { type: Number, default: 0 }, // MESSAGE (Total messages / Inquiries)
     page: { type: Number, default: 0 }, // PAGE
     telegram: { type: Number, default: 0 }, // TELEGRAM
     noReply: { type: Number, default: 0 }, // NO REPLY

@@ -83,6 +83,17 @@ const FollowUp4DetailModal = ({
 
                     {/* Input Fields Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-xs">
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-indigo-600/40">
+                            <label className="block text-indigo-300 font-semibold mb-1">MESSAGE (សារសរុប)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.message !== undefined ? metrics.message : 0}
+                                onChange={(e) => handleMetricChange('message', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-indigo-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-indigo-500 font-mono"
+                            />
+                        </div>
+
                         <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">PAGE (FB Page)</label>
                             <input

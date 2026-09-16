@@ -450,6 +450,7 @@ const FollowUp4 = () => {
     // =========================================================
     const [detailDate, setDetailDate] = useState(new Date().toISOString().split('T')[0]);
     const [detailMetrics, setDetailMetrics] = useState({
+        message: 0,
         page: 0,
         telegram: 0,
         noReply: 0,
@@ -485,7 +486,7 @@ const FollowUp4 = () => {
         const s1 = Number(detailMetrics.success1) || 0;
         const s2 = Number(detailMetrics.success2) || 0;
 
-        const totalInquiries = p + tg;
+        const totalInquiries = detailMetrics.message ? Number(detailMetrics.message) : (p + tg);
         const totalSubmits = ps + tgs;
         const totalProcessed = nr + inq + rcs + mr;
         const totalSuccess = s1 + s2;
@@ -520,6 +521,7 @@ const FollowUp4 = () => {
                 const currentDay = list.find(d => d.date === detailDate);
                 if (currentDay) {
                     setDetailMetrics({
+                        message: currentDay.message !== undefined && currentDay.message !== null ? currentDay.message : (Number(currentDay.page || 0) + Number(currentDay.telegram || 0)),
                         page: currentDay.page || 0,
                         telegram: currentDay.telegram || 0,
                         noReply: currentDay.noReply || 0,
@@ -535,7 +537,7 @@ const FollowUp4 = () => {
                     });
                 } else {
                     setDetailMetrics({
-                        page: 0, telegram: 0, noReply: 0, inquire: 0,
+                        message: 0, page: 0, telegram: 0, noReply: 0, inquire: 0,
                         rejectCs: 0, more: 0, pageSubmit: 0, telegramSubmit: 0,
                         review: 0, reject: 0, success1: 0, success2: 0
                     });
@@ -1161,6 +1163,7 @@ const FollowUp4 = () => {
                                 <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-700">
                                     <tr>
                                         <th className="py-2.5 px-3">កាលបរិច្ឆេទ</th>
+                                        <th className="py-2.5 px-2 text-center text-indigo-300 font-bold bg-indigo-950/30">MESSAGE</th>
                                         <th className="py-2.5 px-2 text-center">PAGE</th>
                                         <th className="py-2.5 px-2 text-center">TG</th>
                                         <th className="py-2.5 px-2 text-center">NO REPLY</th>
@@ -1169,31 +1172,36 @@ const FollowUp4 = () => {
                                         <th className="py-2.5 px-2 text-center">MORE</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-400">PAGE SUB</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-400">TG SUB</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-300 font-extrabold bg-emerald-950/50">TOTAL SUBMIT</th>
                                         <th className="py-2.5 px-2 text-center text-amber-400">REVIEW</th>
                                         <th className="py-2.5 px-2 text-center text-rose-400">REJECT</th>
                                         <th className="py-2.5 px-2 text-center text-teal-400">SUCC 1</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-300">SUCC 2</th>
+                                        <th className="py-2.5 px-2 text-center text-teal-300 font-extrabold bg-teal-950/50">TOTAL SUCCESS</th>
                                         <th className="py-2.5 px-2 text-center">សកម្មភាព</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700/50">
                                     {detailLoading ? (
                                         <tr>
-                                            <td colSpan="14" className="text-center py-8 text-slate-400">
+                                            <td colSpan="17" className="text-center py-8 text-slate-400">
                                                 <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-sky-400" />
                                                 <p>កំពុងទាញយកទិន្នន័យ...</p>
                                             </td>
                                         </tr>
                                     ) : detailHistoryList.length === 0 ? (
                                         <tr>
-                                            <td colSpan="14" className="text-center py-8 text-slate-500 font-medium">
+                                            <td colSpan="17" className="text-center py-8 text-slate-500 font-medium">
                                                 មិនទាន់មានទិន្នន័យ Detail Metrics នៅឡើយទេ សូមចុច &quot;+ បញ្ចូល DETAIL METRICS&quot; ដើម្បីបញ្ចូល
                                             </td>
                                         </tr>
                                     ) : (
                                         detailHistoryList.map((row, idx) => (
                                             <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
-                                                <td className="py-2 px-3 font-mono font-bold text-sky-400">{row.date}</td>
+                                                <td className="py-2 px-3 font-mono font-bold text-sky-400 whitespace-nowrap">{row.date}</td>
+                                                <td className="py-2 px-2 text-center font-mono font-bold text-indigo-300 bg-indigo-950/20">
+                                                    {row.message !== undefined && row.message !== null ? row.message : ((Number(row.page || 0) + Number(row.telegram || 0)))}
+                                                </td>
                                                 <td className="py-2 px-2 text-center font-mono">{row.page || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono">{row.telegram || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono">{row.noReply || 0}</td>
@@ -1202,11 +1210,17 @@ const FollowUp4 = () => {
                                                 <td className="py-2 px-2 text-center font-mono">{row.more || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.pageSubmit || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.telegramSubmit || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono font-black text-emerald-300 bg-emerald-950/40">
+                                                    {Number(row.pageSubmit || 0) + Number(row.telegramSubmit || 0)}
+                                                </td>
                                                 <td className="py-2 px-2 text-center font-mono text-amber-400">{row.review || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-rose-400">{row.reject || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-teal-400">{row.success1 || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-300 font-bold">{row.success2 || 0}</td>
-                                                <td className="py-2 px-2 text-center">
+                                                <td className="py-2 px-2 text-center font-mono font-black text-teal-300 bg-teal-950/40">
+                                                    {Number(row.success1 || 0) + Number(row.success2 || 0)}
+                                                </td>
+                                                <td className="py-2 px-2 text-center whitespace-nowrap">
                                                     <button
                                                         onClick={() => handleOpenCreateDetail(row.date)}
                                                         className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-sky-300 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
