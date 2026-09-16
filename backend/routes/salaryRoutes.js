@@ -630,10 +630,43 @@ router.post('/', async (req, res) => {
     }
 });
 
+// GET /api/salary/:id - Fetch single salary record
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id || id === 'undefined' || id === 'null') {
+            return res.status(400).json({ error: 'Invalid salary ID parameter' });
+        }
+
+        if (isMongoConnected()) {
+            if (id.match(/^[0-9a-fA-F]{24}$/)) {
+                const item = await queryAllDBs(Salary, (M) => M.findById(id));
+                if (item && item.length > 0) {
+                    return res.json({ success: true, data: item[0] });
+                }
+            }
+        }
+
+        const memItem = (MEM_DB.salaries || []).find(s => String(s._id) === String(id) || String(s.id) === String(id));
+        if (memItem) {
+            return res.json({ success: true, data: memItem });
+        }
+
+        return res.status(404).json({ error: 'Salary entry not found' });
+    } catch (err) {
+        console.error('Fetch salary by ID error:', err);
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 // PUT /api/salary/:id - Update salary record
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        if (!id || id === 'undefined' || id === 'null') {
+            return res.status(400).json({ error: 'Invalid salary ID parameter' });
+        }
+
         const updateFields = { ...req.body };
 
         if (updateFields.amount !== undefined) {
@@ -647,23 +680,16 @@ router.put('/:id', async (req, res) => {
             updateFields.month = parts.length >= 2 ? `${parts[0]}-${parts[1]}` : dateStr.slice(0, 7);
         }
 
-        if (isMongoConnected()) {
+        if (isMongoConnected() && id.match(/^[0-9a-fA-F]{24}$/)) {
             const WriteSalary = getWriteModel(Salary) || Salary;
-            let updated = null;
-            if (id.match(/^[0-9a-fA-F]{24}$/)) {
-                updated = await WriteSalary.findByIdAndUpdate(id, { $set: updateFields }, { new: true });
-            }
-            if (!updated) {
-                // Try searching by custom id field
-                updated = await WriteSalary.findOneAndUpdate({ _id: id }, { $set: updateFields }, { new: true });
-            }
+            const updated = await WriteSalary.findByIdAndUpdate(id, { $set: updateFields }, { new: true });
             if (updated) {
                 return res.json({ message: 'Salary entry updated successfully', data: updated });
             }
         }
         
         // Memory fallback
-        const index = MEM_DB.salaries.findIndex(s => String(s._id) === String(id) || String(s.id) === String(id));
+        const index = (MEM_DB.salaries || []).findIndex(s => String(s._id) === String(id) || String(s.id) === String(id));
         if (index === -1) {
             return res.status(404).json({ error: 'Salary entry not found' });
         }
@@ -683,22 +709,20 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        if (isMongoConnected()) {
+        if (!id || id === 'undefined' || id === 'null') {
+            return res.status(400).json({ error: 'Invalid salary ID parameter' });
+        }
+
+        if (isMongoConnected() && id.match(/^[0-9a-fA-F]{24}$/)) {
             const WriteSalary = getWriteModel(Salary) || Salary;
-            let deleted = null;
-            if (id.match(/^[0-9a-fA-F]{24}$/)) {
-                deleted = await WriteSalary.findByIdAndDelete(id);
-            }
-            if (!deleted) {
-                deleted = await WriteSalary.findOneAndDelete({ _id: id });
-            }
+            const deleted = await WriteSalary.findByIdAndDelete(id);
             if (deleted) {
                 return res.json({ message: 'Salary entry deleted successfully' });
             }
         }
         
         // Memory fallback
-        const index = MEM_DB.salaries.findIndex(s => String(s._id) === String(id) || String(s.id) === String(id));
+        const index = (MEM_DB.salaries || []).findIndex(s => String(s._id) === String(id) || String(s.id) === String(id));
         if (index === -1) {
             return res.status(404).json({ error: 'Salary entry not found' });
         }
