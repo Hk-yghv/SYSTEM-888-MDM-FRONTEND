@@ -1,0 +1,325 @@
+import React from 'react';
+import { FaCalculator, FaRegCalendarAlt, FaSave, FaChartBar, FaHistory } from 'react-icons/fa';
+import { MdOutlineSync } from 'react-icons/md';
+
+/**
+ * FollowUp4DetailCard
+ * Prop-driven Component for DETAIL metrics inputs, automated formula calculations, and history view.
+ */
+const FollowUp4DetailCard = ({
+    date,
+    setDate,
+    brand,
+    metrics = {},
+    setMetrics,
+    onSave,
+    saving = false,
+    calculatedFormulas = {},
+    historyList = [],
+    loading = false
+}) => {
+    const handleMetricChange = (field, value) => {
+        const val = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
+        setMetrics(prev => ({
+            ...prev,
+            [field]: val
+        }));
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Top Container: Inputs & Automated Calculations */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Left: Input metrics form */}
+                <div className="lg:col-span-6 bg-slate-800/90 border border-slate-700/80 p-6 rounded-2xl shadow-xl space-y-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-700">
+                        <div>
+                            <h2 className="text-base font-bold text-sky-400 flex items-center gap-2">
+                                <FaCalculator /> <span>DETAIL METRICS INPUT</span>
+                            </h2>
+                            <p className="text-xs text-slate-400">
+                                បញ្ចូលទិន្នន័យ Brand: <span className="text-emerald-400 font-bold bg-slate-900/80 px-2 py-0.5 rounded">{brand || '888MDM'}</span>
+                            </p>
+                        </div>
+
+                        {/* Date Picker */}
+                        <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700">
+                            <FaRegCalendarAlt className="text-slate-400 text-xs" />
+                            <input
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="bg-transparent text-xs text-slate-100 outline-none cursor-pointer font-mono font-bold"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Input Fields Grid */}
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">PAGE (FB Page Inquiries)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.page !== undefined ? metrics.page : 0}
+                                onChange={(e) => handleMetricChange('page', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-cyan-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-cyan-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">TELEGRAM (Tg Inquiries)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.telegram !== undefined ? metrics.telegram : 0}
+                                onChange={(e) => handleMetricChange('telegram', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-sky-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-sky-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">NO REPLY (មិនតប)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.noReply !== undefined ? metrics.noReply : 0}
+                                onChange={(e) => handleMetricChange('noReply', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-slate-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-slate-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">INQUIRE (សួរនាំ)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.inquire !== undefined ? metrics.inquire : 0}
+                                onChange={(e) => handleMetricChange('inquire', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-amber-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-amber-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">REJECT CS</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.rejectCs !== undefined ? metrics.rejectCs : 0}
+                                onChange={(e) => handleMetricChange('rejectCs', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-rose-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-rose-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">MORE (ផ្សេងៗ)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.more !== undefined ? metrics.more : 0}
+                                onChange={(e) => handleMetricChange('more', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-indigo-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-indigo-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">PAGE SUBMIT</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.pageSubmit !== undefined ? metrics.pageSubmit : 0}
+                                onChange={(e) => handleMetricChange('pageSubmit', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-emerald-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-emerald-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">TELEGRAM SUBMIT</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.telegramSubmit !== undefined ? metrics.telegramSubmit : 0}
+                                onChange={(e) => handleMetricChange('telegramSubmit', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-emerald-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-emerald-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">REVIEW</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.review !== undefined ? metrics.review : 0}
+                                onChange={(e) => handleMetricChange('review', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-amber-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-amber-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">REJECT</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.reject !== undefined ? metrics.reject : 0}
+                                onChange={(e) => handleMetricChange('reject', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-rose-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-rose-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">SUCCESS 1</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.success1 !== undefined ? metrics.success1 : 0}
+                                onChange={(e) => handleMetricChange('success1', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-teal-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-teal-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">SUCCESS 2</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.success2 !== undefined ? metrics.success2 : 0}
+                                onChange={(e) => handleMetricChange('success2', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-emerald-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-emerald-500 font-mono"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Save Button */}
+                    <button
+                        onClick={onSave}
+                        disabled={saving || loading}
+                        className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-3 rounded-xl transition-all shadow-lg shadow-sky-600/20 cursor-pointer disabled:opacity-50"
+                    >
+                        {saving ? <MdOutlineSync className="animate-spin text-base" /> : <FaSave size={14} />}
+                        <span>{saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក DETAIL METRICS'}</span>
+                    </button>
+                </div>
+
+                {/* Right: Automated Formulas Output */}
+                <div className="lg:col-span-6 bg-slate-800/90 border border-slate-700/80 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div className="flex items-center gap-2 text-emerald-400 font-bold text-base pb-3 border-b border-slate-700 mb-4">
+                            <FaChartBar /> <span>ការគណនាស្វ័យប្រវត្តិ (AUTOMATED FORMULAS)</span>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-700/60">
+                                <div>
+                                    <span className="text-xs font-bold text-slate-200">TOTAL INQUIRIES</span>
+                                    <p className="text-[10px] text-slate-400">PAGE + TELEGRAM</p>
+                                </div>
+                                <span className="font-mono font-bold text-lg text-cyan-300">
+                                    {calculatedFormulas.totalInquiries || 0}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-700/60">
+                                <div>
+                                    <span className="text-xs font-bold text-slate-200">TOTAL SUBMITS</span>
+                                    <p className="text-[10px] text-slate-400">PAGE SUBMIT + TELEGRAM SUBMIT</p>
+                                </div>
+                                <span className="font-mono font-bold text-lg text-emerald-400">
+                                    {calculatedFormulas.totalSubmits || 0}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-700/60">
+                                <div>
+                                    <span className="text-xs font-bold text-slate-200">TOTAL PROCESSED</span>
+                                    <p className="text-[10px] text-slate-400">NO REPLY + INQUIRE + REJECT CS + MORE</p>
+                                </div>
+                                <span className="font-mono font-bold text-lg text-amber-300">
+                                    {calculatedFormulas.totalProcessed || 0}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-700/60">
+                                <div>
+                                    <span className="text-xs font-bold text-slate-200">TOTAL SUCCESS</span>
+                                    <p className="text-[10px] text-slate-400">SUCCESS 1 + SUCCESS 2</p>
+                                </div>
+                                <span className="font-mono font-bold text-lg text-teal-300">
+                                    {calculatedFormulas.totalSuccess || 0}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/40">
+                                <div>
+                                    <span className="text-xs font-bold text-emerald-300">CONVERSION RATE</span>
+                                    <p className="text-[10px] text-emerald-400/70">(TOTAL SUCCESS / TOTAL SUBMITS) * 100</p>
+                                </div>
+                                <span className="font-mono font-bold text-xl text-emerald-400">
+                                    {calculatedFormulas.conversionRate || '0.0%'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom: History Table */}
+            <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl p-5">
+                <div className="flex items-center gap-2 text-slate-200 font-bold text-sm mb-4">
+                    <FaHistory className="text-sky-400" />
+                    <span>ប្រវត្តិកំណត់ត្រា DETAIL កន្លងមក ({brand || '888MDM'})</span>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left text-slate-200">
+                        <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-700">
+                            <tr>
+                                <th className="py-2.5 px-3">កាលបរិច្ឆេទ</th>
+                                <th className="py-2.5 px-2 text-center">PAGE</th>
+                                <th className="py-2.5 px-2 text-center">TG</th>
+                                <th className="py-2.5 px-2 text-center">NO REPLY</th>
+                                <th className="py-2.5 px-2 text-center">INQUIRE</th>
+                                <th className="py-2.5 px-2 text-center">REJECT CS</th>
+                                <th className="py-2.5 px-2 text-center">MORE</th>
+                                <th className="py-2.5 px-2 text-center text-emerald-400">PAGE SUB</th>
+                                <th className="py-2.5 px-2 text-center text-emerald-400">TG SUB</th>
+                                <th className="py-2.5 px-2 text-center">REVIEW</th>
+                                <th className="py-2.5 px-2 text-center text-rose-400">REJECT</th>
+                                <th className="py-2.5 px-2 text-center text-teal-400">SUCC 1</th>
+                                <th className="py-2.5 px-2 text-center text-emerald-300">SUCC 2</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-700/50">
+                            {historyList.length === 0 ? (
+                                <tr>
+                                    <td colSpan="13" className="text-center py-6 text-slate-500">
+                                        មិនទាន់មានទិន្នន័យប្រវត្តិ Detail នៅឡើយទេ
+                                    </td>
+                                </tr>
+                            ) : (
+                                historyList.map((row, idx) => (
+                                    <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
+                                        <td className="py-2 px-3 font-mono font-bold text-sky-400">{row.date}</td>
+                                        <td className="py-2 px-2 text-center font-mono">{row.page || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono">{row.telegram || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono">{row.noReply || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono">{row.inquire || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono text-rose-400">{row.rejectCs || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono">{row.more || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.pageSubmit || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.telegramSubmit || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono text-amber-400">{row.review || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono text-rose-400">{row.reject || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono text-teal-400">{row.success1 || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono text-emerald-300 font-bold">{row.success2 || 0}</td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default FollowUp4DetailCard;

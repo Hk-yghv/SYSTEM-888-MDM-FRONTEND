@@ -4,13 +4,18 @@ import { useAuth } from '../../../context/AuthContext';
 import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
     FaEdit, FaSearch, FaRegCalendarAlt,
-    FaListUl, FaFilter, FaBuilding,
-    FaSave, FaTimes, FaCalculator,
-    FaBan, FaCheckCircle, FaChartBar
+    FaListUl, FaBuilding, FaBan,
+    FaCalculator, FaChartBar
 } from 'react-icons/fa';
 import { MdOutlineSync } from 'react-icons/md';
 import { exportToExcel } from '../../../utils/exportUtils';
 import CopyCell from '../../../components/CopyCell';
+
+// Modular Prop-driven Subcomponents
+import FollowUp4SubmitModal from '../components/FollowUp4SubmitModal';
+import RejectSubmitCard from '../components/RejectSubmitCard';
+import RejectCsCard from '../components/RejectCsCard';
+import FollowUp4DetailCard from '../components/FollowUp4DetailCard';
 
 const FollowUp4 = () => {
     const { t } = useLanguage();
@@ -24,11 +29,12 @@ const FollowUp4 = () => {
     const [selectedBrand, setSelectedBrand] = useState('');
     const [brandsList, setBrandsList] = useState(['888MDM', 'ECloud']);
 
-    // Master droplists from Control System
+    // Master droplists dynamically fetched from Control System Database
     const [droplists, setDroplists] = useState({
         sources: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'],
         contactTypes: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'],
         statuses: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
+        assetTypes: ['ទូរស័ព្ទ (Smart Phone)', 'ម៉ូតូ (Motorcycle)', 'រថយន្ត (Car)', 'ប្លង់ដី/ផ្ទះ (Real Estate)', 'មាស/គ្រឿងអលង្ការ (Jewelry)', 'កុំព្យូទ័រ (Laptop/PC)', 'ផ្សេងៗ (Other)'],
         rejectSubmitReasons: ['ឯកសារមិនគ្រប់', 'ព័ត៌មានមិនច្បាស់', 'អតិថិជនប្តូរចិត្ត', 'ទាក់ទងមិនបាន', 'ផ្សេងៗ'],
         rejectCsReasons: ['តម្លៃមិនព្រម', 'គ្មានសមត្ថភាពបង់', 'លក្ខខណ្ឌមិនត្រូវ', 'មិនឆ្លើយតប', 'ផ្សេងៗ']
     });
@@ -43,7 +49,7 @@ const FollowUp4 = () => {
         );
     }, [user]);
 
-    // Fetch Brands and Control System Droplists
+    // Fetch Brands and Control System Droplists dynamically from Database
     const fetchControlSystemData = useCallback(async () => {
         try {
             const brandQuery = selectedBrand ? `?brand=${encodeURIComponent(selectedBrand)}` : '?brand=';
@@ -54,6 +60,7 @@ const FollowUp4 = () => {
                     const src = data.droplists.find(d => d.category === 'Follow Up 4 Sources')?.items;
                     const ct = data.droplists.find(d => d.category === 'Follow Up 4 Contact Types')?.items;
                     const st = data.droplists.find(d => d.category === 'Follow Up 4 Statuses')?.items;
+                    const ast = data.droplists.find(d => d.category === 'Follow Up 4 Asset Types' || d.category === 'Asset Types')?.items;
                     const rsr = data.droplists.find(d => d.category === 'Reject Submit Reasons')?.items;
                     const rcr = data.droplists.find(d => d.category === 'Reject CS Reasons')?.items;
                     const bList = data.droplists.find(d => d.category === 'Brands')?.items;
@@ -64,6 +71,7 @@ const FollowUp4 = () => {
                         sources: (src && src.length) ? src : prev.sources,
                         contactTypes: (ct && ct.length) ? ct : prev.contactTypes,
                         statuses: (st && st.length) ? st : prev.statuses,
+                        assetTypes: (ast && ast.length) ? ast : prev.assetTypes,
                         rejectSubmitReasons: (rsr && rsr.length) ? rsr : prev.rejectSubmitReasons,
                         rejectCsReasons: (rcr && rcr.length) ? rcr : prev.rejectCsReasons
                     }));
@@ -83,6 +91,7 @@ const FollowUp4 = () => {
     // =========================================================
     const [submitList, setSubmitList] = useState([]);
     const [submitLoading, setSubmitLoading] = useState(false);
+    const [submitFormSaving, setSubmitFormSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -155,7 +164,7 @@ const FollowUp4 = () => {
             namePgTlContact: '',
             appraisal: '',
             requested: '',
-            assetType: '',
+            assetType: droplists.assetTypes[0] || '',
             model: '',
             status: droplists.statuses[0] || 'PENDING',
             description: '',
@@ -194,6 +203,7 @@ const FollowUp4 = () => {
             return;
         }
 
+        setSubmitFormSaving(true);
         try {
             const url = editingItem
                 ? `${API_BASE}/follow-up-4/submit/${editingItem._id}`
@@ -220,6 +230,8 @@ const FollowUp4 = () => {
             }
         } catch (err) {
             alert(`Network Error: ${err.message}`);
+        } finally {
+            setSubmitFormSaving(false);
         }
     };
 
@@ -246,8 +258,10 @@ const FollowUp4 = () => {
     const [rejectSubmitDate, setRejectSubmitDate] = useState(new Date().toISOString().split('T')[0]);
     const [rejectSubmitCounts, setRejectSubmitCounts] = useState({});
     const [rejectSubmitSaving, setRejectSubmitSaving] = useState(false);
+    const [rejectSubmitLoading, setRejectSubmitLoading] = useState(false);
 
     const fetchRejectSubmitData = useCallback(async () => {
+        setRejectSubmitLoading(true);
         try {
             const targetBrand = selectedBrand || user?.brand || '888MDM';
             const res = await fetch(`${API_BASE}/follow-up-4/reject-submit?date=${rejectSubmitDate}&brand=${encodeURIComponent(targetBrand)}`);
@@ -261,6 +275,8 @@ const FollowUp4 = () => {
             }
         } catch (err) {
             console.error('Fetch Reject Submit Error:', err);
+        } finally {
+            setRejectSubmitLoading(false);
         }
     }, [API_BASE, rejectSubmitDate, selectedBrand, user]);
 
@@ -309,8 +325,10 @@ const FollowUp4 = () => {
     const [rejectCsDate, setRejectCsDate] = useState(new Date().toISOString().split('T')[0]);
     const [rejectCsCounts, setRejectCsCounts] = useState({});
     const [rejectCsSaving, setRejectCsSaving] = useState(false);
+    const [rejectCsLoading, setRejectCsLoading] = useState(false);
 
     const fetchRejectCsData = useCallback(async () => {
+        setRejectCsLoading(true);
         try {
             const targetBrand = selectedBrand || user?.brand || '888MDM';
             const res = await fetch(`${API_BASE}/follow-up-4/reject-cs?date=${rejectCsDate}&brand=${encodeURIComponent(targetBrand)}`);
@@ -324,6 +342,8 @@ const FollowUp4 = () => {
             }
         } catch (err) {
             console.error('Fetch Reject CS Error:', err);
+        } finally {
+            setRejectCsLoading(false);
         }
     }, [API_BASE, rejectCsDate, selectedBrand, user]);
 
@@ -385,6 +405,7 @@ const FollowUp4 = () => {
         success2: 0
     });
     const [detailSaving, setDetailSaving] = useState(false);
+    const [detailLoading, setDetailLoading] = useState(false);
     const [detailHistoryList, setDetailHistoryList] = useState([]);
 
     // AUTO-CALCULATED FORMULAS
@@ -404,22 +425,23 @@ const FollowUp4 = () => {
         const s1 = Number(detailMetrics.success1) || 0;
         const s2 = Number(detailMetrics.success2) || 0;
 
-        const message = p + tg;
-        const verify = nr + inq + rcs + mr + ps + tgs;
-        const totalSubmit = ps + tgs;
-        const verifySubmit = rev + rej + s1;
+        const totalInquiries = p + tg;
+        const totalSubmits = ps + tgs;
+        const totalProcessed = nr + inq + rcs + mr;
         const totalSuccess = s1 + s2;
+        const conversionRate = totalSubmits > 0 ? ((totalSuccess / totalSubmits) * 100).toFixed(1) + '%' : '0.0%';
 
         return {
-            message,
-            verify,
-            totalSubmit,
-            verifySubmit,
-            totalSuccess
+            totalInquiries,
+            totalSubmits,
+            totalProcessed,
+            totalSuccess,
+            conversionRate
         };
     }, [detailMetrics]);
 
     const fetchDetailData = useCallback(async () => {
+        setDetailLoading(true);
         try {
             const targetBrand = selectedBrand || user?.brand || '888MDM';
             const params = new URLSearchParams();
@@ -461,6 +483,8 @@ const FollowUp4 = () => {
             }
         } catch (err) {
             console.error('Fetch Detail Error:', err);
+        } finally {
+            setDetailLoading(false);
         }
     }, [API_BASE, detailDate, selectedBrand, user]);
 
@@ -526,16 +550,14 @@ const FollowUp4 = () => {
                 const message = (item.page || 0) + (item.telegram || 0);
                 const verify = (item.noReply || 0) + (item.inquire || 0) + (item.rejectCs || 0) + (item.more || 0) + (item.pageSubmit || 0) + (item.telegramSubmit || 0);
                 const totalSubmit = (item.pageSubmit || 0) + (item.telegramSubmit || 0);
-                const verifySubmit = (item.review || 0) + (item.reject || 0) + (item.success1 || 0);
                 const totalSuccess = (item.success1 || 0) + (item.success2 || 0);
                 return {
                     '#': idx + 1,
                     'កាលបរិច្ឆេទ': item.date,
                     'BRAND': item.brand,
-                    'MESSAGE (សរុប)': message,
+                    'TOTAL INQUIRIES': message,
                     'PAGE': item.page || 0,
                     'TELEGRAM': item.telegram || 0,
-                    'VERIFY (សរុប)': verify,
                     'NO REPLY': item.noReply || 0,
                     'INQUIRE': item.inquire || 0,
                     'REJECT CS': item.rejectCs || 0,
@@ -543,7 +565,6 @@ const FollowUp4 = () => {
                     'TOTAL SUBMIT': totalSubmit,
                     'PAGE SUBMIT': item.pageSubmit || 0,
                     'TELEGRAM SUBMIT': item.telegramSubmit || 0,
-                    'VERIFY SUBMIT': verifySubmit,
                     'REVIEW': item.review || 0,
                     'REJECT': item.reject || 0,
                     'TOTAL SUCCESS': totalSuccess,
@@ -591,7 +612,7 @@ const FollowUp4 = () => {
                     {(activeTab === 'submit' || activeTab === 'detail') && (
                         <button
                             onClick={handleExportExcel}
-                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition-all shadow-md"
+                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition-all shadow-md cursor-pointer"
                         >
                             <FaFileExcel size={14} />
                             <span>Export Excel</span>
@@ -604,7 +625,7 @@ const FollowUp4 = () => {
             <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-700/80 pb-2">
                 <button
                     onClick={() => setActiveTab('submit')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                         activeTab === 'submit'
                             ? 'bg-emerald-600 text-white border-b-2 border-emerald-400 shadow-md'
                             : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -616,7 +637,7 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('rejectSubmit')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                         activeTab === 'rejectSubmit'
                             ? 'bg-rose-600 text-white border-b-2 border-rose-400 shadow-md'
                             : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -628,7 +649,7 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('rejectCs')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                         activeTab === 'rejectCs'
                             ? 'bg-amber-600 text-white border-b-2 border-amber-400 shadow-md'
                             : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -640,9 +661,9 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('detail')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                         activeTab === 'detail'
-                            ? 'bg-blue-600 text-white border-b-2 border-blue-400 shadow-md'
+                            ? 'bg-sky-600 text-white border-b-2 border-sky-400 shadow-md'
                             : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                     }`}
                 >
@@ -692,7 +713,7 @@ const FollowUp4 = () => {
                         {hasPermission('/follow-up/follow-up-4', 'create') && (
                             <button
                                 onClick={handleOpenCreateForm}
-                                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-all shadow-md"
+                                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-all shadow-md cursor-pointer"
                             >
                                 <FaPlusCircle size={15} />
                                 <span>បន្ថែម FOLLOW UP SUBMIT</span>
@@ -773,7 +794,7 @@ const FollowUp4 = () => {
                                                         {hasPermission('/follow-up/follow-up-4', 'edit') && (
                                                             <button
                                                                 onClick={() => handleOpenEditForm(item)}
-                                                                className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded transition-all"
+                                                                className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
                                                                 title="កែប្រែ"
                                                             >
                                                                 <FaEdit size={14} />
@@ -782,7 +803,7 @@ const FollowUp4 = () => {
                                                         {hasPermission('/follow-up/follow-up-4', 'delete') && (
                                                             <button
                                                                 onClick={() => setDeleteModalItem(item)}
-                                                                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded transition-all"
+                                                                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
                                                                 title="លុប"
                                                             >
                                                                 <FaTrashAlt size={13} />
@@ -800,601 +821,65 @@ const FollowUp4 = () => {
                 </div>
             )}
 
-            {/* TAB 2: REJECT SUBMIT */}
+            {/* TAB 2: REJECT SUBMIT (Modular Prop Component) */}
             {activeTab === 'rejectSubmit' && (
-                <div className="max-w-3xl mx-auto bg-slate-800/80 border border-slate-700/60 p-6 rounded-xl shadow-xl">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-700">
-                        <div>
-                            <h2 className="text-lg font-bold text-rose-400 flex items-center gap-2">
-                                <FaBan /> REJECT SUBMIT (បញ្ចូលចំនួនតាមមូលហេតុ)
-                            </h2>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                បញ្ចូលចំនួន Reject Submit ប្រចាំថ្ងៃសម្រាប់ Brand: <span className="text-emerald-400 font-bold">{selectedBrand || user?.brand || '888MDM'}</span>
-                            </p>
-                        </div>
-
-                        {/* Date Picker */}
-                        <div className="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-lg border border-slate-700">
-                            <FaRegCalendarAlt className="text-slate-400 text-sm" />
-                            <input
-                                type="date"
-                                value={rejectSubmitDate}
-                                onChange={(e) => setRejectSubmitDate(e.target.value)}
-                                className="bg-transparent text-sm text-slate-100 outline-none cursor-pointer font-mono"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Reasons Input List */}
-                    <div className="space-y-3 mb-6">
-                        {droplists.rejectSubmitReasons.map((reason, idx) => (
-                            <div key={idx} className="flex items-center justify-between bg-slate-900/80 p-3.5 rounded-lg border border-slate-700/60 hover:border-slate-600 transition-all">
-                                <span className="text-xs font-semibold text-slate-200">{reason}</span>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={rejectSubmitCounts[reason] !== undefined ? rejectSubmitCounts[reason] : 0}
-                                    onChange={(e) => setRejectSubmitCounts({
-                                        ...rejectSubmitCounts,
-                                        [reason]: e.target.value
-                                    })}
-                                    className="w-24 bg-slate-800 text-right text-rose-400 font-bold text-sm px-3 py-1.5 rounded border border-slate-700 outline-none focus:border-rose-500"
-                                />
-                            </div>
-                        ))}
-                    </div>
-
-                    <button
-                        onClick={handleSaveRejectSubmit}
-                        disabled={rejectSubmitSaving}
-                        className="w-full flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm py-3 rounded-lg transition-all shadow-lg"
-                    >
-                        <FaSave />
-                        <span>{rejectSubmitSaving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក REJECT SUBMIT'}</span>
-                    </button>
-                </div>
+                <RejectSubmitCard
+                    date={rejectSubmitDate}
+                    setDate={setRejectSubmitDate}
+                    brand={selectedBrand || user?.brand}
+                    reasons={droplists.rejectSubmitReasons}
+                    counts={rejectSubmitCounts}
+                    setCounts={setRejectSubmitCounts}
+                    onSave={handleSaveRejectSubmit}
+                    saving={rejectSubmitSaving}
+                    loading={rejectSubmitLoading}
+                />
             )}
 
-            {/* TAB 3: REJECT CS */}
+            {/* TAB 3: REJECT CS (Modular Prop Component) */}
             {activeTab === 'rejectCs' && (
-                <div className="max-w-3xl mx-auto bg-slate-800/80 border border-slate-700/60 p-6 rounded-xl shadow-xl">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-700">
-                        <div>
-                            <h2 className="text-lg font-bold text-amber-400 flex items-center gap-2">
-                                <FaBan /> REJECT CS (បញ្ចូលចំនួនតាមមូលហេតុ)
-                            </h2>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                បញ្ចូលចំនួន Reject CS ប្រចាំថ្ងៃសម្រាប់ Brand: <span className="text-emerald-400 font-bold">{selectedBrand || user?.brand || '888MDM'}</span>
-                            </p>
-                        </div>
-
-                        {/* Date Picker */}
-                        <div className="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-lg border border-slate-700">
-                            <FaRegCalendarAlt className="text-slate-400 text-sm" />
-                            <input
-                                type="date"
-                                value={rejectCsDate}
-                                onChange={(e) => setRejectCsDate(e.target.value)}
-                                className="bg-transparent text-sm text-slate-100 outline-none cursor-pointer font-mono"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Reasons Input List */}
-                    <div className="space-y-3 mb-6">
-                        {droplists.rejectCsReasons.map((reason, idx) => (
-                            <div key={idx} className="flex items-center justify-between bg-slate-900/80 p-3.5 rounded-lg border border-slate-700/60 hover:border-slate-600 transition-all">
-                                <span className="text-xs font-semibold text-slate-200">{reason}</span>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={rejectCsCounts[reason] !== undefined ? rejectCsCounts[reason] : 0}
-                                    onChange={(e) => setRejectCsCounts({
-                                        ...rejectCsCounts,
-                                        [reason]: e.target.value
-                                    })}
-                                    className="w-24 bg-slate-800 text-right text-amber-400 font-bold text-sm px-3 py-1.5 rounded border border-slate-700 outline-none focus:border-amber-500"
-                                />
-                            </div>
-                        ))}
-                    </div>
-
-                    <button
-                        onClick={handleSaveRejectCs}
-                        disabled={rejectCsSaving}
-                        className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm py-3 rounded-lg transition-all shadow-lg"
-                    >
-                        <FaSave />
-                        <span>{rejectCsSaving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក REJECT CS'}</span>
-                    </button>
-                </div>
+                <RejectCsCard
+                    date={rejectCsDate}
+                    setDate={setRejectCsDate}
+                    brand={selectedBrand || user?.brand}
+                    reasons={droplists.rejectCsReasons}
+                    counts={rejectCsCounts}
+                    setCounts={setRejectCsCounts}
+                    onSave={handleSaveRejectCs}
+                    saving={rejectCsSaving}
+                    loading={rejectCsLoading}
+                />
             )}
 
-            {/* TAB 4: DETAIL (WITH AUTOMATED FORMULAS) */}
+            {/* TAB 4: DETAIL (Modular Prop Component) */}
             {activeTab === 'detail' && (
-                <div className="space-y-6">
-                    {/* Automated Metrics Form Card */}
-                    <div className="bg-slate-800/80 border border-slate-700/60 p-6 rounded-xl shadow-xl">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-700">
-                            <div>
-                                <h2 className="text-lg font-bold text-blue-400 flex items-center gap-2">
-                                    <FaCalculator /> DETAIL (រូបមន្តគណនាស្វ័យប្រវត្ត)
-                                </h2>
-                                <p className="text-xs text-slate-400 mt-0.5">
-                                    បញ្ចូលលេខទិន្នន័យប្រចាំថ្ងៃ ហើយប្រព័ន្ធនឹងគណនារូបមន្ត MESSAGE, VERIFY, TOTAL SUBMIT, VERIFY SUBMIT, TOTAL SUCCESS ដោយស្វ័យប្រវត្តិ
-                                </p>
-                            </div>
-
-                            {/* Date Picker */}
-                            <div className="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-lg border border-slate-700">
-                                <FaRegCalendarAlt className="text-slate-400 text-sm" />
-                                <input
-                                    type="date"
-                                    value={detailDate}
-                                    onChange={(e) => setDetailDate(e.target.value)}
-                                    className="bg-transparent text-sm text-slate-100 outline-none cursor-pointer font-mono"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Automated Summary Formula Badges */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-                            <div className="bg-slate-900/90 p-3 rounded-lg border border-sky-500/30 text-center">
-                                <p className="text-[11px] text-slate-400 font-semibold uppercase">MESSAGE</p>
-                                <p className="text-xl font-extrabold text-sky-400 font-mono mt-1">{calculatedFormulas.message}</p>
-                                <p className="text-[10px] text-slate-500 mt-0.5">PAGE + TELEGRAM</p>
-                            </div>
-
-                            <div className="bg-slate-900/90 p-3 rounded-lg border border-indigo-500/30 text-center">
-                                <p className="text-[11px] text-slate-400 font-semibold uppercase">VERIFY</p>
-                                <p className="text-xl font-extrabold text-indigo-400 font-mono mt-1">{calculatedFormulas.verify}</p>
-                                <p className="text-[10px] text-slate-500 mt-0.5">NO REPLY + INQUIRE + REJECT CS + MORE + SUBMITS</p>
-                            </div>
-
-                            <div className="bg-slate-900/90 p-3 rounded-lg border border-amber-500/30 text-center">
-                                <p className="text-[11px] text-slate-400 font-semibold uppercase">TOTAL SUBMIT</p>
-                                <p className="text-xl font-extrabold text-amber-400 font-mono mt-1">{calculatedFormulas.totalSubmit}</p>
-                                <p className="text-[10px] text-slate-500 mt-0.5">PAGE SUBMIT + TELEGRAM SUBMIT</p>
-                            </div>
-
-                            <div className="bg-slate-900/90 p-3 rounded-lg border border-purple-500/30 text-center">
-                                <p className="text-[11px] text-slate-400 font-semibold uppercase">VERIFY SUBMIT</p>
-                                <p className="text-xl font-extrabold text-purple-400 font-mono mt-1">{calculatedFormulas.verifySubmit}</p>
-                                <p className="text-[10px] text-slate-500 mt-0.5">REVIEW + REJECT + SUCCESS 1</p>
-                            </div>
-
-                            <div className="bg-slate-900/90 p-3 rounded-lg border border-emerald-500/30 text-center col-span-2 sm:col-span-1">
-                                <p className="text-[11px] text-slate-400 font-semibold uppercase">TOTAL SUCCESS</p>
-                                <p className="text-xl font-extrabold text-emerald-400 font-mono mt-1">{calculatedFormulas.totalSuccess}</p>
-                                <p className="text-[10px] text-slate-500 mt-0.5">SUCCESS 1 + SUCCESS 2</p>
-                            </div>
-                        </div>
-
-                        {/* Input Fields Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">PAGE</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.page}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, page: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">TELEGRAM</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.telegram}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, telegram: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">NO REPLY</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.noReply}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, noReply: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">INQUIRE</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.inquire}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, inquire: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">REJECT CS</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.rejectCs}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, rejectCs: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">MORE</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.more}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, more: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">PAGE SUBMIT</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.pageSubmit}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, pageSubmit: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">TELEGRAM SUBMIT</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.telegramSubmit}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, telegramSubmit: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">REVIEW</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.review}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, review: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">REJECT</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.reject}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, reject: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">SUCCESS 1</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.success1}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, success1: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-
-                            <div className="bg-slate-900/60 p-3.5 rounded-lg border border-slate-700/50">
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">SUCCESS 2</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={detailMetrics.success2}
-                                    onChange={(e) => setDetailMetrics({ ...detailMetrics, success2: e.target.value })}
-                                    className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-blue-500 font-mono font-bold"
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={handleSaveDetail}
-                            disabled={detailSaving}
-                            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm py-3 rounded-lg transition-all shadow-lg"
-                        >
-                            <FaSave />
-                            <span>{detailSaving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក DETAIL METRICS'}</span>
-                        </button>
-                    </div>
-
-                    {/* Saved Detail History Table */}
-                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-xl overflow-hidden shadow-lg">
-                        <div className="p-4 border-b border-slate-700 bg-slate-900/60 flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-slate-200">ប្រវត្តិ DETAIL METRICS ដែលបានរក្សាទុក</h3>
-                            <span className="text-xs text-slate-400 font-mono">{detailHistoryList.length} ថ្ងៃ</span>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-xs text-left text-slate-200">
-                                <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
-                                    <tr>
-                                        <th className="py-3 px-3 text-center w-10">#</th>
-                                        <th className="py-3 px-3">កាលបរិច្ឆេទ</th>
-                                        <th className="py-3 px-3">MESSAGE</th>
-                                        <th className="py-3 px-3">VERIFY</th>
-                                        <th className="py-3 px-3">TOTAL SUBMIT</th>
-                                        <th className="py-3 px-3">VERIFY SUBMIT</th>
-                                        <th className="py-3 px-3">TOTAL SUCCESS</th>
-                                        <th className="py-3 px-3">PAGE / TG</th>
-                                        <th className="py-3 px-3">SUBMITS (PAGE/TG)</th>
-                                        <th className="py-3 px-3">SUCCESS (1/2)</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-700/50">
-                                    {detailHistoryList.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="10" className="text-center py-6 text-slate-500 font-medium">
-                                                មិនទាន់មានទិន្នន័យ Detail Metrics នៅឡើយទេ
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        detailHistoryList.map((item, idx) => {
-                                            const message = (item.page || 0) + (item.telegram || 0);
-                                            const verify = (item.noReply || 0) + (item.inquire || 0) + (item.rejectCs || 0) + (item.more || 0) + (item.pageSubmit || 0) + (item.telegramSubmit || 0);
-                                            const totalSubmit = (item.pageSubmit || 0) + (item.telegramSubmit || 0);
-                                            const verifySubmit = (item.review || 0) + (item.reject || 0) + (item.success1 || 0);
-                                            const totalSuccess = (item.success1 || 0) + (item.success2 || 0);
-
-                                            return (
-                                                <tr key={item._id || idx} className="hover:bg-slate-700/30 transition-colors">
-                                                    <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{idx + 1}</td>
-                                                    <td className="py-2.5 px-3 font-mono text-emerald-300 font-bold">{item.date}</td>
-                                                    <td className="py-2.5 px-3 font-mono font-bold text-sky-400">{message}</td>
-                                                    <td className="py-2.5 px-3 font-mono font-bold text-indigo-400">{verify}</td>
-                                                    <td className="py-2.5 px-3 font-mono font-bold text-amber-400">{totalSubmit}</td>
-                                                    <td className="py-2.5 px-3 font-mono font-bold text-purple-400">{verifySubmit}</td>
-                                                    <td className="py-2.5 px-3 font-mono font-bold text-emerald-400">{totalSuccess}</td>
-                                                    <td className="py-2.5 px-3 text-slate-400 font-mono">{item.page || 0} / {item.telegram || 0}</td>
-                                                    <td className="py-2.5 px-3 text-slate-400 font-mono">{item.pageSubmit || 0} / {item.telegramSubmit || 0}</td>
-                                                    <td className="py-2.5 px-3 text-slate-400 font-mono">{item.success1 || 0} / {item.success2 || 0}</td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                <FollowUp4DetailCard
+                    date={detailDate}
+                    setDate={setDetailDate}
+                    brand={selectedBrand || user?.brand}
+                    metrics={detailMetrics}
+                    setMetrics={setDetailMetrics}
+                    onSave={handleSaveDetail}
+                    saving={detailSaving}
+                    calculatedFormulas={calculatedFormulas}
+                    historyList={detailHistoryList}
+                    loading={detailLoading}
+                />
             )}
 
-            {/* CREATE / EDIT SUBMIT FORM MODAL */}
-            {isFormOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-3xl my-8 overflow-hidden">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700 bg-slate-900/60">
-                            <h3 className="text-base font-bold text-emerald-400 flex items-center gap-2">
-                                <FaPlusCircle />
-                                <span>{editingItem ? 'កែប្រែ FOLLOW UP SUBMIT' : 'បន្ថែម FOLLOW UP SUBMIT ថ្មី'}</span>
-                            </h3>
-                            <button
-                                onClick={() => setIsFormOpen(false)}
-                                className="text-slate-400 hover:text-slate-200 transition-colors"
-                            >
-                                <FaTimes size={18} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">ថ្ងៃខែឆ្នាំ *</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        value={formData.date}
-                                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 font-mono"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">NAME *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="បញ្ចូលឈ្មោះ"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">USER NAME</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Username"
-                                        value={formData.userName}
-                                        onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">PHONE NUMBER</label>
-                                    <input
-                                        type="text"
-                                        placeholder="លេខទូរស័ព្ទ"
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 font-mono"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">NAME TELEGRAM</label>
-                                    <input
-                                        type="text"
-                                        placeholder="ឈ្មោះ Telegram"
-                                        value={formData.nameTelegram}
-                                        onChange={(e) => setFormData({ ...formData, nameTelegram: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">មកពី (Droplist)</label>
-                                    <select
-                                        value={formData.fromSource}
-                                        onChange={(e) => setFormData({ ...formData, fromSource: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 cursor-pointer"
-                                    >
-                                        {droplists.sources.map((s, i) => (
-                                            <option key={i} value={s}>{s}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">NAME PG OR TL មកពី</label>
-                                    <input
-                                        type="text"
-                                        placeholder="NAME PG/TL មកពី"
-                                        value={formData.namePgTlFrom}
-                                        onChange={(e) => setFormData({ ...formData, namePgTlFrom: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">ទាក់ទង (Droplist)</label>
-                                    <select
-                                        value={formData.contactType}
-                                        onChange={(e) => setFormData({ ...formData, contactType: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 cursor-pointer"
-                                    >
-                                        {droplists.contactTypes.map((c, i) => (
-                                            <option key={i} value={c}>{c}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">NAME PG OR TL ទាក់ទង</label>
-                                    <input
-                                        type="text"
-                                        placeholder="NAME PG/TL ទាក់ទង"
-                                        value={formData.namePgTlContact}
-                                        onChange={(e) => setFormData({ ...formData, namePgTlContact: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">វាយតម្លៃ</label>
-                                    <input
-                                        type="text"
-                                        placeholder="តម្លៃវាយតម្លៃ"
-                                        value={formData.appraisal}
-                                        onChange={(e) => setFormData({ ...formData, appraisal: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">បានស្នើ</label>
-                                    <input
-                                        type="text"
-                                        placeholder="ចំនួនស្នើ"
-                                        value={formData.requested}
-                                        onChange={(e) => setFormData({ ...formData, requested: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">ប្រភេទទ្រព្យ</label>
-                                    <input
-                                        type="text"
-                                        placeholder="ប្រភេទទ្រព្យ"
-                                        value={formData.assetType}
-                                        onChange={(e) => setFormData({ ...formData, assetType: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">MODEL</label>
-                                    <input
-                                        type="text"
-                                        placeholder="ម៉ូឌែលទូរស័ព្ទ/ឧបករណ៍"
-                                        value={formData.model}
-                                        onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1">STATUS (Droplist)</label>
-                                    <select
-                                        value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 cursor-pointer"
-                                    >
-                                        {droplists.statuses.map((st, i) => (
-                                            <option key={i} value={st}>{st}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-300 mb-1">បរិយាយ</label>
-                                <textarea
-                                    rows="3"
-                                    placeholder="ការបរិយាយបន្ថែម..."
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full bg-slate-900 text-slate-100 text-xs p-3 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                                />
-                            </div>
-
-                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-700">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsFormOpen(false)}
-                                    className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg transition-all"
-                                >
-                                    បោះបង់
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-5 py-2 rounded-lg transition-all shadow-md flex items-center gap-1.5"
-                                >
-                                    <FaSave />
-                                    <span>រក្សាទុក</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            {/* CREATE / EDIT SUBMIT FORM MODAL (Modular Prop Component) */}
+            <FollowUp4SubmitModal
+                isOpen={isFormOpen}
+                onClose={() => { setIsFormOpen(false); setEditingItem(null); }}
+                editingItem={editingItem}
+                formData={formData}
+                setFormData={setFormData}
+                onSubmit={handleFormSubmit}
+                submitting={submitFormSaving}
+                droplists={droplists}
+                isMasterAdmin={isMasterAdmin}
+                brandsList={brandsList}
+            />
 
             {/* DELETE CONFIRMATION MODAL */}
             {deleteModalItem && (
@@ -1408,13 +893,13 @@ const FollowUp4 = () => {
                         <div className="flex items-center justify-center gap-3">
                             <button
                                 onClick={() => setDeleteModalItem(null)}
-                                className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg transition-all"
+                                className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer"
                             >
                                 បោះបង់
                             </button>
                             <button
                                 onClick={handleDeleteSubmit}
-                                className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all shadow-md"
+                                className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all shadow-md cursor-pointer"
                             >
                                 លុបចេញ
                             </button>

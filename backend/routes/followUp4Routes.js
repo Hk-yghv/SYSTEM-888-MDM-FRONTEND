@@ -80,7 +80,7 @@ router.get('/submit', async (req, res) => {
         }
 
         let items = [];
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             items = await queryAllDBs(FollowUp4Submit, (M) => M.find(filter).sort({ date: -1, createdAt: -1 }));
         } else {
             items = MEM_SUBMITS.filter(item => {
@@ -143,7 +143,7 @@ router.post('/submit', async (req, res) => {
             createdBy
         };
 
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             const WriteModel = getWriteModel(FollowUp4Submit) || FollowUp4Submit;
             const newRecord = new WriteModel(recordData);
             await newRecord.save();
@@ -164,7 +164,7 @@ router.post('/submit', async (req, res) => {
 router.put('/submit/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             const WriteModel = getWriteModel(FollowUp4Submit) || FollowUp4Submit;
             const updated = await WriteModel.findByIdAndUpdate(id, req.body, { new: true });
             recordSystemAudit(req, 'UPDATE_FOLLOWUP4_SUBMIT', `Updated FollowUp4 submit ID: ${id}`);
@@ -187,7 +187,7 @@ router.put('/submit/:id', async (req, res) => {
 router.delete('/submit/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             const WriteModel = getWriteModel(FollowUp4Submit) || FollowUp4Submit;
             await WriteModel.findByIdAndDelete(id);
             recordSystemAudit(req, 'DELETE_FOLLOWUP4_SUBMIT', `Deleted FollowUp4 submit ID: ${id}`);
@@ -216,7 +216,7 @@ router.get('/reject-submit', async (req, res) => {
         if (brand && brand !== 'ALL' && brand !== 'All') filter.brand = brand;
 
         let items = [];
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             items = await queryAllDBs(FollowUp4RejectSubmit, (M) => M.find(filter));
         } else {
             items = MEM_REJECT_SUBMITS.filter(r => (!date || r.date === date) && (!brand || r.brand === brand));
@@ -236,7 +236,7 @@ router.post('/reject-submit/save', async (req, res) => {
             return res.status(400).json({ success: false, message: 'date, brand, and entries array required' });
         }
 
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             const WriteModel = getWriteModel(FollowUp4RejectSubmit) || FollowUp4RejectSubmit;
             for (const item of entries) {
                 await WriteModel.findOneAndUpdate(
@@ -275,7 +275,7 @@ router.get('/reject-cs', async (req, res) => {
         if (brand && brand !== 'ALL' && brand !== 'All') filter.brand = brand;
 
         let items = [];
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             items = await queryAllDBs(FollowUp4RejectCS, (M) => M.find(filter));
         } else {
             items = MEM_REJECT_CS.filter(r => (!date || r.date === date) && (!brand || r.brand === brand));
@@ -295,7 +295,7 @@ router.post('/reject-cs/save', async (req, res) => {
             return res.status(400).json({ success: false, message: 'date, brand, and entries array required' });
         }
 
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             const WriteModel = getWriteModel(FollowUp4RejectCS) || FollowUp4RejectCS;
             for (const item of entries) {
                 await WriteModel.findOneAndUpdate(
@@ -361,7 +361,7 @@ router.get('/detail', async (req, res) => {
         }
 
         let items = [];
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             items = await queryAllDBs(FollowUp4Detail, (M) => M.find(filter).sort({ date: -1 }));
         } else {
             items = MEM_DETAILS.filter(d => (!date || d.date === date) && (!brand || d.brand === brand));
@@ -416,7 +416,7 @@ router.post('/detail/save', async (req, res) => {
             createdBy
         };
 
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             const WriteModel = getWriteModel(FollowUp4Detail) || FollowUp4Detail;
             const updated = await WriteModel.findOneAndUpdate(
                 { date, brand },
