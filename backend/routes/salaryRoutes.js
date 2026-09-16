@@ -609,7 +609,7 @@ router.post('/', async (req, res) => {
             createdBy: createdBy || 'Administrator'
         };
 
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             const WriteSalary = getWriteModel(Salary) || Salary;
             const newSalary = new WriteSalary(salaryData);
             const saved = await newSalary.save();
@@ -638,7 +638,7 @@ router.get('/:id', async (req, res) => {
             return res.status(400).json({ error: 'Invalid salary ID parameter' });
         }
 
-        if (isMongoConnected()) {
+        if (isMongoConnected) {
             if (id.match(/^[0-9a-fA-F]{24}$/)) {
                 const item = await queryAllDBs(Salary, (M) => M.findById(id));
                 if (item && item.length > 0) {
@@ -680,7 +680,7 @@ router.put('/:id', async (req, res) => {
             updateFields.month = parts.length >= 2 ? `${parts[0]}-${parts[1]}` : dateStr.slice(0, 7);
         }
 
-        if (isMongoConnected() && id.match(/^[0-9a-fA-F]{24}$/)) {
+        if (isMongoConnected && id.match(/^[0-9a-fA-F]{24}$/)) {
             const WriteSalary = getWriteModel(Salary) || Salary;
             const updated = await WriteSalary.findByIdAndUpdate(id, { $set: updateFields }, { new: true });
             if (updated) {
@@ -713,7 +713,7 @@ router.delete('/:id', async (req, res) => {
             return res.status(400).json({ error: 'Invalid salary ID parameter' });
         }
 
-        if (isMongoConnected() && id.match(/^[0-9a-fA-F]{24}$/)) {
+        if (isMongoConnected && id.match(/^[0-9a-fA-F]{24}$/)) {
             const WriteSalary = getWriteModel(Salary) || Salary;
             const deleted = await WriteSalary.findByIdAndDelete(id);
             if (deleted) {
