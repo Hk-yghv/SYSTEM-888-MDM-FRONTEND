@@ -3,7 +3,7 @@ import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
 import { formatIMEI } from '../../../utils/imeiFormatter';
-import ProxyImage from '../../../components/ProxyImage';
+import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 
 /* ── Shared style tokens ── */
@@ -325,33 +325,32 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         try {
             const uploadedUrls = [];
 
+            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+
             for (const file of files) {
                 try {
-                    // Upload via backend proxy (raw Cloudinary URL never exposed to browser)
-                    const base64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(file);
-                    });
+                    const bodyData = new FormData();
+                    bodyData.append('file', file);
+                    bodyData.append('upload_preset', CLOUDINARY_PRESET);
 
-                    const res = await fetch(`${API_BASE}/media/upload`, {
+                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
-                        },
-                        body: JSON.stringify({ file: base64, folder: 'system_mdm_private' })
+                        body: bodyData
                     });
 
                     if (res.ok) {
                         const data = await res.json();
-                        if (data.success && data.raw_url) {
-                            uploadedUrls.push(data.raw_url); // store raw_url; display via ProxyImage
-                        } else {
-                            uploadedUrls.push(base64); // fallback to base64
+                        if (data.secure_url || data.url) {
+                            uploadedUrls.push(data.secure_url || data.url);
                         }
                     } else {
-                        uploadedUrls.push(base64);
+                        const base64 = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(file);
+                        });
+                        if (base64) uploadedUrls.push(base64);
                     }
                 } catch (err) {
                     const base64 = await new Promise((resolve) => {
@@ -635,7 +634,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                             <div className="flex items-center gap-2 flex-wrap max-h-36 overflow-y-auto p-1">
                                                 {(Array.isArray(form.photos) && form.photos.length > 0 ? form.photos : [form.googleDrivePhotoUrl]).filter(Boolean).map((imgUrl, pIdx) => (
                                                     <div key={pIdx} className="relative group border-2 border-amber-600/40 rounded-lg overflow-hidden bg-gray-900 p-0.5 shadow-sm">
-                                                        <ProxyImage
+                                                        <img
                                                             src={imgUrl}
                                                             alt={`Evidence ${pIdx + 1}`}
                                                             className="w-14 h-14 object-cover rounded-md"

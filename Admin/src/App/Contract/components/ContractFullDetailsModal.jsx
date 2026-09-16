@@ -7,7 +7,7 @@ import {
 import { MdClose, MdSwapHoriz } from 'react-icons/md';
 import { formatIMEI } from '../../../utils/imeiFormatter';
 import CopyCell from '../../../components/CopyCell';
-import ProxyImage from '../../../components/ProxyImage';
+import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 const ContractFullDetailsModal = ({
     open,
@@ -413,7 +413,7 @@ const ContractFullDetailsModal = ({
                             {/* Top Overview Banner */}
                             <div className="p-3.5 bg-gray-800/80 border border-gray-700 rounded-xl flex flex-col sm:flex-row items-center sm:items-start gap-4">
                                 {photoUrl ? (
-                                    <ProxyImage
+                                    <img
                                         src={photoUrl}
                                         alt="Customer"
                                         className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl border-2 border-indigo-500/60 shadow-lg flex-shrink-0"

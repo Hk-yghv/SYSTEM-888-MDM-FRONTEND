@@ -10,7 +10,7 @@ import { MdOutlineSync, MdPictureAsPdf, MdPieChart, MdTableChart } from 'react-i
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import LineChart from '../../../components/LineChart';
-import ProxyImage from '../../../components/ProxyImage';
+import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 const LIMIT = 10;
 
@@ -54,34 +54,36 @@ const CashOutPage = () => {
         if (!file) return;
         setUploadingImage(true);
         try {
-            // Convert file to base64 and upload via backend proxy (hides Cloudinary URL)
+            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+            const bodyData = new FormData();
+            bodyData.append('file', file);
+            bodyData.append('upload_preset', CLOUDINARY_PRESET);
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                method: 'POST',
+                body: bodyData
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                const rawUrl = data.secure_url || data.url;
+                setFormData(prev => ({ ...prev, photoUrl: rawUrl }));
+            } else {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setFormData(prev => ({ ...prev, photoUrl: reader.result }));
+                };
+                reader.readAsDataURL(file);
+            }
+        } catch (err) {
+            console.error('Cloudinary upload error:', err);
             const reader = new FileReader();
-            reader.onloadend = async () => {
-                try {
-                    const base64 = reader.result;
-                    const res = await fetch(`${API_BASE}/media/upload`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
-                        },
-                        body: JSON.stringify({ file: base64, folder: 'system_mdm_private' })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        setFormData(prev => ({ ...prev, photoUrl: data.raw_url }));
-                    } else {
-                        setFormData(prev => ({ ...prev, photoUrl: base64 }));
-                    }
-                } catch (uploadErr) {
-                    console.error('Backend upload error:', uploadErr);
-                } finally {
-                    setUploadingImage(false);
-                }
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, photoUrl: reader.result }));
             };
             reader.readAsDataURL(file);
-        } catch (err) {
-            console.error('File read error:', err);
+        } finally {
             setUploadingImage(false);
         }
     };
@@ -584,7 +586,7 @@ const CashOutPage = () => {
                                     />
                                     {formData.photoUrl && (
                                         <div className="flex items-center gap-2 pt-1">
-                                            <ProxyImage src={formData.photoUrl} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs" />
+                                            <img src={formData.photoUrl} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs" />
                                             <span className="text-[10px] text-emerald-700 font-bold">✓ រូបភាពបានបញ្ចូលរួចរាល់</span>
                                         </div>
                                     )}
@@ -608,7 +610,7 @@ const CashOutPage = () => {
             {selectedImage && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-4" onClick={() => setSelectedImage(null)}>
                     <div className="relative bg-white rounded-2xl p-2 max-w-xl max-h-[85vh] overflow-hidden border border-slate-200 shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <ProxyImage src={selectedImage} alt="Receipt" className="max-w-full max-h-[75vh] object-contain rounded-[5px]" />
+                        <img src={selectedImage} alt="Receipt" className="max-w-full max-h-[75vh] object-contain rounded-[5px]" />
                         <button onClick={() => setSelectedImage(null)} className="mt-2 w-full py-1.5 bg-rose-600 text-white font-bold rounded-[5px] text-xs">Close</button>
                     </div>
                 </div>

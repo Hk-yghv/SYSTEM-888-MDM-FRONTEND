@@ -16,7 +16,7 @@ import { MdOutlineSync, MdPictureAsPdf, MdOutlineRateReview, MdOutlineAssignment
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
-import ProxyImage from '../../../components/ProxyImage';
+import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 const LIMIT = 15;
 
@@ -338,39 +338,40 @@ const FollowUp2 = () => {
         setIsFormOpen(true);
     };
 
-    // Upload pending local files via backend proxy on Submit
+    // Upload pending local files directly to Cloudinary on Submit
     const uploadImagesToCloudinary = async (items) => {
+        const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+        const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+
         const finalUrls = [];
 
         for (const item of items) {
             if (item.type === 'url' && item.url) {
-                // Store raw Cloudinary URL — display via ProxyImage
                 finalUrls.push(item.url);
             } else if (item.type === 'file' && item.file) {
                 try {
-                    const base64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(item.file);
-                    });
+                    const formData = new FormData();
+                    formData.append('file', item.file);
+                    formData.append('upload_preset', CLOUDINARY_PRESET);
 
-                    const res = await fetch(`${API_BASE}/media/upload`, {
+                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
-                        },
-                        body: JSON.stringify({ file: base64, folder: 'system_mdm_private' })
+                        body: formData
                     });
 
                     if (res.ok) {
                         const data = await res.json();
-                        finalUrls.push(data.success && data.raw_url ? data.raw_url : base64);
+                        finalUrls.push(data.secure_url || data.url);
                     } else {
+                        const base64 = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(item.file);
+                        });
                         finalUrls.push(base64);
                     }
                 } catch (err) {
-                    console.warn('Backend upload error, using base64 fallback:', err);
+                    console.warn('Cloudinary upload error, using base64 fallback:', err);
                     const b64 = await new Promise((resolve) => {
                         const reader = new FileReader();
                         reader.onloadend = () => resolve(reader.result);
