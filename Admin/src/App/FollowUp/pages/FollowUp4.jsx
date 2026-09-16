@@ -1018,7 +1018,7 @@ const FollowUp4 = () => {
                                     )}
                                 </tbody>
                                 {submitList.length > 0 && (
-                                    <tfoot className="bg-slate-900/95 font-bold border-t-2 border-slate-700 text-xs">
+                                    <tfoot className="bg-gray-200 font-bold border-t-2 border-slate-700 text-xs">
                                         <tr className="text-slate-200">
                                             <td colSpan="10" className="py-3 px-3 font-bold text-emerald-400 uppercase tracking-wider">
                                                 <div className="flex items-center gap-2">
