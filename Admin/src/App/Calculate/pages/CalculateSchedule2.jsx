@@ -68,7 +68,6 @@ const CalculateSchedule2 = () => {
                     }
                 }
                 setAssetTypes(lists);
-                if (lists.length > 0) setAssetName(lists[0]);
             } catch (err) {
                 console.error('Failed to fetch asset types:', err);
             }
@@ -172,9 +171,13 @@ const CalculateSchedule2 = () => {
         return calcData;
     };
 
-    // Auto calculate on load so preview document is always visible
+    // Auto calculate when inputs are valid
     useEffect(() => {
-        handleCalculate();
+        if (principalInput && rateInput && durationMonths) {
+            handleCalculate();
+        } else {
+            setResult(null);
+        }
     }, [startDate, principalInput, rateInput, durationMonths, customerName, assetName, contractNumber]);
 
     // ─── Save to Database ──────────────────────────────────────────
@@ -286,13 +289,14 @@ const CalculateSchedule2 = () => {
     // ─── Reset ─────────────────────────────────────────────────────
     const handleReset = () => {
         setCustomerName('');
-        setPrincipalInput('120');
-        setRateInput('11.5');
-        setDurationMonths('4');
+        setPrincipalInput('');
+        setRateInput('');
+        setDurationMonths('');
         setStartDate(formatDateToYMD(new Date()));
-        setAssetName(assetTypes[0] || '');
+        setAssetName('');
         setContractNumber('');
         setNotes('');
+        setResult(null);
         setActiveRecordId(null);
     };
 
