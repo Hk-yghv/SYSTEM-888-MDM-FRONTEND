@@ -176,14 +176,62 @@ const Dashboard = () => {
     // Lock Device & Other fees = totalRevenue - customerPaid
     const lockDeviceAmt = Math.max(weCollectedAmt - totalCustomerPaid, 0);
 
+    // ── Contract Total Interest Helper ──
+    const calculateContractTotalInterest = (c) => {
+        if (c.totalInterest && !isNaN(Number(c.totalInterest)) && Number(c.totalInterest) > 0) {
+            return Number(c.totalInterest);
+        }
+        const durationStr = String(c.duration || '').toLowerCase();
+        const matched = durationStr.match(/\d+/);
+        const count = matched ? parseInt(matched[0], 10) : 1;
+        const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ');
+        const months = isDays ? Math.max(1, Math.ceil(count / 30)) : Math.max(1, count);
+
+        if (c.monthlyInterest && !isNaN(Number(c.monthlyInterest)) && Number(c.monthlyInterest) > 0) {
+            return Number(c.monthlyInterest) * months;
+        }
+
+        const interestStr = String(c.interest || c.interestType || '').trim();
+        const principal = Number(c.amount || c.loanAmount || 0);
+
+        if (interestStr.includes('%')) {
+            const rate = parseFloat(interestStr.replace(/[^0-9.]/g, '')) || 0;
+            const monthlyInterestUSD = principal * (rate / 100);
+            return monthlyInterestUSD * months;
+        }
+
+        const numericInterest = parseFloat(interestStr.replace(/[^0-9.]/g, ''));
+        if (!isNaN(numericInterest) && numericInterest > 0) {
+            return numericInterest * months;
+        }
+
+        if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
+            const sumSchedInterest = c.repaymentSchedule.reduce((s, row) => s + (Number(row.interest || row.interestAmount || 0)), 0);
+            if (sumSchedInterest > 0) return sumSchedInterest;
+        }
+
+        const monthly = Number(c.monthlyPayment) || 0;
+        if (monthly > 0 && principal > 0) {
+            const totalPay = isDays ? monthly : (monthly * months);
+            if (totalPay > principal) {
+                return totalPay - principal;
+            }
+        }
+
+        return 0;
+    };
+
     // ── Repayment Calculations ──
     const repaymentMetrics = useMemo(() => {
         let totalExpected = 0;
         let totalScheduled = 0;
         let totalPenalty = 0;
+        let totalInterest = 0;
 
         if (rawContracts.length > 0) {
             rawContracts.forEach(c => {
+                totalInterest += calculateContractTotalInterest(c);
+
                 if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
                     c.repaymentSchedule.forEach(row => {
                         const scheduled = Number(row.scheduledAmount) || Number(row.amount) || Number(c.monthlyPayment) || 0;
@@ -209,12 +257,14 @@ const Dashboard = () => {
             totalExpected = stats.totalRepaymentExpected || 0;
             totalScheduled = stats.totalScheduledRepayment || 0;
             totalPenalty = stats.totalPenaltyRepayment || 0;
+            totalInterest = stats.totalInterest || 0;
         }
 
         return {
             totalExpected: totalExpected || stats.totalRepaymentExpected || 0,
             totalScheduled: totalScheduled || stats.totalScheduledRepayment || 0,
-            totalPenalty: totalPenalty || stats.totalPenaltyRepayment || 0
+            totalPenalty: totalPenalty || stats.totalPenaltyRepayment || 0,
+            totalInterest: totalInterest || stats.totalInterest || 0
         };
     }, [rawContracts, stats]);
 
@@ -413,9 +463,15 @@ const Dashboard = () => {
                         <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-purple-900">
                             ${formatMoney(repaymentMetrics.totalExpected)}
                         </div>
-                        <div className="flex items-center justify-between text-xs mt-2.5 pt-2.5 border-t-2 border-slate-200 text-slate-800 font-bold">
-                            <span>ពិន័យ: <strong className="text-rose-700 font-mono font-black">${formatMoney(repaymentMetrics.totalPenalty)}</strong></span>
-                            <span className="font-mono text-purple-950 font-black text-[11px] bg-purple-100 px-2 py-0.5 rounded-md border border-purple-300">SCHEDULED</span>
+                        <div className="mt-2.5 pt-2.5 border-t-2 border-slate-200 space-y-1">
+                            <div className="flex items-center justify-between text-xs text-slate-800 font-bold">
+                                <span>ពិន័យ: <strong className="text-rose-700 font-mono font-black">${formatMoney(repaymentMetrics.totalPenalty)}</strong></span>
+                                <span className="font-mono text-purple-950 font-black text-[11px] bg-purple-100 px-2 py-0.5 rounded-md border border-purple-300">SCHEDULED</span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-slate-800 font-bold pt-1 border-t border-slate-100">
+                                <span>ការប្រាក់សរុប:</span>
+                                <span className="font-mono text-emerald-700 font-black">${formatMoney(repaymentMetrics.totalInterest)}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

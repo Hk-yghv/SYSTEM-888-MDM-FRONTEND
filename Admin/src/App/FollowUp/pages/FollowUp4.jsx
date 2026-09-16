@@ -35,8 +35,8 @@ const FollowUp4 = () => {
         contactTypes: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'],
         statuses: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
         assetTypes: ['ទូរស័ព្ទ (Smart Phone)', 'ម៉ូតូ (Motorcycle)', 'រថយន្ត (Car)', 'ប្លង់ដី/ផ្ទះ (Real Estate)', 'មាស/គ្រឿងអលង្ការ (Jewelry)', 'កុំព្យូទ័រ (Laptop/PC)', 'ផ្សេងៗ (Other)'],
-        rejectSubmitReasons: ['ឯកសារមិនគ្រប់', 'ព័ត៌មានមិនច្បាស់', 'អតិថិជនប្តូរចិត្ត', 'ទាក់ទងមិនបាន', 'ផ្សេងៗ'],
-        rejectCsReasons: ['តម្លៃមិនព្រម', 'គ្មានសមត្ថភាពបង់', 'លក្ខខណ្ឌមិនត្រូវ', 'មិនឆ្លើយតប', 'ផ្សេងៗ']
+        rejectSubmitReasons: [],
+        rejectCsReasons: []
     });
 
     const isMasterAdmin = useMemo(() => {
@@ -72,8 +72,8 @@ const FollowUp4 = () => {
                         contactTypes: (ct && ct.length) ? ct : prev.contactTypes,
                         statuses: (st && st.length) ? st : prev.statuses,
                         assetTypes: (ast && ast.length) ? ast : prev.assetTypes,
-                        rejectSubmitReasons: (rsr && rsr.length) ? rsr : prev.rejectSubmitReasons,
-                        rejectCsReasons: (rcr && rcr.length) ? rcr : prev.rejectCsReasons
+                        rejectSubmitReasons: Array.isArray(rsr) ? rsr : [],
+                        rejectCsReasons: Array.isArray(rcr) ? rcr : []
                     }));
                 }
             }
