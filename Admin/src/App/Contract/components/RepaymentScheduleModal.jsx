@@ -604,9 +604,12 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         </thead>
                         <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                             {rows.map((row, idx) => {
+                                // Normal user = not master admin and not in setup_activate mode
+                                const isNormalUser = !isMasterAdmin && !isSetupActivate;
                                 const isLocked = (!isMasterAdmin && !isSetupActivate && (row.status === 'Paid' || row.status === 'PayOff' || row.status === 'Settled')) || isReadOnly;
                                 const canEditDueDate = (isMasterAdmin || isSetupActivate) && !isReadOnly;
-                                const canEditScheduled = (isMasterAdmin || isSetupActivate || !isLocked) && !isReadOnly;
+                                // Normal user cannot edit scheduledAmount, interest, penalty — only masterAdmin or setup_activate can
+                                const canEditScheduled = (isMasterAdmin || isSetupActivate) && !isReadOnly;
                                 const isCurrentActive = idx === activeRowIdx && !isReadOnly;
                                 const isLastMonth = idx === rows.length - 1;
 
@@ -644,7 +647,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
                                         {/* Interest */}
                                         <td className="px-3 py-2.5 font-mono">
-                                            {isLocked ? (
+                                            {(isLocked || isNormalUser) ? (
                                                 <span className="font-bold text-violet-700">
                                                     ${formatMoney(displayInterest)}
                                                 </span>
@@ -662,7 +665,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
                                         {/* Penalty */}
                                         <td className="px-3 py-2.5 font-mono">
-                                            {isLocked ? (
+                                            {(isLocked || isNormalUser) ? (
                                                 <span className="font-bold text-amber-600">${formatMoney(row.penalty || 0)}</span>
                                             ) : (
                                                 <input
@@ -697,7 +700,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                             ${formatMoney(round2(Number(row.penalty || 0) + Number(row.scheduledAmount || 0)))}
                                         </td>
 
-                                        {/* Paid Amount */}
+                                        {/* Paid Amount - normal user CAN edit this */}
                                         <td className="px-3 py-2.5 font-mono">
                                             {isLocked ? (
                                                 <span className="font-bold text-emerald-700">${formatMoney(row.paidAmount || 0)}</span>
@@ -713,7 +716,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                             )}
                                         </td>
 
-                                        {/* Comment */}
+                                        {/* Comment - normal user CAN edit this */}
                                         <td className="px-3 py-2.5">
                                             {isLocked ? (
                                                 <span className="text-slate-500 italic text-[11px]">{row.comment || '—'}</span>

@@ -354,7 +354,7 @@ const Dashboard = () => {
                 1. REFINED FINANCIAL CONTROL BAR (HIGH CONTRAST HEADER)
             ═══════════════════════════════════════════════════════════ */}
             <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                
+
                 {/* Left: Brand Identity & Title */}
                 <div className="flex items-center gap-3.5">
                     <div className="w-11 h-11 rounded-xl bg-slate-900 text-emerald-400 flex items-center justify-center text-2xl font-black shadow-sm">
@@ -412,7 +412,7 @@ const Dashboard = () => {
                 2. FOUR RAZOR-SHARP KPI METRIC CARDS (2 DECIMALS STRICT)
             ═══════════════════════════════════════════════════════════ */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                
+
                 {/* Metric 1: Total Loan Disbursed */}
                 <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-xs hover:border-blue-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
@@ -511,13 +511,13 @@ const Dashboard = () => {
                 {/* Left 2 Cols: Exact Reusable LineChart (from /report/all-customers) */}
                 <div className="lg:col-span-2">
                     <LineChart
-                        title="ក្រាបខ្សែនិន្នាការហិរញ្ញវត្ថុ & អតិថិជន (Financial & Customer Trend Line Chart)"
+                        title="ក្រាបខ្សែនិន្នាការហិរញ្ញវត្ថុ & អតិថិជន"
                         subtitle="បង្ហាញពីកំណើនទឹកប្រាក់ប្រមូលបាន ឥណទានបញ្ចេញ និងចំនួនអតិថិជន Activated ប្រចាំថ្ងៃ/ខែ"
                         data={chartTrendData}
                         series={[
-                            { key: 'revenue', label: 'ប្រាក់ប្រមូលបាន ($)', color: '#10b981', isCurrency: true },
-                            { key: 'loan', label: 'ឥណទានបញ្ចេញ ($)', color: '#3b82f6', isCurrency: true },
-                            { key: 'customerCount', label: 'ចំនួនអតិថិជន (នាក់)', color: '#8b5cf6', isCurrency: false }
+                            { key: 'revenue', label: 'ប្រាក់ប្រមូលបាន', color: '#10b981', isCurrency: true },
+                            { key: 'loan', label: 'ឥណទានបញ្ចេញ', color: '#3b82f6', isCurrency: true },
+                            { key: 'customerCount', label: 'ចំនួនអតិថិជន', color: '#8b5cf6', isCurrency: false }
                         ]}
                         timeFilterOptions={['7d', '30d', 'monthly', 'all']}
                         defaultFilter="monthly"
