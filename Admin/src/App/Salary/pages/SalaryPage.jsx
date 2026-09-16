@@ -30,7 +30,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import SalaryBarChart from '../../../components/SalaryBarChart';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
-import { getProxyImageUrl } from '../../../utils/mediaUtils';
+import ProxyImage from '../../../components/ProxyImage';
 
 const KHMER_DAYS = ['ថ្ងៃអាទិត្យ', 'ថ្ងៃចន្ទ', 'ថ្ងៃអង្គារ', 'ថ្ងៃពុធ', 'ថ្ងៃព្រហស្បតិ៍', 'ថ្ងៃសុក្រ', 'ថ្ងៃសៅរ៍'];
 const KHMER_MONTH_NAMES = [
@@ -378,43 +378,40 @@ const SalaryPage = () => {
         }
     };
 
-    // Upload Evidence / Proof Photo
     const handlePhotoUpload = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         setPhotoUploading(true);
         try {
-            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-            const fd = new FormData();
-            fd.append('file', file);
-            fd.append('upload_preset', CLOUDINARY_PRESET);
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                method: 'POST',
-                body: fd
-            });
-            if (res.ok) {
-                const data = await res.json();
-                const rawUrl = data.secure_url || data.url;
-                setFormData(prev => ({ ...prev, proofPhoto: getProxyImageUrl(rawUrl) }));
-            } else {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setFormData(prev => ({ ...prev, proofPhoto: reader.result }));
-                };
-                reader.readAsDataURL(file);
-            }
-        } catch (err) {
-            console.error('Photo upload error:', err);
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, proofPhoto: reader.result }));
+            reader.onloadend = async () => {
+                try {
+                    const base64 = reader.result;
+                    const res = await fetch(`${API_BASE}/media/upload`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+                        },
+                        body: JSON.stringify({ file: base64, folder: 'system_mdm_private' })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setFormData(prev => ({ ...prev, proofPhoto: data.raw_url }));
+                    } else {
+                        setFormData(prev => ({ ...prev, proofPhoto: base64 }));
+                    }
+                } catch (uploadErr) {
+                    console.error('Backend upload error:', uploadErr);
+                } finally {
+                    setPhotoUploading(false);
+                    if (photoFileRef.current) photoFileRef.current.value = '';
+                }
             };
             reader.readAsDataURL(file);
-        } finally {
+        } catch (err) {
+            console.error('File read error:', err);
             setPhotoUploading(false);
-            if (photoFileRef.current) photoFileRef.current.value = '';
         }
     };
 
@@ -1399,8 +1396,8 @@ const SalaryPage = () => {
                                 <FaTimes size={16} />
                             </button>
                         </div>
-                        <img
-                            src={getProxyImageUrl(previewImage)}
+                        <ProxyImage
+                            src={previewImage}
                             alt="Salary Proof"
                             className="max-h-[70vh] max-w-full object-contain rounded-lg"
                         />
@@ -1608,11 +1605,10 @@ const CreateEditSalaryModal = ({
                             {/* Preview Box */}
                             {formData.proofPhoto && (
                                 <div className="relative inline-block border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden p-1 bg-slate-50 dark:bg-slate-800">
-                                    <img
-                                        src={getProxyImageUrl(formData.proofPhoto)}
+                                    <ProxyImage
+                                        src={formData.proofPhoto}
                                         alt="Receipt Preview"
                                         className="w-24 h-24 object-cover rounded-lg"
-                                        onError={(e) => { e.target.style.display = 'none'; }}
                                     />
                                     <button
                                         type="button"

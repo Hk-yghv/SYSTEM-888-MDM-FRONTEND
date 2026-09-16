@@ -16,7 +16,7 @@ import { MdOutlineSync, MdPictureAsPdf, MdOutlineRateReview, MdOutlineAssignment
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
-import { getProxyImageUrl } from '../../../utils/mediaUtils';
+import ProxyImage from '../../../components/ProxyImage';
 
 const LIMIT = 15;
 
@@ -338,42 +338,39 @@ const FollowUp2 = () => {
         setIsFormOpen(true);
     };
 
-    // Upload pending local files to Cloudinary on Submit
+    // Upload pending local files via backend proxy on Submit
     const uploadImagesToCloudinary = async (items) => {
-        const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-        const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-
         const finalUrls = [];
 
         for (const item of items) {
             if (item.type === 'url' && item.url) {
-                finalUrls.push(getProxyImageUrl(item.url));
+                // Store raw Cloudinary URL — display via ProxyImage
+                finalUrls.push(item.url);
             } else if (item.type === 'file' && item.file) {
                 try {
-                    const bodyData = new FormData();
-                    bodyData.append('file', item.file);
-                    bodyData.append('upload_preset', CLOUDINARY_PRESET);
+                    const base64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(item.file);
+                    });
 
-                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                    const res = await fetch(`${API_BASE}/media/upload`, {
                         method: 'POST',
-                        body: bodyData
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+                        },
+                        body: JSON.stringify({ file: base64, folder: 'system_mdm_private' })
                     });
 
                     if (res.ok) {
                         const data = await res.json();
-                        const rawUrl = data.secure_url || data.url;
-                        finalUrls.push(getProxyImageUrl(rawUrl));
+                        finalUrls.push(data.success && data.raw_url ? data.raw_url : base64);
                     } else {
-                        // Fallback to Base64
-                        const b64 = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(item.file);
-                        });
-                        finalUrls.push(b64);
+                        finalUrls.push(base64);
                     }
                 } catch (err) {
-                    console.warn('Cloudinary upload error, using fallback:', err);
+                    console.warn('Backend upload error, using base64 fallback:', err);
                     const b64 = await new Promise((resolve) => {
                         const reader = new FileReader();
                         reader.onloadend = () => resolve(reader.result);
@@ -386,6 +383,7 @@ const FollowUp2 = () => {
 
         return finalUrls;
     };
+
 
 
     // Live auto-match search on customerName or phone input

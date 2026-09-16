@@ -3,7 +3,7 @@ import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
 import { formatIMEI } from '../../../utils/imeiFormatter';
-import { getProxyImageUrl } from '../../../utils/mediaUtils';
+import ProxyImage from '../../../components/ProxyImage';
 
 
 /* ── Shared style tokens ── */
@@ -318,38 +318,40 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
     const [inputPhotoUrl, setInputPhotoUrl] = useState('');
 
-    // Cloudinary multi-photo upload with Base64 fallback
     const handlePhotoFileUpload = async (e) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
         setPhotoUploading(true);
         try {
-            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
             const uploadedUrls = [];
 
             for (const file of files) {
                 try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('upload_preset', CLOUDINARY_PRESET);
-                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                        method: 'POST',
-                        body: formData
+                    // Upload via backend proxy (raw Cloudinary URL never exposed to browser)
+                    const base64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(file);
                     });
+
+                    const res = await fetch(`${API_BASE}/media/upload`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+                        },
+                        body: JSON.stringify({ file: base64, folder: 'system_mdm_private' })
+                    });
+
                     if (res.ok) {
                         const data = await res.json();
-                        if (data.secure_url || data.url) {
-                            const rawUrl = data.secure_url || data.url;
-                            uploadedUrls.push(getProxyImageUrl(rawUrl));
+                        if (data.success && data.raw_url) {
+                            uploadedUrls.push(data.raw_url); // store raw_url; display via ProxyImage
+                        } else {
+                            uploadedUrls.push(base64); // fallback to base64
                         }
                     } else {
-                        const base64 = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(file);
-                        });
-                        if (base64) uploadedUrls.push(base64);
+                        uploadedUrls.push(base64);
                     }
                 } catch (err) {
                     const base64 = await new Promise((resolve) => {
@@ -374,7 +376,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 });
             }
         } catch (err) {
-            console.error('Cloudinary multi-upload error:', err);
+            console.error('Backend multi-upload error:', err);
         } finally {
             setPhotoUploading(false);
             if (photoFileRef.current) photoFileRef.current.value = '';
@@ -633,11 +635,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                             <div className="flex items-center gap-2 flex-wrap max-h-36 overflow-y-auto p-1">
                                                 {(Array.isArray(form.photos) && form.photos.length > 0 ? form.photos : [form.googleDrivePhotoUrl]).filter(Boolean).map((imgUrl, pIdx) => (
                                                     <div key={pIdx} className="relative group border-2 border-amber-600/40 rounded-lg overflow-hidden bg-gray-900 p-0.5 shadow-sm">
-                                                        <img
-                                                            src={getProxyImageUrl(imgUrl)}
+                                                        <ProxyImage
+                                                            src={imgUrl}
                                                             alt={`Evidence ${pIdx + 1}`}
                                                             className="w-14 h-14 object-cover rounded-md"
-                                                            onError={(e) => { e.target.style.display = 'none'; }}
                                                         />
                                                         <button
                                                             type="button"

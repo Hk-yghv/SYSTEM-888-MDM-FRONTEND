@@ -1,12 +1,43 @@
 import express from 'express';
 import fetch from 'node-fetch';
+import crypto from 'crypto';
 
 const router = express.Router();
+
+// Secret used to sign/verify proxy tokens (set in .env)
+const PROXY_SECRET = process.env.MEDIA_PROXY_SECRET || 'mdm_media_proxy_hmac_secret_2026_boyboy_secure';
+
+// Token valid for 4 hours (ms)
+const TOKEN_TTL_MS = 4 * 60 * 60 * 1000;
 
 // Allowed external image hosts for security proxying
 const ALLOWED_HOSTS = ['res.cloudinary.com', 'cloudinary.com', 'images.unsplash.com'];
 
-// CORS pre-flight for media proxy
+/**
+ * Generate HMAC-SHA256 signature for a given URL + expiry timestamp.
+ */
+const signProxyUrl = (rawUrl, exp) => {
+    return crypto
+        .createHmac('sha256', PROXY_SECRET)
+        .update(`${rawUrl}|${exp}`)
+        .digest('hex');
+};
+
+/**
+ * Verify that the signature is valid and token has not expired.
+ */
+const verifyProxyToken = (rawUrl, exp, sig) => {
+    try {
+        const now = Date.now();
+        if (!exp || now > parseInt(exp, 10)) return false; // expired
+        const expected = signProxyUrl(rawUrl, exp);
+        return crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'));
+    } catch {
+        return false;
+    }
+};
+
+// ── CORS pre-flight for media proxy ──
 router.options('/proxy', (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -16,18 +47,62 @@ router.options('/proxy', (req, res) => {
 });
 
 /**
+ * GET /api/media/sign
+ * Accepts a raw Cloudinary URL (base64-encoded as `src`) and returns
+ * a signed proxy URL that the frontend can use to display images.
+ *
+ * This endpoint is authenticated (verifySecurityAuth already applies
+ * to all /api routes in server.js).
+ */
+router.get('/sign', (req, res) => {
+    const { src } = req.query;
+    if (!src) {
+        return res.status(400).json({ error: 'Missing src parameter' });
+    }
+
+    let rawUrl;
+    try {
+        rawUrl = Buffer.from(src, 'base64').toString('utf-8');
+    } catch {
+        rawUrl = src;
+    }
+
+    // Validate the URL is an allowed host
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(rawUrl);
+    } catch {
+        return res.status(400).json({ error: 'Invalid URL format' });
+    }
+
+    const isAllowedHost = ALLOWED_HOSTS.some(host => parsedUrl.hostname.endsWith(host));
+    if (!isAllowedHost) {
+        return res.status(403).json({ error: 'URL host not permitted for proxying' });
+    }
+
+    const exp = String(Date.now() + TOKEN_TTL_MS);
+    const sig = signProxyUrl(rawUrl, exp);
+
+    // Re-encode URL as base64 for the proxy param
+    const encodedSrc = Buffer.from(rawUrl).toString('base64');
+    const proxyUrl = `/api/media/proxy?src=${encodeURIComponent(encodedSrc)}&exp=${exp}&sig=${sig}`;
+
+    return res.json({ proxy_url: proxyUrl });
+});
+
+/**
  * GET /api/media/proxy
- * Fetches private/authenticated images from Cloudinary or external origin server-side
- * and streams the image directly to the client under the backend domain.
+ * Fetches private images from Cloudinary and streams back to client.
+ * Requires valid HMAC signature (`sig`) + expiry (`exp`).
+ * Without a valid token this endpoint returns 403 Forbidden.
  */
 router.get('/proxy', async (req, res) => {
-    // Set permissive CORS and Cross-Origin Resource Policy headers so browsers render images in <img> tags
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
     try {
-        const { src, url } = req.query;
+        const { src, url, exp, sig } = req.query;
         let targetUrl = url;
 
         if (!targetUrl && src) {
@@ -40,6 +115,15 @@ router.get('/proxy', async (req, res) => {
 
         if (!targetUrl) {
             return res.status(400).send('Missing src or url parameter');
+        }
+
+        // ── HMAC Verification — reject all unsigned / expired requests ──
+        if (!exp || !sig) {
+            return res.status(403).json({ error: 'Access denied: missing proxy token. Images are private.' });
+        }
+
+        if (!verifyProxyToken(targetUrl, exp, sig)) {
+            return res.status(403).json({ error: 'Access denied: invalid or expired proxy token.' });
         }
 
         // Validate URL format
@@ -86,7 +170,8 @@ router.get('/proxy', async (req, res) => {
 
 /**
  * POST /api/media/upload
- * Backend proxy endpoint for uploading image files to Cloudinary
+ * Backend proxy endpoint for uploading image files to Cloudinary.
+ * Returns a signed proxy_url (not the raw Cloudinary URL).
  */
 router.post('/upload', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -115,8 +200,12 @@ router.post('/upload', async (req, res) => {
         }
 
         const rawUrl = data.secure_url || data.url;
+
+        // Generate a signed proxy URL immediately upon upload
+        const exp = String(Date.now() + TOKEN_TTL_MS);
+        const sig = signProxyUrl(rawUrl, exp);
         const encodedSrc = Buffer.from(rawUrl).toString('base64');
-        const proxyUrl = `/api/media/proxy?src=${encodeURIComponent(encodedSrc)}`;
+        const proxyUrl = `/api/media/proxy?src=${encodeURIComponent(encodedSrc)}&exp=${exp}&sig=${sig}`;
 
         return res.json({
             success: true,
