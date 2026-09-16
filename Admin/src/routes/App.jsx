@@ -68,6 +68,7 @@ import DeviceActionHistory from "../App/History/pages/DeviceActionHistory";
 
 // Calculate
 import CalculateSchedule1 from "../App/Calculate/pages/CalculateSchedule1";
+import CalculateSchedule2 from "../App/Calculate/pages/CalculateSchedule2";
 
 // Follow Up
 import FollowUp1 from "../App/FollowUp/pages/FollowUp1";
@@ -188,6 +189,7 @@ const App = () => {
                   <Route path={json.contract.blacklist} element={<ProtectRoute pagePath={json.contract.blacklist}> <MainLayout><BlackList /></MainLayout> </ProtectRoute>} />
                   {/* Calculate */}
                   <Route path={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'} element={<ProtectRoute pagePath={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'}> <MainLayout><CalculateSchedule1 /></MainLayout> </ProtectRoute>} />
+                  <Route path={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'} element={<ProtectRoute pagePath={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'}> <MainLayout><CalculateSchedule2 /></MainLayout> </ProtectRoute>} />
                   {/* Installment */}
                   <Route path={json.installment.installmentPage} element={<ProtectRoute pagePath={json.installment.installmentPage}> <MainLayout><InstallmentPage /></MainLayout> </ProtectRoute>} />
                   <Route path={json.installment.paymentHistory} element={<ProtectRoute pagePath={json.installment.paymentHistory}> <MainLayout><PaymentHistory /></MainLayout> </ProtectRoute>} />

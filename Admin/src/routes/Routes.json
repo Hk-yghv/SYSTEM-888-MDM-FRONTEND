@@ -24,7 +24,8 @@
         "blacklist": "/contract/blacklist"
     },
     "calculate": {
-        "calculateSchedule1": "/calculate/schedule-1"
+        "calculateSchedule1": "/calculate/schedule-1",
+        "calculateSchedule2": "/calculate/schedule-2"
     },
     "installment": {
         "installmentPage": "/installment/schedule",

@@ -18,12 +18,20 @@ const CalculateSchedule1 = () => {
     const { t } = useLanguage();
     const { user } = useAuth();
 
+    const formatDateToYMD = (d) => {
+        if (!d || !(d instanceof Date) || isNaN(d)) return '';
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    };
+
     // Inputs
     const [principalInput, setPrincipalInput] = useState('1000');
     const [rateInput, setRateInput] = useState('11.5%');
     const [durationInput, setDurationInput] = useState('4');
     const [durationUnit, setDurationUnit] = useState('months'); // 'months' | 'days'
-    const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(() => formatDateToYMD(new Date()));
 
     // Calculation result state
     const [calculationResult, setCalculationResult] = useState(null);
@@ -66,22 +74,23 @@ const CalculateSchedule1 = () => {
         const totalInterest = monthlyInterestUSD * monthsCount;
         const totalRepayment = paymentPerMonth * monthsCount; // or principal + totalInterest
 
-        // Safe addMonths: clamps day to last valid day of target month (prevents overflow)
-        const addMonthsSafe = (date, months) => {
-            const d = new Date(date);
-            const originalDay = d.getDate();
-            d.setDate(1); // Reset to 1st to avoid overflow when changing month
-            d.setMonth(d.getMonth() + months);
-            // Clamp to last day of target month
-            const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-            d.setDate(Math.min(originalDay, lastDay));
-            return d;
-        };
-
         // Generate schedule table rows
         const schedule = [];
         let remainingPrincipal = principal;
         const baseDate = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
+
+        // Safe addMonths: always tries the original start day, only clamps when target month is shorter.
+        // e.g. start=31 Aug → Sep=30(clamped) → Oct=31(restored) → Nov=30(clamped) → Dec=31(restored)
+        const originalDay = baseDate.getDate();
+        const addMonthsSafe = (date, months) => {
+            const d = new Date(date);
+            d.setDate(1); // Reset to 1st to avoid overflow when changing month
+            d.setMonth(d.getMonth() + months);
+            // Always try original start day; clamp only if target month is shorter
+            const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+            d.setDate(Math.min(originalDay, lastDay));
+            return d;
+        };
 
         for (let i = 1; i <= monthsCount; i++) {
             let dueDate;
@@ -99,7 +108,7 @@ const CalculateSchedule1 = () => {
             schedule.push({
                 monthIndex: i,
                 label: `ខែទី ${i} (Month ${i})`,
-                dueDate: dueDate.toISOString().split('T')[0],
+                dueDate: formatDateToYMD(dueDate),
                 principalDue: currentPrincipalDue,
                 interestDue: monthlyInterestUSD,
                 totalDueMonth: paymentPerMonth,
@@ -128,7 +137,7 @@ const CalculateSchedule1 = () => {
         setRateInput('11.5%');
         setDurationInput('4');
         setDurationUnit('months');
-        setStartDate(new Date().toISOString().split('T')[0]);
+        setStartDate(formatDateToYMD(new Date()));
         setCalculationResult(null);
         setCopiedText(false);
     };
