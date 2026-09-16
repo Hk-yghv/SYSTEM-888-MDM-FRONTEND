@@ -217,7 +217,7 @@ router.get('/reject-submit', async (req, res) => {
 
         let items = [];
         if (isMongoConnected) {
-            items = await queryAllDBs(FollowUp4RejectSubmit, (M) => M.find(filter));
+            items = await queryAllDBs(FollowUp4RejectSubmit, (M) => M.find(filter).sort({ date: -1 }));
         } else {
             items = MEM_REJECT_SUBMITS.filter(r => (!date || r.date === date) && (!brand || r.brand === brand));
         }
@@ -276,7 +276,7 @@ router.get('/reject-cs', async (req, res) => {
 
         let items = [];
         if (isMongoConnected) {
-            items = await queryAllDBs(FollowUp4RejectCS, (M) => M.find(filter));
+            items = await queryAllDBs(FollowUp4RejectCS, (M) => M.find(filter).sort({ date: -1 }));
         } else {
             items = MEM_REJECT_CS.filter(r => (!date || r.date === date) && (!brand || r.brand === brand));
         }

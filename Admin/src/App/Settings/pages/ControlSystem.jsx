@@ -52,6 +52,14 @@ const ControlSystem = () => {
     const [selectedCategoryIdx, setSelectedCategoryIdx] = useState(0);
     const [newBrandInput, setNewBrandInput] = useState('');
 
+    // Dedicated Follow Up 4 inputs
+    const [newRejectSubmitInput, setNewRejectSubmitInput] = useState('');
+    const [newRejectCsInput, setNewRejectCsInput] = useState('');
+    const [newFollowUpSourceInput, setNewFollowUpSourceInput] = useState('');
+    const [newFollowUpContactInput, setNewFollowUpContactInput] = useState('');
+    const [newFollowUpStatusInput, setNewFollowUpStatusInput] = useState('');
+    const [newFollowUpAssetInput, setNewFollowUpAssetInput] = useState('');
+
     const [restoring, setRestoring] = useState(false);
 
     const handleRestoreFromFirebase = async () => {
@@ -265,6 +273,33 @@ const ControlSystem = () => {
         updated[catIdx].items.splice(itemIdx, 1);
         setDroplists(updated);
         saveConfigToMongoDB('droplists', updated);
+    };
+
+    const handleAddSpecificReason = (categoryName, reasonText, setInput) => {
+        const text = reasonText.trim();
+        if (!text) return;
+        const updated = [...droplists];
+        const catIdx = updated.findIndex(d => d.category === categoryName);
+        if (catIdx !== -1) {
+            if (!updated[catIdx].items.includes(text)) {
+                updated[catIdx].items.push(text);
+            }
+        } else {
+            updated.push({ category: categoryName, items: [text] });
+        }
+        setDroplists(updated);
+        if (setInput) setInput('');
+        saveConfigToMongoDB('droplists', updated);
+    };
+
+    const handleDeleteSpecificReason = (categoryName, itemIndex) => {
+        const updated = [...droplists];
+        const catIdx = updated.findIndex(d => d.category === categoryName);
+        if (catIdx !== -1) {
+            updated[catIdx].items.splice(itemIndex, 1);
+            setDroplists(updated);
+            saveConfigToMongoDB('droplists', updated);
+        }
     };
 
     // --- Brand Management (Global Config only) ---
@@ -755,7 +790,141 @@ const ControlSystem = () => {
                     </div>
                 </div>
 
-                {/* Section 4: Dynamic Droplists & Options */}
+                {/* Section 4: Follow Up 4 System Customizer (Private Brand Reasons & Settings) */}
+                <div className="lg:col-span-2 p-6 rounded-3xl glass-card border border-rose-500/30 space-y-5 shadow-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-800">
+                        <div className="flex items-center gap-2 text-rose-400 text-sm font-bold uppercase">
+                            <FaList className="text-rose-400" />
+                            <span>⚡ ការកំណត់ប្រព័ន្ធ FOLLOW UP 4 (Reject Submit & Reject CS Private Reasons)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[11px] bg-slate-800 px-2.5 py-1 rounded-lg text-slate-300 font-semibold border border-slate-700">
+                                Brand កំពុងកំណត់: <strong className="text-emerald-400 font-mono">{selectedBrand || '🌐 Global Template'}</strong>
+                            </span>
+                            <OriginBadge fieldKey="droplists" />
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-slate-400">
+                        កំណត់បញ្ជីមូលហេតុ (Reasons) និងជម្រើស Droplists សម្រាប់ទំព័រ <strong className="text-rose-400 font-semibold">Reject Submit</strong> និង <strong className="text-amber-400 font-semibold">Reject CS</strong> ដោយឡែកពីគ្នា។ ទិន្នន័យដែលបានបញ្ចូលនៅទីនេះ នឹងបង្ហាញជាប្រអប់បំពេញលេខនៅក្នុង Modal នៃទំព័រ Follow Up 4 តាម Brand នីមួយៗភ្លាមៗ។
+                    </p>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        {/* Box A: Reject Submit Reasons */}
+                        <div className="p-4 rounded-2xl bg-slate-900/90 border border-rose-600/30 space-y-3">
+                            <div className="flex items-center justify-between border-b border-rose-900/40 pb-2">
+                                <h4 className="text-xs font-bold text-rose-400 uppercase flex items-center gap-1.5">
+                                    <span>🛑</span> មូលហេតុ REJECT SUBMIT (Reject Submit Reasons)
+                                </h4>
+                                <span className="text-[10px] bg-rose-950/80 text-rose-300 px-2 py-0.5 rounded-full border border-rose-800/40 font-mono">
+                                    {(droplists.find(d => d.category === 'Reject Submit Reasons')?.items || []).length} ជម្រើស
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-xs">
+                                <input
+                                    type="text"
+                                    value={newRejectSubmitInput}
+                                    onChange={(e) => setNewRejectSubmitInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddSpecificReason('Reject Submit Reasons', newRejectSubmitInput, setNewRejectSubmitInput)}
+                                    placeholder="បញ្ចូលមូលហេតុ Reject Submit ថ្មី (ឧ. ភ្ញៀវមិនឆ្លើយតប)..."
+                                    className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 text-xs focus:border-rose-500 outline-none"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => handleAddSpecificReason('Reject Submit Reasons', newRejectSubmitInput, setNewRejectSubmitInput)}
+                                    disabled={!newRejectSubmitInput.trim()}
+                                    className="px-3.5 h-9 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-rose-600/20"
+                                >
+                                    <MdAddCircle size={15} /> <span>បន្ថែម</span>
+                                </button>
+                            </div>
+
+                            {/* Reasons List */}
+                            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                                {(droplists.find(d => d.category === 'Reject Submit Reasons')?.items || []).map((reason, rIdx) => (
+                                    <div
+                                        key={rIdx}
+                                        className="flex items-center justify-between p-2 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs transition-colors"
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-4 h-4 rounded-full bg-slate-800 text-slate-400 text-[10px] flex items-center justify-center font-mono">
+                                                {rIdx + 1}
+                                            </span>
+                                            {reason}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteSpecificReason('Reject Submit Reasons', rIdx)}
+                                            className="text-rose-400 hover:text-rose-300 hover:bg-rose-950/60 p-1 rounded-lg cursor-pointer transition-colors"
+                                            title="លុបមូលហេតុនេះ"
+                                        >
+                                            <MdDelete size={15} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Box B: Reject CS Reasons */}
+                        <div className="p-4 rounded-2xl bg-slate-900/90 border border-amber-600/30 space-y-3">
+                            <div className="flex items-center justify-between border-b border-amber-900/40 pb-2">
+                                <h4 className="text-xs font-bold text-amber-400 uppercase flex items-center gap-1.5">
+                                    <span>⚠️</span> មូលហេតុ REJECT CS (Reject CS Reasons)
+                                </h4>
+                                <span className="text-[10px] bg-amber-950/80 text-amber-300 px-2 py-0.5 rounded-full border border-amber-800/40 font-mono">
+                                    {(droplists.find(d => d.category === 'Reject CS Reasons')?.items || []).length} ជម្រើស
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-xs">
+                                <input
+                                    type="text"
+                                    value={newRejectCsInput}
+                                    onChange={(e) => setNewRejectCsInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddSpecificReason('Reject CS Reasons', newRejectCsInput, setNewRejectCsInput)}
+                                    placeholder="បញ្ចូលមូលហេតុ Reject CS ថ្មី (ឧ. តម្លៃមិនព្រម, គ្មានលទ្ធភាព)..."
+                                    className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 text-xs focus:border-amber-500 outline-none"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => handleAddSpecificReason('Reject CS Reasons', newRejectCsInput, setNewRejectCsInput)}
+                                    disabled={!newRejectCsInput.trim()}
+                                    className="px-3.5 h-9 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-amber-600/20"
+                                >
+                                    <MdAddCircle size={15} /> <span>បន្ថែម</span>
+                                </button>
+                            </div>
+
+                            {/* Reasons List */}
+                            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                                {(droplists.find(d => d.category === 'Reject CS Reasons')?.items || []).map((reason, rIdx) => (
+                                    <div
+                                        key={rIdx}
+                                        className="flex items-center justify-between p-2 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs transition-colors"
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-4 h-4 rounded-full bg-slate-800 text-slate-400 text-[10px] flex items-center justify-center font-mono">
+                                                {rIdx + 1}
+                                            </span>
+                                            {reason}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteSpecificReason('Reject CS Reasons', rIdx)}
+                                            className="text-amber-400 hover:text-amber-300 hover:bg-amber-950/60 p-1 rounded-lg cursor-pointer transition-colors"
+                                            title="លុបមូលហេតុនេះ"
+                                        >
+                                            <MdDelete size={15} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Section 5: General Dynamic Droplists & Options */}
                 <div className="lg:col-span-2 p-6 rounded-3xl glass-card border border-gray-800 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-emerald-300 text-xs font-bold uppercase">
                         <FaList /> System Dropdown Lists & Dynamic Options (Droplists)

@@ -5,17 +5,17 @@ import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
     FaEdit, FaSearch, FaRegCalendarAlt,
     FaListUl, FaBuilding, FaBan,
-    FaCalculator, FaChartBar
+    FaCalculator, FaChartBar, FaHistory, FaCheckCircle
 } from 'react-icons/fa';
 import { MdOutlineSync } from 'react-icons/md';
 import { exportToExcel } from '../../../utils/exportUtils';
 import CopyCell from '../../../components/CopyCell';
 
-// Modular Prop-driven Subcomponents
+// Modular Prop-driven Subcomponents (Center Screen Modals)
 import FollowUp4SubmitModal from '../components/FollowUp4SubmitModal';
-import RejectSubmitCard from '../components/RejectSubmitCard';
-import RejectCsCard from '../components/RejectCsCard';
-import FollowUp4DetailCard from '../components/FollowUp4DetailCard';
+import RejectSubmitModal from '../components/RejectSubmitModal';
+import RejectCsModal from '../components/RejectCsModal';
+import FollowUp4DetailModal from '../components/FollowUp4DetailModal';
 
 const FollowUp4 = () => {
     const { t } = useLanguage();
@@ -96,7 +96,7 @@ const FollowUp4 = () => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
-    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [formData, setFormData] = useState({
         date: new Date().toISOString().split('T')[0],
@@ -150,7 +150,7 @@ const FollowUp4 = () => {
         }
     }, [activeTab, fetchSubmitData]);
 
-    const handleOpenCreateForm = () => {
+    const handleOpenCreateSubmitForm = () => {
         setEditingItem(null);
         setFormData({
             date: new Date().toISOString().split('T')[0],
@@ -170,10 +170,10 @@ const FollowUp4 = () => {
             description: '',
             brand: selectedBrand || user?.brand || '888MDM'
         });
-        setIsFormOpen(true);
+        setIsSubmitModalOpen(true);
     };
 
-    const handleOpenEditForm = (item) => {
+    const handleOpenEditSubmitForm = (item) => {
         setEditingItem(item);
         setFormData({
             date: item.date || new Date().toISOString().split('T')[0],
@@ -193,7 +193,7 @@ const FollowUp4 = () => {
             description: item.description || '',
             brand: item.brand || selectedBrand || user?.brand || '888MDM'
         });
-        setIsFormOpen(true);
+        setIsSubmitModalOpen(true);
     };
 
     const handleFormSubmit = async (e) => {
@@ -222,7 +222,7 @@ const FollowUp4 = () => {
             });
 
             if (res.ok) {
-                setIsFormOpen(false);
+                setIsSubmitModalOpen(false);
                 fetchSubmitData();
             } else {
                 const errData = await res.json();
@@ -259,16 +259,23 @@ const FollowUp4 = () => {
     const [rejectSubmitCounts, setRejectSubmitCounts] = useState({});
     const [rejectSubmitSaving, setRejectSubmitSaving] = useState(false);
     const [rejectSubmitLoading, setRejectSubmitLoading] = useState(false);
+    const [isRejectSubmitModalOpen, setIsRejectSubmitModalOpen] = useState(false);
+    const [rejectSubmitHistoryList, setRejectSubmitHistoryList] = useState([]);
 
     const fetchRejectSubmitData = useCallback(async () => {
         setRejectSubmitLoading(true);
         try {
             const targetBrand = selectedBrand || user?.brand || '888MDM';
-            const res = await fetch(`${API_BASE}/follow-up-4/reject-submit?date=${rejectSubmitDate}&brand=${encodeURIComponent(targetBrand)}`);
+            const res = await fetch(`${API_BASE}/follow-up-4/reject-submit?brand=${encodeURIComponent(targetBrand)}`);
             if (res.ok) {
                 const result = await res.json();
+                const rawData = result.data || [];
+                setRejectSubmitHistoryList(rawData);
+
+                // Populate active date counts
+                const forDate = rawData.filter(r => r.date === rejectSubmitDate);
                 const countsObj = {};
-                (result.data || []).forEach(r => {
+                forDate.forEach(r => {
                     countsObj[r.reason] = r.count;
                 });
                 setRejectSubmitCounts(countsObj);
@@ -285,6 +292,11 @@ const FollowUp4 = () => {
             fetchRejectSubmitData();
         }
     }, [activeTab, fetchRejectSubmitData]);
+
+    const handleOpenCreateRejectSubmit = (targetDate = null) => {
+        if (targetDate) setRejectSubmitDate(targetDate);
+        setIsRejectSubmitModalOpen(true);
+    };
 
     const handleSaveRejectSubmit = async () => {
         setRejectSubmitSaving(true);
@@ -308,6 +320,7 @@ const FollowUp4 = () => {
 
             if (res.ok) {
                 alert('✅ បានរក្សាទុកទិន្នន័យ REJECT SUBMIT រួចរាល់!');
+                setIsRejectSubmitModalOpen(false);
                 fetchRejectSubmitData();
             } else {
                 alert('❌ បរាជ័យក្នុងការរក្សាទុក');
@@ -319,6 +332,19 @@ const FollowUp4 = () => {
         }
     };
 
+    // Group reject submit records by date
+    const groupedRejectSubmit = useMemo(() => {
+        const groups = {};
+        rejectSubmitHistoryList.forEach(item => {
+            if (!groups[item.date]) {
+                groups[item.date] = { date: item.date, brand: item.brand, total: 0, reasons: {} };
+            }
+            groups[item.date].reasons[item.reason] = item.count;
+            groups[item.date].total += (Number(item.count) || 0);
+        });
+        return Object.values(groups).sort((a, b) => b.date.localeCompare(a.date));
+    }, [rejectSubmitHistoryList]);
+
     // =========================================================
     // TAB 3: REJECT CS STATE & LOGIC
     // =========================================================
@@ -326,16 +352,23 @@ const FollowUp4 = () => {
     const [rejectCsCounts, setRejectCsCounts] = useState({});
     const [rejectCsSaving, setRejectCsSaving] = useState(false);
     const [rejectCsLoading, setRejectCsLoading] = useState(false);
+    const [isRejectCsModalOpen, setIsRejectCsModalOpen] = useState(false);
+    const [rejectCsHistoryList, setRejectCsHistoryList] = useState([]);
 
     const fetchRejectCsData = useCallback(async () => {
         setRejectCsLoading(true);
         try {
             const targetBrand = selectedBrand || user?.brand || '888MDM';
-            const res = await fetch(`${API_BASE}/follow-up-4/reject-cs?date=${rejectCsDate}&brand=${encodeURIComponent(targetBrand)}`);
+            const res = await fetch(`${API_BASE}/follow-up-4/reject-cs?brand=${encodeURIComponent(targetBrand)}`);
             if (res.ok) {
                 const result = await res.json();
+                const rawData = result.data || [];
+                setRejectCsHistoryList(rawData);
+
+                // Populate active date counts
+                const forDate = rawData.filter(r => r.date === rejectCsDate);
                 const countsObj = {};
-                (result.data || []).forEach(r => {
+                forDate.forEach(r => {
                     countsObj[r.reason] = r.count;
                 });
                 setRejectCsCounts(countsObj);
@@ -352,6 +385,11 @@ const FollowUp4 = () => {
             fetchRejectCsData();
         }
     }, [activeTab, fetchRejectCsData]);
+
+    const handleOpenCreateRejectCs = (targetDate = null) => {
+        if (targetDate) setRejectCsDate(targetDate);
+        setIsRejectCsModalOpen(true);
+    };
 
     const handleSaveRejectCs = async () => {
         setRejectCsSaving(true);
@@ -375,6 +413,7 @@ const FollowUp4 = () => {
 
             if (res.ok) {
                 alert('✅ បានរក្សាទុកទិន្នន័យ REJECT CS រួចរាល់!');
+                setIsRejectCsModalOpen(false);
                 fetchRejectCsData();
             } else {
                 alert('❌ បរាជ័យក្នុងការរក្សាទុក');
@@ -385,6 +424,19 @@ const FollowUp4 = () => {
             setRejectCsSaving(false);
         }
     };
+
+    // Group reject CS records by date
+    const groupedRejectCs = useMemo(() => {
+        const groups = {};
+        rejectCsHistoryList.forEach(item => {
+            if (!groups[item.date]) {
+                groups[item.date] = { date: item.date, brand: item.brand, total: 0, reasons: {} };
+            }
+            groups[item.date].reasons[item.reason] = item.count;
+            groups[item.date].total += (Number(item.count) || 0);
+        });
+        return Object.values(groups).sort((a, b) => b.date.localeCompare(a.date));
+    }, [rejectCsHistoryList]);
 
     // =========================================================
     // TAB 4: DETAIL STATE & AUTOMATED FORMULAS LOGIC
@@ -407,6 +459,7 @@ const FollowUp4 = () => {
     const [detailSaving, setDetailSaving] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailHistoryList, setDetailHistoryList] = useState([]);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     // AUTO-CALCULATED FORMULAS
     const calculatedFormulas = useMemo(() => {
@@ -494,6 +547,11 @@ const FollowUp4 = () => {
         }
     }, [activeTab, detailDate, fetchDetailData]);
 
+    const handleOpenCreateDetail = (targetDate = null) => {
+        if (targetDate) setDetailDate(targetDate);
+        setIsDetailModalOpen(true);
+    };
+
     const handleSaveDetail = async () => {
         setDetailSaving(true);
         try {
@@ -511,6 +569,7 @@ const FollowUp4 = () => {
 
             if (res.ok) {
                 alert('✅ បានរក្សាទុកទិន្នន័យ DETAIL រួចរាល់!');
+                setIsDetailModalOpen(false);
                 fetchDetailData();
             } else {
                 alert('❌ បរាជ័យក្នុងការរក្សាទុក');
@@ -545,6 +604,24 @@ const FollowUp4 = () => {
                 'BRAND': item.brand
             }));
             exportToExcel(exportData, `FollowUp4_Submit_${new Date().toISOString().split('T')[0]}`);
+        } else if (activeTab === 'rejectSubmit') {
+            const exportData = groupedRejectSubmit.map((item, idx) => {
+                const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, 'សរុប (TOTAL)': item.total };
+                droplists.rejectSubmitReasons.forEach(r => {
+                    row[r] = item.reasons[r] || 0;
+                });
+                return row;
+            });
+            exportToExcel(exportData, `FollowUp4_Reject_Submit_${new Date().toISOString().split('T')[0]}`);
+        } else if (activeTab === 'rejectCs') {
+            const exportData = groupedRejectCs.map((item, idx) => {
+                const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, 'សរុប (TOTAL)': item.total };
+                droplists.rejectCsReasons.forEach(r => {
+                    row[r] = item.reasons[r] || 0;
+                });
+                return row;
+            });
+            exportToExcel(exportData, `FollowUp4_Reject_CS_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'detail') {
             const exportData = detailHistoryList.map((item, idx) => {
                 const message = (item.page || 0) + (item.telegram || 0);
@@ -579,7 +656,7 @@ const FollowUp4 = () => {
     return (
         <div className="p-4 md:p-6 bg-slate-900 text-slate-100 min-h-screen">
             {/* Header & Brand Switcher */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-lg">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-slate-800/80 p-4 rounded-2xl border border-slate-700/60 shadow-xl">
                 <div>
                     <h1 className="text-2xl font-bold text-emerald-400 flex items-center gap-2">
                         <FaChartBar className="text-emerald-400" />
@@ -593,7 +670,7 @@ const FollowUp4 = () => {
                 <div className="flex flex-wrap items-center gap-3">
                     {/* Brand Selector */}
                     {isMasterAdmin && (
-                        <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                        <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700 shadow-inner">
                             <FaBuilding className="text-emerald-400 text-sm" />
                             <span className="text-xs text-slate-300 font-semibold">Brand:</span>
                             <select
@@ -609,15 +686,13 @@ const FollowUp4 = () => {
                         </div>
                     )}
 
-                    {(activeTab === 'submit' || activeTab === 'detail') && (
-                        <button
-                            onClick={handleExportExcel}
-                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition-all shadow-md cursor-pointer"
-                        >
-                            <FaFileExcel size={14} />
-                            <span>Export Excel</span>
-                        </button>
-                    )}
+                    <button
+                        onClick={handleExportExcel}
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3.5 py-2 rounded-xl transition-all shadow-md cursor-pointer"
+                    >
+                        <FaFileExcel size={14} />
+                        <span>Export Excel</span>
+                    </button>
                 </div>
             </div>
 
@@ -625,7 +700,7 @@ const FollowUp4 = () => {
             <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-700/80 pb-2">
                 <button
                     onClick={() => setActiveTab('submit')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                         activeTab === 'submit'
                             ? 'bg-emerald-600 text-white border-b-2 border-emerald-400 shadow-md'
                             : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -637,7 +712,7 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('rejectSubmit')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                         activeTab === 'rejectSubmit'
                             ? 'bg-rose-600 text-white border-b-2 border-rose-400 shadow-md'
                             : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -649,7 +724,7 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('rejectCs')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                         activeTab === 'rejectCs'
                             ? 'bg-amber-600 text-white border-b-2 border-amber-400 shadow-md'
                             : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -661,7 +736,7 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('detail')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${
                         activeTab === 'detail'
                             ? 'bg-sky-600 text-white border-b-2 border-sky-400 shadow-md'
                             : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -672,7 +747,9 @@ const FollowUp4 = () => {
                 </button>
             </div>
 
-            {/* TAB 1: FOLLOW UP SUBMIT */}
+            {/* =========================================================
+                TAB 1: FOLLOW UP SUBMIT
+               ========================================================= */}
             {activeTab === 'submit' && (
                 <div className="space-y-4">
                     {/* Filters & Actions Bar */}
@@ -712,11 +789,11 @@ const FollowUp4 = () => {
                         {/* Add Button */}
                         {hasPermission('/follow-up/follow-up-4', 'create') && (
                             <button
-                                onClick={handleOpenCreateForm}
-                                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-lg transition-all shadow-md cursor-pointer"
+                                onClick={handleOpenCreateSubmitForm}
+                                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
                             >
                                 <FaPlusCircle size={15} />
-                                <span>បន្ថែម FOLLOW UP SUBMIT</span>
+                                <span>+ បន្ថែម FOLLOW UP SUBMIT</span>
                             </button>
                         )}
                     </div>
@@ -793,7 +870,7 @@ const FollowUp4 = () => {
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         {hasPermission('/follow-up/follow-up-4', 'edit') && (
                                                             <button
-                                                                onClick={() => handleOpenEditForm(item)}
+                                                                onClick={() => handleOpenEditSubmitForm(item)}
                                                                 className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
                                                                 title="កែប្រែ"
                                                             >
@@ -821,56 +898,332 @@ const FollowUp4 = () => {
                 </div>
             )}
 
-            {/* TAB 2: REJECT SUBMIT (Modular Prop Component) */}
+            {/* =========================================================
+                TAB 2: REJECT SUBMIT (Summary Table & Create Modal Trigger)
+               ========================================================= */}
             {activeTab === 'rejectSubmit' && (
-                <RejectSubmitCard
-                    date={rejectSubmitDate}
-                    setDate={setRejectSubmitDate}
-                    brand={selectedBrand || user?.brand}
-                    reasons={droplists.rejectSubmitReasons}
-                    counts={rejectSubmitCounts}
-                    setCounts={setRejectSubmitCounts}
-                    onSave={handleSaveRejectSubmit}
-                    saving={rejectSubmitSaving}
-                    loading={rejectSubmitLoading}
-                />
+                <div className="space-y-4">
+                    {/* Top Action Bar */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
+                        <div>
+                            <h2 className="text-base font-bold text-rose-400 flex items-center gap-2">
+                                <FaBan /> <span>REJECT SUBMIT SUMMARY</span>
+                            </h2>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                                កំណត់ត្រា Reject Submit តាមថ្ងៃសម្រាប់ Brand: <span className="text-emerald-400 font-bold bg-slate-900 px-2 py-0.5 rounded">{selectedBrand || user?.brand || '888MDM'}</span>
+                            </p>
+                        </div>
+
+                        {hasPermission('/follow-up/follow-up-4', 'create') && (
+                            <button
+                                onClick={() => handleOpenCreateRejectSubmit()}
+                                className="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-rose-600/20 cursor-pointer"
+                            >
+                                <FaPlusCircle size={15} />
+                                <span>+ បញ្ចូល REJECT SUBMIT</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* History Table */}
+                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
+                        <div className="p-4 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-200">ប្រវត្តិទិន្នន័យ REJECT SUBMIT តាមកាលបរិច្ឆេទ</span>
+                            <span className="text-xs text-rose-400 font-mono font-semibold">{groupedRejectSubmit.length} ថ្ងៃបានកត់ត្រា</span>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-left text-slate-200">
+                                <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
+                                    <tr>
+                                        <th className="py-3 px-3 text-center w-10">#</th>
+                                        <th className="py-3 px-3">កាលបរិច្ឆេទ</th>
+                                        <th className="py-3 px-3 text-center font-bold text-rose-400">សរុប (TOTAL)</th>
+                                        {droplists.rejectSubmitReasons.map((reason, rIdx) => (
+                                            <th key={rIdx} className="py-3 px-3 text-center">{reason}</th>
+                                        ))}
+                                        <th className="py-3 px-3 text-center">សកម្មភាព</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-700/50">
+                                    {rejectSubmitLoading ? (
+                                        <tr>
+                                            <td colSpan={4 + droplists.rejectSubmitReasons.length} className="text-center py-8 text-slate-400">
+                                                <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-rose-400" />
+                                                <p>កំពុងទាញយកទិន្នន័យ...</p>
+                                            </td>
+                                        </tr>
+                                    ) : groupedRejectSubmit.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4 + droplists.rejectSubmitReasons.length} className="text-center py-8 text-slate-500 font-medium">
+                                                មិនទាន់មានកំណត់ត្រា Reject Submit នៅឡើយទេ សូមចុច &quot;+ បញ្ចូល REJECT SUBMIT&quot; ដើម្បីបញ្ចូល
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        groupedRejectSubmit.map((group, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
+                                                <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{idx + 1}</td>
+                                                <td className="py-2.5 px-3 font-mono font-bold text-rose-300">{group.date}</td>
+                                                <td className="py-2.5 px-3 text-center font-mono font-extrabold text-rose-400 bg-rose-950/30">
+                                                    {group.total}
+                                                </td>
+                                                {droplists.rejectSubmitReasons.map((reason, rIdx) => (
+                                                    <td key={rIdx} className="py-2.5 px-3 text-center font-mono text-slate-300">
+                                                        {group.reasons[reason] || 0}
+                                                    </td>
+                                                ))}
+                                                <td className="py-2.5 px-3 text-center">
+                                                    <button
+                                                        onClick={() => handleOpenCreateRejectSubmit(group.date)}
+                                                        className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-rose-300 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                                                    >
+                                                        <FaEdit className="inline mr-1" /> កែប្រែ
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             )}
 
-            {/* TAB 3: REJECT CS (Modular Prop Component) */}
+            {/* =========================================================
+                TAB 3: REJECT CS (Summary Table & Create Modal Trigger)
+               ========================================================= */}
             {activeTab === 'rejectCs' && (
-                <RejectCsCard
-                    date={rejectCsDate}
-                    setDate={setRejectCsDate}
-                    brand={selectedBrand || user?.brand}
-                    reasons={droplists.rejectCsReasons}
-                    counts={rejectCsCounts}
-                    setCounts={setRejectCsCounts}
-                    onSave={handleSaveRejectCs}
-                    saving={rejectCsSaving}
-                    loading={rejectCsLoading}
-                />
+                <div className="space-y-4">
+                    {/* Top Action Bar */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
+                        <div>
+                            <h2 className="text-base font-bold text-amber-400 flex items-center gap-2">
+                                <FaBan /> <span>REJECT CS SUMMARY</span>
+                            </h2>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                                កំណត់ត្រា Reject CS តាមថ្ងៃសម្រាប់ Brand: <span className="text-emerald-400 font-bold bg-slate-900 px-2 py-0.5 rounded">{selectedBrand || user?.brand || '888MDM'}</span>
+                            </p>
+                        </div>
+
+                        {hasPermission('/follow-up/follow-up-4', 'create') && (
+                            <button
+                                onClick={() => handleOpenCreateRejectCs()}
+                                className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-600/20 cursor-pointer"
+                            >
+                                <FaPlusCircle size={15} />
+                                <span>+ បញ្ចូល REJECT CS</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* History Table */}
+                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
+                        <div className="p-4 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-200">ប្រវត្តិទិន្នន័យ REJECT CS តាមកាលបរិច្ឆេទ</span>
+                            <span className="text-xs text-amber-400 font-mono font-semibold">{groupedRejectCs.length} ថ្ងៃបានកត់ត្រា</span>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-left text-slate-200">
+                                <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
+                                    <tr>
+                                        <th className="py-3 px-3 text-center w-10">#</th>
+                                        <th className="py-3 px-3">កាលបរិច្ឆេទ</th>
+                                        <th className="py-3 px-3 text-center font-bold text-amber-400">សរុប (TOTAL)</th>
+                                        {droplists.rejectCsReasons.map((reason, rIdx) => (
+                                            <th key={rIdx} className="py-3 px-3 text-center">{reason}</th>
+                                        ))}
+                                        <th className="py-3 px-3 text-center">សកម្មភាព</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-700/50">
+                                    {rejectCsLoading ? (
+                                        <tr>
+                                            <td colSpan={4 + droplists.rejectCsReasons.length} className="text-center py-8 text-slate-400">
+                                                <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-amber-400" />
+                                                <p>កំពុងទាញយកទិន្នន័យ...</p>
+                                            </td>
+                                        </tr>
+                                    ) : groupedRejectCs.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4 + droplists.rejectCsReasons.length} className="text-center py-8 text-slate-500 font-medium">
+                                                មិនទាន់មានកំណត់ត្រា Reject CS នៅឡើយទេ សូមចុច &quot;+ បញ្ចូល REJECT CS&quot; ដើម្បីបញ្ចូល
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        groupedRejectCs.map((group, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
+                                                <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{idx + 1}</td>
+                                                <td className="py-2.5 px-3 font-mono font-bold text-amber-300">{group.date}</td>
+                                                <td className="py-2.5 px-3 text-center font-mono font-extrabold text-amber-400 bg-amber-950/30">
+                                                    {group.total}
+                                                </td>
+                                                {droplists.rejectCsReasons.map((reason, rIdx) => (
+                                                    <td key={rIdx} className="py-2.5 px-3 text-center font-mono text-slate-300">
+                                                        {group.reasons[reason] || 0}
+                                                    </td>
+                                                ))}
+                                                <td className="py-2.5 px-3 text-center">
+                                                    <button
+                                                        onClick={() => handleOpenCreateRejectCs(group.date)}
+                                                        className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-amber-300 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                                                    >
+                                                        <FaEdit className="inline mr-1" /> កែប្រែ
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             )}
 
-            {/* TAB 4: DETAIL (Modular Prop Component) */}
+            {/* =========================================================
+                TAB 4: DETAIL (Automated Calculations & History Table)
+               ========================================================= */}
             {activeTab === 'detail' && (
-                <FollowUp4DetailCard
-                    date={detailDate}
-                    setDate={setDetailDate}
-                    brand={selectedBrand || user?.brand}
-                    metrics={detailMetrics}
-                    setMetrics={setDetailMetrics}
-                    onSave={handleSaveDetail}
-                    saving={detailSaving}
-                    calculatedFormulas={calculatedFormulas}
-                    historyList={detailHistoryList}
-                    loading={detailLoading}
-                />
+                <div className="space-y-6">
+                    {/* Top Action Bar */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
+                        <div>
+                            <h2 className="text-base font-bold text-sky-400 flex items-center gap-2">
+                                <FaCalculator /> <span>DETAIL METRICS & AUTOMATED FORMULAS</span>
+                            </h2>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                                គណនារូបមន្តស្វ័យប្រវត្តិសម្រាប់ Brand: <span className="text-emerald-400 font-bold bg-slate-900 px-2 py-0.5 rounded">{selectedBrand || user?.brand || '888MDM'}</span>
+                            </p>
+                        </div>
+
+                        {hasPermission('/follow-up/follow-up-4', 'create') && (
+                            <button
+                                onClick={() => handleOpenCreateDetail()}
+                                className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-sky-600/20 cursor-pointer"
+                            >
+                                <FaPlusCircle size={15} />
+                                <span>+ បញ្ចូល DETAIL METRICS</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Automated Calculations Summary Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                        <div className="bg-slate-800/90 p-4 rounded-2xl border border-sky-500/30 shadow-lg text-center">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase">TOTAL INQUIRIES</span>
+                            <p className="text-2xl font-black text-sky-400 font-mono mt-1">{calculatedFormulas.totalInquiries || 0}</p>
+                            <span className="text-[10px] text-slate-500">PAGE + TELEGRAM</span>
+                        </div>
+
+                        <div className="bg-slate-800/90 p-4 rounded-2xl border border-indigo-500/30 shadow-lg text-center">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase">TOTAL PROCESSED</span>
+                            <p className="text-2xl font-black text-indigo-400 font-mono mt-1">{calculatedFormulas.totalProcessed || 0}</p>
+                            <span className="text-[10px] text-slate-500">NO REPLY + INQUIRE + REJECT CS + MORE</span>
+                        </div>
+
+                        <div className="bg-slate-800/90 p-4 rounded-2xl border border-emerald-500/30 shadow-lg text-center">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase">TOTAL SUBMITS</span>
+                            <p className="text-2xl font-black text-emerald-400 font-mono mt-1">{calculatedFormulas.totalSubmits || 0}</p>
+                            <span className="text-[10px] text-slate-500">PAGE SUB + TG SUB</span>
+                        </div>
+
+                        <div className="bg-slate-800/90 p-4 rounded-2xl border border-teal-500/30 shadow-lg text-center">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase">TOTAL SUCCESS</span>
+                            <p className="text-2xl font-black text-teal-400 font-mono mt-1">{calculatedFormulas.totalSuccess || 0}</p>
+                            <span className="text-[10px] text-slate-500">SUCCESS 1 + SUCCESS 2</span>
+                        </div>
+
+                        <div className="bg-slate-800/90 p-4 rounded-2xl border border-emerald-500/50 shadow-lg text-center col-span-2 sm:col-span-1 bg-gradient-to-b from-emerald-950/40 to-slate-900/90">
+                            <span className="text-[11px] text-emerald-300 font-bold uppercase">CONVERSION RATE</span>
+                            <p className="text-2xl font-black text-emerald-400 font-mono mt-1">{calculatedFormulas.conversionRate || '0.0%'}</p>
+                            <span className="text-[10px] text-emerald-400/70">(SUCCESS / SUBMITS) * 100</span>
+                        </div>
+                    </div>
+
+                    {/* History Table */}
+                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
+                        <div className="p-4 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-200">ប្រវត្តិ DETAIL METRICS តាមកាលបរិច្ឆេទ</span>
+                            <span className="text-xs text-sky-400 font-mono font-semibold">{detailHistoryList.length} ថ្ងៃបានកត់ត្រា</span>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-left text-slate-200">
+                                <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-700">
+                                    <tr>
+                                        <th className="py-2.5 px-3">កាលបរិច្ឆេទ</th>
+                                        <th className="py-2.5 px-2 text-center">PAGE</th>
+                                        <th className="py-2.5 px-2 text-center">TG</th>
+                                        <th className="py-2.5 px-2 text-center">NO REPLY</th>
+                                        <th className="py-2.5 px-2 text-center">INQUIRE</th>
+                                        <th className="py-2.5 px-2 text-center text-rose-400">REJECT CS</th>
+                                        <th className="py-2.5 px-2 text-center">MORE</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-400">PAGE SUB</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-400">TG SUB</th>
+                                        <th className="py-2.5 px-2 text-center text-amber-400">REVIEW</th>
+                                        <th className="py-2.5 px-2 text-center text-rose-400">REJECT</th>
+                                        <th className="py-2.5 px-2 text-center text-teal-400">SUCC 1</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-300">SUCC 2</th>
+                                        <th className="py-2.5 px-2 text-center">សកម្មភាព</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-700/50">
+                                    {detailLoading ? (
+                                        <tr>
+                                            <td colSpan="14" className="text-center py-8 text-slate-400">
+                                                <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-sky-400" />
+                                                <p>កំពុងទាញយកទិន្នន័យ...</p>
+                                            </td>
+                                        </tr>
+                                    ) : detailHistoryList.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="14" className="text-center py-8 text-slate-500 font-medium">
+                                                មិនទាន់មានទិន្នន័យ Detail Metrics នៅឡើយទេ សូមចុច &quot;+ បញ្ចូល DETAIL METRICS&quot; ដើម្បីបញ្ចូល
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        detailHistoryList.map((row, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
+                                                <td className="py-2 px-3 font-mono font-bold text-sky-400">{row.date}</td>
+                                                <td className="py-2 px-2 text-center font-mono">{row.page || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono">{row.telegram || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono">{row.noReply || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono">{row.inquire || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono text-rose-400">{row.rejectCs || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono">{row.more || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.pageSubmit || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.telegramSubmit || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono text-amber-400">{row.review || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono text-rose-400">{row.reject || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono text-teal-400">{row.success1 || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono text-emerald-300 font-bold">{row.success2 || 0}</td>
+                                                <td className="py-2 px-2 text-center">
+                                                    <button
+                                                        onClick={() => handleOpenCreateDetail(row.date)}
+                                                        className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-sky-300 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+                                                    >
+                                                        <FaEdit className="inline mr-1" /> កែប្រែ
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             )}
 
-            {/* CREATE / EDIT SUBMIT FORM MODAL (Modular Prop Component) */}
+            {/* =========================================================
+                MODAL DIALOGS (PROPS POPOVER AT CENTER OF SCREEN)
+               ========================================================= */}
+            {/* 1. Follow Up 4 Submit Modal */}
             <FollowUp4SubmitModal
-                isOpen={isFormOpen}
-                onClose={() => { setIsFormOpen(false); setEditingItem(null); }}
+                isOpen={isSubmitModalOpen}
+                onClose={() => { setIsSubmitModalOpen(false); setEditingItem(null); }}
                 editingItem={editingItem}
                 formData={formData}
                 setFormData={setFormData}
@@ -881,10 +1234,52 @@ const FollowUp4 = () => {
                 brandsList={brandsList}
             />
 
-            {/* DELETE CONFIRMATION MODAL */}
+            {/* 2. Reject Submit Modal */}
+            <RejectSubmitModal
+                isOpen={isRejectSubmitModalOpen}
+                onClose={() => setIsRejectSubmitModalOpen(false)}
+                date={rejectSubmitDate}
+                setDate={setRejectSubmitDate}
+                brand={selectedBrand || user?.brand}
+                reasons={droplists.rejectSubmitReasons}
+                counts={rejectSubmitCounts}
+                setCounts={setRejectSubmitCounts}
+                onSave={handleSaveRejectSubmit}
+                saving={rejectSubmitSaving}
+            />
+
+            {/* 3. Reject CS Modal */}
+            <RejectCsModal
+                isOpen={isRejectCsModalOpen}
+                onClose={() => setIsRejectCsModalOpen(false)}
+                date={rejectCsDate}
+                setDate={setRejectCsDate}
+                brand={selectedBrand || user?.brand}
+                reasons={droplists.rejectCsReasons}
+                counts={rejectCsCounts}
+                setCounts={setRejectCsCounts}
+                onSave={handleSaveRejectCs}
+                saving={rejectCsSaving}
+            />
+
+            {/* 4. Detail Metrics Modal */}
+            <FollowUp4DetailModal
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                date={detailDate}
+                setDate={setDetailDate}
+                brand={selectedBrand || user?.brand}
+                metrics={detailMetrics}
+                setMetrics={setDetailMetrics}
+                onSave={handleSaveDetail}
+                saving={detailSaving}
+                calculatedFormulas={calculatedFormulas}
+            />
+
+            {/* 5. Delete Confirmation Modal */}
             {deleteModalItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-6 max-w-sm w-full text-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+                    <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center">
                         <FaTrashAlt className="text-rose-500 text-3xl mx-auto mb-3" />
                         <h4 className="text-base font-bold text-slate-100 mb-1">តើអ្នកប្រាកដជាចង់លុប?</h4>
                         <p className="text-xs text-slate-400 mb-6">
@@ -893,13 +1288,13 @@ const FollowUp4 = () => {
                         <div className="flex items-center justify-center gap-3">
                             <button
                                 onClick={() => setDeleteModalItem(null)}
-                                className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer"
+                                className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer"
                             >
                                 បោះបង់
                             </button>
                             <button
                                 onClick={handleDeleteSubmit}
-                                className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all shadow-md cursor-pointer"
+                                className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer"
                             >
                                 លុបចេញ
                             </button>
