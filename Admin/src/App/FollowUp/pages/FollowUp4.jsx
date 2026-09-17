@@ -31,7 +31,7 @@ const FollowUp4 = () => {
 
     // Master droplists dynamically fetched from Control System Database
     const [droplists, setDroplists] = useState({
-        sources: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'],
+        sources: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'CALL', 'Other'],
         contactTypes: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'],
         statuses: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
         assetTypes: ['ទូរស័ព្ទ (Smart Phone)', 'ម៉ូតូ (Motorcycle)', 'រថយន្ត (Car)', 'ប្លង់ដី/ផ្ទះ (Real Estate)', 'មាស/គ្រឿងអលង្ការ (Jewelry)', 'កុំព្យូទ័រ (Laptop/PC)', 'ផ្សេងៗ (Other)'],
@@ -1152,37 +1152,7 @@ const FollowUp4 = () => {
                                     )}
                                 </tbody>
                                 {submitList.length > 0 && (
-                                    <tfoot className="bg-slate-900/95 font-bold border-t-2 border-emerald-500/50 text-xs shadow-inner">
-                                        {/* If multiple days, also render daily breakdown rows in footer */}
-                                        {groupedSubmitByDate.length > 1 && groupedSubmitByDate.map((group) => (
-                                            <tr key={`tfoot-${group.date}`} className="border-b border-slate-800/80 text-slate-300 bg-slate-900/60">
-                                                <td colSpan="10" className="py-2.5 px-3 font-semibold text-emerald-400/90">
-                                                    <div className="flex items-center gap-2">
-                                                        <span>សរុប ({group.date}):</span>
-                                                        <span className="bg-slate-800 text-slate-400 text-[10px] px-2 py-0.5 rounded border border-slate-700 font-mono">
-                                                            {group.count} កំណត់ត្រា
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-2.5 px-3 font-mono font-bold text-amber-400">
-                                                    ${group.totalAppraisal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                                                </td>
-                                                <td className="py-2.5 px-3 font-mono font-bold text-emerald-400">
-                                                    ${group.totalRequested.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                                                </td>
-                                                <td className="py-2.5 px-3 text-slate-500 text-center">-</td>
-                                                <td className="py-2.5 px-3 text-slate-500 text-center">-</td>
-                                                <td className="py-2.5 px-3">
-                                                    <div className="flex flex-col gap-0.5 text-[10px] font-mono">
-                                                        <span className="text-emerald-400">ជោគជ័យ: {group.successCount}</span>
-                                                        <span className="text-rose-400">REJECT: {group.rejectCount}</span>
-                                                        {group.reviewCount > 0 && <span className="text-amber-400">REVIEW: {group.reviewCount}</span>}
-                                                    </div>
-                                                </td>
-                                                <td colSpan="2" className="py-2.5 px-3 text-slate-500 font-mono text-center">-</td>
-                                            </tr>
-                                        ))}
-
+                                    <tfoot className="border-t-2 border-emerald-500/50 text-xs shadow-inner">
                                         {/* Overall Grand Total Row */}
                                         <tr className="bg-slate-950 font-bold text-slate-100 border-t border-emerald-500/40">
                                             <td colSpan="10" className="py-3.5 px-3 font-bold text-emerald-400 uppercase tracking-wider">
