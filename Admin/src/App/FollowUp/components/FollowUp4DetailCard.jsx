@@ -67,7 +67,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.page !== undefined ? metrics.page : 0}
+                                placeholder="0"
+                                value={metrics.page ?? ''}
                                 onChange={(e) => handleMetricChange('page', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-cyan-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-cyan-500 font-mono"
                             />
@@ -78,7 +79,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.telegram !== undefined ? metrics.telegram : 0}
+                                placeholder="0"
+                                value={metrics.telegram ?? ''}
                                 onChange={(e) => handleMetricChange('telegram', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-sky-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-sky-500 font-mono"
                             />
@@ -89,7 +91,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.noReply !== undefined ? metrics.noReply : 0}
+                                placeholder="0"
+                                value={metrics.noReply ?? ''}
                                 onChange={(e) => handleMetricChange('noReply', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-slate-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-slate-500 font-mono"
                             />
@@ -100,7 +103,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.inquire !== undefined ? metrics.inquire : 0}
+                                placeholder="0"
+                                value={metrics.inquire ?? ''}
                                 onChange={(e) => handleMetricChange('inquire', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-amber-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-amber-500 font-mono"
                             />
@@ -111,7 +115,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.rejectCs !== undefined ? metrics.rejectCs : 0}
+                                placeholder="0"
+                                value={metrics.rejectCs ?? ''}
                                 onChange={(e) => handleMetricChange('rejectCs', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-rose-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-rose-500 font-mono"
                             />
@@ -122,7 +127,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.more !== undefined ? metrics.more : 0}
+                                placeholder="0"
+                                value={metrics.more ?? ''}
                                 onChange={(e) => handleMetricChange('more', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-indigo-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-indigo-500 font-mono"
                             />
@@ -133,7 +139,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.pageSubmit !== undefined ? metrics.pageSubmit : 0}
+                                placeholder="0"
+                                value={metrics.pageSubmit ?? ''}
                                 onChange={(e) => handleMetricChange('pageSubmit', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-emerald-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-emerald-500 font-mono"
                             />
@@ -144,7 +151,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.telegramSubmit !== undefined ? metrics.telegramSubmit : 0}
+                                placeholder="0"
+                                value={metrics.telegramSubmit ?? ''}
                                 onChange={(e) => handleMetricChange('telegramSubmit', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-emerald-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-emerald-500 font-mono"
                             />
@@ -155,7 +163,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.call !== undefined ? metrics.call : 0}
+                                placeholder="0"
+                                value={metrics.call ?? ''}
                                 onChange={(e) => handleMetricChange('call', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-emerald-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-emerald-500 font-mono"
                             />
@@ -166,7 +175,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.review !== undefined ? metrics.review : 0}
+                                placeholder="0"
+                                value={metrics.review ?? ''}
                                 onChange={(e) => handleMetricChange('review', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-amber-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-amber-500 font-mono"
                             />
@@ -177,7 +187,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.reject !== undefined ? metrics.reject : 0}
+                                placeholder="0"
+                                value={metrics.reject ?? ''}
                                 onChange={(e) => handleMetricChange('reject', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-rose-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-rose-500 font-mono"
                             />
@@ -188,7 +199,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.success1 !== undefined ? metrics.success1 : 0}
+                                placeholder="0"
+                                value={metrics.success1 ?? ''}
                                 onChange={(e) => handleMetricChange('success1', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-teal-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-teal-500 font-mono"
                             />
@@ -199,7 +211,8 @@ const FollowUp4DetailCard = ({
                             <input
                                 type="number"
                                 min="0"
-                                value={metrics.success2 !== undefined ? metrics.success2 : 0}
+                                placeholder="0"
+                                value={metrics.success2 ?? ''}
                                 onChange={(e) => handleMetricChange('success2', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-emerald-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-emerald-500 font-mono"
                             />

@@ -392,7 +392,18 @@ const FollowUp4 = () => {
     }, [activeTab, fetchRejectSubmitData]);
 
     const handleOpenCreateRejectSubmit = (targetDate = null) => {
-        if (targetDate) setRejectSubmitDate(targetDate);
+        if (targetDate) {
+            setRejectSubmitDate(targetDate);
+            const forDate = rejectSubmitHistoryList.filter(r => r.date === targetDate);
+            const countsObj = {};
+            forDate.forEach(r => {
+                countsObj[r.reason] = r.count;
+            });
+            setRejectSubmitCounts(countsObj);
+        } else {
+            setRejectSubmitDate(new Date().toISOString().split('T')[0]);
+            setRejectSubmitCounts({});
+        }
         setIsRejectSubmitModalOpen(true);
     };
 
@@ -485,7 +496,18 @@ const FollowUp4 = () => {
     }, [activeTab, fetchRejectCsData]);
 
     const handleOpenCreateRejectCs = (targetDate = null) => {
-        if (targetDate) setRejectCsDate(targetDate);
+        if (targetDate) {
+            setRejectCsDate(targetDate);
+            const forDate = rejectCsHistoryList.filter(r => r.date === targetDate);
+            const countsObj = {};
+            forDate.forEach(r => {
+                countsObj[r.reason] = r.count;
+            });
+            setRejectCsCounts(countsObj);
+        } else {
+            setRejectCsDate(new Date().toISOString().split('T')[0]);
+            setRejectCsCounts({});
+        }
         setIsRejectCsModalOpen(true);
     };
 
@@ -543,20 +565,20 @@ const FollowUp4 = () => {
     const [detailStartDate, setDetailStartDate] = useState('');
     const [detailEndDate, setDetailEndDate] = useState('');
     const [detailMetrics, setDetailMetrics] = useState({
-        message: 0,
-        page: 0,
-        telegram: 0,
-        noReply: 0,
-        inquire: 0,
-        rejectCs: 0,
-        more: 0,
-        pageSubmit: 0,
-        telegramSubmit: 0,
-        call: 0,
-        review: 0,
-        reject: 0,
-        success1: 0,
-        success2: 0
+        message: '',
+        page: '',
+        telegram: '',
+        noReply: '',
+        inquire: '',
+        rejectCs: '',
+        more: '',
+        pageSubmit: '',
+        telegramSubmit: '',
+        call: '',
+        review: '',
+        reject: '',
+        success1: '',
+        success2: ''
     });
     const [detailSaving, setDetailSaving] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -671,19 +693,19 @@ const FollowUp4 = () => {
                 if (currentDay) {
                     setDetailMetrics({
                         message: currentDay.message !== undefined && currentDay.message !== null ? currentDay.message : (Number(currentDay.page || 0) + Number(currentDay.telegram || 0) + Number(currentDay.call || 0)),
-                        page: currentDay.page || 0,
-                        telegram: currentDay.telegram || 0,
-                        noReply: currentDay.noReply || 0,
-                        inquire: currentDay.inquire || 0,
-                        rejectCs: currentDay.rejectCs || 0,
-                        more: currentDay.more || 0,
-                        pageSubmit: currentDay.pageSubmit || 0,
-                        telegramSubmit: currentDay.telegramSubmit || 0,
-                        call: currentDay.call || 0,
-                        review: currentDay.review || 0,
-                        reject: currentDay.reject || 0,
-                        success1: currentDay.success1 || 0,
-                        success2: currentDay.success2 || 0
+                        page: currentDay.page ?? '',
+                        telegram: currentDay.telegram ?? '',
+                        noReply: currentDay.noReply ?? '',
+                        inquire: currentDay.inquire ?? '',
+                        rejectCs: currentDay.rejectCs ?? '',
+                        more: currentDay.more ?? '',
+                        pageSubmit: currentDay.pageSubmit ?? '',
+                        telegramSubmit: currentDay.telegramSubmit ?? '',
+                        call: currentDay.call ?? '',
+                        review: currentDay.review ?? '',
+                        reject: currentDay.reject ?? '',
+                        success1: currentDay.success1 ?? '',
+                        success2: currentDay.success2 ?? ''
                     });
                 }
             }
@@ -710,33 +732,33 @@ const FollowUp4 = () => {
             if (existing) {
                 setDetailMetrics({
                     message: existing.message !== undefined && existing.message !== null ? existing.message : (Number(existing.page || 0) + Number(existing.telegram || 0) + Number(existing.call || 0)),
-                    page: existing.page || 0,
-                    telegram: existing.telegram || 0,
-                    noReply: existing.noReply || 0,
-                    inquire: existing.inquire || 0,
-                    rejectCs: existing.rejectCs || 0,
-                    more: existing.more || 0,
-                    pageSubmit: existing.pageSubmit || 0,
-                    telegramSubmit: existing.telegramSubmit || 0,
-                    call: existing.call || 0,
-                    review: existing.review || 0,
-                    reject: existing.reject || 0,
-                    success1: existing.success1 || 0,
-                    success2: existing.success2 || 0
+                    page: existing.page ?? '',
+                    telegram: existing.telegram ?? '',
+                    noReply: existing.noReply ?? '',
+                    inquire: existing.inquire ?? '',
+                    rejectCs: existing.rejectCs ?? '',
+                    more: existing.more ?? '',
+                    pageSubmit: existing.pageSubmit ?? '',
+                    telegramSubmit: existing.telegramSubmit ?? '',
+                    call: existing.call ?? '',
+                    review: existing.review ?? '',
+                    reject: existing.reject ?? '',
+                    success1: existing.success1 ?? '',
+                    success2: existing.success2 ?? ''
                 });
             } else {
                 setDetailMetrics({
-                    message: 0, page: 0, telegram: 0, noReply: 0, inquire: 0,
-                    rejectCs: 0, more: 0, pageSubmit: 0, telegramSubmit: 0, call: 0,
-                    review: 0, reject: 0, success1: 0, success2: 0
+                    message: '', page: '', telegram: '', noReply: '', inquire: '',
+                    rejectCs: '', more: '', pageSubmit: '', telegramSubmit: '', call: '',
+                    review: '', reject: '', success1: '', success2: ''
                 });
             }
         } else {
             // Clean fresh form on new create
             setDetailMetrics({
-                message: 0, page: 0, telegram: 0, noReply: 0, inquire: 0,
-                rejectCs: 0, more: 0, pageSubmit: 0, telegramSubmit: 0, call: 0,
-                review: 0, reject: 0, success1: 0, success2: 0
+                message: '', page: '', telegram: '', noReply: '', inquire: '',
+                rejectCs: '', more: '', pageSubmit: '', telegramSubmit: '', call: '',
+                review: '', reject: '', success1: '', success2: ''
             });
         }
         setIsDetailModalOpen(true);
@@ -752,7 +774,20 @@ const FollowUp4 = () => {
                 body: JSON.stringify({
                     date: detailDate,
                     brand: targetBrand,
-                    ...detailMetrics,
+                    message: Number(detailMetrics.page || 0) + Number(detailMetrics.telegram || 0) + Number(detailMetrics.call || 0),
+                    page: Number(detailMetrics.page) || 0,
+                    telegram: Number(detailMetrics.telegram) || 0,
+                    noReply: Number(detailMetrics.noReply) || 0,
+                    inquire: Number(detailMetrics.inquire) || 0,
+                    rejectCs: Number(detailMetrics.rejectCs) || 0,
+                    more: Number(detailMetrics.more) || 0,
+                    pageSubmit: Number(detailMetrics.pageSubmit) || 0,
+                    telegramSubmit: Number(detailMetrics.telegramSubmit) || 0,
+                    call: Number(detailMetrics.call) || 0,
+                    review: Number(detailMetrics.review) || 0,
+                    reject: Number(detailMetrics.reject) || 0,
+                    success1: Number(detailMetrics.success1) || 0,
+                    success2: Number(detailMetrics.success2) || 0,
                     createdBy: user?.username || 'Staff'
                 })
             });

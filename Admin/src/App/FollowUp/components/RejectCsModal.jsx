@@ -125,7 +125,8 @@ const RejectCsModal = ({
                                         <input
                                             type="number"
                                             min="0"
-                                            value={counts[reason] !== undefined ? counts[reason] : 0}
+                                            placeholder="0"
+                                            value={counts[reason] ?? ''}
                                             onChange={(e) => handleCountChange(reason, e.target.value)}
                                             className="w-20 bg-slate-800 text-center text-amber-400 font-bold text-sm px-2 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-amber-500 font-mono"
                                         />
