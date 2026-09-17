@@ -825,7 +825,6 @@ const CalculateSchedule2 = () => {
                             <p className="text-sm text-slate-700 tracking-widest text-[18px]">
                                 {'\u{1F65C}'}{'\u{1F65C}'}{'\u{1F66A}'}{'\u{1F65E}'}{'\u{1F65E}'}
                             </p>
-                            <br />
                             <div className="flex justify-center my-2">
                                 <div className="h-0.5 w-32 bg-slate-300 rounded" />
                             </div>
