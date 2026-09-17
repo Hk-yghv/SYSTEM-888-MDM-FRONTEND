@@ -22,10 +22,11 @@ const FollowUp4DetailCard = ({
         const val = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
         setMetrics(prev => {
             const next = { ...prev, [field]: val };
-            if (field === 'page' || field === 'telegram') {
+            if (field === 'page' || field === 'telegram' || field === 'call') {
                 const p = Number(field === 'page' ? val : (next.page || 0)) || 0;
                 const tg = Number(field === 'telegram' ? val : (next.telegram || 0)) || 0;
-                next.message = p + tg;
+                const c = Number(field === 'call' ? val : (next.call || 0)) || 0;
+                next.message = p + tg + c;
             }
             return next;
         });
@@ -150,6 +151,17 @@ const FollowUp4DetailCard = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">CALL</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.call !== undefined ? metrics.call : 0}
+                                onChange={(e) => handleMetricChange('call', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-emerald-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-emerald-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">REVIEW</label>
                             <input
                                 type="number"
@@ -216,7 +228,7 @@ const FollowUp4DetailCard = ({
                             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-700/60">
                                 <div>
                                     <span className="text-xs font-bold text-slate-200">TOTAL INQUIRIES</span>
-                                    <p className="text-[10px] text-slate-400">PAGE + TELEGRAM</p>
+                                    <p className="text-[10px] text-slate-400">PAGE + TELEGRAM + CALL</p>
                                 </div>
                                 <span className="font-mono font-bold text-lg text-cyan-300">
                                     {calculatedFormulas.totalInquiries || 0}
@@ -226,7 +238,7 @@ const FollowUp4DetailCard = ({
                             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-700/60">
                                 <div>
                                     <span className="text-xs font-bold text-slate-200">TOTAL SUBMITS</span>
-                                    <p className="text-[10px] text-slate-400">PAGE SUBMIT + TELEGRAM SUBMIT</p>
+                                    <p className="text-[10px] text-slate-400">PAGE SUBMIT + TELEGRAM SUBMIT + CALL</p>
                                 </div>
                                 <span className="font-mono font-bold text-lg text-emerald-400">
                                     {calculatedFormulas.totalSubmits || 0}
@@ -287,6 +299,7 @@ const FollowUp4DetailCard = ({
                                 <th className="py-2.5 px-2 text-center">MORE</th>
                                 <th className="py-2.5 px-2 text-center text-emerald-400">PAGE SUB</th>
                                 <th className="py-2.5 px-2 text-center text-emerald-400">TG SUB</th>
+                                <th className="py-2.5 px-2 text-center text-emerald-400">CALL</th>
                                 <th className="py-2.5 px-2 text-center">REVIEW</th>
                                 <th className="py-2.5 px-2 text-center text-rose-400">REJECT</th>
                                 <th className="py-2.5 px-2 text-center text-teal-400">SUCC 1</th>
@@ -296,7 +309,7 @@ const FollowUp4DetailCard = ({
                         <tbody className="divide-y divide-slate-700/50">
                             {historyList.length === 0 ? (
                                 <tr>
-                                    <td colSpan="13" className="text-center py-6 text-slate-500">
+                                    <td colSpan="14" className="text-center py-6 text-slate-500">
                                         មិនទាន់មានទិន្នន័យប្រវត្តិ Detail នៅឡើយទេ
                                     </td>
                                 </tr>
@@ -312,6 +325,7 @@ const FollowUp4DetailCard = ({
                                         <td className="py-2 px-2 text-center font-mono">{row.more || 0}</td>
                                         <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.pageSubmit || 0}</td>
                                         <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.telegramSubmit || 0}</td>
+                                        <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.call || 0}</td>
                                         <td className="py-2 px-2 text-center font-mono text-amber-400">{row.review || 0}</td>
                                         <td className="py-2 px-2 text-center font-mono text-rose-400">{row.reject || 0}</td>
                                         <td className="py-2 px-2 text-center font-mono text-teal-400">{row.success1 || 0}</td>

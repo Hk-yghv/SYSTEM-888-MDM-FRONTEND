@@ -58,6 +58,7 @@ const followUp4DetailSchema = new mongoose.Schema({
     more: { type: Number, default: 0 }, // MORE
     pageSubmit: { type: Number, default: 0 }, // PAGE SUBMIT
     telegramSubmit: { type: Number, default: 0 }, // TELEGRAM SUBMIT
+    call: { type: Number, default: 0 }, // CALL
     review: { type: Number, default: 0 }, // REVIEW
     reject: { type: Number, default: 0 }, // REJECT
     success1: { type: Number, default: 0 }, // SUCCESS 1

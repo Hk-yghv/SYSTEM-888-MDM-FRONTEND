@@ -25,10 +25,11 @@ const FollowUp4DetailModal = ({
         const val = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
         setMetrics(prev => {
             const next = { ...prev, [field]: val };
-            if (field === 'page' || field === 'telegram') {
+            if (field === 'page' || field === 'telegram' || field === 'call') {
                 const p = Number(field === 'page' ? val : (next.page || 0)) || 0;
                 const tg = Number(field === 'telegram' ? val : (next.telegram || 0)) || 0;
-                next.message = p + tg;
+                const c = Number(field === 'call' ? val : (next.call || 0)) || 0;
+                next.message = p + tg + c;
             }
             return next;
         });
@@ -89,14 +90,14 @@ const FollowUp4DetailModal = ({
                     {/* Input Fields Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-xs">
                         <div className="bg-slate-900/70 p-3 rounded-xl border border-indigo-600/40">
-                            <label className="block text-indigo-300 font-semibold mb-1">MESSAGE (PG + TG)</label>
+                            <label className="block text-indigo-300 font-semibold mb-1">MESSAGE (PG + TG + CALL)</label>
                             <input
                                 type="number"
                                 min="0"
                                 readOnly
-                                value={Number(metrics.page || 0) + Number(metrics.telegram || 0)}
+                                value={Number(metrics.page || 0) + Number(metrics.telegram || 0) + Number(metrics.call || 0)}
                                 className="w-full bg-slate-800/80 text-right text-indigo-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none cursor-not-allowed font-mono"
-                                title="MESSAGE = PG (Page) + TG (Telegram)"
+                                title="MESSAGE = PG (Page) + TG (Telegram) + CALL"
                             />
                         </div>
 
@@ -184,6 +185,17 @@ const FollowUp4DetailModal = ({
                                 min="0"
                                 value={metrics.telegramSubmit !== undefined ? metrics.telegramSubmit : 0}
                                 onChange={(e) => handleMetricChange('telegramSubmit', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-emerald-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-emerald-500 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">CALL</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={metrics.call !== undefined ? metrics.call : 0}
+                                onChange={(e) => handleMetricChange('call', e.target.value)}
                                 className="w-full bg-slate-800 text-right text-emerald-400 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-emerald-500 font-mono"
                             />
                         </div>

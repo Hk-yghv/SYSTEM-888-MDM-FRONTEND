@@ -552,6 +552,7 @@ const FollowUp4 = () => {
         more: 0,
         pageSubmit: 0,
         telegramSubmit: 0,
+        call: 0,
         review: 0,
         reject: 0,
         success1: 0,
@@ -566,6 +567,7 @@ const FollowUp4 = () => {
     const calculatedFormulas = useMemo(() => {
         const p = Number(detailMetrics.page) || 0;
         const tg = Number(detailMetrics.telegram) || 0;
+        const c = Number(detailMetrics.call) || 0;
 
         const nr = Number(detailMetrics.noReply) || 0;
         const inq = Number(detailMetrics.inquire) || 0;
@@ -579,8 +581,8 @@ const FollowUp4 = () => {
         const s1 = Number(detailMetrics.success1) || 0;
         const s2 = Number(detailMetrics.success2) || 0;
 
-        const totalInquiries = p + tg;
-        const totalSubmits = ps + tgs;
+        const totalInquiries = p + tg + c;
+        const totalSubmits = ps + tgs + c;
         const totalProcessed = nr + inq + rcs + mr;
         const totalSuccess = s1 + s2;
         const conversionRate = totalSubmits > 0 ? ((totalSuccess / totalSubmits) * 100).toFixed(1) + '%' : '0.0%';
@@ -606,6 +608,7 @@ const FollowUp4 = () => {
             more: 0,
             pageSubmit: 0,
             telegramSubmit: 0,
+            call: 0,
             totalSubmit: 0,
             review: 0,
             reject: 0,
@@ -617,7 +620,8 @@ const FollowUp4 = () => {
         detailHistoryList.forEach(row => {
             const p = Number(row.page || 0);
             const tg = Number(row.telegram || 0);
-            const msg = p + tg;
+            const c = Number(row.call || 0);
+            const msg = p + tg + c;
             const ps = Number(row.pageSubmit || 0);
             const tgs = Number(row.telegramSubmit || 0);
             const s1 = Number(row.success1 || 0);
@@ -632,7 +636,8 @@ const FollowUp4 = () => {
             totals.more += Number(row.more || 0);
             totals.pageSubmit += ps;
             totals.telegramSubmit += tgs;
-            totals.totalSubmit += (ps + tgs);
+            totals.call += c;
+            totals.totalSubmit += (ps + tgs + c);
             totals.review += Number(row.review || 0);
             totals.reject += Number(row.reject || 0);
             totals.success1 += s1;
@@ -665,7 +670,7 @@ const FollowUp4 = () => {
                 const currentDay = list.find(d => d.date === detailDate);
                 if (currentDay) {
                     setDetailMetrics({
-                        message: currentDay.message !== undefined && currentDay.message !== null ? currentDay.message : (Number(currentDay.page || 0) + Number(currentDay.telegram || 0)),
+                        message: currentDay.message !== undefined && currentDay.message !== null ? currentDay.message : (Number(currentDay.page || 0) + Number(currentDay.telegram || 0) + Number(currentDay.call || 0)),
                         page: currentDay.page || 0,
                         telegram: currentDay.telegram || 0,
                         noReply: currentDay.noReply || 0,
@@ -674,6 +679,7 @@ const FollowUp4 = () => {
                         more: currentDay.more || 0,
                         pageSubmit: currentDay.pageSubmit || 0,
                         telegramSubmit: currentDay.telegramSubmit || 0,
+                        call: currentDay.call || 0,
                         review: currentDay.review || 0,
                         reject: currentDay.reject || 0,
                         success1: currentDay.success1 || 0,
@@ -703,7 +709,7 @@ const FollowUp4 = () => {
             const existing = detailHistoryList.find(d => d.date === targetDate);
             if (existing) {
                 setDetailMetrics({
-                    message: existing.message !== undefined && existing.message !== null ? existing.message : (Number(existing.page || 0) + Number(existing.telegram || 0)),
+                    message: existing.message !== undefined && existing.message !== null ? existing.message : (Number(existing.page || 0) + Number(existing.telegram || 0) + Number(existing.call || 0)),
                     page: existing.page || 0,
                     telegram: existing.telegram || 0,
                     noReply: existing.noReply || 0,
@@ -712,6 +718,7 @@ const FollowUp4 = () => {
                     more: existing.more || 0,
                     pageSubmit: existing.pageSubmit || 0,
                     telegramSubmit: existing.telegramSubmit || 0,
+                    call: existing.call || 0,
                     review: existing.review || 0,
                     reject: existing.reject || 0,
                     success1: existing.success1 || 0,
@@ -720,7 +727,7 @@ const FollowUp4 = () => {
             } else {
                 setDetailMetrics({
                     message: 0, page: 0, telegram: 0, noReply: 0, inquire: 0,
-                    rejectCs: 0, more: 0, pageSubmit: 0, telegramSubmit: 0,
+                    rejectCs: 0, more: 0, pageSubmit: 0, telegramSubmit: 0, call: 0,
                     review: 0, reject: 0, success1: 0, success2: 0
                 });
             }
@@ -728,7 +735,7 @@ const FollowUp4 = () => {
             // Clean fresh form on new create
             setDetailMetrics({
                 message: 0, page: 0, telegram: 0, noReply: 0, inquire: 0,
-                rejectCs: 0, more: 0, pageSubmit: 0, telegramSubmit: 0,
+                rejectCs: 0, more: 0, pageSubmit: 0, telegramSubmit: 0, call: 0,
                 review: 0, reject: 0, success1: 0, success2: 0
             });
         }
@@ -807,9 +814,9 @@ const FollowUp4 = () => {
             exportToExcel(exportData, `FollowUp4_Reject_CS_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'detail') {
             const exportData = detailHistoryList.map((item, idx) => {
-                const message = (item.page || 0) + (item.telegram || 0);
-                const verify = (item.noReply || 0) + (item.inquire || 0) + (item.rejectCs || 0) + (item.more || 0) + (item.pageSubmit || 0) + (item.telegramSubmit || 0);
-                const totalSubmit = (item.pageSubmit || 0) + (item.telegramSubmit || 0);
+                const message = (item.page || 0) + (item.telegram || 0) + (item.call || 0);
+                const verify = (item.noReply || 0) + (item.inquire || 0) + (item.rejectCs || 0) + (item.more || 0) + (item.pageSubmit || 0) + (item.telegramSubmit || 0) + (item.call || 0);
+                const totalSubmit = (item.pageSubmit || 0) + (item.telegramSubmit || 0) + (item.call || 0);
                 const totalSuccess = (item.success1 || 0) + (item.success2 || 0);
                 return {
                     '#': idx + 1,
@@ -822,9 +829,10 @@ const FollowUp4 = () => {
                     'INQUIRE': item.inquire || 0,
                     'REJECT CS': item.rejectCs || 0,
                     'MORE': item.more || 0,
-                    'TOTAL SUBMIT': totalSubmit,
                     'PAGE SUBMIT': item.pageSubmit || 0,
                     'TELEGRAM SUBMIT': item.telegramSubmit || 0,
+                    'CALL': item.call || 0,
+                    'TOTAL SUBMIT': totalSubmit,
                     'REVIEW': item.review || 0,
                     'REJECT': item.reject || 0,
                     'TOTAL SUCCESS': totalSuccess,
@@ -1437,6 +1445,7 @@ const FollowUp4 = () => {
                                         <th className="py-2.5 px-2 text-center">MORE</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-400">PAGE SUB</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-400">TG SUB</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-400 font-bold">CALL</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-200 font-black bg-blue-200 border-x border-emerald-600/50 shadow-inner">TOTAL SUBMIT</th>
                                         <th className="py-2.5 px-2 text-center text-amber-400">REVIEW</th>
                                         <th className="py-2.5 px-2 text-center text-rose-400">REJECT</th>
@@ -1449,14 +1458,14 @@ const FollowUp4 = () => {
                                 <tbody className="divide-y divide-slate-700/50">
                                     {detailLoading ? (
                                         <tr>
-                                            <td colSpan="17" className="text-center py-8 text-slate-400">
+                                            <td colSpan="18" className="text-center py-8 text-slate-400">
                                                 <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-sky-400" />
                                                 <p>កំពុងទាញយកទិន្នន័យ...</p>
                                             </td>
                                         </tr>
                                     ) : detailHistoryList.length === 0 ? (
                                         <tr>
-                                            <td colSpan="17" className="text-center py-8 text-slate-500 font-medium">
+                                            <td colSpan="18" className="text-center py-8 text-slate-500 font-medium">
                                                 មិនទាន់មានទិន្នន័យ Detail Metrics នៅឡើយទេ សូមចុច &quot;+ បញ្ចូល DETAIL METRICS&quot; ដើម្បីបញ្ចូល
                                             </td>
                                         </tr>
@@ -1465,7 +1474,7 @@ const FollowUp4 = () => {
                                             <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
                                                 <td className="py-2 px-3 font-mono font-bold text-sky-400 whitespace-nowrap">{row.date}</td>
                                                 <td className="py-2 px-2 text-center font-mono font-bold text-indigo-300 bg-gray-300">
-                                                    {(Number(row.page || 0) + Number(row.telegram || 0))}
+                                                    {(Number(row.page || 0) + Number(row.telegram || 0) + Number(row.call || 0))}
                                                 </td>
                                                 <td className="py-2 px-2 text-center font-mono">{row.page || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono">{row.telegram || 0}</td>
@@ -1475,8 +1484,9 @@ const FollowUp4 = () => {
                                                 <td className="py-2 px-2 text-center font-mono">{row.more || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.pageSubmit || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.telegramSubmit || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono text-emerald-400 font-bold">{row.call || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono font-black text-emerald-200 bg-blue-200 border-x border-emerald-700/60 shadow-inner">
-                                                    {Number(row.pageSubmit || 0) + Number(row.telegramSubmit || 0)}
+                                                    {Number(row.pageSubmit || 0) + Number(row.telegramSubmit || 0) + Number(row.call || 0)}
                                                 </td>
                                                 <td className="py-2 px-2 text-center font-mono text-amber-400">{row.review || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-rose-400">{row.reject || 0}</td>
@@ -1510,6 +1520,7 @@ const FollowUp4 = () => {
                                             <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.more}</td>
                                             <td className="py-3 px-2 text-center font-mono text-emerald-400">{grandDetailTotals.pageSubmit}</td>
                                             <td className="py-3 px-2 text-center font-mono text-emerald-400">{grandDetailTotals.telegramSubmit}</td>
+                                            <td className="py-3 px-2 text-center font-mono text-emerald-400 font-bold">{grandDetailTotals.call}</td>
                                             <td className="py-3 px-2 text-center font-mono font-black text-emerald-200 bg-blue-300 border-x border-emerald-600 text-xs shadow-inner">
                                                 {grandDetailTotals.totalSubmit}
                                             </td>
