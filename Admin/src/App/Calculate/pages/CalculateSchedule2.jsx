@@ -823,7 +823,7 @@ const CalculateSchedule2 = () => {
                                 ជាតិ សាសនា ព្រះមហាក្សត្រ
                             </p>
                             <p className="text-sm text-slate-700 tracking-widest">
-                                U+1F65D	U+1F65D U+1F66A U+1F65F	U+1F65F
+                                {'\u{1F65D}'} {'\u{1F65D}'} {'\u{1F66A}'} {'\u{1F65F}'} {'\u{1F65F}'}
                             </p>
                             <br />
                             <div className="flex justify-center my-2">
