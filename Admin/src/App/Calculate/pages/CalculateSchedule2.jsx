@@ -822,6 +822,9 @@ const CalculateSchedule2 = () => {
                             <p className="text-sm text-slate-700 tracking-widest" style={{ fontFamily: 'moul' }}>
                                 ជាតិ សាសនា ព្រះមហាក្សត្រ
                             </p>
+                            <p className="text-sm text-slate-700 tracking-widest">
+                                U+1F65D	U+1F65D U+1F66A U+1F65F	U+1F65F
+                            </p>
                             <br />
                             <div className="flex justify-center my-2">
                                 <div className="h-0.5 w-32 bg-slate-300 rounded" />
