@@ -114,8 +114,8 @@ const CalculateSchedule2 = () => {
 
         if (savedHistory.length > 0 && (customerQuery || idQuery || contractNumQuery)) {
             const found = savedHistory.find(item =>
-                (idQuery && item._id === idQuery) ||
-                (customerQuery && item.customerName && item.customerName.trim().toLowerCase() === customerQuery.trim().toLowerCase()) ||
+                (idQuery && String(item._id) === String(idQuery)) ||
+                (customerQuery && item.customerName && item.customerName.trim().toLowerCase().replace(/\s+/g, ' ') === customerQuery.trim().toLowerCase().replace(/\s+/g, ' ')) ||
                 (contractNumQuery && item.contractNumber && item.contractNumber.trim() === contractNumQuery.trim())
             );
             if (found) {

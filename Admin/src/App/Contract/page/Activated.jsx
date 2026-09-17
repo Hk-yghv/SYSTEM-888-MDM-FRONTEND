@@ -38,7 +38,38 @@ const Activated = () => {
     // UI Custom Modal alert state
     const [uiModal, setUiModal] = useState({ open: false, title: '', message: '', type: 'info' });
 
-    // Fetch saved calculation schedules to link matching Khmer names
+    // Helper functions for 3-way matching (Name, Principal, Loan Date)
+    const normalizeStr = (str) => String(str || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+    const normalizeNum = (val) => {
+        if (val === undefined || val === null || val === '') return null;
+        const clean = String(val).replace(/[^0-9.-]/g, '');
+        const num = parseFloat(clean);
+        return isNaN(num) ? null : Math.round(num * 100) / 100;
+    };
+
+    const normalizeDateStr = (dateVal) => {
+        if (!dateVal) return '';
+        const clean = String(dateVal).trim().split('T')[0].split(' ')[0];
+        const dmy = clean.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+        if (dmy) {
+            return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+        }
+        const ymd = clean.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/);
+        if (ymd) {
+            return `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
+        }
+        const d = new Date(clean);
+        if (!isNaN(d.getTime())) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+        return clean.toLowerCase();
+    };
+
+    // Fetch saved calculation schedules to link matching records
     const fetchCalcSchedules = React.useCallback(async () => {
         try {
             const brand = user?.brand || '';
@@ -65,6 +96,7 @@ const Activated = () => {
 
     const fetchActivatedContracts = React.useCallback(async (pg = currentPage, search = searchTerm) => {
         setReloading(true);
+        fetchCalcSchedules(); // Synchronize calculate schedules so bidirectional scan is always up-to-date
         try {
             const pageToFetch = typeof pg === 'number' ? pg : 1;
             const params = new URLSearchParams({
@@ -449,10 +481,32 @@ const Activated = () => {
                                 const canCheck = hasPermission('/contract/activated', 'check');
                                 const canBlacklist = hasPermission('/contract/activated', 'blacklist');
                                 const matchingCalcSchedule = calcSchedules.find(s => {
-                                    const sKh = String(s.customerName || '').trim().toLowerCase();
-                                    const itemKh = String(item.customerNameKh || '').trim().toLowerCase();
-                                    const itemEn = String(item.customerNameEn || '').trim().toLowerCase();
-                                    return (itemKh && sKh === itemKh) || (itemEn && sKh === itemEn);
+                                    // 1. Match Customer Name (Khmer or English)
+                                    const sName = normalizeStr(s.customerName);
+                                    if (!sName) return false;
+                                    const itemKh = normalizeStr(item.customerNameKh);
+                                    const itemEn = normalizeStr(item.customerNameEn);
+                                    const isNameMatch = (
+                                        (itemKh && (sName === itemKh || sName.includes(itemKh) || itemKh.includes(sName))) ||
+                                        (itemEn && (sName === itemEn || sName.includes(itemEn) || itemEn.includes(sName)))
+                                    );
+                                    if (!isNameMatch) return false;
+
+                                    // 2. Match Principal / Loan Amount (ប្រាក់ដើម)
+                                    const sPrincipal = normalizeNum(s.principal);
+                                    const itemPrincipal = normalizeNum(item.amount ?? item.totalAmount);
+                                    if (sPrincipal === null || itemPrincipal === null || sPrincipal !== itemPrincipal) {
+                                        return false;
+                                    }
+
+                                    // 3. Match Loan Date / Start Date (ថ្ងៃខែដាក់កម្ចី)
+                                    const sDate = normalizeDateStr(s.startDate);
+                                    const itemDate = normalizeDateStr(item.inputDate);
+                                    if (!sDate || !itemDate || sDate !== itemDate) {
+                                        return false;
+                                    }
+
+                                    return true;
                                 });
                                 const hasAnyAction = canOpenMosyle || canOpenFb || canHistory || canComment || canLock || canWallpaper || canCheck || canBlacklist || !!matchingCalcSchedule;
 
