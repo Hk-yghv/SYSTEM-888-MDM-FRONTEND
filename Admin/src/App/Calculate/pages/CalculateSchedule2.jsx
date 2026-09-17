@@ -826,7 +826,7 @@ const CalculateSchedule2 = () => {
                             <div className="flex justify-center my-2">
                                 <div className="h-0.5 w-32 bg-slate-300 rounded" />
                             </div>
-                            <h4 className="text-slate-900 text-[14px] mt-2" style={{ fontFamily: 'moul' }}>
+                            <h4 className="text-slate-900 text-[12px] mt-2" style={{ fontFamily: 'moul' }}>
                                 កាលវិភាគសងប្រាក់
                             </h4>
                         </div>
