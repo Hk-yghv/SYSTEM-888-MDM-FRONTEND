@@ -338,72 +338,122 @@ const CalculateSchedule2 = () => {
     return (
         <>
             <style>{`
-                @page {
-                    size: A4 portrait;
-                    margin: 0;
-                }
+    @page {
+        size: A4 portrait;
+        margin: 0;
+    }
 
-                @media print {
+    @media print {
 
-                    html,
-                    body {
-                        width: 210mm !important;
-                        min-width: 210mm !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        background: #fff !important;
-                    }
+        html,
+        body {
+            width: 210mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+        }
 
-                    body {
-                        overflow: visible !important;
-                    }
+        /* លាក់ផ្នែកដែលមិនចង់ Print */
+        body > * {
+            background: white !important;
+        }
 
-                    body * {
-                        visibility: hidden !important;
-                    }
+        .no-print {
+            display: none !important;
+        }
 
-                    #cs2-print-area,
-                    #cs2-print-area * {
-                        visibility: visible !important;
-                    }
+        /* Print Area */
+        #cs2-print-area {
+            display: block !important;
+            visibility: visible !important;
 
-                    #cs2-print-area {
-                        position: relative !important;
-                        left: auto !important;
-                        top: auto !important;
-                        transform: none !important;
+            position: relative !important;
 
-                        width: 210mm !important;
-                        min-height: 297mm !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
 
-                        margin: 0 auto !important;
-                        padding: 10mm 12mm !important;
+            margin: 0 !important;
+            padding: 10mm 12mm !important;
 
-                        box-sizing: border-box !important;
+            box-sizing: border-box !important;
 
-                        background: #fff !important;
-                        box-shadow: none !important;
-                        border: none !important;
+            background: white !important;
 
-                        overflow: visible !important;
-                    }
+            left: auto !important;
+            top: auto !important;
+            transform: none !important;
 
-                    .no-print {
-                        display: none !important;
-                    }
+            overflow: visible !important;
 
-                    table {
-                        width: 100% !important;
-                        border-collapse: collapse !important;
-                    }
+            box-shadow: none !important;
+            border: none !important;
+        }
 
-                    * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-                }
-            `}</style>
+        /* អ្វីៗនៅក្នុង Print Area ត្រូវបង្ហាញ */
+        #cs2-print-area * {
+            visibility: visible !important;
+        }
 
+        /* Table */
+        #cs2-print-area table {
+            display: table !important;
+            visibility: visible !important;
+
+            width: 100% !important;
+            max-width: 100% !important;
+
+            border-collapse: collapse !important;
+            border-spacing: 0 !important;
+
+            margin: 0 auto !important;
+        }
+
+        #cs2-print-area tbody {
+            display: table-row-group !important;
+        }
+
+        #cs2-print-area tr {
+            display: table-row !important;
+        }
+
+        #cs2-print-area th,
+        #cs2-print-area td {
+            display: table-cell !important;
+            visibility: visible !important;
+        }
+
+        /* កុំឱ្យ wrapper របស់ table បង្កើត horizontal scroll */
+        #cs2-print-area .overflow-x-auto {
+            overflow: visible !important;
+            width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        /* Header */
+        #cs2-print-area > div {
+            max-width: 100% !important;
+        }
+
+        /* កុំឱ្យពណ៌ប្រផេះចូល Print */
+        #cs2-print-area,
+        #cs2-print-area * {
+            background-color: white;
+        }
+
+        /* រក្សាពណ៌ដែលចង់បាន */
+        #cs2-print-area .bg-yellow-300 {
+            background-color: #fde047 !important;
+        }
+
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+    }
+`}</style>
             <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 bg-[#fff]">
 
                 {/* ── Header ────────────────────────────────────────── */}
@@ -835,7 +885,7 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Schedule Table */}
-                        <div className="overflow-x-auto px-6 sm:px-12 ml-18 mr-18">
+                        <div className="overflow-x-auto px-6 sm:px-12">
                             <table className="w-full border-collapse border border-black text-xs sm:text-sm">
                                 <tbody>
                                     <tr className='border border-black'>
