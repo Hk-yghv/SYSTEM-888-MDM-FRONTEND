@@ -41,6 +41,7 @@ const CalculateSchedule2 = () => {
     const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
     const [activeRecordId, setActiveRecordId] = useState(null);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [printOrientation, setPrintOrientation] = useState('portrait'); // 'portrait' | 'landscape'
 
     // ─── Load asset types from ControlSystem DB ────────────────────
     useEffect(() => {
@@ -338,21 +339,76 @@ const CalculateSchedule2 = () => {
     return (
         <>
             <style>{`
+                @page {
+                    size: A4 ${printOrientation};
+                    margin: ${printOrientation === 'landscape' ? '12mm 30mm' : '15mm 20mm'};
+                }
                 @media print {
-                    body * { visibility: hidden !important;}
-                    #cs2-print-area, #cs2-print-area * { visibility: visible !important; }
+                    html, body {
+                        width: 100% !important;
+                        height: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: #ffffff !important;
+                        color: #000000 !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    body * {
+                        visibility: hidden !important;
+                    }
+                    #cs2-print-area, #cs2-print-area * {
+                        visibility: visible !important;
+                    }
                     #cs2-print-area {
-                        position: fixed !important;
-                        left: 50% !important;
-                        top: 50% !important;
-                        transform: translate(-50%, -50%) !important;
-                        width: 100vw !important;
-                        padding: 24px 32px !important;
+                        position: absolute !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        top: 0 !important;
+                        margin: 0 auto !important;
+                        width: 100% !important;
+                        max-width: ${printOrientation === 'landscape' ? '220mm' : '185mm'} !important;
+                        padding: 0 !important;
                         box-shadow: none !important;
                         border: none !important;
-                        background: #fff !important;
+                        background: #ffffff !important;
+                        overflow: visible !important;
+                        min-height: auto !important;
                     }
-                    .no-print { display: none !important; }
+                    #cs2-print-area > div {
+                        padding-left: 0 !important;
+                        padding-right: 0 !important;
+                        margin-left: 0 !important;
+                        margin-right: 0 !important;
+                    }
+                    #cs2-print-area .grid-cols-2 {
+                        gap-x: 2.5rem !important;
+                        padding-left: 0 !important;
+                        padding-right: 0 !important;
+                    }
+                    #cs2-print-area div.overflow-x-auto,
+                    #cs2-print-area div[class*="overflow-x-auto"] {
+                        min-height: auto !important;
+                        padding-bottom: 0 !important;
+                        overflow: visible !important;
+                        margin-left: 0 !important;
+                        margin-right: 0 !important;
+                        padding-left: 0 !important;
+                        padding-right: 0 !important;
+                    }
+                    #cs2-print-area table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                        margin: 0 auto !important;
+                    }
+                    #cs2-print-area table th,
+                    #cs2-print-area table td {
+                        border-color: #000000 !important;
+                        color: #000000 !important;
+                    }
+                    .no-print {
+                        display: none !important;
+                    }
                 }
             `}</style>
 
@@ -375,7 +431,7 @@ const CalculateSchedule2 = () => {
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex items-center gap-2 no-print">
+                    <div className="flex flex-wrap items-center gap-2 no-print">
                         {savedHistory.length > 0 && (
                             <button
                                 type="button"
@@ -386,6 +442,34 @@ const CalculateSchedule2 = () => {
                         )}
                         {result && (
                             <>
+                                {/* Orientation Selection Toggle */}
+                                <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPrintOrientation('portrait')}
+                                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                                            printOrientation === 'portrait'
+                                                ? 'bg-white text-violet-700 shadow-xs'
+                                                : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                        title="បោះពុម្ពទម្រង់បញ្ឈរ (Portrait)">
+                                        <span>📄</span>
+                                        <span>បញ្ឈរ</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPrintOrientation('landscape')}
+                                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                                            printOrientation === 'landscape'
+                                                ? 'bg-white text-violet-700 shadow-xs'
+                                                : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                        title="បោះពុម្ពទម្រង់ប្ដេក (Landscape)">
+                                        <span>📑</span>
+                                        <span>ប្ដេក</span>
+                                    </button>
+                                </div>
+
                                 <button
                                     type="button"
                                     onClick={handleSave}
@@ -840,8 +924,6 @@ const CalculateSchedule2 = () => {
                                 </div>
                             </div>
                         </div>
-
-
 
                         {/* Address Footer */}
                         <div className="text-center pb-4 text-[12px] pt-3 px-8" style={{ fontFamily: 'khmer' }}>
