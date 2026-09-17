@@ -855,7 +855,7 @@ const CalculateSchedule2 = () => {
                                 </div>
                                 <div className="flex items-center justify-between gap-2 text-slate-900">
                                     <span className="text-blue-400">Interest and Fee:</span>
-                                    <span className="font-black ml-1 text-right text-sm text-blue-400">
+                                    <span className="font-black ml-1 text-right text-blue-400">
                                         {result.monthlyInterest.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
                                     </span>
                                 </div>
@@ -898,17 +898,17 @@ const CalculateSchedule2 = () => {
                                         <tr key={row.no}
                                             className="text-center">
                                             <td className="px-3 border border-black text-slate-900">{row.no}</td>
-                                            <td className="px-4 border border-black font-mono text-slate-900">
+                                            <td className="px-4 border border-black text-slate-900">
                                                 {formatDate(row.dueDate)}
                                             </td>
                                             <td className='border border-black'></td>
-                                            <td className="px-4 border border-black font-mono text-slate-900">
+                                            <td className="px-4 border border-black text-slate-900">
                                                 {row.principal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                                             </td>
-                                            <td className="px-4 border border-black font-mono text-slate-900">
+                                            <td className="px-4 border border-black text-slate-900">
                                                 {row.totalDueMonth ? row.totalDueMonth.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 }) : ''}
                                             </td>
-                                            <td className="px-4 border border-black font-mono text-slate-900">
+                                            <td className="px-4 border border-black text-slate-900">
                                             </td>
                                         </tr>
                                     ))}
