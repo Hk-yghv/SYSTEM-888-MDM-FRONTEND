@@ -839,23 +839,23 @@ const CalculateSchedule2 = () => {
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="whitespace-nowrap text-slate-800">ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ:</span>
-                                    <span className="font-mono text-slate-900 ml-1">
+                                    <span className="text-slate-900 ml-1">
                                         {formatDate(result.startDate)}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-slate-800">ចំនួនទឹកប្រាក់ដាក់បញ្ចាំ:</span>
-                                    <span className="font-mono font-black text-slate-900 bg-yellow-300 w-25 px-2.5 py-0.5 text-right shadow-xs ml-1">
+                                    <span className="font-black text-slate-900 bg-yellow-300 w-25 px-2.5 py-0.5 text-right shadow-xs ml-1">
                                         {result.principal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-slate-800">រយៈពេល (ចំនួនខែ):</span>
-                                    <span className="font-mono text-slate-900 text-right ml-1">{result.months}</span>
+                                    <span className="text-slate-900 text-right ml-1">{result.months}</span>
                                 </div>
                                 <div className="flex items-center justify-between gap-2 text-slate-900">
                                     <span className="text-blue-400">Interest and Fee:</span>
-                                    <span className="font-mono font-black ml-1 text-right text-sm text-blue-400">
+                                    <span className="font-black ml-1 text-right text-sm text-blue-400">
                                         {result.monthlyInterest.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
                                     </span>
                                 </div>
@@ -873,7 +873,7 @@ const CalculateSchedule2 = () => {
                                 </div>
                                 <div className='flex items-center'>
                                     <span className="text-slate-800">លេខកិច្ចសន្យា&nbsp;</span>{' '}
-                                    <span className="font-mono text-slate-900">
+                                    <span className="text-slate-900">
                                         {result.contractNumber || '—'}
                                     </span>
                                 </div>
