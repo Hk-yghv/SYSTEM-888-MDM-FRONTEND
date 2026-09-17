@@ -41,7 +41,7 @@ const CalculateSchedule2 = () => {
     const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
     const [activeRecordId, setActiveRecordId] = useState(null);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
-    const [printOrientation, setPrintOrientation] = useState('portrait'); // 'portrait' | 'landscape'
+    const [printOrientation, setPrintOrientation] = useState('landscape'); // 'portrait' | 'landscape'
 
     // ─── Load asset types from ControlSystem DB ────────────────────
     useEffect(() => {
@@ -323,7 +323,13 @@ const CalculateSchedule2 = () => {
     };
 
     const handlePrint = () => {
-        window.print();
+        const previewEl = document.getElementById('cs2-print-area');
+        if (previewEl) {
+            previewEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        setTimeout(() => {
+            window.print();
+        }, 350);
     };
 
     const filteredHistory = savedHistory.filter(item => {
@@ -341,7 +347,7 @@ const CalculateSchedule2 = () => {
             <style>{`
                 @page {
                     size: A4 ${printOrientation};
-                    margin: ${printOrientation === 'landscape' ? '12mm 30mm' : '15mm 20mm'};
+                    margin: ${printOrientation === 'landscape' ? '12mm 50mm' : '15mm 20mm'};
                 }
                 @media print {
                     html, body {
@@ -367,7 +373,7 @@ const CalculateSchedule2 = () => {
                         top: 0 !important;
                         margin: 0 auto !important;
                         width: 100% !important;
-                        max-width: ${printOrientation === 'landscape' ? '220mm' : '185mm'} !important;
+                        max-width: ${printOrientation === 'landscape' ? '185mm' : '185mm'} !important;
                         padding: 0 !important;
                         box-shadow: none !important;
                         border: none !important;
@@ -405,6 +411,10 @@ const CalculateSchedule2 = () => {
                     #cs2-print-area table td {
                         border-color: #000000 !important;
                         color: #000000 !important;
+                    }
+                    #cs2-print-area .cs2-address-footer {
+                        margin-top: 50px !important;
+                        padding-top: 50px !important;
                     }
                     .no-print {
                         display: none !important;
@@ -447,11 +457,10 @@ const CalculateSchedule2 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setPrintOrientation('portrait')}
-                                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                                            printOrientation === 'portrait'
-                                                ? 'bg-white text-violet-700 shadow-xs'
-                                                : 'text-slate-600 hover:text-slate-900'
-                                        }`}
+                                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${printOrientation === 'portrait'
+                                            ? 'bg-white text-violet-700 shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                            }`}
                                         title="បោះពុម្ពទម្រង់បញ្ឈរ (Portrait)">
                                         <span>📄</span>
                                         <span>បញ្ឈរ</span>
@@ -459,11 +468,10 @@ const CalculateSchedule2 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setPrintOrientation('landscape')}
-                                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                                            printOrientation === 'landscape'
-                                                ? 'bg-white text-violet-700 shadow-xs'
-                                                : 'text-slate-600 hover:text-slate-900'
-                                        }`}
+                                        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${printOrientation === 'landscape'
+                                            ? 'bg-white text-violet-700 shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                            }`}
                                         title="បោះពុម្ពទម្រង់ប្ដេក (Landscape)">
                                         <span>📑</span>
                                         <span>ប្ដេក</span>
@@ -926,7 +934,7 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Address Footer */}
-                        <div className="text-center pb-4 text-[12px] pt-3 px-8" style={{ fontFamily: 'khmer' }}>
+                        <div className="cs2-address-footer text-center pb-4 text-[12px] pt-8 mt-6 px-8" style={{ fontFamily: 'khmer' }}>
                             អាសយដ្ឋាន: អគារលេខ378A ផ្លូវ1928 ភូមិកោះអណ្តែត សង្កាត់ទួលសង្កែទី២ ខណ្ឌឬស្សីកែវ រាជធានីភ្នំពេញ
                         </div>
                     </div>
