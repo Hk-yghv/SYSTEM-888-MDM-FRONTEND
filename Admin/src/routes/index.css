@@ -87,6 +87,7 @@
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }
@@ -114,7 +115,8 @@
 /* ============================================
    GLOBAL LIGHT THEME SYSTEM OVERRIDES
    ============================================ */
-body, body.light {
+body,
+body.light {
     background: #f4f6f8 !important;
     color: #0f172a !important;
 }
@@ -179,7 +181,8 @@ body, body.light {
 }
 
 /* Table Design & Vertical Center Alignment */
-table th, table td {
+table th,
+table td {
     vertical-align: middle !important;
 }
 
@@ -221,7 +224,7 @@ td .absolute,
     border-color: rgba(16, 185, 129, 0.25) !important;
 }
 
-.divide-gray-800\/60 > * {
+.divide-gray-800\/60>* {
     border-color: #f1f5f9 !important;
 }
 
@@ -254,19 +257,24 @@ thead {
 }
 
 /* Form Controls: Inputs, Selects, Textareas */
-input, select, textarea {
+input,
+select,
+textarea {
     background: #ffffff !important;
     border-color: #cbd5e1 !important;
     color: #0f172a !important;
     font-weight: 500 !important;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
     border-color: #10b981 !important;
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
     color: #64748b !important;
 }
 
@@ -283,6 +291,7 @@ input::placeholder, textarea::placeholder {
 .shadow-indigo-500\/30 {
     box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25) !important;
 }
+
 /* GLOBAL THEME & GLASSMORPHISM OVERRIDES FOR ALL PAGES ACROSS SYSTEM */
 .bg-\[\#f4f6f8\],
 .bg-\[\#070913\],

@@ -338,22 +338,49 @@ const CalculateSchedule2 = () => {
     return (
         <>
             <style>{`
-                @media print {
-                    body * { visibility: hidden !important;}
-                    #cs2-print-area, #cs2-print-area * { visibility: visible !important; }
-                    #cs2-print-area {
-                        position: fixed !important;
-                        left: 50% !important;
-                        top: 50% !important;
-                        transform: translate(-50%, -50%) !important;
-                        width: 100vw !important;
-                        padding: 24px 32px !important;
-                        box-shadow: none !important;
-                        border: none !important;
-                        background: #fff !important;
-                    }
-                    .no-print { display: none !important; }
-                }
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 0;
+    }
+
+    #cs2-print-area {
+        position: absolute !important;
+        z-index: 9999 !important;
+        left: 50% !important;
+        top: 0 !important;
+
+        transform: translateX(-50%) !important;
+
+        /* A4 Landscape = 297mm × 210mm */
+        width: 100vw !important;
+        min-height: 100vh !important;
+
+        margin: 0 !important;
+        padding: 10mm !important;
+
+        box-sizing: border-box !important;
+
+        background: white !important;
+        border: none !important;
+        box-shadow: none !important;
+
+        overflow: visible !important;
+    }
+
+    #cs2-print-area table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+
+    #cs2-print-area .overflow-x-auto {
+        overflow: visible !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+}
             `}</style>
 
             <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 bg-[#fff]">
@@ -414,7 +441,7 @@ const CalculateSchedule2 = () => {
                 )}
 
                 {/* Main Grid: Form Inputs + Saved Records Sidebar */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" >
 
                     {/* ── Left Column (2 cols): Input Form ──────────── */}
                     <div className="lg:col-span-2 space-y-6">
