@@ -93,20 +93,38 @@ const FollowUp4 = () => {
         fetchControlSystemData();
     }, [fetchControlSystemData]);
 
+    // Helper functions for date range formatting
+    const getPastDateStr = (daysAgo) => {
+        const d = new Date();
+        d.setDate(d.getDate() - daysAgo);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const getTodayStr = () => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     // =========================================================
-    // TAB 1: FOLLOW UP SUBMIT STATE & LOGIC
+    // TAB 1: FOLLOW UP SUBMIT STATE & LOGIC (Default: 3 Days)
     // =========================================================
     const [submitList, setSubmitList] = useState([]);
     const [submitLoading, setSubmitLoading] = useState(false);
     const [submitFormSaving, setSubmitFormSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    const [startDate, setStartDate] = useState(getPastDateStr(2)); // Default 3 days (today and past 2 days)
+    const [endDate, setEndDate] = useState(getTodayStr());
 
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [formData, setFormData] = useState({
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayStr(),
         name: '',
         userName: '',
         phone: '',
@@ -160,7 +178,7 @@ const FollowUp4 = () => {
     const handleOpenCreateSubmitForm = () => {
         setEditingItem(null);
         setFormData({
-            date: new Date().toISOString().split('T')[0],
+            date: getTodayStr(),
             name: '',
             userName: '',
             phone: '',
@@ -183,7 +201,7 @@ const FollowUp4 = () => {
     const handleOpenEditSubmitForm = (item) => {
         setEditingItem(item);
         setFormData({
-            date: item.date || new Date().toISOString().split('T')[0],
+            date: item.date || getTodayStr(),
             name: item.name || '',
             userName: item.userName || '',
             phone: item.phone || '',
@@ -351,9 +369,11 @@ const FollowUp4 = () => {
     };
 
     // =========================================================
-    // TAB 2: REJECT SUBMIT STATE & LOGIC
+    // TAB 2: REJECT SUBMIT STATE & LOGIC (Default: 1 Week)
     // =========================================================
-    const [rejectSubmitDate, setRejectSubmitDate] = useState(new Date().toISOString().split('T')[0]);
+    const [rejectSubmitDate, setRejectSubmitDate] = useState(getTodayStr());
+    const [rejectSubmitStartDate, setRejectSubmitStartDate] = useState(getPastDateStr(6)); // Default 1 week (today & past 6 days)
+    const [rejectSubmitEndDate, setRejectSubmitEndDate] = useState(getTodayStr());
     const [rejectSubmitCounts, setRejectSubmitCounts] = useState({});
     const [rejectSubmitSaving, setRejectSubmitSaving] = useState(false);
     const [rejectSubmitLoading, setRejectSubmitLoading] = useState(false);
@@ -364,7 +384,16 @@ const FollowUp4 = () => {
         setRejectSubmitLoading(true);
         try {
             const targetBrand = selectedBrand || user?.brand || '888MDM';
-            const res = await fetch(`${API_BASE}/follow-up-4/reject-submit?brand=${encodeURIComponent(targetBrand)}`);
+            const params = new URLSearchParams();
+            if (user?.brand) params.append('userBrand', user.brand);
+            if (user?.role) params.append('userRole', user.role);
+            if (user?.username) params.append('username', user.username);
+            if (user?.isImmutable) params.append('isImmutable', String(user.isImmutable));
+            if (selectedBrand) params.append('brand', targetBrand);
+            if (rejectSubmitStartDate) params.append('startDate', rejectSubmitStartDate);
+            if (rejectSubmitEndDate) params.append('endDate', rejectSubmitEndDate);
+
+            const res = await fetch(`${API_BASE}/follow-up-4/reject-submit?${params.toString()}`);
             if (res.ok) {
                 const result = await res.json();
                 const rawData = result.data || [];
@@ -383,7 +412,7 @@ const FollowUp4 = () => {
         } finally {
             setRejectSubmitLoading(false);
         }
-    }, [API_BASE, rejectSubmitDate, selectedBrand, user]);
+    }, [API_BASE, rejectSubmitDate, rejectSubmitStartDate, rejectSubmitEndDate, selectedBrand, user]);
 
     useEffect(() => {
         if (activeTab === 'rejectSubmit') {
@@ -401,7 +430,7 @@ const FollowUp4 = () => {
             });
             setRejectSubmitCounts(countsObj);
         } else {
-            setRejectSubmitDate(new Date().toISOString().split('T')[0]);
+            setRejectSubmitDate(getTodayStr());
             setRejectSubmitCounts({});
         }
         setIsRejectSubmitModalOpen(true);
@@ -454,10 +483,33 @@ const FollowUp4 = () => {
         return Object.values(groups).sort((a, b) => b.date.localeCompare(a.date));
     }, [rejectSubmitHistoryList]);
 
+    // Calculate Grand Totals across all filtered rows in Reject Submit
+    const grandRejectSubmitTotals = useMemo(() => {
+        let grandTotal = 0;
+        const reasonTotals = {};
+        (droplists.rejectSubmitReasons || []).forEach(r => {
+            reasonTotals[r] = 0;
+        });
+
+        groupedRejectSubmit.forEach(group => {
+            grandTotal += (Number(group.total) || 0);
+            (droplists.rejectSubmitReasons || []).forEach(r => {
+                reasonTotals[r] = (reasonTotals[r] || 0) + (Number(group.reasons[r]) || 0);
+            });
+        });
+
+        return {
+            grandTotal,
+            reasonTotals
+        };
+    }, [groupedRejectSubmit, droplists.rejectSubmitReasons]);
+
     // =========================================================
-    // TAB 3: REJECT CS STATE & LOGIC
+    // TAB 3: REJECT CS STATE & LOGIC (Default: 1 Week)
     // =========================================================
-    const [rejectCsDate, setRejectCsDate] = useState(new Date().toISOString().split('T')[0]);
+    const [rejectCsDate, setRejectCsDate] = useState(getTodayStr());
+    const [rejectCsStartDate, setRejectCsStartDate] = useState(getPastDateStr(6)); // Default 1 week (today & past 6 days)
+    const [rejectCsEndDate, setRejectCsEndDate] = useState(getTodayStr());
     const [rejectCsCounts, setRejectCsCounts] = useState({});
     const [rejectCsSaving, setRejectCsSaving] = useState(false);
     const [rejectCsLoading, setRejectCsLoading] = useState(false);
@@ -468,7 +520,16 @@ const FollowUp4 = () => {
         setRejectCsLoading(true);
         try {
             const targetBrand = selectedBrand || user?.brand || '888MDM';
-            const res = await fetch(`${API_BASE}/follow-up-4/reject-cs?brand=${encodeURIComponent(targetBrand)}`);
+            const params = new URLSearchParams();
+            if (user?.brand) params.append('userBrand', user.brand);
+            if (user?.role) params.append('userRole', user.role);
+            if (user?.username) params.append('username', user.username);
+            if (user?.isImmutable) params.append('isImmutable', String(user.isImmutable));
+            if (selectedBrand) params.append('brand', targetBrand);
+            if (rejectCsStartDate) params.append('startDate', rejectCsStartDate);
+            if (rejectCsEndDate) params.append('endDate', rejectCsEndDate);
+
+            const res = await fetch(`${API_BASE}/follow-up-4/reject-cs?${params.toString()}`);
             if (res.ok) {
                 const result = await res.json();
                 const rawData = result.data || [];
@@ -487,7 +548,7 @@ const FollowUp4 = () => {
         } finally {
             setRejectCsLoading(false);
         }
-    }, [API_BASE, rejectCsDate, selectedBrand, user]);
+    }, [API_BASE, rejectCsDate, rejectCsStartDate, rejectCsEndDate, selectedBrand, user]);
 
     useEffect(() => {
         if (activeTab === 'rejectCs') {
@@ -505,7 +566,7 @@ const FollowUp4 = () => {
             });
             setRejectCsCounts(countsObj);
         } else {
-            setRejectCsDate(new Date().toISOString().split('T')[0]);
+            setRejectCsDate(getTodayStr());
             setRejectCsCounts({});
         }
         setIsRejectCsModalOpen(true);
@@ -558,12 +619,33 @@ const FollowUp4 = () => {
         return Object.values(groups).sort((a, b) => b.date.localeCompare(a.date));
     }, [rejectCsHistoryList]);
 
+    // Calculate Grand Totals across all filtered rows in Reject CS
+    const grandRejectCsTotals = useMemo(() => {
+        let grandTotal = 0;
+        const reasonTotals = {};
+        (droplists.rejectCsReasons || []).forEach(r => {
+            reasonTotals[r] = 0;
+        });
+
+        groupedRejectCs.forEach(group => {
+            grandTotal += (Number(group.total) || 0);
+            (droplists.rejectCsReasons || []).forEach(r => {
+                reasonTotals[r] = (reasonTotals[r] || 0) + (Number(group.reasons[r]) || 0);
+            });
+        });
+
+        return {
+            grandTotal,
+            reasonTotals
+        };
+    }, [groupedRejectCs, droplists.rejectCsReasons]);
+
     // =========================================================
-    // TAB 4: DETAIL STATE & AUTOMATED FORMULAS LOGIC
+    // TAB 4: DETAIL STATE & AUTOMATED FORMULAS LOGIC (Default: 1 Week)
     // =========================================================
-    const [detailDate, setDetailDate] = useState(new Date().toISOString().split('T')[0]);
-    const [detailStartDate, setDetailStartDate] = useState('');
-    const [detailEndDate, setDetailEndDate] = useState('');
+    const [detailDate, setDetailDate] = useState(getTodayStr());
+    const [detailStartDate, setDetailStartDate] = useState(getPastDateStr(6)); // Default 1 week (today & past 6 days)
+    const [detailEndDate, setDetailEndDate] = useState(getTodayStr());
     const [detailMetrics, setDetailMetrics] = useState({
         message: '',
         page: '',
@@ -723,7 +805,7 @@ const FollowUp4 = () => {
     }, [activeTab, fetchDetailData]);
 
     const handleOpenCreateDetail = (targetDate = null) => {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getTodayStr();
         const activeDate = targetDate || today;
         setDetailDate(activeDate);
 
@@ -837,6 +919,18 @@ const FollowUp4 = () => {
                 });
                 return row;
             });
+            if (groupedRejectSubmit.length > 0) {
+                const totalRow = {
+                    '#': 'សរុប',
+                    'កាលបរិច្ឆេទ': `GRAND TOTAL (${groupedRejectSubmit.length} ថ្ងៃ)`,
+                    'BRAND': selectedBrand || user?.brand || '888MDM',
+                    'សរុប (TOTAL)': grandRejectSubmitTotals.grandTotal
+                };
+                droplists.rejectSubmitReasons.forEach(r => {
+                    totalRow[r] = grandRejectSubmitTotals.reasonTotals[r] || 0;
+                });
+                exportData.push(totalRow);
+            }
             exportToExcel(exportData, `FollowUp4_Reject_Submit_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'rejectCs') {
             const exportData = groupedRejectCs.map((item, idx) => {
@@ -846,6 +940,18 @@ const FollowUp4 = () => {
                 });
                 return row;
             });
+            if (groupedRejectCs.length > 0) {
+                const totalRow = {
+                    '#': 'សរុប',
+                    'កាលបរិច្ឆេទ': `GRAND TOTAL (${groupedRejectCs.length} ថ្ងៃ)`,
+                    'BRAND': selectedBrand || user?.brand || '888MDM',
+                    'សរុប (TOTAL)': grandRejectCsTotals.grandTotal
+                };
+                droplists.rejectCsReasons.forEach(r => {
+                    totalRow[r] = grandRejectCsTotals.reasonTotals[r] || 0;
+                });
+                exportData.push(totalRow);
+            }
             exportToExcel(exportData, `FollowUp4_Reject_CS_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'detail') {
             const exportData = detailHistoryList.map((item, idx) => {
@@ -1005,6 +1111,14 @@ const FollowUp4 = () => {
                                     onChange={(e) => setEndDate(e.target.value)}
                                     className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
                                 />
+                                {(startDate || endDate) && (
+                                    <button
+                                        onClick={() => { setStartDate(''); setEndDate(''); }}
+                                        className="text-[11px] text-rose-400 hover:text-rose-300 ml-1 font-semibold cursor-pointer underline"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -1061,7 +1175,7 @@ const FollowUp4 = () => {
                                         </tr>
                                     ) : (
                                         (() => {
-                                            let runningIdx = 0;
+                                             let runningIdx = 0;
                                             return groupedSubmitByDate.map((group) => (
                                                 <React.Fragment key={group.date}>
                                                     {group.items.map((item) => {
@@ -1194,7 +1308,7 @@ const FollowUp4 = () => {
             {activeTab === 'rejectSubmit' && (
                 <div className="space-y-4">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-rose-400 flex items-center gap-2">
                                 <FaBan /> <span>REJECT SUBMIT SUMMARY</span>
@@ -1204,15 +1318,45 @@ const FollowUp4 = () => {
                             </p>
                         </div>
 
-                        {hasPermission('/follow-up/follow-up-4', 'create') && (
-                            <button
-                                onClick={() => handleOpenCreateRejectSubmit()}
-                                className="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-rose-600/20 cursor-pointer"
-                            >
-                                <FaPlusCircle size={15} />
-                                <span>+ បញ្ចូល REJECT SUBMIT</span>
-                            </button>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                            {/* Date Filter */}
+                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700">
+                                <FaRegCalendarAlt className="text-rose-400 text-xs" />
+                                <input
+                                    type="date"
+                                    value={rejectSubmitStartDate}
+                                    onChange={(e) => setRejectSubmitStartDate(e.target.value)}
+                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+                                    title="ចាប់ពីថ្ងៃ"
+                                />
+                                <span className="text-slate-500 text-xs">ដល់</span>
+                                <input
+                                    type="date"
+                                    value={rejectSubmitEndDate}
+                                    onChange={(e) => setRejectSubmitEndDate(e.target.value)}
+                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+                                    title="ដល់ថ្ងៃ"
+                                />
+                                {(rejectSubmitStartDate || rejectSubmitEndDate) && (
+                                    <button
+                                        onClick={() => { setRejectSubmitStartDate(''); setRejectSubmitEndDate(''); }}
+                                        className="text-[11px] text-rose-400 hover:text-rose-300 ml-1 font-semibold cursor-pointer underline"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
+
+                            {hasPermission('/follow-up/follow-up-4', 'create') && (
+                                <button
+                                    onClick={() => handleOpenCreateRejectSubmit()}
+                                    className="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-rose-600/20 cursor-pointer"
+                                >
+                                    <FaPlusCircle size={15} />
+                                    <span>+ បញ្ចូល REJECT SUBMIT</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* History Table */}
@@ -1274,6 +1418,30 @@ const FollowUp4 = () => {
                                         ))
                                     )}
                                 </tbody>
+                                {groupedRejectSubmit.length > 0 && (
+                                    <tfoot className="border-t-2 border-rose-500/50 text-xs shadow-inner">
+                                        <tr className="bg-slate-950 font-bold text-slate-100 border-t border-rose-500/40">
+                                            <td className="py-3.5 px-3 text-center text-slate-400 font-mono">-</td>
+                                            <td className="py-3.5 px-3 font-bold text-rose-400 uppercase tracking-wider">
+                                                <div className="flex items-center gap-2">
+                                                    <span>សរុបរួម (GRAND TOTAL):</span>
+                                                    <span className="bg-rose-950 text-rose-300 text-[11px] px-2.5 py-0.5 rounded border border-rose-500/40 font-bold">
+                                                        {groupedRejectSubmit.length} ថ្ងៃ
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="py-3.5 px-3 text-center font-mono font-black text-rose-400 bg-rose-950/40 text-sm">
+                                                {grandRejectSubmitTotals.grandTotal}
+                                            </td>
+                                            {droplists.rejectSubmitReasons.map((reason, rIdx) => (
+                                                <td key={rIdx} className="py-3.5 px-3 text-center font-mono font-bold text-slate-200">
+                                                    {grandRejectSubmitTotals.reasonTotals[reason] || 0}
+                                                </td>
+                                            ))}
+                                            <td className="py-3.5 px-3 text-center text-slate-500 font-mono">-</td>
+                                        </tr>
+                                    </tfoot>
+                                )}
                             </table>
                         </div>
                     </div>
@@ -1286,7 +1454,7 @@ const FollowUp4 = () => {
             {activeTab === 'rejectCs' && (
                 <div className="space-y-4">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-amber-400 flex items-center gap-2">
                                 <FaBan /> <span>REJECT CS SUMMARY</span>
@@ -1296,15 +1464,45 @@ const FollowUp4 = () => {
                             </p>
                         </div>
 
-                        {hasPermission('/follow-up/follow-up-4', 'create') && (
-                            <button
-                                onClick={() => handleOpenCreateRejectCs()}
-                                className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-600/20 cursor-pointer"
-                            >
-                                <FaPlusCircle size={15} />
-                                <span>+ បញ្ចូល REJECT CS</span>
-                            </button>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                            {/* Date Filter */}
+                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700">
+                                <FaRegCalendarAlt className="text-amber-400 text-xs" />
+                                <input
+                                    type="date"
+                                    value={rejectCsStartDate}
+                                    onChange={(e) => setRejectCsStartDate(e.target.value)}
+                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+                                    title="ចាប់ពីថ្ងៃ"
+                                />
+                                <span className="text-slate-500 text-xs">ដល់</span>
+                                <input
+                                    type="date"
+                                    value={rejectCsEndDate}
+                                    onChange={(e) => setRejectCsEndDate(e.target.value)}
+                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+                                    title="ដល់ថ្ងៃ"
+                                />
+                                {(rejectCsStartDate || rejectCsEndDate) && (
+                                    <button
+                                        onClick={() => { setRejectCsStartDate(''); setRejectCsEndDate(''); }}
+                                        className="text-[11px] text-rose-400 hover:text-rose-300 ml-1 font-semibold cursor-pointer underline"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
+
+                            {hasPermission('/follow-up/follow-up-4', 'create') && (
+                                <button
+                                    onClick={() => handleOpenCreateRejectCs()}
+                                    className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-600/20 cursor-pointer"
+                                >
+                                    <FaPlusCircle size={15} />
+                                    <span>+ បញ្ចូល REJECT CS</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* History Table */}
@@ -1366,6 +1564,30 @@ const FollowUp4 = () => {
                                         ))
                                     )}
                                 </tbody>
+                                {groupedRejectCs.length > 0 && (
+                                    <tfoot className="border-t-2 border-amber-500/50 text-xs shadow-inner">
+                                        <tr className="bg-slate-950 font-bold text-slate-100 border-t border-amber-500/40">
+                                            <td className="py-3.5 px-3 text-center text-slate-400 font-mono">-</td>
+                                            <td className="py-3.5 px-3 font-bold text-amber-400 uppercase tracking-wider">
+                                                <div className="flex items-center gap-2">
+                                                    <span>សរុបរួម (GRAND TOTAL):</span>
+                                                    <span className="bg-amber-950 text-amber-300 text-[11px] px-2.5 py-0.5 rounded border border-amber-500/40 font-bold">
+                                                        {groupedRejectCs.length} ថ្ងៃ
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="py-3.5 px-3 text-center font-mono font-black text-amber-400 bg-amber-950/40 text-sm">
+                                                {grandRejectCsTotals.grandTotal}
+                                            </td>
+                                            {droplists.rejectCsReasons.map((reason, rIdx) => (
+                                                <td key={rIdx} className="py-3.5 px-3 text-center font-mono font-bold text-slate-200">
+                                                    {grandRejectCsTotals.reasonTotals[reason] || 0}
+                                                </td>
+                                            ))}
+                                            <td className="py-3.5 px-3 text-center text-slate-500 font-mono">-</td>
+                                        </tr>
+                                    </tfoot>
+                                )}
                             </table>
                         </div>
                     </div>

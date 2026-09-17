@@ -207,19 +207,52 @@ router.delete('/submit/:id', async (req, res) => {
 // 2. REJECT SUBMIT ENDPOINTS
 // ==========================================
 
-// GET Reject Submit records by date and brand
+// GET Reject Submit records by date range and brand
 router.get('/reject-submit', async (req, res) => {
     try {
-        const { date, brand } = req.query;
+        const {
+            userBrand = '',
+            userRole = '',
+            username = '',
+            isImmutable = 'false',
+            date,
+            brand = '',
+            startDate = '',
+            endDate = ''
+        } = req.query;
+
+        const isMaster = checkMasterAdmin(username, userRole, isImmutable);
+
         let filter = {};
-        if (date) filter.date = date;
-        if (brand && brand !== 'ALL' && brand !== 'All') filter.brand = brand;
+        if (isMaster) {
+            if (brand && brand !== 'ALL' && brand !== 'All') {
+                filter.brand = { $in: [brand, new RegExp(`^${brand.trim()}$`, 'i')] };
+            }
+        } else {
+            if (userBrand && userBrand !== 'ALL' && userBrand !== 'All') {
+                filter.brand = { $in: [userBrand, '', null, new RegExp(`^${userBrand.trim()}$`, 'i')] };
+            }
+        }
+
+        if (date) {
+            filter.date = date;
+        } else if (startDate || endDate) {
+            filter.date = {};
+            if (startDate) filter.date.$gte = startDate;
+            if (endDate) filter.date.$lte = endDate;
+        }
 
         let items = [];
         if (isMongoConnected) {
             items = await queryAllDBs(FollowUp4RejectSubmit, (M) => M.find(filter).sort({ date: -1 }));
         } else {
-            items = MEM_REJECT_SUBMITS.filter(r => (!date || r.date === date) && (!brand || r.brand === brand));
+            items = MEM_REJECT_SUBMITS.filter(r => {
+                if (filter.brand && r.brand !== filter.brand) return false;
+                if (date && r.date !== date) return false;
+                if (startDate && r.date < startDate) return false;
+                if (endDate && r.date > endDate) return false;
+                return true;
+            });
         }
         res.json({ success: true, data: items });
     } catch (err) {
@@ -266,19 +299,52 @@ router.post('/reject-submit/save', async (req, res) => {
 // 3. REJECT CS ENDPOINTS
 // ==========================================
 
-// GET Reject CS records by date and brand
+// GET Reject CS records by date range and brand
 router.get('/reject-cs', async (req, res) => {
     try {
-        const { date, brand } = req.query;
+        const {
+            userBrand = '',
+            userRole = '',
+            username = '',
+            isImmutable = 'false',
+            date,
+            brand = '',
+            startDate = '',
+            endDate = ''
+        } = req.query;
+
+        const isMaster = checkMasterAdmin(username, userRole, isImmutable);
+
         let filter = {};
-        if (date) filter.date = date;
-        if (brand && brand !== 'ALL' && brand !== 'All') filter.brand = brand;
+        if (isMaster) {
+            if (brand && brand !== 'ALL' && brand !== 'All') {
+                filter.brand = { $in: [brand, new RegExp(`^${brand.trim()}$`, 'i')] };
+            }
+        } else {
+            if (userBrand && userBrand !== 'ALL' && userBrand !== 'All') {
+                filter.brand = { $in: [userBrand, '', null, new RegExp(`^${userBrand.trim()}$`, 'i')] };
+            }
+        }
+
+        if (date) {
+            filter.date = date;
+        } else if (startDate || endDate) {
+            filter.date = {};
+            if (startDate) filter.date.$gte = startDate;
+            if (endDate) filter.date.$lte = endDate;
+        }
 
         let items = [];
         if (isMongoConnected) {
             items = await queryAllDBs(FollowUp4RejectCS, (M) => M.find(filter).sort({ date: -1 }));
         } else {
-            items = MEM_REJECT_CS.filter(r => (!date || r.date === date) && (!brand || r.brand === brand));
+            items = MEM_REJECT_CS.filter(r => {
+                if (filter.brand && r.brand !== filter.brand) return false;
+                if (date && r.date !== date) return false;
+                if (startDate && r.date < startDate) return false;
+                if (endDate && r.date > endDate) return false;
+                return true;
+            });
         }
         res.json({ success: true, data: items });
     } catch (err) {
