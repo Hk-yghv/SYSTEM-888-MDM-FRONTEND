@@ -338,21 +338,69 @@ const CalculateSchedule2 = () => {
     return (
         <>
             <style>{`
+                @page {
+                    size: A4 portrait;
+                    margin: 0;
+                }
+
                 @media print {
-                    body * { visibility: hidden !important;}
-                    #cs2-print-area, #cs2-print-area * { visibility: visible !important; }
-                    #cs2-print-area {
-                        position: fixed !important;
-                        left: 50% !important;
-                        top: 50% !important;
-                        transform: translate(-50%, -50%) !important;
-                        width: 100vw !important;
-                        padding: 24px 32px !important;
-                        box-shadow: none !important;
-                        border: none !important;
+
+                    html,
+                    body {
+                        width: 210mm !important;
+                        min-width: 210mm !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
                         background: #fff !important;
                     }
-                    .no-print { display: none !important; }
+
+                    body {
+                        overflow: visible !important;
+                    }
+
+                    body * {
+                        visibility: hidden !important;
+                    }
+
+                    #cs2-print-area,
+                    #cs2-print-area * {
+                        visibility: visible !important;
+                    }
+
+                    #cs2-print-area {
+                        position: relative !important;
+                        left: auto !important;
+                        top: auto !important;
+                        transform: none !important;
+
+                        width: 210mm !important;
+                        min-height: 297mm !important;
+
+                        margin: 0 auto !important;
+                        padding: 10mm 12mm !important;
+
+                        box-sizing: border-box !important;
+
+                        background: #fff !important;
+                        box-shadow: none !important;
+                        border: none !important;
+
+                        overflow: visible !important;
+                    }
+
+                    .no-print {
+                        display: none !important;
+                    }
+
+                    table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                    }
+
+                    * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
                 }
             `}</style>
 
