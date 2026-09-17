@@ -816,17 +816,17 @@ const CalculateSchedule2 = () => {
 
                         {/* KH Royal Header */}
                         <div className="text-center pt-8 px-8">
-                            <p className="text-sm text-slate-700 tracking-widest">
+                            <p className="text-sm text-slate-700 tracking-widest" style={{ fontFamily: 'moul' }}>
                                 ព្រះរាជាណាចក្រកម្ពុជា
                             </p>
-                            <p className="text-sm text-slate-700 tracking-widest">
+                            <p className="text-sm text-slate-700 tracking-widest" style={{ fontFamily: 'moul' }}>
                                 ជាតិ សាសនា ព្រះមហាក្សត្រ
                             </p>
                             <br />
                             <div className="flex justify-center my-2">
                                 <div className="h-0.5 w-32 bg-slate-300 rounded" />
                             </div>
-                            <h4 className="text-slate-900 text-[14px] mt-2">
+                            <h4 className="text-slate-900 text-[14px] mt-2" style={{ fontFamily: 'moul' }}>
                                 កាលវិភាគសងប្រាក់
                             </h4>
                         </div>
