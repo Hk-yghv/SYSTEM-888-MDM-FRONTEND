@@ -11,7 +11,7 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
     const [langOpen, setLangOpen] = useState(false);
 
     const { t, lang, changeLanguage, LANGUAGES } = useLanguage();
-    const { user, logout, API_BASE, hasPermission } = useAuth();
+    const { user, logout, API_BASE, API_BASE1, hasPermission } = useAuth();
     const navigate = useNavigate();
 
     // Financial summary state
@@ -36,23 +36,50 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
             if (user?.username) params.set('username', user.username);
             if (user?.isImmutable) params.set('isImmutable', 'true');
 
-            const res = await fetch(`${API_BASE}/dashboard/stats?${params.toString()}`);
-            if (res.ok) {
-                const data = await res.json();
-                setBalance({
-                    totalLoanAmount: data.totalLoanAmount || 0,
-                    totalRevenue: data.totalRevenue || 0,
-                    totalRepaymentExpected: data.totalRepaymentExpected || 0,
-                    outstandingBalance: data.outstandingBalance || Math.max((data.totalRepaymentExpected || data.totalLoanAmount || 0) - (data.totalRevenue || 0), 0)
+            // Fetch stats and raw contracts in parallel (same as Dashboard does)
+            const contractParams = new URLSearchParams(params);
+            contractParams.set('limit', '999999');
+
+            const [statsRes, contractsRes] = await Promise.all([
+                fetch(`${API_BASE}/dashboard/stats?${params.toString()}`),
+                fetch(`${API_BASE1}/contracts?${contractParams.toString()}`)
+            ]);
+
+            let data = {};
+            if (statsRes.ok) data = await statsRes.json();
+
+            let totalCustomerPaid = 0;
+            let totalExpected = 0;
+
+            if (contractsRes.ok) {
+                const cData = await contractsRes.json();
+                const contracts = cData.data || cData.contracts || (Array.isArray(cData) ? cData : []);
+                contracts.forEach(c => {
+                    if (Array.isArray(c.repaymentSchedule)) {
+                        c.repaymentSchedule.forEach(row => {
+                            totalCustomerPaid += Number(row.paidAmount || 0);
+                            totalExpected += (Number(row.scheduledAmount || 0) + Number(row.penalty || 0));
+                        });
+                    }
                 });
             }
+
+            const resolvedExpected = totalExpected || data.totalRepaymentExpected || 0;
+            const resolvedOutstanding = Math.max(resolvedExpected - totalCustomerPaid, 0);
+
+            setBalance({
+                totalLoanAmount: data.totalLoanAmount || 0,
+                totalRevenue: data.totalRevenue || 0,
+                totalRepaymentExpected: resolvedExpected,
+                outstandingBalance: resolvedOutstanding
+            });
         } catch { }
     };
 
     useEffect(() => {
         if (hasPermission('/dashboard', 'read')) {
             fetchBalance();
-            const interval = setInterval(fetchBalance, 5000);
+            const interval = setInterval(fetchBalance, 30000);
             return () => clearInterval(interval);
         }
     }, [API_BASE, user, hasPermission]);

@@ -366,6 +366,135 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         autoSaveRows(updated);
     };
 
+    // ── Payment Confirmation Modal State ──────────────────────────────────────
+    const [payConfirm, setPayConfirm] = useState(null);
+    const [payConfirmSubmitting, setPayConfirmSubmitting] = useState(false);
+    // payConfirm = { idx, mode: 'Paid' | 'PayOff', amount, description, imageItems: [{file, preview}] }
+
+    const openPayConfirm = (idx, mode) => {
+        const row = rows[idx];
+        const totalAmt = Number(row.penalty || 0) + Number(row.scheduledAmount || 0);
+        setPayConfirm({
+            idx,
+            mode,
+            amount: totalAmt,
+            description: row.comment || '',
+            imageItems: []
+        });
+        setActiveDropdownIdx(null);
+    };
+
+    const handlePayConfirmImagesAdd = (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        const newItems = files.map(file => ({
+            file,
+            preview: URL.createObjectURL(file)
+        }));
+        setPayConfirm(prev => ({
+            ...prev,
+            imageItems: [...(prev.imageItems || []), ...newItems]
+        }));
+        // reset input so same file can be re-added
+        e.target.value = '';
+    };
+
+    const handlePayConfirmRemoveImage = (imgIdx) => {
+        setPayConfirm(prev => {
+            const updated = [...(prev.imageItems || [])];
+            if (updated[imgIdx]?.preview?.startsWith('blob:')) {
+                URL.revokeObjectURL(updated[imgIdx].preview);
+            }
+            updated.splice(imgIdx, 1);
+            return { ...prev, imageItems: updated };
+        });
+    };
+
+    const uploadImagesToCloudinary = async (imageItems) => {
+        const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+        const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+        const urls = [];
+        for (const item of imageItems) {
+            try {
+                const fd = new FormData();
+                fd.append('file', item.file);
+                fd.append('upload_preset', CLOUDINARY_PRESET);
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                    method: 'POST',
+                    body: fd
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    urls.push(data.secure_url || data.url);
+                } else {
+                    // fallback: base64
+                    const b64 = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(item.file);
+                    });
+                    urls.push(b64);
+                }
+            } catch {
+                const b64 = await new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(item.file);
+                });
+                urls.push(b64);
+            }
+        }
+        return urls;
+    };
+
+    const handlePayConfirmSubmit = async () => {
+        if (!payConfirm || payConfirmSubmitting) return;
+        setPayConfirmSubmitting(true);
+        try {
+            const { idx, mode, amount, description, imageItems } = payConfirm;
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            // Upload images to Cloudinary first
+            const uploadedUrls = imageItems.length > 0
+                ? await uploadImagesToCloudinary(imageItems)
+                : [];
+
+            let updated;
+            if (mode === 'Paid') {
+                updated = [...rows];
+                updated[idx] = {
+                    ...updated[idx],
+                    paidAmount: Number(amount),
+                    paidDate: updated[idx].paidDate || todayStr,
+                    comment: description,
+                    paymentImages: uploadedUrls,
+                    status: 'Paid'
+                };
+            } else {
+                updated = rows.map((r, i) => {
+                    if (i === idx) {
+                        return {
+                            ...r,
+                            paidAmount: Number(amount),
+                            paidDate: r.paidDate || todayStr,
+                            comment: description,
+                            paymentImages: uploadedUrls,
+                            status: 'PayOff'
+                        };
+                    }
+                    if (i > idx) return { ...r, status: 'Settled' };
+                    return r;
+                });
+            }
+
+            setRows(updated);
+            setPayConfirm(null);
+            await autoSaveRows(updated);
+        } finally {
+            setPayConfirmSubmitting(false);
+        }
+    };
+
     const handleMarkPaid = (idx) => {
         const todayStr = new Date().toISOString().split('T')[0];
         const updated = [...rows];
@@ -502,6 +631,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     };
 
     return (
+        <>
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 select-none">
             <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-xs text-slate-800">
 
@@ -785,7 +915,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                 {!isLastMonth && row.status !== 'PayOff' && (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => handleMarkPaid(idx)}
+                                                                        onClick={() => openPayConfirm(idx, 'Paid')}
                                                                         className="w-full px-3 py-1.5 text-left text-xs font-bold text-amber-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
                                                                     >
                                                                         <FaCheckCircle size={11} /> Paid
@@ -794,7 +924,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => handleMarkPayOff(idx)}
+                                                                    onClick={() => openPayConfirm(idx, 'PayOff')}
                                                                     className="w-full px-3 py-1.5 text-left text-xs font-bold text-indigo-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
                                                                 >
                                                                     <FaLock size={11} /> Pay Off
@@ -869,6 +999,153 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
             </div>
         </div>
+
+        {/* ── Payment Confirmation Modal ──────────────────────────────────── */}
+        {payConfirm && (
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999999] p-4">
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[92vh] overflow-hidden">
+
+                    {/* Header */}
+                    <div className={`px-5 py-4 flex items-center justify-between flex-shrink-0 ${
+                        payConfirm.mode === 'PayOff'
+                            ? 'bg-gradient-to-r from-indigo-600 to-indigo-500'
+                            : 'bg-gradient-to-r from-amber-500 to-amber-400'
+                    }`}>
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                                {payConfirm.mode === 'PayOff' ? <FaLock size={15} /> : <FaCheckCircle size={15} />}
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-white">
+                                    {payConfirm.mode === 'PayOff' ? 'ទូទាត់ (Pay Off)' : 'ចុះបង់ (Mark as Paid)'}
+                                </h4>
+                                <p className="text-[11px] text-white/70">{rows[payConfirm.idx]?.labelName || `ខែទី ${payConfirm.idx + 1}`}</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setPayConfirm(null)}
+                            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white cursor-pointer transition-colors"
+                        >
+                            <MdClose size={16} />
+                        </button>
+                    </div>
+
+                    {/* Body */}
+                    <div className="overflow-y-auto flex-1 p-5 space-y-4">
+
+                        {/* Amount */}
+                        <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">ភ្ញៀវបានបង់ (Amount Paid) $</label>
+                            <input
+                                type="number"
+                                step="any"
+                                value={payConfirm.amount}
+                                onChange={e => setPayConfirm(prev => ({ ...prev, amount: e.target.value }))}
+                                className="w-full h-10 px-3 bg-emerald-50 border border-emerald-200 focus:border-emerald-500 rounded-xl text-emerald-700 font-bold font-mono text-base outline-none shadow-sm"
+                            />
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">កំណត់ចំណាំ (Description / Note)</label>
+                            <input
+                                type="text"
+                                value={payConfirm.description}
+                                onChange={e => setPayConfirm(prev => ({ ...prev, description: e.target.value }))}
+                                placeholder="Comment or transaction note..."
+                                className="w-full h-10 px-3 bg-slate-50 border border-slate-200 focus:border-indigo-400 rounded-xl text-slate-800 text-xs outline-none shadow-sm"
+                            />
+                        </div>
+
+                        {/* Multi-Image Upload */}
+                        <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">រូបភាពបង្កាន់ដៃ (Receipt Images)</label>
+                                <span className="text-[10px] text-slate-400">{payConfirm.imageItems?.length || 0} files</span>
+                            </div>
+
+                            {/* Upload button */}
+                            <label className="flex items-center gap-2.5 h-10 px-3 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 rounded-xl cursor-pointer transition-all group">
+                                <div className="w-5 h-5 rounded-lg bg-slate-200 group-hover:bg-indigo-100 flex items-center justify-center transition-colors">
+                                    <FaDollarSign size={10} className="text-slate-500 group-hover:text-indigo-600" />
+                                </div>
+                                <span className="text-xs text-slate-400 group-hover:text-indigo-600 transition-colors">+ ជ្រើសរើសរូបភាព (Multiple allowed)</span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={handlePayConfirmImagesAdd}
+                                />
+                            </label>
+
+                            {/* Image Preview Grid */}
+                            {payConfirm.imageItems?.length > 0 && (
+                                <div className="mt-3 grid grid-cols-3 gap-2">
+                                    {payConfirm.imageItems.map((item, imgIdx) => (
+                                        <div key={imgIdx} className="relative group rounded-xl overflow-hidden bg-slate-100 aspect-square border border-slate-200">
+                                            <img
+                                                src={item.preview}
+                                                alt={`receipt-${imgIdx + 1}`}
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePayConfirmRemoveImage(imgIdx)}
+                                                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-[9px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-md"
+                                            >
+                                                ✕
+                                            </button>
+                                            <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[8px] text-center py-0.5 truncate px-1">
+                                                {item.file.name}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Upload note */}
+                        {payConfirm.imageItems?.length > 0 && (
+                            <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                                ☁️ រូបភាពនឹង Upload ទៅ Cloudinary នៅពេល Submit
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Footer Buttons */}
+                    <div className="flex gap-2 px-5 py-4 border-t border-slate-100 flex-shrink-0 bg-slate-50">
+                        <button
+                            type="button"
+                            onClick={() => setPayConfirm(null)}
+                            disabled={payConfirmSubmitting}
+                            className="flex-1 h-10 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold cursor-pointer transition-all disabled:opacity-50"
+                        >
+                            ខ្វែង (Cancel)
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handlePayConfirmSubmit}
+                            disabled={payConfirmSubmitting}
+                            className={`flex-1 h-10 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 ${
+                                payConfirm.mode === 'PayOff'
+                                    ? 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30'
+                                    : 'bg-amber-500 hover:bg-amber-400 shadow-amber-500/30'
+                            }`}
+                        >
+                            {payConfirmSubmitting ? (
+                                <span className="animate-spin text-base">⏳</span>
+                            ) : (
+                                <>{payConfirm.mode === 'PayOff' ? <FaLock size={11} /> : <FaCheckCircle size={11} />}
+                                <span>Submit {payConfirm.mode}</span></>
+                            )}
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        )}
+        </>
     );
 };
 
