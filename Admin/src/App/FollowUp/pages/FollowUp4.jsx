@@ -1029,7 +1029,7 @@ const FollowUp4 = () => {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-700/80 pb-2">
+            <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-700/80">
                 <button
                     onClick={() => setActiveTab('submit')}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'submit'
@@ -1175,7 +1175,7 @@ const FollowUp4 = () => {
                                         </tr>
                                     ) : (
                                         (() => {
-                                             let runningIdx = 0;
+                                            let runningIdx = 0;
                                             return groupedSubmitByDate.map((group) => (
                                                 <React.Fragment key={group.date}>
                                                     {group.items.map((item) => {

@@ -12,6 +12,7 @@ import { AuthProvider, useAuth } from "../context/AuthContext";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import ProtectRoute from "../services/ProtectRoute";
 import SignIn from "../services/SignIn";
+import { getFirstAllowedRoute } from "../utils/permissionUtils";
 
 // Dashboard);
 import Dashboard from "../App/Dashboard/Dashboard";
@@ -145,11 +146,9 @@ const MainLayout = ({ children }) => {
 
 
 const RootRedirect = () => {
-  const { user } = useAuth();
-  if (user?.role?.toLowerCase() === 'salary') {
-    return <Navigate to={json.salary || '/salary'} replace />;
-  }
-  return <Navigate to={json.dashboard || '/dashboard'} replace />;
+  const { user, hasPermission } = useAuth();
+  const targetRoute = getFirstAllowedRoute(user, hasPermission);
+  return <Navigate to={targetRoute} replace />;
 };
 
 const App = () => {

@@ -4,39 +4,58 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
 import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaBell, FaExpand, FaCompress } from 'react-icons/fa';
+import { getFirstAllowedRoute, hasAnyAlertPermission } from '../../utils/permissionUtils';
 
 const Header = ({ onOpenAlerts, alertCount = 0 }) => {
     const [accountOpen, setAccountOpen] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
 
     const { t, lang, changeLanguage, LANGUAGES } = useLanguage();
-    const { user, logout, API_BASE } = useAuth();
+    const { user, logout, API_BASE, hasPermission } = useAuth();
     const navigate = useNavigate();
 
     // Financial summary state
-    const [balance, setBalance] = useState({ totalLoanAmount: 0, totalRevenue: 0 });
+    const [balance, setBalance] = useState({
+        totalLoanAmount: 0,
+        totalRevenue: 0,
+        totalRepaymentExpected: 0,
+        outstandingBalance: 0
+    });
+
+    const formatMoney = (val) => {
+        const num = Number(val) || 0;
+        return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
 
     const fetchBalance = async () => {
+        if (!hasPermission('/dashboard', 'read')) return;
         try {
-            const params = user?.brand && user?.role !== 'Administrator' ? `?userBrand=${user.brand}&userRole=${user.role}` : '';
-            const res = await fetch(`${API_BASE}/dashboard/stats${params}`);
+            const params = new URLSearchParams();
+            if (user?.brand && user?.role !== 'Administrator') params.set('userBrand', user.brand);
+            if (user?.role) params.set('userRole', user.role);
+            if (user?.username) params.set('username', user.username);
+            if (user?.isImmutable) params.set('isImmutable', 'true');
+
+            const res = await fetch(`${API_BASE}/dashboard/stats?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setBalance({
                     totalLoanAmount: data.totalLoanAmount || 0,
                     totalRevenue: data.totalRevenue || 0,
-                    totalLoanAmount: data.totalLoanAmount || 0,
-                    totalRevenue: data.totalRevenue || 0
+                    totalRepaymentExpected: data.totalRepaymentExpected || 0,
+                    outstandingBalance: data.outstandingBalance || Math.max((data.totalRepaymentExpected || data.totalLoanAmount || 0) - (data.totalRevenue || 0), 0)
                 });
             }
         } catch { }
     };
 
     useEffect(() => {
-        fetchBalance();
-        const interval = setInterval(fetchBalance, 5000);
-        return () => clearInterval(interval);
-    }, [API_BASE, user]);
+        if (hasPermission('/dashboard', 'read')) {
+            fetchBalance();
+            const interval = setInterval(fetchBalance, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [API_BASE, user, hasPermission]);
 
     const handleLogout = () => {
         logout();
@@ -85,7 +104,7 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
             }}
         >
             <div className='flex items-center gap-4'>
-                <Link to={user?.role?.toLowerCase() === 'salary' ? "/salary" : "/dashboard"} className='flex items-center gap-2.5 group'>
+                <Link to={getFirstAllowedRoute(user, hasPermission)} className='flex items-center gap-2.5 group'>
                     <h1 className="text-xl font-extrabold tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors">
                         {(!user || user.isImmutable || user.username === '@hakyonghouv' || !user.brand)
                             ? 'SYSTEM'
@@ -93,31 +112,36 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                     </h1>
                 </Link>
 
-                {/* Financial Summary Widget — only hide for salary accounts */}
-                {user?.role?.toLowerCase() !== 'salary' && (
-                    <div className='hidden lg:flex items-center gap-3 pl-4 border-l border-slate-200'>
-                        {/* Loan */}
-                        <div className='flex flex-col items-center px-3 py-1 rounded-[5px] bg-slate-50 border border-slate-200/80'>
-                            <span className='text-[9px] font-bold text-slate-500 uppercase tracking-wider'>Loan Out</span>
-                            <span className='text-sm font-black text-slate-700 font-mono leading-tight'>${balance.totalLoanAmount.toLocaleString()}</span>
+                {/* Financial Summary Widget — only show if user has read permission for /dashboard */}
+                {hasPermission('/dashboard', 'read') && (
+                    <div className='hidden lg:flex items-center gap-2 pl-4 border-l border-slate-200'>
+                        {/* ឥណទានបញ្ចេញសរុប */}
+                        <div className='flex flex-col items-center px-2.5 py-1 rounded-[5px] bg-slate-50 border border-slate-200/80'>
+                            <span className='text-[9px] font-bold text-slate-500 uppercase tracking-wider'>ឥណទានបញ្ចេញសរុប</span>
+                            <span className='text-xs font-black text-slate-700 font-mono leading-tight'>${formatMoney(balance.totalLoanAmount)}</span>
                         </div>
-                        {/* Collected */}
-                        <div className='flex flex-col items-center px-3 py-1 rounded-[5px] bg-emerald-50 border border-emerald-200/80'>
-                            <span className='text-[9px] font-bold text-emerald-600 uppercase tracking-wider'>Collected</span>
-                            <span className='text-sm font-black text-emerald-700 font-mono leading-tight'>${balance.totalRevenue.toLocaleString()}</span>
+                        {/* ប្រាក់ប្រមូលបានសរុប */}
+                        <div className='flex flex-col items-center px-2.5 py-1 rounded-[5px] bg-emerald-50 border border-emerald-200/80'>
+                            <span className='text-[9px] font-bold text-emerald-600 uppercase tracking-wider'>ប្រាក់ប្រមូលបានសរុប</span>
+                            <span className='text-xs font-black text-emerald-700 font-mono leading-tight'>${formatMoney(balance.totalRevenue)}</span>
                         </div>
-                        {/* Total requested */}
-                        <div className='flex flex-col items-center px-3 py-1 rounded-[5px] bg-amber-50 border border-amber-200/80'>
-                            <span className='text-[9px] font-bold text-amber-600 uppercase tracking-wider'>Requested</span>
-                            <span className='text-sm font-black text-amber-700 font-mono leading-tight'>${balance.totalLoanAmount.toLocaleString()}</span>
+                        {/* ប្រាក់ត្រូវប្រមូលមកវិញ */}
+                        <div className='flex flex-col items-center px-2.5 py-1 rounded-[5px] bg-purple-50 border border-purple-200/80'>
+                            <span className='text-[9px] font-bold text-purple-600 uppercase tracking-wider'>ប្រាក់ត្រូវប្រមូលមកវិញ</span>
+                            <span className='text-xs font-black text-purple-700 font-mono leading-tight'>${formatMoney(balance.totalRepaymentExpected)}</span>
+                        </div>
+                        {/* ប្រាក់នៅសល់មិនទាន់ប្រមូល */}
+                        <div className='flex flex-col items-center px-2.5 py-1 rounded-[5px] bg-amber-50 border border-amber-200/80'>
+                            <span className='text-[9px] font-bold text-amber-600 uppercase tracking-wider'>ប្រាក់នៅសល់មិនទាន់ប្រមូល</span>
+                            <span className='text-xs font-black text-amber-700 font-mono leading-tight'>${formatMoney(balance.outstandingBalance)}</span>
                         </div>
                     </div>
                 )}
             </div>
 
             <div className='flex items-center gap-3'>
-                {/* Payment Alerts Button — only hide for salary accounts */}
-                {user?.role?.toLowerCase() !== 'salary' && (
+                {/* Payment Alerts Button — only show if user has permission to at least one alert page */}
+                {hasAnyAlertPermission(user, hasPermission) && (
                     <button
                         onClick={onOpenAlerts}
                         className='relative flex items-center gap-2 px-3 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'

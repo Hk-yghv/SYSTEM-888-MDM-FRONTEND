@@ -22,7 +22,7 @@ import { useLanguage } from '../context/LanguageContext';
 import CopyCell from './CopyCell';
 
 const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
-    const { user, API_BASE1, API_BASE2, API_BASE } = useAuth();
+    const { user, API_BASE1, API_BASE2, API_BASE, hasPermission } = useAuth();
     const { t } = useLanguage();
     const navigate = useNavigate();
 
@@ -55,12 +55,21 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     };
 
     const updateUnreadCount = useCallback((dueList, due1List, due3List, overdue3DaysList, overdue7DaysList, ovList, fu2ReviewList, othersList, seenKeys) => {
-        const allItems = [...dueList, ...(due1List || []), ...due3List, ...overdue3DaysList, ...overdue7DaysList, ...ovList, ...fu2ReviewList, ...(othersList || [])];
+        const allItems = [
+            ...(hasPermission('/installment/due-today', 'read') ? dueList : []),
+            ...(hasPermission('/installment/schedule', 'read') ? (due1List || []) : []),
+            ...(hasPermission('/installment/due-in-3-days', 'read') ? due3List : []),
+            ...(hasPermission('/installment/overdue-3-days', 'read') ? overdue3DaysList : []),
+            ...(hasPermission('/installment/overdue-7-days', 'read') ? overdue7DaysList : []),
+            ...(hasPermission('/installment/overdue', 'read') ? ovList : []),
+            ...(hasPermission('/follow-up/follow-up-2', 'read') ? fu2ReviewList : []),
+            ...(hasPermission('/history/device-history', 'read') ? (othersList || []) : [])
+        ];
         const unreadItems = allItems.filter(item => !seenKeys.has(getItemKey(item)));
         if (setAlertCount) {
             setAlertCount(unreadItems.length);
         }
-    }, [setAlertCount]);
+    }, [hasPermission, setAlertCount]);
 
     const fetchAlerts = useCallback(async () => {
         setLoading(true);
@@ -282,10 +291,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     const unreadCountFollowUp2Review = followUp2ReviewList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
     const unreadCountOthers = othersRejectedList.filter(item => !seenAlertKeys.has(getItemKey(item))).length;
 
-    const totalUnreadCount = unreadCountDue + unreadCountDueIn1Day + unreadCountDueIn3Days + unreadCountOverdue3Days + unreadCountOverdue7Days + unreadCountOverdue + unreadCountFollowUp2Review + unreadCountOthers;
-
     // Category Droplist Options Config
-    const alertCategories = [
+    const rawAlertCategories = [
         {
             key: 'overdue',
             label: '🔴 ហួសកាលកំណត់ (Overdue Customers)',
@@ -314,7 +321,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
             unread: unreadCountDueIn1Day,
             color: 'orange',
             badgeBg: 'bg-orange-500',
-            route: '/installment/schedule?urgency=dueIn1Day'
+            route: '/installment/schedule?urgency=dueIn1Day',
+            checkRoute: '/installment/schedule'
         },
         {
             key: 'dueIn3Days',
@@ -364,11 +372,36 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
             unread: unreadCountOthers,
             color: 'rose',
             badgeBg: 'bg-rose-500',
-            route: '/history/device-history?status=Rejected'
+            route: '/history/device-history?status=Rejected',
+            checkRoute: '/history/device-history'
         }
     ];
 
-    const currentCategory = alertCategories.find(c => c.key === activeTab) || alertCategories[0];
+    const alertCategories = useMemo(() => {
+        return rawAlertCategories.filter(cat => hasPermission(cat.checkRoute || cat.route, 'read'));
+    }, [rawAlertCategories, hasPermission]);
+
+    useEffect(() => {
+        if (alertCategories.length > 0 && !alertCategories.some(c => c.key === activeTab)) {
+            setActiveTab(alertCategories[0].key);
+        }
+    }, [alertCategories, activeTab]);
+
+    const totalUnreadCount = useMemo(() => {
+        return alertCategories.reduce((sum, cat) => sum + (cat.unread || 0), 0);
+    }, [alertCategories]);
+
+    const totalAlertCount = useMemo(() => {
+        return alertCategories.reduce((sum, cat) => sum + (cat.count || 0), 0);
+    }, [alertCategories]);
+
+    const currentCategory = alertCategories.find(c => c.key === activeTab) || alertCategories[0] || {
+        key: 'none',
+        label: 'គ្មានការជូនដំណឹង',
+        count: 0,
+        unread: 0,
+        route: '/profile'
+    };
 
     // Get active list
     const activeList = useMemo(() => {
@@ -407,7 +440,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <h2 className="text-sm font-bold tracking-wide text-slate-100 flex items-center gap-2 font-khmer">
                                 <span className='text-black'>{t('paymentDueAlerts') || 'ការជូនដំណឹងការបង់ប្រាក់ & Follow Up'}</span>
                                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 border border-slate-700">
-                                    {summary.totalAlerts + followUp2ReviewList.length + othersRejectedList.length} Total
+                                    {totalAlertCount} Total
                                 </span>
                             </h2>
                             <p className="text-[11px] text-slate-400">
@@ -518,6 +551,12 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-3">
                             <FaSync className="animate-spin text-3xl text-emerald-600" />
                             <p className="text-xs font-bold">កំពុងទាញយកទិន្នន័យ Alert...</p>
+                        </div>
+                    ) : alertCategories.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-3">
+                            <FaExclamationTriangle className="text-3xl text-amber-500" />
+                            <p className="text-sm font-bold text-slate-700">គ្មានសិទ្ធិចូលមើលការជូនដំណឹង (No Permission for Alerts)</p>
+                            <p className="text-xs text-slate-400">គណនីរបស់អ្នកមិនមានសិទ្ធិចូលមើលទំព័រទាក់ទងនឹងការជូនដំណឹងឡើយ។</p>
                         </div>
                     ) : activeTab === 'followUp2Review' ? (
                         /* ── FollowUp2 Review Table ── */

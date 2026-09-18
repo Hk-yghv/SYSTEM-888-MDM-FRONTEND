@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { FaLock, FaUser, FaKey, FaShieldAlt, FaTelegramPlane, FaExclamationTriangle, FaClock } from 'react-icons/fa';
 import { MdOutlineDashboard } from 'react-icons/md';
+import { getFirstAllowedRoute } from '../utils/permissionUtils';
 
 const SignIn = () => {
     const [username, setUsername] = useState('');
@@ -56,12 +57,8 @@ const SignIn = () => {
                     sessionStorage.setItem('recent_login_device', JSON.stringify(res.deviceInfo));
                     sessionStorage.setItem('show_login_toast', 'true');
                 }
-                const loggedRole = res.user?.role?.toLowerCase();
-                if (loggedRole === 'salary') {
-                    navigate('/salary');
-                } else {
-                    navigate('/dashboard');
-                }
+                const targetRoute = getFirstAllowedRoute(res.user);
+                navigate(targetRoute);
             }
         } catch (err) {
             setLoading(false);
@@ -97,12 +94,8 @@ const SignIn = () => {
                     sessionStorage.setItem('recent_login_device', JSON.stringify(res.deviceInfo));
                     sessionStorage.setItem('show_login_toast', 'true');
                 }
-                const loggedRole = res.user?.role?.toLowerCase();
-                if (loggedRole === 'salary') {
-                    navigate('/salary');
-                } else {
-                    navigate('/dashboard');
-                }
+                const targetRoute = getFirstAllowedRoute(res.user);
+                navigate(targetRoute);
             }
         } catch (err) {
             setLoading(false);
