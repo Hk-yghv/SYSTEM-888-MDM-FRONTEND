@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo, FaFilePdf, FaCalculator } from 'react-icons/fa';
 import { MdClose, MdSwapHoriz } from 'react-icons/md';
@@ -32,11 +33,25 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     const [downloadingPdf, setDownloadingPdf] = useState(false);
     const [activeDropdownIdx, setActiveDropdownIdx] = useState(null);
     const rowRefs = useRef([]);
+    const dropdownRef = useRef(null);
 
     // ── Payment Confirmation Modal State ──────────────────────────────────────
     const [payConfirm, setPayConfirm] = useState(null);
     const [payConfirmSubmitting, setPayConfirmSubmitting] = useState(false);
     // payConfirm = { idx, mode: 'Paid' | 'PayOff', amount, description, imageItems: [{file, preview}] }
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        if (activeDropdownIdx === null) return;
+        const handler = (e) => {
+            const btn = document.getElementById(`pay-btn-${activeDropdownIdx}`);
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target) && btn && !btn.contains(e.target)) {
+                setActiveDropdownIdx(null);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [activeDropdownIdx]);
 
     const applyCalculateSchedule2 = () => {
         if (!contract) return;
@@ -462,6 +477,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 : [];
 
             let updated;
+            const paidRow = rows[idx];
             if (mode === 'Paid') {
                 updated = [...rows];
                 updated[idx] = {
@@ -492,6 +508,37 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             setRows(updated);
             setPayConfirm(null);
             await autoSaveRows(updated);
+
+            // ── Save to Payment History ───────────────────────────────────────
+            try {
+                await fetch(`${API_BASE1}/payments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contractId:   contract.contractId  || contract._id,
+                        contractDbId: contract._id,
+                        customerName: contract.customerNameEn || contract.customerNameKh || '',
+                        customerNameKh: contract.customerNameKh || '',
+                        model:        contract.model        || '',
+                        serialNumber: contract.serialNumber || '',
+                        brand:        contract.brand        || user?.brand || '',
+                        paidDate:     paidRow.paidDate      || todayStr,
+                        paidBy:       user?.username        || user?.name || '',
+                        amount:       Number(amount),
+                        description:  description           || paidRow.comment || '',
+                        paymentImages: uploadedUrls,
+                        paymentType:  mode,                 // 'Paid' | 'PayOff'
+                        monthLabel:   paidRow.labelName     || `Month ${paidRow.monthIndex}`,
+                        monthIndex:   paidRow.monthIndex,
+                        dueDate:      paidRow.dueDate       || '',
+                        penalty:      Number(paidRow.penalty || 0),
+                        scheduledAmount: Number(paidRow.scheduledAmount || 0),
+                    })
+                });
+            } catch (payErr) {
+                console.error('Failed to record payment history:', payErr);
+            }
+            // ─────────────────────────────────────────────────────────────────
         } finally {
             setPayConfirmSubmitting(false);
         }
@@ -634,13 +681,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
     return (
         <>
-        {/* Invisible backdrop to close dropdown when clicking outside */}
-        {activeDropdownIdx !== null && (
-            <div
-                className="fixed inset-0 z-[999998]"
-                onClick={() => setActiveDropdownIdx(null)}
-            />
-        )}
+
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 select-none">
             <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-xs text-slate-800">
 
@@ -900,18 +941,19 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                             <FaDollarSign />
                                                         </button>
 
-                                                        {activeDropdownIdx === idx && (
+                                                        {activeDropdownIdx === idx && createPortal(
                                                             <div
-                                                                className="fixed w-44 bg-white border border-slate-200 rounded-xl shadow-2xl z-[999999] overflow-hidden animate-in zoom-in-95 duration-100"
+                                                                ref={dropdownRef}
+                                                                className="fixed w-44 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden"
                                                                 style={(() => {
                                                                     const btn = document.getElementById(`pay-btn-${idx}`);
-                                                                    if (!btn) return { top: 0, left: 0 };
+                                                                    if (!btn) return { top: 0, left: 0, zIndex: 999999 };
                                                                     const r = btn.getBoundingClientRect();
                                                                     const spaceBelow = window.innerHeight - r.bottom;
-                                                                    const left = Math.min(r.left, window.innerWidth - 180);
+                                                                    const left = Math.min(r.left, window.innerWidth - 184);
                                                                     return spaceBelow < 200
-                                                                        ? { bottom: `${window.innerHeight - r.top + 4}px`, left: `${left}px` }
-                                                                        : { top: `${r.bottom + 6}px`, left: `${left}px` };
+                                                                        ? { bottom: `${window.innerHeight - r.top + 4}px`, left: `${left}px`, zIndex: 999999 }
+                                                                        : { top: `${r.bottom + 6}px`, left: `${left}px`, zIndex: 999999 };
                                                                 })()}
                                                             >
                                                                 <div className="px-2.5 py-1 bg-indigo-50 border-b border-slate-200 text-[9px] font-bold text-indigo-700 uppercase">
@@ -961,7 +1003,8 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                         <FaUndo size={11} /> Revert / Unlock
                                                                     </button>
                                                                 )}
-                                                            </div>
+                                                            </div>,
+                                                            document.body
                                                         )}
                                                     </div>
                                                 ) : (
