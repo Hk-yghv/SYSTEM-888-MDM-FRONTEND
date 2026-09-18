@@ -634,6 +634,13 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
     return (
         <>
+        {/* Invisible backdrop to close dropdown when clicking outside */}
+        {activeDropdownIdx !== null && (
+            <div
+                className="fixed inset-0 z-[999998]"
+                onClick={() => setActiveDropdownIdx(null)}
+            />
+        )}
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 select-none">
             <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-xs text-slate-800">
 
@@ -731,7 +738,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 <th className="px-3 py-3 text-emerald-800">ភ្ញៀវបានបង់</th>
                                 <th className="px-3 py-3">Comment (Note)</th>
                                 <th className="px-3 py-3 text-purple-700">កាលបរិច្ឆេទបានបង់</th>
-                                {!isReadOnly && <th className="px-3 py-3 text-center">Action ($)</th>}
+                                {!isReadOnly && !isSetupActivate && <th className="px-3 py-3 text-center">Action ($)</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -877,9 +884,9 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                             )}
                                         </td>
 
-                                        {/* Action ($ Dropdown) */}
-                                        {!isReadOnly && (
-                                            <td className={`px-3 py-2.5 text-center relative ${activeDropdownIdx === idx ? 'z-[999]' : ''}`}>
+                                        {/* Action ($ Dropdown) — hidden in setup_activate mode */}
+                                        {!isReadOnly && !isSetupActivate && (
+                                            <td className="px-3 py-2.5 text-center">
                                                 {row.status === 'Settled' ? (
                                                     <span className="text-slate-400 italic text-[10px]">Settled</span>
                                                 ) : isCurrentActive || isMasterAdmin ? (
@@ -893,7 +900,18 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                         </button>
 
                                                         {activeDropdownIdx === idx && (
-                                                            <div className={`absolute right-0 ${idx === rows.length - 1 && rows.length > 2 ? 'bottom-full mb-1' : 'top-full mt-1'} w-36 bg-white border border-slate-200 rounded-xl shadow-2xl z-[99999] overflow-hidden animate-in zoom-in-95 duration-100`}>
+                                                            <div
+                                                                className="fixed w-40 bg-white border border-slate-200 rounded-xl shadow-2xl z-[999999] overflow-hidden animate-in zoom-in-95 duration-100"
+                                                                style={(() => {
+                                                                    const el = rowRefs.current[idx];
+                                                                    if (!el) return { top: 0, right: 24 };
+                                                                    const rect = el.getBoundingClientRect();
+                                                                    const spaceBelow = window.innerHeight - rect.bottom;
+                                                                    return spaceBelow < 200
+                                                                        ? { bottom: `${window.innerHeight - rect.top + 4}px`, right: '24px' }
+                                                                        : { top: `${rect.bottom + 4}px`, right: '24px' };
+                                                                })()}
+                                                            >
                                                                 <div className="px-2.5 py-1 bg-indigo-50 border-b border-slate-200 text-[9px] font-bold text-indigo-700 uppercase">
                                                                     Payment Options
                                                                 </div>
