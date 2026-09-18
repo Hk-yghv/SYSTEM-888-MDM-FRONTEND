@@ -33,6 +33,11 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     const [activeDropdownIdx, setActiveDropdownIdx] = useState(null);
     const rowRefs = useRef([]);
 
+    // ── Payment Confirmation Modal State ──────────────────────────────────────
+    const [payConfirm, setPayConfirm] = useState(null);
+    const [payConfirmSubmitting, setPayConfirmSubmitting] = useState(false);
+    // payConfirm = { idx, mode: 'Paid' | 'PayOff', amount, description, imageItems: [{file, preview}] }
+
     const applyCalculateSchedule2 = () => {
         if (!contract) return;
 
@@ -366,10 +371,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         autoSaveRows(updated);
     };
 
-    // ── Payment Confirmation Modal State ──────────────────────────────────────
-    const [payConfirm, setPayConfirm] = useState(null);
-    const [payConfirmSubmitting, setPayConfirmSubmitting] = useState(false);
-    // payConfirm = { idx, mode: 'Paid' | 'PayOff', amount, description, imageItems: [{file, preview}] }
+
 
     const openPayConfirm = (idx, mode) => {
         const row = rows[idx];
