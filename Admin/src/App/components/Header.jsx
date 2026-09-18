@@ -254,7 +254,7 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
 
                     {/* Account Menu */}
                     {accountOpen && (
-                        <div className='absolute top-[5vh] right-0 bg-white border border-slate-200 w-[220px] p-2 rounded-[5px] shadow-xl z-50 animate-in fade-in duration-200'>
+                        <div className='absolute top-[5vh] right-0 bg-white border border-slate-200 w-[220px] p-2 rounded-[5px] shadow-xl z-999999 animate-in fade-in duration-200'>
                             <div className='p-3 border-b border-slate-100 mb-1 bg-slate-50 rounded-xl'>
                                 <p className='text-xs font-bold text-slate-800'>{user?.name || 'BOY BOY'}</p>
                                 <p className='text-[11px] text-emerald-600 font-mono mt-0.5'>{user?.email || 'yonghouvh@gmail.com'}</p>

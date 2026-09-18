@@ -892,6 +892,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                 ) : isCurrentActive || isMasterAdmin ? (
                                                     <div className="relative inline-block text-left">
                                                         <button
+                                                            id={`pay-btn-${idx}`}
                                                             type="button"
                                                             onClick={() => setActiveDropdownIdx(activeDropdownIdx === idx ? null : idx)}
                                                             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-md transition-transform hover:scale-110 cursor-pointer ${row.status === 'Paid' ? 'bg-emerald-600 text-white' : row.status === 'PayOff' ? 'bg-indigo-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-gray-950'}`}
@@ -901,15 +902,16 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
                                                         {activeDropdownIdx === idx && (
                                                             <div
-                                                                className="fixed w-40 bg-white border border-slate-200 rounded-xl shadow-2xl z-[999999] overflow-hidden animate-in zoom-in-95 duration-100"
+                                                                className="fixed w-44 bg-white border border-slate-200 rounded-xl shadow-2xl z-[999999] overflow-hidden animate-in zoom-in-95 duration-100"
                                                                 style={(() => {
-                                                                    const el = rowRefs.current[idx];
-                                                                    if (!el) return { top: 0, right: 24 };
-                                                                    const rect = el.getBoundingClientRect();
-                                                                    const spaceBelow = window.innerHeight - rect.bottom;
+                                                                    const btn = document.getElementById(`pay-btn-${idx}`);
+                                                                    if (!btn) return { top: 0, left: 0 };
+                                                                    const r = btn.getBoundingClientRect();
+                                                                    const spaceBelow = window.innerHeight - r.bottom;
+                                                                    const left = Math.min(r.left, window.innerWidth - 180);
                                                                     return spaceBelow < 200
-                                                                        ? { bottom: `${window.innerHeight - rect.top + 4}px`, right: '24px' }
-                                                                        : { top: `${rect.bottom + 4}px`, right: '24px' };
+                                                                        ? { bottom: `${window.innerHeight - r.top + 4}px`, left: `${left}px` }
+                                                                        : { top: `${r.bottom + 6}px`, left: `${left}px` };
                                                                 })()}
                                                             >
                                                                 <div className="px-2.5 py-1 bg-indigo-50 border-b border-slate-200 text-[9px] font-bold text-indigo-700 uppercase">
