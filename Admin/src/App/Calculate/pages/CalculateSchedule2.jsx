@@ -143,7 +143,7 @@ const CalculateSchedule2 = () => {
     const formatDate = (dateStr) => {
         if (!dateStr) return '';
         const [y, m, d] = dateStr.split('-');
-        return `${d}/${m}/${y}`;
+        return `${d}-${m}-${y}`;
     };
 
     // ─── Calculate ─────────────────────────────────────────────────
@@ -163,15 +163,30 @@ const CalculateSchedule2 = () => {
         const originalDay = baseDate.getDate();
 
         const schedule = [];
+        let remainingBalance = principal;
+
         for (let i = 1; i <= months; i++) {
             const dueDate = addMonthsSafe(baseDate, originalDay, i);
+
+            // ប្រាក់ដើមដែលត្រូវបង់ក្នុងខែនេះ
+            const principalPayment =
+                i === months
+                    ? remainingBalance
+                    : monthlyPrincipal;
+
+            // ដកប្រាក់ដើមដែលបានបង់
+            remainingBalance -= principalPayment;
+
             schedule.push({
                 no: i,
                 dueDate: formatDateToYMD(dueDate),
                 principal,
-                monthlyPrincipal,
+                monthlyPrincipal: principalPayment,
                 interestAndFee: monthlyInterest,
                 totalDueMonth: monthlyTotalDue,
+
+                // សមតុល្យនៅសល់
+                remainingBalance: Math.max(0, remainingBalance),
             });
         }
 
@@ -341,6 +356,33 @@ const CalculateSchedule2 = () => {
             (item.assetName && item.assetName.toLowerCase().includes(q))
         );
     });
+
+    const formatDateWithWeekday = (dateStr) => {
+        if (!dateStr) return '';
+
+        const [y, m, d] = dateStr.split('-');
+        const date = new Date(`${y}-${m}-${d}T00:00:00`);
+
+        const weekdays = [
+            'ថ្ងៃអាទិត្យ',
+            'ថ្ងៃចន្ទ',
+            'ថ្ងៃអង្គារ',
+            'ថ្ងៃពុធ',
+            'ថ្ងៃព្រហស្បតិ៍',
+            'ថ្ងៃសុក្រ',
+            'ថ្ងៃសៅរ៍'
+        ];
+
+        return `${d}-${m}-${y} ${weekdays[date.getDay()]}`;
+    };
+    const formatMoney = (value) => {
+        if (value === null || value === undefined || value === '') return '';
+
+        return Number(value).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+        });
+    };
 
     return (
         <>
@@ -834,27 +876,27 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Meta Info */}
-                        <div className="px-30 py-5 grid grid-cols-2 gap-x-40 gap-y-2 text-xs">
+                        <div className="px-50 py-5 grid grid-cols-2 gap-x-40 gap-y-2 text-xs">
                             {/* Left Meta */}
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="whitespace-nowrap text-slate-800">ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ:</span>
-                                    <span className="text-slate-900 ml-1">
+                                    <span className="text-blue-400 ml-1 font-bold">
                                         {formatDate(result.startDate)}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-slate-800">ចំនួនទឹកប្រាក់ដាក់បញ្ចាំ:</span>
-                                    <span className="font-black text-slate-900 bg-yellow-300 w-25 px-2.5 py-0.5 text-right shadow-xs ml-1">
-                                        {result.principal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                    <span className="text-slate-800">ចំនួនទឹកប្រាក់បញ្ចាំ:</span>
+                                    <span className="text-blue-400 ml-1 font-bold">
+                                        {result.principal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} USD
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-slate-800">រយៈពេល (ចំនួនខែ):</span>
-                                    <span className="text-slate-900 text-right ml-1">{result.months}</span>
+                                    <span className="text-blue-400 font-bold text-right ml-1">{result.months}</span>
                                 </div>
-                                <div className="flex items-center justify-between gap-2 text-slate-900">
-                                    <span className="text-blue-400">Interest and Fee:</span>
+                                <div className="flex items-center justify-between gap-">
+                                    <span>ការប្រាក់ នឹង សេវ៉ាជួល:</span>
                                     <span className="font-black ml-1 text-right text-blue-400">
                                         {result.monthlyInterest.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
                                     </span>
@@ -863,17 +905,17 @@ const CalculateSchedule2 = () => {
 
                             {/* Right Meta */}
                             <div className="space-y-2 text-left ">
-                                <div className='flex items-center'>
+                                <div className='flex justify-between items-center'>
                                     <span className="text-slate-800">ឈ្មោះអតិថិជន&nbsp;</span>{' '}
-                                    <span className="text-slate-900">{result.customerName || '—'}</span>
+                                    <span className="text-blue-400 font-bold text-right">{result.customerName || '—'}</span>
                                 </div>
-                                <div className='flex items-center'>
+                                <div className='flex justify-between items-center'>
                                     <span className="text-slate-800">ប្រភេទទ្រព្យបញ្ចាំ&nbsp;</span>{' '}
-                                    <span className="text-slate-900">{result.assetName}</span>
+                                    <span className="text-blue-400 font-bold text-right">{result.assetName}</span>
                                 </div>
-                                <div className='flex items-center'>
+                                <div className='flex justify-between items-center'>
                                     <span className="text-slate-800">លេខកិច្ចសន្យា&nbsp;</span>{' '}
-                                    <span className="text-slate-900">
+                                    <span className="text-blue-400 font-bold text-right">
                                         {result.contractNumber || '—'}
                                     </span>
                                 </div>
@@ -881,16 +923,15 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Schedule Table */}
-                        <div className="overflow-x-auto px-6 sm:px-12 ml-18 mr-18">
+                        <div className="overflow-x-auto px-6 sm:px-32 ml-18 mr-18">
                             <table className="w-full border-collapse border border-black text-xs sm:text-sm">
                                 <tbody>
                                     <tr className='border border-black'>
-                                        <th className="px-4 py-3 border border-black text-[11px]"><span className='text-black'>No</span></th>
-                                        <th className="px-4 py-3 border border-black text-[11px]"><span className='text-black'>ថ្ងៃបង់ប្រាក់</span></th>
-                                        <th className="px-4 py-3 border border-black text-[11px] w-[120px]"><span className='text-black'></span></th>
-                                        <th className="px-4 py-3 border border-black text-[11px]"><span className='text-black'>ប្រាក់ខ្ចី</span></th>
-                                        <th className="px-4 py-3 border border-black text-[11px]"><span className='text-black'>ទឹកប្រាក់ត្រូវបង់សរុប</span></th>
-                                        <th className="px-4 py-3 border border-black text-[11px] w-[120px]"><span className='text-black'>Interest and Fee</span></th>
+                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>ខែទី</span></th>
+                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>ថ្ងៃបង់ប្រាក់</span></th>
+                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>ទឹកប្រាក់ត្រូវបង់សរុប</span></th>
+                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>ការប្រាក់ត្រូវបង់</span></th>
+                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>សមតុល្យនៅសល់</span></th>
                                     </tr>
                                 </tbody>
                                 <tbody>
@@ -898,36 +939,36 @@ const CalculateSchedule2 = () => {
                                         <tr key={row.no}
                                             className="text-center">
                                             <td className="px-3 border border-black text-slate-900">{row.no}</td>
-                                            <td className="px-4 border border-black text-slate-900">
-                                                {formatDate(row.dueDate)}
-                                            </td>
-                                            <td className='border border-black'></td>
-                                            <td className="px-4 border border-black text-slate-900">
-                                                {row.principal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                            <td className="px-4 border border-black text-slate-900 text-left py-1">
+                                                {formatDateWithWeekday(row.dueDate)}
                                             </td>
                                             <td className="px-4 border border-black text-slate-900">
                                                 {row.totalDueMonth ? row.totalDueMonth.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 }) : ''}
                                             </td>
                                             <td className="px-4 border border-black text-slate-900">
+                                                {result.monthlyInterest.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="px-3 border border-black text-slate-900">
+                                                {formatMoney(row.remainingBalance)}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                            <p className='text-left mt-4 text-[12px] '>
-                                ចំណាំ ៖ ករណីអតិថិជនបង់ការប្រាក់រួចហើយ អតិថិជនមិនអាចដកប្រាក់វិញបានទេ (ដោយគ្មានលក្ខខណ្ឌ) ។
+                            <p className='text-left mt-4 text-[12px] font-bold '>
+                                <span className='text-red-900'>ចំណាំ ៖</span> ករណីអតិថិជនបង់ការប្រាក់រួចហើយ អតិថិជនមិនអាចដកប្រាក់វិញបានទេ (ដោយគ្មានលក្ខខណ្ឌ) ។
                             </p>
                             <br />
                             {/* Signature Block */}
                             <div className="px-8 pb-1 grid grid-cols-2 gap-12 text-xs text-slate-800">
                                 <div className="text-center">
-                                    <p className="font-bold text-[12px] text-sm">តំណាងក្រុមហ៊ុន</p>
+                                    <p className="font-bold text-[12px] text-sm font-normal" style={{ fontFamily: 'moul' }}>តំណាងក្រុមហ៊ុន</p>
                                     <div className='flex items-center justify-center'>
                                         <div className="mt-16 border-b border-dotted border-slate-400 mx-6 w-[150px]" />
                                     </div>
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-bold text-[12px] text-sm">ឈ្មោះអតិថិជន</p>
+                                    <p className="font-bold text-[12px] text-sm font-normal" style={{ fontFamily: 'moul' }}>ឈ្មោះអតិថិជន</p>
                                     <div className='flex items-center justify-center'>
                                         <div className="mt-16 border-b border-dotted border-slate-400 mx-6 w-[150px]" />
                                     </div>
@@ -950,7 +991,7 @@ const CalculateSchedule2 = () => {
                                 <div className="flex items-center gap-2">
                                     <FaHistory className="text-violet-600 text-lg" />
                                     <h3 className="font-black text-base text-slate-800">
-                                        ប្រវត្តិបានរក្សាទុកក្នុង Database ({savedHistory.length})
+                                        ប្រវត្តិបានរក្សាទុក ({savedHistory.length})
                                     </h3>
                                 </div>
                                 <button
