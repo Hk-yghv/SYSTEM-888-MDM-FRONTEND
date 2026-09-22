@@ -210,7 +210,7 @@ function calcPawnSchedule(principal, ratePercent, months, startDateStr) {
     return { monthlyInterest, totalInterest: monthlyInterest * months, monthlyTotal, schedule };
 }
 
-/** Generate pawn schedule PDF Buffer (Khmer-style like CalculateSchedule2) */
+/** Generate pawn schedule PDF Buffer — matches CalculateSchedule2 print area exactly */
 function generatePawnSchedulePdf(data) {
     return new Promise((resolve, reject) => {
         try {
@@ -218,7 +218,18 @@ function generatePawnSchedulePdf(data) {
             const hasArial = fs.existsSync(arialFontPath);
             const hasArialBold = fs.existsSync(arialBoldPath);
 
-            const doc = new PDFDocument({ size: 'A4', margins: { top: 28, bottom: 20, left: 45, right: 45 } });
+            // Page size: A4 portrait
+            const PAGE_W = 595.28;
+            const PAGE_H = 841.89;
+            const ML = 40;  // margin left
+            const MR = 40;  // margin right
+            const W = PAGE_W - ML - MR; // 515.28
+
+            const doc = new PDFDocument({
+                size: 'A4',
+                margins: { top: 20, bottom: 20, left: ML, right: MR },
+                bufferPages: true
+            });
             if (hasKhmer) doc.registerFont('KH', khmerFontPath);
             if (hasArial) doc.registerFont('AR', arialFontPath);
             if (hasArialBold) doc.registerFont('ARB', arialBoldPath);
@@ -231,121 +242,178 @@ function generatePawnSchedulePdf(data) {
             doc.on('data', b => buffers.push(b));
             doc.on('end', () => resolve(Buffer.concat(buffers)));
 
-            const W = 595.28 - 90; // content width
-            const ML = 45;
             let y = 28;
 
-            // ── KH Header ──
-            doc.font(KH).fontSize(11).fillColor('#1e293b')
-                .text('ព្រះរាជាណាចក្រកម្ពុជា', ML, y, { width: W, align: 'center' });
+            // ────── HEADER (matches: ព្រះរាជាណាចក្រកកម្ពុជា) ──────
+            doc.font(KH).fontSize(10).fillColor('#334155')
+                .text('ព្រះរាជាណាចក្រកកម្ពុជា', ML, y, { width: W, align: 'center', lineBreak: false });
             y += 16;
-            doc.font(KH).fontSize(10).text('ជាតិ សាសនា ព្រះមហាក្សត្រ', ML, y, { width: W, align: 'center' });
-            y += 14;
-            doc.font(AR).fontSize(14).text('\u{1F65C}\u{1F65C}\u{1F66A}\u{1F65E}\u{1F65E}', ML, y, { width: W, align: 'center' });
+            doc.font(KH).fontSize(9)
+                .text('ជាតិ សាសនា ព្រះមហាក្សត្រ', ML, y, { width: W, align: 'center', lineBreak: false });
+            y += 15;
+            // Flower ornament (rendered as symbols)
+            doc.font(AR).fontSize(13).fillColor('#1e293b')
+                .text('❁ ❁ ✿ ❁ ❁', ML, y, { width: W, align: 'center', lineBreak: false });
             y += 16;
-            doc.moveTo(ML + W / 2 - 50, y).lineTo(ML + W / 2 + 50, y).strokeColor('#94a3b8').stroke();
-            y += 8;
-            doc.font(KH).fontSize(13).fillColor('#2750F5')
-                .text('កាលវិភាគសងប្រាក់', ML, y, { width: W, align: 'center' });
-            y += 22;
+            // Divider line
+            doc.moveTo(ML + W / 2 - 55, y).lineTo(ML + W / 2 + 55, y).strokeColor('#94a3b8').lineWidth(0.8).stroke();
+            y += 10;
+            // កាលវិភាគសងប្រាក់ title (blue, like <h4 style font moul>)
+            doc.font(KH).fontSize(14).fillColor('#2750F5')
+                .text('កាលវិភាគសងប្រាក់', ML, y, { width: W, align: 'center', lineBreak: false });
+            y += 28;
 
-            // ── Meta info 2-col ──
-            const metaLeft = [
+            // ────── META INFO (2 columns matching grid-cols-2) ──────
+            const colW = (W - 20) / 2;  // two equal columns with 20pt gap
+            const lblColor = '#1e293b';
+            const valColor = '#2563eb';
+            const metaFontSize = 8.5;
+            const metaRowH = 15;
+
+            // left column data
+            const leftMeta = [
                 ['ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ:', data.startDate ? data.startDate.split('-').reverse().join('-') : '—'],
                 ['ចំនួនទឹកប្រាក់បញ្ចាំ:', `${Number(data.principal).toLocaleString()} USD`],
-                ['រយៈពេល (ចំនួនខែ):', String(data.months)],
-                ['ការប្រាក់ នឹង សេវ៉ាជួល:', Number(data.monthlyInterest).toFixed(2)]
+                ['រយៈពេល (ចំនួនខែ):', `${data.months}`],
+                ['ការប្រាក់ នឹង សេវ៉ាជួល:', Number(data.monthlyInterest).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })]
             ];
-            const metaRight = [
-                ['ឈ្មោះអតិថិជន:', data.customerName || '—'],
-                ['ប្រភេទទ្រព្យបញ្ចាំ:', data.assetName || '—'],
-                ['លេខកិច្ចសន្យា:', data.contractNumber || '—']
+            // right column data
+            const rightMeta = [
+                ['ឈ្មោះអតិថិជន', data.customerName || '—'],
+                ['ប្រភេទទ្រព្យបញ្ចាំ', data.assetName || '—'],
+                ['លេខកិច្ចសន្យា', data.contractNumber || '—']
             ];
 
-            const colW = W / 2 - 5;
-            let metaY = y;
-            metaLeft.forEach(([lbl, val]) => {
-                doc.font(KH).fontSize(8).fillColor('#475569').text(lbl, ML, metaY, { width: colW, continued: false });
-                doc.font(KH).fontSize(8).fillColor('#2563eb').text(val, ML + colW * 0.55, metaY, { width: colW * 0.45 });
-                metaY += 14;
+            const startY = y;
+            // Draw left meta
+            leftMeta.forEach(([lbl, val], i) => {
+                const ry = startY + i * metaRowH;
+                doc.font(KH).fontSize(metaFontSize).fillColor(lblColor)
+                    .text(lbl, ML, ry, { width: colW * 0.55, lineBreak: false });
+                doc.font(KH).fontSize(metaFontSize).fillColor(valColor)
+                    .text(val, ML + colW * 0.56, ry, { width: colW * 0.44, lineBreak: false });
             });
-            let metaY2 = y;
-            metaRight.forEach(([lbl, val]) => {
-                doc.font(KH).fontSize(8).fillColor('#475569').text(lbl, ML + colW + 10, metaY2, { width: colW, continued: false });
-                doc.font(KH).fontSize(8).fillColor('#2563eb').text(val, ML + colW + 10 + colW * 0.5, metaY2, { width: colW * 0.5 });
-                metaY2 += 14;
+            // Draw right meta
+            const rx = ML + colW + 20;
+            rightMeta.forEach(([lbl, val], i) => {
+                const ry = startY + i * metaRowH;
+                doc.font(KH).fontSize(metaFontSize).fillColor(lblColor)
+                    .text(lbl, rx, ry, { width: colW * 0.5, lineBreak: false });
+                doc.font(KH).fontSize(metaFontSize).fillColor(valColor)
+                    .text(val, rx + colW * 0.51, ry, { width: colW * 0.49, lineBreak: false });
             });
-            y = Math.max(metaY, metaY2) + 10;
 
-            // ── Schedule Table ──
+            y = startY + Math.max(leftMeta.length, rightMeta.length) * metaRowH + 14;
+
+            // ────── SCHEDULE TABLE (matches CalculateSchedule2 HTML table) ──────
+            // Columns: ខែទី | ថ្ងៃបង់ប្រាក់ | ទឹកប្រាក់ត្រូវបង់សរុប | ការប្រាក់ត្រូវបង់ | សមតុល្យនៅសល់
             const tCols = [
-                { title: 'ខែទី', w: 30 },
-                { title: 'ថ្ងៃបង់ប្រាក់', w: 120 },
-                { title: 'ទឹកប្រាក់ត្រូវបង់សរុប', w: 110 },
-                { title: 'ការប្រាក់ត្រូវបង់', w: 100 },
-                { title: 'សមតុល្យនៅសល់', w: W - 360 }
+                { title: 'ខែទី',                  w: 38  },
+                { title: 'ថ្ងៃបង់ប្រាក់',             w: 138 },
+                { title: 'ទឹកប្រាក់ត្រូវបង់សរុប', w: 115 },
+                { title: 'ការប្រាក់ត្រូវបង់',      w: 108 },
+                { title: 'សមតុល្យនៅសល់',         w: W - 38 - 138 - 115 - 108 } // fills remaining
             ];
 
-            // Header row
-            doc.rect(ML, y, W, 18).fillAndStroke('#1e293b', '#1e293b');
+            // Table header row (dark background, white text — matches '#1e293b')
+            const tHeaderH = 20;
+            doc.rect(ML, y, W, tHeaderH).fill('#1e293b');
             let cx = ML;
             tCols.forEach(c => {
                 doc.font(KH).fontSize(8).fillColor('#ffffff')
-                    .text(c.title, cx + 2, y + 4, { width: c.w - 4, align: 'center', lineBreak: false });
+                    .text(c.title, cx + 2, y + 5, { width: c.w - 4, align: 'center', lineBreak: false });
                 cx += c.w;
             });
-            y += 18;
+            y += tHeaderH;
 
-            const WEEKDAYS_KH = ['ថ្ងៃអាទិត្យ', 'ថ្ងៃចន្ទ', 'ថ្ងៃអង្គារ', 'ថ្ងៃពុធ', 'ថ្ងៃព្រហស្បតិ៍', 'ថ្ងៃសុក្រ', 'ថ្ងៃសៅរ៍'];
-            const fmtWithWeekday = (s) => {
+            // weekday labels matching HTML formatDateWithWeekday
+            const WD_KH = ['ថ្ងៃអាទិត្យ', 'ថ្ងៃចន្ទ', 'ថ្ងៃអង្គារ', 'ថ្ងៃពុធ', 'ថ្ងៃព្រហស្បតិ៍', 'ថ្ងៃសុក្រ', 'ថ្ងៃសៅរ៍'];
+            const fmtDateWD = (s) => {
                 if (!s) return '—';
                 const [yr, mo, dy] = s.split('-');
                 const d = new Date(`${yr}-${mo}-${dy}T00:00:00`);
-                return `${dy}-${mo}-${yr} ${WEEKDAYS_KH[d.getDay()]}`;
+                return `${dy}-${mo}-${yr} ${WD_KH[d.getDay()]}`;
             };
+            const fmtMoney = (v) => Number(v).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
 
             data.schedule.forEach((row, idx) => {
-                const rh = 16;
+                const rh = 17;
+                // Check page overflow
+                if (y + rh > PAGE_H - 60) {
+                    doc.addPage();
+                    y = 30;
+                    // Redraw header
+                    doc.rect(ML, y, W, tHeaderH).fill('#1e293b');
+                    let hx = ML;
+                    tCols.forEach(c => {
+                        doc.font(KH).fontSize(8).fillColor('#ffffff')
+                            .text(c.title, hx + 2, y + 5, { width: c.w - 4, align: 'center', lineBreak: false });
+                        hx += c.w;
+                    });
+                    y += tHeaderH;
+                }
+
+                // Alternating row colors like web (white / #f8fafc)
                 const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
-                doc.rect(ML, y, W, rh).fillAndStroke(bg, '#cbd5e1');
-                let rx = ML;
+                // Border (black, like HTML border-black)
+                doc.rect(ML, y, W, rh).fillAndStroke(bg, '#000000');
+
+                let tx = ML;
                 const vals = [
-                    String(row.no),
-                    fmtWithWeekday(row.dueDate),
-                    Number(row.totalDueMonth).toFixed(2),
-                    Number(data.monthlyInterest).toFixed(2),
-                    Number(row.remainingBalance).toFixed(2)
+                    { v: String(row.no),                align: 'center' },
+                    { v: fmtDateWD(row.dueDate),        align: 'left'   },
+                    { v: fmtMoney(row.totalDueMonth),   align: 'center' },
+                    { v: fmtMoney(data.monthlyInterest),align: 'center' },
+                    { v: fmtMoney(row.remainingBalance),align: 'center' }
                 ];
-                tCols.forEach((c, ci) => {
-                    doc.font(ci === 1 ? KH : AR).fontSize(7.5).fillColor('#1e293b')
-                        .text(vals[ci], rx + 3, y + 4, { width: c.w - 6, align: ci === 0 ? 'center' : (ci >= 2 ? 'right' : 'left'), lineBreak: false });
-                    rx += c.w;
+                vals.forEach((item, ci) => {
+                    const useFont = ci === 1 ? KH : AR;
+                    doc.font(useFont).fontSize(8).fillColor('#0f172a')
+                        .text(item.v, tx + 3, y + 4.5, { width: tCols[ci].w - 6, align: item.align, lineBreak: false });
+                    tx += tCols[ci].w;
                 });
                 y += rh;
             });
-            y += 8;
+            y += 12;
 
-            // Note
-            doc.font(KH).fontSize(8).fillColor('#7f1d1d')
+            // ────── NOTE (ចំណាំ ៖) ──────
+            doc.font(KH).fontSize(9).fillColor('#7f1d1d')
                 .text('ចំណាំ ៖', ML, y, { continued: true })
                 .fillColor('#374151')
-                .text(' ករណីអតិថិជនបង់ការប្រាក់រួចហើយ អតិថិជនមិនអាចដកប្រាក់វិញបានទេ (ដោយគ្មានលក្ខខណ្ឌ) ។');
-            y += 20;
+                .font(KH).fontSize(9)
+                .text(' ករណីអតិថិជនបង់ការប្រាក់រួចហើយ អតិថិជនមិនអាចដកប្រាក់វិញបានទេ (ដោយគ្មានលក្ខខណ្ឌ) ។',
+                { lineBreak: false });
+            y += 26;
 
-            // Signature
-            doc.font(KH).fontSize(9).fillColor('#1e293b')
-                .text('តំណាងក្រុមហ៊ុន', ML, y + 10, { width: W / 2, align: 'center' })
-                .text('ឈ្មោះអតិថិជន', ML + W / 2, y + 10, { width: W / 2, align: 'center' });
+            // ────── SIGNATURE BLOCK (2 columns — matches grid-cols-2) ──────
+            const sigColW = W / 2;
+            // Labels
+            doc.font(KH).fontSize(10).fillColor('#1e293b')
+                .text('តំណាងក្រុមហ៊ុន', ML, y, { width: sigColW, align: 'center', lineBreak: false });
+            doc.font(KH).fontSize(10).fillColor('#1e293b')
+                .text('ឈ្មោះអតិថិជន', ML + sigColW, y, { width: sigColW, align: 'center', lineBreak: false });
+            y += 52;
+            // Dotted signature lines
+            const lineMargin = sigColW * 0.15;
+            doc.moveTo(ML + lineMargin, y).lineTo(ML + sigColW - lineMargin, y)
+                .dash(2, { space: 3 }).strokeColor('#94a3b8').lineWidth(0.8).stroke();
+            doc.moveTo(ML + sigColW + lineMargin, y).lineTo(ML + W - lineMargin, y)
+                .stroke();
+            doc.undash();
+            y += 16;
 
-            // Footer address
-            doc.font(KH).fontSize(7.5).fillColor('#64748b')
-                .text('អាសយដ្ឋាន: អគារលេខ378A ផ្លូវ1928 ភូមិកោះអណ្តែត សង្កាត់ទួលសង្កែទី២ ខណ្ឌឬស្សីកែវ រាជធានីភ្នំពេញ',
-                    ML, doc.page.height - 30, { width: W, align: 'center' });
+            // ────── ADDRESS FOOTER ──────
+            // Position at near bottom like HTML cs2-address-footer
+            const footerY = PAGE_H - 30;
+            doc.font(KH).fontSize(8).fillColor('#64748b')
+                .text('អាសយដ្ឋាន: អគារលេខ378A ផ្លូវ1928 ភូមិកោះអណ្តែត សង្កាត់ទួលសង្កែទី២ ខណ្ឌឮស្សីកែវ រាជធានីភ្នំពេញ',
+                    ML, footerY, { width: W, align: 'center', lineBreak: false });
 
             doc.end();
         } catch (err) { reject(err); }
     });
 }
+
 
 /**
  * Initialize Telegram Bot Service with interactive /sys workflow
@@ -763,6 +831,19 @@ export function initTelegramBotService(bot) {
                 return;
             }
 
+            // ── 12b. Pawn: Switch to manual asset typing ──
+            if (data === 'pawn_back:manual_mode') {
+                const session = sessions.get(chatId);
+                if (!session || !session.pawn) return;
+                session.step = 'PAWN_ASSET_MANUAL';
+                sessions.set(chatId, session);
+                await bot.sendMessage(chatId,
+                    `⌨️ <b>ប្រភេទទ្រព្យបញ្ចាំ</b>\nសូមវាយបញ្ចូលដោយដៃ (ឧ. iPhone 14 Pro):`,
+                    { parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]] } }
+                );
+                return;
+            }
+
             // ── 13. Pawn: Confirm Save ──
             if (data === 'pawn_save:confirm') {
                 const session = sessions.get(chatId);
@@ -872,7 +953,7 @@ export function initTelegramBotService(bot) {
             if (bases[i + 1]) row.push({ text: `📱 ${bases[i + 1]}`, callback_data: `pawn_model:${encodeURIComponent(bases[i + 1])}` });
             keyboard.push(row);
         }
-        keyboard.push([{ text: '⌨️ វាយដោយដៃ', callback_data: 'pawn_back:manual' }, { text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]);
+        keyboard.push([{ text: '⌨️ វាយដោយដៃ', callback_data: 'pawn_back:manual_mode' }, { text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]);
         await bot.sendMessage(chatId,
             `📱 <b>ជំហ3 — ជ្រើស Model គោក:</b>`,
             { parse_mode: 'HTML', reply_markup: { inline_keyboard: keyboard } }
@@ -1076,6 +1157,18 @@ export function initTelegramBotService(bot) {
                 { parse_mode: 'HTML' }
             );
             await sendModelButtons(chatId, session);
+            return;
+        }
+
+        // ── STATE: PAWN_ASSET_MODEL — user is on model-picker screen, text input = fallback manual ──
+        if (session.step === 'PAWN_ASSET_MODEL') {
+            // If user types text instead of pressing a button, treat it as manual model entry
+            if (text) {
+                session.pawn.assetName = text;
+                session.step = 'PAWN_DURATION';
+                sessions.set(chatId, session);
+                await promptPawnDuration(chatId, session);
+            }
             return;
         }
 
