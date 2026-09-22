@@ -1,11 +1,27 @@
 import bcrypt from 'bcryptjs';
+import PDFDocument from 'pdfkit';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import ControlSystem from '../models/ControlSystem.js';
 import Contract from '../models/Contract.js';
+import CalculateSchedule from '../models/CalculateSchedule.js';
 import User from '../models/User.js';
 import Payment from '../models/Payment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
-import { queryAllDBs } from '../config/multiDB.js';
+import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { generateCustomerPdf } from '../utils/customerPdfGenerator.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ─── Font paths for Pawn Schedule PDF ────────────────────────────────────────
+const FONT_DIR = path.resolve(__dirname, '../fonts');
+const khmerFontPath = fs.existsSync(path.join(FONT_DIR, 'khmer_os.ttf'))
+    ? path.join(FONT_DIR, 'khmer_os.ttf')
+    : path.join(FONT_DIR, 'noto_khmer.ttf');
+const arialFontPath = path.join(FONT_DIR, 'arial.ttf');
+const arialBoldPath = path.join(FONT_DIR, 'arialbd.ttf');
 
 // In-memory sessions mapped by Telegram chatId
 // Structure: { [chatId]: { step, brand, authenticated, username, searchType, pendingContracts } }
@@ -87,6 +103,250 @@ const SEARCH_OPTIONS = [
     { type: 'contractId', labelKh: '📋 លេខកុងត្រា (Contract ID)', labelEn: 'Contract ID' }
 ];
 
+// ─── Pawn Contract Helpers ────────────────────────────────────────────────────
+
+/** Known variant suffixes (longest first to avoid partial matches) */
+const VARIANT_SUFFIXES = ['Pro Max', 'Pro Plus', 'Ultra', 'Plus', 'Pro', 'Max', 'Lite', 'FE', 'Mini', 'SE', 'XS Max', 'XS', 'XR'];
+
+/**
+ * Group raw asset list into { baseName: [fullName, ...] }
+ * e.g. ["iPhone 12", "iPhone 12 Pro", "iPhone 12 Pro Max"] →
+ *   { "iPhone 12": ["iPhone 12", "iPhone 12 Pro", "iPhone 12 Pro Max"] }
+ */
+function groupAssetModels(assetList) {
+    const groups = {};
+    (assetList || []).forEach(item => {
+        const trimmed = item.trim();
+        if (!trimmed) return;
+        let baseName = trimmed;
+        for (const suffix of VARIANT_SUFFIXES) {
+            const re = new RegExp(`\\s+${suffix}\\s*$`, 'i');
+            if (re.test(trimmed)) {
+                baseName = trimmed.replace(re, '').trim();
+                break;
+            }
+        }
+        if (!groups[baseName]) groups[baseName] = [];
+        if (!groups[baseName].includes(trimmed)) groups[baseName].push(trimmed);
+    });
+    return groups;
+}
+
+/** Fetch asset types list from ControlSystem for a given brand */
+async function fetchAssetTypes(brand) {
+    try {
+        if (isMongoConnected) {
+            const urls = brand ? [brand, ''] : [''];
+            for (const b of urls) {
+                const docs = await queryAllDBs(ControlSystem, M => M.find(b ? { brand: b, key: 'droplists' } : { $or: [{ brand: '' }, { brand: null }], key: 'droplists' }));
+                for (const doc of docs) {
+                    if (!Array.isArray(doc.value)) continue;
+                    const pawnCat = doc.value.find(d => d.category === 'Pawn Asset Types' || d.category === 'ប្រភេទទ្រព្យបញ្ចាំ');
+                    const deviceCat = doc.value.find(d => d.category === 'Device Models');
+                    const cat = pawnCat || deviceCat;
+                    if (cat && Array.isArray(cat.items) && cat.items.length > 0) return cat.items;
+                }
+            }
+        }
+    } catch (e) { console.error('[TelegramBot] fetchAssetTypes error:', e.message); }
+    return [];
+}
+
+/** Get next contract number from CalculateSchedule records */
+async function getNextContractNumber(brand) {
+    try {
+        let records = [];
+        if (isMongoConnected) {
+            records = await queryAllDBs(CalculateSchedule, M => M.find({ contractNumber: { $regex: /^\d+$/ } }).sort({ createdAt: -1 }).limit(50));
+        } else {
+            records = (MEM_DB.calculateSchedules || []);
+        }
+        const nums = records
+            .map(r => r.contractNumber)
+            .filter(n => n && /^\d+$/.test(n.trim()))
+            .map(n => parseInt(n.trim(), 10));
+        if (nums.length === 0) return '001';
+        return String(Math.max(...nums) + 1).padStart(3, '0');
+    } catch (e) { return '001'; }
+}
+
+/** Calculate pawn schedule */
+function calcPawnSchedule(principal, ratePercent, months, startDateStr) {
+    const monthlyInterest = principal * (ratePercent / 100);
+    const monthlyPrincipal = principal / months;
+    const monthlyTotal = monthlyPrincipal + monthlyInterest;
+    const baseDate = new Date(`${startDateStr}T00:00:00`);
+    const origDay = baseDate.getDate();
+
+    const addMonthsSafe = (d, m) => {
+        const nd = new Date(d);
+        nd.setDate(1);
+        nd.setMonth(nd.getMonth() + m);
+        const last = new Date(nd.getFullYear(), nd.getMonth() + 1, 0).getDate();
+        nd.setDate(Math.min(origDay, last));
+        return nd;
+    };
+    const fmtDate = d => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    };
+
+    let remaining = principal;
+    const schedule = [];
+    for (let i = 1; i <= months; i++) {
+        const due = addMonthsSafe(baseDate, i);
+        const prinPay = i === months ? remaining : monthlyPrincipal;
+        remaining -= prinPay;
+        schedule.push({
+            no: i,
+            dueDate: fmtDate(due),
+            totalDueMonth: monthlyTotal,
+            interestAndFee: monthlyInterest,
+            remainingBalance: Math.max(0, remaining)
+        });
+    }
+    return { monthlyInterest, totalInterest: monthlyInterest * months, monthlyTotal, schedule };
+}
+
+/** Generate pawn schedule PDF Buffer (Khmer-style like CalculateSchedule2) */
+function generatePawnSchedulePdf(data) {
+    return new Promise((resolve, reject) => {
+        try {
+            const hasKhmer = fs.existsSync(khmerFontPath);
+            const hasArial = fs.existsSync(arialFontPath);
+            const hasArialBold = fs.existsSync(arialBoldPath);
+
+            const doc = new PDFDocument({ size: 'A4', margins: { top: 28, bottom: 20, left: 45, right: 45 } });
+            if (hasKhmer) doc.registerFont('KH', khmerFontPath);
+            if (hasArial) doc.registerFont('AR', arialFontPath);
+            if (hasArialBold) doc.registerFont('ARB', arialBoldPath);
+
+            const KH = hasKhmer ? 'KH' : 'Helvetica';
+            const AR = hasArial ? 'AR' : 'Helvetica';
+            const ARB = hasArialBold ? 'ARB' : 'Helvetica-Bold';
+
+            const buffers = [];
+            doc.on('data', b => buffers.push(b));
+            doc.on('end', () => resolve(Buffer.concat(buffers)));
+
+            const W = 595.28 - 90; // content width
+            const ML = 45;
+            let y = 28;
+
+            // ── KH Header ──
+            doc.font(KH).fontSize(11).fillColor('#1e293b')
+                .text('ព្រះរាជាណាចក្រកម្ពុជា', ML, y, { width: W, align: 'center' });
+            y += 16;
+            doc.font(KH).fontSize(10).text('ជាតិ សាសនា ព្រះមហាក្សត្រ', ML, y, { width: W, align: 'center' });
+            y += 14;
+            doc.font(AR).fontSize(14).text('\u{1F65C}\u{1F65C}\u{1F66A}\u{1F65E}\u{1F65E}', ML, y, { width: W, align: 'center' });
+            y += 16;
+            doc.moveTo(ML + W / 2 - 50, y).lineTo(ML + W / 2 + 50, y).strokeColor('#94a3b8').stroke();
+            y += 8;
+            doc.font(KH).fontSize(13).fillColor('#2750F5')
+                .text('កាលវិភាគសងប្រាក់', ML, y, { width: W, align: 'center' });
+            y += 22;
+
+            // ── Meta info 2-col ──
+            const metaLeft = [
+                ['ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ:', data.startDate ? data.startDate.split('-').reverse().join('-') : '—'],
+                ['ចំនួនទឹកប្រាក់បញ្ចាំ:', `${Number(data.principal).toLocaleString()} USD`],
+                ['រយៈពេល (ចំនួនខែ):', String(data.months)],
+                ['ការប្រាក់ នឹង សេវ៉ាជួល:', Number(data.monthlyInterest).toFixed(2)]
+            ];
+            const metaRight = [
+                ['ឈ្មោះអតិថិជន:', data.customerName || '—'],
+                ['ប្រភេទទ្រព្យបញ្ចាំ:', data.assetName || '—'],
+                ['លេខកិច្ចសន្យា:', data.contractNumber || '—']
+            ];
+
+            const colW = W / 2 - 5;
+            let metaY = y;
+            metaLeft.forEach(([lbl, val]) => {
+                doc.font(KH).fontSize(8).fillColor('#475569').text(lbl, ML, metaY, { width: colW, continued: false });
+                doc.font(KH).fontSize(8).fillColor('#2563eb').text(val, ML + colW * 0.55, metaY, { width: colW * 0.45 });
+                metaY += 14;
+            });
+            let metaY2 = y;
+            metaRight.forEach(([lbl, val]) => {
+                doc.font(KH).fontSize(8).fillColor('#475569').text(lbl, ML + colW + 10, metaY2, { width: colW, continued: false });
+                doc.font(KH).fontSize(8).fillColor('#2563eb').text(val, ML + colW + 10 + colW * 0.5, metaY2, { width: colW * 0.5 });
+                metaY2 += 14;
+            });
+            y = Math.max(metaY, metaY2) + 10;
+
+            // ── Schedule Table ──
+            const tCols = [
+                { title: 'ខែទី', w: 30 },
+                { title: 'ថ្ងៃបង់ប្រាក់', w: 120 },
+                { title: 'ទឹកប្រាក់ត្រូវបង់សរុប', w: 110 },
+                { title: 'ការប្រាក់ត្រូវបង់', w: 100 },
+                { title: 'សមតុល្យនៅសល់', w: W - 360 }
+            ];
+
+            // Header row
+            doc.rect(ML, y, W, 18).fillAndStroke('#1e293b', '#1e293b');
+            let cx = ML;
+            tCols.forEach(c => {
+                doc.font(KH).fontSize(8).fillColor('#ffffff')
+                    .text(c.title, cx + 2, y + 4, { width: c.w - 4, align: 'center', lineBreak: false });
+                cx += c.w;
+            });
+            y += 18;
+
+            const WEEKDAYS_KH = ['ថ្ងៃអាទិត្យ', 'ថ្ងៃចន្ទ', 'ថ្ងៃអង្គារ', 'ថ្ងៃពុធ', 'ថ្ងៃព្រហស្បតិ៍', 'ថ្ងៃសុក្រ', 'ថ្ងៃសៅរ៍'];
+            const fmtWithWeekday = (s) => {
+                if (!s) return '—';
+                const [yr, mo, dy] = s.split('-');
+                const d = new Date(`${yr}-${mo}-${dy}T00:00:00`);
+                return `${dy}-${mo}-${yr} ${WEEKDAYS_KH[d.getDay()]}`;
+            };
+
+            data.schedule.forEach((row, idx) => {
+                const rh = 16;
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                doc.rect(ML, y, W, rh).fillAndStroke(bg, '#cbd5e1');
+                let rx = ML;
+                const vals = [
+                    String(row.no),
+                    fmtWithWeekday(row.dueDate),
+                    Number(row.totalDueMonth).toFixed(2),
+                    Number(data.monthlyInterest).toFixed(2),
+                    Number(row.remainingBalance).toFixed(2)
+                ];
+                tCols.forEach((c, ci) => {
+                    doc.font(ci === 1 ? KH : AR).fontSize(7.5).fillColor('#1e293b')
+                        .text(vals[ci], rx + 3, y + 4, { width: c.w - 6, align: ci === 0 ? 'center' : (ci >= 2 ? 'right' : 'left'), lineBreak: false });
+                    rx += c.w;
+                });
+                y += rh;
+            });
+            y += 8;
+
+            // Note
+            doc.font(KH).fontSize(8).fillColor('#7f1d1d')
+                .text('ចំណាំ ៖', ML, y, { continued: true })
+                .fillColor('#374151')
+                .text(' ករណីអតិថិជនបង់ការប្រាក់រួចហើយ អតិថិជនមិនអាចដកប្រាក់វិញបានទេ (ដោយគ្មានលក្ខខណ្ឌ) ។');
+            y += 20;
+
+            // Signature
+            doc.font(KH).fontSize(9).fillColor('#1e293b')
+                .text('តំណាងក្រុមហ៊ុន', ML, y + 10, { width: W / 2, align: 'center' })
+                .text('ឈ្មោះអតិថិជន', ML + W / 2, y + 10, { width: W / 2, align: 'center' });
+
+            // Footer address
+            doc.font(KH).fontSize(7.5).fillColor('#64748b')
+                .text('អាសយដ្ឋាន: អគារលេខ378A ផ្លូវ1928 ភូមិកោះអណ្តែត សង្កាត់ទួលសង្កែទី២ ខណ្ឌឬស្សីកែវ រាជធានីភ្នំពេញ',
+                    ML, doc.page.height - 30, { width: W, align: 'center' });
+
+            doc.end();
+        } catch (err) { reject(err); }
+    });
+}
+
 /**
  * Initialize Telegram Bot Service with interactive /sys workflow
  * @param {TelegramBot} bot - The initialized node-telegram-bot-api instance
@@ -122,7 +382,7 @@ export function initTelegramBotService(bot) {
         });
     };
 
-    // ── Helper: Send Search Options Menu ──
+    // ── Helper: Send Main Menu (Search + Create Pawn) ──
     const promptSearchMenu = async (chatId, brand, username) => {
         const keyboard = [];
         for (let i = 0; i < SEARCH_OPTIONS.length; i += 2) {
@@ -133,6 +393,10 @@ export function initTelegramBotService(bot) {
             }
             keyboard.push(row);
         }
+        // Create Pawn Contract button
+        keyboard.push([
+            { text: '📝 បង្កើតកុងត្រាបញ្ចាំថ្មី (New Pawn)', callback_data: 'cmd:create_pawn' }
+        ]);
         // Action row
         keyboard.push([
             { text: '🔄 ជ្រើសរើស Brand ផ្សេង', callback_data: 'cmd:switch_brand' },
@@ -142,7 +406,7 @@ export function initTelegramBotService(bot) {
         const msg = `✅ <b>ផ្ទៀងផ្ទាត់ជោគជ័យ!</b>\n\n` +
                     `👤 <b>គណនី:</b> <code>${username}</code>\n` +
                     `🏢 <b>Brand:</b> <b>${brand}</b>\n\n` +
-                    `🔎 <b>សូមជ្រើសរើសរបៀបស្វែងរកព័ត៌មានភ្ញៀវ៖</b>`;
+                    `🔎 <b>ស្វែងរកព័ត៌មានភ្ញៀវ ឬ 📝 បង្កើតកុងត្រាបញ្ចាំ:</b>`;
 
         await bot.sendMessage(chatId, msg, {
             parse_mode: 'HTML',
@@ -352,10 +616,359 @@ export function initTelegramBotService(bot) {
                 return;
             }
 
+            // ── 5. Create Pawn Contract: Start Wizard ──
+            if (data === 'cmd:create_pawn') {
+                const session = sessions.get(chatId);
+                if (!session || !session.authenticated) {
+                    await bot.sendMessage(chatId, `⚠️ សូមចូលប្រព័ន្ធជាមុនដោយចុច /sys`);
+                    return;
+                }
+
+                const nextNum = await getNextContractNumber(session.brand);
+                session.pawn = { contractNumber: nextNum };
+                session.step = 'PAWN_CONFIRM_NUMBER';
+                sessions.set(chatId, session);
+
+                await bot.sendMessage(chatId,
+                    `📝 <b>បង្កើតកុងត្រាបញ្ចាំថ្មី</b>\n\n` +
+                    `🔢 <b>លេខរៀងបន្ទាប់ (Auto):</b> <code>${nextNum}</code>\n\n` +
+                    `✏️ សូមផ្ទៀងផ្ទាត់ ឬផ្លាស់ប្ដូរលេខរៀង:\n` +
+                    `• ប្រសិនបើត្រឹមត្រូវ ចុច ✅ <b>បញ្ជាក់</b>\n` +
+                    `• ឬវាយ <b>លេខថ្មី</b> ដោយផ្ទាល់`,
+                    {
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [
+                                [{ text: `✅ បញ្ជាក់ #${nextNum}`, callback_data: `pawn_num:${nextNum}` }],
+                                [{ text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]
+                            ]
+                        }
+                    }
+                );
+                return;
+            }
+
+            // ── 6. Pawn: Contract Number confirmed via button ──
+            if (data.startsWith('pawn_num:')) {
+                const session = sessions.get(chatId);
+                if (!session || !session.pawn) return;
+                const num = data.split('pawn_num:')[1];
+                session.pawn.contractNumber = num;
+                session.step = 'PAWN_CUSTOMER_NAME';
+                sessions.set(chatId, session);
+
+                await bot.sendMessage(chatId,
+                    `📋 <b>លេខរៀង:</b> <code>#${num}</code>\n\n` +
+                    `👤 <b>ជំហ1 — ឈ្មោះអតិថិជន</b>\n` +
+                    `សូមវាយបញ្ចូលឈ្មោះអតិថិជន:`,
+                    { parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]] } }
+                );
+                return;
+            }
+
+            // ── 7. Pawn: Asset Model (base) selected ──
+            if (data.startsWith('pawn_model:')) {
+                const session = sessions.get(chatId);
+                if (!session || !session.pawn) return;
+                const base = decodeURIComponent(data.split('pawn_model:')[1]);
+                session.pawn.selectedBase = base;
+                sessions.set(chatId, session);
+
+                const groups = session.pawn._groups || {};
+                const variants = groups[base] || [];
+
+                if (variants.length <= 1) {
+                    // Only one variant (which is the base itself) — skip variant step
+                    session.pawn.assetName = variants[0] || base;
+                    session.step = 'PAWN_DURATION';
+                    sessions.set(chatId, session);
+                    await promptPawnDuration(chatId, session);
+                } else {
+                    session.step = 'PAWN_ASSET_VARIANT';
+                    sessions.set(chatId, session);
+                    const varKeyboard = variants.map(v => [{ text: `📱 ${v}`, callback_data: `pawn_variant:${encodeURIComponent(v)}` }]);
+                    varKeyboard.push([{ text: '⬅️ ត្រឡប់ Model', callback_data: 'pawn_back:model' }, { text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]);
+                    await bot.sendMessage(chatId,
+                        `📱 <b>Model: ${base}</b>\n\n` +
+                        `🔘 <b>ជំហ3b — ជ្រើស Variant:</b>`,
+                        { parse_mode: 'HTML', reply_markup: { inline_keyboard: varKeyboard } }
+                    );
+                }
+                return;
+            }
+
+            // ── 8. Pawn: Variant selected ──
+            if (data.startsWith('pawn_variant:')) {
+                const session = sessions.get(chatId);
+                if (!session || !session.pawn) return;
+                const full = decodeURIComponent(data.split('pawn_variant:')[1]);
+                session.pawn.assetName = full;
+                session.step = 'PAWN_DURATION';
+                sessions.set(chatId, session);
+                await promptPawnDuration(chatId, session);
+                return;
+            }
+
+            // ── 9. Pawn: Duration selected via button ──
+            if (data.startsWith('pawn_dur:')) {
+                const session = sessions.get(chatId);
+                if (!session || !session.pawn) return;
+                const months = parseInt(data.split('pawn_dur:')[1], 10);
+                session.pawn.months = months;
+                session.step = 'PAWN_PRINCIPAL';
+                sessions.set(chatId, session);
+                await bot.sendMessage(chatId,
+                    `⏱ <b>រយៈពេល:</b> <code>${months} ខែ</code>\n\n` +
+                    `💵 <b>ជំហ4 — ប្រាក់ដើម ($)</b>\n` +
+                    `សូមវាយបញ្ចូលចំនួនប្រាក់ដើម (ឧ. 120):`,
+                    { parse_mode: 'HTML', reply_markup: { inline_keyboard: [
+                        [{ text: '$100', callback_data: 'pawn_p:100' }, { text: '$120', callback_data: 'pawn_p:120' }, { text: '$200', callback_data: 'pawn_p:200' }, { text: '$500', callback_data: 'pawn_p:500' }],
+                        [{ text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]
+                    ]}}
+                );
+                return;
+            }
+
+            // ── 10. Pawn: Principal quick button ──
+            if (data.startsWith('pawn_p:')) {
+                const session = sessions.get(chatId);
+                if (!session || !session.pawn) return;
+                const principal = parseFloat(data.split('pawn_p:')[1]);
+                session.pawn.principal = principal;
+                session.step = 'PAWN_RATE';
+                sessions.set(chatId, session);
+                await promptPawnRate(chatId, session);
+                return;
+            }
+
+            // ── 11. Pawn: Rate quick button ──
+            if (data.startsWith('pawn_r:')) {
+                const session = sessions.get(chatId);
+                if (!session || !session.pawn) return;
+                const rate = parseFloat(data.split('pawn_r:')[1]);
+                session.pawn.ratePercent = rate;
+                session.step = 'PAWN_PREVIEW';
+                sessions.set(chatId, session);
+                await sendPawnPreview(chatId, session);
+                return;
+            }
+
+            // ── 12. Pawn: Back to model selection ──
+            if (data === 'pawn_back:model') {
+                const session = sessions.get(chatId);
+                if (!session || !session.pawn) return;
+                session.step = 'PAWN_ASSET_MODEL';
+                sessions.set(chatId, session);
+                await sendModelButtons(chatId, session);
+                return;
+            }
+
+            // ── 13. Pawn: Confirm Save ──
+            if (data === 'pawn_save:confirm') {
+                const session = sessions.get(chatId);
+                if (!session || !session.pawn) return;
+                const p = session.pawn;
+
+                try {
+                    const startDate = new Date().toISOString().split('T')[0];
+                    const { monthlyInterest, totalInterest, schedule } = calcPawnSchedule(
+                        p.principal, p.ratePercent, p.months, p.startDate || startDate
+                    );
+
+                    const newDoc = {
+                        contractNumber: p.contractNumber || '',
+                        customerName: p.customerName || '',
+                        assetName: p.assetName || '',
+                        assetType: '',
+                        startDate: p.startDate || startDate,
+                        principal: p.principal,
+                        ratePercent: p.ratePercent,
+                        months: p.months,
+                        monthlyInterest,
+                        totalInterest,
+                        schedule,
+                        brand: session.brand || '',
+                        createdBy: session.username || 'TelegramBot',
+                        notes: `Created via Telegram Bot by ${session.username || 'unknown'}`,
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    };
+
+                    if (isMongoConnected) {
+                        const Model = getWriteModel(CalculateSchedule);
+                        await Model.create(newDoc);
+                    } else {
+                        if (!MEM_DB.calculateSchedules) MEM_DB.calculateSchedules = [];
+                        newDoc._id = 'calc_tg_' + Date.now();
+                        MEM_DB.calculateSchedules.unshift(newDoc);
+                    }
+
+                    session.step = 'SEARCH_SELECT';
+                    delete session.pawn;
+                    sessions.set(chatId, session);
+
+                    await bot.sendMessage(chatId,
+                        `✅ <b>រក្សាទុកបានជោគជ័យ!</b>\n\n` +
+                        `📋 <b>លេខ:</b> #${newDoc.contractNumber}\n` +
+                        `👤 <b>ឈ្មោះ:</b> ${newDoc.customerName}\n` +
+                        `📱 <b>ទ្រព្យ:</b> ${newDoc.assetName}\n` +
+                        `💵 <b>ប្រាក់ដើម:</b> $${newDoc.principal}\n` +
+                        `📅 <b>រយៈពេល:</b> ${newDoc.months} ខែ\n` +
+                        `💹 <b>ការប្រាក់/ខែ:</b> $${monthlyInterest.toFixed(2)}\n\n` +
+                        `ទិន្នន័យបានរក្សាទុកនៅ <b>Schedule 2</b> ដោយជោគជ័យ! ✔️`,
+                        {
+                            parse_mode: 'HTML',
+                            reply_markup: { inline_keyboard: [
+                                [{ text: '📝 បង្កើតកុងត្រាថ្មីទៀត', callback_data: 'cmd:create_pawn' }],
+                                [{ text: '🔍 ស្វែងរកភ្ញៀវ', callback_data: 'cmd:search_again' }]
+                            ]}
+                        }
+                    );
+                } catch (saveErr) {
+                    console.error('[TelegramBot] Pawn save error:', saveErr);
+                    await bot.sendMessage(chatId, `❌ បរាជ័យក្នុងការរក្សាទុក: ${saveErr.message}`);
+                }
+                return;
+            }
+
+            // ── 14. Pawn: Cancel/Redo ──
+            if (data === 'pawn_save:cancel') {
+                const session = sessions.get(chatId);
+                if (session) {
+                    delete session.pawn;
+                    session.step = 'SEARCH_SELECT';
+                    sessions.set(chatId, session);
+                }
+                await bot.sendMessage(chatId, `❌ បានបោះបង់ការបង្កើតកុងត្រា។`);
+                if (session) await promptSearchMenu(chatId, session.brand, session.username);
+                return;
+            }
+
         } catch (err) {
             console.error('[TelegramBot] Callback query error:', err);
         }
     });
+
+    // ── Pawn Wizard Helpers (inline) ──
+
+    const sendModelButtons = async (chatId, session) => {
+        const assetList = await fetchAssetTypes(session.brand);
+        const groups = groupAssetModels(assetList);
+        session.pawn._groups = groups;
+        sessions.set(chatId, session);
+        const bases = Object.keys(groups).sort();
+        if (bases.length === 0) {
+            session.step = 'PAWN_ASSET_MANUAL';
+            sessions.set(chatId, session);
+            await bot.sendMessage(chatId,
+                `📱 <b>ជំហ3 — ប្រភេទទ្រព្យបញ្ចាំ</b>\n\nគ្មានទ្រព្យនៅក្នុង Database ទេ។\nសូមវាយបញ្ចូលដោយដៃ (ឧ. iPhone 14 Pro):`,
+                { parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]] } }
+            );
+            return;
+        }
+        const keyboard = [];
+        for (let i = 0; i < bases.length; i += 2) {
+            const row = [{ text: `📱 ${bases[i]}`, callback_data: `pawn_model:${encodeURIComponent(bases[i])}` }];
+            if (bases[i + 1]) row.push({ text: `📱 ${bases[i + 1]}`, callback_data: `pawn_model:${encodeURIComponent(bases[i + 1])}` });
+            keyboard.push(row);
+        }
+        keyboard.push([{ text: '⌨️ វាយដោយដៃ', callback_data: 'pawn_back:manual' }, { text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]);
+        await bot.sendMessage(chatId,
+            `📱 <b>ជំហ3 — ជ្រើស Model គោក:</b>`,
+            { parse_mode: 'HTML', reply_markup: { inline_keyboard: keyboard } }
+        );
+    };
+
+    const promptPawnDuration = async (chatId, session) => {
+        const p = session.pawn;
+        await bot.sendMessage(chatId,
+            `📱 <b>ទ្រព្យ:</b> ${p.assetName}\n\n` +
+            `⏱ <b>ជំហ4 — រយៈពេល (ខែ)</b>\nសូមជ្រើស ឬវាយចំនួនខែ:`,
+            {
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: [
+                    [
+                        { text: '2️⃣ ២ ខែ', callback_data: 'pawn_dur:2' },
+                        { text: '3️⃣ ៣ ខែ', callback_data: 'pawn_dur:3' },
+                        { text: '4️⃣ ៤ ខែ', callback_data: 'pawn_dur:4' }
+                    ],
+                    [
+                        { text: '6️⃣ ៦ ខែ', callback_data: 'pawn_dur:6' },
+                        { text: '🔟 ១២ ខែ', callback_data: 'pawn_dur:12' }
+                    ],
+                    [{ text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]
+                ]}
+            }
+        );
+    };
+
+    const promptPawnRate = async (chatId, session) => {
+        const p = session.pawn;
+        await bot.sendMessage(chatId,
+            `💵 <b>ប្រាក់ដើម:</b> $${p.principal}\n\n` +
+            `💹 <b>ជំហ5 — អត្រា %/ខែ</b>\n` +
+            `Default: <b>11.5%</b> — ចុចដើម្បីប្រើ ឬវាយអត្រាដែលចង់:`,
+            {
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: [
+                    [
+                        { text: '⭐ 11.5%', callback_data: 'pawn_r:11.5' },
+                        { text: '10%', callback_data: 'pawn_r:10' },
+                        { text: '12%', callback_data: 'pawn_r:12' },
+                        { text: '15%', callback_data: 'pawn_r:15' }
+                    ],
+                    [{ text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]
+                ]}
+            }
+        );
+    };
+
+    const sendPawnPreview = async (chatId, session) => {
+        const p = session.pawn;
+        const today = new Date().toISOString().split('T')[0];
+        p.startDate = p.startDate || today;
+        const { monthlyInterest, totalInterest, schedule } = calcPawnSchedule(p.principal, p.ratePercent, p.months, p.startDate);
+
+        // Build text preview
+        const [y, m, d] = p.startDate.split('-');
+        const fmtD = `${d}-${m}-${y}`;
+        let tableText = `<pre>\nខែ | ថ្ងៃបង់       | សរុប($) | ការប្រាក់ | សល់($)\n`;
+        tableText += `--- | ------------ | ------- | --------- | ------\n`;
+        schedule.forEach(r => {
+            const [ry, rm, rd] = r.dueDate.split('-');
+            tableText += `${String(r.no).padStart(3)} | ${rd}-${rm}-${ry} | ${r.totalDueMonth.toFixed(1).padStart(7)} | ${monthlyInterest.toFixed(1).padStart(9)} | ${r.remainingBalance.toFixed(0).padStart(6)}\n`;
+        });
+        tableText += `</pre>`;
+
+        const previewMsg =
+            `📋 <b>ព្រៀង Preview កុងត្រា</b>\n\n` +
+            `🔢 <b>#</b> ${p.contractNumber}\n` +
+            `👤 ${p.customerName}\n` +
+            `📱 ${p.assetName}\n` +
+            `📅 ថ្ងៃ: ${fmtD} | ⏱ ${p.months}ខែ\n` +
+            `💵 ដើម: $${p.principal} | 💹 ${p.ratePercent}%/ខែ\n` +
+            `💰 ការប្រាក់/ខែ: <b>$${monthlyInterest.toFixed(2)}</b> | សរុបការប្រាក់: $${totalInterest.toFixed(2)}\n\n` +
+            tableText;
+
+        await bot.sendMessage(chatId, previewMsg, {
+            parse_mode: 'HTML',
+            reply_markup: { inline_keyboard: [
+                [{ text: '✅ Save ចូល Schedule 2', callback_data: 'pawn_save:confirm' }],
+                [{ text: '❌ Cancel', callback_data: 'pawn_save:cancel' }]
+            ]}
+        });
+
+        // Also send actual PDF
+        try {
+            const pdfBuf = await generatePawnSchedulePdf({ ...p, monthlyInterest, schedule });
+            await bot.sendDocument(chatId, pdfBuf, {
+                caption: `📄 PDF — #${p.contractNumber} ${p.customerName}\nចុច ✅ Save ដើម្បីរក្សាទុក`,
+                parse_mode: 'HTML'
+            }, { filename: `PawnSchedule_${p.contractNumber}.pdf`, contentType: 'application/pdf' });
+        } catch (pdfErr) {
+            console.error('[TelegramBot] Pawn PDF error:', pdfErr);
+        }
+    };
 
     // ── Incoming Text Message Handler (State Machine) ──
     bot.on('message', async (msg) => {
@@ -430,6 +1043,88 @@ export function initTelegramBotService(bot) {
             sessions.set(chatId, session);
 
             await promptSearchMenu(chatId, session.brand, user.username);
+            return;
+        }
+
+        // ── STATE: PAWN_CONFIRM_NUMBER — user types custom contract number ──
+        if (session.step === 'PAWN_CONFIRM_NUMBER') {
+            const num = text.replace(/\s+/g, '');
+            if (!num) {
+                await bot.sendMessage(chatId, `⚠️ សូមបញ្ចូលលេខរៀង`);
+                return;
+            }
+            session.pawn.contractNumber = num.padStart(3, '0');
+            session.step = 'PAWN_CUSTOMER_NAME';
+            sessions.set(chatId, session);
+            await bot.sendMessage(chatId,
+                `📋 <b>លេខរៀង:</b> <code>#${session.pawn.contractNumber}</code>\n\n` +
+                `👤 <b>ជំហ1 — ឈ្មោះអតិថិជន</b>\nសូមវាយបញ្ចូលឈ្មោះ:`,
+                { parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]] } }
+            );
+            return;
+        }
+
+        // ── STATE: PAWN_CUSTOMER_NAME ──
+        if (session.step === 'PAWN_CUSTOMER_NAME') {
+            if (!text) { await bot.sendMessage(chatId, `⚠️ សូមបញ្ចូលឈ្មោះ`); return; }
+            session.pawn.customerName = text;
+            session.step = 'PAWN_ASSET_MODEL';
+            sessions.set(chatId, session);
+            await bot.sendMessage(chatId,
+                `👤 <b>ឈ្មោះ:</b> ${text}\n\n` +
+                `⏳ <i>កំពុងទាញយក Model list...</i>`,
+                { parse_mode: 'HTML' }
+            );
+            await sendModelButtons(chatId, session);
+            return;
+        }
+
+        // ── STATE: PAWN_ASSET_MANUAL — user types asset name by hand ──
+        if (session.step === 'PAWN_ASSET_MANUAL') {
+            if (!text) { await bot.sendMessage(chatId, `⚠️ សូមបញ្ចូលប្រភេទទ្រព្យ`); return; }
+            session.pawn.assetName = text;
+            session.step = 'PAWN_DURATION';
+            sessions.set(chatId, session);
+            await promptPawnDuration(chatId, session);
+            return;
+        }
+
+        // ── STATE: PAWN_DURATION — user types custom duration ──
+        if (session.step === 'PAWN_DURATION') {
+            const m = parseInt(text, 10);
+            if (isNaN(m) || m < 1) { await bot.sendMessage(chatId, `⚠️ សូមបញ្ចូលចំនួនខែ (ជាលេខ)`); return; }
+            session.pawn.months = m;
+            session.step = 'PAWN_PRINCIPAL';
+            sessions.set(chatId, session);
+            await bot.sendMessage(chatId,
+                `⏱ <b>រយៈពេល:</b> <code>${m} ខែ</code>\n\n💵 <b>ជំហ4 — ប្រាក់ដើម ($)</b>\nសូមវាយចំនួន:`,
+                { parse_mode: 'HTML', reply_markup: { inline_keyboard: [
+                    [{ text: '$100', callback_data: 'pawn_p:100' }, { text: '$120', callback_data: 'pawn_p:120' }, { text: '$200', callback_data: 'pawn_p:200' }, { text: '$500', callback_data: 'pawn_p:500' }],
+                    [{ text: '❌ បោះបង់', callback_data: 'cmd:search_again' }]
+                ]}}
+            );
+            return;
+        }
+
+        // ── STATE: PAWN_PRINCIPAL — user types custom principal ──
+        if (session.step === 'PAWN_PRINCIPAL') {
+            const amt = parseFloat(text.replace(/[$,]/g, ''));
+            if (isNaN(amt) || amt <= 0) { await bot.sendMessage(chatId, `⚠️ សូមបញ្ចូលប្រាក់ដើម (ជាលេខ ឧ. 120)`); return; }
+            session.pawn.principal = amt;
+            session.step = 'PAWN_RATE';
+            sessions.set(chatId, session);
+            await promptPawnRate(chatId, session);
+            return;
+        }
+
+        // ── STATE: PAWN_RATE — user types custom rate ──
+        if (session.step === 'PAWN_RATE') {
+            const r = parseFloat(text.replace(/%/g, ''));
+            if (isNaN(r) || r <= 0) { await bot.sendMessage(chatId, `⚠️ សូមបញ្ចូលអត្រា (ឧ. 11.5)`); return; }
+            session.pawn.ratePercent = r;
+            session.step = 'PAWN_PREVIEW';
+            sessions.set(chatId, session);
+            await sendPawnPreview(chatId, session);
             return;
         }
 
