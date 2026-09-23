@@ -223,8 +223,15 @@ export const isTokenRevoked = (token) => revokedTokensMap.has(token);
 // ── LAYER 8: Security Verification Auth Middleware ──
 export const verifySecurityAuth = (req, res, next) => {
     // Only strictly public endpoints bypass auth check
-    const publicPaths = ['/api/auth/login', '/api/auth/verify-otp', '/api/health', '/api/history/report-schedule'];
-    if (!req.path.startsWith('/api') || publicPaths.some(p => req.path === p || req.path.startsWith('/api/health'))) {
+    const publicPaths = [
+        '/api/auth/login',
+        '/api/auth/verify-otp',
+        '/api/health',
+        '/api/history/report-schedule',
+        '/api/calculate-schedules/stream',
+        '/calculate-schedules/stream'
+    ];
+    if (!req.path.startsWith('/api') || publicPaths.some(p => req.path === p || req.path.startsWith('/api/health') || req.path.endsWith('/calculate-schedules/stream'))) {
         return next();
     }
 

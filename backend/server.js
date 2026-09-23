@@ -64,7 +64,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS
 app.use(cors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-System-API-Key', 'x-system-api-key', 'X-Request-Timestamp', 'x-request-timestamp'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-System-API-Key', 'x-system-api-key', 'X-Request-Timestamp', 'x-request-timestamp', 'Cache-Control', 'cache-control', 'Pragma', 'pragma'],
     credentials: true
 }));
 

@@ -89,14 +89,7 @@ const CalculateSchedule2 = () => {
             const isImmutable = user?.isImmutable ? 'true' : 'false';
 
             const res = await fetch(
-                `${API_BASE}/calculate-schedules?userBrand=${encodeURIComponent(brand)}&username=${encodeURIComponent(username)}&userRole=${encodeURIComponent(role)}&isImmutable=${isImmutable}&_t=${Date.now()}`,
-                {
-                    cache: 'no-store',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache'
-                    }
-                }
+                `${API_BASE}/calculate-schedules?userBrand=${encodeURIComponent(brand)}&username=${encodeURIComponent(username)}&userRole=${encodeURIComponent(role)}&isImmutable=${isImmutable}&_t=${Date.now()}`
             );
             if (res.ok) {
                 const data = await res.json();
