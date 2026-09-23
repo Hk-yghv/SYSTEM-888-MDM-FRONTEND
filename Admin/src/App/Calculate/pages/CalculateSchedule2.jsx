@@ -906,15 +906,15 @@ const CalculateSchedule2 = () => {
                             {/* Right Meta */}
                             <div className="space-y-2 text-left ">
                                 <div className='flex justify-between items-center'>
-                                    <span className="text-slate-800">ឈ្មោះអតិថិជន&nbsp;</span>{' '}
+                                    <span className="text-slate-800">ឈ្មោះអតិថិជន:&nbsp;</span>{' '}
                                     <span className="text-blue-400 font-bold text-right">{result.customerName || '—'}</span>
                                 </div>
                                 <div className='flex justify-between items-center'>
-                                    <span className="text-slate-800">ប្រភេទទ្រព្យបញ្ចាំ&nbsp;</span>{' '}
+                                    <span className="text-slate-800">ប្រភេទទ្រព្យបញ្ចាំ:&nbsp;</span>{' '}
                                     <span className="text-blue-400 font-bold text-right">{result.assetName}</span>
                                 </div>
                                 <div className='flex justify-between items-center'>
-                                    <span className="text-slate-800">លេខកិច្ចសន្យា&nbsp;</span>{' '}
+                                    <span className="text-slate-800">លេខកិច្ចសន្យា:&nbsp;</span>{' '}
                                     <span className="text-blue-400 font-bold text-right">
                                         {result.contractNumber || '—'}
                                     </span>
