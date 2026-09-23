@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { FaLock, FaUser, FaKey, FaShieldAlt, FaTelegramPlane, FaExclamationTriangle, FaClock } from 'react-icons/fa';
 import { MdOutlineDashboard } from 'react-icons/md';
 import { getFirstAllowedRoute } from '../utils/permissionUtils';
+import { setSecureItem } from '../utils/secureStorage';
 
 const SignIn = () => {
     const [username, setUsername] = useState('');
@@ -54,8 +55,8 @@ const SignIn = () => {
                 setAttempts(0);
                 setCooldownSec(0);
                 if (res.deviceInfo) {
-                    sessionStorage.setItem('recent_login_device', JSON.stringify(res.deviceInfo));
-                    sessionStorage.setItem('show_login_toast', 'true');
+                    setSecureItem('recent_login_device', res.deviceInfo);
+                    setSecureItem('show_login_toast', 'true');
                 }
                 const targetRoute = getFirstAllowedRoute(res.user);
                 navigate(targetRoute);
@@ -91,8 +92,8 @@ const SignIn = () => {
             setLoading(false);
             if (res.success) {
                 if (res.deviceInfo) {
-                    sessionStorage.setItem('recent_login_device', JSON.stringify(res.deviceInfo));
-                    sessionStorage.setItem('show_login_toast', 'true');
+                    setSecureItem('recent_login_device', res.deviceInfo);
+                    setSecureItem('show_login_toast', 'true');
                 }
                 const targetRoute = getFirstAllowedRoute(res.user);
                 navigate(targetRoute);

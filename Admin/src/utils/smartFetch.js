@@ -1,4 +1,5 @@
 // High-Availability Multi-API Real-Time Failover & Smart Cache Engine for SYSTEM MDM
+import { getSecureItem } from './secureStorage';
 
 const normalizeUrl = (url) => (url ? url.replace(/\/$/, '') : '');
 
@@ -99,7 +100,7 @@ export const smartFetch = async (inputUrlOrPath, options = {}) => {
         const targetUrl = `${currentBase}${relativePath}`;
 
         try {
-            const token = sessionStorage.getItem('mdm_token') || localStorage.getItem('mdm_token');
+            const token = getSecureItem('mdm_token');
             const mergedHeaders = {
                 'x-system-api-key': 'SYSTEM_MDM_SECURE_AUTH_HEADER_TOKEN_2026',
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {}),

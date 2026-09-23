@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { FaBan } from 'react-icons/fa';
 import { smartFetch, getActiveApiBase, API_POOL } from '../utils/smartFetch';
+import { getSecureItem, setSecureItem, clearSecureAuth } from '../utils/secureStorage';
 
 const AuthContext = createContext();
 
@@ -15,11 +16,10 @@ export const AuthProvider = ({ children }) => {
         // Clean up legacy localStorage auth to enforce session-only auth
         localStorage.removeItem('mdm_user');
         localStorage.removeItem('mdm_token');
-        const saved = sessionStorage.getItem('mdm_user');
-        return saved ? JSON.parse(saved) : null;
+        return getSecureItem('mdm_user', true);
     });
 
-    const [token, setToken] = useState(() => sessionStorage.getItem('mdm_token') || '');
+    const [token, setToken] = useState(() => getSecureItem('mdm_token') || '');
     const [loading, setLoading] = useState(false);
     const [isBlocked, setIsBlocked] = useState(false);
 
@@ -36,10 +36,7 @@ export const AuthProvider = ({ children }) => {
         }
         setUser(null);
         setToken('');
-        sessionStorage.removeItem('mdm_user');
-        sessionStorage.removeItem('mdm_token');
-        localStorage.removeItem('mdm_user');
-        localStorage.removeItem('mdm_token');
+        clearSecureAuth();
     }, [user?.username]);
 
     // Send periodic heartbeat to keep online status fresh & sendBeacon on unload
@@ -173,8 +170,8 @@ export const AuthProvider = ({ children }) => {
 
             setUser(data.user);
             setToken(data.token);
-            sessionStorage.setItem('mdm_user', JSON.stringify(data.user));
-            sessionStorage.setItem('mdm_token', data.token);
+            setSecureItem('mdm_user', data.user);
+            setSecureItem('mdm_token', data.token);
             return { success: true, user: data.user, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
@@ -199,8 +196,8 @@ export const AuthProvider = ({ children }) => {
 
             setUser(data.user);
             setToken(data.token);
-            sessionStorage.setItem('mdm_user', JSON.stringify(data.user));
-            sessionStorage.setItem('mdm_token', data.token);
+            setSecureItem('mdm_user', data.user);
+            setSecureItem('mdm_token', data.token);
             return { success: true, user: data.user, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
@@ -227,7 +224,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateUserState = (updatedUser) => {
         setUser(updatedUser);
-        sessionStorage.setItem('mdm_user', JSON.stringify(updatedUser));
+        setSecureItem('mdm_user', updatedUser);
     };
 
     return (
