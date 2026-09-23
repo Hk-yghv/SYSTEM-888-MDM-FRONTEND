@@ -6,6 +6,13 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#059669">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MDM Calculate">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <link rel="manifest" href="manifest.json">
     <title>MDM Calculate Schedule</title>
     <style>
         :root {
@@ -44,7 +51,7 @@
             background-color: var(--bg-body);
             color: var(--text-main);
             min-height: 100vh;
-            padding-bottom: 40px;
+            padding-bottom: max(40px, env(safe-area-inset-bottom));
             transition: background-color 0.3s, color 0.3s;
         }
 
@@ -55,7 +62,7 @@
             z-index: 50;
             background: linear-gradient(135deg, #059669, #0d9488);
             color: white;
-            padding: 16px 20px;
+            padding: max(16px, env(safe-area-inset-top)) 20px 16px 20px;
             box-shadow: 0 4px 20px rgba(5, 150, 105, 0.25);
             display: flex;
             align-items: center;
@@ -118,6 +125,91 @@
         .icon-btn:active {
             transform: scale(0.92);
             background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* iOS Install Modal */
+        .ios-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .ios-modal-overlay.active {
+            display: flex;
+        }
+
+        .ios-modal-card {
+            background: var(--bg-card);
+            color: var(--text-main);
+            width: 100%;
+            max-width: 380px;
+            border-radius: 20px;
+            padding: 22px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.92); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .ios-modal-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #059669;
+        }
+
+        .ios-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            text-align: left;
+            margin: 10px 0;
+            font-size: 13px;
+            background: var(--bg-body);
+            padding: 10px 12px;
+            border-radius: 12px;
+            line-height: 1.4;
+        }
+
+        .ios-step-num {
+            background: #059669;
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .ios-close-btn {
+            margin-top: 14px;
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            background: #059669;
+            color: white;
+            border: none;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
         }
 
         /* Main Container */
@@ -605,6 +697,7 @@
             </div>
         </div>
         <div class="header-actions">
+            <button class="icon-btn" id="btnIosGuide" title="iOS Install / App Info" onclick="toggleIosModal(true)">📱</button>
             <button class="icon-btn" id="btnThemeToggle" title="Dark / Light Mode">🌓</button>
             <button class="icon-btn" id="btnShareApp" title="Share">📤</button>
         </div>
@@ -783,18 +876,76 @@
         </div>
     </div>
 
+    <!-- iOS Add to Home Screen Modal -->
+    <div id="iosModal" class="ios-modal-overlay" onclick="if(event.target===this) toggleIosModal(false)">
+        <div class="ios-modal-card">
+            <div style="font-size: 36px; margin-bottom: 8px;">🍎 📱</div>
+            <div class="ios-modal-title">របៀបដំឡើងលើ iPhone / iOS</div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">ដំឡើងជា App ពេញអេក្រង់ដោយមិនបាច់ប្រើ App Store</p>
+            
+            <div class="ios-step">
+                <div class="ios-step-num">1</div>
+                <div>បើកក្នុងកម្មវិធី <b>Safari</b> លើទូរស័ព្ទ iPhone / iPad</div>
+            </div>
+            <div class="ios-step">
+                <div class="ios-step-num">2</div>
+                <div>ចុចលើប៊ូតុង <b>Share (ចែករំលែក 📤)</b> នៅខាងក្រោម</div>
+            </div>
+            <div class="ios-step">
+                <div class="ios-step-num">3</div>
+                <div>អូសចុះក្រោម រួចជ្រើសរើស <b>"Add to Home Screen (បន្ថែមទៅអេក្រង់ដើម ➕)"</b></div>
+            </div>
+            <div class="ios-step">
+                <div class="ios-step-num">4</div>
+                <div>ចុច <b>"Add (បន្ថែម)"</b> នៅជ្រុងខាងស្ដាំខាងលើ ជាការស្រេច!</div>
+            </div>
+
+            <button class="ios-close-btn" onclick="toggleIosModal(false)">យល់ព្រម (OK)</button>
+        </div>
+    </div>
+
     <!-- Toast message -->
     <div id="toast" class="toast">
         <span>✅</span> <span id="toastMsg">បានចម្លងរួចរាល់!</span>
     </div>
 
     <script>
+        // Helper: Format Date to YYYY-MM-DD in local time
+        function formatDateToYMD(d) {
+            if (!d || !(d instanceof Date) || isNaN(d)) return '';
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        // Helper: Safe addMonths matching calculate/schedule-1
+        // Always tries the original start day, only clamps when target month is shorter
+        // e.g. start=31 Aug -> Sep=30 (clamped) -> Oct=31 (restored) -> Nov=30 (clamped) -> Dec=31 (restored)
+        function addMonthsSafe(date, months, originalDay) {
+            const d = new Date(date);
+            d.setDate(1); // Reset to 1st to avoid overflow when changing month
+            d.setMonth(d.getMonth() + months);
+            const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+            d.setDate(Math.min(originalDay, lastDay));
+            return d;
+        }
+
         // State
         let currentDurationUnit = 'months';
         let lastCalculation = null;
 
-        // Init default date
-        document.getElementById('inpStartDate').value = new Date().toISOString().split('T')[0];
+        // Init default date (Local Time)
+        document.getElementById('inpStartDate').value = formatDateToYMD(new Date());
+
+        // iOS modal toggle
+        function toggleIosModal(show) {
+            const modal = document.getElementById('iosModal');
+            if (modal) {
+                if (show) modal.classList.add('active');
+                else modal.classList.remove('active');
+            }
+        }
 
         // Theme toggle
         const btnTheme = document.getElementById('btnThemeToggle');
@@ -869,7 +1020,7 @@
             return '$' + Number(num || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        // Calculate Schedule
+        // Calculate Schedule exactly as calculate/schedule-1
         function calculate() {
             const principal = parseFloat(document.getElementById('inpPrincipal').value) || 0;
             const ratePercent = parseRate(document.getElementById('inpRate').value);
@@ -888,26 +1039,29 @@
             const totalInterest = monthlyInterestUSD * monthsCount;
             const totalRepayment = paymentPerMonth * monthsCount;
 
-            // Generate Schedule
+            // Generate Schedule table rows
             const schedule = [];
             let remainingPrincipal = principal;
             const baseDate = startDateStr ? new Date(`${startDateStr}T00:00:00`) : new Date();
+            const originalDay = baseDate.getDate();
 
             for (let i = 1; i <= monthsCount; i++) {
-                const dueDate = new Date(baseDate);
+                let dueDate;
                 if (currentDurationUnit === 'days') {
+                    dueDate = new Date(baseDate);
                     const daysPerPeriod = Math.floor(duration / monthsCount);
                     dueDate.setDate(dueDate.getDate() + (daysPerPeriod * i));
                 } else {
-                    dueDate.setMonth(dueDate.getMonth() + i);
+                    dueDate = addMonthsSafe(baseDate, i, originalDay);
                 }
 
-                remainingPrincipal = Math.max(0, remainingPrincipal - principalPerMonth);
+                const currentPrincipalDue = principalPerMonth;
+                remainingPrincipal = Math.max(0, remainingPrincipal - currentPrincipalDue);
 
                 schedule.push({
                     monthIndex: i,
-                    dueDate: dueDate.toISOString().split('T')[0],
-                    principalDue: principalPerMonth,
+                    dueDate: formatDateToYMD(dueDate),
+                    principalDue: currentPrincipalDue,
                     interestDue: monthlyInterestUSD,
                     totalDueMonth: paymentPerMonth,
                     remainingPrincipal: remainingPrincipal
@@ -982,7 +1136,7 @@
             document.getElementById('inpRate').value = '11.5%';
             document.getElementById('inpDuration').value = '4';
             setDurationUnit('months');
-            document.getElementById('inpStartDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('inpStartDate').value = formatDateToYMD(new Date());
             calculate();
             showToast('🔄 បានកំណត់ឡើងវិញ!');
         }
@@ -1011,6 +1165,9 @@
             // Check if Android Native Bridge exists
             if (window.AndroidBridge && typeof window.AndroidBridge.copyToClipboard === 'function') {
                 window.AndroidBridge.copyToClipboard(text);
+            } else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iosBridge) {
+                window.webkit.messageHandlers.iosBridge.postMessage({ action: 'copy', text: text });
+                showToast('បានចម្លងរួចរាល់! Copied');
             } else if (navigator.clipboard) {
                 navigator.clipboard.writeText(text);
                 showToast('បានចម្លងរួចរាល់! Copied');
@@ -1031,6 +1188,8 @@
 
             if (window.AndroidBridge && typeof window.AndroidBridge.shareText === 'function') {
                 window.AndroidBridge.shareText('តារាងគណនាការប្រាក់ MDM', text);
+            } else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iosBridge) {
+                window.webkit.messageHandlers.iosBridge.postMessage({ action: 'share', title: 'តារាងគណនាការប្រាក់ MDM', text: text });
             } else if (navigator.share) {
                 navigator.share({
                     title: 'តារាងគណនាការប្រាក់ MDM',
