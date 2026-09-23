@@ -77,10 +77,10 @@ const CalculateSchedule2 = () => {
         if (API_BASE) fetchAssetTypes();
     }, [API_BASE, user?.brand]);
 
-    // ─── Load Saved History from DB ────────────────────────────────
-    const fetchHistory = async () => {
+    // ─── Load Saved History from DB (with silent realtime refresh support) ──────
+    const fetchHistory = async (isSilent = false) => {
         try {
-            setHistoryLoading(true);
+            if (!isSilent) setHistoryLoading(true);
             const brand = user?.brand || '';
             const username = user?.username || '';
             const role = user?.role || '';
@@ -96,15 +96,49 @@ const CalculateSchedule2 = () => {
         } catch (err) {
             console.error('Error loading saved calculation history:', err);
         } finally {
-            setHistoryLoading(false);
+            if (!isSilent) setHistoryLoading(false);
         }
     };
 
     const [searchParams] = useSearchParams();
 
+    // ─── Realtime Polling & Sync for Saved Props ───────────────────
     useEffect(() => {
-        if (API_BASE) fetchHistory();
-    }, [API_BASE, user?.brand]);
+        if (!API_BASE) return;
+
+        // Initial fetch with spinner
+        fetchHistory(false);
+
+        // Realtime sync: poll every 3 seconds silently
+        const pollInterval = setInterval(() => {
+            fetchHistory(true);
+        }, 3000);
+
+        // Sync immediately when tab is focused / becomes visible
+        const handleSync = () => {
+            if (document.visibilityState === 'visible') {
+                fetchHistory(true);
+            }
+        };
+
+        window.addEventListener('focus', handleSync);
+        document.addEventListener('visibilitychange', handleSync);
+
+        // Cross-tab sync listener
+        const handleStorage = (e) => {
+            if (e.key === 'calc_schedules_updated') {
+                fetchHistory(true);
+            }
+        };
+        window.addEventListener('storage', handleStorage);
+
+        return () => {
+            clearInterval(pollInterval);
+            window.removeEventListener('focus', handleSync);
+            document.removeEventListener('visibilitychange', handleSync);
+            window.removeEventListener('storage', handleStorage);
+        };
+    }, [API_BASE, user?.brand, user?.username, user?.role, user?.isImmutable]);
 
     // ─── Auto load record from Query Parameters ─────────────────────
     useEffect(() => {
@@ -257,7 +291,8 @@ const CalculateSchedule2 = () => {
                 if (data.data?._id) {
                     setActiveRecordId(data.data._id);
                 }
-                fetchHistory();
+                localStorage.setItem('calc_schedules_updated', Date.now().toString());
+                fetchHistory(true);
             } else {
                 alert('បរាជ័យក្នុងការរក្សាទុក: ' + (data.error || 'Server error'));
             }
@@ -315,6 +350,7 @@ const CalculateSchedule2 = () => {
             if (res.ok) {
                 if (activeRecordId === id) setActiveRecordId(null);
                 setSavedHistory(prev => prev.filter(item => item._id !== id));
+                localStorage.setItem('calc_schedules_updated', Date.now().toString());
             } else {
                 alert('មិនអាចលុបទិន្នន័យបានទេ');
             }
@@ -776,8 +812,12 @@ const CalculateSchedule2 = () => {
                                 <h3 className="font-bold text-sm text-slate-800">
                                     បញ្ជីបានរក្សាទុក (Saved Props)
                                 </h3>
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-xs">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Realtime
+                                </span>
                             </div>
-                            <span className="px-2 py-0.5 rounded-full text-xs bg-violet-100 text-violet-700">
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-violet-100 text-violet-700 font-bold">
                                 {savedHistory.length}
                             </span>
                         </div>
