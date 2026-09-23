@@ -6,6 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
 import { MdOutlineSync, MdSearch, MdPictureAsPdf, MdQrCode2 } from 'react-icons/md';
 import { FaFileExcel, FaDollarSign, FaClock } from 'react-icons/fa';
+import { AiOutlineMenu } from 'react-icons/ai';
 import RepaymentScheduleModal from '../../Contract/components/RepaymentScheduleModal';
 import QrPaymentModal from '../components/QrPaymentModal';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
@@ -154,7 +155,7 @@ const DueIn3DaysPage = () => {
         fetch(`${API_BASE1}/controlsystem?brand=${encodeURIComponent(user?.brand || '')}`)
             .then(res => res.ok ? res.json() : null)
             .then(data => setLatePenaltyRules(Array.isArray(data?.late_penalty_rules) ? data.late_penalty_rules : []))
-            .catch(() => {});
+            .catch(() => { });
     }, [API_BASE1, user?.brand]);
 
     useEffect(() => {
