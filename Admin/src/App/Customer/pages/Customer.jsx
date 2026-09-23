@@ -335,117 +335,117 @@ const Customer = () => {
                                 const hasAnyAction = canSeePhoto || canDetail || canQrcode || canExport;
 
                                 return (
-                                <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                                    <td className='px-4 py-3'>
-                                        <div className="flex items-center gap-2">
-                                            <div>
-                                                <CopyCell text={item.customerNameEn} className='font-bold text-emerald-700 block' />
-                                                <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-[11px] font-semibold' />
+                                    <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
+                                        <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                        <td className='px-4 py-3'>
+                                            <div className="flex items-center gap-2">
+                                                <div>
+                                                    <CopyCell text={item.customerNameEn} className='font-bold text-emerald-700 block' />
+                                                    <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-[11px] font-semibold' />
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className='px-4 py-3 font-mono text-slate-600 text-[11px]'><CopyCell text={item.idCardNumber || '-'} className='font-mono text-slate-600 text-[11px]' /></td>
-                                    <td className='px-4 py-3 font-mono text-slate-700 font-medium'><CopyCell text={item.phone || '-'} className='font-mono text-slate-700 font-medium' /></td>
-                                    <td className='px-4 py-3'>
-                                        <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
-                                            {item.brand || '—'}
-                                        </span>
-                                    </td>
-                                    <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
-                                    <td className='px-4 py-3 font-mono text-emerald-700 font-semibold text-[11px]'><CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-semibold text-[11px]' /></td>
-                                    <td className='px-4 py-3 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
-                                    <td className='px-4 py-3 text-center'>
-                                        <span className='px-2.5 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>Activated</span>
-                                    </td>
-                                    <td className='px-4 py-3 text-center'>
-                                        {hasAnyAction ? (
-                                            <div className="relative inline-block text-left">
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setOpenMenuId(openMenuId === (item._id || item.contractId) ? null : (item._id || item.contractId));
-                                                    }}
-                                                    className="px-2.5 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-300 text-slate-700 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                                                >
-                                                    <span>Actions</span>
-                                                    <span className="text-[9px]">▼</span>
-                                                </button>
-
-                                                {openMenuId === (item._id || item.contractId) && (
-                                                    <div
-                                                        className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100"
-                                                        onClick={(e) => e.stopPropagation()}
+                                        </td>
+                                        <td className='px-4 py-3 font-mono text-slate-600 text-[11px]'><CopyCell text={item.idCardNumber || '-'} className='font-mono text-slate-600 text-[11px]' /></td>
+                                        <td className='px-4 py-3 font-mono text-slate-700 font-medium'><CopyCell text={item.phone || '-'} className='font-mono text-slate-700 font-medium' /></td>
+                                        <td className='px-4 py-3'>
+                                            <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
+                                                {item.brand || '—'}
+                                            </span>
+                                        </td>
+                                        <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                        <td className='px-4 py-3 font-mono text-emerald-700 font-semibold text-[11px]'><CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-semibold text-[11px]' /></td>
+                                        <td className='px-4 py-3 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
+                                        <td className='px-4 py-3 text-center'>
+                                            <span className='px-2.5 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>Activated</span>
+                                        </td>
+                                        <td className='px-4 py-3 text-center'>
+                                            {hasAnyAction ? (
+                                                <div className="relative inline-block text-left">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setOpenMenuId(openMenuId === (item._id || item.contractId) ? null : (item._id || item.contractId));
+                                                        }}
+                                                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-300 text-slate-700 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                                                     >
-                                                        {/* See Photo */}
-                                                        {canSeePhoto && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setPhotoGalleryCustomer(item);
-                                                                    setOpenMenuId(null);
-                                                                }}
-                                                                className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-semibold cursor-pointer transition-colors"
-                                                            >
-                                                                <FaFileImage className="text-emerald-600" />
-                                                                <span>See Photo (មើលរូប)</span>
-                                                            </button>
-                                                        )}
+                                                        <span>Actions</span>
+                                                        <span className="text-[9px]">▼</span>
+                                                    </button>
 
-                                                        {/* Details Info */}
-                                                        {canDetail && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setSelectedCustomer(item);
-                                                                    setOpenMenuId(null);
-                                                                }}
-                                                                className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
-                                                            >
-                                                                <MdInfo className="text-slate-500" />
-                                                                <span>Details (ព័ត៌មានលម្អិត)</span>
-                                                            </button>
-                                                        )}
+                                                    {openMenuId === (item._id || item.contractId) && (
+                                                        <div
+                                                            className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            {/* See Photo */}
+                                                            {canSeePhoto && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setPhotoGalleryCustomer(item);
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-semibold cursor-pointer transition-colors"
+                                                                >
+                                                                    <FaFileImage className="text-emerald-600" />
+                                                                    <span>See Photo (មើលរូប)</span>
+                                                                </button>
+                                                            )}
 
-                                                        {/* QR Code Profile */}
-                                                        {canQrcode && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    handleOpenQrModal(item);
-                                                                    setOpenMenuId(null);
-                                                                }}
-                                                                className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
-                                                            >
-                                                                <FaQrcode className="text-indigo-600" />
-                                                                <span>QR Code (ស្កេន QR)</span>
-                                                            </button>
-                                                        )}
+                                                            {/* Details Info */}
+                                                            {canDetail && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSelectedCustomer(item);
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+                                                                >
+                                                                    <MdInfo className="text-slate-500" />
+                                                                    <span>Details (ព័ត៌មានលម្អិត)</span>
+                                                                </button>
+                                                            )}
 
-                                                        {/* Export PDF */}
-                                                        {canExport && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    handleDirectExportPdf(item);
-                                                                    setOpenMenuId(null);
-                                                                }}
-                                                                disabled={exportingCustomerPdfId === (item._id || item.contractId)}
-                                                                className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
-                                                            >
-                                                                <MdPictureAsPdf className="text-red-600" />
-                                                                <span>{exportingCustomerPdfId === (item._id || item.contractId) ? 'Exporting...' : 'Export PDF'}</span>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <span className="text-slate-400 font-mono text-[11px]">—</span>
-                                        )}
-                                    </td>
-                                </tr>
+                                                            {/* QR Code Profile */}
+                                                            {canQrcode && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        handleOpenQrModal(item);
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+                                                                >
+                                                                    <FaQrcode className="text-indigo-600" />
+                                                                    <span>QR Code (ស្កេន QR)</span>
+                                                                </button>
+                                                            )}
+
+                                                            {/* Export PDF */}
+                                                            {canExport && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        handleDirectExportPdf(item);
+                                                                        setOpenMenuId(null);
+                                                                    }}
+                                                                    disabled={exportingCustomerPdfId === (item._id || item.contractId)}
+                                                                    className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+                                                                >
+                                                                    <MdPictureAsPdf className="text-red-600" />
+                                                                    <span>{exportingCustomerPdfId === (item._id || item.contractId) ? 'Exporting...' : 'Export PDF'}</span>
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-400 font-mono text-[11px]">—</span>
+                                            )}
+                                        </td>
+                                    </tr>
                                 );
                             })
                         )}
@@ -749,7 +749,7 @@ const Customer = () => {
                                         ['IMEI 2', formatIMEI(selectedCustomer.imei2), selectedCustomer.imei2],
                                         ['MEID', selectedCustomer.meid || '-'],
                                         ['Color', selectedCustomer.color || '-'],
-                                        ['Storage / Version', selectedCustomer.version || '-'],
+                                        ['Storage / Version', `${selectedCustomer.capacity || '-'} / ${selectedCustomer.version || '-'}`],
                                     ].map(([label, value, rawVal]) => (
 
                                         <div
