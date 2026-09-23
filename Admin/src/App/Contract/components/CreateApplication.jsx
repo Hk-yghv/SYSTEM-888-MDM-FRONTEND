@@ -260,7 +260,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             } else {
                 const initialBrand = form.brand || user?.brand || (brandsList.length > 0 ? brandsList[0] : 'M8');
                 const autoSuffix = computeNextSuffixForBrand(initialBrand, allCustomers);
-                const autoContractId = `CT-${currentYear}-${Math.floor(100 + Math.random() * 900)}`;
+                const autoContractId = `CT-${currentYear}-${Math.floor(100000 + Math.random() * 900000)}`;
                 setForm({
                     ...emptyForm,
                     brand: initialBrand,
@@ -453,7 +453,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             cleanSuffix = '000000001';
         }
         const fullContractIid = `${currentBrand}-${currentYear}-${cleanSuffix}`;
-        const fullContractId = editData?.contractId || form.contractId || (`CT-${currentYear}-${Math.floor(100 + Math.random() * 900)}`);
+        const fullContractId = editData?.contractId || form.contractId || (`CT-${currentYear}-${Math.floor(100000 + Math.random() * 900000)}`);
 
         const { _id, __v, createdAt, updatedAt, ...cleanFormData } = form;
 

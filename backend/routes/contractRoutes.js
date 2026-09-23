@@ -353,36 +353,76 @@ router.get('/:id/pdf', async (req, res) => {
     }
 });
 
+const generateUniqueContractId = async (currentYear = new Date().getFullYear()) => {
+    for (let i = 0; i < 20; i++) {
+        const randomNum = Math.floor(100000 + Math.random() * 900000);
+        const candidate = `CT-${currentYear}-${randomNum}`;
+        let exists = false;
+        if (isMongoConnected) {
+            const found = await queryAllDBs(Contract, (M) => M.findOne({ contractId: candidate }));
+            exists = Array.isArray(found) && found.some(doc => doc !== null);
+        } else {
+            exists = MEM_DB.contracts.some(c => c.contractId === candidate);
+        }
+        if (!exists) return candidate;
+    }
+    return `CT-${currentYear}-${Date.now().toString().slice(-6)}${Math.floor(10 + Math.random() * 90)}`;
+};
+
 // CREATE contract
 router.post('/', async (req, res) => {
     try {
         const currentYear = new Date().getFullYear();
-        const autoRandomId = `CT-${currentYear}-${Math.floor(100 + Math.random() * 900)}`;
+        let targetContractId = (req.body.contractId || '').trim();
+
+        if (targetContractId) {
+            let exists = false;
+            if (isMongoConnected) {
+                const found = await queryAllDBs(Contract, (M) => M.findOne({ contractId: targetContractId }));
+                exists = Array.isArray(found) && found.some(doc => doc !== null);
+            } else {
+                exists = MEM_DB.contracts.some(c => c.contractId === targetContractId);
+            }
+            if (exists) {
+                targetContractId = await generateUniqueContractId(currentYear);
+            }
+        } else {
+            targetContractId = await generateUniqueContractId(currentYear);
+        }
+
         const newContract = {
-            contractId: req.body.contractId || autoRandomId,
+            ...req.body,
+            contractId: targetContractId,
             contractIid: req.body.contractIid || '',
-            status: 'Application',
-            lockPhoneStatus: 'Unlocked',
-            lockWallpaperStatus: 'Unlocked',
+            status: req.body.status || 'Application',
+            lockPhoneStatus: req.body.lockPhoneStatus || 'Unlocked',
+            lockWallpaperStatus: req.body.lockWallpaperStatus || 'Unlocked',
             editHistory: [{
                 timestamp: new Date(),
                 editedBy: req.body.lastModifiedBy || req.user?.username || 'Staff',
                 reason: 'Initial contract creation',
                 changedFields: ['contractId', 'customerNameEn', 'customerNameKh', 'model', 'amount'],
                 previousData: {}
-            }],
-            ...req.body
+            }]
         };
-        if (!req.body.contractId) {
-            newContract.contractId = autoRandomId;
-        }
 
         let savedContract = newContract;
 
         if (isMongoConnected) {
             const ContractWrite = getWriteModel(Contract) || Contract;
-            const doc = new ContractWrite(newContract);
-            await doc.save();
+            let doc = new ContractWrite(newContract);
+            try {
+                await doc.save();
+            } catch (saveErr) {
+                if (saveErr.code === 11000 || (saveErr.message && saveErr.message.includes('E11000'))) {
+                    const fallbackId = `CT-${currentYear}-${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`;
+                    doc.contractId = fallbackId;
+                    await doc.save();
+                    newContract.contractId = fallbackId;
+                } else {
+                    throw saveErr;
+                }
+            }
             savedContract = doc.toObject();
         }
 
