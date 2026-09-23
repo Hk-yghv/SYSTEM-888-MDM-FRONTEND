@@ -43,26 +43,29 @@ jobs:
 
       - name: 📦 Package iOS .IPA and Artifacts
         run: |
-          cd ios-calculate-app
-          mkdir -p Payload release-ios
+          WORKSPACE_DIR="$GITHUB_WORKSPACE"
+          APP_DIR="$WORKSPACE_DIR/ios-calculate-app"
+          RELEASE_DIR="$APP_DIR/release-ios"
+          PRODUCTS_DIR="$APP_DIR/DerivedData/Build/Products/Release-iphoneos"
           
-          # Copy .app into Payload folder for standard IPA packaging
-          cp -r DerivedData/Build/Products/Release-iphoneos/MDMCalculate.app Payload/
+          mkdir -p "$APP_DIR/Payload" "$RELEASE_DIR"
           
-          # Create installable IPA (Payload.zip -> .ipa)
-          zip -r release-ios/MDM-Calculate-Schedule-iOS.ipa Payload
+          # 1. Copy .app into Payload folder for standard IPA packaging
+          cp -r "$PRODUCTS_DIR/MDMCalculate.app" "$APP_DIR/Payload/"
           
-          # Create raw .app zip
-          cd DerivedData/Build/Products/Release-iphoneos/
-          zip -r ../../../../release-ios/MDMCalculate-App-Bundle.zip MDMCalculate.app
-          cd ../../../../
+          # 2. Create installable IPA from Payload
+          cd "$APP_DIR"
+          zip -r "$RELEASE_DIR/MDM-Calculate-Schedule-iOS.ipa" Payload
           
-          # Create standalone Web/PWA zip for quick sharing
-          cd ios-calculate-app
-          zip -r release-ios/MDM-Calculate-PWA-WebClip.zip www/
-          cd ..
+          # 3. Create raw .app zip
+          cd "$PRODUCTS_DIR"
+          zip -r "$RELEASE_DIR/MDMCalculate-App-Bundle.zip" MDMCalculate.app
           
-          ls -la ios-calculate-app/release-ios/
+          # 4. Create standalone Web/PWA zip for quick sharing
+          cd "$APP_DIR"
+          zip -r "$RELEASE_DIR/MDM-Calculate-PWA-WebClip.zip" www/
+          
+          ls -la "$RELEASE_DIR"
 
       - name: 🚀 Upload iOS IPA Artifact to GitHub Actions
         uses: actions/upload-artifact@v4
