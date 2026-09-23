@@ -992,16 +992,16 @@
             const { principal, ratePercent, monthsCount, monthlyInterestUSD, paymentPerMonth, totalInterest, totalRepayment } = lastCalculation;
 
             return `📋 តារាងគណនាការប្រាក់ & កាលវិភាគបង់ប្រាក់
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━
 💵 ប្រាក់ដើមកម្ចី: $${principal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 📊 អត្រាការប្រាក់: ${ratePercent}% / ខែ
 ⏳ រយៈពេលកម្ចី: ${monthsCount} ខែ
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━
 💰 ការប្រាក់ក្នុង ១ ខែ: $${monthlyInterestUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 💳 ត្រូវបង់ក្នុង ១ ខែ: $${paymentPerMonth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 💵 សរុបការប្រាក់ទាំងអស់ (${monthsCount}ខែ): $${totalInterest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 ✨ សរុបប្រាក់ត្រូវបង់ត្រឡប់មកវិញ: $${totalRepayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+━━━━━━━━━━━━━━━━━━━━━━━━`;
         }
 
         function copySummaryText() {
@@ -1013,7 +1013,7 @@
                 window.AndroidBridge.copyToClipboard(text);
             } else if (navigator.clipboard) {
                 navigator.clipboard.writeText(text);
-                showToast('✅ បានចម្លងរួចរាល់! Copied');
+                showToast('បានចម្លងរួចរាល់! Copied');
             } else {
                 const ta = document.createElement('textarea');
                 ta.value = text;
@@ -1021,7 +1021,7 @@
                 ta.select();
                 document.execCommand('copy');
                 document.body.removeChild(ta);
-                showToast('✅ បានចម្លងរួចរាល់! Copied');
+                showToast('បានចម្លងរួចរាល់! Copied');
             }
         }
 

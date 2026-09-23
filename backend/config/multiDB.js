@@ -123,24 +123,23 @@ export const getWriteModel = (baseModel) => {
     }
 };
 
-// ── Read from All DBs (Merged) ────────────────────────────────────────────────
+// ── Read from DBs — Sequential Fallback ──────────────────────────────────────
 
 /**
- * queryAllDBs — Run the same query across all connected DBs and merge results.
- * Deduplicates by `_id` (DB1 takes priority).
+ * queryAllDBs — Sequential Fallback Strategy:
+ *   1. Try DB1 first. If it returns results → return immediately.
+ *   2. If DB1 errors OR returns 0 results → try DB2.
+ *   3. If DB2 errors OR returns 0 results → try DB3.
+ *
+ * One DB is used at a time. Failover only on error or empty result.
  *
  * @param {mongoose.Model} baseModel  — Base Mongoose model
  * @param {Function}       queryFn    — async (Model) => array of docs
- * @returns {Array}                    Merged, deduplicated documents
- *
- * @example
- *   const users = await queryAllDBs(User, (M) => M.find({ role: 'Staff' }));
+ * @returns {Array}                    Results from first successful DB
  */
 export const queryAllDBs = async (baseModel, queryFn) => {
     const schema = baseModel.schema;
     const modelName = baseModel.modelName;
-    const seen = new Set();
-    const merged = [];
 
     for (const instance of dbInstances) {
         if (instance.status !== 'connected' || !instance.conn) continue;
@@ -155,20 +154,23 @@ export const queryAllDBs = async (baseModel, queryFn) => {
 
             const docs = await queryFn(BoundModel);
 
-            for (const doc of docs) {
-                const id = doc._id?.toString();
-                if (id && !seen.has(id)) {
-                    seen.add(id);
-                    merged.push(doc);
-                }
+            // Got results → return immediately, don't query other DBs
+            if (Array.isArray(docs) && docs.length > 0) {
+                return docs;
             }
+
+            // Empty result → try next DB as fallback
+            console.log(`[MultiDB] \u2139\ufe0f  ${instance.name} returned 0 results — trying next DB...`);
+
         } catch (err) {
-            console.warn(`[MultiDB] ⚠️  Read from ${instance.name} failed: ${err.message}`);
+            // Error → log and fallback to next DB
+            console.warn(`[MultiDB] \u26a0\ufe0f  ${instance.name} query failed: ${err.message} — falling back...`);
         }
     }
 
-    return merged;
+    return [];
 };
+
 
 // ── DB Status ─────────────────────────────────────────────────────────────────
 

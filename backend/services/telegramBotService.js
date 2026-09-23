@@ -574,6 +574,27 @@ export function initTelegramBotService(bot) {
         await promptBrandSelection(chatId);
     });
 
+    // ── /calc — Interest Calculator ──
+    bot.onText(/\/calc/i, async (msg) => {
+        const chatId = msg.chat.id;
+        const session = sessions.get(chatId) || {};
+        session.calcStep = 'CALC_PRINCIPAL';
+        sessions.set(chatId, { ...session, calcStep: 'CALC_PRINCIPAL' });
+
+        await bot.sendMessage(chatId,
+            `🧮 <b>គណនាការប្រាក់ (Calculate Interest)</b>\n\n` +
+            `💵 <b>ជំហ1 — ប្រាក់ដើម ($)</b>\nសូមវាយបញ្ចូលចំនួនប្រាក់ដើម (ឧ. 1000):`,
+            {
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: [
+                    [{ text: '$100', callback_data: 'calc_p:100' }, { text: '$200', callback_data: 'calc_p:200' }, { text: '$500', callback_data: 'calc_p:500' }],
+                    [{ text: '$1000', callback_data: 'calc_p:1000' }, { text: '$2000', callback_data: 'calc_p:2000' }, { text: '$5000', callback_data: 'calc_p:5000' }],
+                    [{ text: '❌ បោះបង់', callback_data: 'calc:cancel' }]
+                ]}
+            }
+        );
+    });
+
     // ── Callback Query (Button Clicks) ──
     bot.on('callback_query', async (query) => {
         const chatId = query.message.chat.id;
@@ -925,6 +946,80 @@ export function initTelegramBotService(bot) {
                 return;
             }
 
+            // ── 15. Calc: Cancel ──
+            if (data === 'calc:cancel') {
+                const session = sessions.get(chatId);
+                if (session) { delete session.calcStep; delete session.calc; sessions.set(chatId, session); }
+                await bot.sendMessage(chatId, `❌ បានបោះបង់ការគណនា។`);
+                return;
+            }
+
+            // ── 16. Calc: Restart ──
+            if (data === 'calc:restart') {
+                const session = sessions.get(chatId) || {};
+                session.calcStep = 'CALC_PRINCIPAL';
+                session.calc = {};
+                sessions.set(chatId, session);
+                await bot.sendMessage(chatId,
+                    `🧮 <b>គណនាការប្រាក់ — ប្រាក់ដើមថ្មី</b>\n\n💵 <b>ជំហ1 — ប្រាក់ដើម ($)</b>\nសូមវាយបញ្ចូលចំនួនប្រាក់ដើម:`,
+                    { parse_mode: 'HTML', reply_markup: { inline_keyboard: [
+                        [{ text: '$100', callback_data: 'calc_p:100' }, { text: '$200', callback_data: 'calc_p:200' }, { text: '$500', callback_data: 'calc_p:500' }],
+                        [{ text: '$1000', callback_data: 'calc_p:1000' }, { text: '$2000', callback_data: 'calc_p:2000' }, { text: '$5000', callback_data: 'calc_p:5000' }],
+                        [{ text: '❌ បោះបង់', callback_data: 'calc:cancel' }]
+                    ]}}
+                );
+                return;
+            }
+
+            // ── 17. Calc: Principal quick button ──
+            if (data.startsWith('calc_p:')) {
+                const session = sessions.get(chatId) || {};
+                const principal = parseFloat(data.split('calc_p:')[1]);
+                session.calc = { ...(session.calc || {}), principal };
+                session.calcStep = 'CALC_RATE';
+                sessions.set(chatId, session);
+                await bot.sendMessage(chatId,
+                    `💵 <b>ប្រាក់ដើម:</b> $${principal}\n\n📊 <b>ជំហ2 — អត្រាការប្រាក់ (%/ខែ)</b>\nសូមជ្រើសរើស ឬវាយអត្រា (ឧ. 11.5):`,
+                    { parse_mode: 'HTML', reply_markup: { inline_keyboard: [
+                        [{ text: '⭐ 11.5%', callback_data: 'calc_r:11.5' }, { text: '10%', callback_data: 'calc_r:10' }, { text: '12%', callback_data: 'calc_r:12' }, { text: '15%', callback_data: 'calc_r:15' }],
+                        [{ text: '5%', callback_data: 'calc_r:5' }, { text: '3%', callback_data: 'calc_r:3' }, { text: '1%', callback_data: 'calc_r:1' }],
+                        [{ text: '❌ បោះបង់', callback_data: 'calc:cancel' }]
+                    ]}}
+                );
+                return;
+            }
+
+            // ── 18. Calc: Rate quick button ──
+            if (data.startsWith('calc_r:')) {
+                const session = sessions.get(chatId);
+                if (!session || !session.calc) return;
+                const rate = parseFloat(data.split('calc_r:')[1]);
+                session.calc.ratePercent = rate;
+                session.calcStep = 'CALC_DURATION';
+                sessions.set(chatId, session);
+                await bot.sendMessage(chatId,
+                    `📊 <b>អត្រា:</b> ${rate}%/ខែ\n\n⏳ <b>ជំហ3 — រយៈពេលកម្ចី (ខែ)</b>\nសូមជ្រើសរើស ឬវាយចំនួនខែ:`,
+                    { parse_mode: 'HTML', reply_markup: { inline_keyboard: [
+                        [{ text: '1 ខែ', callback_data: 'calc_d:1' }, { text: '2 ខែ', callback_data: 'calc_d:2' }, { text: '3 ខែ', callback_data: 'calc_d:3' }, { text: '4 ខែ', callback_data: 'calc_d:4' }],
+                        [{ text: '6 ខែ', callback_data: 'calc_d:6' }, { text: '12 ខែ', callback_data: 'calc_d:12' }],
+                        [{ text: '❌ បោះបង់', callback_data: 'calc:cancel' }]
+                    ]}}
+                );
+                return;
+            }
+
+            // ── 19. Calc: Duration quick button → show result ──
+            if (data.startsWith('calc_d:')) {
+                const session = sessions.get(chatId);
+                if (!session || !session.calc) return;
+                const months = parseInt(data.split('calc_d:')[1], 10);
+                session.calc.months = months;
+                delete session.calcStep;
+                sessions.set(chatId, session);
+                await sendCalcResult(chatId, session.calc);
+                return;
+            }
+
         } catch (err) {
             console.error('[TelegramBot] Callback query error:', err);
         }
@@ -1038,17 +1133,38 @@ export function initTelegramBotService(bot) {
                 [{ text: '❌ Cancel', callback_data: 'pawn_save:cancel' }]
             ]}
         });
+    };
+    // ── Calc Interest Helper ──
+    const sendCalcResult = async (chatId, calc) => {
+        const { principal, ratePercent, months } = calc;
+        const rateDecimal = ratePercent / 100;
+        const monthlyInterest = principal * rateDecimal;
+        const monthlyPrincipal = principal / months;
+        const monthlyTotal = monthlyPrincipal + monthlyInterest;
+        const totalInterest = monthlyInterest * months;
+        const totalRepayment = monthlyTotal * months;
 
-        // Also send actual PDF
-        try {
-            const pdfBuf = await generatePawnSchedulePdf({ ...p, monthlyInterest, schedule });
-            await bot.sendDocument(chatId, pdfBuf, {
-                caption: `📄 PDF — #${p.contractNumber} ${p.customerName}\nចុច ✅ Save ដើម្បីរក្សាទុក`,
-                parse_mode: 'HTML'
-            }, { filename: `PawnSchedule_${p.contractNumber}.pdf`, contentType: 'application/pdf' });
-        } catch (pdfErr) {
-            console.error('[TelegramBot] Pawn PDF error:', pdfErr);
-        }
+        const fmt = (v) => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const result =
+            `📋 តារាងគណនាការប្រាក់ & កាលវិភាគបង់ប្រាក់\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `💵 ប្រាក់ដើមកម្ចី: $${fmt(principal)}\n` +
+            `📊 អត្រាការប្រាក់: ${ratePercent}% / ខែ\n` +
+            `⏳ រយៈពេលកម្ចី: ${months} ខែ\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            `💰 ការប្រាក់ក្នុង ១ ខែ: $${fmt(monthlyInterest)}\n` +
+            `💳 ត្រូវបង់ក្នុង ១ ខែ: $${fmt(monthlyTotal)}\n` +
+            `💵 សរុបការប្រាក់ទាំងអស់ (${months}ខែ): $${fmt(totalInterest)}\n` +
+            `✨ សរុបប្រាក់ត្រូវបង់ត្រឡប់មកវិញទាំងអស់: $${fmt(totalRepayment)}\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+        await bot.sendMessage(chatId, result, {
+            reply_markup: { inline_keyboard: [
+                [{ text: '🧮 គណនាថ្មីទៀត', callback_data: 'calc:restart' }],
+                [{ text: '🏠 ត្រឡប់ទៅមេនូ (Menu)', callback_data: 'cmd:search_again' }]
+            ]}
+        });
     };
 
     // ── Incoming Text Message Handler (State Machine) ──
@@ -1061,10 +1177,63 @@ export function initTelegramBotService(bot) {
         const session = sessions.get(chatId);
 
         if (!session) {
-            // If user types without active session, suggest /sys
-            await bot.sendMessage(chatId, `👋 សួស្តី! សូមវាយបញ្ជា <b>/sys</b> ដើម្បីស្វែងរកទិន្នន័យ និងទាញយកតារាងបង់ប្រាក់ជា PDF។`, {
+            await bot.sendMessage(chatId, `👋 សួស្តី! សូមវាយបញ្ជា <b>/sys</b> ដើម្បីស្វែងរកទិន្នន័យ ឬ <b>/calc</b> ដើម្បីគណនាការប្រាក់។`, {
                 parse_mode: 'HTML'
             });
+            return;
+        }
+
+        // ── CALC States: handle text input for each step ──
+        if (session.calcStep === 'CALC_PRINCIPAL') {
+            const principal = parseFloat(text.replace(/[$,]/g, ''));
+            if (isNaN(principal) || principal <= 0) {
+                await bot.sendMessage(chatId, `⚠️ សូមបញ្ចូលចំនួនប្រាក់ដើម (ជាលេខ ឧ. 1000)`);
+                return;
+            }
+            session.calc = { ...(session.calc || {}), principal };
+            session.calcStep = 'CALC_RATE';
+            sessions.set(chatId, session);
+            await bot.sendMessage(chatId,
+                `💵 <b>ប្រាក់ដើម:</b> $${principal}\n\n📊 <b>ជំហ2 — អត្រាការប្រាក់ (%/ខែ)</b>\nសូមជ្រើសរើស ឬវាយអត្រា (ឧ. 11.5):`,
+                { parse_mode: 'HTML', reply_markup: { inline_keyboard: [
+                    [{ text: '⭐ 11.5%', callback_data: 'calc_r:11.5' }, { text: '10%', callback_data: 'calc_r:10' }, { text: '12%', callback_data: 'calc_r:12' }, { text: '15%', callback_data: 'calc_r:15' }],
+                    [{ text: '5%', callback_data: 'calc_r:5' }, { text: '3%', callback_data: 'calc_r:3' }, { text: '1%', callback_data: 'calc_r:1' }],
+                    [{ text: '❌ បោះបង់', callback_data: 'calc:cancel' }]
+                ]}}
+            );
+            return;
+        }
+
+        if (session.calcStep === 'CALC_RATE') {
+            const rate = parseFloat(text.replace(/%/g, ''));
+            if (isNaN(rate) || rate <= 0) {
+                await bot.sendMessage(chatId, `⚠️ សូមបញ្ចូលអត្រាការប្រាក់ (ជាលេខ ឧ. 11.5)`);
+                return;
+            }
+            session.calc = { ...(session.calc || {}), ratePercent: rate };
+            session.calcStep = 'CALC_DURATION';
+            sessions.set(chatId, session);
+            await bot.sendMessage(chatId,
+                `📊 <b>អត្រា:</b> ${rate}%/ខែ\n\n⏳ <b>ជំហ3 — រយៈពេលកម្ចី (ខែ)</b>\nសូមជ្រើសរើស ឬវាយចំនួនខែ:`,
+                { parse_mode: 'HTML', reply_markup: { inline_keyboard: [
+                    [{ text: '1 ខែ', callback_data: 'calc_d:1' }, { text: '2 ខែ', callback_data: 'calc_d:2' }, { text: '3 ខែ', callback_data: 'calc_d:3' }, { text: '4 ខែ', callback_data: 'calc_d:4' }],
+                    [{ text: '6 ខែ', callback_data: 'calc_d:6' }, { text: '12 ខែ', callback_data: 'calc_d:12' }],
+                    [{ text: '❌ បោះបង់', callback_data: 'calc:cancel' }]
+                ]}}
+            );
+            return;
+        }
+
+        if (session.calcStep === 'CALC_DURATION') {
+            const months = parseInt(text, 10);
+            if (isNaN(months) || months < 1) {
+                await bot.sendMessage(chatId, `⚠️ សូមបញ្ចូលចំនួនខែ (ជាលេខ ឧ. 4)`);
+                return;
+            }
+            session.calc = { ...(session.calc || {}), months };
+            delete session.calcStep;
+            sessions.set(chatId, session);
+            await sendCalcResult(chatId, session.calc);
             return;
         }
 
