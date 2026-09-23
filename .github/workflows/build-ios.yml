@@ -1,0 +1,69 @@
+name: Build iOS App (IPA)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    paths:
+      - 'ios-calculate-app/**'
+      - '.github/workflows/build-ios.yml'
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI anytime
+
+jobs:
+  build-ios:
+    name: Build iOS IPA & App Bundle
+    runs-on: macos-14
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🍏 Select Xcode Version
+        run: |
+          sudo xcode-select -switch /Applications/Xcode_15.4.app || sudo xcode-select -switch /Applications/Xcode.app
+          xcodebuild -version
+
+      - name: 🏗️ Build iOS App with Xcode
+        run: |
+          cd ios-calculate-app
+          xcodebuild clean build \
+            -project MDMCalculate.xcodeproj \
+            -scheme MDMCalculate \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath ./DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE_SPECIFIER=""
+
+      - name: 📦 Package iOS .IPA and Artifacts
+        run: |
+          cd ios-calculate-app
+          mkdir -p Payload release-ios
+          
+          # Copy .app into Payload folder for standard IPA packaging
+          cp -r DerivedData/Build/Products/Release-iphoneos/MDMCalculate.app Payload/
+          
+          # Create installable IPA (Payload.zip -> .ipa)
+          zip -r release-ios/MDM-Calculate-Schedule-iOS.ipa Payload
+          
+          # Create raw .app zip
+          cd DerivedData/Build/Products/Release-iphoneos/
+          zip -r ../../../../release-ios/MDMCalculate-App-Bundle.zip MDMCalculate.app
+          cd ../../../../
+          
+          # Create standalone Web/PWA zip for quick sharing
+          cd ios-calculate-app
+          zip -r release-ios/MDM-Calculate-PWA-WebClip.zip www/
+          cd ..
+          
+          ls -la ios-calculate-app/release-ios/
+
+      - name: 🚀 Upload iOS IPA Artifact to GitHub Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: MDM-Calculate-Schedule-iOS-IPA
+          path: ios-calculate-app/release-ios/*
+          retention-days: 30
