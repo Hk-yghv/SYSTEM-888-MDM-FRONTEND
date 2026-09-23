@@ -56,45 +56,34 @@ router.get('/', async (req, res) => {
         res.setHeader('Expires', '0');
 
         const { userBrand = '', userRole = '', username = '', isImmutable = 'false', search = '' } = req.query;
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin');
-
-        let filter = {};
-        if (userBrand && !isMasterAdmin) {
-            filter.$or = [
-                { brand: userBrand },
-                { brand: '' },
-                { brand: null },
-                { brand: { $exists: false } }
-            ];
-        }
+        const isMasterAdmin = (
+            username === '@hakyonghouv' ||
+            username === 'hakyonghouv' ||
+            isImmutable === 'true' ||
+            userRole === 'Administrator' ||
+            userRole === 'Admin' ||
+            userRole === 'SuperAdmin' ||
+            userRole === 'Manager'
+        );
 
         let records = [];
         if (isMongoConnected) {
-            records = await queryAllDBs(CalculateSchedule, (M) => {
-                let f = { ...filter };
-                if (search) {
-                    const searchCondition = {
-                        $or: [
-                            { customerName: { $regex: search, $options: 'i' } },
-                            { contractNumber: { $regex: search, $options: 'i' } },
-                            { assetName: { $regex: search, $options: 'i' } }
-                        ]
-                    };
-                    if (f.$or) {
-                        f = { $and: [{ $or: f.$or }, searchCondition] };
-                    } else {
-                        f = searchCondition;
-                    }
+            records = await queryAllDBs(CalculateSchedule, async (M) => {
+                let query = {};
+                if (search && search.trim()) {
+                    const s = search.trim();
+                    query.$or = [
+                        { customerName: { $regex: s, $options: 'i' } },
+                        { contractNumber: { $regex: s, $options: 'i' } },
+                        { assetName: { $regex: s, $options: 'i' } }
+                    ];
                 }
-                return M.find(f).sort({ createdAt: -1 });
+                return await M.find(query).sort({ createdAt: -1 }).lean();
             });
         } else {
             let list = [...MEM_DB.calculateSchedules];
-            if (userBrand && !isMasterAdmin) {
-                list = list.filter(item => !item.brand || item.brand === userBrand);
-            }
-            if (search) {
-                const s = search.toLowerCase();
+            if (search && search.trim()) {
+                const s = search.trim().toLowerCase();
                 list = list.filter(item =>
                     (item.customerName && item.customerName.toLowerCase().includes(s)) ||
                     (item.contractNumber && item.contractNumber.toLowerCase().includes(s)) ||
@@ -104,10 +93,20 @@ router.get('/', async (req, res) => {
             records = list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         }
 
+        if (!Array.isArray(records)) {
+            records = [];
+        }
+
+        // Branch filtering if applicable (case-insensitive, includes unbranded records)
+        if (userBrand && !isMasterAdmin && records.length > 0) {
+            const b = userBrand.trim().toLowerCase();
+            records = records.filter(r => !r.brand || r.brand.trim().toLowerCase() === b || r.brand.trim() === '');
+        }
+
         res.json({ success: true, count: records.length, data: records });
     } catch (err) {
         console.error('Error fetching calculate schedules:', err);
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, error: err.message, data: [] });
     }
 });
 
