@@ -15,7 +15,7 @@
 /* Begin PBXFileReference section */
 		2001 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		2002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		2003 /* www */ = {isa = PBXFileReference; lastKnownFileType = folder; name = www; path = ../www; sourceTree = "<group>"; };
+		2003 /* www */ = {isa = PBXFileReference; lastKnownFileType = folder; path = www; sourceTree = "<group>"; };
 		2004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2005 /* MDMCalculate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MDMCalculate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -35,7 +35,6 @@
 			isa = PBXGroup;
 			children = (
 				4002 /* MDMCalculateApp */,
-				2003 /* www */,
 				4003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -45,6 +44,7 @@
 			children = (
 				2001 /* App.swift */,
 				2002 /* ContentView.swift */,
+				2003 /* www */,
 				2004 /* Info.plist */,
 			);
 			path = MDMCalculateApp;

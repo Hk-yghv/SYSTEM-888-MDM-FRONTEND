@@ -27,10 +27,13 @@ jobs:
       - name: 🏗️ Build iOS App with Xcode
         run: |
           cd ios-calculate-app
+          mkdir -p MDMCalculateApp/www
+          cp -r www/* MDMCalculateApp/www/ 2>/dev/null || true
           xcodebuild clean build \
             -project MDMCalculate.xcodeproj \
             -scheme MDMCalculate \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -configuration Release \
             -derivedDataPath ./DerivedData \
             CODE_SIGNING_ALLOWED=NO \

@@ -1,0 +1,18 @@
+{
+  "name": "MDM Calculate Schedule",
+  "short_name": "MDM Calc",
+  "description": "កម្មវិធីគណនាការប្រាក់ និងកាលវិភាគបង់ប្រាក់ MDM",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#059669",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
