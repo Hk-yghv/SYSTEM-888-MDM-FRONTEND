@@ -11,6 +11,7 @@ import Payment from '../models/Payment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { generateCustomerPdf } from '../utils/customerPdfGenerator.js';
+import { broadcastCalculateUpdate } from '../routes/calculateScheduleRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -903,6 +904,13 @@ export function initTelegramBotService(bot) {
                         if (!MEM_DB.calculateSchedules) MEM_DB.calculateSchedules = [];
                         newDoc._id = 'calc_tg_' + Date.now();
                         MEM_DB.calculateSchedules.unshift(newDoc);
+                    }
+
+                    // Realtime Push to Schedule 2 web page
+                    try {
+                        broadcastCalculateUpdate({ type: 'CREATED', data: newDoc });
+                    } catch (e) {
+                        console.warn('[TelegramBot] Realtime broadcast error:', e);
                     }
 
                     session.step = 'SEARCH_SELECT';

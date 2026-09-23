@@ -87,7 +87,16 @@ const CalculateSchedule2 = () => {
             const role = user?.role || '';
             const isImmutable = user?.isImmutable ? 'true' : 'false';
 
-            const res = await fetch(`${API_BASE}/calculate-schedules?userBrand=${encodeURIComponent(brand)}&username=${encodeURIComponent(username)}&userRole=${encodeURIComponent(role)}&isImmutable=${isImmutable}`);
+            const res = await fetch(
+                `${API_BASE}/calculate-schedules?userBrand=${encodeURIComponent(brand)}&username=${encodeURIComponent(username)}&userRole=${encodeURIComponent(role)}&isImmutable=${isImmutable}&_t=${Date.now()}`,
+                {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    }
+                }
+            );
             if (res.ok) {
                 const data = await res.json();
                 if (data.success && Array.isArray(data.data)) {
@@ -121,14 +130,12 @@ const CalculateSchedule2 = () => {
                     const eventData = JSON.parse(e.data);
                     if (eventData.type === 'CREATED' && eventData.data) {
                         const newDoc = eventData.data;
-                        const isMaster = user?.isImmutable || user?.role === 'Admin' || user?.role === 'Administrator' || user?.username === 'hakyonghouv' || user?.username === '@hakyonghouv';
-                        if (isMaster || !user?.brand || newDoc.brand === user?.brand) {
-                            setSavedHistory(prev => [newDoc, ...prev.filter(item => String(item._id) !== String(newDoc._id))]);
-                            setNewlyAddedId(newDoc._id);
-                            setTimeout(() => {
-                                setNewlyAddedId(null);
-                            }, 6000);
-                        }
+                        setSavedHistory(prev => [newDoc, ...prev.filter(item => String(item._id) !== String(newDoc._id))]);
+                        setNewlyAddedId(newDoc._id);
+                        setTimeout(() => {
+                            setNewlyAddedId(null);
+                        }, 5000);
+                        fetchHistory(true);
                     } else if (eventData.type === 'DELETED' && eventData.id) {
                         setSavedHistory(prev => prev.filter(item => String(item._id) !== String(eventData.id)));
                     }
@@ -140,10 +147,10 @@ const CalculateSchedule2 = () => {
             console.warn('SSE initialization notice:', err);
         }
 
-        // Realtime fallback polling every 3 seconds silently
+        // Realtime fallback polling every 2.5 seconds silently
         const pollInterval = setInterval(() => {
             fetchHistory(true);
-        }, 3000);
+        }, 2500);
 
         // Sync immediately when tab is focused / becomes visible
         const handleSync = () => {
@@ -322,8 +329,14 @@ const CalculateSchedule2 = () => {
             if (res.ok && data.success) {
                 setSaveSuccessMsg('រក្សាទុកបានជោគជ័យ!');
                 setTimeout(() => setSaveSuccessMsg(''), 3500);
-                if (data.data?._id) {
-                    setActiveRecordId(data.data._id);
+                if (data.data) {
+                    const savedDoc = data.data;
+                    if (savedDoc._id) {
+                        setActiveRecordId(savedDoc._id);
+                        setNewlyAddedId(savedDoc._id);
+                        setTimeout(() => setNewlyAddedId(null), 5000);
+                    }
+                    setSavedHistory(prev => [savedDoc, ...prev.filter(item => String(item._id) !== String(savedDoc._id))]);
                 }
                 localStorage.setItem('calc_schedules_updated', Date.now().toString());
                 fetchHistory(true);

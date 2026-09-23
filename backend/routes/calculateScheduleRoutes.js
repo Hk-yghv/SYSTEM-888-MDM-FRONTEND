@@ -9,9 +9,7 @@ if (!MEM_DB.calculateSchedules) {
     MEM_DB.calculateSchedules = [];
 }
 
-let sseClients = new Set();
-
-const broadcastUpdate = (eventData) => {
+export const broadcastCalculateUpdate = (eventData) => {
     const payload = `data: ${JSON.stringify(eventData)}\n\n`;
     for (const client of sseClients) {
         try {
@@ -53,6 +51,10 @@ router.get('/stream', (req, res) => {
 // GET /api/calculate-schedules
 router.get('/', async (req, res) => {
     try {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+
         const { userBrand = '', userRole = '', username = '', isImmutable = 'false', search = '' } = req.query;
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin');
 
@@ -151,7 +153,7 @@ router.post('/', async (req, res) => {
         }
 
         // Broadcast realtime update to all connected clients immediately
-        broadcastUpdate({ type: 'CREATED', data: resultDoc });
+        broadcastCalculateUpdate({ type: 'CREATED', data: resultDoc });
 
         return res.status(201).json({ success: true, message: 'Saved successfully', data: resultDoc });
     } catch (err) {
@@ -172,7 +174,7 @@ router.delete('/:id', async (req, res) => {
         }
 
         // Broadcast deletion event
-        broadcastUpdate({ type: 'DELETED', id });
+        broadcastCalculateUpdate({ type: 'DELETED', id });
 
         res.json({ success: true, message: 'Deleted successfully' });
     } catch (err) {
