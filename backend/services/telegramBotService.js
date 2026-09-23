@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import PDFDocument from 'pdfkit';
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -209,6 +210,251 @@ function calcPawnSchedule(principal, ratePercent, months, startDateStr) {
         });
     }
     return { monthlyInterest, totalInterest: monthlyInterest * months, monthlyTotal, schedule };
+}
+
+let canvasFontsRegistered = false;
+function registerCanvasFonts() {
+    if (canvasFontsRegistered) return;
+    try {
+        if (fs.existsSync(khmerFontPath)) {
+            GlobalFonts.registerFromPath(khmerFontPath, 'KhmerOS');
+        }
+        const fontKhmer = path.join(FONT_DIR, 'font_khmer.ttf');
+        if (fs.existsSync(fontKhmer)) {
+            GlobalFonts.registerFromPath(fontKhmer, 'KhmerMoul');
+        }
+        if (fs.existsSync(arialFontPath)) {
+            GlobalFonts.registerFromPath(arialFontPath, 'Arial');
+        }
+        if (fs.existsSync(arialBoldPath)) {
+            GlobalFonts.registerFromPath(arialBoldPath, 'ArialBold');
+        }
+        canvasFontsRegistered = true;
+    } catch (err) {
+        console.warn('[TelegramBot] Canvas font register error:', err);
+    }
+}
+
+/** Generate pawn schedule PNG Image Buffer — matches CalculateSchedule2 print area exactly */
+async function generatePawnScheduleImage(data) {
+    registerCanvasFonts();
+
+    const WD_KH = ['ថ្ងៃអាទិត្យ', 'ថ្ងៃចន្ទ', 'ថ្ងៃអង្គារ', 'ថ្ងៃពុធ', 'ថ្ងៃព្រហស្បតិ៍', 'ថ្ងៃសុក្រ', 'ថ្ងៃសៅរ៍'];
+    const fmtDateWD = (s) => {
+        if (!s) return '—';
+        const [yr, mo, dy] = s.split('-');
+        const d = new Date(`${yr}-${mo}-${dy}T00:00:00`);
+        return `${dy}-${mo}-${yr} ${WD_KH[d.getDay()] || ''}`;
+    };
+    const fmt2 = (v) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtDate = (s) => {
+        if (!s) return '—';
+        const [yr, mo, dy] = s.split('-');
+        return `${dy}-${mo}-${yr}`;
+    };
+
+    const width = 850;
+    const headerHeight = 220;
+    const rowHeight = 32;
+    const tableHeaderHeight = 35;
+    const rowsCount = Array.isArray(data.schedule) ? data.schedule.length : 1;
+    const tableHeight = tableHeaderHeight + (rowsCount * rowHeight);
+    const footerHeight = 220;
+    const height = headerHeight + tableHeight + footerHeight;
+
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // 1. White Background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // 2. KH Royal Header
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#334155';
+    ctx.font = 'bold 16px KhmerMoul, KhmerOS, sans-serif';
+    ctx.fillText('ព្រះរាជាណាចក្រកម្ពុជា', width / 2, 45);
+
+    ctx.font = 'bold 15px KhmerMoul, KhmerOS, sans-serif';
+    ctx.fillText('ជាតិ សាសនា ព្រះមហាក្សត្រ', width / 2, 72);
+
+    ctx.font = '20px Arial, sans-serif';
+    ctx.fillStyle = '#1e293b';
+    ctx.fillText('❁ ❁ ✿ ❁ ❁', width / 2, 98);
+
+    // Divider line
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(width / 2 - 70, 108);
+    ctx.lineTo(width / 2 + 70, 108);
+    ctx.stroke();
+
+    // Title: កាលវិភាគសងប្រាក់
+    ctx.fillStyle = '#2750F5';
+    ctx.font = 'bold 18px KhmerMoul, KhmerOS, sans-serif';
+    ctx.fillText('កាលវិភាគសងប្រាក់', width / 2, 136);
+
+    // 3. Meta Information (2 columns)
+    const metaY = 165;
+    const leftX = 50;
+    const rightX = 460;
+    const metaLineH = 22;
+
+    ctx.textAlign = 'left';
+
+    // Left Column
+    ctx.fillStyle = '#1e293b';
+    ctx.font = '13px KhmerOS, sans-serif';
+    ctx.fillText('ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ:', leftX, metaY);
+    ctx.fillStyle = '#2563eb';
+    ctx.font = 'bold 13px KhmerOS, sans-serif';
+    ctx.fillText(fmtDate(data.startDate), leftX + 170, metaY);
+
+    ctx.fillStyle = '#1e293b';
+    ctx.font = '13px KhmerOS, sans-serif';
+    ctx.fillText('ចំនួនទឹកប្រាក់បញ្ចាំ:', leftX, metaY + metaLineH);
+    ctx.fillStyle = '#2563eb';
+    ctx.font = 'bold 13px ArialBold, Arial, KhmerOS, sans-serif';
+    ctx.fillText(`$${fmt2(data.principal)} USD`, leftX + 170, metaY + metaLineH);
+
+    ctx.fillStyle = '#1e293b';
+    ctx.font = '13px KhmerOS, sans-serif';
+    ctx.fillText('រយៈពេល (ចំនួនខែ):', leftX, metaY + metaLineH * 2);
+    ctx.fillStyle = '#2563eb';
+    ctx.font = 'bold 13px ArialBold, Arial, KhmerOS, sans-serif';
+    ctx.fillText(`${data.months} ខែ`, leftX + 170, metaY + metaLineH * 2);
+
+    ctx.fillStyle = '#1e293b';
+    ctx.font = '13px KhmerOS, sans-serif';
+    ctx.fillText('ការប្រាក់ នឹង សេវ៉ាជួល:', leftX, metaY + metaLineH * 3);
+    ctx.fillStyle = '#2563eb';
+    ctx.font = 'bold 13px ArialBold, Arial, KhmerOS, sans-serif';
+    ctx.fillText(`$${fmt2(data.monthlyInterest)}`, leftX + 170, metaY + metaLineH * 3);
+
+    // Right Column
+    ctx.fillStyle = '#1e293b';
+    ctx.font = '13px KhmerOS, sans-serif';
+    ctx.fillText('ឈ្មោះអតិថិជន:', rightX, metaY);
+    ctx.fillStyle = '#2563eb';
+    ctx.font = 'bold 13px KhmerOS, sans-serif';
+    ctx.fillText(data.customerName || '—', rightX + 140, metaY);
+
+    ctx.fillStyle = '#1e293b';
+    ctx.font = '13px KhmerOS, sans-serif';
+    ctx.fillText('ប្រភេទទ្រព្យបញ្ចាំ:', rightX, metaY + metaLineH);
+    ctx.fillStyle = '#2563eb';
+    ctx.font = 'bold 13px KhmerOS, sans-serif';
+    ctx.fillText(data.assetName || '—', rightX + 140, metaY + metaLineH);
+
+    ctx.fillStyle = '#1e293b';
+    ctx.font = '13px KhmerOS, sans-serif';
+    ctx.fillText('លេខកិច្ចសន្យា:', rightX, metaY + metaLineH * 2);
+    ctx.fillStyle = '#2563eb';
+    ctx.font = 'bold 13px ArialBold, Arial, KhmerOS, sans-serif';
+    ctx.fillText(data.contractNumber ? `#${data.contractNumber}` : '—', rightX + 140, metaY + metaLineH * 2);
+
+    // 4. Table Structure
+    const tableX = 50;
+    const tableW = width - 100;
+    const tableStartY = metaY + metaLineH * 3 + 25;
+
+    const cols = [
+        { w: 60, title: 'ខែទី', align: 'center' },
+        { w: 220, title: 'ថ្ងៃបង់ប្រាក់', align: 'left' },
+        { w: 155, title: 'ទឹកប្រាក់ត្រូវបង់សរុប', align: 'center' },
+        { w: 155, title: 'ការប្រាក់ត្រូវបង់', align: 'center' },
+        { w: 160, title: 'សមតុល្យនៅសល់', align: 'center' }
+    ];
+
+    // Table Header
+    let curX = tableX;
+    cols.forEach(col => {
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(curX, tableStartY, col.w, tableHeaderHeight);
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 13px KhmerOS, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(col.title, curX + col.w / 2, tableStartY + 22);
+        curX += col.w;
+    });
+
+    // Table Body
+    let curY = tableStartY + tableHeaderHeight;
+    data.schedule.forEach((row, idx) => {
+        ctx.fillStyle = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+        ctx.fillRect(tableX, curY, tableW, rowHeight);
+
+        let rowX = tableX;
+        const vals = [
+            { text: String(row.no), align: 'center', isMono: true },
+            { text: fmtDateWD(row.dueDate), align: 'left', isMono: false },
+            { text: fmt2(row.totalDueMonth), align: 'center', isMono: true },
+            { text: fmt2(data.monthlyInterest), align: 'center', isMono: true },
+            { text: fmt2(row.remainingBalance), align: 'center', isMono: true }
+        ];
+
+        vals.forEach((v, ci) => {
+            const col = cols[ci];
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(rowX, curY, col.w, rowHeight);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = v.isMono ? '12.5px Arial, sans-serif' : '12px KhmerOS, sans-serif';
+
+            if (col.align === 'center') {
+                ctx.textAlign = 'center';
+                ctx.fillText(v.text, rowX + col.w / 2, curY + 20);
+            } else {
+                ctx.textAlign = 'left';
+                ctx.fillText(v.text, rowX + 12, curY + 20);
+            }
+            rowX += col.w;
+        });
+
+        curY += rowHeight;
+    });
+
+    // 5. Note
+    const noteY = curY + 28;
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 12.5px KhmerOS, sans-serif';
+    ctx.fillStyle = '#7f1d1d';
+    ctx.fillText('ចំណាំ ៖ ', tableX, noteY);
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '12px KhmerOS, sans-serif';
+    ctx.fillText('ករណីអតិថិជនបង់ការប្រាក់រួចហើយ អតិថិជនមិនអាចដកប្រាក់វិញបានទេ (ដោយគ្មានលក្ខខណ្ឌ) ។', tableX + 50, noteY);
+
+    // 6. Signatures Block
+    const sigY = noteY + 50;
+    const sigColW = (tableW - 80) / 2;
+    ctx.textAlign = 'center';
+
+    // Left Signature
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 13px KhmerMoul, KhmerOS, sans-serif';
+    ctx.fillText('តំណាងក្រុមហ៊ុន', tableX + sigColW / 2, sigY);
+
+    ctx.strokeStyle = '#94a3b8';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(tableX + sigColW / 2 - 80, sigY + 60);
+    ctx.lineTo(tableX + sigColW / 2 + 80, sigY + 60);
+    ctx.stroke();
+
+    // Right Signature
+    const rightSigX = tableX + sigColW + 80;
+    ctx.fillText('ឈ្មោះអតិថិជន', rightSigX + sigColW / 2, sigY);
+
+    ctx.beginPath();
+    ctx.moveTo(rightSigX + sigColW / 2 - 80, sigY + 60);
+    ctx.lineTo(rightSigX + sigColW / 2 + 80, sigY + 60);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    return canvas.toBuffer('image/png');
 }
 
 /** Generate pawn schedule PDF Buffer — matches CalculateSchedule2 print area exactly */
@@ -1113,34 +1359,54 @@ export function initTelegramBotService(bot) {
         p.startDate = p.startDate || today;
         const { monthlyInterest, totalInterest, schedule } = calcPawnSchedule(p.principal, p.ratePercent, p.months, p.startDate);
 
-        // Build text preview
         const [y, m, d] = p.startDate.split('-');
         const fmtD = `${d}-${m}-${y}`;
-        let tableText = `<pre>\nខែ | ថ្ងៃបង់       | សរុប($) | ការប្រាក់ | សល់($)\n`;
-        tableText += `--- | ------------ | ------- | --------- | ------\n`;
-        schedule.forEach(r => {
-            const [ry, rm, rd] = r.dueDate.split('-');
-            tableText += `${String(r.no).padStart(3)} | ${rd}-${rm}-${ry} | ${r.totalDueMonth.toFixed(1).padStart(7)} | ${monthlyInterest.toFixed(1).padStart(9)} | ${r.remainingBalance.toFixed(0).padStart(6)}\n`;
-        });
-        tableText += `</pre>`;
+        const fmt2 = (v) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        const previewMsg =
-            `📋 <b>ព្រៀង Preview កុងត្រា</b>\n\n` +
-            `🔢 <b>#</b> ${p.contractNumber}\n` +
-            `👤 ${p.customerName}\n` +
-            `📱 ${p.assetName}\n` +
-            `📅 ថ្ងៃ: ${fmtD} | ⏱ ${p.months}ខែ\n` +
-            `💵 ដើម: $${p.principal} | 💹 ${p.ratePercent}%/ខែ\n` +
-            `💰 ការប្រាក់/ខែ: <b>$${monthlyInterest.toFixed(2)}</b> | សរុបការប្រាក់: $${totalInterest.toFixed(2)}\n\n` +
-            tableText;
+        const caption =
+            `📋 <b>កាលវិភាគសងប្រាក់ (Pawn Schedule 2)</b>\n\n` +
+            `🔢 <b>លេខកិច្ចសន្យា:</b> #${p.contractNumber || '—'}\n` +
+            `👤 <b>ឈ្មោះអតិថិជន:</b> ${p.customerName || '—'}\n` +
+            `📱 <b>ប្រភេទទ្រព្យ:</b> ${p.assetName || '—'}\n` +
+            `📅 <b>ថ្ងៃដាក់:</b> ${fmtD} | ⏱ <b>រយៈពេល:</b> ${p.months} ខែ\n` +
+            `💵 <b>ប្រាក់ដើម:</b> $${fmt2(p.principal)} | 💹 <b>ការប្រាក់:</b> ${p.ratePercent}%/ខែ\n` +
+            `💰 <b>ការប្រាក់/ខែ:</b> $${fmt2(monthlyInterest)} | <b>សរុបការប្រាក់:</b> $${fmt2(totalInterest)}`;
 
-        await bot.sendMessage(chatId, previewMsg, {
-            parse_mode: 'HTML',
-            reply_markup: { inline_keyboard: [
-                [{ text: '✅ Save ចូល Schedule 2', callback_data: 'pawn_save:confirm' }],
-                [{ text: '❌ Cancel', callback_data: 'pawn_save:cancel' }]
-            ]}
-        });
+        const inlineKeyboard = [
+            [{ text: '✅ Save ចូល Schedule 2', callback_data: 'pawn_save:confirm' }],
+            [{ text: '❌ Cancel', callback_data: 'pawn_save:cancel' }]
+        ];
+
+        try {
+            const imgBuffer = await generatePawnScheduleImage({
+                customerName: p.customerName,
+                contractNumber: p.contractNumber,
+                assetName: p.assetName,
+                startDate: p.startDate,
+                principal: p.principal,
+                ratePercent: p.ratePercent,
+                months: p.months,
+                monthlyInterest: monthlyInterest,
+                totalInterest: totalInterest,
+                schedule: schedule
+            });
+
+            await bot.sendPhoto(chatId, imgBuffer, {
+                caption: caption,
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: inlineKeyboard }
+            }, {
+                filename: `Schedule_${p.contractNumber || 'Pawn'}.png`,
+                contentType: 'image/png'
+            });
+        } catch (imgErr) {
+            console.error('[TelegramBot] Failed to generate/send schedule photo:', imgErr);
+            // Fallback to text message if photo fails
+            await bot.sendMessage(chatId, caption, {
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: inlineKeyboard }
+            });
+        }
     };
     // ── Calc Interest Helper ──
     const sendCalcResult = async (chatId, calc) => {
