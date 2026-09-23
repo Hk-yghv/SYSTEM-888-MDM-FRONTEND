@@ -56,8 +56,13 @@ export const pathAndCommandGuardMiddleware = (req, res, next) => {
     }
 
     const checkValue = (val) => {
-        if (typeof val === 'string' && COMMAND_INJECTION_REGEX.test(val)) {
-            return true;
+        if (typeof val === 'string') {
+            if (val.startsWith('data:image/') || val.startsWith('data:application/') || val.startsWith('data:')) {
+                return false;
+            }
+            if (COMMAND_INJECTION_REGEX.test(val)) {
+                return true;
+            }
         }
         if (val && typeof val === 'object') {
             return Object.values(val).some(checkValue);
