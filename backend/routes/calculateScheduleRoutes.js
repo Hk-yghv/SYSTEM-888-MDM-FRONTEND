@@ -60,7 +60,12 @@ router.get('/', async (req, res) => {
 
         let filter = {};
         if (userBrand && !isMasterAdmin) {
-            filter.brand = userBrand;
+            filter.$or = [
+                { brand: userBrand },
+                { brand: '' },
+                { brand: null },
+                { brand: { $exists: false } }
+            ];
         }
 
         let records = [];
@@ -68,18 +73,25 @@ router.get('/', async (req, res) => {
             records = await queryAllDBs(CalculateSchedule, (M) => {
                 let f = { ...filter };
                 if (search) {
-                    f.$or = [
-                        { customerName: { $regex: search, $options: 'i' } },
-                        { contractNumber: { $regex: search, $options: 'i' } },
-                        { assetName: { $regex: search, $options: 'i' } }
-                    ];
+                    const searchCondition = {
+                        $or: [
+                            { customerName: { $regex: search, $options: 'i' } },
+                            { contractNumber: { $regex: search, $options: 'i' } },
+                            { assetName: { $regex: search, $options: 'i' } }
+                        ]
+                    };
+                    if (f.$or) {
+                        f = { $and: [{ $or: f.$or }, searchCondition] };
+                    } else {
+                        f = searchCondition;
+                    }
                 }
                 return M.find(f).sort({ createdAt: -1 });
             });
         } else {
             let list = [...MEM_DB.calculateSchedules];
             if (userBrand && !isMasterAdmin) {
-                list = list.filter(item => item.brand === userBrand);
+                list = list.filter(item => !item.brand || item.brand === userBrand);
             }
             if (search) {
                 const s = search.toLowerCase();

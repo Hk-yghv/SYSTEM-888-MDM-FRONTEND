@@ -41,6 +41,7 @@ const CalculateSchedule2 = () => {
     const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
     const [activeRecordId, setActiveRecordId] = useState(null);
     const [newlyAddedId, setNewlyAddedId] = useState(null);
+    const [displayLimit, setDisplayLimit] = useState(10);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [printOrientation, setPrintOrientation] = useState('landscape'); // 'portrait' | 'landscape'
 
@@ -439,6 +440,21 @@ const CalculateSchedule2 = () => {
             (item.assetName && item.assetName.toLowerCase().includes(q))
         );
     });
+
+    // Reset pagination when search query changes
+    useEffect(() => {
+        setDisplayLimit(10);
+    }, [historySearch]);
+
+    const displayedHistory = filteredHistory.slice(0, displayLimit);
+    const hasMoreHistory = filteredHistory.length > displayLimit;
+
+    const handleHistoryScroll = (e) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        if (scrollHeight - scrollTop - clientHeight < 60 && hasMoreHistory) {
+            setDisplayLimit(prev => Math.min(prev + 10, filteredHistory.length));
+        }
+    };
 
     const formatDateWithWeekday = (dateStr) => {
         if (!dateStr) return '';
@@ -865,7 +881,7 @@ const CalculateSchedule2 = () => {
                                 </span>
                             </div>
                             <span className="px-2 py-0.5 rounded-full text-xs bg-violet-100 text-violet-700 font-bold">
-                                {savedHistory.length}
+                                {displayedHistory.length > 0 ? `${displayedHistory.length}/${filteredHistory.length}` : filteredHistory.length}
                             </span>
                         </div>
 
@@ -884,7 +900,9 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* History Records Scrollable List */}
-                        <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                        <div
+                            onScroll={handleHistoryScroll}
+                            className="flex-1 overflow-y-auto space-y-2 pr-1 scroll-smooth">
                             {historyLoading ? (
                                 <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-xs gap-2">
                                     <FaSpinner className="animate-spin text-lg text-violet-500" />
@@ -897,7 +915,8 @@ const CalculateSchedule2 = () => {
                                     <span className="text-[11px] text-slate-400 mt-1">ចុចប៊ូតុង "រក្សាទុក (Save)" ដើម្បីរក្សាទុកកាលវិភាគ</span>
                                 </div>
                             ) : (
-                                    filteredHistory.map((item) => {
+                                <>
+                                    {displayedHistory.map((item) => {
                                         const isNewlyAdded = newlyAddedId === item._id;
                                         const isActive = activeRecordId === item._id;
                                         return (
@@ -941,7 +960,20 @@ const CalculateSchedule2 = () => {
                                                 </div>
                                             </div>
                                         );
-                                    })
+                                    })}
+
+                                    {/* Load More Indicator / Button on bottom */}
+                                    {hasMoreHistory && (
+                                        <div className="py-2.5 text-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => setDisplayLimit(prev => Math.min(prev + 10, filteredHistory.length))}
+                                                className="w-full py-1.5 px-3 rounded-lg text-[11px] bg-violet-50 hover:bg-violet-100 text-violet-700 font-semibold border border-violet-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs">
+                                                <span>ទាញយក +10 ទៀត ({displayedHistory.length}/{filteredHistory.length})</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
