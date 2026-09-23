@@ -9,6 +9,47 @@ if (!MEM_DB.calculateSchedules) {
     MEM_DB.calculateSchedules = [];
 }
 
+let sseClients = new Set();
+
+const broadcastUpdate = (eventData) => {
+    const payload = `data: ${JSON.stringify(eventData)}\n\n`;
+    for (const client of sseClients) {
+        try {
+            client.res.write(payload);
+        } catch (e) {
+            sseClients.delete(client);
+        }
+    }
+};
+
+// GET /api/calculate-schedules/stream (SSE for Realtime Instant Updates)
+router.get('/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (res.flushHeaders) res.flushHeaders();
+
+    const client = { id: Date.now() + Math.random(), res };
+    sseClients.add(client);
+
+    res.write(`data: ${JSON.stringify({ type: 'CONNECTED', timestamp: Date.now() })}\n\n`);
+
+    const keepAlive = setInterval(() => {
+        try {
+            res.write(': keep-alive\n\n');
+        } catch (e) {
+            clearInterval(keepAlive);
+            sseClients.delete(client);
+        }
+    }, 20000);
+
+    req.on('close', () => {
+        clearInterval(keepAlive);
+        sseClients.delete(client);
+    });
+});
+
 // GET /api/calculate-schedules
 router.get('/', async (req, res) => {
     try {
@@ -99,15 +140,20 @@ router.post('/', async (req, res) => {
             updatedAt: new Date()
         };
 
+        let resultDoc = null;
         if (isMongoConnected) {
             const Model = getWriteModel(CalculateSchedule);
-            const saved = await Model.create(newDoc);
-            return res.status(201).json({ success: true, message: 'Saved successfully', data: saved });
+            resultDoc = await Model.create(newDoc);
         } else {
             newDoc._id = 'calc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
             MEM_DB.calculateSchedules.unshift(newDoc);
-            return res.status(201).json({ success: true, message: 'Saved to memory database', data: newDoc });
+            resultDoc = newDoc;
         }
+
+        // Broadcast realtime update to all connected clients immediately
+        broadcastUpdate({ type: 'CREATED', data: resultDoc });
+
+        return res.status(201).json({ success: true, message: 'Saved successfully', data: resultDoc });
     } catch (err) {
         console.error('Error creating calculate schedule:', err);
         res.status(500).json({ success: false, error: err.message });
@@ -124,6 +170,10 @@ router.delete('/:id', async (req, res) => {
         } else {
             MEM_DB.calculateSchedules = MEM_DB.calculateSchedules.filter(item => String(item._id) !== String(id));
         }
+
+        // Broadcast deletion event
+        broadcastUpdate({ type: 'DELETED', id });
+
         res.json({ success: true, message: 'Deleted successfully' });
     } catch (err) {
         console.error('Error deleting calculate schedule:', err);

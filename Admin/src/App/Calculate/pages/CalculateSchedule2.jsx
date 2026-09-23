@@ -40,6 +40,7 @@ const CalculateSchedule2 = () => {
     const [saving, setSaving] = useState(false);
     const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
     const [activeRecordId, setActiveRecordId] = useState(null);
+    const [newlyAddedId, setNewlyAddedId] = useState(null);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [printOrientation, setPrintOrientation] = useState('landscape'); // 'portrait' | 'landscape'
 
@@ -102,14 +103,44 @@ const CalculateSchedule2 = () => {
 
     const [searchParams] = useSearchParams();
 
-    // ─── Realtime Polling & Sync for Saved Props ───────────────────
+    // ─── Realtime SSE Stream & Polling Sync for Saved Props ─────────
     useEffect(() => {
         if (!API_BASE) return;
 
         // Initial fetch with spinner
         fetchHistory(false);
 
-        // Realtime sync: poll every 3 seconds silently
+        // Instant Realtime SSE (Server-Sent Events) push
+        let eventSource = null;
+        try {
+            const streamUrl = `${API_BASE}/calculate-schedules/stream`;
+            eventSource = new EventSource(streamUrl);
+
+            eventSource.onmessage = (e) => {
+                try {
+                    const eventData = JSON.parse(e.data);
+                    if (eventData.type === 'CREATED' && eventData.data) {
+                        const newDoc = eventData.data;
+                        const isMaster = user?.isImmutable || user?.role === 'Admin' || user?.role === 'Administrator' || user?.username === 'hakyonghouv' || user?.username === '@hakyonghouv';
+                        if (isMaster || !user?.brand || newDoc.brand === user?.brand) {
+                            setSavedHistory(prev => [newDoc, ...prev.filter(item => String(item._id) !== String(newDoc._id))]);
+                            setNewlyAddedId(newDoc._id);
+                            setTimeout(() => {
+                                setNewlyAddedId(null);
+                            }, 6000);
+                        }
+                    } else if (eventData.type === 'DELETED' && eventData.id) {
+                        setSavedHistory(prev => prev.filter(item => String(item._id) !== String(eventData.id)));
+                    }
+                } catch (err) {
+                    // Ignore non-json heartbeats
+                }
+            };
+        } catch (err) {
+            console.warn('SSE initialization notice:', err);
+        }
+
+        // Realtime fallback polling every 3 seconds silently
         const pollInterval = setInterval(() => {
             fetchHistory(true);
         }, 3000);
@@ -133,6 +164,9 @@ const CalculateSchedule2 = () => {
         window.addEventListener('storage', handleStorage);
 
         return () => {
+            if (eventSource) {
+                eventSource.close();
+            }
             clearInterval(pollInterval);
             window.removeEventListener('focus', handleSync);
             document.removeEventListener('visibilitychange', handleSync);
@@ -850,40 +884,51 @@ const CalculateSchedule2 = () => {
                                     <span className="text-[11px] text-slate-400 mt-1">ចុចប៊ូតុង "រក្សាទុក (Save)" ដើម្បីរក្សាទុកកាលវិភាគ</span>
                                 </div>
                             ) : (
-                                filteredHistory.map((item) => (
-                                    <div
-                                        key={item._id}
-                                        onClick={() => handleLoadRecord(item)}
-                                        className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${activeRecordId === item._id
-                                            ? 'bg-violet-50 border-violet-400 shadow-xs ring-1 ring-violet-400'
-                                            : 'bg-[#fff] border-slate-200 hover:border-violet-300 hover:bg-slate-50'
-                                            }`}>
-                                        <div className="flex items-start justify-between gap-1">
-                                            <div className="font-bold text-slate-800 truncate">
-                                                {item.customerName || 'អតិថិជនទូទៅ'}
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => handleDeleteRecord(item._id, e)}
-                                                    title="លុប"
-                                                    className="p-1 rounded hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition-colors">
-                                                    <FaTrash className="text-[10px]" />
-                                                </button>
-                                            </div>
-                                        </div>
+                                    filteredHistory.map((item) => {
+                                        const isNewlyAdded = newlyAddedId === item._id;
+                                        const isActive = activeRecordId === item._id;
+                                        return (
+                                            <div
+                                                key={item._id}
+                                                onClick={() => handleLoadRecord(item)}
+                                                className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${isNewlyAdded
+                                                    ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-400 animate-pulse'
+                                                    : isActive
+                                                        ? 'bg-violet-50 border-violet-400 shadow-xs ring-1 ring-violet-400'
+                                                        : 'bg-[#fff] border-slate-200 hover:border-violet-300 hover:bg-slate-50'
+                                                    }`}>
+                                                <div className="flex items-start justify-between gap-1">
+                                                    <div className="flex items-center gap-1.5 font-bold text-slate-800 truncate">
+                                                        <span>{item.customerName || 'អតិថិជនទូទៅ'}</span>
+                                                        {isNewlyAdded && (
+                                                            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-600 text-white font-bold tracking-tight animate-bounce">
+                                                                ថ្មី
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => handleDeleteRecord(item._id, e)}
+                                                            title="លុប"
+                                                            className="p-1 rounded hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition-colors">
+                                                            <FaTrash className="text-[10px]" />
+                                                        </button>
+                                                    </div>
+                                                </div>
 
-                                        <div className="text-slate-500 text-[11px] mt-1 flex items-center justify-between">
-                                            <span>{item.assetName} {item.contractNumber ? `(#${item.contractNumber})` : ''}</span>
-                                            <span className="font-bold text-slate-700 font-mono">${item.principal}</span>
-                                        </div>
+                                                <div className="text-slate-500 text-[11px] mt-1 flex items-center justify-between">
+                                                    <span>{item.assetName} {item.contractNumber ? `(#${item.contractNumber})` : ''}</span>
+                                                    <span className="font-bold text-slate-700 font-mono">${item.principal}</span>
+                                                </div>
 
-                                        <div className="text-slate-400 text-[10px] mt-1 flex items-center justify-between pt-1 border-t border-slate-100">
-                                            <span>{formatDate(item.startDate)} • {item.months} ខែ</span>
-                                            <span className="text-violet-600 font-semibold font-mono">ការប្រាក់ ${item.monthlyInterest}/ខែ</span>
-                                        </div>
-                                    </div>
-                                ))
+                                                <div className="text-slate-400 text-[10px] mt-1 flex items-center justify-between pt-1 border-t border-slate-100">
+                                                    <span>{formatDate(item.startDate)} • {item.months} ខែ</span>
+                                                    <span className="text-violet-600 font-semibold font-mono">ការប្រាក់ ${item.monthlyInterest}/ខែ</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
                             )}
                         </div>
                     </div>
