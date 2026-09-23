@@ -52,6 +52,7 @@ router.get('/staff-list', async (req, res) => {
                     role: u.role || 'Salary',
                     brand: u.brand || '',
                     avatar: u.avatar || '',
+                    qrCodePhoto: u.qrCodePhoto || '',
                     totalAmount: 0,
                     recordsCount: 0,
                     latestDate: '',
@@ -103,6 +104,7 @@ router.get('/staff-list', async (req, res) => {
                     role: 'Salary',
                     brand: item.brand || '',
                     avatar: '',
+                    qrCodePhoto: item.qrCodePhoto || '',
                     totalAmount: 0,
                     recordsCount: 0,
                     latestDate: '',
@@ -115,6 +117,7 @@ router.get('/staff-list', async (req, res) => {
             if (!entry.staffNameKh && item.staffNameKh) entry.staffNameKh = item.staffNameKh;
             if (!entry.staffNameEn && (item.staffNameEn || item.staffName)) entry.staffNameEn = item.staffNameEn || item.staffName;
             if ((!entry.joinDate || entry.joinDate === '—') && item.joinDate) entry.joinDate = item.joinDate;
+            if (!entry.qrCodePhoto && item.qrCodePhoto) entry.qrCodePhoto = item.qrCodePhoto;
             if (!entry.brand && item.brand) entry.brand = item.brand;
 
             entry.totalAmount += Number(item.amount) || 0;
@@ -475,10 +478,10 @@ router.get('/stats', async (req, res) => {
     }
 });
 
-// POST /api/salary/save-staff-info - Save or update staff profile info (Khmer/English names & Join Date)
+// POST /api/salary/save-staff-info - Save or update staff profile info (Khmer/English names, Join Date & QR Code)
 router.post('/save-staff-info', async (req, res) => {
     try {
-        const { staffKey = '', username = '', staffNameKh = '', staffNameEn = '', joinDate = '' } = req.body;
+        const { staffKey = '', username = '', staffNameKh = '', staffNameEn = '', joinDate = '', qrCodePhoto = '' } = req.body;
         const targetUsername = (username || staffKey || '').trim().replace(/^@/, '');
         const targetKey = (staffKey || username || '').trim();
 
@@ -503,7 +506,8 @@ router.post('/save-staff-info', async (req, res) => {
                     $set: {
                         ...(staffNameKh ? { nameKh: staffNameKh } : {}),
                         ...(staffNameEn ? { name: staffNameEn } : {}),
-                        ...(joinDate ? { joinDate } : {})
+                        ...(joinDate ? { joinDate } : {}),
+                        ...(qrCodePhoto !== undefined ? { qrCodePhoto } : {})
                     }
                 });
             }
@@ -525,7 +529,8 @@ router.post('/save-staff-info', async (req, res) => {
                 const updateDoc = {
                     ...(staffNameKh ? { staffNameKh } : {}),
                     ...(staffNameEn ? { staffNameEn, staffName: staffNameEn } : {}),
-                    ...(joinDate ? { joinDate } : {})
+                    ...(joinDate ? { joinDate } : {}),
+                    ...(qrCodePhoto !== undefined ? { qrCodePhoto } : {})
                 };
                 if (Object.keys(updateDoc).length > 0) {
                     await SalaryWrite.updateMany(salaryFilter, { $set: updateDoc });
@@ -540,6 +545,7 @@ router.post('/save-staff-info', async (req, res) => {
                 if (staffNameKh) u.nameKh = staffNameKh;
                 if (staffNameEn) u.name = staffNameEn;
                 if (joinDate) u.joinDate = joinDate;
+                if (qrCodePhoto !== undefined) u.qrCodePhoto = qrCodePhoto;
             }
         });
         (MEM_DB.salaries || []).forEach(s => {
@@ -549,12 +555,13 @@ router.post('/save-staff-info', async (req, res) => {
                 if (staffNameKh) s.staffNameKh = staffNameKh;
                 if (staffNameEn) { s.staffNameEn = staffNameEn; s.staffName = staffNameEn; }
                 if (joinDate) s.joinDate = joinDate;
+                if (qrCodePhoto !== undefined) s.qrCodePhoto = qrCodePhoto;
             }
         });
 
         res.json({
             message: 'Staff profile updated successfully',
-            data: { staffNameKh, staffNameEn, joinDate }
+            data: { staffNameKh, staffNameEn, joinDate, qrCodePhoto }
         });
     } catch (err) {
         console.error('Save staff info error:', err);
@@ -573,6 +580,7 @@ router.post('/', async (req, res) => {
             amount,
             date,
             proofPhoto = '',
+            qrCodePhoto = '',
             category = 'Basic Salary',
             paymentMethod = 'ABA Bank',
             note = '',
@@ -602,6 +610,7 @@ router.post('/', async (req, res) => {
             month,
             year,
             proofPhoto: proofPhoto || '',
+            qrCodePhoto: qrCodePhoto || '',
             category: category || 'Basic Salary',
             paymentMethod: paymentMethod || 'ABA Bank',
             note: note || '',

@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     nameKh: { type: String, default: '' },
     joinDate: { type: String, default: '' },
+    qrCodePhoto: { type: String, default: '' },
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true },
     password: { type: String, required: true },

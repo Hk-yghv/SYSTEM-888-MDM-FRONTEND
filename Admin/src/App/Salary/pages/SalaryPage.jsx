@@ -10,6 +10,8 @@ import {
     FaCalendarCheck,
     FaCalendarAlt,
     FaReceipt,
+    FaQrcode,
+    FaDownload,
     FaEye,
     FaEdit,
     FaTrash,
@@ -94,14 +96,17 @@ const SalaryPage = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [photoUploading, setPhotoUploading] = useState(false);
-    const [previewImage, setPreviewImage] = useState(null);
+    const [qrPhotoUploading, setQrPhotoUploading] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null); // { url, title, filename }
 
-    // Global Saved Join Date + Staff Names
+    // Global Saved Join Date + Staff Names + Staff QR Code
     const [savedJoinDate, setSavedJoinDate] = useState(() => localStorage.getItem('salary_saved_join_date') || '');
     const [savedStaffNameKh, setSavedStaffNameKh] = useState(() => localStorage.getItem('salary_saved_name_kh') || '');
     const [savedStaffNameEn, setSavedStaffNameEn] = useState(() => localStorage.getItem('salary_saved_name_en') || '');
+    const [savedQrCodePhoto, setSavedQrCodePhoto] = useState(() => localStorage.getItem('salary_saved_qr_code') || '');
     const [tempNameKh, setTempNameKh] = useState(() => localStorage.getItem('salary_saved_name_kh') || '');
     const [tempNameEn, setTempNameEn] = useState(() => localStorage.getItem('salary_saved_name_en') || '');
+    const [tempQrCodePhoto, setTempQrCodePhoto] = useState(() => localStorage.getItem('salary_saved_qr_code') || '');
     const [tempDay, setTempDay] = useState(() => {
         const saved = localStorage.getItem('salary_saved_join_date');
         if (saved) { const parts = saved.split('-'); if (parts[2]) return parseInt(parts[2], 10); }
@@ -126,15 +131,35 @@ const SalaryPage = () => {
         return `${yy}-${mm}-${dd}`;
     };
 
-    const handleSaveDate = () => {
+    const handleSaveDate = async () => {
         const dateStr = computeTempDateString(tempYear, tempMonth, tempDay);
         setSavedJoinDate(dateStr);
         setSavedStaffNameKh(tempNameKh);
         setSavedStaffNameEn(tempNameEn);
+        setSavedQrCodePhoto(tempQrCodePhoto);
         localStorage.setItem('salary_saved_join_date', dateStr);
         localStorage.setItem('salary_saved_name_kh', tempNameKh);
         localStorage.setItem('salary_saved_name_en', tempNameEn);
+        localStorage.setItem('salary_saved_qr_code', tempQrCodePhoto);
         setIsEditingDate(false);
+
+        // Sync with backend
+        try {
+            await fetch(`${API_BASE}/salary/save-staff-info`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    staffKey: selectedStaff?.key || user?.username || '',
+                    username: user?.username || '',
+                    staffNameKh: tempNameKh,
+                    staffNameEn: tempNameEn,
+                    joinDate: dateStr,
+                    qrCodePhoto: tempQrCodePhoto
+                })
+            });
+        } catch (err) {
+            console.error('Save staff info error:', err);
+        }
     };
 
     const handleEditDate = () => {
@@ -148,7 +173,37 @@ const SalaryPage = () => {
         }
         setTempNameKh(savedStaffNameKh);
         setTempNameEn(savedStaffNameEn);
+        setTempQrCodePhoto(savedQrCodePhoto);
         setIsEditingDate(true);
+    };
+
+    // Download image helper
+    const handleDownloadImage = async (imgUrl, defaultName = 'download.png') => {
+        if (!imgUrl) return;
+        try {
+            if (imgUrl.startsWith('data:')) {
+                const link = document.createElement('a');
+                link.href = imgUrl;
+                link.download = defaultName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                return;
+            }
+            const res = await fetch(imgUrl);
+            const blob = await res.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = defaultName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+            console.error('Download error:', err);
+            window.open(imgUrl, '_blank');
+        }
     };
 
     // Form State
@@ -161,11 +216,13 @@ const SalaryPage = () => {
         category: 'Basic Salary',
         paymentMethod: 'ABA Bank',
         proofPhoto: '',
+        qrCodePhoto: '',
         note: '',
         brand: user?.brand || ''
     };
     const [formData, setFormData] = useState(initialForm);
     const photoFileRef = useRef(null);
+    const qrFileRef = useRef(null);
 
     // Fetch Staff Directory (for Admin view)
     const fetchStaffDirectory = useCallback(async () => {
@@ -202,11 +259,14 @@ const SalaryPage = () => {
         const sKh = staff.staffNameKh || '';
         const sEn = staff.staffNameEn || staff.staffName || '';
         const sDate = staff.joinDate || '';
+        const sQr = staff.qrCodePhoto || '';
 
         setSavedStaffNameKh(sKh);
         setSavedStaffNameEn(sEn);
+        setSavedQrCodePhoto(sQr);
         setTempNameKh(sKh);
         setTempNameEn(sEn);
+        setTempQrCodePhoto(sQr);
 
         if (sDate) {
             setSavedJoinDate(sDate);
@@ -415,6 +475,49 @@ const SalaryPage = () => {
         } finally {
             setPhotoUploading(false);
             if (photoFileRef.current) photoFileRef.current.value = '';
+        }
+    };
+
+    const handleQrPhotoUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setQrPhotoUploading(true);
+        try {
+            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+            const bodyData = new FormData();
+            bodyData.append('file', file);
+            bodyData.append('upload_preset', CLOUDINARY_PRESET);
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                method: 'POST',
+                body: bodyData
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                const rawUrl = data.secure_url || data.url;
+                setTempQrCodePhoto(rawUrl);
+                setFormData(prev => ({ ...prev, qrCodePhoto: rawUrl }));
+            } else {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setTempQrCodePhoto(reader.result);
+                    setFormData(prev => ({ ...prev, qrCodePhoto: reader.result }));
+                };
+                reader.readAsDataURL(file);
+            }
+        } catch (err) {
+            console.error('Cloudinary QR upload error:', err);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setTempQrCodePhoto(reader.result);
+                setFormData(prev => ({ ...prev, qrCodePhoto: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        } finally {
+            setQrPhotoUploading(false);
+            if (qrFileRef.current) qrFileRef.current.value = '';
         }
     };
 
@@ -868,6 +971,21 @@ const SalaryPage = () => {
 
                 {/* Header Action Buttons */}
                 <div className="flex items-center gap-2 flex-wrap">
+                    {savedQrCodePhoto && (
+                        <button
+                            type="button"
+                            onClick={() => setPreviewImage({
+                                url: savedQrCodePhoto,
+                                title: `រូបភាព QR Code របស់យើង (Our QR Code) - ${savedStaffNameKh || savedStaffNameEn || 'Staff'}`,
+                                filename: `Salary_QRCode_${(savedStaffNameKh || savedStaffNameEn || 'Staff').replace(/\s+/g, '_')}.png`
+                            })}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs active:scale-95"
+                            title="ចុចដើម្បីបើកមើល QR Code របស់យើង និងទាញយក"
+                        >
+                            <FaQrcode className="text-white text-sm" />
+                            <span>មើល QR Code របស់យើង</span>
+                        </button>
+                    )}
                     {hasPermission('/salary', 'export') && (
                         <>
                             <button
@@ -897,7 +1015,7 @@ const SalaryPage = () => {
                 </div>
             </header>
 
-            {/* Top Employment Card: Names + Join Date */}
+            {/* Top Employment Card: Names + Join Date + QR Code */}
             {savedJoinDate && !isEditingDate ? (
                 /* Saved State Card */
                 <div className="p-4 w-full border border-emerald-300/80 dark:border-emerald-700/60 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-cyan-950/30 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -933,6 +1051,33 @@ const SalaryPage = () => {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap self-end md:self-center">
+                        {/* View Staff QR Code Button */}
+                        {savedQrCodePhoto ? (
+                            <button
+                                type="button"
+                                onClick={() => setPreviewImage({
+                                    url: savedQrCodePhoto,
+                                    title: `រូបភាព QR Code របស់យើង (Our QR Code) - ${savedStaffNameKh || savedStaffNameEn || 'Staff'}`,
+                                    filename: `Salary_QRCode_${(savedStaffNameKh || savedStaffNameEn || 'Staff').replace(/\s+/g, '_')}.png`
+                                })}
+                                className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/30 active:scale-95"
+                                title="ចុចដើម្បីបើកមើល QR Code របស់យើង និងទាញយក (View & Download QR Code)"
+                            >
+                                <FaQrcode className="text-sm" />
+                                <span>មើល QR Code របស់យើង</span>
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={handleEditDate}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
+                                title="បញ្ចូលរូបភាព QR Code ទទួលប្រាក់"
+                            >
+                                <FaQrcode className="text-emerald-600" />
+                                <span>+ បញ្ចូល QR Code</span>
+                            </button>
+                        )}
+
                         <button
                             type="button"
                             onClick={handleEditDate}
@@ -964,7 +1109,7 @@ const SalaryPage = () => {
                         <div>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-xs font-black text-amber-900 dark:text-amber-300 uppercase tracking-wider">
-                                    បំពេញឈ្មោះខ្មែរ + ឈ្មោះអង់គ្លេស + ថ្ងៃចូលបម្រើការងារ <span className="text-rose-500">*</span>
+                                    បំពេញឈ្មោះ + ថ្ងៃចូលបម្រើការងារ + រូបភាព QR Code <span className="text-rose-500">*</span>
                                 </span>
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/60 dark:text-amber-200 animate-pulse">
                                     សូមបំពេញ រួចចុច Save
@@ -1069,22 +1214,79 @@ const SalaryPage = () => {
                                 className="bg-transparent text-xs font-mono font-bold text-emerald-600 outline-none cursor-pointer"
                             />
                         </div>
+                    </div>
 
-                        {/* Save Button */}
+                    {/* QR Code Upload Row */}
+                    <div className="flex flex-wrap items-center gap-2 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs">
+                        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                            <FaQrcode className="text-emerald-600 text-sm shrink-0" />
+                            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                រូបភាព QR Code របស់យើង:
+                            </span>
+                            <input
+                                type="text"
+                                value={tempQrCodePhoto}
+                                onChange={(e) => setTempQrCodePhoto(e.target.value)}
+                                placeholder="បញ្ចូល URL QR Code ឬ ចុចប៊ូតុង Upload..."
+                                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-100 outline-none flex-1"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => qrFileRef.current?.click()}
+                            disabled={qrPhotoUploading}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all disabled:opacity-50 whitespace-nowrap"
+                        >
+                            <FaCloudUploadAlt />
+                            <span>{qrPhotoUploading ? 'Uploading...' : 'Upload QR'}</span>
+                        </button>
+                        <input
+                            ref={qrFileRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleQrPhotoUpload}
+                        />
+                        {tempQrCodePhoto && (
+                            <div className="flex items-center gap-2">
+                                <img
+                                    src={tempQrCodePhoto}
+                                    alt="QR Preview"
+                                    className="w-7 h-7 object-contain rounded border border-slate-300 cursor-pointer hover:scale-110 transition-transform"
+                                    onClick={() => setPreviewImage({
+                                        url: tempQrCodePhoto,
+                                        title: 'រូបភាព QR Code របស់យើង (Our QR Code)',
+                                        filename: 'My_Salary_QRCode.png'
+                                    })}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setTempQrCodePhoto('')}
+                                    className="text-rose-500 hover:text-rose-700 text-xs p-1"
+                                    title="លុបរូប QR"
+                                >
+                                    <FaTimes />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Action Buttons Row */}
+                    <div className="flex items-center gap-2">
                         <button
                             type="button"
                             onClick={handleSaveDate}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/30 transition-all active:scale-95"
+                            className="flex items-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/30 transition-all active:scale-95"
                         >
                             <FaSave />
-                            <span>រក្សាទុក (Save)</span>
+                            <span>រក្សាទុក (Save Info & QR)</span>
                         </button>
 
                         {savedJoinDate && (
                             <button
                                 type="button"
                                 onClick={() => setIsEditingDate(false)}
-                                className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
                             >
                                 បោះបង់
                             </button>
@@ -1301,9 +1503,13 @@ const SalaryPage = () => {
                                         {item.proofPhoto ? (
                                             <button
                                                 type="button"
-                                                onClick={() => setPreviewImage(item.proofPhoto)}
-                                                className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-[5px] text-[10px] font-bold cursor-pointer transition-all shadow-2xs"
-                                                title="មើលរូបភាពភស្តុតាង"
+                                                onClick={() => setPreviewImage({
+                                                    url: item.proofPhoto,
+                                                    title: `រូបភាពភស្តុតាងវិក្កយបត្រ (Salary Evidence Photo) - ${item.staffNameKh || item.staffNameEn || 'Staff'}`,
+                                                    filename: `Salary_Receipt_${(item.staffNameKh || item.staffNameEn || 'Staff').replace(/\s+/g, '_')}_${item.date || 'date'}.png`
+                                                })}
+                                                className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-[5px] text-[10px] font-bold cursor-pointer transition-all shadow-2xs active:scale-95"
+                                                title="មើលរូបភាពភស្តុតាង និងទាញយក (View & Download Receipt)"
                                             >
                                                 <FaEye />
                                                 <span>មើលរូប</span>
@@ -1377,33 +1583,54 @@ const SalaryPage = () => {
                 />
             )}
 
-            {/* Proof Photo Lightbox Modal */}
+            {/* Image Preview Lightbox Modal with Download */}
             {previewImage && (
                 <div
                     className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4 animate-in fade-in duration-150"
                     onClick={() => setPreviewImage(null)}
                 >
                     <div
-                        className="relative max-w-3xl max-h-[85vh] bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden p-2 shadow-2xl flex flex-col items-center"
+                        className="relative max-w-3xl max-h-[88vh] bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden p-2 shadow-2xl flex flex-col items-center"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="w-full flex items-center justify-between p-2 text-white border-b border-slate-800 mb-2">
-                            <span className="text-xs font-bold flex items-center gap-2">
-                                <FaReceipt className="text-emerald-400" />
-                                <span>រូបភាពភស្តុតាងប្រាក់ខែ (Salary Evidence Photo)</span>
+                        <div className="w-full flex items-center justify-between p-2 text-white border-b border-slate-800 mb-2 gap-3 flex-wrap">
+                            <span className="text-xs font-bold flex items-center gap-2 truncate">
+                                <FaQrcode className="text-emerald-400 shrink-0" />
+                                <span className="truncate">
+                                    {typeof previewImage === 'object'
+                                        ? (previewImage.title || 'រូបភាព (Image Preview)')
+                                        : 'រូបភាពភស្តុតាងប្រាក់ខែ (Salary Photo)'}
+                                </span>
                             </span>
-                            <button
-                                onClick={() => setPreviewImage(null)}
-                                className="text-slate-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
-                            >
-                                <FaTimes size={16} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => handleDownloadImage(
+                                        typeof previewImage === 'object' ? previewImage.url : previewImage,
+                                        typeof previewImage === 'object' ? (previewImage.filename || 'salary_photo.png') : 'salary_photo.png'
+                                    )}
+                                    className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-md active:scale-95"
+                                    title="ទាញយករូបភាពនេះទុក (Download Image)"
+                                >
+                                    <FaDownload className="text-xs" />
+                                    <span>ទាញយក (Download)</span>
+                                </button>
+                                <button
+                                    onClick={() => setPreviewImage(null)}
+                                    className="text-slate-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
+                                    title="បិទ (Close)"
+                                >
+                                    <FaTimes size={16} />
+                                </button>
+                            </div>
                         </div>
-                        <img
-                            src={previewImage}
-                            alt="Salary Proof"
-                            className="max-h-[70vh] max-w-full object-contain rounded-lg"
-                        />
+                        <div className="flex items-center justify-center p-2 overflow-auto w-full">
+                            <img
+                                src={typeof previewImage === 'object' ? previewImage.url : previewImage}
+                                alt="Preview"
+                                className="max-h-[70vh] max-w-full object-contain rounded-lg border border-slate-800 shadow-lg"
+                            />
+                        </div>
                     </div>
                 </div>
             )}
@@ -1428,9 +1655,9 @@ const CreateEditSalaryModal = ({
 }) => {
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-150">
-            <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+            <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
                 {/* Modal Header */}
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--app-border,#e2e8f0)] bg-emerald-600 text-white">
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--app-border,#e2e8f0)] bg-emerald-600 text-white shrink-0">
                     <h3 className="text-sm font-bold flex items-center gap-2">
                         <FaMoneyBillWave />
                         <span>{editingItem ? 'កែប្រែកំណត់ត្រាប្រាក់ខែ (Edit Salary)' : 'បញ្ចូលប្រាក់ខែថ្មី (Create Salary Entry)'}</span>
@@ -1444,7 +1671,7 @@ const CreateEditSalaryModal = ({
                 </div>
 
                 {/* Modal Body */}
-                <form onSubmit={handleFormSubmit} className="p-5 space-y-4 text-xs">
+                <form onSubmit={handleFormSubmit} className="p-5 space-y-4 text-xs overflow-y-auto flex-1">
                     {/* Staff Names Row (Khmer & English) */}
                     <div className="grid grid-cols-2 gap-3">
                         <div>
