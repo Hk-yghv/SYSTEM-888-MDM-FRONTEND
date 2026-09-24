@@ -329,6 +329,19 @@ export const verifySecurityAuth = (req, res, next) => {
         });
     }
 
+    // ── OPEN PARTNER ENDPOINTS (No auth required for programmatic GET) ──
+    // External systems (curl, Python, PHP, Android, Node.js) can access partner endpoints freely.
+    // Only browser navigation is blocked above. Programmatic requests pass through here.
+    if (req.method === 'GET' && !token) {
+        const isPartnerOpenPath = PARTNER_ALLOWED_PATH_PREFIXES.some(p =>
+            path.startsWith(p) || originalUrl.startsWith(p)
+        );
+        if (isPartnerOpenPath) {
+            req.isPartnerAccess = true;
+            return next();
+        }
+    }
+
     if (token) {
         if (isTokenRevoked(token)) {
             return res.status(401).json({ error: 'Security Notice: Session has been revoked or logged out. Please log in again.' });
@@ -343,7 +356,7 @@ export const verifySecurityAuth = (req, res, next) => {
         }
     }
 
-    // Notify on unauthorized programmatic API access attempts (not browser, not partner)
+    // Block unauthorized access to non-partner endpoints
     const clientIpFinal = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || '127.0.0.1';
     notifySecurityAlert(`🔒 <b>UNAUTHORIZED API ACCESS BLOCKED</b>\nIP: <code>${clientIpFinal}</code>\nPath: <code>${originalUrl}</code>\nMethod: <code>${req.method}</code>`);
 
