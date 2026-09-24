@@ -272,10 +272,31 @@ export const verifySecurityAuth = (req, res, next) => {
     const partnerKey = req.headers['x-partner-api-key'];
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
+    const acceptHeader = (req.headers['accept'] || '').toLowerCase();
+    const userAgent = (req.headers['user-agent'] || '').toLowerCase();
 
     // Internal system key — full access
     if (systemKey === SYSTEM_API_KEY) {
         return next();
+    }
+
+    // ── BROWSER NAVIGATION DETECTION ──
+    // Browsers send: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,...
+    // Programmatic tools (curl, Python, Node, PHP) send: Accept: application/json OR */* OR nothing
+    const looksLikeBrowserNavigation = (
+        acceptHeader.includes('text/html') &&
+        acceptHeader.includes('application/xhtml+xml') &&
+        !token &&
+        !partnerKey &&
+        !systemKey
+    );
+
+    if (looksLikeBrowserNavigation) {
+        const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || '127.0.0.1';
+        notifySecurityAlert(`🌐 <b>BROWSER DIRECT ACCESS BLOCKED</b>\nIP: <code>${clientIp}</code>\nPath: <code>${originalUrl}</code>\nUser-Agent: <code>${req.headers['user-agent']?.substring(0, 80)}</code>`);
+        return res.status(401).json({
+            error: 'Security Protection: Direct browser access to this API is not permitted. Use the SYSTEM MDM application to access this data.'
+        });
     }
 
     // External Partner API Key — read-only GET access to whitelisted endpoints only
@@ -301,6 +322,13 @@ export const verifySecurityAuth = (req, res, next) => {
         return next();
     }
 
+    // Wrong partner key provided
+    if (partnerKey && partnerKey !== EXTERNAL_PARTNER_API_KEY) {
+        return res.status(403).json({
+            error: 'Partner Access Denied: Invalid partner API key.'
+        });
+    }
+
     if (token) {
         if (isTokenRevoked(token)) {
             return res.status(401).json({ error: 'Security Notice: Session has been revoked or logged out. Please log in again.' });
@@ -315,9 +343,9 @@ export const verifySecurityAuth = (req, res, next) => {
         }
     }
 
-    // Notify on unauthorized direct API access attempts
-    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || '127.0.0.1';
-    notifySecurityAlert(`🔒 <b>UNAUTHORIZED API ACCESS BLOCKED</b>\nIP: <code>${clientIp}</code>\nPath: <code>${originalUrl}</code>\nMethod: <code>${req.method}</code>`);
+    // Notify on unauthorized programmatic API access attempts (not browser, not partner)
+    const clientIpFinal = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || '127.0.0.1';
+    notifySecurityAlert(`🔒 <b>UNAUTHORIZED API ACCESS BLOCKED</b>\nIP: <code>${clientIpFinal}</code>\nPath: <code>${originalUrl}</code>\nMethod: <code>${req.method}</code>`);
 
     return res.status(401).json({
         error: 'Security Protection: Access Denied! Direct API scraping or unauthorized access is blocked by SYSTEM MDM Security Protocol.'

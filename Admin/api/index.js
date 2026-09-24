@@ -79,21 +79,27 @@ export default async function handler(req, res) {
     if (!isPublicPath) {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-        // Allow requests with a partner API key — backend handles partner key validation
         const partnerKey = req.headers['x-partner-api-key'];
-        const isPartnerKeyRequest = !!partnerKey;
+        const systemKey = req.headers['x-system-api-key'];
+        const acceptHeader = (req.headers['accept'] || '').toLowerCase();
 
-        if (!token && !isPartnerKeyRequest) {
+        // Block browser navigation immediately at proxy level
+        // Browsers send: text/html + xhtml+xml in Accept header
+        // Programmatic tools (curl, Python, Node, PHP) do NOT
+        const isBrowserNavigation = (
+            acceptHeader.includes('text/html') &&
+            acceptHeader.includes('application/xhtml+xml') &&
+            !token && !partnerKey && !systemKey
+        );
+
+        if (isBrowserNavigation) {
             return res.status(401).json({
-                error: 'Security Protection: Access Denied! Authentication token required. Please log in to continue.'
+                error: 'Security Protection: Direct browser access to this API is not permitted.'
             });
         }
 
-        // If only partner key is present, skip JWT verification — backend validates partner key
-        if (isPartnerKeyRequest && !token) {
-            // Just forward the request; backend security.js will validate the partner key
-        } else if (token) {
-            // Verify JWT signature at proxy level using Web Crypto API (no DB call needed)
+        // For JWT token requests: verify at proxy level before forwarding
+        if (token) {
             try {
                 const parts = token.split('.');
                 if (parts.length !== 3) throw new Error('Malformed token');
@@ -108,7 +114,6 @@ export default async function handler(req, res) {
                 );
 
                 const dataToVerify = enc.encode(`${headerB64}.${payloadB64}`);
-                // Convert base64url signature to ArrayBuffer
                 const b64 = signatureB64.replace(/-/g, '+').replace(/_/g, '/');
                 const padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
                 const sigBuffer = Uint8Array.from(atob(padded), c => c.charCodeAt(0));
@@ -116,20 +121,16 @@ export default async function handler(req, res) {
                 const valid = await crypto.subtle.verify('HMAC', cryptoKey, sigBuffer, dataToVerify);
                 if (!valid) throw new Error('Invalid signature');
 
-                // Check token expiry
                 const payloadJson = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - payloadB64.length % 4) % 4));
                 const payload = JSON.parse(payloadJson);
                 if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) {
-                    return res.status(401).json({
-                        error: 'Security Protection: Token has expired. Please log in again.'
-                    });
+                    return res.status(401).json({ error: 'Security Protection: Token has expired. Please log in again.' });
                 }
             } catch {
-                return res.status(403).json({
-                    error: 'Security Protection: Invalid or tampered token. Access denied.'
-                });
+                return res.status(403).json({ error: 'Security Protection: Invalid or tampered token. Access denied.' });
             }
         }
+        // Partner key requests & other programmatic requests → forwarded to backend for validation
     }
 
     // 6. Prepare Forward Headers with Secret x-system-api-key (only injected AFTER auth passes)
