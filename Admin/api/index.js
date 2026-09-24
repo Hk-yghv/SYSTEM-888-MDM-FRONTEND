@@ -43,8 +43,9 @@ export default async function handler(req, res) {
         'https://system-mdm-2.onrender.com/api'
     ];
 
-    // 3. Secret SYSTEM_API_KEY (Stored safely on Server - Never exposed to Client Browser)
+    // 3. Secret SYSTEM_API_KEY (Stored safely on Vercel Server - Never exposed to Client Browser)
     const SYSTEM_API_KEY = process.env.SYSTEM_API_KEY || process.env.MDM_API_KEY || 'sys-mdm@hkayonghouv-fdasdlfjri98chbLI*Y0&*T(';
+    const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
 
     // 4. Extract Path & Query accurately from req.url
     let rawUrl = req.url || '';
@@ -55,7 +56,71 @@ export default async function handler(req, res) {
     const cleanPath = (pathPart || '').replace(/^\/+/, '');
     const queryString = queryPart ? `?${queryPart}` : '';
 
-    // 5. Prepare Forward Headers with Secret x-system-api-key
+    // 5. ── PROXY-LEVEL AUTH GATE ──
+    // Whitelist of public paths that do NOT require a JWT token
+    const PUBLIC_PATH_PREFIXES = [
+        'auth/login',
+        'auth/verify-otp',
+        'health',
+        'history/report-schedule',
+        'calculate-schedules/stream',
+    ];
+
+    const isPublicPath = PUBLIC_PATH_PREFIXES.some(p =>
+        cleanPath === p ||
+        cleanPath.startsWith(p + '/') ||
+        cleanPath.startsWith(p + '?')
+    );
+
+    if (!isPublicPath) {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+        if (!token) {
+            return res.status(401).json({
+                error: 'Security Protection: Access Denied! Authentication token required. Please log in to continue.'
+            });
+        }
+
+        // Verify JWT signature at proxy level using Web Crypto API (no DB call needed)
+        try {
+            const parts = token.split('.');
+            if (parts.length !== 3) throw new Error('Malformed token');
+            const [headerB64, payloadB64, signatureB64] = parts;
+
+            const enc = new TextEncoder();
+            const keyData = enc.encode(JWT_SECRET);
+            const cryptoKey = await crypto.subtle.importKey(
+                'raw', keyData,
+                { name: 'HMAC', hash: 'SHA-256' },
+                false, ['verify']
+            );
+
+            const dataToVerify = enc.encode(`${headerB64}.${payloadB64}`);
+            // Convert base64url signature to ArrayBuffer
+            const b64 = signatureB64.replace(/-/g, '+').replace(/_/g, '/');
+            const padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
+            const sigBuffer = Uint8Array.from(atob(padded), c => c.charCodeAt(0));
+
+            const valid = await crypto.subtle.verify('HMAC', cryptoKey, sigBuffer, dataToVerify);
+            if (!valid) throw new Error('Invalid signature');
+
+            // Check token expiry
+            const payloadJson = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - payloadB64.length % 4) % 4));
+            const payload = JSON.parse(payloadJson);
+            if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) {
+                return res.status(401).json({
+                    error: 'Security Protection: Token has expired. Please log in again.'
+                });
+            }
+        } catch {
+            return res.status(403).json({
+                error: 'Security Protection: Invalid or tampered token. Access denied.'
+            });
+        }
+    }
+
+    // 6. Prepare Forward Headers with Secret x-system-api-key (only injected AFTER auth passes)
     const forwardHeaders = {
         'x-system-api-key': SYSTEM_API_KEY,
         'x-forwarded-for': req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1'
@@ -73,7 +138,7 @@ export default async function handler(req, res) {
 
     let lastError = null;
 
-    // 6. Real-Time Failover Loop across all 3 Backend Servers
+    // 7. Real-Time Failover Loop across all 3 Backend Servers
     for (let i = 0; i < API_POOL.length; i++) {
         const backendBase = API_POOL[i];
         const targetUrl = `${backendBase}/${cleanPath}${queryString}`;
