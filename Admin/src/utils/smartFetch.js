@@ -3,8 +3,6 @@ import { getSecureItem } from './secureStorage';
 
 const normalizeUrl = (url) => (url ? url.replace(/\/$/, '') : '');
 
-const SYSTEM_API_KEY = import.meta.env.VITE_SYSTEM_API_KEY || '';
-
 const rawApiPool = [
     import.meta.env.VITE_API_BACKEND,
     import.meta.env.VITE_API_BACKEND1,
@@ -13,10 +11,10 @@ const rawApiPool = [
 ].map(normalizeUrl).filter(Boolean);
 
 export const API_POOL = rawApiPool.length > 0 ? rawApiPool : [
+    '/api',
     'http://localhost:5000/api',
     'http://localhost:5001/api',
-    'http://localhost:5002/api',
-    'http://localhost:5003/api'
+    'http://localhost:5002/api'
 ];
 
 let activeApiIndex = 0;
@@ -103,10 +101,13 @@ export const smartFetch = async (inputUrlOrPath, options = {}) => {
 
         try {
             const token = getSecureItem('mdm_token');
+            const sanitizedHeaders = { ...(options.headers || {}) };
+            delete sanitizedHeaders['x-system-api-key'];
+            delete sanitizedHeaders['X-System-Api-Key'];
+
             const mergedHeaders = {
-                'x-system-api-key': SYSTEM_API_KEY,
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                ...(options.headers || {})
+                ...sanitizedHeaders
             };
 
             const requestOptions = {
