@@ -68,7 +68,7 @@ router.get('/payments', async (req, res) => {
 // POST payment
 router.post('/payments', async (req, res) => {
     try {
-        const { contractId, amount, customerName, serialNumber, model, paidDate, paidBy, description } = req.body;
+        const { contractId, amount, customerName, photo, image, receiptImage, serialNumber, model, paidDate, paidBy, description } = req.body;
 
         let contract = null;
         if (contractId) {
@@ -81,11 +81,14 @@ router.post('/payments', async (req, res) => {
         }
 
         const uniquePaymentId = 'PAY-' + Date.now() + '-' + Math.floor(100 + Math.random() * 900);
+        const proofImg = photo || image || receiptImage || '';
         const paymentObj = {
             paymentId: uniquePaymentId,
             contractId: contractId || 'N/A',
             customerName: customerName || contract?.customerNameEn || contract?.customerNameKh || 'Customer',
-            photo: contract?.customerPhoto || '',
+            photo: proofImg,
+            image: proofImg,
+            receiptImage: proofImg,
             serialNumber: serialNumber || contract?.serialNumber || 'N/A',
             model: model || contract?.model || 'Device',
             paidDate: paidDate || new Date().toISOString().split('T')[0],

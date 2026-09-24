@@ -5,6 +5,8 @@ const paymentSchema = new mongoose.Schema({
     contractId: { type: String, required: true },
     customerName: { type: String, default: 'Customer' },
     photo: { type: String, default: '' },
+    image: { type: String, default: '' },
+    receiptImage: { type: String, default: '' },
     serialNumber: { type: String, default: 'N/A' },
     model: { type: String, default: 'Device' },
     paidDate: { type: String, default: () => new Date().toISOString().split('T')[0] },

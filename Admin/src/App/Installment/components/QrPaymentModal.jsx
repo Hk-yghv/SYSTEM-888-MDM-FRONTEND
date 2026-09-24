@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
-import { FaMobileAlt, FaCheck, FaImages, FaChevronLeft, FaChevronRight, FaExpand, FaUser } from "react-icons/fa";
+import { FaMobileAlt, FaCheck, FaCloudUploadAlt, FaTrashAlt, FaExpand, FaImage, FaTimes } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 
 const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
@@ -15,36 +15,29 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
         amount: 150,
         description: ''
     });
+    const [receiptFile, setReceiptFile] = useState(null);
+    const [receiptPreview, setReceiptPreview] = useState('');
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [paymentSubmitting, setPaymentSubmitting] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [qrPayments, setQrPayments] = useState([]);
     const [loadingQrPayments, setLoadingQrPayments] = useState(false);
-    const [activePhotoIdx, setActivePhotoIdx] = useState(0);
     const [previewLightbox, setPreviewLightbox] = useState(false);
+    const [viewHistoryImage, setViewHistoryImage] = useState(null);
 
-    // Extract all photos from contract
-    const photosList = useMemo(() => {
-        if (!contract) return [];
-        const list = [];
-        if (Array.isArray(contract.photos)) list.push(...contract.photos);
-        if (Array.isArray(contract.evidencePhotos)) list.push(...contract.evidencePhotos);
-        if (contract.customerPhoto) list.push(contract.customerPhoto);
-        if (contract.googleDrivePhotoUrl) list.push(contract.googleDrivePhotoUrl);
-        if (contract.photo) list.push(contract.photo);
-        if (contract.photoUrl) list.push(contract.photoUrl);
-        if (contract.idCardPhoto) list.push(contract.idCardPhoto);
-        if (contract.itemPhoto) list.push(contract.itemPhoto);
-        return [...new Set(list.filter(Boolean))];
-    }, [contract]);
+    const fileInputRef = useRef(null);
 
+    // Reset when modal opens
     useEffect(() => {
         if (!open || !contract) return;
 
         setPaymentSuccess(false);
         setQrPayments([]);
         setLoadingQrPayments(true);
-        setActivePhotoIdx(0);
+        setReceiptFile(null);
+        setReceiptPreview('');
         setPreviewLightbox(false);
+        setViewHistoryImage(null);
 
         // Calculate initial amount from schedule or monthlyPayment
         let defaultAmount = Number(contract.monthlyPayment || contract.amount || 150);
@@ -93,20 +86,89 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
         }
     }, [open, contract, API_BASE, API_BASE1, user?.brand]);
 
+    // Handle File Selection
+    const handleFileChange = (file) => {
+        if (!file || !file.type.startsWith('image/')) return;
+        setReceiptFile(file);
+        const previewUrl = URL.createObjectURL(file);
+        setReceiptPreview(previewUrl);
+    };
+
+    // Support Paste (Ctrl+V) from Clipboard
+    const handlePaste = useCallback((e) => {
+        if (!open) return;
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const file = items[i].getAsFile();
+                if (file) {
+                    handleFileChange(file);
+                    break;
+                }
+            }
+        }
+    }, [open]);
+
+    useEffect(() => {
+        window.addEventListener('paste', handlePaste);
+        return () => window.removeEventListener('paste', handlePaste);
+    }, [handlePaste]);
+
+    // Upload receipt to Cloudinary or base64 fallback
+    const uploadReceiptImage = async (file) => {
+        if (!file) return '';
+        const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
+        const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_PRESET);
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                return data.secure_url || data.url || '';
+            }
+        } catch (err) {
+            console.warn('Cloudinary upload failed, falling back to base64:', err);
+        }
+
+        // Base64 fallback
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result || '');
+            reader.readAsDataURL(file);
+        });
+    };
+
     if (!open || !contract) return null;
 
     const handleMobilePaymentSubmit = async (e) => {
         e.preventDefault();
         setPaymentSubmitting(true);
+        setIsUploadingPhoto(Boolean(receiptFile));
+
         try {
-            const primaryPhoto = photosList[0] || contract.customerPhoto || '';
+            let photoUrl = '';
+            if (receiptFile) {
+                photoUrl = await uploadReceiptImage(receiptFile);
+            }
+
             const res = await fetch(`${API_BASE1}/payments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contractId: contract.contractId || contract._id,
                     customerName: `${contract.customerNameEn || ''} (${contract.customerNameKh || ''})`.trim(),
-                    photo: primaryPhoto,
+                    photo: photoUrl,
+                    image: photoUrl,
+                    receiptImage: photoUrl,
                     serialNumber: contract.serialNumber || '',
                     model: contract.model || '',
                     paidDate: phoneForm.paidDate,
@@ -115,16 +177,22 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                     description: phoneForm.description
                 })
             });
+
             if (res.ok) {
-                const newRecord = {
+                const data = await res.json();
+                const savedPayment = data.payment || {
                     paidDate: phoneForm.paidDate,
                     paidBy: phoneForm.paidBy,
                     amount: Number(phoneForm.amount),
-                    description: phoneForm.description
+                    description: phoneForm.description,
+                    photo: photoUrl,
+                    image: photoUrl
                 };
-                setQrPayments(current => [newRecord, ...current]);
+
+                setQrPayments(current => [savedPayment, ...current]);
                 setPaymentSuccess(true);
                 if (onSaved) onSaved();
+
                 setTimeout(() => {
                     onClose();
                     setPaymentSuccess(false);
@@ -134,10 +202,9 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
             console.error('Submit payment error:', err);
         } finally {
             setPaymentSubmitting(false);
+            setIsUploadingPhoto(false);
         }
     };
-
-    const currentPhotoUrl = photosList[activePhotoIdx] || '';
 
     return (
         <>
@@ -151,7 +218,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                             </div>
                             <div>
                                 <h3 className="text-base font-bold text-gray-100 flex items-center gap-2">
-                                    Payment Entry & Customer Information
+                                    Payment Entry & Payment Proof
                                 </h3>
                                 <p className="text-[11px] text-gray-400">
                                     {contract.customerNameEn || contract.customerNameKh} • <span className="text-indigo-400 font-mono font-semibold">{contract.contractIid || contract.contractId}</span>
@@ -173,169 +240,185 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                 <FaCheck />
                             </div>
                             <h3 className="text-lg font-bold text-emerald-400">Payment Submitted Successfully!</h3>
-                            <p className="text-xs text-gray-300">Payment record has been stored in MongoDB and updated in Payment History.</p>
+                            <p className="text-xs text-gray-300">Payment receipt has been saved and is now visible in Payment History.</p>
                         </div>
                     ) : (
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Left Column: Payment Entry Form */}
-                                <div className="p-5 rounded-2xl bg-[#090c17] border border-indigo-500/30 text-left space-y-4 relative shadow-inner">
-                                    <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-xs font-bold text-emerald-400">
-                                        <FaMobileAlt className="text-base" />
-                                        <span>Payment Entry Form / បញ្ចូលព័ត៌មានបង់ប្រាក់</span>
+                                <div className="p-5 rounded-2xl bg-[#090c17] border border-indigo-500/30 text-left space-y-4 relative shadow-inner flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-xs font-bold text-emerald-400">
+                                            <FaMobileAlt className="text-base" />
+                                            <span>Payment Entry Form / បញ្ចូលព័ត៌មានបង់ប្រាក់</span>
+                                        </div>
+                                        <form id="paymentForm" onSubmit={handleMobilePaymentSubmit} className="space-y-3 text-xs mt-3">
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('paidDate')}</label>
+                                                <input
+                                                    type="date"
+                                                    required
+                                                    value={phoneForm.paidDate}
+                                                    onChange={(e) => setPhoneForm({ ...phoneForm, paidDate: e.target.value })}
+                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('paidBy')} / Payment Method</label>
+                                                <select
+                                                    required
+                                                    value={phoneForm.paidBy}
+                                                    onChange={(e) => setPhoneForm({ ...phoneForm, paidBy: e.target.value })}
+                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer"
+                                                >
+                                                    <option value="">-- Select Payment Method --</option>
+                                                    {paymentMethods.map(m => (
+                                                        <option key={m} value={m}>{m}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('amount')} ($ USD)</label>
+                                                <input
+                                                    type="number"
+                                                    required
+                                                    step="any"
+                                                    value={phoneForm.amount}
+                                                    onChange={(e) => setPhoneForm({ ...phoneForm, amount: e.target.value })}
+                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('description')}</label>
+                                                <input
+                                                    type="text"
+                                                    value={phoneForm.description}
+                                                    onChange={(e) => setPhoneForm({ ...phoneForm, description: e.target.value })}
+                                                    placeholder="Note or transaction ref"
+                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100"
+                                                />
+                                            </div>
+                                        </form>
                                     </div>
-                                    <form onSubmit={handleMobilePaymentSubmit} className="space-y-3 text-xs">
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('paidDate')}</label>
-                                            <input
-                                                type="date"
-                                                required
-                                                value={phoneForm.paidDate}
-                                                onChange={(e) => setPhoneForm({ ...phoneForm, paidDate: e.target.value })}
-                                                className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('paidBy')} / Payment Method</label>
-                                            <select
-                                                required
-                                                value={phoneForm.paidBy}
-                                                onChange={(e) => setPhoneForm({ ...phoneForm, paidBy: e.target.value })}
-                                                className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer"
-                                            >
-                                                <option value="">-- Select Payment Method --</option>
-                                                {paymentMethods.map(m => (
-                                                    <option key={m} value={m}>{m}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('amount')} ($ USD)</label>
-                                            <input
-                                                type="number"
-                                                required
-                                                step="any"
-                                                value={phoneForm.amount}
-                                                onChange={(e) => setPhoneForm({ ...phoneForm, amount: e.target.value })}
-                                                className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-gray-400 mb-1">{t('description')}</label>
-                                            <input
-                                                type="text"
-                                                value={phoneForm.description}
-                                                onChange={(e) => setPhoneForm({ ...phoneForm, description: e.target.value })}
-                                                placeholder="Note or transaction ref"
-                                                className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100"
-                                            />
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            disabled={paymentSubmitting}
-                                            className="w-full h-10 mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
-                                        >
-                                            {paymentSubmitting ? (
+
+                                    <button
+                                        type="submit"
+                                        form="paymentForm"
+                                        disabled={paymentSubmitting}
+                                        className="w-full h-10 mt-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
+                                    >
+                                        {paymentSubmitting ? (
+                                            <div className="flex items-center gap-2">
                                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            ) : (
-                                                <span>Submit Payment to MongoDB</span>
-                                            )}
-                                        </button>
-                                    </form>
+                                                <span>{isUploadingPhoto ? 'Uploading Proof Image...' : 'Submitting Payment...'}</span>
+                                            </div>
+                                        ) : (
+                                            <span>Submit Payment to MongoDB</span>
+                                        )}
+                                    </button>
                                 </div>
 
-                                {/* Right Column: Customer / Contract Photo Display */}
+                                {/* Right Column: Payment Proof / Receipt Image Upload */}
                                 <div className="p-5 rounded-2xl bg-gray-900/80 border border-gray-800 text-center space-y-3 flex flex-col justify-between">
                                     <div className="flex items-center justify-between pb-2 border-b border-gray-800">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-indigo-300 uppercase tracking-wider">
-                                            <FaImages className="text-sm text-indigo-400" />
-                                            <span>រូបភាពអតិថិជន / ភស្តុតាង</span>
+                                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                                            <FaImage className="text-sm" />
+                                            <span>រូបភាពភស្តុតាងបង់ប្រាក់ (Payment Proof)</span>
                                         </div>
-                                        {photosList.length > 0 && (
-                                            <span className="text-[11px] font-bold text-indigo-400 bg-indigo-950/80 border border-indigo-700 px-2 py-0.5 rounded-full">
-                                                {activePhotoIdx + 1} / {photosList.length}
-                                            </span>
+                                        {receiptPreview && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setReceiptFile(null);
+                                                    setReceiptPreview('');
+                                                    if (fileInputRef.current) fileInputRef.current.value = '';
+                                                }}
+                                                className="text-[11px] text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1 cursor-pointer"
+                                            >
+                                                <FaTrashAlt size={10} /> លុប
+                                            </button>
                                         )}
                                     </div>
 
-                                    {photosList.length > 0 ? (
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                                handleFileChange(e.target.files[0]);
+                                            }
+                                        }}
+                                    />
+
+                                    {receiptPreview ? (
                                         <div className="space-y-3 flex-1 flex flex-col justify-center">
-                                            {/* Main Image Display */}
-                                            <div className="relative group rounded-2xl overflow-hidden bg-black/60 border border-gray-700 flex items-center justify-center h-52">
+                                            <div className="relative group rounded-2xl overflow-hidden bg-black/70 border border-emerald-500/40 flex items-center justify-center h-52">
                                                 <img
-                                                    src={currentPhotoUrl}
-                                                    alt="Customer/Evidence"
+                                                    src={receiptPreview}
+                                                    alt="Payment Proof Receipt"
                                                     className="w-full h-full object-contain cursor-pointer transition-transform duration-200 group-hover:scale-105"
                                                     onClick={() => setPreviewLightbox(true)}
                                                 />
-                                                {/* Expand Button */}
                                                 <button
                                                     type="button"
                                                     onClick={() => setPreviewLightbox(true)}
-                                                    className="absolute top-2 right-2 p-2 rounded-lg bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                    className="absolute top-2 right-2 p-2 rounded-lg bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow"
                                                     title="View Full Size"
                                                 >
                                                     <FaExpand size={12} />
                                                 </button>
-
-                                                {/* Left/Right arrow navigation */}
-                                                {photosList.length > 1 && (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setActivePhotoIdx((prev) => (prev > 0 ? prev - 1 : photosList.length - 1));
-                                                            }}
-                                                            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/70 hover:bg-black text-white cursor-pointer shadow-md transition-all"
-                                                        >
-                                                            <FaChevronLeft size={12} />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setActivePhotoIdx((prev) => (prev < photosList.length - 1 ? prev + 1 : 0));
-                                                            }}
-                                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/70 hover:bg-black text-white cursor-pointer shadow-md transition-all"
-                                                        >
-                                                            <FaChevronRight size={12} />
-                                                        </button>
-                                                    </>
-                                                )}
                                             </div>
-
-                                            {/* Thumbnail Strip */}
-                                            {photosList.length > 1 && (
-                                                <div className="flex items-center justify-center gap-2 overflow-x-auto py-1">
-                                                    {photosList.map((img, idx) => (
-                                                        <button
-                                                            key={idx}
-                                                            type="button"
-                                                            onClick={() => setActivePhotoIdx(idx)}
-                                                            className={`w-11 h-11 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 cursor-pointer ${idx === activePhotoIdx
-                                                                ? 'border-indigo-500 scale-105 shadow-md shadow-indigo-500/30'
-                                                                : 'border-gray-700 opacity-60 hover:opacity-100'
-                                                                }`}
-                                                        >
-                                                            <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" />
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
+                                            <div className="flex items-center justify-between text-[11px] text-gray-400 px-1">
+                                                <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                                                    ✓ បានជ្រើសរើសរូបភាពភស្តុតាង
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
+                                                >
+                                                    ប្តូររូបភាពថ្មី
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="h-52 rounded-2xl bg-gray-950/60 border border-gray-800 border-dashed flex flex-col items-center justify-center text-gray-500 space-y-2">
-                                            <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-xl text-gray-400">
-                                                <FaUser />
+                                        <div
+                                            onClick={() => fileInputRef.current?.click()}
+                                            onDragOver={(e) => e.preventDefault()}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                                    handleFileChange(e.dataTransfer.files[0]);
+                                                }
+                                            }}
+                                            className="h-52 rounded-2xl bg-gray-950/60 border-2 border-dashed border-gray-700 hover:border-emerald-500/60 transition-all flex flex-col items-center justify-center p-4 cursor-pointer group space-y-2"
+                                        >
+                                            <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-2xl text-emerald-400 group-hover:scale-110 transition-transform">
+                                                <FaCloudUploadAlt />
                                             </div>
-                                            <p className="text-xs font-medium">គ្មានរូបភាពភ្ជាប់ (No Photo Available)</p>
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-200 group-hover:text-emerald-300 transition-colors">
+                                                    ចុចទីនេះដើម្បី Upload ឬ អូសទម្លាក់រូបភាព
+                                                </p>
+                                                <p className="text-[11px] text-gray-400 mt-1">
+                                                    ឬចុច <kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-300 font-mono text-[10px]">Ctrl + V</kbd> ដើម្បី Paste រូបភាព
+                                                </p>
+                                            </div>
+                                            <span className="text-[10px] text-gray-500">
+                                                រូបភាពនេះនឹងបង្ហាញក្នុង Payment History
+                                            </span>
                                         </div>
                                     )}
+
+                                    <div className="text-[10px] text-gray-400 text-left bg-gray-950/40 p-2.5 rounded-xl border border-gray-800">
+                                        💡 <span className="text-gray-300 font-medium">ចំណាំ៖</span> រូបភាពដែលបានភ្ជាប់នឹងត្រូវរក្សាទុកជាភស្តុតាងនៃការបង់ប្រាក់ ហើយលោតទៅបង្ហាញនៅជួររូបភាពក្នុងទំព័រ <span className="text-emerald-400 font-mono">Payment History</span>។
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Payment History */}
+                            {/* Payment History Section */}
                             <div className="p-5 rounded-2xl bg-gray-900/80 border border-sky-500/30 space-y-3">
                                 <div className="flex items-center justify-between border-b border-gray-800 pb-2">
                                     <h4 className="text-xs font-bold text-sky-300 uppercase tracking-wider">Payment History / ប្រវត្តិបង់ប្រាក់</h4>
@@ -346,15 +429,30 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                         <p className="py-4 text-center text-xs text-gray-500">Loading payment history...</p>
                                     ) : qrPayments.length === 0 ? (
                                         <p className="py-4 text-center text-xs text-gray-500">No payment records yet.</p>
-                                    ) : qrPayments.map((payment, index) => (
-                                        <div key={payment._id || `${payment.paidDate}-${index}`} className="flex items-center justify-between gap-3 py-2 text-xs">
-                                            <div className="min-w-0">
-                                                <p className="text-gray-300 font-mono">{payment.paidDate || payment.paymentDate || '—'}</p>
-                                                <p className="text-gray-500 truncate">{payment.paidBy || 'System'} · {payment.description || '—'}</p>
+                                    ) : qrPayments.map((payment, index) => {
+                                        const proofImg = payment.photo || payment.image || payment.receiptImage;
+                                        return (
+                                            <div key={payment._id || `${payment.paidDate}-${index}`} className="flex items-center justify-between gap-3 py-2 text-xs">
+                                                <div className="min-w-0 flex items-center gap-2">
+                                                    {proofImg && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setViewHistoryImage(proofImg)}
+                                                            className="w-8 h-8 rounded-lg overflow-hidden border border-emerald-500/40 flex-shrink-0 cursor-pointer hover:scale-110 transition-transform"
+                                                            title="មើលរូបភាពភស្តុតាង"
+                                                        >
+                                                            <img src={proofImg} alt="Receipt" className="w-full h-full object-cover" />
+                                                        </button>
+                                                    )}
+                                                    <div className="min-w-0">
+                                                        <p className="text-gray-300 font-mono">{payment.paidDate || payment.paymentDate || '—'}</p>
+                                                        <p className="text-gray-500 truncate">{payment.paidBy || 'System'} · {payment.description || '—'}</p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-emerald-400 font-bold font-mono whitespace-nowrap">${Number(payment.amount || 0).toLocaleString()}</span>
                                             </div>
-                                            <span className="text-emerald-400 font-bold font-mono whitespace-nowrap">${Number(payment.amount || 0).toLocaleString()}</span>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                                 <div className="flex justify-between pt-2 border-t border-gray-800 text-xs font-bold">
                                     <span className="text-gray-400">Total Paid</span>
@@ -366,8 +464,8 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                 </div>
             </div>
 
-            {/* Lightbox / Full-size photo preview */}
-            {previewLightbox && currentPhotoUrl && (
+            {/* Lightbox / Full-size photo preview for uploaded receipt */}
+            {previewLightbox && receiptPreview && (
                 <div
                     className="fixed inset-0 bg-black/90 backdrop-blur-md z-[1000000] flex items-center justify-center p-4"
                     onClick={() => setPreviewLightbox(false)}
@@ -381,31 +479,33 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                             <MdClose size={28} />
                         </button>
                         <img
-                            src={currentPhotoUrl}
-                            alt="Full preview"
+                            src={receiptPreview}
+                            alt="Full receipt preview"
                             className="max-h-[80vh] max-w-full object-contain rounded-xl shadow-2xl border border-gray-700"
                         />
-                        {photosList.length > 1 && (
-                            <div className="flex items-center gap-4 mt-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setActivePhotoIdx((prev) => (prev > 0 ? prev - 1 : photosList.length - 1))}
-                                    className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold cursor-pointer flex items-center gap-1"
-                                >
-                                    <FaChevronLeft /> Prev
-                                </button>
-                                <span className="text-xs text-gray-300 font-bold">
-                                    {activePhotoIdx + 1} / {photosList.length}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => setActivePhotoIdx((prev) => (prev < photosList.length - 1 ? prev + 1 : 0))}
-                                    className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold cursor-pointer flex items-center gap-1"
-                                >
-                                    Next <FaChevronRight />
-                                </button>
-                            </div>
-                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Lightbox for Payment History receipt image */}
+            {viewHistoryImage && (
+                <div
+                    className="fixed inset-0 bg-black/90 backdrop-blur-md z-[1000000] flex items-center justify-center p-4"
+                    onClick={() => setViewHistoryImage(null)}
+                >
+                    <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onClick={e => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            onClick={() => setViewHistoryImage(null)}
+                            className="absolute -top-10 right-0 text-white hover:text-red-400 text-xl font-bold cursor-pointer"
+                        >
+                            <MdClose size={28} />
+                        </button>
+                        <img
+                            src={viewHistoryImage}
+                            alt="History Payment Proof"
+                            className="max-h-[80vh] max-w-full object-contain rounded-xl shadow-2xl border border-emerald-500/40"
+                        />
                     </div>
                 </div>
             )}
