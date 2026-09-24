@@ -354,6 +354,96 @@ export const archiveAndCleanupSystemLogs = async (retentionDays = 7, triggeredBy
 };
 
 /**
+ * Export ALL logs currently in DB to Google Sheet 2 (used on first boot / full sync)
+ * Does NOT delete any logs — only streams them to Sheet 2 for history
+ */
+export const exportAllLogsToGoogleSheet2 = async () => {
+    try {
+        const sheetId = process.env.GOOGLE_SHEET_SYSTEM_LOGS_ID || process.env.GOOGLE_SHEET_DELETE_HISTORY_ID;
+        const webhookUrl = process.env.GOOGLE_SHEET_SYSTEM_LOGS_WEBHOOK_URL || process.env.GOOGLE_SHEET_DELETE_HISTORY_WEBHOOK_URL;
+        const svc = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_PATH || process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+
+        if (!webhookUrl && (!svc || !sheetId)) {
+            console.log('[LogArchival] No Google Sheet 2 config found — skipping full sync.');
+            return { skipped: true };
+        }
+
+        // Fetch ALL logs from DB (no date filter)
+        let allLogs = [];
+        if (isMongoConnected) {
+            const results = await queryAllDBs(SystemAuditLog, (M) =>
+                M.find({}).sort({ timestamp: 1 }).limit(5000)
+            );
+            const map = new Map();
+            results.forEach(l => map.set(l._id ? l._id.toString() : l.eventId, l));
+            allLogs = Array.from(map.values());
+        } else {
+            allLogs = [...(MEM_DB.systemAuditLogs || [])].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        }
+
+        if (allLogs.length === 0) {
+            console.log('[LogArchival] No logs found in DB to sync to Google Sheet 2.');
+            return { success: true, count: 0 };
+        }
+
+        console.log(`[LogArchival] 🔄 Full Sync: Exporting ALL ${allLogs.length} logs to Google Sheet 2...`);
+
+        // Send in batches of 200 rows to avoid webhook timeout
+        const BATCH_SIZE = 200;
+        let totalSent = 0;
+        for (let i = 0; i < allLogs.length; i += BATCH_SIZE) {
+            const batch = allLogs.slice(i, i + BATCH_SIZE);
+            const rows = batch.map(l => formatLogRow(l));
+
+            if (webhookUrl) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 30000);
+                    const response = await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'append',
+                            sheetId: sheetId || '',
+                            rows,
+                            type: 'system_logs_full_sync'
+                        }),
+                        redirect: 'follow',
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    if (response.ok) {
+                        totalSent += rows.length;
+                        console.log(`[LogArchival] ✅ Full Sync batch ${Math.floor(i / BATCH_SIZE) + 1}: Sent ${rows.length} rows (total: ${totalSent}/${allLogs.length})`);
+                    } else {
+                        console.warn(`[LogArchival] ⚠️ Full Sync batch ${Math.floor(i / BATCH_SIZE) + 1} returned status ${response.status}`);
+                        // Fallback to API
+                        if (svc && sheetId) await appendToSystemLogsGoogleSheetAPI(svc, sheetId, rows);
+                    }
+                } catch (wErr) {
+                    console.warn(`[LogArchival] Full Sync batch error: ${wErr.message} — trying API fallback...`);
+                    if (svc && sheetId) await appendToSystemLogsGoogleSheetAPI(svc, sheetId, rows);
+                }
+            } else if (svc && sheetId) {
+                await appendToSystemLogsGoogleSheetAPI(svc, sheetId, rows);
+                totalSent += rows.length;
+            }
+
+            // Small delay between batches to avoid rate limiting
+            if (i + BATCH_SIZE < allLogs.length) {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
+        }
+
+        console.log(`[LogArchival] ✅ Full Sync complete: ${totalSent}/${allLogs.length} logs synced to Google Sheet 2.`);
+        return { success: true, count: totalSent, total: allLogs.length };
+    } catch (err) {
+        console.error('[LogArchival] exportAllLogsToGoogleSheet2 error:', err.message);
+        return { success: false, error: err.message };
+    }
+};
+
+/**
  * Get current 7-day archival status and count of logs pending archival
  */
 export const getArchivalStatus = async (retentionDays = 7) => {
@@ -637,8 +727,23 @@ export const readSystemLogsFromGoogleSheet = async ({
  */
 export const startSystemLogArchivalScheduler = () => {
     console.log('[LogArchival] Initializing Automatic 7-Day System Log Archival & Retention Scheduler...');
-    
-    // 1. Run immediately on server boot (after 2 seconds)
+
+    // 1. Full Sync on boot: export ALL existing DB logs to Google Sheet 2 (no filter)
+    setTimeout(async () => {
+        console.log('[LogArchival] 🚀 Boot-time: Starting FULL SYNC of ALL existing logs to Google Sheet 2...');
+        try {
+            const syncResult = await exportAllLogsToGoogleSheet2();
+            if (syncResult.skipped) {
+                console.log('[LogArchival] ⏩ Full Sync skipped (no Google Sheet 2 config).');
+            } else {
+                console.log(`[LogArchival] ✅ Full Sync done: ${syncResult.count || 0} logs sent to Google Sheet 2.`);
+            }
+        } catch (err) {
+            console.error('[LogArchival] ❌ Boot-time full sync error:', err.message);
+        }
+    }, 3000);
+
+    // 2. Archive + Purge logs older than 7 days (runs after full sync, with slight delay)
     setTimeout(async () => {
         console.log('[LogArchival] 🚀 Starting immediate boot-time scan to check & archive system logs (>7 days) to Google Sheet...');
         try {
@@ -647,9 +752,9 @@ export const startSystemLogArchivalScheduler = () => {
         } catch (err) {
             console.error('[LogArchival] ❌ Boot-time immediate scan error:', err.message);
         }
-    }, 2000);
+    }, 8000);
 
-    // 2. Periodic run every 6 hours (6 * 60 * 60 * 1000 ms)
+    // 3. Periodic run every 6 hours (6 * 60 * 60 * 1000 ms)
     setInterval(async () => {
         console.log('[LogArchival] ⏰ Starting 6-hour periodic archival scan to Google Sheet...');
         try {
