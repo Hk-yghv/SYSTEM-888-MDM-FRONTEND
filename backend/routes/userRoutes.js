@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { recordSystemAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
 
@@ -222,6 +223,33 @@ router.delete('/:id', async (req, res) => {
             );
         }
         MEM_DB.users = MEM_DB.users.filter(u => u._id !== req.params.id && u.userId !== req.params.id);
+
+        // Record audit log with snapshot of deleted user
+        recordSystemAudit({
+            category: 'Security',
+            level: 'Warning',
+            action: 'USER_ACCOUNT_DELETE',
+            taskCategory: 'Account Deletion',
+            description: `Deleted user account: ${user?.username || req.params.id} (Role: ${user?.role || 'Staff'}, Brand: ${user?.brand || 'All'})`,
+            username: req.user?.username || req.query?.operator || 'Admin',
+            name: req.user?.name || '',
+            role: req.user?.role || 'Admin',
+            brand: user?.brand || '',
+            payload: {
+                deletedData: user ? {
+                    _id: user._id,
+                    userId: user.userId,
+                    username: user.username,
+                    name: user.name,
+                    role: user.role,
+                    brand: user.brand,
+                    phone: user.phone,
+                    telegramId: user.telegramId,
+                    permissions: user.permissions
+                } : { id: req.params.id }
+            }
+        }).catch(() => {});
+
         res.json({ message: 'Deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -2,6 +2,7 @@ import express from 'express';
 import CalculateSchedule from '../models/CalculateSchedule.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { recordSystemAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
 
@@ -177,15 +178,34 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        let targetSchedule = null;
+
         if (isMongoConnected) {
+            const results = await queryAllDBs(CalculateSchedule, (M) => M.findById(id));
+            targetSchedule = results.find(r => r != null) || null;
             const Model = getWriteModel(CalculateSchedule);
             await Model.findByIdAndDelete(id);
         } else {
+            targetSchedule = MEM_DB.calculateSchedules.find(item => String(item._id) === String(id)) || null;
             MEM_DB.calculateSchedules = MEM_DB.calculateSchedules.filter(item => String(item._id) !== String(id));
         }
 
         // Broadcast deletion event
         broadcastCalculateUpdate({ type: 'DELETED', id });
+
+        // Record audit log
+        recordSystemAudit({
+            category: 'Financial',
+            level: 'Warning',
+            action: 'CALCULATE_SCHEDULE_DELETE',
+            taskCategory: 'Calculate Schedule',
+            description: `Deleted calculate schedule record ${targetSchedule?.customerName || id} (Phone: ${targetSchedule?.phone || 'N/A'}, Price: $${targetSchedule?.phonePrice || 0})`,
+            username: req.user?.username || req.query?.username || 'Staff',
+            brand: targetSchedule?.brand || '',
+            payload: {
+                deletedData: targetSchedule || { id }
+            }
+        }).catch(() => {});
 
         res.json({ success: true, message: 'Deleted successfully' });
     } catch (err) {

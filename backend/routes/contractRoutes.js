@@ -567,7 +567,14 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         let deletedContractId = req.params.id;
+        let targetContract = null;
+
         if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, (M) =>
+                M.findOne({ $or: [{ _id: req.params.id }, { contractId: req.params.id }] })
+            );
+            targetContract = results.find(r => r != null) || null;
+
             await Promise.allSettled(
                 [Contract].map(async (M) => {
                     await queryAllDBs(M, async (BoundM) => {
@@ -577,18 +584,34 @@ router.delete('/:id', async (req, res) => {
                     });
                 })
             );
+        } else {
+            targetContract = MEM_DB.contracts.find(c => c._id === req.params.id || c.contractId === req.params.id) || null;
         }
+
         MEM_DB.contracts = MEM_DB.contracts.filter(c => c._id !== req.params.id && c.contractId !== req.params.id);
 
-        // Record Audit Log
+        const customerName = targetContract?.customerName || targetContract?.name || targetContract?.customerInfo?.name || 'N/A';
+        const phone = targetContract?.phoneNumber || targetContract?.phone || targetContract?.customerInfo?.phone || 'N/A';
+        const imei = targetContract?.imei1 || targetContract?.imei || targetContract?.deviceInfo?.imei1 || 'N/A';
+        const brand = targetContract?.brand || req.user?.brand || '';
+
+        // Record Audit Log with full pre-deletion data
         recordSystemAudit({
             category: 'Contract',
             level: 'Warning',
             action: 'CONTRACT_DELETE',
             taskCategory: 'Contract Removal',
-            description: `Deleted contract ${deletedContractId} in MongoDB (Archived in Firebase Backup)`,
-            username: req.user?.username || 'Staff',
-            contractId: deletedContractId
+            description: `Deleted contract ${targetContract?.contractId || deletedContractId} (Customer: ${customerName}, Phone: ${phone}, IMEI: ${imei})`,
+            username: req.user?.username || req.query?.username || 'Staff',
+            name: req.user?.name || '',
+            role: req.user?.role || 'Staff',
+            brand,
+            contractId: targetContract?.contractId || deletedContractId,
+            customerId: targetContract?.customerId || '',
+            payload: {
+                deletedData: targetContract || { contractId: deletedContractId },
+                deletedContractId
+            }
         }).catch(() => {});
 
         res.json({ message: 'Contract deleted from MongoDB (Archived in Firebase backup)' });

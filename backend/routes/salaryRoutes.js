@@ -3,6 +3,7 @@ import Salary from '../models/Salary.js';
 import User from '../models/User.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { recordSystemAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
 
@@ -722,20 +723,35 @@ router.delete('/:id', async (req, res) => {
             return res.status(400).json({ error: 'Invalid salary ID parameter' });
         }
 
+        let targetSalary = null;
+
         if (isMongoConnected && id.match(/^[0-9a-fA-F]{24}$/)) {
+            const results = await queryAllDBs(Salary, (M) => M.findById(id));
+            targetSalary = results.find(r => r != null) || null;
             const WriteSalary = getWriteModel(Salary) || Salary;
-            const deleted = await WriteSalary.findByIdAndDelete(id);
-            if (deleted) {
-                return res.json({ message: 'Salary entry deleted successfully' });
+            await WriteSalary.findByIdAndDelete(id);
+        } else {
+            const index = (MEM_DB.salaries || []).findIndex(s => String(s._id) === String(id) || String(s.id) === String(id));
+            if (index !== -1) {
+                targetSalary = MEM_DB.salaries[index];
+                MEM_DB.salaries.splice(index, 1);
             }
         }
-        
-        // Memory fallback
-        const index = (MEM_DB.salaries || []).findIndex(s => String(s._id) === String(id) || String(s.id) === String(id));
-        if (index === -1) {
-            return res.status(404).json({ error: 'Salary entry not found' });
-        }
-        MEM_DB.salaries.splice(index, 1);
+
+        // Record audit log with deleted salary record
+        recordSystemAudit({
+            category: 'Financial',
+            level: 'Warning',
+            action: 'SALARY_RECORD_DELETE',
+            taskCategory: 'Salary Deletion',
+            description: `Deleted salary record for ${targetSalary?.staffName || targetSalary?.username || id} (Amount: $${targetSalary?.netSalary || targetSalary?.salary || 0}, Month: ${targetSalary?.month || targetSalary?.date || 'N/A'})`,
+            username: req.user?.username || req.query?.username || 'Staff',
+            brand: targetSalary?.brand || '',
+            payload: {
+                deletedData: targetSalary || { id }
+            }
+        }).catch(() => {});
+
         return res.json({ message: 'Salary entry deleted successfully' });
     } catch (err) {
         console.error('Delete salary error:', err);

@@ -13,6 +13,7 @@ import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import ProtectRoute from "../services/ProtectRoute";
 import SignIn from "../services/SignIn";
 import { getFirstAllowedRoute } from "../utils/permissionUtils";
+import GlobalActivityTracker from "../components/GlobalActivityTracker";
 
 // Dashboard);
 import Dashboard from "../App/Dashboard/Dashboard";
@@ -159,6 +160,7 @@ const App = () => {
           <ThemeProvider>
             <LanguageProvider>
               <BrowserRouter>
+                <GlobalActivityTracker />
                 <Routes>
                   {/* Sign In Route */}
                   <Route path={json.signin} element={<SignIn />} />

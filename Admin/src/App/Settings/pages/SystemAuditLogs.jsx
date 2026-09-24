@@ -23,7 +23,10 @@ import {
     FaLaptopCode,
     FaDatabase,
     FaServer,
-    FaMobileAlt
+    FaMobileAlt,
+    FaCloudUploadAlt,
+    FaTrashAlt,
+    FaMousePointer
 } from 'react-icons/fa';
 import { MdOutlineCleaningServices, MdOutlineViewStream, MdCode } from 'react-icons/md';
 import { exportToExcel } from '../../../utils/exportUtils';
@@ -41,7 +44,7 @@ const SystemAuditLogs = () => {
     );
 
     // Filter & Query States
-    const [selectedCategory, setSelectedCategory] = useState('All'); // 'All', 'Security', 'Navigation', 'Contract', 'Device', 'System'
+    const [selectedCategory, setSelectedCategory] = useState('All'); // 'All', 'Security', 'Navigation', 'Contract', 'Device', 'System', 'UserActivity'
     const [selectedLevel, setSelectedLevel] = useState('All'); // 'All', 'Information', 'Warning', 'Error', 'SuccessAudit'
     const [selectedBrand, setSelectedBrand] = useState(isMasterAdmin ? '' : (user?.brand || ''));
     const [targetUser, setTargetUser] = useState('');
@@ -58,16 +61,22 @@ const SystemAuditLogs = () => {
     const [detailTab, setDetailTab] = useState('general'); // 'general' or 'xml'
     const [copiedXml, setCopiedXml] = useState(false);
 
+    // Archival State (7-Day Google Sheet Archival & DB Cleanup)
+    const [archivalStatus, setArchivalStatus] = useState({ pendingCount: 0, totalCount: 0, cutoffDate: null, lastStatus: null });
+    const [archiving, setArchiving] = useState(false);
+    const [openArchivalModal, setOpenArchivalModal] = useState(false);
+    const [archiveSuccessMsg, setArchiveSuccessMsg] = useState('');
+
     // Tree navigation expanded state
     const [treeOpen, setTreeOpen] = useState({
         root: true,
         windowsLogs: true,
+        googleSheetFolder: true,
         appLogs: true
     });
 
-    // Fetch Brands and Users for filtering (Master Admin only)
+    // Fetch Brands and Users for filtering
     useEffect(() => {
-        if (!isMasterAdmin) return;
         const fetchFilters = async () => {
             try {
                 const bRes = await fetch(`${API_BASE}/controlsystem?brand=`);
@@ -81,36 +90,44 @@ const SystemAuditLogs = () => {
                 const uRes = await fetch(`${API_BASE}/users?limit=1000`);
                 if (uRes.ok) {
                     const uData = await uRes.json();
-                    setUsersList(Array.isArray(uData.users) ? uData.users : []);
+                    const usersArr = Array.isArray(uData) ? uData : (Array.isArray(uData?.users) ? uData.users : []);
+                    setUsersList(usersArr);
                 }
             } catch (err) {
                 console.error('Failed to load filter metadata:', err);
             }
         };
         fetchFilters();
-    }, [isMasterAdmin, API_BASE]);
+    }, [API_BASE]);
 
-    // Fetch Audit Logs
+    // Fetch Audit Logs (supports both MongoDB active store and Google Sheet archive)
     const fetchLogs = async () => {
         setLoading(true);
         try {
+            const isGoogleSheetView = selectedCategory === 'GoogleSheetHistory';
             const params = new URLSearchParams({
                 username: user?.username || '',
                 userRole: user?.role || '',
                 userBrand: user?.brand || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false',
-                limit: 200
+                limit: 300
             });
 
-            if (selectedCategory && selectedCategory !== 'All') params.set('category', selectedCategory);
+            if (selectedCategory && selectedCategory !== 'All' && selectedCategory !== 'GoogleSheetHistory') {
+                params.set('category', selectedCategory);
+            }
             if (selectedLevel && selectedLevel !== 'All') params.set('level', selectedLevel);
-            if (isMasterAdmin && selectedBrand) params.set('brand', selectedBrand);
-            if (isMasterAdmin && targetUser) params.set('targetUser', targetUser);
+            if (selectedBrand) params.set('brand', selectedBrand);
+            if (targetUser) params.set('targetUser', targetUser);
             if (searchTerm) params.set('search', searchTerm);
             if (startDate) params.set('startDate', startDate);
             if (endDate) params.set('endDate', endDate);
 
-            const res = await fetch(`${API_BASE}/audit-logs?${params.toString()}`);
+            const endpoint = isGoogleSheetView
+                ? `${API_BASE}/audit-logs/google-sheet-history`
+                : `${API_BASE}/audit-logs`;
+
+            const res = await fetch(`${endpoint}?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 const items = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
@@ -126,11 +143,13 @@ const SystemAuditLogs = () => {
                 }
             }
 
-            // Also fetch stats
-            const statsRes = await fetch(`${API_BASE}/audit-logs/stats?${params.toString()}`);
-            if (statsRes.ok) {
-                const sData = await statsRes.json();
-                setStats(sData);
+            // Also fetch stats for MongoDB if not in Google Sheet view
+            if (!isGoogleSheetView) {
+                const statsRes = await fetch(`${API_BASE}/audit-logs/stats?${params.toString()}`);
+                if (statsRes.ok) {
+                    const sData = await statsRes.json();
+                    setStats(sData);
+                }
             }
         } catch (err) {
             console.error('Fetch audit logs error:', err);
@@ -139,8 +158,47 @@ const SystemAuditLogs = () => {
         }
     };
 
+    // Fetch 7-Day Archival Status
+    const fetchArchivalStatus = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/audit-logs/archive-status?days=7`);
+            if (res.ok) {
+                const data = await res.json();
+                setArchivalStatus(data);
+            }
+        } catch (err) {
+            console.error('Fetch archival status error:', err);
+        }
+    };
+
+    // Trigger Manual 7-Day Archival to Google Sheet & Clean DB
+    const handleTriggerArchival = async () => {
+        setArchiving(true);
+        setArchiveSuccessMsg('');
+        try {
+            const res = await fetch(`${API_BASE}/audit-logs/archive-7days`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ days: 7, username: user?.username || 'Admin' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setArchiveSuccessMsg(data.message || `Archived ${data.count} records to Google Sheet and cleaned from database.`);
+                fetchLogs();
+                fetchArchivalStatus();
+            } else {
+                alert('Archival failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (err) {
+            alert('Archival error: ' + err.message);
+        } finally {
+            setArchiving(false);
+        }
+    };
+
     useEffect(() => {
         fetchLogs();
+        fetchArchivalStatus();
     }, [selectedCategory, selectedLevel, selectedBrand, targetUser, startDate, endDate]);
 
     // Format Date for Windows Explorer / Event Viewer style
@@ -494,11 +552,54 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
                     </button>
 
                     <button
+                        onClick={() => { fetchArchivalStatus(); setOpenArchivalModal(true); }}
+                        className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded text-xs font-semibold shadow-xs cursor-pointer active:translate-y-px transition-all"
+                        title="Auto-sync and cleanup logs older than 7 days to Google Sheets"
+                    >
+                        <FaCloudUploadAlt size={13} className="animate-pulse" />
+                        <span>Google Sheet Archive (&gt;7 Days)</span>
+                        {archivalStatus.pendingCount > 0 && (
+                            <span className="bg-amber-300 text-slate-900 text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
+                                {archivalStatus.pendingCount}
+                            </span>
+                        )}
+                    </button>
+
+                    {/* Date Range Inputs (ពីថ្ងៃណា ដល់ថ្ងៃណា) */}
+                    <div className="flex items-center gap-1 bg-white border border-slate-300 rounded px-2 py-0.5 shadow-2xs">
+                        <span className="text-[11px] text-slate-500 font-medium">ពីថ្ងៃ:</span>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="h-6 text-xs text-slate-800 bg-transparent outline-none font-mono cursor-pointer"
+                        />
+                        <span className="text-slate-400 text-xs">→</span>
+                        <span className="text-[11px] text-slate-500 font-medium">ដល់ថ្ងៃ:</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="h-6 text-xs text-slate-800 bg-transparent outline-none font-mono cursor-pointer"
+                        />
+                        {(startDate || endDate) && (
+                            <button
+                                onClick={() => { setStartDate(''); setEndDate(''); }}
+                                className="text-slate-400 hover:text-red-500 text-xs ml-1 font-bold cursor-pointer"
+                                title="Clear date filter"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
+
+                    <button
                         onClick={() => {
                             setSearchTerm('');
                             setStartDate('');
                             setEndDate('');
-                            if (isMasterAdmin) { setSelectedBrand(''); setTargetUser(''); }
+                            setSelectedBrand('');
+                            setTargetUser('');
                             setSelectedCategory('All');
                             setSelectedLevel('All');
                         }}
@@ -529,41 +630,37 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
 
                 {/* Right Filters (Brand, User, Severity) */}
                 <div className="flex items-center gap-2 flex-wrap text-xs">
-                    {/* Brand Filter (Master Admin only) */}
-                    {isMasterAdmin && (
-                        <div className="flex items-center gap-1">
-                            <span className="text-[11px] text-slate-500 font-medium">Brand:</span>
-                            <select
-                                value={selectedBrand}
-                                onChange={(e) => setSelectedBrand(e.target.value)}
-                                className="h-7 px-2 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-semibold cursor-pointer"
-                            >
-                                <option value="">🌐 All Brands (ទាំងអស់)</option>
-                                {brandsList.map((b, idx) => (
-                                    <option key={idx} value={b}>{b}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
+                    {/* Brand Filter */}
+                    <div className="flex items-center gap-1">
+                        <span className="text-[11px] text-slate-500 font-medium">Brand:</span>
+                        <select
+                            value={selectedBrand}
+                            onChange={(e) => setSelectedBrand(e.target.value)}
+                            className="h-7 px-2 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-semibold cursor-pointer"
+                        >
+                            <option value="">🌐 All Brands (ទាំងអស់)</option>
+                            {brandsList.map((b, idx) => (
+                                <option key={idx} value={b}>{b}</option>
+                            ))}
+                        </select>
+                    </div>
 
-                    {/* User Filter (Master Admin only) */}
-                    {isMasterAdmin && (
-                        <div className="flex items-center gap-1">
-                            <span className="text-[11px] text-slate-500 font-medium">Account:</span>
-                            <select
-                                value={targetUser}
-                                onChange={(e) => setTargetUser(e.target.value)}
-                                className="h-7 px-2 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-semibold cursor-pointer"
-                            >
-                                <option value="">👥 All Accounts</option>
-                                {usersList.map((u, idx) => (
-                                    <option key={idx} value={u.username}>
-                                        {u.username} ({u.role || 'Staff'})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
+                    {/* User Account Filter */}
+                    <div className="flex items-center gap-1">
+                        <span className="text-[11px] text-slate-500 font-medium">Account:</span>
+                        <select
+                            value={targetUser}
+                            onChange={(e) => setTargetUser(e.target.value)}
+                            className="h-7 px-2 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-semibold cursor-pointer max-w-[170px]"
+                        >
+                            <option value="">👥 All Accounts ({usersList.length})</option>
+                            {usersList.map((u, idx) => (
+                                <option key={u._id || u.userId || idx} value={u.username}>
+                                    {u.username} {u.name ? `(${u.name})` : ''} - {u.role || 'Staff'}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
                     {/* Severity Level */}
                     <div className="flex items-center gap-1">
@@ -608,14 +705,14 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
 
                             {treeOpen.root && (
                                 <div className="ml-4 pl-2 border-l border-slate-200 space-y-0.5">
-                                    {/* Windows Logs Node */}
+                                    {/* 1. Active MongoDB Logs Node */}
                                     <div
                                         onClick={() => setTreeOpen(prev => ({ ...prev, windowsLogs: !prev.windowsLogs }))}
                                         className="flex items-center gap-1.5 px-2 py-1 hover:bg-slate-100 rounded cursor-pointer font-semibold text-slate-700"
                                     >
                                         {treeOpen.windowsLogs ? <FaChevronDown size={9} className="text-slate-400" /> : <FaChevronRight size={9} className="text-slate-400" />}
                                         <FaFolderOpen className="text-amber-500" size={12} />
-                                        <span>System MDM Logs</span>
+                                        <span>System MDM Logs (Active)</span>
                                     </div>
 
                                     {treeOpen.windowsLogs && (
@@ -642,6 +739,17 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
                                                     <span>Navigation & Pages</span>
                                                 </span>
                                                 <span className="text-[10px] opacity-80">{stats.navigationCount || 0}</span>
+                                            </div>
+
+                                            {/* User Interactions & Clicks */}
+                                            <div
+                                                onClick={() => setSelectedCategory('UserActivity')}
+                                                className={`flex items-center justify-between px-2 py-1 rounded cursor-pointer text-xs ${selectedCategory === 'UserActivity' ? 'bg-[#0078d4] text-white font-bold' : 'hover:bg-slate-100 text-slate-700'}`}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <FaMousePointer className={selectedCategory === 'UserActivity' ? 'text-white' : 'text-teal-600'} />
+                                                    <span>Button Clicks & Actions</span>
+                                                </span>
                                             </div>
 
                                             {/* Contract & Application */}
@@ -691,6 +799,33 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* 2. History Data Clear (Google Sheet Archive) Node */}
+                                    <div
+                                        onClick={() => setTreeOpen(prev => ({ ...prev, googleSheetFolder: !prev.googleSheetFolder }))}
+                                        className="flex items-center gap-1.5 px-2 py-1 hover:bg-slate-100 rounded cursor-pointer font-semibold text-slate-700 mt-2 pt-1 border-t border-slate-200"
+                                    >
+                                        {treeOpen.googleSheetFolder ? <FaChevronDown size={9} className="text-slate-400" /> : <FaChevronRight size={9} className="text-slate-400" />}
+                                        <FaCloudUploadAlt className="text-emerald-600" size={13} />
+                                        <span>History data clear</span>
+                                    </div>
+
+                                    {treeOpen.googleSheetFolder && (
+                                        <div className="ml-4 pl-2 border-l border-emerald-300 space-y-0.5">
+                                            <div
+                                                onClick={() => setSelectedCategory('GoogleSheetHistory')}
+                                                className={`flex items-center justify-between px-2 py-1.5 rounded cursor-pointer text-xs ${selectedCategory === 'GoogleSheetHistory' ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold shadow-xs' : 'hover:bg-emerald-50 text-emerald-900'}`}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <FaCloudUploadAlt className={selectedCategory === 'GoogleSheetHistory' ? 'text-white' : 'text-emerald-600'} />
+                                                    <span>Google Sheet Cleared</span>
+                                                </span>
+                                                <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold ${selectedCategory === 'GoogleSheetHistory' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'}`}>
+                                                    &gt;7d
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -708,6 +843,19 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
 
                 {/* Right Pane: Split Table View & Event Properties */}
                 <div className="flex-1 flex flex-col overflow-hidden bg-white">
+                    {/* Google Sheet History Active Banner */}
+                    {selectedCategory === 'GoogleSheetHistory' && (
+                        <div className="bg-emerald-50 border-b border-emerald-200 px-3 py-1.5 flex items-center justify-between text-xs text-emerald-900 font-semibold select-text">
+                            <span className="flex items-center gap-2">
+                                <FaCloudUploadAlt className="text-emerald-600 text-sm animate-pulse" />
+                                <span>🌐 History Data Cleared — កំពុងបង្ហាញទិន្នន័យដែលបានសម្អាត និងទាញយកផ្ទាល់ពី Google Sheet (Read-only mode មិនមែន Database ទេ)</span>
+                            </span>
+                            <span className="text-[11px] bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded font-mono font-bold">
+                                {logs.length} Google Sheet Records
+                            </span>
+                        </div>
+                    )}
+
                     {/* Top Section: Event Records Grid */}
                     <div className="flex-1 overflow-auto border-b border-slate-300">
                         <table className="w-full text-left border-collapse text-xs font-sans">
@@ -904,7 +1052,30 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
                                             </div>
                                         )}
 
-                                        {selectedLog.payload && Object.keys(selectedLog.payload).length > 0 && (
+                                        {/* Pre-Deletion Data Snapshot Display */}
+                                        {(selectedLog.payload?.deletedData || selectedLog.payload?.deletedRecord || selectedLog.payload?.previousData) && (
+                                            <div className="bg-rose-50/80 border border-rose-300 rounded overflow-hidden shadow-2xs">
+                                                <div className="bg-rose-100 px-3 py-1.5 border-b border-rose-200 flex items-center justify-between">
+                                                    <span className="text-[11px] font-bold text-rose-900 flex items-center gap-1.5">
+                                                        <FaTrashAlt className="text-rose-600" />
+                                                        <span>ទិន្នន័យមុនពេលលុប (Pre-Deletion Data Snapshot Record)</span>
+                                                    </span>
+                                                    <span className="text-[10px] bg-rose-200 text-rose-800 px-2 py-0.5 rounded font-bold font-mono">
+                                                        Deleted Item Snapshot
+                                                    </span>
+                                                </div>
+                                                <div className="p-3 bg-white space-y-2">
+                                                    <div className="text-xs text-rose-800 font-semibold">
+                                                        ⚠️ ទិន្នន័យខាងក្រោមនេះត្រូវបានកត់ត្រាទុកយ៉ាងលម្អិតមុនពេលប្រតិបត្តិការលុបចេញពី Database ដើម្បីដឹងច្បាស់ថាទិន្នន័យណាខ្លះត្រូវបានលុប៖
+                                                    </div>
+                                                    <div className="overflow-x-auto max-h-56 bg-slate-900 text-rose-300 font-mono text-[11px] p-2.5 rounded border border-slate-800">
+                                                        <pre>{JSON.stringify(selectedLog.payload?.deletedData || selectedLog.payload?.deletedRecord || selectedLog.payload?.previousData, null, 2)}</pre>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {selectedLog.payload && Object.keys(selectedLog.payload).length > 0 && !selectedLog.payload?.deletedData && (
                                             <div className="p-2 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded border border-slate-800 overflow-x-auto">
                                                 <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Attached Payload:</div>
                                                 <pre>{JSON.stringify(selectedLog.payload, null, 2)}</pre>
@@ -1096,6 +1267,81 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
                                 Copy Details
                             </button>
                             <button onClick={() => setOpenPropertiesModal(false)} className="px-5 py-1 bg-white hover:bg-slate-100 border border-slate-400 rounded text-xs font-semibold cursor-pointer shadow-xs">Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* ── WINDOWS DIALOG MODAL: GOOGLE SHEET 7-DAY ARCHIVE & PURGE ── */}
+            {openArchivalModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[999999] p-4">
+                    <div className="bg-[#f0f2f5] border border-slate-400 rounded shadow-2xl w-full max-w-lg overflow-hidden text-slate-800 text-xs font-sans animate-in zoom-in-95 duration-100">
+                        <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-3 py-2 flex items-center justify-between font-semibold">
+                            <span className="flex items-center gap-2"><FaCloudUploadAlt size={15} /> 7-Day Retention & Google Sheet Archival (កំណត់ហេតុលើសពី ៧ថ្ងៃ)</span>
+                            <button onClick={() => { setOpenArchivalModal(false); setArchiveSuccessMsg(''); }} className="hover:bg-red-500 px-2 py-0.5 rounded cursor-pointer">✕</button>
+                        </div>
+                        <div className="p-4 space-y-3 bg-white max-h-[75vh] overflow-y-auto">
+                            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded text-emerald-900 space-y-1 text-xs">
+                                <div className="font-bold flex items-center gap-1.5 text-emerald-800">
+                                    <FaCheckCircle className="text-emerald-600" />
+                                    <span>គោលការណ៍រក្សាទុក និងសម្អាតអូតូ (Auto 7-Day Retention Policy):</span>
+                                </div>
+                                <p className="text-[11px] leading-relaxed text-slate-700">
+                                    • រាល់កំណត់ហេតុសកម្មភាព (System Event Logs) ដែលមានអាយុកាលលើសពី <strong>៧ ថ្ងៃ</strong> នឹងត្រូវ <strong>បញ្ចូលទៅកាន់ Google Sheet អូតូម៉ាទិក</strong> និងបម្រុងទុក Safety CSV Backup។<br />
+                                    • បន្ទាប់ពីការបញ្ចូលទៅ Google Sheet ជោគជ័យ ប្រព័ន្ធនឹង <strong>លុបសម្អាតចេញពី Database</strong> ដោយស្វ័យប្រវត្តិដើម្បីរក្សាល្បឿនលឿននៃប្រព័ន្ធ។
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded">
+                                    <span className="text-slate-500 block text-[10px] uppercase font-bold">កំណត់ត្រាលើសពី ៧ថ្ងៃ (Ready to Archive)</span>
+                                    <strong className="text-lg font-mono text-amber-600 font-bold">{archivalStatus.pendingCount || 0}</strong>
+                                    <span className="text-[10px] text-slate-500 block">កត់ត្រាមុន {archivalStatus.cutoffDate ? new Date(archivalStatus.cutoffDate).toLocaleDateString() : '7 days ago'}</span>
+                                </div>
+                                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded">
+                                    <span className="text-slate-500 block text-[10px] uppercase font-bold">ចំនួនកំណត់ត្រាសរុប (Total in Database)</span>
+                                    <strong className="text-lg font-mono text-indigo-700 font-bold">{archivalStatus.totalCount || logs.length}</strong>
+                                    <span className="text-[10px] text-slate-500 block">MongoDB Active Cluster</span>
+                                </div>
+                            </div>
+
+                            {archiveSuccessMsg && (
+                                <div className="p-3 bg-emerald-100 border border-emerald-300 text-emerald-900 rounded font-semibold text-xs flex items-center gap-2">
+                                    <FaCheckCircle className="text-emerald-600 text-base shrink-0" />
+                                    <span>{archiveSuccessMsg}</span>
+                                </div>
+                            )}
+
+                            <div className="p-2.5 bg-slate-100 border border-slate-300 rounded text-[11px] text-slate-600 space-y-1">
+                                <div className="font-semibold text-slate-800">⚙️ កាលវិភាគដំណើរការអូតូ (Auto Scheduler Status):</div>
+                                <div>• ដំណើរការស្វ័យប្រវត្តិកំណត់រៀងរាល់ <strong>៦ ម៉ោងម្តង</strong> និងពេល Server ចាប់ផ្តើមដំណើរការ។</div>
+                                <div>• Google Sheet Target ID: <code className="text-indigo-600 font-mono text-[10px]">process.env.GOOGLE_SHEET_ID</code></div>
+                            </div>
+                        </div>
+
+                        <div className="bg-[#f0f2f5] px-4 py-2.5 flex justify-between items-center border-t border-slate-300">
+                            <button
+                                onClick={handleTriggerArchival}
+                                disabled={archiving || archivalStatus.pendingCount === 0}
+                                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs active:translate-y-px transition-all"
+                            >
+                                {archiving ? (
+                                    <>
+                                        <FaSync className="animate-spin" size={11} />
+                                        <span>កំពុងបញ្ចូល Google Sheet & លុបសម្អាត...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <FaCloudUploadAlt size={13} />
+                                        <span>🚀 Sync Google Sheet & Clean DB Now</span>
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => { setOpenArchivalModal(false); setArchiveSuccessMsg(''); }}
+                                className="px-5 py-1.5 bg-white hover:bg-slate-100 border border-slate-400 rounded text-xs font-semibold cursor-pointer shadow-xs"
+                            >
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>

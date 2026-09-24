@@ -2,6 +2,7 @@ import express from 'express';
 import CashTransaction from '../models/CashTransaction.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { recordSystemAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
 
@@ -189,14 +190,33 @@ router.put('/cash-transactions/:id', async (req, res) => {
 router.delete('/cash-transactions/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        let targetItem = null;
+
         if (isMongoConnected) {
+            const results = await queryAllDBs(CashTransaction, (M) => M.findOne({ $or: [{ _id: id }, { transactionId: id }] }));
+            targetItem = results.find(r => r != null) || null;
             const Model = getWriteModel(CashTransaction);
             await Model.findByIdAndDelete(id);
-            return res.json({ success: true, message: 'Record deleted successfully.' });
         } else {
+            targetItem = MEM_DB.cashTransactions.find(item => item.transactionId === id || item._id === id) || null;
             MEM_DB.cashTransactions = MEM_DB.cashTransactions.filter(item => item.transactionId !== id && item._id !== id);
-            return res.json({ success: true, message: 'Record deleted successfully.' });
         }
+
+        // Record audit log
+        recordSystemAudit({
+            category: 'Financial',
+            level: 'Warning',
+            action: 'CASH_TRANSACTION_DELETE',
+            taskCategory: 'Cash Flow',
+            description: `Deleted cash transaction ${targetItem?.transactionId || id} (Type: ${targetItem?.type || 'N/A'}, Amount: $${targetItem?.amount || 0}, Note: ${targetItem?.note || '-'})`,
+            username: req.user?.username || req.query?.username || 'Staff',
+            brand: targetItem?.brand || '',
+            payload: {
+                deletedData: targetItem || { id }
+            }
+        }).catch(() => {});
+
+        return res.json({ success: true, message: 'Record deleted successfully.' });
     } catch (err) {
         console.error('Delete cash transaction error:', err);
         res.status(500).json({ error: err.message });

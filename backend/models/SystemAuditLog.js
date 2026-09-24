@@ -4,7 +4,7 @@ const systemAuditLogSchema = new mongoose.Schema({
     eventId: { type: String, required: true }, // e.g., EVT-1001, EVT-4624 (Windows style)
     category: {
         type: String,
-        enum: ['Security', 'Navigation', 'Contract', 'Device', 'Financial', 'Settings', 'System'],
+        enum: ['Security', 'Navigation', 'Contract', 'Device', 'Financial', 'Settings', 'System', 'UserActivity'],
         default: 'System'
     },
     level: {

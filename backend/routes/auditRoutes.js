@@ -3,6 +3,7 @@ import SystemAuditLog from '../models/SystemAuditLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+import { archiveAndCleanupSystemLogs, getArchivalStatus, readSystemLogsFromGoogleSheet } from '../services/logArchivalService.js';
 
 const router = express.Router();
 
@@ -210,6 +211,64 @@ router.get('/stats', async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/audit-logs/archive-7days - Manually or scheduled archive logs older than 7 days to Google Sheets & clean from DB
+router.post('/archive-7days', async (req, res) => {
+    try {
+        const days = parseInt(req.body.days) || 7;
+        const operator = req.body.username || req.user?.username || 'ManualTrigger';
+        const result = await archiveAndCleanupSystemLogs(days, operator);
+        res.json(result);
+    } catch (err) {
+        console.error('Archive 7-days error:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// GET /api/audit-logs/archive-status - Get 7-day retention backlog and archival status
+router.get('/archive-status', async (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 7;
+        const status = await getArchivalStatus(days);
+        res.json(status);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/audit-logs/google-sheet-history - Read historical archived records directly from Google Sheet
+router.get('/google-sheet-history', async (req, res) => {
+    try {
+        const {
+            startDate,
+            endDate,
+            search,
+            category,
+            level,
+            brand,
+            username,
+            page = 1,
+            limit = 100
+        } = req.query;
+
+        const result = await readSystemLogsFromGoogleSheet({
+            startDate,
+            endDate,
+            search,
+            category,
+            level,
+            brand,
+            username,
+            page,
+            limit
+        });
+
+        res.json(result);
+    } catch (err) {
+        console.error('Google Sheet history query error:', err.message);
+        res.status(500).json({ success: false, error: err.message, data: [], total: 0 });
     }
 });
 

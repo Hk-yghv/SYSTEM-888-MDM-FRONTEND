@@ -23,6 +23,7 @@ import {
     startFirebaseBackupScheduler
 } from './config/firebaseBackup.js';
 import auditRoutes from './routes/auditRoutes.js';
+import { startSystemLogArchivalScheduler } from './services/logArchivalService.js';
 import {
     securityHeadersMiddleware,
     botFirewallMiddleware,
@@ -180,6 +181,7 @@ app.use((err, req, res, next) => {
 // ── Connect All Databases & Start Server ──
 connectDB().then(() => {
     startFirebaseBackupScheduler();
+    startSystemLogArchivalScheduler();
     app.listen(PORT, () => {
         console.log(`SYSTEM MDM Backend Server 0 (Auth/Users/Control/Dashboard) active on port ${PORT} with Ultimate Security Shield`);
     });
