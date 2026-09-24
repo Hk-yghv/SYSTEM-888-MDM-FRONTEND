@@ -499,15 +499,20 @@
     <!-- Partner Auth & Configuration -->
     <section class="card" id="authentication">
       <div class="card-header">
-        <h2 class="card-title">🔑 ព័ត៌មាន Connection & Headers</h2>
+        <h2 class="card-title">🔑 ព័ត៌មាន Connection, Multi-Server Pool & Headers</h2>
       </div>
 
       <div class="callout callout-info">
         <div>🌐</div>
         <div>
-          <strong>Server Base URL:</strong><br>
-          • Production URL: <code style="font-family:monospace; color:#38bdf8">https://system-mdm.onrender.com</code><br>
-          • Local Development URL: <code style="font-family:monospace; color:#38bdf8">http://localhost:5000</code>
+          <strong>បញ្ជី Server URLs ទាំង ៣ (High-Availability Multi-API Pool):</strong><br>
+          ប្រព័ន្ធដំណើរការឆ្លាស់គ្នាលើ Server ចំនួន ៣ (ដំណើរការទិន្នន័យដូចគ្នា 100%)។ ប្រសិនបើ Server មួយណាមិនឆ្លើយតប សូមធ្វើការប្តូរទៅភ្ជាប់ Server បន្ទាប់តាមលំដាប់ ៖<br>
+          <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+            <div>1️⃣ <strong>Primary Server 1:</strong> <code style="font-family:monospace; color:#38bdf8">https://system-mdm.onrender.com</code> <span style="font-size:11px; color:#34d399; font-weight:700;">(ចម្បង)</span></div>
+            <div>2️⃣ <strong>Backup Server 2:</strong> <code style="font-family:monospace; color:#38bdf8">https://system-mdm-1.onrender.com</code> <span style="font-size:11px; color:#fbbf24; font-weight:700;">(ជំនួយទី១)</span></div>
+            <div>3️⃣ <strong>Backup Server 3:</strong> <code style="font-family:monospace; color:#38bdf8">https://system-mdm-2.onrender.com</code> <span style="font-size:11px; color:#fbbf24; font-weight:700;">(ជំនួយទី២)</span></div>
+            <div>💻 <strong>Local Development:</strong> <code style="font-family:monospace; color:#94a3b8">http://localhost:5000</code></div>
+          </div>
         </div>
       </div>
 
@@ -529,6 +534,130 @@
           <strong>គន្លឹះសំខាន់ដើម្បីទទួលបានទិន្នន័យពេញលេញ:</strong><br>
           សូមបន្ថែម Query Parameter <code>?isImmutable=true</code> ទៅខាងចុង Endpoint ដើម្បីទាញយកទិន្នន័យពីគ្រប់សាខាទាំងអស់ (All Brands) ដោយមិនមានការច្រោះចោល។
         </div>
+      </div>
+
+      <!-- Auto-Failover Code Guide -->
+      <h3 style="font-size: 15px; color: #fff; margin: 20px 0 10px; display: flex; align-items: center; gap: 8px;">
+        🔄 គំរូ Function ភ្ជាប់បែប Auto-Failover (ប្តូរ Server ស្វ័យប្រវត្តិនៅពេល Error ឬយឺត)
+      </h3>
+
+      <div class="code-tabs">
+        <div class="tab-header">
+          <button class="tab-btn active" onclick="switchTab(this, 'failover-js')">JavaScript (Node.js & Fetch)</button>
+          <button class="tab-btn" onclick="switchTab(this, 'failover-py')">Python</button>
+          <button class="tab-btn" onclick="switchTab(this, 'failover-php')">PHP</button>
+          <button class="copy-btn" onclick="copyCurrentCode(this)">📋 Copy Code</button>
+        </div>
+
+        <pre class="code-content active" id="failover-js"><code>const API_SERVERS = [
+  'https://system-mdm.onrender.com',
+  'https://system-mdm-1.onrender.com',
+  'https://system-mdm-2.onrender.com'
+];
+
+// Helper ហៅ API ដោយស្វ័យប្រវត្តិតាម Server ទាំង ៣
+async function fetchWithFailover(endpointPath) {
+  const PARTNER_KEY = 'MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ';
+  
+  for (let i = 0; i &lt; API_SERVERS.length; i++) {
+    const serverUrl = API_SERVERS[i];
+    try {
+      console.log(`Trying Server ${i + 1}: ${serverUrl}...`);
+      const response = await fetch(`${serverUrl}${endpointPath}`, {
+        method: 'GET',
+        headers: {
+          'X-Partner-API-Key': PARTNER_KEY,
+          'Content-Type': 'application/json'
+        },
+        // Timeout 8 វិនាទី បើមិនឆ្លើយតបដូរទៅ Server បន្ទាប់
+        signal: AbortSignal.timeout(8000)
+      });
+
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn(`Server ${serverUrl} failed (${err.message}). Switching to next server...`);
+    }
+  }
+  throw new Error('All 3 MDM API Servers are currently unreachable.');
+}
+
+// ឧទាហរណ៍នៃការប្រើប្រាស់:
+async function loadData() {
+  try {
+    const alerts = await fetchWithFailover('/api/contracts/payment-alerts?isImmutable=true');
+    console.log('Payment Alerts Received:', alerts);
+  } catch (e) {
+    console.error(e.message);
+  }
+}
+
+loadData();</code></pre>
+
+        <pre class="code-content" id="failover-py"><code>import requests
+
+API_SERVERS = [
+    "https://system-mdm.onrender.com",
+    "https://system-mdm-1.onrender.com",
+    "https://system-mdm-2.onrender.com"
+]
+
+def fetch_with_failover(endpoint_path):
+    headers = {
+        "X-Partner-API-Key": "MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ",
+        "Content-Type": "application/json"
+    }
+    for server in API_SERVERS:
+        url = f"{server}{endpoint_path}"
+        try:
+            print(f"Connecting to: {url}...")
+            response = requests.get(url, headers=headers, timeout=8)
+            if response.status_code == 200:
+                return response.json()
+        except requests.RequestException as e:
+            print(f"Warning: {server} failed. Trying next server...")
+            continue
+    raise Exception("All 3 MDM API Servers are currently unreachable.")
+
+# ឧទាហរណ៍ប្រើប្រាស់:
+data = fetch_with_failover("/api/contracts/payment-alerts?isImmutable=true")
+print("Alerts Summary:", data.get("summary"))</code></pre>
+
+        <pre class="code-content" id="failover-php"><code>&lt;?php
+function fetchWithFailover($endpointPath) {
+    $servers = [
+        'https://system-mdm.onrender.com',
+        'https://system-mdm-1.onrender.com',
+        'https://system-mdm-2.onrender.com'
+    ];
+    $partnerKey = 'MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ';
+
+    foreach ($servers as $server) {
+        $url = $server . $endpointPath;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'X-Partner-API-Key: ' . $partnerKey,
+            'Content-Type: application/json'
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200 && $response) {
+            return json_decode($response, true);
+        }
+    }
+    return null;
+}
+
+// ឧទាហរណ៍ប្រើប្រាស់:
+$alerts = fetchWithFailover('/api/contracts/payment-alerts?isImmutable=true');
+print_r($alerts['summary']);
+?&gt;</code></pre>
       </div>
     </section>
 
