@@ -13,6 +13,94 @@ let lastArchivalStatus = {
     error: null
 };
 
+export const formatLogRow = (l) => {
+    const timeStr = new Date(l.timestamp || Date.now()).toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
+    let payloadStr = '';
+    try {
+        if (l.payload) {
+            if (l.payload.deletedData || l.payload.deletedRecord || l.payload.previousData) {
+                const delData = l.payload.deletedData || l.payload.deletedRecord || l.payload.previousData;
+                payloadStr = `[DELETED DATA]: ${JSON.stringify(delData)}`;
+            } else if (l.payload.diff && Array.isArray(l.payload.diff)) {
+                payloadStr = `[DIFF]: ${l.payload.diff.map(d => `${d.field}: ${d.oldValue} -> ${d.newValue}`).join('; ')}`;
+            } else {
+                payloadStr = JSON.stringify(l.payload);
+            }
+        }
+    } catch {
+        payloadStr = String(l.payload);
+    }
+
+    return [
+        l.eventId || '-',
+        timeStr,
+        l.category || 'System',
+        l.level || 'Information',
+        l.action || 'GENERAL',
+        l.taskCategory || '-',
+        l.username || 'System',
+        l.name || '',
+        l.role || 'Staff',
+        l.brand || 'Global',
+        l.ip || '127.0.0.1',
+        l.deviceInfo || 'Windows PC',
+        l.path || '-',
+        l.contractId || l.customerId || '-',
+        l.description || '',
+        payloadStr.slice(0, 1500)
+    ];
+};
+
+/**
+ * Real-time direct export for deleted data & critical events to Google Sheet 2
+ */
+export const exportDeletedLogToGoogleSheet = async (logEntry) => {
+    try {
+        const sheetId = process.env.GOOGLE_SHEET_SYSTEM_LOGS_ID || process.env.GOOGLE_SHEET_DELETE_HISTORY_ID || process.env.GOOGLE_SHEET_ID;
+        const webhookUrl = process.env.GOOGLE_SHEET_SYSTEM_LOGS_WEBHOOK_URL || process.env.GOOGLE_SHEET_DELETE_HISTORY_WEBHOOK_URL || process.env.GOOGLE_SHEET_WEBHOOK_URL;
+        const svc = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_PATH || process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+
+        if (!webhookUrl && (!svc || !sheetId)) {
+            return { skipped: true };
+        }
+
+        const row = formatLogRow(logEntry);
+
+        if (webhookUrl) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'append',
+                        sheetId,
+                        rows: [row],
+                        row,
+                        type: 'system_logs_delete_history'
+                    }),
+                    redirect: 'follow',
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (response.ok) {
+                    console.log(`[LogArchival] Real-time deleted record ${logEntry.eventId || logEntry.action} saved to Google Sheet 2.`);
+                    return { success: true, via: 'webhook_realtime' };
+                }
+            } catch (wErr) {
+                console.warn('[LogArchival] Real-time Webhook append error:', wErr.message);
+            }
+        }
+
+        if (svc && sheetId) {
+            return await appendToGoogleSheet(svc, sheetId, [row]);
+        }
+    } catch (err) {
+        console.error('[LogArchival] exportDeletedLogToGoogleSheet error:', err.message);
+    }
+};
+
 /**
  * Archive system audit logs older than specified days (default: 7 days)
  * 1. Exports them to Google Sheets
@@ -53,43 +141,7 @@ export const archiveAndCleanupSystemLogs = async (retentionDays = 7, triggeredBy
         console.log(`[LogArchival] Found ${oldLogs.length} logs older than ${retentionDays} days. Preparing Google Sheet sync...`);
 
         // Format rows for Google Sheet
-        const rows = oldLogs.map(l => {
-            const timeStr = new Date(l.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
-            let payloadStr = '';
-            try {
-                if (l.payload) {
-                    if (l.payload.deletedData || l.payload.deletedRecord || l.payload.previousData) {
-                        const delData = l.payload.deletedData || l.payload.deletedRecord || l.payload.previousData;
-                        payloadStr = `[DELETED DATA]: ${JSON.stringify(delData)}`;
-                    } else if (l.payload.diff && Array.isArray(l.payload.diff)) {
-                        payloadStr = `[DIFF]: ${l.payload.diff.map(d => `${d.field}: ${d.oldValue} -> ${d.newValue}`).join('; ')}`;
-                    } else {
-                        payloadStr = JSON.stringify(l.payload);
-                    }
-                }
-            } catch {
-                payloadStr = String(l.payload);
-            }
-
-            return [
-                l.eventId || '-',
-                timeStr,
-                l.category || 'System',
-                l.level || 'Information',
-                l.action || 'GENERAL',
-                l.taskCategory || '-',
-                l.username || 'System',
-                l.name || '',
-                l.role || 'Staff',
-                l.brand || 'Global',
-                l.ip || '127.0.0.1',
-                l.deviceInfo || 'Windows PC',
-                l.path || '-',
-                l.contractId || l.customerId || '-',
-                l.description || '',
-                payloadStr.slice(0, 1500)
-            ];
-        });
+        const rows = oldLogs.map(l => formatLogRow(l));
 
         // 1. Local Safety CSV Backup
         try {
@@ -122,7 +174,12 @@ export const archiveAndCleanupSystemLogs = async (retentionDays = 7, triggeredBy
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sheetId, rows, type: 'system_logs_delete_history' }),
+                    body: JSON.stringify({
+                        action: 'append',
+                        sheetId,
+                        rows,
+                        type: 'system_logs_delete_history'
+                    }),
                     redirect: 'follow',
                     signal: controller.signal
                 });

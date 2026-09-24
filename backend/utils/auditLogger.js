@@ -1,6 +1,7 @@
 import SystemAuditLog from '../models/SystemAuditLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { getWriteModel } from '../config/multiDB.js';
+import { exportDeletedLogToGoogleSheet } from '../services/logArchivalService.js';
 
 let eventCounter = 1000;
 
@@ -92,6 +93,13 @@ export const recordSystemAudit = async (param1, param2, param3, param4) => {
         MEM_DB.systemAuditLogs.unshift({ ...logEntry, _id: 'aud-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5) });
         if (MEM_DB.systemAuditLogs.length > 2000) {
             MEM_DB.systemAuditLogs = MEM_DB.systemAuditLogs.slice(0, 2000);
+        }
+
+        // Real-time synchronization of deleted data to Google Sheet 2
+        if (action.includes('DELETE') || payload?.deletedData || payload?.deletedRecord || payload?.previousData) {
+            exportDeletedLogToGoogleSheet(logEntry).catch(e => {
+                console.warn('[AuditLogger] Real-time Google Sheet delete sync warning:', e.message);
+            });
         }
 
         return logEntry;
