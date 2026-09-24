@@ -75,30 +75,32 @@ const SystemAuditLogs = () => {
         appLogs: true
     });
 
-    // Fetch Brands and Users for filtering
+    // Fetch Brands and Users for filtering (Only Master Admin needs the full users and brand list)
     useEffect(() => {
         const fetchFilters = async () => {
             try {
-                const bRes = await fetch(`${API_BASE}/controlsystem?brand=`);
-                if (bRes.ok) {
-                    const bData = await bRes.json();
-                    const brandCat = (bData.droplists || []).find(d => d.category === 'Brands');
-                    if (brandCat && Array.isArray(brandCat.items)) {
-                        setBrandsList(brandCat.items);
+                if (isMasterAdmin) {
+                    const bRes = await fetch(`${API_BASE}/controlsystem?brand=`);
+                    if (bRes.ok) {
+                        const bData = await bRes.json();
+                        const brandCat = (bData.droplists || []).find(d => d.category === 'Brands');
+                        if (brandCat && Array.isArray(brandCat.items)) {
+                            setBrandsList(brandCat.items);
+                        }
                     }
-                }
-                const uRes = await fetch(`${API_BASE}/users?limit=1000`);
-                if (uRes.ok) {
-                    const uData = await uRes.json();
-                    const usersArr = Array.isArray(uData) ? uData : (Array.isArray(uData?.users) ? uData.users : []);
-                    setUsersList(usersArr);
+                    const uRes = await fetch(`${API_BASE}/users?limit=1000`);
+                    if (uRes.ok) {
+                        const uData = await uRes.json();
+                        const usersArr = Array.isArray(uData) ? uData : (Array.isArray(uData?.users) ? uData.users : []);
+                        setUsersList(usersArr);
+                    }
                 }
             } catch (err) {
                 console.error('Failed to load filter metadata:', err);
             }
         };
         fetchFilters();
-    }, [API_BASE]);
+    }, [API_BASE, isMasterAdmin]);
 
     // Fetch Audit Logs (supports both MongoDB active store and Google Sheet archive)
     const fetchLogs = async () => {
@@ -117,8 +119,15 @@ const SystemAuditLogs = () => {
                 params.set('category', selectedCategory);
             }
             if (selectedLevel && selectedLevel !== 'All') params.set('level', selectedLevel);
-            if (selectedBrand) params.set('brand', selectedBrand);
-            if (targetUser) params.set('targetUser', targetUser);
+
+            // Non-admin accounts can only query their own brand & account
+            if (isMasterAdmin) {
+                if (selectedBrand) params.set('brand', selectedBrand);
+                if (targetUser) params.set('targetUser', targetUser);
+            } else {
+                if (user?.brand) params.set('brand', user.brand);
+            }
+
             if (searchTerm) params.set('search', searchTerm);
             if (startDate) params.set('startDate', startDate);
             if (endDate) params.set('endDate', endDate);
@@ -529,156 +538,176 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
 
             {/* Toolbar Action Strip */}
             {showToolbar && (
-            <div className="bg-[#f0f2f5] border-b border-slate-300 p-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-                {/* Left Controls & Search */}
-                <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                        onClick={fetchLogs}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded text-xs font-semibold text-slate-700 shadow-2xs cursor-pointer active:translate-y-px"
-                        title="Refresh Event Log (F5)"
-                    >
-                        <FaSync className={`text-indigo-600 ${loading ? 'animate-spin' : ''}`} size={11} />
-                        <span>Refresh</span>
-                    </button>
+                <div className="bg-[#f0f2f5] border-b border-slate-300 p-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    {/* Left Controls & Search */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                            onClick={fetchLogs}
+                            disabled={loading}
+                            className="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded text-xs font-semibold text-slate-700 shadow-2xs cursor-pointer active:translate-y-px"
+                            title="Refresh Event Log (F5)"
+                        >
+                            <FaSync className={`text-indigo-600 ${loading ? 'animate-spin' : ''}`} size={11} />
+                            <span>Refresh</span>
+                        </button>
 
-                    <button
-                        onClick={handleExport}
-                        className="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded text-xs font-semibold text-emerald-700 shadow-2xs cursor-pointer active:translate-y-px"
-                        title="Save All Events As Excel / CSV"
-                    >
-                        <FaDownload size={11} />
-                        <span>Export List...</span>
-                    </button>
+                        <button
+                            onClick={handleExport}
+                            className="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded text-xs font-semibold text-emerald-700 shadow-2xs cursor-pointer active:translate-y-px"
+                            title="Save All Events As Excel / CSV"
+                        >
+                            <FaDownload size={11} />
+                            <span>Export List...</span>
+                        </button>
 
-                    <button
-                        onClick={() => { fetchArchivalStatus(); setOpenArchivalModal(true); }}
-                        className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded text-xs font-semibold shadow-xs cursor-pointer active:translate-y-px transition-all"
-                        title="Auto-sync and cleanup logs older than 7 days to Google Sheets"
-                    >
-                        <FaCloudUploadAlt size={13} className="animate-pulse" />
-                        <span>Google Sheet Archive (&gt;7 Days)</span>
-                        {archivalStatus.pendingCount > 0 && (
-                            <span className="bg-amber-300 text-slate-900 text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
-                                {archivalStatus.pendingCount}
-                            </span>
-                        )}
-                    </button>
-
-                    {/* Date Range Inputs (ពីថ្ងៃណា ដល់ថ្ងៃណា) */}
-                    <div className="flex items-center gap-1 bg-white border border-slate-300 rounded px-2 py-0.5 shadow-2xs">
-                        <span className="text-[11px] text-slate-500 font-medium">ពីថ្ងៃ:</span>
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="h-6 text-xs text-slate-800 bg-transparent outline-none font-mono cursor-pointer"
-                        />
-                        <span className="text-slate-400 text-xs">→</span>
-                        <span className="text-[11px] text-slate-500 font-medium">ដល់ថ្ងៃ:</span>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="h-6 text-xs text-slate-800 bg-transparent outline-none font-mono cursor-pointer"
-                        />
-                        {(startDate || endDate) && (
+                        {/* Google Sheet Manual Archival Trigger (Admin Only) */}
+                        {isMasterAdmin && (
                             <button
-                                onClick={() => { setStartDate(''); setEndDate(''); }}
-                                className="text-slate-400 hover:text-red-500 text-xs ml-1 font-bold cursor-pointer"
-                                title="Clear date filter"
+                                onClick={() => { fetchArchivalStatus(); setOpenArchivalModal(true); }}
+                                className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded text-xs font-semibold shadow-xs cursor-pointer active:translate-y-px transition-all"
+                                title="Auto-sync and cleanup logs older than 7 days to Google Sheets"
                             >
-                                ✕
+                                <FaCloudUploadAlt size={13} className="animate-pulse" />
+                                <span>Google Sheet Archive (&gt;7 Days)</span>
+                                {archivalStatus.pendingCount > 0 && (
+                                    <span className="bg-amber-300 text-slate-900 text-[10px] font-bold px-1.5 py-0.2 rounded-full font-mono">
+                                        {archivalStatus.pendingCount}
+                                    </span>
+                                )}
                             </button>
                         )}
+
+                        {/* Date Range Inputs (ពីថ្ងៃណា ដល់ថ្ងៃណា) */}
+                        <div className="flex items-center gap-1 bg-white border border-slate-300 rounded px-2 py-0.5 shadow-2xs">
+                            <span className="text-[11px] text-slate-500 font-medium">ពីថ្ងៃ:</span>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="h-6 text-xs text-slate-800 bg-transparent outline-none font-mono cursor-pointer"
+                            />
+                            <span className="text-slate-400 text-xs">→</span>
+                            <span className="text-[11px] text-slate-500 font-medium">ដល់ថ្ងៃ:</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="h-6 text-xs text-slate-800 bg-transparent outline-none font-mono cursor-pointer"
+                            />
+                            {(startDate || endDate) && (
+                                <button
+                                    onClick={() => { setStartDate(''); setEndDate(''); }}
+                                    className="text-slate-400 hover:text-red-500 text-xs ml-1 font-bold cursor-pointer"
+                                    title="Clear date filter"
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                setSearchTerm('');
+                                setStartDate('');
+                                setEndDate('');
+                                if (isMasterAdmin) {
+                                    setSelectedBrand('');
+                                    setTargetUser('');
+                                }
+                                setSelectedCategory('All');
+                                setSelectedLevel('All');
+                            }}
+                            className="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded text-xs font-semibold text-slate-600 shadow-2xs cursor-pointer active:translate-y-px"
+                        >
+                            <MdOutlineCleaningServices size={13} />
+                            <span>Clear Filters</span>
+                        </button>
+
+                        {/* Quick Search */}
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && fetchLogs()}
+                                placeholder="Filter current log (Type & press Enter)..."
+                                className="w-56 h-7 pl-7 pr-3 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-sans"
+                            />
+                            <FaSearch className="absolute left-2.5 top-2 text-slate-400 text-xs pointer-events-none" />
+                            {searchTerm && (
+                                <button onClick={() => { setSearchTerm(''); fetchLogs(); }} className="absolute right-2 top-2 text-slate-400 hover:text-slate-600">
+                                    <FaTimes size={10} />
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    <button
-                        onClick={() => {
-                            setSearchTerm('');
-                            setStartDate('');
-                            setEndDate('');
-                            setSelectedBrand('');
-                            setTargetUser('');
-                            setSelectedCategory('All');
-                            setSelectedLevel('All');
-                        }}
-                        className="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded text-xs font-semibold text-slate-600 shadow-2xs cursor-pointer active:translate-y-px"
-                    >
-                        <MdOutlineCleaningServices size={13} />
-                        <span>Clear Filters</span>
-                    </button>
+                    {/* Right Filters (Brand, User, Severity) */}
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                        {/* Brand Filter (Admin selects all, Staff locked to assigned branch) */}
+                        {isMasterAdmin ? (
+                            <div className="flex items-center gap-1">
+                                <span className="text-[11px] text-slate-500 font-medium">Brand:</span>
+                                <select
+                                    value={selectedBrand}
+                                    onChange={(e) => setSelectedBrand(e.target.value)}
+                                    className="h-7 px-2 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-semibold cursor-pointer"
+                                >
+                                    <option value="">🌐 All Brands (ទាំងអស់)</option>
+                                    {brandsList.map((b, idx) => (
+                                        <option key={idx} value={b}>{b}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : user?.brand ? (
+                            <div className="flex items-center gap-1 bg-white border border-slate-300 px-2 py-1 rounded text-xs text-slate-700 shadow-2xs">
+                                <span className="text-[11px] text-slate-500 font-medium">Brand:</span>
+                                <span className="font-bold text-indigo-700">{user.brand}</span>
+                            </div>
+                        ) : null}
 
-                    {/* Quick Search */}
-                    <div className="relative">
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && fetchLogs()}
-                            placeholder="Filter current log (Type & press Enter)..."
-                            className="w-56 h-7 pl-7 pr-3 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-sans"
-                        />
-                        <FaSearch className="absolute left-2.5 top-2 text-slate-400 text-xs pointer-events-none" />
-                        {searchTerm && (
-                            <button onClick={() => { setSearchTerm(''); fetchLogs(); }} className="absolute right-2 top-2 text-slate-400 hover:text-slate-600">
-                                <FaTimes size={10} />
-                            </button>
+                        {/* User Account Filter: SuperAdmin can filter any account; Regular staff is strictly scoped to own account */}
+                        {isMasterAdmin ? (
+                            <div className="flex items-center gap-1">
+                                <span className="text-[11px] text-slate-500 font-medium">Account:</span>
+                                <select
+                                    value={targetUser}
+                                    onChange={(e) => setTargetUser(e.target.value)}
+                                    className="h-7 px-2 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-semibold cursor-pointer max-w-[170px]"
+                                >
+                                    <option value="">👥 All Accounts ({usersList.length})</option>
+                                    {usersList.map((u, idx) => (
+                                        <option key={u._id || u.userId || idx} value={u.username}>
+                                            {u.username} {u.name ? `(${u.name})` : ''} - {u.role || 'Staff'}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded text-xs text-indigo-900 font-medium shadow-2xs">
+                                <FaUserShield className="text-indigo-600" />
+                                <span>គណនីផ្ទាល់ខ្លួន:</span>
+                                <strong className="font-mono text-indigo-700">{user?.username || 'Current User'}</strong>
+                            </div>
                         )}
+
+                        {/* Severity Level */}
+                        <div className="flex items-center gap-1">
+                            <span className="text-[11px] text-slate-500 font-medium">Level:</span>
+                            <select
+                                value={selectedLevel}
+                                onChange={(e) => setSelectedLevel(e.target.value)}
+                                className="h-7 px-2 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-semibold cursor-pointer"
+                            >
+                                <option value="All">All Levels (គ្រប់កម្រិត)</option>
+                                <option value="Information">ℹ️ Information</option>
+                                <option value="Warning">⚠️ Warning</option>
+                                <option value="Error">⛔ Error</option>
+                                <option value="SuccessAudit">🛡️ Success Audit</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-
-                {/* Right Filters (Brand, User, Severity) */}
-                <div className="flex items-center gap-2 flex-wrap text-xs">
-                    {/* Brand Filter */}
-                    <div className="flex items-center gap-1">
-                        <span className="text-[11px] text-slate-500 font-medium">Brand:</span>
-                        <select
-                            value={selectedBrand}
-                            onChange={(e) => setSelectedBrand(e.target.value)}
-                            className="h-7 px-2 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-semibold cursor-pointer"
-                        >
-                            <option value="">🌐 All Brands (ទាំងអស់)</option>
-                            {brandsList.map((b, idx) => (
-                                <option key={idx} value={b}>{b}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* User Account Filter */}
-                    <div className="flex items-center gap-1">
-                        <span className="text-[11px] text-slate-500 font-medium">Account:</span>
-                        <select
-                            value={targetUser}
-                            onChange={(e) => setTargetUser(e.target.value)}
-                            className="h-7 px-2 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-semibold cursor-pointer max-w-[170px]"
-                        >
-                            <option value="">👥 All Accounts ({usersList.length})</option>
-                            {usersList.map((u, idx) => (
-                                <option key={u._id || u.userId || idx} value={u.username}>
-                                    {u.username} {u.name ? `(${u.name})` : ''} - {u.role || 'Staff'}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Severity Level */}
-                    <div className="flex items-center gap-1">
-                        <span className="text-[11px] text-slate-500 font-medium">Level:</span>
-                        <select
-                            value={selectedLevel}
-                            onChange={(e) => setSelectedLevel(e.target.value)}
-                            className="h-7 px-2 bg-white border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-indigo-500 font-semibold cursor-pointer"
-                        >
-                            <option value="All">All Levels (គ្រប់កម្រិត)</option>
-                            <option value="Information">ℹ️ Information</option>
-                            <option value="Warning">⚠️ Warning</option>
-                            <option value="Error">⛔ Error</option>
-                            <option value="SuccessAudit">🛡️ Success Audit</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
             )}
 
             {/* Main Windows Explorer Two-Pane Workspace */}
@@ -953,156 +982,156 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
 
                     {/* Bottom Split Pane: Event Properties Inspector */}
                     {showPreviewPane && (
-                    <div className="h-64 bg-[#f7f8fa] border-t-2 border-slate-300 flex flex-col">
-                        {/* Event Properties Tabs */}
-                        <div className="flex items-center justify-between border-b border-slate-300 px-3 pt-1 bg-[#eef1f4]">
-                            <div className="flex items-center gap-1">
-                                <button
-                                    onClick={() => setDetailTab('general')}
-                                    className={`px-3 py-1 text-xs font-semibold rounded-t cursor-pointer border-t border-x ${detailTab === 'general' ? 'bg-[#f7f8fa] border-slate-300 text-slate-900' : 'border-transparent text-slate-600 hover:bg-slate-200'}`}
-                                >
-                                    General (លម្អិតព្រឹត្តិការណ៍)
-                                </button>
-                                <button
-                                    onClick={() => setDetailTab('xml')}
-                                    className={`px-3 py-1 text-xs font-semibold rounded-t cursor-pointer border-t border-x ${detailTab === 'xml' ? 'bg-[#f7f8fa] border-slate-300 text-slate-900' : 'border-transparent text-slate-600 hover:bg-slate-200'}`}
-                                >
-                                    Details (XML / JSON Structured View)
-                                </button>
+                        <div className="h-64 bg-[#f7f8fa] border-t-2 border-slate-300 flex flex-col">
+                            {/* Event Properties Tabs */}
+                            <div className="flex items-center justify-between border-b border-slate-300 px-3 pt-1 bg-[#eef1f4]">
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => setDetailTab('general')}
+                                        className={`px-3 py-1 text-xs font-semibold rounded-t cursor-pointer border-t border-x ${detailTab === 'general' ? 'bg-[#f7f8fa] border-slate-300 text-slate-900' : 'border-transparent text-slate-600 hover:bg-slate-200'}`}
+                                    >
+                                        General (លម្អិតព្រឹត្តិការណ៍)
+                                    </button>
+                                    <button
+                                        onClick={() => setDetailTab('xml')}
+                                        className={`px-3 py-1 text-xs font-semibold rounded-t cursor-pointer border-t border-x ${detailTab === 'xml' ? 'bg-[#f7f8fa] border-slate-300 text-slate-900' : 'border-transparent text-slate-600 hover:bg-slate-200'}`}
+                                    >
+                                        Details (XML / JSON Structured View)
+                                    </button>
+                                </div>
+
+                                {selectedLog && (
+                                    <div className="text-[11px] text-slate-500 font-mono">
+                                        Event ID: <strong className="text-slate-800">{selectedLog.eventId || 'EVT-1001'}</strong> &bull; Log Name: <span className="text-indigo-600 font-semibold">{selectedLog.category || 'System'}</span>
+                                    </div>
+                                )}
                             </div>
 
-                            {selectedLog && (
-                                <div className="text-[11px] text-slate-500 font-mono">
-                                    Event ID: <strong className="text-slate-800">{selectedLog.eventId || 'EVT-1001'}</strong> &bull; Log Name: <span className="text-indigo-600 font-semibold">{selectedLog.category || 'System'}</span>
-                                </div>
-                            )}
-                        </div>
+                            {/* Inspector Content Area */}
+                            <div className="flex-1 p-3 overflow-y-auto font-sans text-xs">
+                                {selectedLog ? (
+                                    detailTab === 'general' ? (
+                                        <div className="space-y-2">
+                                            <div className="p-2.5 bg-white border border-slate-300 rounded shadow-2xs">
+                                                <p className="font-semibold text-slate-900 leading-relaxed text-sm">
+                                                    {selectedLog.description || selectedLog.action}
+                                                </p>
+                                            </div>
 
-                        {/* Inspector Content Area */}
-                        <div className="flex-1 p-3 overflow-y-auto font-sans text-xs">
-                            {selectedLog ? (
-                                detailTab === 'general' ? (
-                                    <div className="space-y-2">
-                                        <div className="p-2.5 bg-white border border-slate-300 rounded shadow-2xs">
-                                            <p className="font-semibold text-slate-900 leading-relaxed text-sm">
-                                                {selectedLog.description || selectedLog.action}
-                                            </p>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-                                            <div className="p-2 bg-white border border-slate-200 rounded">
-                                                <span className="text-slate-400 block font-semibold uppercase text-[9px]">Logged User</span>
-                                                <strong className="text-slate-800 font-mono">{selectedLog.username}</strong> ({selectedLog.role || 'Staff'})
-                                            </div>
-                                            <div className="p-2 bg-white border border-slate-200 rounded">
-                                                <span className="text-slate-400 block font-semibold uppercase text-[9px]">IP & Client Device</span>
-                                                <strong className="text-slate-800 font-mono">{selectedLog.ip || '127.0.0.1'}</strong> &bull; {selectedLog.deviceInfo || 'Windows PC'}
-                                            </div>
-                                            <div className="p-2 bg-white border border-slate-200 rounded">
-                                                <span className="text-slate-400 block font-semibold uppercase text-[9px]">Brand / Branch</span>
-                                                <strong className="text-indigo-600">{selectedLog.brand || 'Global Master'}</strong>
-                                            </div>
-                                            <div className="p-2 bg-white border border-slate-200 rounded">
-                                                <span className="text-slate-400 block font-semibold uppercase text-[9px]">Contract / Customer Ref</span>
-                                                <strong className="text-slate-800 font-mono">{selectedLog.contractId || selectedLog.customerId || 'N/A'}</strong>
-                                            </div>
-                                        </div>
-
-                                        {/* Structured Field Modification Diff Table (Old vs New) */}
-                                        {selectedLog.payload?.diff && Array.isArray(selectedLog.payload.diff) && selectedLog.payload.diff.length > 0 && (
-                                            <div className="bg-white border border-amber-300 rounded overflow-hidden shadow-2xs">
-                                                <div className="bg-amber-50 px-3 py-1.5 border-b border-amber-200 flex items-center justify-between">
-                                                    <span className="text-[11px] font-bold text-amber-900 flex items-center gap-1.5">
-                                                        <span>🔄</span> កំណត់ត្រាបម្រែបម្រួលទិន្នន័យ (Field Modification Diff / Old vs New)
-                                                    </span>
-                                                    <span className="text-[10px] bg-amber-200/80 text-amber-800 px-1.5 py-0.5 rounded font-bold font-mono">
-                                                        {selectedLog.payload.diff.length} changes
-                                                    </span>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                                                <div className="p-2 bg-white border border-slate-200 rounded">
+                                                    <span className="text-slate-400 block font-semibold uppercase text-[9px]">Logged User</span>
+                                                    <strong className="text-slate-800 font-mono">{selectedLog.username}</strong> ({selectedLog.role || 'Staff'})
                                                 </div>
-                                                <div className="overflow-x-auto max-h-48">
-                                                    <table className="w-full text-[11px] text-left">
-                                                        <thead className="bg-slate-100 text-slate-600 uppercase text-[9px] font-bold border-b border-slate-200 sticky top-0">
-                                                            <tr>
-                                                                <th className="py-1.5 px-2.5">Field / Attribute</th>
-                                                                <th className="py-1.5 px-2.5 text-rose-700 bg-rose-50/50">តម្លៃចាស់ (Previous / Old Value)</th>
-                                                                <th className="py-1.5 px-2.5 text-emerald-700 bg-emerald-50/50">តម្លៃថ្មី (Updated / New Value)</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-slate-100 font-mono">
-                                                            {selectedLog.payload.diff.map((d, dIdx) => (
-                                                                <tr key={dIdx} className="hover:bg-slate-50 transition-colors">
-                                                                    <td className="py-1.5 px-2.5 font-bold text-slate-800 font-sans">
-                                                                        {d.field}
-                                                                    </td>
-                                                                    <td className="py-1.5 px-2.5 text-rose-600 bg-rose-50/20 font-medium">
-                                                                        <span className="line-through mr-1 opacity-70">
-                                                                            {d.oldValue !== undefined && d.oldValue !== null && d.oldValue !== '' ? String(d.oldValue) : '(empty)'}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="py-1.5 px-2.5 text-emerald-600 bg-emerald-50/20 font-bold">
-                                                                        <span>
-                                                                            {d.newValue !== undefined && d.newValue !== null && d.newValue !== '' ? String(d.newValue) : '(empty)'}
-                                                                        </span>
-                                                                    </td>
+                                                <div className="p-2 bg-white border border-slate-200 rounded">
+                                                    <span className="text-slate-400 block font-semibold uppercase text-[9px]">IP & Client Device</span>
+                                                    <strong className="text-slate-800 font-mono">{selectedLog.ip || '127.0.0.1'}</strong> &bull; {selectedLog.deviceInfo || 'Windows PC'}
+                                                </div>
+                                                <div className="p-2 bg-white border border-slate-200 rounded">
+                                                    <span className="text-slate-400 block font-semibold uppercase text-[9px]">Brand / Branch</span>
+                                                    <strong className="text-indigo-600">{selectedLog.brand || 'Global Master'}</strong>
+                                                </div>
+                                                <div className="p-2 bg-white border border-slate-200 rounded">
+                                                    <span className="text-slate-400 block font-semibold uppercase text-[9px]">Contract / Customer Ref</span>
+                                                    <strong className="text-slate-800 font-mono">{selectedLog.contractId || selectedLog.customerId || 'N/A'}</strong>
+                                                </div>
+                                            </div>
+
+                                            {/* Structured Field Modification Diff Table (Old vs New) */}
+                                            {selectedLog.payload?.diff && Array.isArray(selectedLog.payload.diff) && selectedLog.payload.diff.length > 0 && (
+                                                <div className="bg-white border border-amber-300 rounded overflow-hidden shadow-2xs">
+                                                    <div className="bg-amber-50 px-3 py-1.5 border-b border-amber-200 flex items-center justify-between">
+                                                        <span className="text-[11px] font-bold text-amber-900 flex items-center gap-1.5">
+                                                            <span>🔄</span> កំណត់ត្រាបម្រែបម្រួលទិន្នន័យ (Field Modification Diff / Old vs New)
+                                                        </span>
+                                                        <span className="text-[10px] bg-amber-200/80 text-amber-800 px-1.5 py-0.5 rounded font-bold font-mono">
+                                                            {selectedLog.payload.diff.length} changes
+                                                        </span>
+                                                    </div>
+                                                    <div className="overflow-x-auto max-h-48">
+                                                        <table className="w-full text-[11px] text-left">
+                                                            <thead className="bg-slate-100 text-slate-600 uppercase text-[9px] font-bold border-b border-slate-200 sticky top-0">
+                                                                <tr>
+                                                                    <th className="py-1.5 px-2.5">Field / Attribute</th>
+                                                                    <th className="py-1.5 px-2.5 text-rose-700 bg-rose-50/50">តម្លៃចាស់ (Previous / Old Value)</th>
+                                                                    <th className="py-1.5 px-2.5 text-emerald-700 bg-emerald-50/50">តម្លៃថ្មី (Updated / New Value)</th>
                                                                 </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Pre-Deletion Data Snapshot Display */}
-                                        {(selectedLog.payload?.deletedData || selectedLog.payload?.deletedRecord || selectedLog.payload?.previousData) && (
-                                            <div className="bg-rose-50/80 border border-rose-300 rounded overflow-hidden shadow-2xs">
-                                                <div className="bg-rose-100 px-3 py-1.5 border-b border-rose-200 flex items-center justify-between">
-                                                    <span className="text-[11px] font-bold text-rose-900 flex items-center gap-1.5">
-                                                        <FaTrashAlt className="text-rose-600" />
-                                                        <span>ទិន្នន័យមុនពេលលុប (Pre-Deletion Data Snapshot Record)</span>
-                                                    </span>
-                                                    <span className="text-[10px] bg-rose-200 text-rose-800 px-2 py-0.5 rounded font-bold font-mono">
-                                                        Deleted Item Snapshot
-                                                    </span>
-                                                </div>
-                                                <div className="p-3 bg-white space-y-2">
-                                                    <div className="text-xs text-rose-800 font-semibold">
-                                                        ⚠️ ទិន្នន័យខាងក្រោមនេះត្រូវបានកត់ត្រាទុកយ៉ាងលម្អិតមុនពេលប្រតិបត្តិការលុបចេញពី Database ដើម្បីដឹងច្បាស់ថាទិន្នន័យណាខ្លះត្រូវបានលុប៖
-                                                    </div>
-                                                    <div className="overflow-x-auto max-h-56 bg-slate-900 text-rose-300 font-mono text-[11px] p-2.5 rounded border border-slate-800">
-                                                        <pre>{JSON.stringify(selectedLog.payload?.deletedData || selectedLog.payload?.deletedRecord || selectedLog.payload?.previousData, null, 2)}</pre>
+                                                            </thead>
+                                                            <tbody className="divide-y divide-slate-100 font-mono">
+                                                                {selectedLog.payload.diff.map((d, dIdx) => (
+                                                                    <tr key={dIdx} className="hover:bg-slate-50 transition-colors">
+                                                                        <td className="py-1.5 px-2.5 font-bold text-slate-800 font-sans">
+                                                                            {d.field}
+                                                                        </td>
+                                                                        <td className="py-1.5 px-2.5 text-rose-600 bg-rose-50/20 font-medium">
+                                                                            <span className="line-through mr-1 opacity-70">
+                                                                                {d.oldValue !== undefined && d.oldValue !== null && d.oldValue !== '' ? String(d.oldValue) : '(empty)'}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="py-1.5 px-2.5 text-emerald-600 bg-emerald-50/20 font-bold">
+                                                                            <span>
+                                                                                {d.newValue !== undefined && d.newValue !== null && d.newValue !== '' ? String(d.newValue) : '(empty)'}
+                                                                            </span>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
 
-                                        {selectedLog.payload && Object.keys(selectedLog.payload).length > 0 && !selectedLog.payload?.deletedData && (
-                                            <div className="p-2 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded border border-slate-800 overflow-x-auto">
-                                                <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Attached Payload:</div>
-                                                <pre>{JSON.stringify(selectedLog.payload, null, 2)}</pre>
-                                            </div>
-                                        )}
-                                    </div>
+                                            {/* Pre-Deletion Data Snapshot Display */}
+                                            {(selectedLog.payload?.deletedData || selectedLog.payload?.deletedRecord || selectedLog.payload?.previousData) && (
+                                                <div className="bg-rose-50/80 border border-rose-300 rounded overflow-hidden shadow-2xs">
+                                                    <div className="bg-rose-100 px-3 py-1.5 border-b border-rose-200 flex items-center justify-between">
+                                                        <span className="text-[11px] font-bold text-rose-900 flex items-center gap-1.5">
+                                                            <FaTrashAlt className="text-rose-600" />
+                                                            <span>ទិន្នន័យមុនពេលលុប (Pre-Deletion Data Snapshot Record)</span>
+                                                        </span>
+                                                        <span className="text-[10px] bg-rose-200 text-rose-800 px-2 py-0.5 rounded font-bold font-mono">
+                                                            Deleted Item Snapshot
+                                                        </span>
+                                                    </div>
+                                                    <div className="p-3 bg-white space-y-2">
+                                                        <div className="text-xs text-rose-800 font-semibold">
+                                                            ⚠️ ទិន្នន័យខាងក្រោមនេះត្រូវបានកត់ត្រាទុកយ៉ាងលម្អិតមុនពេលប្រតិបត្តិការលុបចេញពី Database ដើម្បីដឹងច្បាស់ថាទិន្នន័យណាខ្លះត្រូវបានលុប៖
+                                                        </div>
+                                                        <div className="overflow-x-auto max-h-56 bg-slate-900 text-rose-300 font-mono text-[11px] p-2.5 rounded border border-slate-800">
+                                                            <pre>{JSON.stringify(selectedLog.payload?.deletedData || selectedLog.payload?.deletedRecord || selectedLog.payload?.previousData, null, 2)}</pre>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {selectedLog.payload && Object.keys(selectedLog.payload).length > 0 && !selectedLog.payload?.deletedData && (
+                                                <div className="p-2 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded border border-slate-800 overflow-x-auto">
+                                                    <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">Attached Payload:</div>
+                                                    <pre>{JSON.stringify(selectedLog.payload, null, 2)}</pre>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <button
+                                                onClick={handleCopyXml}
+                                                className="absolute right-2 top-2 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-[11px] flex items-center gap-1.5 shadow z-10 cursor-pointer"
+                                            >
+                                                <FaCopy size={11} />
+                                                <span>{copiedXml ? 'Copied XML!' : 'Copy XML'}</span>
+                                            </button>
+                                            <pre className="p-3 bg-[#1e1e1e] text-[#d4d4d4] font-mono text-[11px] rounded border border-slate-700 overflow-x-auto leading-relaxed">
+                                                {formatXmlView(selectedLog)}
+                                            </pre>
+                                        </div>
+                                    )
                                 ) : (
-                                    <div className="relative">
-                                        <button
-                                            onClick={handleCopyXml}
-                                            className="absolute right-2 top-2 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-[11px] flex items-center gap-1.5 shadow z-10 cursor-pointer"
-                                        >
-                                            <FaCopy size={11} />
-                                            <span>{copiedXml ? 'Copied XML!' : 'Copy XML'}</span>
-                                        </button>
-                                        <pre className="p-3 bg-[#1e1e1e] text-[#d4d4d4] font-mono text-[11px] rounded border border-slate-700 overflow-x-auto leading-relaxed">
-                                            {formatXmlView(selectedLog)}
-                                        </pre>
+                                    <div className="text-center py-10 text-slate-400 italic">
+                                        Select an event log entry from the table above to view its system properties.
                                     </div>
-                                )
-                            ) : (
-                                <div className="text-center py-10 text-slate-400 italic">
-                                    Select an event log entry from the table above to view its system properties.
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
-                    </div>
                     )}
                 </div>
             </div>
@@ -1314,7 +1343,6 @@ ${payloadJson.split('\n').map(l => '      ' + l).join('\n')}
                             <div className="p-2.5 bg-slate-100 border border-slate-300 rounded text-[11px] text-slate-600 space-y-1">
                                 <div className="font-semibold text-slate-800">⚙️ កាលវិភាគដំណើរការអូតូ (Auto Scheduler Status):</div>
                                 <div>• ដំណើរការស្វ័យប្រវត្តិកំណត់រៀងរាល់ <strong>៦ ម៉ោងម្តង</strong> និងពេល Server ចាប់ផ្តើមដំណើរការ។</div>
-                                <div>• Google Sheet Target ID: <code className="text-indigo-600 font-mono text-[10px]">process.env.GOOGLE_SHEET_ID</code></div>
                             </div>
                         </div>
 

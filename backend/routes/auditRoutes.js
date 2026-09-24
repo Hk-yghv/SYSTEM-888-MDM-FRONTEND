@@ -28,16 +28,22 @@ router.get('/', async (req, res) => {
 
         const isMasterAdmin = isImmutable === 'true' ||
             requestingUser === '@hakyonghouv' ||
+            requestingUser === 'hakyonghouv' ||
             userRole === 'Administrator' ||
             userRole === 'Admin';
 
         const filter = {};
 
-        // Scope access: Non-admin users can see their own activity logs
+        // Scope access: Non-admin users can ONLY see their own activity logs
         if (!isMasterAdmin) {
             if (requestingUser) {
                 const cleanUser = requestingUser.replace(/^@/, '');
                 filter.username = new RegExp(`^@?${cleanUser}$`, 'i');
+            } else {
+                filter.username = '__NO_ACCESS__';
+            }
+            if (userBrand) {
+                filter.brand = userBrand;
             }
         } else {
             // Master Admin filters
@@ -163,13 +169,21 @@ router.get('/stats', async (req, res) => {
         const { userBrand, userRole, username: requestingUser, isImmutable } = req.query;
         const isMasterAdmin = isImmutable === 'true' ||
             requestingUser === '@hakyonghouv' ||
+            requestingUser === 'hakyonghouv' ||
             userRole === 'Administrator' ||
             userRole === 'Admin';
 
         const filter = {};
-        if (!isMasterAdmin && requestingUser) {
-            const cleanUser = requestingUser.replace(/^@/, '');
-            filter.username = new RegExp(`^@?${cleanUser}$`, 'i');
+        if (!isMasterAdmin) {
+            if (requestingUser) {
+                const cleanUser = requestingUser.replace(/^@/, '');
+                filter.username = new RegExp(`^@?${cleanUser}$`, 'i');
+            } else {
+                filter.username = '__NO_ACCESS__';
+            }
+            if (userBrand) {
+                filter.brand = userBrand;
+            }
         }
 
         let total = 0;
@@ -194,7 +208,15 @@ router.get('/stats', async (req, res) => {
             contractCount = first.c;
             navigationCount = first.n;
         } else {
-            const mem = MEM_DB.systemAuditLogs || [];
+            const cleanReqUser = (requestingUser || '').replace(/^@/, '').toLowerCase();
+            const mem = (MEM_DB.systemAuditLogs || []).filter(item => {
+                const itemCleanUser = (item.username || '').replace(/^@/, '').toLowerCase();
+                if (!isMasterAdmin) {
+                    if (!cleanReqUser || itemCleanUser !== cleanReqUser) return false;
+                    if (userBrand && item.brand && item.brand !== userBrand) return false;
+                }
+                return true;
+            });
             total = mem.length;
             securityCount = mem.filter(m => m.category === 'Security').length;
             errorCount = mem.filter(m => m.level === 'Error').length;
@@ -242,16 +264,31 @@ router.get('/archive-status', async (req, res) => {
 router.get('/google-sheet-history', async (req, res) => {
     try {
         const {
+            userBrand,
+            userRole,
+            username: requestingUser,
+            isImmutable,
             startDate,
             endDate,
             search,
             category,
             level,
             brand,
+            targetUser,
             username,
             page = 1,
             limit = 100
         } = req.query;
+
+        const isMasterAdmin = isImmutable === 'true' ||
+            requestingUser === '@hakyonghouv' ||
+            requestingUser === 'hakyonghouv' ||
+            userRole === 'Administrator' ||
+            userRole === 'Admin';
+
+        // Strict isolation: non-admins only see their own archived rows
+        const effectiveUsername = !isMasterAdmin ? (requestingUser || '__NO_ACCESS__') : (targetUser || username || '');
+        const effectiveBrand = !isMasterAdmin ? (userBrand || '') : (brand || '');
 
         const result = await readSystemLogsFromGoogleSheet({
             startDate,
@@ -259,8 +296,8 @@ router.get('/google-sheet-history', async (req, res) => {
             search,
             category,
             level,
-            brand,
-            username,
+            brand: effectiveBrand,
+            username: effectiveUsername,
             page,
             limit
         });
