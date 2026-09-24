@@ -483,22 +483,30 @@ export const readSystemLogsFromGoogleSheet = async ({
 };
 
 /**
- * Background Scheduler: Runs on server start (after 15s) and every 6 hours
+ * Background Scheduler: Runs immediately on server startup (after 2s DB stabilization) and every 6 hours
  */
 export const startSystemLogArchivalScheduler = () => {
     console.log('[LogArchival] Initializing Automatic 7-Day System Log Archival & Retention Scheduler...');
     
-    // Initial run after 15 seconds
-    setTimeout(() => {
-        archiveAndCleanupSystemLogs(7, 'StartupScheduler').catch(err => {
-            console.error('[LogArchival] Startup archival error:', err.message);
-        });
-    }, 15000);
+    // 1. Run immediately on server boot (after 2 seconds)
+    setTimeout(async () => {
+        console.log('[LogArchival] 🚀 Starting immediate boot-time scan to check & archive system logs (>7 days) to Google Sheet...');
+        try {
+            const result = await archiveAndCleanupSystemLogs(7, 'StartupImmediateScan');
+            console.log('[LogArchival] ✅ Boot-time immediate scan finished:', result.message || result);
+        } catch (err) {
+            console.error('[LogArchival] ❌ Boot-time immediate scan error:', err.message);
+        }
+    }, 2000);
 
-    // Periodic run every 6 hours (6 * 60 * 60 * 1000 ms)
-    setInterval(() => {
-        archiveAndCleanupSystemLogs(7, 'CronScheduler').catch(err => {
-            console.error('[LogArchival] Periodic archival error:', err.message);
-        });
+    // 2. Periodic run every 6 hours (6 * 60 * 60 * 1000 ms)
+    setInterval(async () => {
+        console.log('[LogArchival] ⏰ Starting 6-hour periodic archival scan to Google Sheet...');
+        try {
+            const result = await archiveAndCleanupSystemLogs(7, 'CronScheduler');
+            console.log('[LogArchival] ✅ 6-hour periodic scan finished:', result.message || result);
+        } catch (err) {
+            console.error('[LogArchival] ❌ Periodic archival error:', err.message);
+        }
     }, 6 * 60 * 60 * 1000);
 };
