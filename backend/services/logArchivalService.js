@@ -51,33 +51,64 @@ export const formatLogRow = (l) => {
     ];
 };
 
-/**
- * Real-time direct export for deleted data & critical events to Google Sheet 2
- */
-export const exportDeletedLogToGoogleSheet = async (logEntry) => {
+// ── Stream Buffer Queue for Real-Time Google Sheet 2 Syncing (Continuous Recording) ──
+let logStreamBuffer = [];
+let isFlushingBuffer = false;
+let flushTimer = null;
+
+export const queueAuditLogToGoogleSheet = (logEntry) => {
+    try {
+        if (!logEntry) return;
+        const row = formatLogRow(logEntry);
+        logStreamBuffer.push(row);
+
+        // Immediate flush for deletion actions or when buffer reaches 5+ entries
+        const isDeleteAction = (logEntry.action && logEntry.action.includes('DELETE')) ||
+            Boolean(logEntry.payload?.deletedData || logEntry.payload?.deletedRecord);
+
+        if (isDeleteAction || logStreamBuffer.length >= 5) {
+            if (flushTimer) clearTimeout(flushTimer);
+            flushTimer = null;
+            flushLogStreamBuffer();
+        } else if (!flushTimer) {
+            // Debounce flush every 2.5 seconds for normal navigation/clicks
+            flushTimer = setTimeout(() => {
+                flushTimer = null;
+                flushLogStreamBuffer();
+            }, 2500);
+        }
+    } catch (e) {
+        console.warn('[LogArchival] queueAuditLogToGoogleSheet warning:', e.message);
+    }
+};
+
+export const flushLogStreamBuffer = async () => {
+    if (isFlushingBuffer || logStreamBuffer.length === 0) return;
+    isFlushingBuffer = true;
+    const batch = [...logStreamBuffer];
+    logStreamBuffer = [];
+
     try {
         const sheetId = process.env.GOOGLE_SHEET_SYSTEM_LOGS_ID || process.env.GOOGLE_SHEET_DELETE_HISTORY_ID || process.env.GOOGLE_SHEET_ID;
         const webhookUrl = process.env.GOOGLE_SHEET_SYSTEM_LOGS_WEBHOOK_URL || process.env.GOOGLE_SHEET_DELETE_HISTORY_WEBHOOK_URL || process.env.GOOGLE_SHEET_WEBHOOK_URL;
         const svc = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_PATH || process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
         if (!webhookUrl && (!svc || !sheetId)) {
-            return { skipped: true };
+            isFlushingBuffer = false;
+            return;
         }
-
-        const row = formatLogRow(logEntry);
 
         if (webhookUrl) {
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                const timeoutId = setTimeout(() => controller.abort(), 20000);
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'append',
                         sheetId,
-                        rows: [row],
-                        row,
+                        rows: batch,
                         type: 'system_logs_delete_history'
                     }),
                     redirect: 'follow',
@@ -85,20 +116,30 @@ export const exportDeletedLogToGoogleSheet = async (logEntry) => {
                 });
                 clearTimeout(timeoutId);
                 if (response.ok) {
-                    console.log(`[LogArchival] Real-time deleted record ${logEntry.eventId || logEntry.action} saved to Google Sheet 2.`);
-                    return { success: true, via: 'webhook_realtime' };
+                    console.log(`[LogArchival] ✅ Continuous stream: Sent ${batch.length} audit log(s) to Google Sheet 2.`);
+                    isFlushingBuffer = false;
+                    return;
                 }
             } catch (wErr) {
-                console.warn('[LogArchival] Real-time Webhook append error:', wErr.message);
+                console.warn('[LogArchival] Webhook stream warning:', wErr.message);
             }
         }
 
         if (svc && sheetId) {
-            return await appendToGoogleSheet(svc, sheetId, [row]);
+            await appendToGoogleSheet(svc, sheetId, batch);
         }
     } catch (err) {
-        console.error('[LogArchival] exportDeletedLogToGoogleSheet error:', err.message);
+        console.error('[LogArchival] flushLogStreamBuffer error:', err.message);
+    } finally {
+        isFlushingBuffer = false;
+        if (logStreamBuffer.length > 0 && !flushTimer) {
+            flushTimer = setTimeout(flushLogStreamBuffer, 2500);
+        }
     }
+};
+
+export const exportDeletedLogToGoogleSheet = async (logEntry) => {
+    queueAuditLogToGoogleSheet(logEntry);
 };
 
 /**
