@@ -100,7 +100,6 @@ export default async function handler(req, res) {
 
             // If Render instance is sleeping/down/rate-limited (502, 503, 504), failover to next backend server
             if (backendRes.status === 502 || backendRes.status === 503 || backendRes.status === 504) {
-                console.warn(`[Proxy Failover] Server ${backendBase} returned HTTP ${backendRes.status}. Trying next server...`);
                 continue;
             }
 
@@ -115,13 +114,11 @@ export default async function handler(req, res) {
 
             return res.status(backendRes.status).send(buffer);
         } catch (err) {
-            console.warn(`[Proxy Failover Error] Server ${backendBase} unreachable (${err.message}). Trying next...`);
             lastError = err;
         }
     }
 
     // If all servers in pool fail
-    console.error('[Proxy Gateway Fatal]: All API backend servers failed.', lastError);
     return res.status(502).json({
         error: 'High-Availability Gateway Error: All 3 MDM API backend servers are currently unreachable.',
         details: lastError?.message || 'Server timeout or network failure'
