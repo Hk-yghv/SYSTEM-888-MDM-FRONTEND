@@ -227,7 +227,7 @@ export const isTokenRevoked = (token) => revokedTokensMap.has(token);
 
 // ── LAYER 8: Security Verification Auth Middleware ──
 export const verifySecurityAuth = (req, res, next) => {
-    // Only strictly public endpoints bypass auth check
+    // Strictly whitelisted public endpoints that do NOT require authentication
     const publicPaths = [
         '/api/auth/login',
         '/api/auth/verify-otp',
@@ -236,10 +236,25 @@ export const verifySecurityAuth = (req, res, next) => {
         '/api/calculate-schedules/stream',
         '/calculate-schedules/stream'
     ];
-    if (!req.path.startsWith('/api') || publicPaths.some(p => req.path === p || req.path.startsWith('/api/health') || req.path.endsWith('/calculate-schedules/stream'))) {
+
+    const path = req.path;
+    const originalUrl = req.originalUrl?.split('?')[0] || path;
+
+    // Allow only explicitly whitelisted public paths
+    const isPublicPath = publicPaths.some(p =>
+        path === p ||
+        originalUrl === p ||
+        path.startsWith('/api/health') ||
+        originalUrl.startsWith('/api/health') ||
+        path.endsWith('/calculate-schedules/stream') ||
+        originalUrl.endsWith('/calculate-schedules/stream')
+    );
+
+    if (isPublicPath) {
         return next();
     }
 
+    // All other paths (with or without /api prefix) require authentication
     const systemKey = req.headers['x-system-api-key'];
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -261,6 +276,10 @@ export const verifySecurityAuth = (req, res, next) => {
             return res.status(403).json({ error: 'Security Protection: Invalid or Expired Token signature.' });
         }
     }
+
+    // Notify on unauthorized direct API access attempts
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || '127.0.0.1';
+    notifySecurityAlert(`🔒 <b>UNAUTHORIZED API ACCESS BLOCKED</b>\nIP: <code>${clientIp}</code>\nPath: <code>${originalUrl}</code>\nMethod: <code>${req.method}</code>`);
 
     return res.status(401).json({
         error: 'Security Protection: Access Denied! Direct API scraping or unauthorized access is blocked by SYSTEM MDM Security Protocol.'
