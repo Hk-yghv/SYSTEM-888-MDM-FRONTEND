@@ -2,6 +2,19 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
 const SYSTEM_API_KEY = process.env.SYSTEM_API_KEY || 'SYSTEM_MDM_SECURE_AUTH_HEADER_TOKEN_2026';
+// External Partner API Key — for third-party integrations (read-only access to specific endpoints)
+const EXTERNAL_PARTNER_API_KEY = process.env.EXTERNAL_PARTNER_API_KEY || 'MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ';
+
+// Endpoints accessible to external partners with X-Partner-API-Key (GET only)
+const PARTNER_ALLOWED_PATH_PREFIXES = [
+    '/api/contracts',
+    '/contracts',
+    '/api/payments',
+    '/payments',
+    '/api/calculate-schedules',
+    '/calculate-schedules',
+    '/api/health',
+];
 
 let telegramBotInstance = null;
 export const setSecurityTelegramBot = (bot) => {
@@ -256,10 +269,35 @@ export const verifySecurityAuth = (req, res, next) => {
 
     // All other paths (with or without /api prefix) require authentication
     const systemKey = req.headers['x-system-api-key'];
+    const partnerKey = req.headers['x-partner-api-key'];
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
+    // Internal system key — full access
     if (systemKey === SYSTEM_API_KEY) {
+        return next();
+    }
+
+    // External Partner API Key — read-only GET access to whitelisted endpoints only
+    if (partnerKey === EXTERNAL_PARTNER_API_KEY) {
+        const isPartnerAllowedPath = PARTNER_ALLOWED_PATH_PREFIXES.some(p =>
+            path.startsWith(p) || originalUrl.startsWith(p)
+        );
+
+        if (!isPartnerAllowedPath) {
+            return res.status(403).json({
+                error: 'Partner Access Denied: This endpoint is not available for external partner access.'
+            });
+        }
+
+        if (req.method !== 'GET') {
+            return res.status(403).json({
+                error: 'Partner Access Denied: External partner API key allows GET (read-only) access only.'
+            });
+        }
+
+        // Mark request as partner access
+        req.isPartnerAccess = true;
         return next();
     }
 
