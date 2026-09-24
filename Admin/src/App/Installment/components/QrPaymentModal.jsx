@@ -313,7 +313,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                 <span>{isUploadingPhoto ? 'Uploading Proof Image...' : 'Submitting Payment...'}</span>
                                             </div>
                                         ) : (
-                                            <span>Submit Payment to MongoDB</span>
+                                            <span>Submit Payment</span>
                                         )}
                                     </button>
                                 </div>
