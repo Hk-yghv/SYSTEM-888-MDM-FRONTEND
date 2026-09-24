@@ -28,9 +28,13 @@ export const AuthProvider = ({ children }) => {
 
     const logout = useCallback(() => {
         if (user?.username) {
+            const currentToken = getSecureItem('mdm_token');
             fetch(`${API_BASE}/auth/logout`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {})
+                },
                 body: JSON.stringify({ username: user.username })
             }).catch(() => { });
         }
@@ -46,7 +50,10 @@ export const AuthProvider = ({ children }) => {
         const sendHeartbeat = () => {
             fetch(`${API_BASE}/auth/heartbeat`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({ username: user.username })
             }).catch(() => { });
         };
@@ -56,8 +63,16 @@ export const AuthProvider = ({ children }) => {
 
         const handleUnload = () => {
             if (user?.username) {
-                const blob = new Blob([JSON.stringify({ username: user.username })], { type: 'application/json' });
-                navigator.sendBeacon(`${API_BASE}/auth/logout`, blob);
+                // sendBeacon doesn't support custom headers, use keepalive fetch instead
+                fetch(`${API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    },
+                    body: JSON.stringify({ username: user.username }),
+                    keepalive: true
+                }).catch(() => { });
             }
         };
 
@@ -121,7 +136,9 @@ export const AuthProvider = ({ children }) => {
 
         const poll = async () => {
             try {
-                const res = await fetch(`${API_BASE}/users/status-check?username=${encodeURIComponent(user.username)}`);
+                const res = await fetch(`${API_BASE}/users/status-check?username=${encodeURIComponent(user.username)}`, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
                 if (res.ok) {
                     const data = await res.json();
                     if (data.isBlocked) {

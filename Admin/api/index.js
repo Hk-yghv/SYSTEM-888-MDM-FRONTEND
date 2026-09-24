@@ -57,13 +57,17 @@ export default async function handler(req, res) {
     const queryString = queryPart ? `?${queryPart}` : '';
 
     // 5. ── PROXY-LEVEL AUTH GATE ──
-    // Whitelist of public paths that do NOT require a JWT token
+    // Whitelist of public paths that do NOT require a JWT token at proxy level
+    // NOTE: Backend still enforces its own auth for sensitive paths
     const PUBLIC_PATH_PREFIXES = [
         'auth/login',
         'auth/verify-otp',
+        'auth/logout',
+        'auth/heartbeat',
         'health',
         'history/report-schedule',
         'calculate-schedules/stream',
+        'users/status-check',
     ];
 
     const isPublicPath = PUBLIC_PATH_PREFIXES.some(p =>
