@@ -3,6 +3,8 @@ import { getSecureItem } from './secureStorage';
 
 const normalizeUrl = (url) => (url ? url.replace(/\/$/, '') : '');
 
+const SYSTEM_API_KEY = import.meta.env.VITE_SYSTEM_API_KEY || '';
+
 const rawApiPool = [
     import.meta.env.VITE_API_BACKEND,
     import.meta.env.VITE_API_BACKEND1,
@@ -102,7 +104,7 @@ export const smartFetch = async (inputUrlOrPath, options = {}) => {
         try {
             const token = getSecureItem('mdm_token');
             const mergedHeaders = {
-                'x-system-api-key': 'SYSTEM_MDM_SECURE_AUTH_HEADER_TOKEN_2026',
+                'x-system-api-key': SYSTEM_API_KEY,
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
                 ...(options.headers || {})
             };
