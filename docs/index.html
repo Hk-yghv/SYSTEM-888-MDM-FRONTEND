@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📡 SYSTEM MDM — External Partner & Installment API Documentation</title>
+  <title>📡 SYSTEM MDM — Partner API Integration Documentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -141,8 +141,6 @@
     }
 
     .badge-get { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-    .badge-post { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-    .badge-locked { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 
     /* Main Content */
     .main-content {
@@ -179,13 +177,13 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(99, 102, 241, 0.2);
-      border: 1px solid rgba(99, 102, 241, 0.4);
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.4);
       padding: 4px 12px;
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
-      color: #c7d2fe;
+      color: #6ee7b7;
       margin-bottom: 12px;
     }
 
@@ -229,68 +227,6 @@
       align-items: center;
       gap: 8px;
     }
-
-    /* Security Role Comparison Table */
-    .role-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin: 16px 0;
-    }
-
-    .role-card {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 12px;
-      padding: 20px;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .role-card.admin {
-      border-color: rgba(99, 102, 241, 0.4);
-      background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, rgba(15, 23, 42, 0.4) 100%);
-    }
-
-    .role-card.partner {
-      border-color: rgba(16, 185, 129, 0.4);
-      background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.4) 100%);
-    }
-
-    .role-pill {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-    }
-
-    .role-pill.admin { background: #4f46e5; color: #fff; }
-    .role-pill.partner { background: #059669; color: #fff; }
-
-    .role-card h3 {
-      font-size: 16px;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-
-    .role-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .role-list li {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .role-list li.allow::before { content: '✅'; font-size: 12px; }
-    .role-list li.deny::before { content: '🚫'; font-size: 12px; }
 
     /* Endpoint Blocks */
     .endpoint-box {
@@ -469,22 +405,16 @@
       color: #c7d2fe;
     }
 
-    .callout-warning {
-      background: rgba(245, 158, 11, 0.1);
-      border-left: 4px solid var(--accent-amber);
-      color: #fde68a;
-    }
-
-    .callout-danger {
-      background: rgba(239, 68, 68, 0.1);
-      border-left: 4px solid var(--accent-red);
-      color: #fca5a5;
+    .callout-success {
+      background: rgba(16, 185, 129, 0.1);
+      border-left: 4px solid var(--accent-green);
+      color: #a7f3d0;
     }
 
     /* Key Token Box */
     .key-box {
       background: rgba(0, 0, 0, 0.4);
-      border: 1px dashed rgba(99, 102, 241, 0.4);
+      border: 1px dashed rgba(16, 185, 129, 0.5);
       border-radius: 10px;
       padding: 14px 18px;
       display: flex;
@@ -496,7 +426,7 @@
 
     .key-val {
       font-family: 'JetBrains Mono', monospace;
-      color: #38bdf8;
+      color: #34d399;
       font-size: 13px;
       font-weight: 700;
       word-break: break-all;
@@ -507,7 +437,6 @@
       .app-container { flex-direction: column; }
       .sidebar { width: 100%; height: auto; position: static; }
       .main-content { padding: 20px; }
-      .role-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -520,42 +449,33 @@
       <div class="brand-logo">📡</div>
       <div class="brand-info">
         <h1>SYSTEM MDM</h1>
-        <p>API Integration Portal v2.0</p>
+        <p>Partner API Portal v2.0</p>
       </div>
     </div>
 
     <nav class="nav-section">
-      <div class="nav-label">សេចក្ដីណែនាំ & សុវត្ថិភាព</div>
+      <div class="nav-label">សេចក្ដីណែនាំទូទៅ</div>
       <a href="#overview" class="nav-link active">📌 ទិដ្ឋភាពទូទៅ (Overview)</a>
-      <a href="#security-roles" class="nav-link">🛡️ សុវត្ថិភាព (Admin vs Partner)</a>
-      <a href="#authentication" class="nav-link">🔑 Partner API Key</a>
+      <a href="#authentication" class="nav-link">🔑 Partner API Key & Headers</a>
     </nav>
 
     <nav class="nav-section">
-      <div class="nav-label">បញ្ជី API Endpoints (Read-Only)</div>
+      <div class="nav-label">បញ្ជី API Endpoints</div>
       <a href="#endpoint-alerts" class="nav-link">
-        <span>Payment Alerts</span>
+        <span>1. Payment Alerts</span>
         <span class="nav-badge badge-get">GET</span>
       </a>
       <a href="#endpoint-contracts" class="nav-link">
-        <span>Contracts & Schedules</span>
+        <span>2. Contracts & Schedules</span>
         <span class="nav-badge badge-get">GET</span>
       </a>
       <a href="#endpoint-payments" class="nav-link">
-        <span>Payment History</span>
+        <span>3. Payment History</span>
         <span class="nav-badge badge-get">GET</span>
       </a>
       <a href="#endpoint-calculate" class="nav-link">
-        <span>Calculate Schedules</span>
+        <span>4. Calculate Schedules</span>
         <span class="nav-badge badge-get">GET</span>
-      </a>
-    </nav>
-
-    <nav class="nav-section">
-      <div class="nav-label">ប្រតិបត្តិការដែលត្រូវបានហាមឃាត់</div>
-      <a href="#write-protection" class="nav-link">
-        <span>POST/PUT/DELETE</span>
-        <span class="nav-badge badge-locked">BLOCKED</span>
       </a>
     </nav>
   </aside>
@@ -565,60 +485,21 @@
     
     <!-- Hero Banner -->
     <div class="hero-banner" id="overview">
-      <div class="hero-badge">⚡ PRODUCTION READY API</div>
-      <h1 class="hero-title">ឯកសារភ្ជាប់ប្រព័ន្ធ API សម្រាប់ដៃគូខាងក្រៅ (External Partners)</h1>
+      <div class="hero-badge">🟢 PARTNER INTEGRATION ACTIVE</div>
+      <h1 class="hero-title">ឯកសារភ្ជាប់ប្រព័ន្ធ API សម្រាប់ដៃគូ (Partner Integration Guide)</h1>
       <p class="hero-desc">
-        ឯកសារនេះរៀបរាប់អំពីរបៀបភ្ជាប់ និងទាញយកទិន្នន័យអតិថិជន កុងត្រាបង់រំលស់ ប្រវត្តិបង់ប្រាក់ និងបញ្ជីដល់ថ្ងៃត្រូវបង់ (Due Today & Overdue) សម្រាប់យកទៅប្រើប្រាស់ក្នុង App ឬ System ផ្ទាល់ខ្លួនរបស់អ្នក។
+        ឯកសារនេះរៀបរាប់អំពីរបៀបភ្ជាប់ និងទាញយកទិន្នន័យអតិថិជន កុងត្រាបង់រំលស់ ប្រវត្តិបង់ប្រាក់ និងបញ្ជីដល់ថ្ងៃត្រូវបង់ (Due Today & Overdue) សម្រាប់យកទៅប្រើប្រាស់ក្នុង Mobile App, Website, Bot ឬ ប្រព័ន្ធខាងក្រៅរបស់អ្នក។
       </p>
     </div>
 
-    <!-- Security & Role Separation Section -->
-    <section class="card" id="security-roles">
+    <!-- Partner Auth & Configuration -->
+    <section class="card" id="authentication">
       <div class="card-header">
-        <h2 class="card-title">🛡️ ការបែងចែកសិទ្ធិសុវត្ថិភាព (Access Control)</h2>
+        <h2 class="card-title">🔑 ព័ត៌មាន Connection & Headers</h2>
       </div>
 
-      <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">
-        ប្រព័ន្ធ SYSTEM MDM បានបែងចែកសិទ្ធិច្បាស់លាស់រវាង **Admin (គ្រប់គ្រងប្រព័ន្ធផ្ទាល់)** និង **Partner (ដៃគូខាងក្រៅដែលមកភ្ជាប់)** ដើម្បីធានាសុវត្ថិភាពទិន្នន័យ 100% ៖
-      </p>
-
-      <div class="role-grid">
-        <!-- Admin Card -->
-        <div class="role-card admin">
-          <span class="role-pill admin">👑 Admin Control (ផ្ទៃក្នុង)</span>
-          <h3>Admin Control (គ្រប់គ្រងពេញលេញ)</h3>
-          <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px;">
-            សម្រាប់តែបុគ្គលិក និង Admin នៃ SYSTEM MDM តាមរយៈ Web Admin App ប៉ុណ្ណោះ។
-          </p>
-          <ul class="role-list">
-            <li class="allow">អានទិន្នន័យ (GET All Data)</li>
-            <li class="allow">បង្កើតកុងត្រាថ្មី (POST Contracts)</li>
-            <li class="allow">កែប្រែទិន្នន័យ និងកាលវិភាគ (PUT / Edit)</li>
-            <li class="allow">លុបទិន្នន័យ (DELETE Contracts / Payments)</li>
-            <li class="allow">បញ្ជា Lock / Unlock ទូរស័ព្ទពីចម្ងាយ</li>
-          </ul>
-        </div>
-
-        <!-- Partner Card -->
-        <div class="role-card partner">
-          <span class="role-pill partner">🤝 External Partner (ខាងក្រៅ)</span>
-          <h3>Partner Access (អានទិន្នន័យតែប៉ុណ្ណោះ)</h3>
-          <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px;">
-            សម្រាប់ប្រព័ន្ធខាងក្រៅ (App, Website, Bot, Dashboard) របស់ដៃគូដែលយក API ទៅប្រើ។
-          </p>
-          <ul class="role-list">
-            <li class="allow">ទាញយកបញ្ជីដល់ថ្ងៃបង់ (Due Today / Overdue)</li>
-            <li class="allow">ទាញយកព័ត៌មានកុងត្រា & តារាងបង់រំលស់</li>
-            <li class="allow">ទាញយកប្រវត្តិបង់ប្រាក់តាម Contract ID</li>
-            <li class="deny"><strong>ហាមឃាត់ដាច់ខាត:</strong> មិនអាចបង្កើតថ្មី (POST)</li>
-            <li class="deny"><strong>ហាមឃាត់ដាច់ខាត:</strong> មិនអាចកែប្រែទិន្នន័យ (PUT/PATCH)</li>
-            <li class="deny"><strong>ហាមឃាត់ដាច់ខាត:</strong> មិនអាចលុបទិន្នន័យ (DELETE)</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="callout callout-info" id="authentication">
-        <div>💡</div>
+      <div class="callout callout-info">
+        <div>🌐</div>
         <div>
           <strong>Server Base URL:</strong><br>
           • Production URL: <code style="font-family:monospace; color:#38bdf8">https://system-mdm.onrender.com</code><br>
@@ -626,12 +507,24 @@
         </div>
       </div>
 
+      <p style="font-size: 13.5px; color: var(--text-muted); margin: 12px 0 6px;">
+        សូមដាក់ Header នេះទៅកាន់រាល់ API Request របស់អ្នក ៖
+      </p>
+
       <div class="key-box">
         <div>
-          <div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Header សម្ងាត់សម្រាប់ Partner (Recommended Header)</div>
+          <div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Header សម្ងាត់សម្រាប់ Partner</div>
           <div class="key-val">X-Partner-API-Key: MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ</div>
         </div>
         <button class="copy-btn" onclick="navigator.clipboard.writeText('MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ'); alert('Copied Partner Key!');">📋 Copy Key</button>
+      </div>
+
+      <div class="callout callout-success">
+        <div>💡</div>
+        <div>
+          <strong>គន្លឹះសំខាន់ដើម្បីទទួលបានទិន្នន័យពេញលេញ:</strong><br>
+          សូមបន្ថែម Query Parameter <code>?isImmutable=true</code> ទៅខាងចុង Endpoint ដើម្បីទាញយកទិន្នន័យពីគ្រប់សាខាទាំងអស់ (All Brands) ដោយមិនមានការច្រោះចោល។
+        </div>
       </div>
     </section>
 
@@ -642,12 +535,12 @@
           <span class="method-tag method-get">GET</span>
           <span class="url-text">/api/contracts/payment-alerts</span>
         </div>
-        <span style="font-size:12px; color:#34d399; font-weight:700;">🟢 Read-Only (Safe)</span>
+        <span style="font-size:12px; color:#34d399; font-weight:700;">🟢 Read-Only</span>
       </div>
 
       <div class="endpoint-body">
         <div class="endpoint-desc">
-          <strong>គោលបំណង:</strong> ប្រើសម្រាប់ទាញយកអតិថិជនដែល <strong>ត្រូវបង់ថ្ងៃនេះ (Due Today)</strong>, <strong>ហួសថ្ងៃកំណត់ (Overdue)</strong>, និង <strong>ជិតដល់ថ្ងៃបង់ (Due Soon)</strong> ទាំងអស់ ព្រមទាំងមានស្ថិតិសរុប (Summary Counts)។
+          <strong>គោលបំណង:</strong> ប្រើសម្រាប់ទាញយកអតិថិជនដែល <strong>ត្រូវបង់ថ្ងៃនេះ (Due Today)</strong>, <strong>ហួសថ្ងៃកំណត់ (Overdue)</strong>, និង <strong>ជិតដល់ថ្ងៃបង់ (Due Soon)</strong> ទាំងអស់ ព្រមទាំងមានចំនួនសរុប (Summary Counts)។
         </div>
 
         <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-dim); margin-top: 12px;">Query Parameters</h4>
@@ -671,7 +564,7 @@
               <td><code>userBrand</code></td>
               <td>string</td>
               <td>Optional</td>
-              <td>ច្រោះតាមឈ្មោះ Brand ជាក់លាក់ (ឧទាហរណ៍ <code>SYSTEM MDM</code>)</td>
+              <td>ច្រោះតាមឈ្មោះសាខា (Brand) ជាក់លាក់</td>
             </tr>
           </tbody>
         </table>
@@ -757,7 +650,7 @@ print_r($data['summary']);
           <span class="method-tag method-get">GET</span>
           <span class="url-text">/api/contracts</span>
         </div>
-        <span style="font-size:12px; color:#34d399; font-weight:700;">🟢 Read-Only (Safe)</span>
+        <span style="font-size:12px; color:#34d399; font-weight:700;">🟢 Read-Only</span>
       </div>
 
       <div class="endpoint-body">
@@ -832,7 +725,7 @@ fetchContracts();</code></pre>
           <span class="method-tag method-get">GET</span>
           <span class="url-text">/api/payments/contract/:contractId</span>
         </div>
-        <span style="font-size:12px; color:#34d399; font-weight:700;">🟢 Read-Only (Safe)</span>
+        <span style="font-size:12px; color:#34d399; font-weight:700;">🟢 Read-Only</span>
       </div>
 
       <div class="endpoint-body">
@@ -870,7 +763,7 @@ fetchPaymentHistory('MDM-2026-0012');</code></pre>
           <span class="method-tag method-get">GET</span>
           <span class="url-text">/api/calculate-schedules</span>
         </div>
-        <span style="font-size:12px; color:#34d399; font-weight:700;">🟢 Read-Only (Safe)</span>
+        <span style="font-size:12px; color:#34d399; font-weight:700;">🟢 Read-Only</span>
       </div>
 
       <div class="endpoint-body">
@@ -886,22 +779,6 @@ fetchPaymentHistory('MDM-2026-0012');</code></pre>
 
           <pre class="code-content active" id="calc-curl"><code>curl -X GET "https://system-mdm.onrender.com/api/calculate-schedules?isImmutable=true" \
   -H "X-Partner-API-Key: MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ"</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- Write Protection Notice -->
-    <section class="card" id="write-protection">
-      <div class="card-header">
-        <h2 class="card-title">🚫 ការការពារទិន្នន័យ (Write/Delete Protection)</h2>
-      </div>
-
-      <div class="callout callout-danger">
-        <div>🔒</div>
-        <div>
-          <strong>សេចក្ដីបញ្ជាក់ចំពោះការកែប្រែ និងលុបទិន្នន័យ:</strong><br>
-          រាល់ Request ប្រភេទ <code>POST</code> (បង្កើត), <code>PUT</code> / <code>PATCH</code> (កែប្រែ), និង <code>DELETE</code> (លុប) ពីខាងក្រៅ ឬពី Partner API Key នឹងត្រូវ <strong>Blocked 100% ដោយស្វ័យប្រវត្តិ (HTTP 403 Forbidden)</strong>។<br>
-          មានតែ Admin ផ្ទាល់ដែលបាន Login លើ SYSTEM MDM Admin Application ប៉ុណ្ណោះ ទើបអាចធ្វើប្រតិបត្តិការទាំងនេះបាន។
         </div>
       </div>
     </section>
