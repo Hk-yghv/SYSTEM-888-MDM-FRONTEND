@@ -1,7 +1,6 @@
 import SystemAuditLog from '../models/SystemAuditLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs } from '../config/multiDB.js';
-import { appendToGoogleSheet } from '../utils/reporting.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
 import fs from 'fs';
 import path from 'path';
@@ -51,6 +50,57 @@ export const formatLogRow = (l) => {
     ];
 };
 
+// ── Dedicated Helper to Append Rows to Google Sheet 2 (System Logs & Delete History) ──
+const appendToSystemLogsGoogleSheetAPI = async (serviceAccountJsonOrPath, sheetId, rows) => {
+    if (!serviceAccountJsonOrPath || !sheetId || !rows || rows.length === 0) return { skipped: true };
+    try {
+        let credentialsObj = null;
+        if (typeof serviceAccountJsonOrPath === 'string') {
+            if (fs.existsSync(serviceAccountJsonOrPath)) {
+                credentialsObj = JSON.parse(fs.readFileSync(serviceAccountJsonOrPath, 'utf8'));
+            } else if (serviceAccountJsonOrPath.trim().startsWith('{')) {
+                credentialsObj = JSON.parse(serviceAccountJsonOrPath);
+            }
+        } else {
+            credentialsObj = serviceAccountJsonOrPath;
+        }
+
+        if (!credentialsObj) return { skipped: true };
+
+        const { google } = await import('googleapis');
+        const auth = new google.auth.GoogleAuth({
+            credentials: credentialsObj,
+            scopes: ['https://www.googleapis.com/auth/spreadsheets']
+        });
+        const client = await auth.getClient();
+        const sheets = google.sheets({ version: 'v4', auth: client });
+
+        let range = 'Sheet1!A1';
+        try {
+            await sheets.spreadsheets.values.append({
+                spreadsheetId: sheetId,
+                range: 'SystemLogs!A1',
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: rows }
+            });
+            range = 'SystemLogs!A1';
+        } catch {
+            await sheets.spreadsheets.values.append({
+                spreadsheetId: sheetId,
+                range: 'Sheet1!A1',
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: rows }
+            });
+        }
+
+        console.log(`[LogArchival] Appended ${rows.length} rows to Google Sheet 2 (${sheetId}) range ${range}`);
+        return { success: true, via: 'google_api_sheet2' };
+    } catch (err) {
+        console.error('[LogArchival] appendToSystemLogsGoogleSheetAPI error:', err.message);
+        return { success: false, error: err.message };
+    }
+};
+
 // ── Stream Buffer Queue for Real-Time Google Sheet 2 Syncing (Continuous Recording) ──
 let logStreamBuffer = [];
 let isFlushingBuffer = false;
@@ -89,11 +139,13 @@ export const flushLogStreamBuffer = async () => {
     logStreamBuffer = [];
 
     try {
-        const sheetId = process.env.GOOGLE_SHEET_SYSTEM_LOGS_ID || process.env.GOOGLE_SHEET_DELETE_HISTORY_ID || process.env.GOOGLE_SHEET_ID;
-        const webhookUrl = process.env.GOOGLE_SHEET_SYSTEM_LOGS_WEBHOOK_URL || process.env.GOOGLE_SHEET_DELETE_HISTORY_WEBHOOK_URL || process.env.GOOGLE_SHEET_WEBHOOK_URL;
+        // Strictly use Google Sheet 2 configuration ONLY (Do NOT fallback to Sheet 1)
+        const sheetId = process.env.GOOGLE_SHEET_SYSTEM_LOGS_ID || process.env.GOOGLE_SHEET_DELETE_HISTORY_ID;
+        const webhookUrl = process.env.GOOGLE_SHEET_SYSTEM_LOGS_WEBHOOK_URL || process.env.GOOGLE_SHEET_DELETE_HISTORY_WEBHOOK_URL;
         const svc = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_PATH || process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
         if (!webhookUrl && (!svc || !sheetId)) {
+            // No Sheet 2 configured, silently ignore
             isFlushingBuffer = false;
             return;
         }
@@ -107,7 +159,7 @@ export const flushLogStreamBuffer = async () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'append',
-                        sheetId,
+                        sheetId: sheetId || '',
                         rows: batch,
                         type: 'system_logs_delete_history'
                     }),
@@ -116,17 +168,17 @@ export const flushLogStreamBuffer = async () => {
                 });
                 clearTimeout(timeoutId);
                 if (response.ok) {
-                    console.log(`[LogArchival] ✅ Continuous stream: Sent ${batch.length} audit log(s) to Google Sheet 2.`);
+                    console.log(`[LogArchival] ✅ Google Sheet 2: Streamed ${batch.length} audit log(s) successfully.`);
                     isFlushingBuffer = false;
                     return;
                 }
             } catch (wErr) {
-                console.warn('[LogArchival] Webhook stream warning:', wErr.message);
+                console.warn('[LogArchival] Google Sheet 2 Webhook stream warning:', wErr.message);
             }
         }
 
         if (svc && sheetId) {
-            await appendToGoogleSheet(svc, sheetId, batch);
+            await appendToSystemLogsGoogleSheetAPI(svc, sheetId, batch);
         }
     } catch (err) {
         console.error('[LogArchival] flushLogStreamBuffer error:', err.message);
@@ -201,8 +253,8 @@ export const archiveAndCleanupSystemLogs = async (retentionDays = 7, triggeredBy
         }
 
         // 2. Google Sheet Export for Sheet 2 (Data History Delete & System Logs)
-        const sheetId = process.env.GOOGLE_SHEET_SYSTEM_LOGS_ID || process.env.GOOGLE_SHEET_DELETE_HISTORY_ID || process.env.GOOGLE_SHEET_ID;
-        const webhookUrl = process.env.GOOGLE_SHEET_SYSTEM_LOGS_WEBHOOK_URL || process.env.GOOGLE_SHEET_DELETE_HISTORY_WEBHOOK_URL || process.env.GOOGLE_SHEET_WEBHOOK_URL;
+        const sheetId = process.env.GOOGLE_SHEET_SYSTEM_LOGS_ID || process.env.GOOGLE_SHEET_DELETE_HISTORY_ID;
+        const webhookUrl = process.env.GOOGLE_SHEET_SYSTEM_LOGS_WEBHOOK_URL || process.env.GOOGLE_SHEET_DELETE_HISTORY_WEBHOOK_URL;
         const svc = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_PATH || process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
         let sheetResult = null;
@@ -217,7 +269,7 @@ export const archiveAndCleanupSystemLogs = async (retentionDays = 7, triggeredBy
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'append',
-                        sheetId,
+                        sheetId: sheetId || '',
                         rows,
                         type: 'system_logs_delete_history'
                     }),
@@ -238,7 +290,7 @@ export const archiveAndCleanupSystemLogs = async (retentionDays = 7, triggeredBy
 
         // Fallback to Google API Service Account if Webhook wasn't used or failed
         if (!sheetResult && svc && sheetId) {
-            sheetResult = await appendToGoogleSheet(svc, sheetId, rows);
+            sheetResult = await appendToSystemLogsGoogleSheetAPI(svc, sheetId, rows);
         }
         console.log('[LogArchival] Google Sheet 2 (Data History Delete) append result:', sheetResult);
 
@@ -349,8 +401,8 @@ export const readSystemLogsFromGoogleSheet = async ({
     limit = 100
 } = {}) => {
     try {
-        const sheetId = process.env.GOOGLE_SHEET_SYSTEM_LOGS_ID || process.env.GOOGLE_SHEET_DELETE_HISTORY_ID || process.env.GOOGLE_SHEET_ID;
-        const webhookUrl = process.env.GOOGLE_SHEET_SYSTEM_LOGS_WEBHOOK_URL || process.env.GOOGLE_SHEET_DELETE_HISTORY_WEBHOOK_URL || process.env.GOOGLE_SHEET_WEBHOOK_URL;
+        const sheetId = process.env.GOOGLE_SHEET_SYSTEM_LOGS_ID || process.env.GOOGLE_SHEET_DELETE_HISTORY_ID;
+        const webhookUrl = process.env.GOOGLE_SHEET_SYSTEM_LOGS_WEBHOOK_URL || process.env.GOOGLE_SHEET_DELETE_HISTORY_WEBHOOK_URL;
         const svc = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_PATH || process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
         let rawRows = [];
