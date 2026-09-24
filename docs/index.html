@@ -477,6 +477,10 @@
         <span>4. Calculate Schedules</span>
         <span class="nav-badge badge-get">GET</span>
       </a>
+      <a href="#endpoint-dashboard" class="nav-link">
+        <span>5. Dashboard Stats</span>
+        <span class="nav-badge badge-get">GET</span>
+      </a>
     </nav>
   </aside>
 
@@ -779,6 +783,122 @@ fetchPaymentHistory('MDM-2026-0012');</code></pre>
 
           <pre class="code-content active" id="calc-curl"><code>curl -X GET "https://system-mdm.onrender.com/api/calculate-schedules?isImmutable=true" \
   -H "X-Partner-API-Key: MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ"</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ENDPOINT 5: Dashboard Stats -->
+    <section class="endpoint-box" id="endpoint-dashboard">
+      <div class="endpoint-header">
+        <div class="endpoint-method-url">
+          <span class="method-tag method-get">GET</span>
+          <span class="url-text">/api/dashboard/stats</span>
+        </div>
+        <span style="font-size:12px; color:#34d399; font-weight:700;">🟢 Read-Only</span>
+      </div>
+
+      <div class="endpoint-body">
+        <div class="endpoint-desc">
+          <strong>គោលបំណង:</strong> ទាញយកស្ថិតិរួម និង KPIs សំខាន់ៗនៃប្រព័ន្ធ (ចំនួនកុងត្រាសរុប, កុងត្រាសកម្ម Activated, Blacklist, ចំនួនទឹកប្រាក់ប្រមូលបាន Total Revenue, Total Loan Amount, និង Repayment Metrics)។
+        </div>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-dim); margin-top: 12px;">Query Parameters</h4>
+        <table class="params-table">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>isImmutable</code></td>
+              <td>string</td>
+              <td><span style="color:#34d399; font-weight:700;">Recommended</span></td>
+              <td>ដាក់ <code>true</code> ដើម្បីទាញយកស្ថិតិពីគ្រប់សាខាទាំងអស់ (All Brands)</td>
+            </tr>
+            <tr>
+              <td><code>userBrand</code></td>
+              <td>string</td>
+              <td>Optional</td>
+              <td>ច្រោះស្ថិតិតាមឈ្មោះសាខា (Brand) ជាក់លាក់</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Code Examples Tab -->
+        <div class="code-tabs">
+          <div class="tab-header">
+            <button class="tab-btn active" onclick="switchTab(this, 'dash-curl')">cURL</button>
+            <button class="tab-btn" onclick="switchTab(this, 'dash-js')">JavaScript / Node.js</button>
+            <button class="tab-btn" onclick="switchTab(this, 'dash-py')">Python</button>
+            <button class="tab-btn" onclick="switchTab(this, 'dash-php')">PHP</button>
+            <button class="copy-btn" onclick="copyCurrentCode(this)">📋 Copy Code</button>
+          </div>
+
+          <pre class="code-content active" id="dash-curl"><code>curl -X GET "https://system-mdm.onrender.com/api/dashboard/stats?isImmutable=true" \
+  -H "X-Partner-API-Key: MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ" \
+  -H "Content-Type: application/json"</code></pre>
+
+          <pre class="code-content" id="dash-js"><code>const fetchDashboardStats = async () => {
+  const url = 'https://system-mdm.onrender.com/api/dashboard/stats?isImmutable=true';
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'X-Partner-API-Key': 'MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ',
+      'Content-Type': 'application/json'
+    }
+  });
+
+  const data = await res.json();
+  console.log('Total Contracts:', data.totalContracts);
+  console.log('Activated Contracts:', data.activatedContracts);
+  console.log('Total Revenue ($):', data.totalRevenue);
+  console.log('Total Loan Amount ($):', data.totalLoanAmount);
+};
+
+fetchDashboardStats();</code></pre>
+
+          <pre class="code-content" id="dash-py"><code>import requests
+
+url = "https://system-mdm.onrender.com/api/dashboard/stats"
+headers = {
+    "X-Partner-API-Key": "MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ",
+    "Content-Type": "application/json"
+}
+params = {
+    "isImmutable": "true"
+}
+
+response = requests.get(url, headers=headers, params=params)
+if response.status_code == 200:
+    data = response.json()
+    print("Total Contracts:", data.get("totalContracts"))
+    print("Activated Contracts:", data.get("activatedContracts"))
+    print("Total Revenue:", data.get("totalRevenue"))
+else:
+    print("Error:", response.status_code, response.text)</code></pre>
+
+          <pre class="code-content" id="dash-php"><code>&lt;?php
+$curl = curl_init();
+
+curl_setopt_array($curl, array(
+  CURLOPT_URL => 'https://system-mdm.onrender.com/api/dashboard/stats?isImmutable=true',
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_HTTPHEADER => array(
+    'X-Partner-API-Key: MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ',
+    'Content-Type: application/json'
+  ),
+));
+
+$response = curl_exec($curl);
+curl_close($curl);
+
+$data = json_decode($response, true);
+print_r($data);
+?&gt;</code></pre>
         </div>
       </div>
     </section>

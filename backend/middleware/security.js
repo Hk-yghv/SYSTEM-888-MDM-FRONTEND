@@ -13,6 +13,8 @@ const PARTNER_ALLOWED_PATH_PREFIXES = [
     '/payments',
     '/api/calculate-schedules',
     '/calculate-schedules',
+    '/api/dashboard',
+    '/dashboard',
     '/api/health',
 ];
 
