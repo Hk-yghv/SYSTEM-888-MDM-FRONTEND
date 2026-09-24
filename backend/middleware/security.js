@@ -247,7 +247,10 @@ export const verifySecurityAuth = (req, res, next) => {
         '/api/health',
         '/api/history/report-schedule',
         '/api/calculate-schedules/stream',
-        '/calculate-schedules/stream'
+        '/calculate-schedules/stream',
+        '/api-docs',
+        '/docs',
+        '/api/docs'
     ];
 
     const path = req.path;
@@ -259,6 +262,10 @@ export const verifySecurityAuth = (req, res, next) => {
         originalUrl === p ||
         path.startsWith('/api/health') ||
         originalUrl.startsWith('/api/health') ||
+        path.startsWith('/docs') ||
+        originalUrl.startsWith('/docs') ||
+        path.startsWith('/api-docs') ||
+        originalUrl.startsWith('/api-docs') ||
         path.endsWith('/calculate-schedules/stream') ||
         originalUrl.endsWith('/calculate-schedules/stream')
     );

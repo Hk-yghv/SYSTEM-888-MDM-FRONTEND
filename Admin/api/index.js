@@ -68,6 +68,8 @@ export default async function handler(req, res) {
         'history/report-schedule',
         'calculate-schedules/stream',
         'users/status-check',
+        'docs',
+        'api-docs'
     ];
 
     const isPublicPath = PUBLIC_PATH_PREFIXES.some(p =>

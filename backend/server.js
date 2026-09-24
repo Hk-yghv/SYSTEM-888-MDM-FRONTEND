@@ -3,6 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api';
 import dns from 'dns';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dns.setDefaultResultOrder('ipv4first');
 try {
@@ -171,6 +176,13 @@ app.use('/api/salary', salaryRoutes);
 app.use('/salary', salaryRoutes);
 app.use('/api/calculate-schedules', calculateScheduleRoutes);
 app.use('/calculate-schedules', calculateScheduleRoutes);
+
+// ── Interactive HTML Partner API Documentation Route ──
+const docsHtmlPath = path.resolve(__dirname, '../docs/index.html');
+app.get(['/docs', '/api-docs', '/api/docs'], (req, res) => {
+    res.sendFile(docsHtmlPath);
+});
+
 app.use((err, req, res, next) => {
     console.error('Unhandled System Error:', err);
     res.status(err.status || 500).json({
