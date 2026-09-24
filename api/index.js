@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',
-        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-system-api-key'
     );
 
     if (req.method === 'OPTIONS') {
@@ -30,6 +30,7 @@ export default async function handler(req, res) {
         process.env.MDM_API_URL1,
         process.env.MDM_API_URL2,
         process.env.MDM_API_URL3,
+        process.env.BACKEND_API_URL,
         process.env.VITE_API_BACKEND,
         process.env.VITE_API_BACKEND1,
         process.env.VITE_API_BACKEND2,
@@ -45,19 +46,14 @@ export default async function handler(req, res) {
     // 3. Secret SYSTEM_API_KEY (Stored safely on Server - Never exposed to Client Browser)
     const SYSTEM_API_KEY = process.env.SYSTEM_API_KEY || process.env.MDM_API_KEY || 'sys-mdm@hkayonghouv-fdasdlfjri98chbLI*Y0&*T(';
 
-    // 4. Extract Path & Query
-    const pathParam = req.query.path;
-    let routePath = '';
-    if (Array.isArray(pathParam)) {
-        routePath = pathParam.join('/');
-    } else if (typeof pathParam === 'string') {
-        routePath = pathParam;
+    // 4. Extract Path & Query accurately from req.url
+    let rawUrl = req.url || '';
+    if (rawUrl.startsWith('/api')) {
+        rawUrl = rawUrl.substring(4);
     }
-
-    const urlObj = new URL(req.url, 'http://localhost');
-    urlObj.searchParams.delete('path');
-    const searchParamsStr = urlObj.searchParams.toString();
-    const queryString = searchParamsStr ? `?${searchParamsStr}` : '';
+    const [pathPart, queryPart] = rawUrl.split('?');
+    const cleanPath = (pathPart || '').replace(/^\/+/, '');
+    const queryString = queryPart ? `?${queryPart}` : '';
 
     // 5. Prepare Forward Headers with Secret x-system-api-key
     const forwardHeaders = {
@@ -80,7 +76,7 @@ export default async function handler(req, res) {
     // 6. Real-Time Failover Loop across all 3 Backend Servers
     for (let i = 0; i < API_POOL.length; i++) {
         const backendBase = API_POOL[i];
-        const targetUrl = `${backendBase}/${routePath}${queryString}`;
+        const targetUrl = `${backendBase}/${cleanPath}${queryString}`;
 
         try {
             const fetchOptions = {
