@@ -39,6 +39,7 @@ export default async function handler(req, res) {
 
     const API_POOL = rawPool.length > 0 ? Array.from(new Set(rawPool)) : [
         'https://system-mdm.onrender.com/api',
+        'https://system-mdm-1-nok5.onrender.com/api',
         'https://system-mdm-1.onrender.com/api',
         'https://system-mdm-2.onrender.com/api'
     ];
