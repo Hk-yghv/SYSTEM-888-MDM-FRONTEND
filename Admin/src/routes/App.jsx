@@ -87,7 +87,7 @@ import SystemAuditLogs from "../App/Settings/pages/SystemAuditLogs";
 import AllAccount from "../App/Settings/pages/AllAccount";
 import Profile from "../App/Profile/Profile";
 
-import DesktopOnlyGuard from "../components/DesktopOnlyGuard";
+// import DesktopOnlyGuard from "../components/DesktopOnlyGuard";
 import PaymentAlertDrawer from "../components/PaymentAlertDrawer";
 
 const MainLayout = ({ children }) => {
@@ -154,92 +154,92 @@ const RootRedirect = () => {
 
 const App = () => {
   return (
-    <DesktopOnlyGuard>
-      <Suspense fallback={<Loading />}>
-        <AuthProvider>
-          <ThemeProvider>
-            <LanguageProvider>
-              <BrowserRouter>
-                <GlobalActivityTracker />
-                <Routes>
-                  {/* Sign In Route */}
-                  <Route path={json.signin} element={<SignIn />} />
-                  {/* Protected System Routes */}
-                  <Route path={json.start} element={<RootRedirect />} />
-                  <Route path={json.dashboard} element={<ProtectRoute pagePath={json.dashboard}> <MainLayout><Dashboard /></MainLayout> </ProtectRoute>} />
-                  {/* Customer */}
-                  <Route path={json.customer} element={<ProtectRoute pagePath={json.customer}> <MainLayout><Customer /></MainLayout> </ProtectRoute>} />
-                  {/* Device */}
-                  <Route path={json.device} element={<ProtectRoute pagePath={json.device}> <MainLayout><Device /></MainLayout> </ProtectRoute>} />
-                  {/* Report Droplist Sub-Routes — each page is its own dedicated component */}
-                  <Route path={json.report.report} element={<Navigate to={json.report.allCustomers} replace />} />
-                  <Route path={json.report?.allCustomers} element={<ProtectRoute pagePath={json.report?.allCustomers}> <MainLayout><AllCustomersReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.reportAll} element={<ProtectRoute pagePath={json.report?.reportAll}> <MainLayout><ReportAll /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.activated} element={<ProtectRoute pagePath={json.report?.activated}> <MainLayout><ActivatedReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.redeem} element={<ProtectRoute pagePath={json.report?.redeem}> <MainLayout><RedeemReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.lockPhone} element={<ProtectRoute pagePath={json.report?.lockPhone}> <MainLayout><LockPhoneReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.setWallpaper} element={<ProtectRoute pagePath={json.report?.setWallpaper}> <MainLayout><SetWallpaperReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.installment} element={<ProtectRoute pagePath={json.report?.installment}> <MainLayout><InstallmentReport /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.report?.followUpReport || '/report/follow-up'} element={<ProtectRoute pagePath={json.report?.followUpReport || '/report/follow-up'}> <MainLayout><FollowUpReport /></MainLayout> </ProtectRoute>} />
-                  <Route path="/follow-up/report" element={<ProtectRoute pagePath={json.report?.followUpReport || '/report/follow-up'}> <MainLayout><FollowUpReport /></MainLayout> </ProtectRoute>} />
-                  {/* Contract */}
-                  <Route path={json.contract.application} element={<ProtectRoute pagePath={json.contract.application}> <MainLayout><Application /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.contract.activated} element={<ProtectRoute pagePath={json.contract.activated}> <MainLayout><Activated /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.contract.check} element={<ProtectRoute pagePath={json.contract.check}> <MainLayout><Check /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.contract.redeem} element={<ProtectRoute pagePath={json.contract.redeem}> <MainLayout><Redeem /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.contract.comments} element={<ProtectRoute pagePath={json.contract.comments}> <MainLayout><Comments /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.contract.blacklist} element={<ProtectRoute pagePath={json.contract.blacklist}> <MainLayout><BlackList /></MainLayout> </ProtectRoute>} />
-                  {/* Calculate */}
-                  <Route path={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'} element={<ProtectRoute pagePath={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'}> <MainLayout><CalculateSchedule1 /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'} element={<ProtectRoute pagePath={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'}> <MainLayout><CalculateSchedule2 /></MainLayout> </ProtectRoute>} />
-                  {/* Installment */}
-                  <Route path={json.installment.installmentPage} element={<ProtectRoute pagePath={json.installment.installmentPage}> <MainLayout><InstallmentPage /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.installment.paymentHistory} element={<ProtectRoute pagePath={json.installment.paymentHistory}> <MainLayout><PaymentHistory /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.installment.cashOut} element={<ProtectRoute pagePath={json.installment.cashOut}> <MainLayout><CashOutPage /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.installment.cashIn} element={<ProtectRoute pagePath={json.installment.cashIn}> <MainLayout><CashInPage /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.installment.overdue} element={<ProtectRoute pagePath={json.installment.overdue}> <MainLayout><OverduePage /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.installment.dueToday} element={<ProtectRoute pagePath={json.installment.dueToday}> <MainLayout><DueTodayPage /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.installment.dueIn3Days} element={<ProtectRoute pagePath={json.installment.dueIn3Days}> <MainLayout><DueIn3DaysPage /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.installment.overdue3Days} element={<ProtectRoute pagePath={json.installment.overdue3Days}> <MainLayout><Overdue3DaysPage /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.installment.unpaidYesterday} element={<ProtectRoute pagePath={json.installment.unpaidYesterday}> <MainLayout><UnpaidYesterdayPage /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.installment.overdue7Days} element={<ProtectRoute pagePath={json.installment.overdue7Days}> <MainLayout><Overdue7DaysPage /></MainLayout> </ProtectRoute>} />
-                  {/* Lostphone */}
-                  <Route path={json.lostphone.actionLockphone} element={<ProtectRoute pagePath={json.lostphone.actionLockphone}> <MainLayout><ActionLockphone /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.lostphone.lockPhone} element={<ProtectRoute pagePath={json.lostphone.lockPhone}> <MainLayout><LockPhone /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.lostphone.unlockPhone} element={<ProtectRoute pagePath={json.lostphone.unlockPhone}> <MainLayout><UnlockPhone /></MainLayout> </ProtectRoute>} />
-                  {/* Wallpaper */}
-                  <Route path={json.wallpaper.actionWallpaper} element={<ProtectRoute pagePath={json.wallpaper.actionWallpaper}> <MainLayout><ActionWallpaper /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.wallpaper.lockWallpaper} element={<ProtectRoute pagePath={json.wallpaper.lockWallpaper}> <MainLayout><LockWallpaper /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.wallpaper.unlockWallpaper} element={<ProtectRoute pagePath={json.wallpaper.unlockWallpaper}> <MainLayout><UnlockWallpaper /></MainLayout> </ProtectRoute>} />
-                  {/* History */}
-                  <Route path={json.history?.loginHistory} element={<ProtectRoute pagePath={json.history?.loginHistory}> <MainLayout><LoginHistory /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.history?.deviceHistory} element={<ProtectRoute pagePath={json.history?.deviceHistory}> <MainLayout><DeviceActionHistory /></MainLayout> </ProtectRoute>} />
+    // <DesktopOnlyGuard>
+    <Suspense fallback={<Loading />}>
+      <AuthProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <BrowserRouter>
+              <GlobalActivityTracker />
+              <Routes>
+                {/* Sign In Route */}
+                <Route path={json.signin} element={<SignIn />} />
+                {/* Protected System Routes */}
+                <Route path={json.start} element={<RootRedirect />} />
+                <Route path={json.dashboard} element={<ProtectRoute pagePath={json.dashboard}> <MainLayout><Dashboard /></MainLayout> </ProtectRoute>} />
+                {/* Customer */}
+                <Route path={json.customer} element={<ProtectRoute pagePath={json.customer}> <MainLayout><Customer /></MainLayout> </ProtectRoute>} />
+                {/* Device */}
+                <Route path={json.device} element={<ProtectRoute pagePath={json.device}> <MainLayout><Device /></MainLayout> </ProtectRoute>} />
+                {/* Report Droplist Sub-Routes — each page is its own dedicated component */}
+                <Route path={json.report.report} element={<Navigate to={json.report.allCustomers} replace />} />
+                <Route path={json.report?.allCustomers} element={<ProtectRoute pagePath={json.report?.allCustomers}> <MainLayout><AllCustomersReport /></MainLayout> </ProtectRoute>} />
+                <Route path={json.report?.reportAll} element={<ProtectRoute pagePath={json.report?.reportAll}> <MainLayout><ReportAll /></MainLayout> </ProtectRoute>} />
+                <Route path={json.report?.activated} element={<ProtectRoute pagePath={json.report?.activated}> <MainLayout><ActivatedReport /></MainLayout> </ProtectRoute>} />
+                <Route path={json.report?.redeem} element={<ProtectRoute pagePath={json.report?.redeem}> <MainLayout><RedeemReport /></MainLayout> </ProtectRoute>} />
+                <Route path={json.report?.lockPhone} element={<ProtectRoute pagePath={json.report?.lockPhone}> <MainLayout><LockPhoneReport /></MainLayout> </ProtectRoute>} />
+                <Route path={json.report?.setWallpaper} element={<ProtectRoute pagePath={json.report?.setWallpaper}> <MainLayout><SetWallpaperReport /></MainLayout> </ProtectRoute>} />
+                <Route path={json.report?.installment} element={<ProtectRoute pagePath={json.report?.installment}> <MainLayout><InstallmentReport /></MainLayout> </ProtectRoute>} />
+                <Route path={json.report?.followUpReport || '/report/follow-up'} element={<ProtectRoute pagePath={json.report?.followUpReport || '/report/follow-up'}> <MainLayout><FollowUpReport /></MainLayout> </ProtectRoute>} />
+                <Route path="/follow-up/report" element={<ProtectRoute pagePath={json.report?.followUpReport || '/report/follow-up'}> <MainLayout><FollowUpReport /></MainLayout> </ProtectRoute>} />
+                {/* Contract */}
+                <Route path={json.contract.application} element={<ProtectRoute pagePath={json.contract.application}> <MainLayout><Application /></MainLayout> </ProtectRoute>} />
+                <Route path={json.contract.activated} element={<ProtectRoute pagePath={json.contract.activated}> <MainLayout><Activated /></MainLayout> </ProtectRoute>} />
+                <Route path={json.contract.check} element={<ProtectRoute pagePath={json.contract.check}> <MainLayout><Check /></MainLayout> </ProtectRoute>} />
+                <Route path={json.contract.redeem} element={<ProtectRoute pagePath={json.contract.redeem}> <MainLayout><Redeem /></MainLayout> </ProtectRoute>} />
+                <Route path={json.contract.comments} element={<ProtectRoute pagePath={json.contract.comments}> <MainLayout><Comments /></MainLayout> </ProtectRoute>} />
+                <Route path={json.contract.blacklist} element={<ProtectRoute pagePath={json.contract.blacklist}> <MainLayout><BlackList /></MainLayout> </ProtectRoute>} />
+                {/* Calculate */}
+                <Route path={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'} element={<ProtectRoute pagePath={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'}> <MainLayout><CalculateSchedule1 /></MainLayout> </ProtectRoute>} />
+                <Route path={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'} element={<ProtectRoute pagePath={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'}> <MainLayout><CalculateSchedule2 /></MainLayout> </ProtectRoute>} />
+                {/* Installment */}
+                <Route path={json.installment.installmentPage} element={<ProtectRoute pagePath={json.installment.installmentPage}> <MainLayout><InstallmentPage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.paymentHistory} element={<ProtectRoute pagePath={json.installment.paymentHistory}> <MainLayout><PaymentHistory /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.cashOut} element={<ProtectRoute pagePath={json.installment.cashOut}> <MainLayout><CashOutPage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.cashIn} element={<ProtectRoute pagePath={json.installment.cashIn}> <MainLayout><CashInPage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.overdue} element={<ProtectRoute pagePath={json.installment.overdue}> <MainLayout><OverduePage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.dueToday} element={<ProtectRoute pagePath={json.installment.dueToday}> <MainLayout><DueTodayPage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.dueIn3Days} element={<ProtectRoute pagePath={json.installment.dueIn3Days}> <MainLayout><DueIn3DaysPage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.overdue3Days} element={<ProtectRoute pagePath={json.installment.overdue3Days}> <MainLayout><Overdue3DaysPage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.unpaidYesterday} element={<ProtectRoute pagePath={json.installment.unpaidYesterday}> <MainLayout><UnpaidYesterdayPage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.overdue7Days} element={<ProtectRoute pagePath={json.installment.overdue7Days}> <MainLayout><Overdue7DaysPage /></MainLayout> </ProtectRoute>} />
+                {/* Lostphone */}
+                <Route path={json.lostphone.actionLockphone} element={<ProtectRoute pagePath={json.lostphone.actionLockphone}> <MainLayout><ActionLockphone /></MainLayout> </ProtectRoute>} />
+                <Route path={json.lostphone.lockPhone} element={<ProtectRoute pagePath={json.lostphone.lockPhone}> <MainLayout><LockPhone /></MainLayout> </ProtectRoute>} />
+                <Route path={json.lostphone.unlockPhone} element={<ProtectRoute pagePath={json.lostphone.unlockPhone}> <MainLayout><UnlockPhone /></MainLayout> </ProtectRoute>} />
+                {/* Wallpaper */}
+                <Route path={json.wallpaper.actionWallpaper} element={<ProtectRoute pagePath={json.wallpaper.actionWallpaper}> <MainLayout><ActionWallpaper /></MainLayout> </ProtectRoute>} />
+                <Route path={json.wallpaper.lockWallpaper} element={<ProtectRoute pagePath={json.wallpaper.lockWallpaper}> <MainLayout><LockWallpaper /></MainLayout> </ProtectRoute>} />
+                <Route path={json.wallpaper.unlockWallpaper} element={<ProtectRoute pagePath={json.wallpaper.unlockWallpaper}> <MainLayout><UnlockWallpaper /></MainLayout> </ProtectRoute>} />
+                {/* History */}
+                <Route path={json.history?.loginHistory} element={<ProtectRoute pagePath={json.history?.loginHistory}> <MainLayout><LoginHistory /></MainLayout> </ProtectRoute>} />
+                <Route path={json.history?.deviceHistory} element={<ProtectRoute pagePath={json.history?.deviceHistory}> <MainLayout><DeviceActionHistory /></MainLayout> </ProtectRoute>} />
 
-                  {/* Follow Up */}
-                  <Route path={json.followUp?.followUp1 || '/follow-up/follow-up-1'} element={<ProtectRoute pagePath={json.followUp?.followUp1 || '/follow-up/follow-up-1'}> <MainLayout><FollowUp1 /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.followUp?.followUp2 || '/follow-up/follow-up-2'} element={<ProtectRoute pagePath={json.followUp?.followUp2 || '/follow-up/follow-up-2'}> <MainLayout><FollowUp2 /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.followUp?.followUp3 || '/follow-up/follow-up-3'} element={<ProtectRoute pagePath={json.followUp?.followUp3 || '/follow-up/follow-up-3'}> <MainLayout><FollowUp3 /></MainLayout> </ProtectRoute>} />
-                  <Route path={json.followUp?.followUp4 || '/follow-up/follow-up-4'} element={<ProtectRoute pagePath={json.followUp?.followUp4 || '/follow-up/follow-up-4'}> <MainLayout><FollowUp4 /></MainLayout> </ProtectRoute>} />
-                  <Route path="/follow-up/sen-sok" element={<ProtectRoute pagePath="/follow-up/follow-up-3"> <MainLayout><FollowUp3 /></MainLayout> </ProtectRoute>} />
+                {/* Follow Up */}
+                <Route path={json.followUp?.followUp1 || '/follow-up/follow-up-1'} element={<ProtectRoute pagePath={json.followUp?.followUp1 || '/follow-up/follow-up-1'}> <MainLayout><FollowUp1 /></MainLayout> </ProtectRoute>} />
+                <Route path={json.followUp?.followUp2 || '/follow-up/follow-up-2'} element={<ProtectRoute pagePath={json.followUp?.followUp2 || '/follow-up/follow-up-2'}> <MainLayout><FollowUp2 /></MainLayout> </ProtectRoute>} />
+                <Route path={json.followUp?.followUp3 || '/follow-up/follow-up-3'} element={<ProtectRoute pagePath={json.followUp?.followUp3 || '/follow-up/follow-up-3'}> <MainLayout><FollowUp3 /></MainLayout> </ProtectRoute>} />
+                <Route path={json.followUp?.followUp4 || '/follow-up/follow-up-4'} element={<ProtectRoute pagePath={json.followUp?.followUp4 || '/follow-up/follow-up-4'}> <MainLayout><FollowUp4 /></MainLayout> </ProtectRoute>} />
+                <Route path="/follow-up/sen-sok" element={<ProtectRoute pagePath="/follow-up/follow-up-3"> <MainLayout><FollowUp3 /></MainLayout> </ProtectRoute>} />
 
-                  {/* Salary */}
-                  <Route path={json.salary || '/salary'} element={<ProtectRoute pagePath={json.salary || '/salary'}> <MainLayout><SalaryPage /></MainLayout> </ProtectRoute>} />
+                {/* Salary */}
+                <Route path={json.salary || '/salary'} element={<ProtectRoute pagePath={json.salary || '/salary'}> <MainLayout><SalaryPage /></MainLayout> </ProtectRoute>} />
 
-                  {/* Settings */}
-                  <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />
-                  <Route path={json.settings.controlSystem} element={<ProtectRoute pagePath={json.settings.controlSystem}><MainLayout><ControlSystem /></MainLayout></ProtectRoute>} />
-                  <Route path={json.settings.systemLogs} element={<ProtectRoute pagePath={json.settings.systemLogs}><MainLayout><SystemAuditLogs /></MainLayout></ProtectRoute>} />
-                  <Route path={json.settings.profile} element={<ProtectRoute pagePath={json.settings.profile}> <MainLayout><Profile /></MainLayout> </ProtectRoute>} />
+                {/* Settings */}
+                <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />
+                <Route path={json.settings.controlSystem} element={<ProtectRoute pagePath={json.settings.controlSystem}><MainLayout><ControlSystem /></MainLayout></ProtectRoute>} />
+                <Route path={json.settings.systemLogs} element={<ProtectRoute pagePath={json.settings.systemLogs}><MainLayout><SystemAuditLogs /></MainLayout></ProtectRoute>} />
+                <Route path={json.settings.profile} element={<ProtectRoute pagePath={json.settings.profile}> <MainLayout><Profile /></MainLayout> </ProtectRoute>} />
 
-                  {/* Fallback */}
-                  <Route path="*" element={<RootRedirect />} />
-                </Routes>
-              </BrowserRouter>
-            </LanguageProvider>
-          </ThemeProvider>
-        </AuthProvider>
-      </Suspense>
-    </DesktopOnlyGuard>
+                {/* Fallback */}
+                <Route path="*" element={<RootRedirect />} />
+              </Routes>
+            </BrowserRouter>
+          </LanguageProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </Suspense>
+    // </DesktopOnlyGuard>
   );
 };
 
