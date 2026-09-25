@@ -15,6 +15,7 @@ import SignIn from "../services/SignIn";
 import { getFirstAllowedRoute } from "../utils/permissionUtils";
 import GlobalActivityTracker from "../components/GlobalActivityTracker";
 import MobileBottomNav from "../components/MobileBottomNav";
+import MobileResponsiveContent from "../components/MobileResponsiveContent";
 
 // Dashboard);
 import Dashboard from "../App/Dashboard/Dashboard";
@@ -143,9 +144,9 @@ const MainLayout = ({ children }) => {
             aria-hidden="true"
           />
           <Left isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-          <div className="flex-1 min-w-0 overflow-auto mobile-content-area">
+          <MobileResponsiveContent className="flex-1 min-w-0 overflow-auto mobile-content-area">
             {children}
-          </div>
+          </MobileResponsiveContent>
         </div>
         <MobileBottomNav onOpenMenu={() => setIsSidebarOpen(true)} />
         <PaymentAlertDrawer

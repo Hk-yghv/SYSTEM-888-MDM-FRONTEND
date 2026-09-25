@@ -169,7 +169,7 @@
         overflow-wrap: anywhere;
     }
 
-    /* Dense desktop tables become compact, wrapping mobile tables instead of creating sideways page scroll. */
+    /* Turn every data table into a readable card list on phones. */
     .mobile-content-area .overflow-x-auto,
     .mobile-content-area [class*="overflow-x-auto"] {
         max-width: 100%;
@@ -178,32 +178,58 @@
 
     .mobile-content-area table,
     .mobile-content-area table[class*="min-w-"] {
+        display: block;
         width: 100% !important;
         min-width: 0 !important;
         max-width: 100%;
-        table-layout: fixed;
+        border: 0;
+    }
+
+    .mobile-content-area table > thead {
+        display: none;
+    }
+
+    .mobile-content-area table > tbody {
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .mobile-content-area table > tbody > tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem 0.75rem;
+        padding: 0.8rem;
+        border: 1px solid var(--app-border, #e2e8f0);
+        border-radius: 0.85rem;
+        background: var(--app-card, #ffffff);
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.07);
+    }
+
+    .mobile-content-area table > tbody > tr > td {
+        display: flex;
+        min-width: 0;
+        max-width: none;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+        padding: 0 !important;
+        border: 0 !important;
         white-space: normal !important;
         overflow-wrap: anywhere;
         word-break: break-word;
     }
 
-    .mobile-content-area th,
-    .mobile-content-area td {
-        max-width: 0;
-        padding: 0.5rem 0.3rem !important;
-        white-space: normal !important;
-        overflow-wrap: anywhere;
-        word-break: break-word;
+    .mobile-content-area table > tbody > tr > td::before {
+        content: attr(data-label);
+        color: #64748b;
+        font-size: 0.58rem;
+        font-weight: 800;
+        line-height: 1.2;
+        text-transform: uppercase;
     }
 
-    .mobile-content-area th {
-        font-size: 0.6rem;
-        line-height: 1.25;
-    }
-
-    .mobile-content-area td {
-        font-size: 0.65rem;
-        line-height: 1.35;
+    .mobile-content-area table > tbody > tr > td[colspan] {
+        grid-column: 1 / -1;
     }
 
     .mobile-content-area [class*="whitespace-nowrap"] {
