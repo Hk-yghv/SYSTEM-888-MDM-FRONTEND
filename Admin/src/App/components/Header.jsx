@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaBell, FaExpand, FaCompress } from 'react-icons/fa';
+import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaBell, FaExpand, FaCompress, FaBars, FaTimes } from 'react-icons/fa';
 import { getFirstAllowedRoute, hasAnyAlertPermission } from '../../utils/permissionUtils';
 
-const Header = ({ onOpenAlerts, alertCount = 0 }) => {
+const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleSidebar }) => {
     const [accountOpen, setAccountOpen] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
 
@@ -124,15 +124,24 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
 
     return (
         <header
-            className='w-full h-[7vh] flex items-center justify-between px-6 border-b z-40 select-none shadow-sm transition-colors backdrop-blur-md'
+            className='w-full h-[7vh] flex items-center justify-between px-3 md:px-6 border-b z-40 select-none shadow-sm transition-colors backdrop-blur-md'
             style={{
                 backgroundColor: 'var(--app-header, rgba(255, 255, 255, 0.9))',
                 borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'
             }}
         >
-            <div className='flex items-center gap-4'>
+            <div className='flex items-center gap-3 md:gap-4 min-w-0'>
+                <button
+                    type='button'
+                    onClick={onToggleSidebar}
+                    className='md:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
+                    aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                    title={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                >
+                    {isSidebarOpen ? <FaTimes className='text-sm' /> : <FaBars className='text-sm' />}
+                </button>
                 <Link to={getFirstAllowedRoute(user, hasPermission)} className='flex items-center gap-2.5 group'>
-                    <h1 className="text-xl font-extrabold tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors">
+                    <h1 className="text-base md:text-xl font-extrabold tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors whitespace-nowrap">
                         {(!user || user.isImmutable || user.username === '@hakyonghouv' || !user.brand)
                             ? 'SYSTEM'
                             : `SYSTEM ${user.brand.toUpperCase()}`}
@@ -166,12 +175,12 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                 )}
             </div>
 
-            <div className='flex items-center gap-3'>
+            <div className='flex items-center gap-1.5 md:gap-3 flex-shrink-0'>
                 {/* Payment Alerts Button — only show if user has permission to at least one alert page */}
                 {hasAnyAlertPermission(user, hasPermission) && (
                     <button
                         onClick={onOpenAlerts}
-                        className='relative flex items-center gap-2 px-3 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
+                        className='relative flex items-center justify-center gap-2 w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
                         title='ការជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)'
                     >
                         <FaBell className='text-sm animate-pulse text-slate-950' />
@@ -187,7 +196,7 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                 {/* Fullscreen Button */}
                 <button
                     onClick={toggleFullscreen}
-                    className='flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
+                    className='hidden md:flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
                     title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                 >
                     {isFullscreen ? (
@@ -201,7 +210,7 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                 <div className='relative'>
                     <button
                         onClick={() => { setLangOpen(!langOpen); setAccountOpen(false); }}
-                        className='flex items-center gap-2 px-3 py-1.5 rounded-[5px] bg-slate-100 border border-slate-200 hover:border-emerald-500/50 transition-all text-xs font-semibold cursor-pointer shadow-xs hover:bg-slate-200/60'
+                        className='flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 rounded-[5px] bg-slate-100 border border-slate-200 hover:border-emerald-500/50 transition-all text-xs font-semibold cursor-pointer shadow-xs hover:bg-slate-200/60'
                     >
                         <span className='text-base'>{currentLangObj.flag}</span>
                         <span className='hidden sm:inline text-slate-700'>{currentLangObj.label}</span>
@@ -239,7 +248,7 @@ const Header = ({ onOpenAlerts, alertCount = 0 }) => {
                 <div className='relative'>
                     <div
                         onClick={() => { setAccountOpen(!accountOpen); setLangOpen(false); }}
-                        className='flex items-center gap-2.5 pl-2 pr-3 py-1 rounded-[10px] bg-slate-100 border border-slate-200 hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs hover:bg-slate-200/60'
+                        className='flex items-center gap-2.5 pl-1.5 md:pl-2 pr-1.5 md:pr-3 py-1 rounded-[10px] bg-slate-100 border border-slate-200 hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs hover:bg-slate-200/60'
                     >
                         <div className='w-8 h-8 rounded-full bg-emerald-600 p-0.5 shadow-xs'>
                             <div className='w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden'>

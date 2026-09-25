@@ -9,7 +9,7 @@ import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "reac
 import { FaHistory, FaClipboardCheck, FaMoneyBillWave } from "react-icons/fa";
 
 
-const Left = () => {
+const Left = ({ isOpen = false, onClose }) => {
     const [openMenu, setOpenMenu] = useState("");
     const { t } = useLanguage();
     const { hasPermission } = useAuth();
@@ -38,7 +38,10 @@ const Left = () => {
 
     return (
         <div
-            className="w-[260px] h-full min-h-0 flex-shrink-0 border-r p-3 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-colors"
+            onClick={(event) => {
+                if (event.target.closest('a')) onClose?.();
+            }}
+            className={`w-[260px] h-full min-h-0 flex-shrink-0 border-r p-3 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-colors mobile-sidebar ${isOpen ? 'mobile-sidebar-open' : ''}`}
             style={{
                 backgroundColor: 'var(--app-sidebar, rgba(248, 250, 252, 0.9))',
                 borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'

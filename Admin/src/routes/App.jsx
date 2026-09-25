@@ -93,6 +93,7 @@ import PaymentAlertDrawer from "../components/PaymentAlertDrawer";
 const MainLayout = ({ children }) => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { theme } = useTheme();
 
   return (
@@ -127,10 +128,20 @@ const MainLayout = ({ children }) => {
       )}
 
       <div className="relative z-10 flex flex-col h-full overflow-hidden">
-        <Header onOpenAlerts={() => setIsAlertOpen(true)} alertCount={alertCount} />
+        <Header
+          onOpenAlerts={() => setIsAlertOpen(true)}
+          alertCount={alertCount}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen((isOpen) => !isOpen)}
+        />
         <div className="flex flex-1 overflow-hidden">
-          <Left />
-          <div className="flex-1 overflow-y-auto">
+          <div
+            className={`mobile-sidebar-backdrop ${isSidebarOpen ? 'mobile-sidebar-backdrop-open' : ''}`}
+            onClick={() => setIsSidebarOpen(false)}
+            aria-hidden="true"
+          />
+          <Left isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+          <div className="flex-1 min-w-0 overflow-auto mobile-content-area">
             {children}
           </div>
         </div>

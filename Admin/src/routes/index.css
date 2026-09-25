@@ -112,6 +112,49 @@
     transform: translateX(3px);
 }
 
+@media (max-width: 767px) {
+    .mobile-sidebar {
+        position: fixed;
+        top: 7vh;
+        bottom: 0;
+        left: 0;
+        width: min(82vw, 260px);
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease-in-out;
+        box-shadow: 12px 0 30px rgba(15, 23, 42, 0.16);
+    }
+
+    .mobile-sidebar.mobile-sidebar-open {
+        transform: translateX(0);
+    }
+
+    .mobile-sidebar-backdrop {
+        position: fixed;
+        inset: 7vh 0 0;
+        z-index: 40;
+        background: rgba(15, 23, 42, 0.35);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease-in-out;
+    }
+
+    .mobile-sidebar-backdrop.mobile-sidebar-backdrop-open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .mobile-content-area {
+        overscroll-behavior-x: none;
+    }
+
+    .mobile-content-area .table-container,
+    .mobile-content-area div.overflow-x-auto {
+        min-height: 250px !important;
+        padding-bottom: 1.5rem !important;
+    }
+}
+
 /* ============================================
    GLOBAL LIGHT THEME SYSTEM OVERRIDES
    ============================================ */
