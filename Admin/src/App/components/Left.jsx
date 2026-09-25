@@ -144,6 +144,7 @@ const Left = ({ isOpen = false, onClose }) => {
                 hasPermission(json.installment.paymentHistory, 'read') ||
                 hasPermission(json.installment.cashOut, 'read') ||
                 hasPermission(json.installment.cashIn, 'read') ||
+                hasPermission(json.installment.penalty, 'read') ||
                 hasPermission(json.installment.overdue, 'read') ||
                 hasPermission(json.installment.dueToday, 'read') ||
                 hasPermission(json.installment.dueIn3Days, 'read') ||
@@ -189,6 +190,9 @@ const Left = ({ isOpen = false, onClose }) => {
                             )}
                             {hasPermission(json.installment.cashIn, 'read') && (
                                 <Link to={json.installment.cashIn} className={subItemClass(json.installment.cashIn)}>{t('cashIn')}</Link>
+                            )}
+                            {hasPermission(json.installment.penalty, 'read') && (
+                                <Link to={json.installment.penalty} className={subItemClass(json.installment.penalty)}>{t('penalty')}</Link>
                             )}
 
                         </div>

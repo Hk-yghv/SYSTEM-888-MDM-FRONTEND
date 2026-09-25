@@ -14,7 +14,7 @@ if (!MEM_DB.cashTransactions) {
 router.get('/cash-transactions', async (req, res) => {
     try {
         const {
-            type, // 'cash_out' | 'cash_in'
+            type, // 'cash_out' | 'cash_in' | 'penalty'
             userBrand = '',
             userRole = '',
             username = '',

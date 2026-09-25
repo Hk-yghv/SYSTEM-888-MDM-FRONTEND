@@ -32,6 +32,7 @@
         "paymentHistory": "/installment/paymentHistory",
         "cashOut": "/installment/cash-out",
         "cashIn": "/installment/cash-in",
+        "penalty": "/installment/penalty",
         "overdue": "/installment/overdue",
         "dueToday": "/installment/due-today",
         "dueIn3Days": "/installment/due-in-3-days",

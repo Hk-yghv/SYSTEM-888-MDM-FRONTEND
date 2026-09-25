@@ -47,6 +47,7 @@ import InstallmentPage from "../App/Installment/pages/InstallmentPage";
 import PaymentHistory from "../App/Installment/pages/PaymentHistory";
 import CashOutPage from "../App/Installment/pages/CashOutPage";
 import CashInPage from "../App/Installment/pages/CashInPage";
+import PenaltyPage from "../App/Installment/pages/PenaltyPage";
 import OverduePage from "../App/Installment/pages/OverduePage";
 import DueTodayPage from "../App/Installment/pages/DueTodayPage";
 import DueIn3DaysPage from "../App/Installment/pages/DueIn3DaysPage";
@@ -208,6 +209,7 @@ const App = () => {
                 <Route path={json.installment.paymentHistory} element={<ProtectRoute pagePath={json.installment.paymentHistory}> <MainLayout><PaymentHistory /></MainLayout> </ProtectRoute>} />
                 <Route path={json.installment.cashOut} element={<ProtectRoute pagePath={json.installment.cashOut}> <MainLayout><CashOutPage /></MainLayout> </ProtectRoute>} />
                 <Route path={json.installment.cashIn} element={<ProtectRoute pagePath={json.installment.cashIn}> <MainLayout><CashInPage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.penalty} element={<ProtectRoute pagePath={json.installment.penalty}> <MainLayout><PenaltyPage /></MainLayout> </ProtectRoute>} />
                 <Route path={json.installment.overdue} element={<ProtectRoute pagePath={json.installment.overdue}> <MainLayout><OverduePage /></MainLayout> </ProtectRoute>} />
                 <Route path={json.installment.dueToday} element={<ProtectRoute pagePath={json.installment.dueToday}> <MainLayout><DueTodayPage /></MainLayout> </ProtectRoute>} />
                 <Route path={json.installment.dueIn3Days} element={<ProtectRoute pagePath={json.installment.dueIn3Days}> <MainLayout><DueIn3DaysPage /></MainLayout> </ProtectRoute>} />
