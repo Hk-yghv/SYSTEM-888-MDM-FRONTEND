@@ -6,6 +6,7 @@ const cashTransactionSchema = new mongoose.Schema({
     date: { type: String, required: true, default: () => new Date().toISOString().split('T')[0] },
     amount: { type: Number, required: true, default: 0 },
     currency: { type: String, enum: ['USD', 'KHR'], default: 'USD' },
+    paymentMethod: { type: String, enum: ['Cash', 'Bank'], default: 'Cash' },
     amountUSD: { type: Number, required: true, default: 0 },
     category: { type: String, default: 'General' },
     description: { type: String, default: '' },

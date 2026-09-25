@@ -108,7 +108,7 @@ router.get('/cash-transactions', async (req, res) => {
 // POST /api/cash-transactions (Create)
 router.post('/cash-transactions', async (req, res) => {
     try {
-        const { type, date, amount, currency, category, description, photoUrl, performedBy, brand } = req.body;
+        const { type, date, amount, currency, paymentMethod, category, description, photoUrl, performedBy, brand } = req.body;
         if (!type || !amount) {
             return res.status(400).json({ error: 'Type and Amount are required.' });
         }
@@ -125,6 +125,7 @@ router.post('/cash-transactions', async (req, res) => {
             date: date || new Date().toISOString().split('T')[0],
             amount: numAmount,
             currency: cur,
+            paymentMethod: paymentMethod === 'Bank' ? 'Bank' : 'Cash',
             amountUSD,
             category: category || 'General',
             description: description || '',
@@ -152,7 +153,7 @@ router.post('/cash-transactions', async (req, res) => {
 router.put('/cash-transactions/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { date, amount, currency, category, description, photoUrl, performedBy } = req.body;
+        const { date, amount, currency, paymentMethod, category, description, photoUrl, performedBy } = req.body;
         const numAmount = Number(amount) || 0;
         const cur = currency === 'KHR' ? 'KHR' : 'USD';
         const amountUSD = cur === 'KHR' ? (numAmount / 4000) : numAmount;
@@ -161,6 +162,7 @@ router.put('/cash-transactions/:id', async (req, res) => {
             date,
             amount: numAmount,
             currency: cur,
+            paymentMethod: paymentMethod === 'Bank' ? 'Bank' : 'Cash',
             amountUSD,
             category,
             description,

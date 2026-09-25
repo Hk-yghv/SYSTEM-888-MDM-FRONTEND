@@ -41,6 +41,7 @@ const PenaltyPage = () => {
         date: new Date().toISOString().split('T')[0],
         amount: '',
         currency: 'USD',
+        paymentMethod: 'Cash',
         category: 'ពិន័យទូទៅ (General Penalty)',
         description: '',
         photoUrl: ''
@@ -143,6 +144,7 @@ const PenaltyPage = () => {
                 date: formData.date,
                 amount: Number(formData.amount),
                 currency: formData.currency,
+                paymentMethod: formData.paymentMethod,
                 category: formData.category,
                 description: formData.description,
                 photoUrl: formData.photoUrl,
@@ -168,6 +170,7 @@ const PenaltyPage = () => {
                     date: new Date().toISOString().split('T')[0],
                     amount: '',
                     currency: 'USD',
+                    paymentMethod: 'Cash',
                     category: 'ពិន័យទូទៅ (General Penalty)',
                     description: '',
                     photoUrl: ''
@@ -190,6 +193,7 @@ const PenaltyPage = () => {
             date: item.date || new Date().toISOString().split('T')[0],
             amount: item.amount || '',
             currency: item.currency || 'USD',
+            paymentMethod: item.paymentMethod || 'Cash',
             category: item.category || 'ពិន័យទូទៅ (General Penalty)',
             description: item.description || '',
             photoUrl: item.photoUrl || ''
@@ -246,6 +250,7 @@ const PenaltyPage = () => {
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Date', accessor: 'date' },
+            { header: 'Payment Type', accessor: 'paymentMethod' },
             { header: 'Category', accessor: 'category' },
             { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
             { header: 'Amount USD Est.', cell: (r) => `$${(r.amountUSD || 0).toFixed(2)}` },
@@ -260,6 +265,7 @@ const PenaltyPage = () => {
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Date', accessor: 'date' },
+            { header: 'Payment Type', accessor: 'paymentMethod' },
             { header: 'Category', accessor: 'category' },
             { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
             { header: 'Description', accessor: 'description' },
@@ -296,7 +302,7 @@ const PenaltyPage = () => {
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
-                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', category: 'ពិន័យទូទៅ (General Penalty)', description: '', photoUrl: '' }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-amber-600/20'>
+                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', paymentMethod: 'Cash', category: 'ពិន័យទូទៅ (General Penalty)', description: '', photoUrl: '' }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-amber-600/20'>
                         <FaPlus className="text-xs" /><span>{t('create')} (បង្កើតពិន័យ)</span>
                     </button>
                     <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
@@ -441,6 +447,7 @@ const PenaltyPage = () => {
                                 <tr>
                                     <th className='px-4 py-3 text-center'>No</th>
                                     <th className='px-4 py-3'>Date</th>
+                                    <th className='px-4 py-3'>Payment Type</th>
                                     <th className='px-4 py-3'>Category</th>
                                     <th className='px-4 py-3 text-right'>Amount</th>
                                     <th className='px-4 py-3'>Description</th>
@@ -451,14 +458,19 @@ const PenaltyPage = () => {
                             </thead>
                             <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                                 {loading ? (
-                                    <tr><td colSpan={8} className="text-center py-10 text-amber-600 font-semibold">Loading...</td></tr>
+                                    <tr><td colSpan={9} className="text-center py-10 text-amber-600 font-semibold">Loading...</td></tr>
                                 ) : dataList.length === 0 ? (
-                                    <tr><td colSpan={8} className="text-center py-8 text-slate-500 italic">មិនមានទិន្នន័យពិន័យទេ។ (No penalty records found.)</td></tr>
+                                    <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic">មិនមានទិន្នន័យពិន័យទេ។ (No penalty records found.)</td></tr>
                                 ) : (
                                     dataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-amber-50/40 transition-colors'>
                                             <td className='px-4 py-3 text-center font-mono font-bold text-slate-500'>{(page - 1) * LIMIT + idx + 1}</td>
                                             <td className='px-4 py-3 font-mono font-bold text-slate-900'>{item.date || '-'}</td>
+                                            <td className='px-4 py-3'>
+                                                <span className={`px-2.5 py-1 rounded-lg font-bold ${item.paymentMethod === 'Bank' ? 'bg-blue-50 border border-blue-200 text-blue-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800'}`}>
+                                                    {item.paymentMethod || 'Cash'}
+                                                </span>
+                                            </td>
                                             <td className='px-4 py-3 font-bold text-slate-900'>
                                                 <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 font-bold">
                                                     {item.category || 'General'}
@@ -543,6 +555,18 @@ const PenaltyPage = () => {
                                         <option value="KHR">៛ KHR</option>
                                     </select>
                                 </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-slate-700 font-bold mb-1">ប្រភេទបង់ប្រាក់ (Payment Type)</label>
+                                <select
+                                    value={formData.paymentMethod}
+                                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-bold text-slate-800 focus:outline-none focus:border-amber-500"
+                                >
+                                    <option value="Cash">Cash (សាច់ប្រាក់)</option>
+                                    <option value="Bank">Bank (ធនាគារ)</option>
+                                </select>
                             </div>
 
                             <div>
