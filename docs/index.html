@@ -481,6 +481,10 @@
         <span>5. Dashboard Stats</span>
         <span class="nav-badge badge-get">GET</span>
       </a>
+      <a href="#endpoint-penalty" class="nav-link">
+        <span>6. Installment Penalties</span>
+        <span class="nav-badge badge-get">GET</span>
+      </a>
     </nav>
   </aside>
 
@@ -1029,6 +1033,146 @@ $data = json_decode($response, true);
 print_r($data);
 ?&gt;</code></pre>
         </div>
+      </div>
+    </section>
+
+    <!-- ENDPOINT 6: Installment Penalties -->
+    <section class="endpoint-box" id="endpoint-penalty">
+      <div class="endpoint-header">
+        <div class="endpoint-method-url">
+          <span class="method-tag method-get">GET</span>
+          <span class="url-text">/api/cash-transactions?type=penalty</span>
+        </div>
+        <span style="font-size:12px; color:#34d399; font-weight:700;">🟢 Read-Only</span>
+      </div>
+
+      <div class="endpoint-body">
+        <div class="endpoint-desc">
+          <strong>គោលបំណង:</strong> ទាញយកទិន្នន័យពិន័យរំលស់សម្រាប់ទំព័រ <code>/installment/penalty</code>។ ត្រូវផ្ញើ <code>type=penalty</code> ជានិច្ច ដើម្បីច្រោះយកតែប្រតិបត្តិការប្រភេទ Penalty។
+        </div>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-dim); margin-top: 12px;">Query Parameters</h4>
+        <table class="params-table">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>type</code></td>
+              <td>string</td>
+              <td><span style="color:#f87171; font-weight:700;">Required</span></td>
+              <td>ត្រូវដាក់តម្លៃ <code>penalty</code></td>
+            </tr>
+            <tr>
+              <td><code>userBrand</code></td>
+              <td>string</td>
+              <td>Optional</td>
+              <td>ច្រោះតាមសាខា/Brand; ប្រើជាមួយ <code>userRole</code> និង <code>username</code> តាមសិទ្ធិអ្នកប្រើ</td>
+            </tr>
+            <tr>
+              <td><code>page</code>, <code>limit</code></td>
+              <td>number</td>
+              <td>Optional</td>
+              <td>Pagination; តម្លៃលំនាំដើមគឺ <code>page=1</code>, <code>limit=10</code></td>
+            </tr>
+            <tr>
+              <td><code>search</code></td>
+              <td>string</td>
+              <td>Optional</td>
+              <td>ស្វែងរកក្នុង Category, Description និងអ្នកកត់ត្រា</td>
+            </tr>
+            <tr>
+              <td><code>startDate</code>, <code>endDate</code></td>
+              <td>YYYY-MM-DD</td>
+              <td>Optional</td>
+              <td>ច្រោះតាមចន្លោះកាលបរិច្ឆេទ</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-tabs">
+          <div class="tab-header">
+            <button class="tab-btn active" onclick="switchTab(this, 'penalty-curl')">cURL</button>
+            <button class="tab-btn" onclick="switchTab(this, 'penalty-js')">JavaScript / Node.js</button>
+            <button class="tab-btn" onclick="switchTab(this, 'penalty-py')">Python</button>
+            <button class="copy-btn" onclick="copyCurrentCode(this)">📋 Copy Code</button>
+          </div>
+
+          <pre class="code-content active" id="penalty-curl"><code>curl -X GET "https://system-mdm.onrender.com/api/cash-transactions?type=penalty&amp;page=1&amp;limit=10" \
+  -H "X-Partner-API-Key: MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ" \
+  -H "Content-Type: application/json"</code></pre>
+
+          <pre class="code-content" id="penalty-js"><code>const fetchPenaltyTransactions = async () =&gt; {
+  const params = new URLSearchParams({
+    type: 'penalty',
+    page: '1',
+    limit: '10'
+  });
+
+  const response = await fetch(
+    `https://system-mdm.onrender.com/api/cash-transactions?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'X-Partner-API-Key': 'MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ',
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+
+  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  return response.json();
+};
+
+const penaltyResult = await fetchPenaltyTransactions();
+console.log(penaltyResult.data);</code></pre>
+
+          <pre class="code-content" id="penalty-py"><code>import requests
+
+url = "https://system-mdm.onrender.com/api/cash-transactions"
+headers = {
+    "X-Partner-API-Key": "MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ",
+    "Content-Type": "application/json"
+}
+params = {"type": "penalty", "page": 1, "limit": 10}
+
+response = requests.get(url, headers=headers, params=params)
+response.raise_for_status()
+result = response.json()
+print(result["data"])</code></pre>
+        </div>
+
+        <h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-dim); margin-top: 18px;">Response Example</h4>
+        <pre class="code-content active"><code>{
+  "data": [
+    {
+      "transactionId": "TX-1730000000000-123",
+      "type": "penalty",
+      "date": "2026-09-25",
+      "amount": 5,
+      "currency": "USD",
+      "amountUSD": 5,
+      "category": "Late Payment",
+      "description": "Installment penalty",
+      "performedBy": "admin",
+      "brand": "Brand A"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "totalPages": 1,
+  "kpi": {
+    "totalUSD": 5,
+    "totalKHR": 0,
+    "grandTotalUSD": 5,
+    "count": 1
+  }
+}</code></pre>
       </div>
     </section>
 

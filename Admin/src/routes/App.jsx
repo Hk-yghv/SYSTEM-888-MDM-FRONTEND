@@ -14,6 +14,7 @@ import ProtectRoute from "../services/ProtectRoute";
 import SignIn from "../services/SignIn";
 import { getFirstAllowedRoute } from "../utils/permissionUtils";
 import GlobalActivityTracker from "../components/GlobalActivityTracker";
+import MobileBottomNav from "../components/MobileBottomNav";
 
 // Dashboard);
 import Dashboard from "../App/Dashboard/Dashboard";
@@ -146,6 +147,7 @@ const MainLayout = ({ children }) => {
             {children}
           </div>
         </div>
+        <MobileBottomNav onOpenMenu={() => setIsSidebarOpen(true)} />
         <PaymentAlertDrawer
           isOpen={isAlertOpen}
           onClose={() => setIsAlertOpen(false)}
