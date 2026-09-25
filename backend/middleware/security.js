@@ -15,8 +15,14 @@ const PARTNER_ALLOWED_PATH_PREFIXES = [
     '/calculate-schedules',
     '/api/dashboard',
     '/dashboard',
+    '/api/cash-transactions',
     '/api/health',
 ];
+
+const isPenaltyReadPath = (req) => (
+    req.path === '/api/cash-transactions' &&
+    String(req.query?.type || '').toLowerCase() === 'penalty'
+);
 
 let telegramBotInstance = null;
 export const setSecurityTelegramBot = (bot) => {
@@ -314,6 +320,12 @@ export const verifySecurityAuth = (req, res, next) => {
             path.startsWith(p) || originalUrl.startsWith(p)
         );
 
+        if (path === '/api/cash-transactions' && !isPenaltyReadPath(req)) {
+            return res.status(403).json({
+                error: 'Partner Access Denied: External partner access to cash transactions is limited to penalty records.'
+            });
+        }
+
         if (!isPartnerAllowedPath) {
             return res.status(403).json({
                 error: 'Partner Access Denied: This endpoint is not available for external partner access.'
@@ -346,6 +358,11 @@ export const verifySecurityAuth = (req, res, next) => {
             path.startsWith(p) || originalUrl.startsWith(p)
         );
         if (isPartnerOpenPath) {
+            if (path === '/api/cash-transactions' && !isPenaltyReadPath(req)) {
+                return res.status(403).json({
+                    error: 'Partner Access Denied: External partner access to cash transactions is limited to penalty records.'
+                });
+            }
             req.isPartnerAccess = true;
             return next();
         }
