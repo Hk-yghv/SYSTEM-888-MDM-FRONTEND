@@ -22,6 +22,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Installment & Payment', path: '/installment/paymentHistory', label: 'Payment History', actions: ['read', 'create', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/cash-out', label: 'Cash Out (ប្រាក់ចេញ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/cash-in', label: 'Cash In (ប្រាក់ចូល)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/penalty', label: 'Penalty (ពិន័យ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/overdue', label: 'Overdue Customers (ភ្ញៀវយឺត)', actions: ['read', 'export'] },
     { category: 'Installment & Payment', path: '/installment/due-today', label: 'Due Today (ភ្ញៀវត្រូវបង់ថ្ងៃនេះ)', actions: ['read', 'export'] },
     { category: 'Installment & Payment', path: '/installment/due-in-3-days', label: 'Due In 3 Days (ភ្ញៀវនៅសល់ ៣ ថ្ងៃ)', actions: ['read', 'export'] },
