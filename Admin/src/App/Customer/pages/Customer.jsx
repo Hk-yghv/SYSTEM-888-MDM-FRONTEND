@@ -1010,7 +1010,6 @@ const Customer = () => {
                                                 <th className="px-3 py-2">Amount Paid</th>
                                                 <th className="px-3 py-2">Month / Cycle</th>
                                                 <th className="px-3 py-2">Paid By</th>
-                                                <th className="px-3 py-2">Method / Note</th>
                                                 <th className="px-3 py-2 text-center">Status</th>
                                             </tr>
                                         </thead>
@@ -1069,17 +1068,6 @@ const Customer = () => {
 
                                                         <td className="px-3 py-2 text-gray-500">
                                                             {p.paidBy || p.cashier || 'System'}
-                                                        </td>
-
-                                                        <td className="
-                                                px-3 py-2
-                                                text-gray-500
-                                                truncate
-                                                max-w-[120px]
-                                            ">
-                                                            {p.paymentMethod ||
-                                                                p.note ||
-                                                                'Cash / ABA'}
                                                         </td>
 
                                                         <td className="px-3 py-2 text-center">
