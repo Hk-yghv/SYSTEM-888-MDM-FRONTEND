@@ -28,35 +28,59 @@ router.get('/payments/contract/:contractId', async (req, res) => {
 // GET payments
 router.get('/payments', async (req, res) => {
     try {
-        const { userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '' } = req.query;
+        const { userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '', dateFrom = '', dateTo = '' } = req.query;
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
         const skip = (parseInt(page) - 1) * parseInt(limit);
-        let filter = {};
+
         if (isMongoConnected) {
             let matchedContractIds = null;
             if (userBrand && !isMasterAdmin) {
                 const matchedContracts = await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'));
                 matchedContractIds = matchedContracts.map(c => c.contractId);
             }
-            const allPayments = await queryAllDBs(Payment, (M) => {
-                let f = { ...filter };
+            let allPayments = await queryAllDBs(Payment, (M) => {
+                let f = {};
                 if (matchedContractIds) f.contractId = { $in: matchedContractIds };
+                // Date range filter
+                if (dateFrom || dateTo) {
+                    f.paidDate = {};
+                    if (dateFrom) f.paidDate.$gte = dateFrom;
+                    if (dateTo) f.paidDate.$lte = dateTo;
+                }
                 return M.find(f).sort({ createdAt: -1 });
             });
+            // Apply search filter in memory (after fetch)
+            if (search) {
+                const q = search.toLowerCase();
+                allPayments = allPayments.filter(p =>
+                    (p.customerName || '').toLowerCase().includes(q) ||
+                    (p.serialNumber || '').toLowerCase().includes(q) ||
+                    (p.contractId || '').toLowerCase().includes(q) ||
+                    (p.paidBy || '').toLowerCase().includes(q)
+                );
+            }
             const total = allPayments.length;
             const data = allPayments.slice(skip, skip + parseInt(limit));
             return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
         }
+
+        // MEM_DB path
         let filtered = MEM_DB.payments;
         if (userBrand && !isMasterAdmin) {
             const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
             filtered = filtered.filter(p => contractIds.includes(p.contractId));
         }
-        if (search) filtered = filtered.filter(p =>
-            (p.customerName || '').toLowerCase().includes(search.toLowerCase()) ||
-            (p.serialNumber || '').toLowerCase().includes(search.toLowerCase()) ||
-            (p.paidBy || '').toLowerCase().includes(search.toLowerCase())
-        );
+        if (search) {
+            const q = search.toLowerCase();
+            filtered = filtered.filter(p =>
+                (p.customerName || '').toLowerCase().includes(q) ||
+                (p.serialNumber || '').toLowerCase().includes(q) ||
+                (p.contractId || '').toLowerCase().includes(q) ||
+                (p.paidBy || '').toLowerCase().includes(q)
+            );
+        }
+        if (dateFrom) filtered = filtered.filter(p => (p.paidDate || '') >= dateFrom);
+        if (dateTo) filtered = filtered.filter(p => (p.paidDate || '') <= dateTo);
         const total = filtered.length;
         const data = filtered.slice(skip, skip + parseInt(limit));
         res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
@@ -68,7 +92,12 @@ router.get('/payments', async (req, res) => {
 // POST payment
 router.post('/payments', async (req, res) => {
     try {
-        const { contractId, amount, customerName, photo, image, receiptImage, serialNumber, model, paidDate, paidBy, description } = req.body;
+        const {
+            contractId, amount, customerName, photo, image, receiptImage,
+            paymentImages, // array from RepaymentScheduleModal
+            serialNumber, model, paidDate, paidBy, description,
+            paymentType, monthLabel, monthIndex, dueDate, penalty, scheduledAmount
+        } = req.body;
 
         let contract = null;
         if (contractId) {
@@ -81,7 +110,18 @@ router.post('/payments', async (req, res) => {
         }
 
         const uniquePaymentId = 'PAY-' + Date.now() + '-' + Math.floor(100 + Math.random() * 900);
-        const proofImg = photo || image || receiptImage || '';
+
+        // Merge all image sources:
+        // - paymentImages = array from RepaymentScheduleModal (schedule table pay button)
+        // - photo/image/receiptImage = single string from QrPaymentModal
+        const imagesArray = Array.isArray(paymentImages) && paymentImages.length > 0
+            ? paymentImages.filter(Boolean)
+            : [];
+        const singleImg = photo || image || receiptImage || imagesArray[0] || '';
+        // Combine: single image (if not already in array) + all array images, deduplicated
+        const allImages = [...new Set([...(singleImg ? [singleImg] : []), ...imagesArray])].filter(Boolean);
+        const proofImg = allImages[0] || '';
+
         const paymentObj = {
             paymentId: uniquePaymentId,
             contractId: contractId || 'N/A',
@@ -89,13 +129,20 @@ router.post('/payments', async (req, res) => {
             photo: proofImg,
             image: proofImg,
             receiptImage: proofImg,
+            paymentImages: allImages,
             serialNumber: serialNumber || contract?.serialNumber || 'N/A',
             model: model || contract?.model || 'Device',
             paidDate: paidDate || new Date().toISOString().split('T')[0],
             paidBy: paidBy || 'QR Mobile Payment',
             amount: Number(amount) || 0,
             description: description || 'Paid via Mobile QR',
-            brand: contract?.brand || ''
+            brand: contract?.brand || '',
+            paymentType: paymentType || '',
+            monthLabel: monthLabel || '',
+            monthIndex: Number(monthIndex) || 0,
+            dueDate: dueDate || '',
+            penalty: Number(penalty) || 0,
+            scheduledAmount: Number(scheduledAmount) || 0
         };
 
         if (isMongoConnected) {
