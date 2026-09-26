@@ -135,7 +135,7 @@ router.post('/payments', async (req, res) => {
             paidDate: paidDate || new Date().toISOString().split('T')[0],
             paidBy: paidBy || 'QR Mobile Payment',
             amount: Number(amount) || 0,
-            description: description || 'Paid via Mobile QR',
+            description: description || '',
             brand: contract?.brand || '',
             paymentType: paymentType || '',
             monthLabel: monthLabel || '',

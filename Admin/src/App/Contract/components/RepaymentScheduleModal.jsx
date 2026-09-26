@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo, FaFilePdf, FaCalculator } from 'react-icons/fa';
-import { MdClose, MdSwapHoriz } from 'react-icons/md';
+import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo, FaFilePdf, FaCalculator, FaImage, FaTimes } from 'react-icons/fa';
+import { MdClose, MdSwapHoriz, MdChevronLeft, MdChevronRight } from 'react-icons/md';
 
 const round2 = (val) => {
     const num = Number(val);
@@ -29,16 +29,21 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
     const [rows, setRows] = useState([]);
     const [latePenaltyRules, setLatePenaltyRules] = useState([]);
+    const [paymentMethods, setPaymentMethods] = useState(['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer']);
     const [submitting, setSubmitting] = useState(false);
     const [downloadingPdf, setDownloadingPdf] = useState(false);
     const [activeDropdownIdx, setActiveDropdownIdx] = useState(null);
     const rowRefs = useRef([]);
     const dropdownRef = useRef(null);
 
+    // Image lightbox for viewing saved payment images in the schedule table
+    const [lightboxImages, setLightboxImages] = useState([]);
+    const [lightboxIdx, setLightboxIdx] = useState(0);
+
     // ── Payment Confirmation Modal State ──────────────────────────────────────
     const [payConfirm, setPayConfirm] = useState(null);
     const [payConfirmSubmitting, setPayConfirmSubmitting] = useState(false);
-    // payConfirm = { idx, mode: 'Paid' | 'PayOff', amount, description, imageItems: [{file, preview}] }
+    // payConfirm = { idx, mode: 'Paid' | 'PayOff', amount, paidBy, description, imageItems: [{file, preview}] }
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -52,6 +57,21 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, [activeDropdownIdx]);
+
+    // Fetch Payment Methods from controlsystem
+    useEffect(() => {
+        if (!open || !contract) return;
+        const brand = contract.brand || user?.brand || '';
+        fetch(`${API_BASE1}/controlsystem?brand=${encodeURIComponent(brand)}`)
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                const pmCat = data?.droplists?.find(d => d.category === 'Payment Methods');
+                if (pmCat && pmCat.items?.length) {
+                    setPaymentMethods(pmCat.items);
+                }
+            })
+            .catch(err => console.error('Fetch payment methods error:', err));
+    }, [open, contract, API_BASE1, user?.brand]);
 
     const applyCalculateSchedule2 = () => {
         if (!contract) return;
@@ -395,7 +415,8 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             idx,
             mode,
             amount: totalAmt,
-            description: row.comment || '',
+            paidBy: paymentMethods[0] || 'Cash',
+            description: '',
             imageItems: []
         });
         setActiveDropdownIdx(null);
@@ -468,7 +489,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         if (!payConfirm || payConfirmSubmitting) return;
         setPayConfirmSubmitting(true);
         try {
-            const { idx, mode, amount, description, imageItems } = payConfirm;
+            const { idx, mode, amount, paidBy, description, imageItems } = payConfirm;
             const todayStr = new Date().toISOString().split('T')[0];
 
             // Upload images to Cloudinary first
@@ -515,23 +536,23 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contractId:   contract.contractId  || contract._id,
-                        contractDbId: contract._id,
-                        customerName: contract.customerNameEn || contract.customerNameKh || '',
-                        customerNameKh: contract.customerNameKh || '',
-                        model:        contract.model        || '',
-                        serialNumber: contract.serialNumber || '',
-                        brand:        contract.brand        || user?.brand || '',
-                        paidDate:     paidRow.paidDate      || todayStr,
-                        paidBy:       user?.username        || user?.name || '',
-                        amount:       Number(amount),
-                        description:  description           || paidRow.comment || '',
-                        paymentImages: uploadedUrls,
-                        paymentType:  mode,                 // 'Paid' | 'PayOff'
-                        monthLabel:   paidRow.labelName     || `Month ${paidRow.monthIndex}`,
-                        monthIndex:   paidRow.monthIndex,
-                        dueDate:      paidRow.dueDate       || '',
-                        penalty:      Number(paidRow.penalty || 0),
+                        contractId:      contract.contractId  || contract._id,
+                        contractDbId:    contract._id,
+                        customerName:    contract.customerNameEn || contract.customerNameKh || '',
+                        customerNameKh:  contract.customerNameKh || '',
+                        model:           contract.model        || '',
+                        serialNumber:    contract.serialNumber || '',
+                        brand:           contract.brand        || user?.brand || '',
+                        paidDate:        paidRow.paidDate      || todayStr,
+                        paidBy:          paidBy || user?.username || user?.name || '',
+                        amount:          Number(amount),
+                        description:     description           || '',
+                        paymentImages:   uploadedUrls,
+                        paymentType:     mode,
+                        monthLabel:      paidRow.labelName     || `Month ${paidRow.monthIndex}`,
+                        monthIndex:      paidRow.monthIndex,
+                        dueDate:         paidRow.dueDate       || '',
+                        penalty:         Number(paidRow.penalty || 0),
                         scheduledAmount: Number(paidRow.scheduledAmount || 0),
                     })
                 });
@@ -779,6 +800,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 <th className="px-3 py-3 text-emerald-800">ភ្ញៀវបានបង់</th>
                                 <th className="px-3 py-3">Comment (Note)</th>
                                 <th className="px-3 py-3 text-purple-700">កាលបរិច្ឆេទបានបង់</th>
+                                <th className="px-3 py-3 text-center text-indigo-600">រូបភាព</th>
                                 {!isReadOnly && !isSetupActivate && <th className="px-3 py-3 text-center">Action ($)</th>}
                             </tr>
                         </thead>
@@ -925,6 +947,27 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                             )}
                                         </td>
 
+                                        {/* Payment Images column */}
+                                        <td className="px-3 py-2.5 text-center">
+                                            {(() => {
+                                                const imgs = Array.isArray(row.paymentImages)
+                                                    ? row.paymentImages.filter(Boolean)
+                                                    : [];
+                                                if (!imgs.length) return <span className="text-slate-300 text-[10px]">—</span>;
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setLightboxImages(imgs); setLightboxIdx(0); }}
+                                                        className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 rounded-lg text-[10px] font-bold cursor-pointer transition-all"
+                                                        title="មើលរូបភាពភស្តុតាង"
+                                                    >
+                                                        <FaImage size={10} className="text-indigo-500" />
+                                                        <span>{imgs.length > 1 ? `${imgs.length}` : 'មើល'}</span>
+                                                    </button>
+                                                );
+                                            })()}
+                                        </td>
+
                                         {/* Action ($ Dropdown) — hidden in setup_activate mode */}
                                         {!isReadOnly && !isSetupActivate && (
                                             <td className="px-3 py-2.5 text-center">
@@ -1065,6 +1108,76 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             </div>
         </div>
 
+        {/* ── Image Lightbox (payment proof viewer in schedule table) ────── */}
+        {lightboxImages.length > 0 && (
+            <div
+                className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-[99999999] p-4"
+                onClick={() => setLightboxImages([])}
+            >
+                <div
+                    className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
+                        <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <FaImage className="text-indigo-600" />
+                            រូបភាពភស្តុតាងបង់ប្រាក់
+                            {lightboxImages.length > 1 && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-300">
+                                    {lightboxIdx + 1} / {lightboxImages.length}
+                                </span>
+                            )}
+                        </span>
+                        <button
+                            onClick={() => setLightboxImages([])}
+                            className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-red-600 transition-colors cursor-pointer"
+                        >
+                            <FaTimes size={14} />
+                        </button>
+                    </div>
+                    <div className="relative p-4 flex items-center justify-center bg-slate-100 min-h-[300px]">
+                        {lightboxImages.length > 1 && lightboxIdx > 0 && (
+                            <button
+                                onClick={() => setLightboxIdx(i => i - 1)}
+                                className="absolute left-2 p-2 rounded-full bg-white/80 hover:bg-white shadow-md text-slate-700 hover:text-indigo-600 cursor-pointer z-10"
+                            >
+                                <MdChevronLeft size={22} />
+                            </button>
+                        )}
+                        <img
+                            key={lightboxIdx}
+                            src={lightboxImages[lightboxIdx]}
+                            alt="payment proof"
+                            className="max-w-full max-h-[500px] object-contain rounded-lg shadow-md"
+                        />
+                        {lightboxImages.length > 1 && lightboxIdx < lightboxImages.length - 1 && (
+                            <button
+                                onClick={() => setLightboxIdx(i => i + 1)}
+                                className="absolute right-2 p-2 rounded-full bg-white/80 hover:bg-white shadow-md text-slate-700 hover:text-indigo-600 cursor-pointer z-10"
+                            >
+                                <MdChevronRight size={22} />
+                            </button>
+                        )}
+                    </div>
+                    {lightboxImages.length > 1 && (
+                        <div className="flex gap-2 px-4 py-3 bg-slate-50 border-t border-slate-200 overflow-x-auto">
+                            {lightboxImages.map((img, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setLightboxIdx(i)}
+                                    className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
+                                        i === lightboxIdx ? 'border-indigo-500 shadow-md' : 'border-slate-200 hover:border-indigo-300'
+                                    }`}
+                                >
+                                    <img src={img} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
+
         {/* ── Payment Confirmation Modal ──────────────────────────────────── */}
         {payConfirm && (
             <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999999] p-4">
@@ -1108,6 +1221,21 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 onChange={e => setPayConfirm(prev => ({ ...prev, amount: e.target.value }))}
                                 className="w-full h-10 px-3 bg-emerald-50 border border-emerald-200 focus:border-emerald-500 rounded-xl text-emerald-700 font-bold font-mono text-base outline-none shadow-sm"
                             />
+                        </div>
+
+                        {/* Paid By — Payment Method Dropdown */}
+                        <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">បង់ដោយ (Paid By / Payment Method)</label>
+                            <select
+                                value={payConfirm.paidBy || ''}
+                                onChange={e => setPayConfirm(prev => ({ ...prev, paidBy: e.target.value }))}
+                                className="w-full h-10 px-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl text-slate-800 text-xs font-semibold outline-none shadow-sm cursor-pointer"
+                            >
+                                <option value="">-- ជ្រើសរើសវិធីបង់ប្រាក់ --</option>
+                                {paymentMethods.map(m => (
+                                    <option key={m} value={m}>{m}</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Description */}
