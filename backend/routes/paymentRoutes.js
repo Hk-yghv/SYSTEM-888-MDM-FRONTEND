@@ -7,23 +7,47 @@ import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 
+// Helper: normalize a payment doc so paymentImages is always an array
+// and image/photo/receiptImage are populated from paymentImages if empty
+const normalizePayment = (p) => {
+    const obj = p && typeof p.toObject === 'function' ? p.toObject() : { ...p };
+    // Ensure paymentImages is always an array
+    if (!Array.isArray(obj.paymentImages)) {
+        obj.paymentImages = [];
+    }
+    // If single image fields exist but paymentImages is empty, populate it
+    const singleImg = obj.photo || obj.image || obj.receiptImage || '';
+    if (obj.paymentImages.length === 0 && singleImg) {
+        obj.paymentImages = [singleImg];
+    }
+    // If paymentImages has items but single fields are empty, fill them
+    if (obj.paymentImages.length > 0 && !obj.photo && !obj.image && !obj.receiptImage) {
+        obj.photo = obj.paymentImages[0];
+        obj.image = obj.paymentImages[0];
+        obj.receiptImage = obj.paymentImages[0];
+    }
+    return obj;
+};
+
 // GET complete payment history for one contract
 router.get('/payments/contract/:contractId', async (req, res) => {
     try {
         const { contractId } = req.params;
         let payments;
         if (isMongoConnected) {
-            payments = await queryAllDBs(Payment, (M) => M.find({ contractId }).sort({ createdAt: -1 }));
+            payments = await queryAllDBs(Payment, (M) => M.find({ contractId }).sort({ createdAt: -1 }).lean());
         } else {
             payments = MEM_DB.payments
                 .filter(payment => payment.contractId === contractId)
                 .sort((a, b) => new Date(b.createdAt || b.paidDate) - new Date(a.createdAt || a.paidDate));
         }
-        res.json({ data: payments, total: payments.length });
+        const normalized = payments.map(normalizePayment);
+        res.json({ data: normalized, total: normalized.length });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 // GET payments
 router.get('/payments', async (req, res) => {
@@ -47,8 +71,10 @@ router.get('/payments', async (req, res) => {
                     if (dateFrom) f.paidDate.$gte = dateFrom;
                     if (dateTo) f.paidDate.$lte = dateTo;
                 }
-                return M.find(f).sort({ createdAt: -1 });
+                return M.find(f).sort({ createdAt: -1 }).lean();
             });
+            // Normalize paymentImages on every doc
+            allPayments = allPayments.map(normalizePayment);
             // Apply search filter in memory (after fetch)
             if (search) {
                 const q = search.toLowerCase();
