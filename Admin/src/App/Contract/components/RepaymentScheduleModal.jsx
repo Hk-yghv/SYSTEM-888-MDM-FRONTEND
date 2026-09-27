@@ -326,6 +326,9 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     useEffect(() => {
         if (!open || !contract) return;
 
+        setLightboxImages([]);
+        setLightboxIdx(0);
+
         const rateStr = String(contract?.interest || contract?.interestType || '14%');
         const ratePercent = parseFloat(rateStr.replace(/[^0-9.]/g, '')) || 0;
         const totalLoan = Number(contract?.amount || contract?.totalAmount || 0);

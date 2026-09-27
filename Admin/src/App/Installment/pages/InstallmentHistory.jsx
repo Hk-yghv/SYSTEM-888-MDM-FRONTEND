@@ -64,8 +64,7 @@ const getPenalty = (row, contract, rules, today) => {
 };
 
 const getImages = (row) => [...new Set([
-    ...(Array.isArray(row.paymentImages) ? row.paymentImages : []),
-    ...(Array.isArray(row.images) ? row.images : [])
+    ...(Array.isArray(row.paymentImages) ? row.paymentImages : [])
 ].filter(Boolean))];
 
 const InstallmentHistory = ({ mode = 'history' }) => {
@@ -189,6 +188,11 @@ const InstallmentHistory = ({ mode = 'history' }) => {
         }
         return { from: today, to: today };
     }, [period, customFrom, customTo, today]);
+
+    useEffect(() => {
+        setViewImages([]);
+        setViewImageIndex(0);
+    }, [dateRange.from, dateRange.to, selectedBrand, search]);
 
     const scheduleRows = useMemo(() => contracts.flatMap(contract => {
         const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
