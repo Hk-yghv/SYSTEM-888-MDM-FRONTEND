@@ -719,21 +719,53 @@ router.get('/payment-alerts', async (req, res) => {
             const pInfo = paymentMap[cid] || { totalPaid: 0, count: 0, lastPaidDate: null };
 
             const totalAmount = Number(sanitized.totalAmount || sanitized.amount) || 0;
-            const monthlyPayment = Number(sanitized.monthlyPayment) || (totalAmount / 12) || 50;
-            const totalPaid = pInfo.totalPaid;
-            const remainingBalance = Math.max(0, totalAmount - totalPaid);
+            const schedule = Array.isArray(sanitized.repaymentSchedule) ? sanitized.repaymentSchedule : [];
+            const paidStatuses = ['Paid', 'PayOff', 'Settled'];
+            const nextScheduleIndex = schedule.findIndex(row => !paidStatuses.includes(row.status));
+            const startDate = parseAnyDate(sanitized.inputDate) || parseAnyDate(sanitized.createdAt) || now;
 
-            // Skip if loan is fully paid off
-            if (totalAmount > 0 && remainingBalance <= 0) continue;
+            let monthlyPayment = Number(sanitized.monthlyPayment) || (totalAmount / 12) || 50;
+            let totalPaid = pInfo.totalPaid;
+            let remainingBalance = Math.max(0, totalAmount - totalPaid);
+            let targetDueDate = null;
 
-            // Parse start date
-            let startDate = parseAnyDate(sanitized.inputDate) || parseAnyDate(sanitized.createdAt) || now;
+            if (schedule.length > 0) {
+                // Schedule status is authoritative: a completed month must not alert again.
+                if (nextScheduleIndex === -1) continue;
 
-            // Calculate months paid so far
-            const monthsPaid = Math.floor(totalPaid / (monthlyPayment || 1));
+                const nextRow = schedule[nextScheduleIndex];
+                targetDueDate = parseAnyDate(nextRow.dueDate);
+                if (!targetDueDate) {
+                    const duration = String(sanitized.duration || '').toLowerCase();
+                    const durationCount = Number(duration.match(/\d+/)?.[0]) || 1;
+                    targetDueDate = new Date(startDate);
+                    if (duration.includes('day') || duration.includes('ថ្ងៃ') || duration.includes('d')) {
+                        targetDueDate.setDate(targetDueDate.getDate() + durationCount);
+                    } else {
+                        const monthIndex = Number(nextRow.monthIndex) || nextScheduleIndex + 1;
+                        const originalDay = targetDueDate.getDate();
+                        targetDueDate.setDate(1);
+                        targetDueDate.setMonth(targetDueDate.getMonth() + monthIndex);
+                        const lastDay = new Date(targetDueDate.getFullYear(), targetDueDate.getMonth() + 1, 0).getDate();
+                        targetDueDate.setDate(Math.min(originalDay, lastDay));
+                    }
+                }
 
-            // Target due date calculation
-            let targetDueDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthsPaid + 1, startDate.getDate());
+                monthlyPayment = Number(nextRow.scheduledAmount) || monthlyPayment;
+                totalPaid = Math.max(totalPaid, schedule.reduce((sum, row) => sum + (Number(row.paidAmount) || 0), 0));
+                remainingBalance = schedule.reduce((sum, row) => {
+                    if (paidStatuses.includes(row.status)) return sum;
+                    const scheduled = Number(row.totalAmount) || (Number(row.scheduledAmount) + Number(row.penalty || 0));
+                    return sum + Math.max(0, scheduled - (Number(row.paidAmount) || 0));
+                }, 0);
+            } else {
+                // Legacy contracts without a schedule retain the transaction-total estimate.
+                if (totalAmount > 0 && remainingBalance <= 0) continue;
+                const monthsPaid = Math.floor(totalPaid / (monthlyPayment || 1));
+                targetDueDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthsPaid + 1, startDate.getDate());
+            }
+
+            if (!targetDueDate || Number.isNaN(targetDueDate.getTime())) continue;
 
             // Calculate difference in days between targetDueDate and Today
             const diffTime = now.getTime() - targetDueDate.getTime();
