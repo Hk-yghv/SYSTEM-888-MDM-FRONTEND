@@ -781,33 +781,6 @@ const FollowUp2 = () => {
                 exportToPDF(title, exportColumns, exportDataWithTotals, user?.brand || 'SYSTEM', 'landscape');
             }
 
-            // Log export event to audit logs
-            try {
-                fetch(`${API_BASE}/audit-logs`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        eventType: exportFormat === 'excel' ? 'FOLLOW_UP_2_EXPORT_EXCEL' : 'FOLLOW_UP_2_EXPORT_PDF',
-                        action: `Exported Follow-Up 2 (${exportFormat.toUpperCase()}) - ${items.length} records [${range.label}]`,
-                        username: user?.username || 'SYSTEM',
-                        brand: user?.brand || 'SYSTEM',
-                        ip: '127.0.0.1',
-                        payload: {
-                            format: exportFormat,
-                            scope: exportScope,
-                            recordCount: items.length,
-                            dateRange: range,
-                            totalAmount,
-                            successCount: totalSucc,
-                            failedCount: totalFail,
-                            successRate: overallRate
-                        }
-                    })
-                }).catch(() => { });
-            } catch (auditErr) {
-                console.warn('Audit log trigger error:', auditErr);
-            }
-
             setIsExportModalOpen(false);
         } catch (err) {
             console.error('Export error:', err);

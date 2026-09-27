@@ -570,25 +570,6 @@ const FollowUp1 = () => {
                 exportFollowUp1PDF(title, exportColumns, dataWithSummaryRow, exportSummaryObj, range.label, user?.brand || 'SYSTEM');
             }
 
-            // Record System Audit Log for Export Activity
-            fetch(`${API_BASE}/audit-logs`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    category: 'Contract',
-                    level: 'Information',
-                    action: 'FOLLOW_UP_1_EXPORT',
-                    taskCategory: 'Follow Up 1',
-                    description: `Exported Follow-Up 1 report (${exportFormat.toUpperCase()}) for range: ${range.label || 'All'} (${items.length} records)`,
-                    username: user?.username || 'Staff',
-                    name: user?.name || '',
-                    role: user?.role || 'Staff',
-                    brand: user?.brand || '',
-                    path: '/follow-up/follow-up-1',
-                    payload: { format: exportFormat, scope: exportScope, count: items.length, range }
-                })
-            }).catch(() => { });
-
             setIsExportModalOpen(false);
         } catch (err) {
             console.error('Export error:', err);

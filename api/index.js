@@ -55,6 +55,10 @@ export default async function handler(req, res) {
     const cleanPath = (pathPart || '').replace(/^\/+/, '');
     const queryString = queryPart ? `?${queryPart}` : '';
 
+    if (['audit-logs', 'system-logs'].some(path => cleanPath === path || cleanPath.startsWith(`${path}/`))) {
+        return res.status(410).json({ error: 'System log endpoints have been retired.' });
+    }
+
     // 5. Prepare Forward Headers with Secret x-system-api-key
     const forwardHeaders = {
         'x-system-api-key': SYSTEM_API_KEY,

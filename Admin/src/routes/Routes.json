@@ -29,6 +29,7 @@
     },
     "installment": {
         "installmentPage": "/installment/schedule",
+        "installmentHistory": "/installment/history",
         "paymentHistory": "/installment/paymentHistory",
         "cashOut": "/installment/cash-out",
         "cashIn": "/installment/cash-in",
@@ -64,7 +65,6 @@
     "salary": "/salary",
     "settings": {
         "controlSystem": "/settings/control-system",
-        "systemLogs": "/settings/system-logs",
         "allAccount": "/settings/all-account",
         "phoneApp": "/settings/phone-app",
         "profile": "/profile"

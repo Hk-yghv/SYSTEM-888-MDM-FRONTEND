@@ -19,6 +19,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Calculation & Tools', path: '/calculate/schedule-2', label: 'Calculate Schedule 2 (គណនាការប្រាក់ Schedule 2)', actions: ['read', 'export', 'create', 'edit', 'delete'] },
 
     { category: 'Installment & Payment', path: '/installment/schedule', label: 'Installment Schedule (តារាងបង់ប្រាក់)', actions: ['read', 'edit', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/history', label: 'Installment History', actions: ['read', 'export'] },
     { category: 'Installment & Payment', path: '/installment/paymentHistory', label: 'Payment History', actions: ['read', 'create', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/cash-out', label: 'Cash Out (ប្រាក់ចេញ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/cash-in', label: 'Cash In (ប្រាក់ចូល)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
@@ -59,8 +60,7 @@ const ALL_SYSTEM_PAGES = [
 
     { category: 'Settings & Profile', path: '/profile', label: 'User Profile', actions: ['read', 'edit'] },
     { category: 'Settings & Profile', path: '/settings/all-account', label: 'All Account Management', actions: ['read', 'create', 'edit', 'delete'] },
-    { category: 'Settings & Profile', path: '/settings/control-system', label: 'Control System Settings', actions: ['read', 'edit'] },
-    { category: 'Settings & Profile', path: '/settings/system-logs', label: 'System Event Logs (កំណត់ហេតុប្រព័ន្ធ)', actions: ['read', 'export'] }
+    { category: 'Settings & Profile', path: '/settings/control-system', label: 'Control System Settings', actions: ['read', 'edit'] }
 ];
 
 const AllAccount = () => {

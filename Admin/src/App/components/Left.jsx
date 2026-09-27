@@ -141,6 +141,7 @@ const Left = ({ isOpen = false, onClose }) => {
 
             {/* Installment */}
             {(hasPermission(json.installment.installmentPage, 'read') ||
+                hasPermission(json.installment.installmentHistory, 'read') ||
                 hasPermission(json.installment.paymentHistory, 'read') ||
                 hasPermission(json.installment.cashOut, 'read') ||
                 hasPermission(json.installment.cashIn, 'read') ||
@@ -163,6 +164,9 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.installment.installmentPage, 'read') && (
                                 <Link to={json.installment.installmentPage} className={subItemClass(json.installment.installmentPage)}>{t('installment')}</Link>
+                            )}
+                            {hasPermission(json.installment.installmentHistory, 'read') && (
+                                <Link to={json.installment.installmentHistory} className={subItemClass(json.installment.installmentHistory)}>Installment History</Link>
                             )}
                             {hasPermission(json.installment.overdue, 'read') && (
                                 <Link to={json.installment.overdue} className={subItemClass(json.installment.overdue)}>{t('overdueCustomers')}</Link>

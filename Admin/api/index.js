@@ -57,6 +57,10 @@ export default async function handler(req, res) {
     const cleanPath = (pathPart || '').replace(/^\/+/, '');
     const queryString = queryPart ? `?${queryPart}` : '';
 
+    if (['audit-logs', 'system-logs'].some(path => cleanPath === path || cleanPath.startsWith(`${path}/`))) {
+        return res.status(410).json({ error: 'System log endpoints have been retired.' });
+    }
+
     // 5. ── PROXY-LEVEL AUTH GATE ──
     // Whitelist of public paths that do NOT require a JWT token at proxy level
     // NOTE: Backend still enforces its own auth for sensitive paths

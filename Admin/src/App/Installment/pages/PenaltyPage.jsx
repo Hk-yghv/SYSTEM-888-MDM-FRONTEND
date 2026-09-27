@@ -513,7 +513,7 @@ const PenaltyPage = () => {
             {isFormOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="p-4 bg-amber-600 text-white flex items-center justify-between">
+                        <div className="p-4 bg-amber-600 text-black flex items-center justify-between">
                             <h3 className="font-bold text-sm flex items-center gap-2">
                                 <FaPlusCircle /> <span>{editingItem ? 'កែប្រែទិន្នន័យពិន័យ' : 'បញ្ចូលទិន្នន័យពិន័យ (Create Penalty)'}</span>
                             </h3>

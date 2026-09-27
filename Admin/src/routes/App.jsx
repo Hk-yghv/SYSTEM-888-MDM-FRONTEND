@@ -13,7 +13,6 @@ import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import ProtectRoute from "../services/ProtectRoute";
 import SignIn from "../services/SignIn";
 import { getFirstAllowedRoute } from "../utils/permissionUtils";
-import GlobalActivityTracker from "../components/GlobalActivityTracker";
 import MobileBottomNav from "../components/MobileBottomNav";
 import MobileResponsiveContent from "../components/MobileResponsiveContent";
 
@@ -46,6 +45,7 @@ import BlackList from "../App/Contract/page/BlackList";
 
 // Installment
 import InstallmentPage from "../App/Installment/pages/InstallmentPage";
+import InstallmentHistory from "../App/Installment/pages/InstallmentHistory";
 import PaymentHistory from "../App/Installment/pages/PaymentHistory";
 import CashOutPage from "../App/Installment/pages/CashOutPage";
 import CashInPage from "../App/Installment/pages/CashInPage";
@@ -86,7 +86,6 @@ import SalaryPage from "../App/Salary/pages/SalaryPage";
 
 // Settings & Profile
 import ControlSystem from "../App/Settings/pages/ControlSystem";
-import SystemAuditLogs from "../App/Settings/pages/SystemAuditLogs";
 import AllAccount from "../App/Settings/pages/AllAccount";
 import Profile from "../App/Profile/Profile";
 
@@ -175,7 +174,6 @@ const App = () => {
         <ThemeProvider>
           <LanguageProvider>
             <BrowserRouter>
-              <GlobalActivityTracker />
               <Routes>
                 {/* Sign In Route */}
                 <Route path={json.signin} element={<SignIn />} />
@@ -209,6 +207,8 @@ const App = () => {
                 <Route path={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'} element={<ProtectRoute pagePath={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'}> <MainLayout><CalculateSchedule2 /></MainLayout> </ProtectRoute>} />
                 {/* Installment */}
                 <Route path={json.installment.installmentPage} element={<ProtectRoute pagePath={json.installment.installmentPage}> <MainLayout><InstallmentPage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.installmentHistory} element={<ProtectRoute pagePath={json.installment.installmentHistory}> <MainLayout><InstallmentHistory /></MainLayout> </ProtectRoute>} />
+                <Route path="/installment/pad" element={<Navigate to={json.installment.installmentHistory} replace />} />
                 <Route path={json.installment.paymentHistory} element={<ProtectRoute pagePath={json.installment.paymentHistory}> <MainLayout><PaymentHistory /></MainLayout> </ProtectRoute>} />
                 <Route path={json.installment.cashOut} element={<ProtectRoute pagePath={json.installment.cashOut}> <MainLayout><CashOutPage /></MainLayout> </ProtectRoute>} />
                 <Route path={json.installment.cashIn} element={<ProtectRoute pagePath={json.installment.cashIn}> <MainLayout><CashInPage /></MainLayout> </ProtectRoute>} />
@@ -244,7 +244,6 @@ const App = () => {
                 {/* Settings */}
                 <Route path={json.settings.allAccount} element={<ProtectRoute pagePath={json.settings.allAccount}><MainLayout><AllAccount /></MainLayout></ProtectRoute>} />
                 <Route path={json.settings.controlSystem} element={<ProtectRoute pagePath={json.settings.controlSystem}><MainLayout><ControlSystem /></MainLayout></ProtectRoute>} />
-                <Route path={json.settings.systemLogs} element={<ProtectRoute pagePath={json.settings.systemLogs}><MainLayout><SystemAuditLogs /></MainLayout></ProtectRoute>} />
                 <Route path={json.settings.profile} element={<ProtectRoute pagePath={json.settings.profile}> <MainLayout><Profile /></MainLayout> </ProtectRoute>} />
 
                 {/* Fallback */}

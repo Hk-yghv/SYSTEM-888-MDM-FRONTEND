@@ -196,11 +196,12 @@ setInterval(() => {
 }, 10 * 60 * 1000);
 
 export const rateLimiterMiddleware = (req, res, next) => {
-    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || '127.0.0.1';
     const now = Date.now();
     let record = ipRateMap.get(clientIp);
 
-    if (!record || (now - record.startTime > RATE_LIMIT_WINDOW_MS && !record.bannedUntil)) {
+    const isValidRecord = record && typeof record === 'object' && typeof record.startTime === 'number';
+    if (!isValidRecord || (now - record.startTime > RATE_LIMIT_WINDOW_MS && !record.bannedUntil)) {
         record = { startTime: now, authCount: 0, apiCount: 0, violations: 0, bannedUntil: null };
     }
 
@@ -212,9 +213,9 @@ export const rateLimiterMiddleware = (req, res, next) => {
     }
 
     if (req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/verify-otp')) {
-        record.authCount += 1;
+        record.authCount = Number(record.authCount || 0) + 1;
         if (record.authCount > MAX_AUTH_ATTEMPTS) {
-            record.violations += 1;
+            record.violations = Number(record.violations || 0) + 1;
             if (record.violations >= 2) {
                 record.bannedUntil = now + BAN_THRESHOLD_MS;
                 notifySecurityAlert(`🚨 <b>SECURITY BAN ALERT</b>\nIP: <code>${clientIp}</code> has been banned for 30 minutes due to repeated authentication brute-force attempts!`);
@@ -225,9 +226,9 @@ export const rateLimiterMiddleware = (req, res, next) => {
             });
         }
     } else if (req.path.startsWith('/api')) {
-        record.apiCount += 1;
+        record.apiCount = Number(record.apiCount || 0) + 1;
         if (record.apiCount > MAX_API_ATTEMPTS) {
-            record.violations += 1;
+            record.violations = Number(record.violations || 0) + 1;
             ipRateMap.set(clientIp, record);
             return res.status(429).json({
                 error: 'Security Protection: Rate limit exceeded. Automated scraping or DoS activity detected from your IP address.'

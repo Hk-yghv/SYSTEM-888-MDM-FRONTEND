@@ -52,14 +52,15 @@ router.get('/payments/contract/:contractId', async (req, res) => {
 // GET payments
 router.get('/payments', async (req, res) => {
     try {
-        const { userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '', dateFrom = '', dateTo = '' } = req.query;
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
+        const { userBrand, userRole, username, isImmutable, brand = '', page = 1, limit = 10, search = '', dateFrom = '', dateTo = '' } = req.query;
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin');
+        const requestedBrand = isMasterAdmin ? brand : userBrand;
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         if (isMongoConnected) {
             let matchedContractIds = null;
-            if (userBrand && !isMasterAdmin) {
-                const matchedContracts = await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'));
+            if (requestedBrand) {
+                const matchedContracts = await queryAllDBs(Contract, (M) => M.find({ brand: requestedBrand }).select('contractId'));
                 matchedContractIds = matchedContracts.map(c => c.contractId);
             }
             let allPayments = await queryAllDBs(Payment, (M) => {
@@ -92,8 +93,8 @@ router.get('/payments', async (req, res) => {
 
         // MEM_DB path
         let filtered = MEM_DB.payments;
-        if (userBrand && !isMasterAdmin) {
-            const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
+        if (requestedBrand) {
+            const contractIds = MEM_DB.contracts.filter(c => c.brand === requestedBrand).map(c => c.contractId);
             filtered = filtered.filter(p => contractIds.includes(p.contractId));
         }
         if (search) {

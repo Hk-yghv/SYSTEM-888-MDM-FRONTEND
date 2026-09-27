@@ -27,8 +27,6 @@ import {
     getFirebaseBackupStatus,
     startFirebaseBackupScheduler
 } from './config/firebaseBackup.js';
-import auditRoutes from './routes/auditRoutes.js';
-import { startSystemLogArchivalScheduler } from './services/logArchivalService.js';
 import {
     securityHeadersMiddleware,
     botFirewallMiddleware,
@@ -158,8 +156,6 @@ app.use('/pay', paymentRoutes);
 app.use('/api', lostphoneRoutes);
 app.use('/api', wallpaperRoutes);
 app.use('/api/history', createHistoryRoutes(bot));
-app.use('/api/audit-logs', auditRoutes);
-app.use('/api/system-logs', auditRoutes);
 app.use('/api', cashTransactionRoutes);
 app.use('/api/follow-up', followUpRoutes);
 app.use('/api/follow-up-2', followUp2Routes);
@@ -193,7 +189,6 @@ app.use((err, req, res, next) => {
 // ── Connect All Databases & Start Server ──
 connectDB().then(() => {
     startFirebaseBackupScheduler();
-    startSystemLogArchivalScheduler();
     app.listen(PORT, () => {
         console.log(`SYSTEM MDM Backend Server 0 (Auth/Users/Control/Dashboard) active on port ${PORT} with Ultimate Security Shield`);
     });

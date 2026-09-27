@@ -4,8 +4,7 @@ import { MdOutlineSync, MdOutlineClose } from 'react-icons/md';
 import { useAuth } from '../../../context/AuthContext';
 
 const ContractActivityHistoryModal = ({ contract, onClose }) => {
-    const { API_BASE, user } = useAuth();
-    const [auditLogs, setAuditLogs] = useState([]);
+    const { API_BASE } = useAuth();
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -14,15 +13,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
         const fetchHistory = async () => {
             setLoading(true);
             try {
-                // 1. Fetch system audit logs for this customer/contract
-                const id = contract.contractId || contract._id;
-                const logRes = await fetch(`${API_BASE}/audit-logs/customer/${encodeURIComponent(id)}`);
-                if (logRes.ok) {
-                    const data = await logRes.json();
-                    setAuditLogs(Array.isArray(data) ? data : []);
-                }
-
-                // 2. Fetch payments for this contract
+                // Fetch payments for this contract
                 const payRes = await fetch(`${API_BASE}/payments?search=${encodeURIComponent(contract.contractId || contract.phone || '')}&limit=100`);
                 if (payRes.ok) {
                     const payData = await payRes.json();
@@ -40,7 +31,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
 
     if (!contract) return null;
 
-    // Compile timeline events from contract metadata, audit logs, and payments
+    // Compile timeline events from contract metadata and payments
     const timelineEvents = [];
 
     // Event 1: Application Created
@@ -137,19 +128,6 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
             });
         });
     }
-
-    // Event 8: Audit Logs
-    auditLogs.forEach(l => {
-        timelineEvents.push({
-            date: new Date(l.timestamp || l.createdAt),
-            type: 'audit',
-            icon: <FaUserEdit className="text-indigo-500" />,
-            title: `${l.action || 'ACTIVITY'}: ${l.description}`,
-            description: `Action performed by user: ${l.username} (${l.role || 'Staff'}) • IP: ${l.ip || '127.0.0.1'}`,
-            badge: l.category || 'System',
-            badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-300'
-        });
-    });
 
     // Sort descending by date (newest first)
     timelineEvents.sort((a, b) => b.date.getTime() - a.date.getTime());

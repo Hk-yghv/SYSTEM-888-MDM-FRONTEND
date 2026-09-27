@@ -12,6 +12,7 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/calculate/schedule-1',
     '/calculate/schedule-2',
     '/installment/schedule',
+    '/installment/history',
     '/installment/overdue',
     '/installment/due-today',
     '/installment/unpaid-yesterday',
@@ -44,7 +45,6 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/salary',
     '/settings/all-account',
     '/settings/control-system',
-    '/settings/system-logs',
     '/profile'
 ];
 
