@@ -12,6 +12,7 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/calculate/schedule-1',
     '/calculate/schedule-2',
     '/installment/schedule',
+    '/installment/pad',
     '/installment/history',
     '/installment/overdue',
     '/installment/due-today',

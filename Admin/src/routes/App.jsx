@@ -207,8 +207,8 @@ const App = () => {
                 <Route path={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'} element={<ProtectRoute pagePath={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'}> <MainLayout><CalculateSchedule2 /></MainLayout> </ProtectRoute>} />
                 {/* Installment */}
                 <Route path={json.installment.installmentPage} element={<ProtectRoute pagePath={json.installment.installmentPage}> <MainLayout><InstallmentPage /></MainLayout> </ProtectRoute>} />
+                <Route path={json.installment.installmentPad} element={<ProtectRoute pagePath={json.installment.installmentPad}><MainLayout><InstallmentHistory mode="pad" /></MainLayout></ProtectRoute>} />
                 <Route path={json.installment.installmentHistory} element={<ProtectRoute pagePath={json.installment.installmentHistory}> <MainLayout><InstallmentHistory /></MainLayout> </ProtectRoute>} />
-                <Route path="/installment/pad" element={<Navigate to={json.installment.installmentHistory} replace />} />
                 <Route path={json.installment.paymentHistory} element={<ProtectRoute pagePath={json.installment.paymentHistory}> <MainLayout><PaymentHistory /></MainLayout> </ProtectRoute>} />
                 <Route path={json.installment.cashOut} element={<ProtectRoute pagePath={json.installment.cashOut}> <MainLayout><CashOutPage /></MainLayout> </ProtectRoute>} />
                 <Route path={json.installment.cashIn} element={<ProtectRoute pagePath={json.installment.cashIn}> <MainLayout><CashInPage /></MainLayout> </ProtectRoute>} />

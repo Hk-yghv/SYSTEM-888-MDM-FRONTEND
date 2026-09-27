@@ -23,15 +23,8 @@ const addDays = (date, days) => {
     return result;
 };
 
-const addMonths = (date, months) => {
-    const result = new Date(date);
-    const day = result.getDate();
-    result.setDate(1);
-    result.setMonth(result.getMonth() + months);
-    const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
-    result.setDate(Math.min(day, lastDay));
-    return result;
-};
+const getCalendarMonthEnd = (date, monthOffset = 0) =>
+    new Date(date.getFullYear(), date.getMonth() + monthOffset + 1, 0);
 
 const getRowWithDueDate = (row, contract) => {
     if (!row || row.dueDate || !contract?.inputDate) return row;
@@ -75,8 +68,11 @@ const getImages = (row) => [...new Set([
     ...(Array.isArray(row.images) ? row.images : [])
 ].filter(Boolean))];
 
-const InstallmentHistory = () => {
+const InstallmentHistory = ({ mode = 'history' }) => {
     const { API_BASE1, user, hasPermission } = useAuth();
+    const isHistoryPage = mode === 'history';
+    const pageTitle = isHistoryPage ? 'Installment History' : 'Installment Pad';
+    const pagePath = isHistoryPage ? '/installment/history' : '/installment/pad';
     const isMasterAdmin = user?.username === '@hakyonghouv' ||
         user?.username === 'hakyonghouv' ||
         user?.isImmutable === true ||
@@ -178,10 +174,19 @@ const InstallmentHistory = () => {
     const today = formatLocalDate(new Date());
     const dateRange = useMemo(() => {
         if (period === 'Custom') return { from: customFrom, to: customTo };
-        const start = new Date(`${today}T00:00:00`);
-        if (period === '7 days') return { from: today, to: formatLocalDate(addDays(start, 6)) };
-        if (period === '1 month') return { from: today, to: formatLocalDate(addMonths(start, 1)) };
-        if (period === '3 months') return { from: today, to: formatLocalDate(addMonths(start, 3)) };
+        const currentDate = new Date(`${today}T00:00:00`);
+        if (period === '7 days') {
+            const weekStart = addDays(currentDate, -currentDate.getDay());
+            return { from: formatLocalDate(weekStart), to: formatLocalDate(addDays(weekStart, 6)) };
+        }
+        if (period === '1 month') {
+            const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            return { from: formatLocalDate(monthStart), to: formatLocalDate(getCalendarMonthEnd(currentDate)) };
+        }
+        if (period === '3 months') {
+            const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            return { from: formatLocalDate(monthStart), to: formatLocalDate(getCalendarMonthEnd(currentDate, 2)) };
+        }
         return { from: today, to: today };
     }, [period, customFrom, customTo, today]);
 
@@ -191,8 +196,6 @@ const InstallmentHistory = () => {
             if (rawRow.status === 'Settled') return [];
             const row = getRowWithDueDate(rawRow, contract);
             if (!row?.dueDate) return [];
-            if (dateRange.from && row.dueDate < dateRange.from) return [];
-            if (dateRange.to && row.dueDate > dateRange.to) return [];
             if (selectedBrand && contract.brand !== selectedBrand) return [];
 
             const penalty = getPenalty(row, contract, penaltyRules, today);
@@ -206,12 +209,14 @@ const InstallmentHistory = () => {
             const daysUntilDue = Math.round((dueTimestamp - todayTimestamp) / 86400000);
             const type = contract.status === 'Redeem' && row.status === 'PayOff'
                 ? 'Redeem'
-                : row.status === 'PayOff' ? 'Payoff' : 'Pad';
+                : row.status === 'PayOff' ? 'Payoff'
+                    : row.status === 'Paid' ? 'Pad' : '';
 
             return [{
                 ...row,
                 _id: `${contract._id || contract.contractId}-${row.monthIndex || index + 1}`,
                 contractId: contract.contractId || '',
+                contractIid: contract.contractIid || '',
                 contract,
                 scheduleIndex: index,
                 customerName: contract.customerNameEn || contract.customerNameKh || 'Customer',
@@ -220,6 +225,7 @@ const InstallmentHistory = () => {
                 model: contract.model || '',
                 serialNumber: contract.serialNumber || '',
                 loanDate: contract.inputDate || '',
+                paidDate: row.paidDate || '',
                 penalty,
                 scheduledAmount,
                 paidAmount,
@@ -230,16 +236,23 @@ const InstallmentHistory = () => {
                 type
             }];
         });
-    }), [contracts, dateRange, selectedBrand, penaltyRules, today]);
+    }), [contracts, selectedBrand, penaltyRules, today]);
 
     const filteredRows = useMemo(() => {
         const query = search.trim().toLowerCase();
         return scheduleRows
+            .filter(row => {
+                if (isHistoryPage && (!row.isPaid || !row.paidDate)) return false;
+                const filterDate = isHistoryPage ? row.paidDate : row.dueDate;
+                if (dateRange.from && filterDate < dateRange.from) return false;
+                if (dateRange.to && filterDate > dateRange.to) return false;
+                return true;
+            })
             .filter(row => !query || [row.customerName, row.customerNameKh, row.contractId, row.model,
-                row.serialNumber, row.brand, row.labelName, row.monthLabel]
+                row.contractIid, row.serialNumber, row.brand, row.labelName, row.monthLabel]
                 .some(value => String(value || '').toLowerCase().includes(query)))
-            .sort((left, right) => left.dueDate.localeCompare(right.dueDate) || left.customerName.localeCompare(right.customerName));
-    }, [scheduleRows, search]);
+            .sort((left, right) => (isHistoryPage ? left.paidDate : left.dueDate).localeCompare(isHistoryPage ? right.paidDate : right.dueDate) || left.customerName.localeCompare(right.customerName));
+    }, [scheduleRows, search, isHistoryPage, dateRange]);
 
     useEffect(() => { setPage(1); }, [search, period, customFrom, customTo, selectedBrand]);
 
@@ -254,8 +267,9 @@ const InstallmentHistory = () => {
     const exportRows = filteredRows.map((row, index) => ({
         No: index + 1,
         'Loan Date': row.loanDate,
+        'Paid Date': row.paidDate,
         'Customer Name': `${row.customerName} ${row.customerNameKh}`.trim(),
-        'Contract ID': row.contractId,
+        ContractIid: row.contractIid,
         Brand: row.brand,
         Model: row.model,
         'Serial Number': row.serialNumber,
@@ -272,7 +286,7 @@ const InstallmentHistory = () => {
 
     const exportExcel = () => exportToExcel(exportRows, 'Installment_History');
     const exportPdf = () => exportToPDF('Installment History', [
-        { header: 'Due Date', accessor: 'Due Date' },
+        { header: isHistoryPage ? 'Paid Date' : 'Due Date', accessor: isHistoryPage ? 'Paid Date' : 'Due Date' },
         { header: 'Customer', accessor: 'Customer Name' },
         { header: 'Brand', accessor: 'Brand' },
         { header: 'Installment', accessor: 'Installment' },
@@ -302,20 +316,22 @@ const InstallmentHistory = () => {
 
     return (
         <div className="w-full space-y-4 bg-[#f4f6f8] p-4">
-            <RepaymentScheduleModal
-                open={scheduleModalOpen}
-                setOpen={setScheduleModalOpen}
-                contract={scheduleModalContract}
-                mode="view_edit"
-                defaultMonthIdx={scheduleModalMonthIndex}
-                onSaved={refreshContracts}
-            />
-            <QrPaymentModal
-                open={Boolean(selectedQrContract)}
-                contract={selectedQrContract}
-                onClose={() => setSelectedQrContract(null)}
-                onSaved={refreshContracts}
-            />
+            {!isHistoryPage && <>
+                <RepaymentScheduleModal
+                    open={scheduleModalOpen}
+                    setOpen={setScheduleModalOpen}
+                    contract={scheduleModalContract}
+                    mode="view_edit"
+                    defaultMonthIdx={scheduleModalMonthIndex}
+                    onSaved={refreshContracts}
+                />
+                <QrPaymentModal
+                    open={Boolean(selectedQrContract)}
+                    contract={selectedQrContract}
+                    onClose={() => setSelectedQrContract(null)}
+                    onSaved={refreshContracts}
+                />
+            </>}
             {viewImages.length > 0 && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" onClick={() => setViewImages([])}>
                     <div className="relative max-h-full max-w-4xl" onClick={event => event.stopPropagation()}>
@@ -330,11 +346,11 @@ const InstallmentHistory = () => {
             <header className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-xs">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-lg font-bold text-slate-900">Installment History</h1>
-                        <p className="text-xs text-slate-500">កាលវិភាគបង់ប្រាក់តាមថ្ងៃកំណត់</p>
+                        <h1 className="text-lg font-bold text-slate-900">{pageTitle}</h1>
+                        <p className="text-xs text-slate-500">{isHistoryPage ? 'ប្រវត្តិភ្ញៀវដែលបានបង់ប្រាក់ តាមថ្ងៃបង់' : 'Installments due within the selected period'}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        {hasPermission('/installment/history', 'export') && <>
+                        {hasPermission(pagePath, 'export') && <>
                             <button onClick={exportExcel} className="flex items-center gap-2 rounded-[5px] border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"><FaFileExcel /> Excel</button>
                             <button onClick={exportPdf} className="flex items-center gap-2 rounded-[5px] border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-800"><MdPictureAsPdf /> PDF</button>
                         </>}
@@ -365,7 +381,7 @@ const InstallmentHistory = () => {
 
                 <div className="flex flex-wrap items-end gap-3 border-t border-slate-100 pt-3">
                     <div>
-                        <div className="mb-1 text-[10px] font-bold text-slate-500">Due period</div>
+                        <div className="mb-1 text-[10px] font-bold text-slate-500">{isHistoryPage ? 'Payment date' : 'Due date'}</div>
                         <div className="inline-flex flex-wrap rounded-[5px] border border-slate-300 bg-slate-100 p-0.5" role="group" aria-label="Due period">
                             {presetOptions.map(option => (
                                 <button key={option} onClick={() => setPeriod(option)} className={`rounded-[4px] px-3 py-2 text-xs font-semibold ${period === option ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white'}`}>
@@ -394,7 +410,7 @@ const InstallmentHistory = () => {
             </header>
 
             <div className="max-h-[calc(100vh-390px)] min-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-xs">
-                <table className="w-full min-w-[1450px] border-collapse text-left text-xs">
+                <table className="w-full min-w-[1550px] border-collapse text-left text-xs">
                     <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-slate-700">
                         <tr>
                             <th className="px-3 py-3 text-center">No.</th>
@@ -404,6 +420,7 @@ const InstallmentHistory = () => {
                             <th className="px-3 py-3">Model / Serial</th>
                             <th className="px-3 py-3">Installment</th>
                             <th className="px-3 py-3">Due date</th>
+                            <th className="px-3 py-3">Paid date</th>
                             <th className="px-3 py-3">Due status</th>
                             <th className="px-3 py-3 text-right">Amount due</th>
                             <th className="px-3 py-3 text-right">Penalty</th>
@@ -411,12 +428,12 @@ const InstallmentHistory = () => {
                             <th className="px-3 py-3 text-right">Unpaid</th>
                             <th className="px-3 py-3 text-center">Image</th>
                             <th className="px-3 py-3">Pad / Payoff / Redeem</th>
-                            <th className="px-3 py-3 text-center">Action</th>
+                            {!isHistoryPage && <th className="px-3 py-3 text-center">Action</th>}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {loading ? <tr><td colSpan={15} className="py-12 text-center font-semibold text-emerald-700">Loading installment schedule...</td></tr>
-                            : visibleRows.length === 0 ? <tr><td colSpan={15} className="py-12 text-center italic text-slate-500">No installments due in this period.</td></tr>
+                        {loading ? <tr><td colSpan={isHistoryPage ? 15 : 16} className="py-12 text-center font-semibold text-emerald-700">Loading installment schedule...</td></tr>
+                            : visibleRows.length === 0 ? <tr><td colSpan={isHistoryPage ? 15 : 16} className="py-12 text-center italic text-slate-500">{isHistoryPage ? 'No paid installments in this period.' : 'No installments due in this period.'}</td></tr>
                                 : visibleRows.map((row, index) => {
                                     const images = getImages(row);
                                     const statusText = row.isPaid ? 'បានបង់រួច'
@@ -433,19 +450,20 @@ const InstallmentHistory = () => {
                                     return <tr key={row._id} className={row.isPaid ? 'bg-emerald-50/20' : row.daysUntilDue < 0 ? 'bg-rose-50/30' : row.daysUntilDue === 0 ? 'bg-amber-50/40' : 'hover:bg-slate-50'}>
                                         <td className="px-3 py-3 text-center font-mono text-slate-500">{(page - 1) * PAGE_SIZE + index + 1}</td>
                                         <td className="whitespace-nowrap px-3 py-3 font-mono text-slate-600">{row.loanDate || '—'}</td>
-                                        <td className="px-3 py-3"><div className="font-bold text-slate-900">{row.customerName}</div><div className="font-mono text-[10px] text-slate-500">{row.contractId}</div></td>
+                                        <td className="px-3 py-3"><div className="font-bold text-slate-900">{row.customerName}</div><div className="font-mono text-[10px] text-slate-500">{row.contractIid || '—'}</div></td>
                                         <td className="px-3 py-3">{row.brand || '—'}</td>
                                         <td className="px-3 py-3"><div className="font-semibold text-slate-800">{row.model || '—'}</div><div className="font-mono text-[10px] text-slate-500">{row.serialNumber || '—'}</div></td>
                                         <td className="px-3 py-3 font-semibold text-slate-700">{row.labelName || row.monthLabel || `Month ${row.monthIndex || ''}`}</td>
                                         <td className="whitespace-nowrap px-3 py-3 font-mono font-bold text-slate-900">{row.dueDate}</td>
+                                        <td className="whitespace-nowrap px-3 py-3 font-mono font-semibold text-purple-700">{row.paidDate || '—'}</td>
                                         <td className="px-3 py-3"><span className={`whitespace-nowrap rounded-[4px] border px-2 py-1 font-bold ${statusClass}`}>{statusText}</span></td>
                                         <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-semibold text-slate-700">${row.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-semibold text-amber-700">${row.penalty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-bold text-emerald-700">${row.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-bold text-rose-700">${row.unpaidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="px-3 py-3 text-center">{images.length ? <button onClick={() => openImageGallery(row)} className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800"><FaImage /> View{images.length > 1 ? ` (${images.length})` : ''}</button> : <span className="text-slate-300">—</span>}</td>
-                                        <td className="px-3 py-3"><span className={`inline-flex rounded-[4px] border px-2 py-1 font-bold ${typeClass}`}>{row.type}</span></td>
-                                        <td className="px-3 py-3">
+                                        <td className="px-3 py-3">{row.type ? <span className={`inline-flex rounded-[4px] border px-2 py-1 font-bold ${typeClass}`}>{row.type}</span> : <span className="text-slate-300">—</span>}</td>
+                                        {!isHistoryPage && <td className="px-3 py-3">
                                             <div className="flex items-center justify-center gap-1.5">
                                                 <button onClick={() => openScheduleForRow(row)} title="Open Pad, Payoff, or Redeem actions" className="inline-flex items-center gap-1 rounded-[5px] border border-emerald-300 bg-emerald-50 px-2 py-1 font-bold text-emerald-800">
                                                     <FaDollarSign /> Pay / Redeem
@@ -454,7 +472,7 @@ const InstallmentHistory = () => {
                                                     <MdQrCode2 /> QR
                                                 </button>
                                             </div>
-                                        </td>
+                                        </td>}
                                     </tr>;
                                 })}
                     </tbody>

@@ -19,6 +19,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Calculation & Tools', path: '/calculate/schedule-2', label: 'Calculate Schedule 2 (គណនាការប្រាក់ Schedule 2)', actions: ['read', 'export', 'create', 'edit', 'delete'] },
 
     { category: 'Installment & Payment', path: '/installment/schedule', label: 'Installment Schedule (តារាងបង់ប្រាក់)', actions: ['read', 'edit', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/pad', label: 'Installment Pad', actions: ['read', 'edit', 'export'] },
     { category: 'Installment & Payment', path: '/installment/history', label: 'Installment History', actions: ['read', 'export'] },
     { category: 'Installment & Payment', path: '/installment/paymentHistory', label: 'Payment History', actions: ['read', 'create', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/cash-out', label: 'Cash Out (ប្រាក់ចេញ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },

@@ -29,6 +29,7 @@
     },
     "installment": {
         "installmentPage": "/installment/schedule",
+        "installmentPad": "/installment/pad",
         "installmentHistory": "/installment/history",
         "paymentHistory": "/installment/paymentHistory",
         "cashOut": "/installment/cash-out",
