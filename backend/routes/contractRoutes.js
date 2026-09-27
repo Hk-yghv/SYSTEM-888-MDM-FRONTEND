@@ -821,7 +821,6 @@ router.get('/payment-alerts', async (req, res) => {
                 dueTodayList.push(alertItem);
             } else if (diffDays === -1) {
                 dueIn1DayList.push(alertItem);
-                dueIn3DaysList.push(alertItem);
             } else if (diffDays >= -3) {
                 dueIn3DaysList.push(alertItem);
             }
