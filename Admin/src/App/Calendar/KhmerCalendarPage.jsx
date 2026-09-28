@@ -4,16 +4,9 @@ import { getKhmerHolidays, toKhmerLunarDate } from 'khmer-chhankitek-calendar';
 import { useAuth } from '../../context/AuthContext';
 import { MdChevronLeft, MdChevronRight, MdDeleteOutline, MdEdit, MdEvent, MdRefresh } from 'react-icons/md';
 import { FaPlus } from 'react-icons/fa';
-import KHMER_CALENDAR_EVENTS_2026 from './khmerCalendarEvents2026';
 
 const WEEKDAYS = ['អាទិត្យ', 'ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
 const MONTH_NAMES = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
-const ANNUAL_OBSERVANCES = [
-    { month: '09', day: '08', nameKm: 'ទិវាអក្ខរកម្មអន្តរជាតិ', nameEn: 'International Literacy Day' },
-    { month: '09', day: '16', nameKm: 'ទិវាអូហ្សូនបរិស្ថានអន្តរជាតិ', nameEn: 'International Day for the Preservation of the Ozone Layer' },
-    { month: '09', day: '17', nameKm: 'តំបន់ប្រាសាទកោះកេរចុះក្នុងបញ្ជីបេតិកភណ្ឌពិភពលោក UNESCO', nameEn: 'Koh Ker inscribed on the UNESCO World Heritage List' },
-    { month: '09', day: '21', nameKm: 'ទិវាសន្តិភាពអន្តរជាតិ', nameEn: 'International Day of Peace' }
-];
 const PAID_STATUSES = new Set(['paid', 'payoff', 'settled']);
 const EVENT_LABELS = { event: 'កម្មវិធី', holiday: 'ថ្ងៃបុណ្យ', note: 'កំណត់ចំណាំ' };
 
@@ -177,25 +170,7 @@ const KhmerCalendarPage = () => {
 
     const holidaysByDate = useMemo(() => {
         const years = new Set(calendarDates.map((date) => date.getFullYear()));
-        const holidayRows = [...years].flatMap((year) => {
-            if (year === 2026) {
-                return KHMER_CALENDAR_EVENTS_2026.map(([date, title]) => {
-                    const separatorIndex = title.indexOf(' (');
-                    return {
-                        date,
-                        nameKm: separatorIndex < 0 ? title : title.slice(0, separatorIndex),
-                        nameEn: separatorIndex < 0 ? '' : title.slice(separatorIndex + 2, -1)
-                    };
-                });
-            }
-            return [
-                ...getKhmerHolidays(year),
-                ...ANNUAL_OBSERVANCES.map((observance) => ({
-                    ...observance,
-                    date: `${year}-${observance.month}-${observance.day}`
-                }))
-            ];
-        });
+        const holidayRows = [...years].flatMap((year) => getKhmerHolidays(year));
         return holidayRows.reduce((grouped, holiday) => {
             const holidays = grouped.get(holiday.date) || [];
             holidays.push(holiday);
