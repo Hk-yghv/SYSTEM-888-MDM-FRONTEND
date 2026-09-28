@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import RepaymentScheduleModal from '../../Contract/components/RepaymentScheduleModal';
@@ -69,6 +70,8 @@ const getImages = (row) => [...new Set([
 
 const InstallmentHistory = ({ mode = 'history' }) => {
     const { API_BASE1, user, hasPermission } = useAuth();
+    const [searchParams] = useSearchParams();
+    const initialSearch = searchParams.get('search') || '';
     const isHistoryPage = mode === 'history';
     const pageTitle = isHistoryPage ? 'Installment History' : 'Installment Pad';
     const pagePath = isHistoryPage ? '/installment/history' : '/installment/pad';
@@ -81,8 +84,8 @@ const InstallmentHistory = ({ mode = 'history' }) => {
     const [contracts, setContracts] = useState([]);
     const [brands, setBrands] = useState([]);
     const [selectedBrand, setSelectedBrand] = useState('');
-    const [search, setSearch] = useState('');
-    const [period, setPeriod] = useState('Today');
+    const [search, setSearch] = useState(initialSearch);
+    const [period, setPeriod] = useState(initialSearch ? 'Custom' : 'Today');
     const [customFrom, setCustomFrom] = useState('');
     const [customTo, setCustomTo] = useState('');
     const [page, setPage] = useState(1);
@@ -96,6 +99,16 @@ const InstallmentHistory = ({ mode = 'history' }) => {
     const [scheduleModalContract, setScheduleModalContract] = useState(null);
     const [scheduleModalMonthIndex, setScheduleModalMonthIndex] = useState(null);
     const [selectedQrContract, setSelectedQrContract] = useState(null);
+
+    useEffect(() => {
+        const query = searchParams.get('search') || '';
+        setSearch(query);
+        if (query) {
+            setPeriod('Custom');
+            setCustomFrom('');
+            setCustomTo('');
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         if (!isMasterAdmin) return;

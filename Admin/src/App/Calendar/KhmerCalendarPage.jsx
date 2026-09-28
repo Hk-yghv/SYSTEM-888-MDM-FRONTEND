@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getKhmerHolidays, toKhmerLunarDate } from 'khmer-chhankitek-calendar';
 import { useAuth } from '../../context/AuthContext';
 import { MdChevronLeft, MdChevronRight, MdDeleteOutline, MdEdit, MdEvent, MdRefresh } from 'react-icons/md';
@@ -45,6 +46,7 @@ const getIdentityParams = (user) => ({
 
 const KhmerCalendarPage = () => {
     const { API_BASE1, user, token, hasPermission } = useAuth();
+    const navigate = useNavigate();
     const [visibleMonth, setVisibleMonth] = useState(() => {
         const now = new Date();
         return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -65,6 +67,7 @@ const KhmerCalendarPage = () => {
     const canCreate = hasPermission('/calendar', 'create');
     const canEdit = hasPermission('/calendar', 'edit');
     const canDelete = hasPermission('/calendar', 'delete');
+    const canOpenInstallmentPad = hasPermission('/installment/pad', 'read');
 
     const calendarDates = useMemo(() => {
         const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
@@ -92,27 +95,30 @@ const KhmerCalendarPage = () => {
                 const [contractResult, eventResult] = await Promise.all([
                     (async () => {
                         const allContracts = [];
-                        let page = 1;
-                        let totalPages = 1;
-                        do {
-                            const params = new URLSearchParams({
-                                ...identity,
-                                status: 'Activated',
-                                page: String(page),
-                                limit: '1000',
-                                requireSchedule: 'true'
-                            });
-                            const response = await fetch(`${API_BASE1}/contracts?${params}`, { headers: requestHeaders });
-                            if (!response.ok) throw new Error('មិនអាចទាញយកកាលវិភាគបង់ប្រាក់បានទេ');
-                            const result = await response.json();
-                            allContracts.push(...(Array.isArray(result.data) ? result.data : []));
-                            totalPages = Number(result.totalPages || 1);
-                            page += 1;
-                        } while (page <= totalPages);
+                        for (const status of ['Activated', 'Redeem']) {
+                            let page = 1;
+                            let totalPages = 1;
+                            do {
+                                const params = new URLSearchParams({
+                                    ...identity,
+                                    status,
+                                    page: String(page),
+                                    limit: '1000',
+                                    requireSchedule: 'true'
+                                });
+                                const response = await fetch(`${API_BASE1}/contracts?${params}`, { headers: requestHeaders });
+                                if (!response.ok) throw new Error('មិនអាចទាញយកកាលវិភាគបង់ប្រាក់បានទេ');
+                                const result = await response.json();
+                                allContracts.push(...(Array.isArray(result.data) ? result.data : []));
+                                totalPages = Number(result.totalPages || 1);
+                                page += 1;
+                            } while (page <= totalPages);
+                        }
                         return allContracts;
                     })(),
-                    fetch(`${API_BASE1}/calendar-events?${eventParams}`, { headers: requestHeaders }).then(async (response) => {
-                        if (!response.ok) throw new Error('មិនអាចទាញយក event និង note បានទេ');
+                    (async () => {
+                        const response = await fetch(`${API_BASE1}/calendar-events?${eventParams}`, { headers: requestHeaders });
+                        if (!response.ok) throw new Error(`មិនអាចទាញយក event និង note បានទេ (HTTP ${response.status})`);
                         const result = await response.json();
                         return Array.isArray(result.data) ? result.data : [];
                     })()
@@ -136,20 +142,24 @@ const KhmerCalendarPage = () => {
         contracts.forEach((contract) => {
             const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
             schedule.forEach((row, index) => {
-                if (PAID_STATUSES.has(String(row.status || '').toLowerCase())) return;
+                if (PAID_STATUSES.has(String(row?.status || '').toLowerCase()) || row?.status === 'Settled') return;
                 const date = getScheduleDueDate(contract, row, index);
                 if (!date || date < visibleStart || date > visibleEnd) return;
+                const scheduledAmount = Number(row?.scheduledAmount || row?.amount || contract.monthlyPayment || 0);
+                const paidAmount = Number(row?.paidAmount || 0);
+                const unpaidAmount = Math.max(0, scheduledAmount - paidAmount);
+                if (scheduledAmount > 0 && unpaidAmount === 0) return;
                 const items = grouped.get(date) || [];
                 items.push({
                     id: `${contract._id || contract.contractId || contract.customerNameEn}-${index}`,
                     contractId: contract.contractId || contract.contractIid || '',
-                    customerNameEn: contract.customerNameEn || 'មិនមានឈ្មោះ',
+                    customerNameEn: contract.customerNameEn || contract.customerNameKh || 'មិនមានឈ្មោះ',
                     customerNameKh: contract.customerNameKh || '',
                     phone: contract.phoneNumber || contract.phone || '',
                     model: contract.model || '',
                     brand: contract.brand || '',
-                    amount: Number(row.scheduledAmount || row.amount || contract.monthlyPayment || 0),
-                    status: row.status || 'Pending',
+                    amount: unpaidAmount,
+                    status: row?.status || 'Pending',
                     month: row.labelName || `ខែទី ${row.monthIndex || index + 1}`
                 });
                 grouped.set(date, items);
@@ -366,8 +376,18 @@ const KhmerCalendarPage = () => {
                                     {selectedDueItems.map((item) => <li key={item.id} className="py-2.5">
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0">
-                                                <p className="truncate text-xs font-bold text-slate-900">{item.customerNameEn}</p>
-                                                {item.customerNameKh && <p className="mt-0.5 truncate text-xs text-emerald-800">{item.customerNameKh}</p>}
+                                                {canOpenInstallmentPad ? (
+                                                    <button type="button" onClick={() => {
+                                                        const params = new URLSearchParams({ search: item.customerNameEn || item.customerNameKh });
+                                                        navigate(`/installment/pad?${params.toString()}`);
+                                                    }} className="block max-w-full text-left text-xs font-bold text-slate-900 hover:text-emerald-700 hover:underline">
+                                                        <span className="block truncate">{item.customerNameEn}</span>
+                                                        {item.customerNameKh && item.customerNameKh !== item.customerNameEn && <span className="mt-0.5 block truncate text-emerald-800">{item.customerNameKh}</span>}
+                                                    </button>
+                                                ) : <>
+                                                    <p className="truncate text-xs font-bold text-slate-900">{item.customerNameEn}</p>
+                                                    {item.customerNameKh && item.customerNameKh !== item.customerNameEn && <p className="mt-0.5 truncate text-xs text-emerald-800">{item.customerNameKh}</p>}
+                                                </>}
                                                 <p className="mt-1 text-[10px] text-slate-500">{[item.contractId, item.brand, item.model, item.month].filter(Boolean).join(' · ')}</p>
                                             </div>
                                             <span className="shrink-0 text-xs font-bold text-sky-800">${item.amount.toLocaleString()}</span>

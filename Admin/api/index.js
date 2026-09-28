@@ -160,6 +160,7 @@ export default async function handler(req, res) {
     }
 
     let lastError = null;
+    let missingCalendarRoute = false;
 
     // 7. Real-Time Failover Loop across all 3 Backend Servers
     for (let i = 0; i < API_POOL.length; i++) {
@@ -191,6 +192,11 @@ export default async function handler(req, res) {
                 continue;
             }
 
+            if (backendRes.status === 404 && (cleanPath === 'calendar-events' || cleanPath.startsWith('calendar-events/'))) {
+                missingCalendarRoute = true;
+                continue;
+            }
+
             // Forward response headers
             const contentType = backendRes.headers.get('content-type');
             if (contentType) {
@@ -204,6 +210,10 @@ export default async function handler(req, res) {
         } catch (err) {
             lastError = err;
         }
+    }
+
+    if (missingCalendarRoute) {
+        return res.status(404).json({ error: 'Calendar API is not deployed on any configured backend.' });
     }
 
     // If all servers in pool fail
