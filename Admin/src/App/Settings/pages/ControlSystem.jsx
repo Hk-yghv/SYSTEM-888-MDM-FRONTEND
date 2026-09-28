@@ -3,7 +3,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { IoIosSettings } from 'react-icons/io';
 import { MdOutlineSync, MdAddCircle, MdDelete, MdSave, MdOutlineSettingsBackupRestore } from 'react-icons/md';
-import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup, FaGlobeAmericas, FaDollarSign } from 'react-icons/fa';
+import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup, FaGlobeAmericas, FaDollarSign, FaFolder, FaFolderOpen, FaShieldAlt } from 'react-icons/fa';
 
 
 
@@ -61,6 +61,36 @@ const ControlSystem = () => {
     const [newFollowUpAssetInput, setNewFollowUpAssetInput] = useState('');
 
     const [restoring, setRestoring] = useState(false);
+    const [activeFile, setActiveFile] = useState('lock-screen');
+
+    const explorerFolders = [
+        {
+            name: 'DEVICE & SECURITY',
+            files: [{ id: 'lock-screen', label: 'Lock screen & hotline', icon: <FaPhoneAlt />, color: 'text-rose-400' }]
+        },
+        {
+            name: 'FINANCE',
+            files: [{ id: 'penalties', label: 'Late penalty rules', icon: <FaDollarSign />, color: 'text-amber-400' }]
+        },
+        {
+            name: 'ACCESS CONTROL',
+            files: [{ id: 'roles', label: 'User roles', icon: <FaUserShield />, color: 'text-sky-400' }]
+        },
+        {
+            name: 'WORKFLOWS',
+            files: [{ id: 'follow-up', label: 'Follow Up 4', icon: <FaList />, color: 'text-orange-400' }]
+        },
+        {
+            name: 'SYSTEM DATA',
+            files: [{ id: 'dropdowns', label: 'Dropdown lists', icon: <FaLayerGroup />, color: 'text-emerald-400' }]
+        },
+        ...(user?.role === 'Administrator' && selectedBrand === '' ? [{
+            name: 'ORGANIZATION',
+            files: [{ id: 'brands', label: 'Brand directory', icon: <FaGlobeAmericas />, color: 'text-violet-400' }]
+        }] : [])
+    ];
+    const activeExplorerFile = explorerFolders.flatMap(folder => folder.files).find(file => file.id === activeFile)
+        || explorerFolders[0].files[0];
 
     const handleRestoreFromFirebase = async () => {
         const isConfirmed = window.confirm(
@@ -482,18 +512,18 @@ const ControlSystem = () => {
     };
 
     return (
-        <div className='w-full bg-transparent p-4 select-none space-y-6'>
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
+        <div className='w-full bg-transparent p-3 md:p-5 select-none space-y-4'>
+            <header className='p-3 w-full border border-slate-700 bg-[#111923] rounded-xl flex flex-col xl:flex-row xl:items-center justify-between gap-3 shadow-lg'>
                 <div className='flex items-center gap-3'>
                     <div className='w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl'>
                         <IoIosSettings />
                     </div>
                     <div>
-                        <h1 className='text-lg font-bold text-gray-100 flex items-center gap-2'>
+                        <h1 className='text-lg font-bold text-white flex items-center gap-2'>
                             {t('controlSystem')} Dynamic Configurations
                         </h1>
-                        <p className='text-xs text-indigo-400 font-semibold'>
-                            Define dropdown options, Call Phone display texts and roles.
+                        <p className='text-xs text-slate-400 font-semibold'>
+                            Control Center <span className="text-slate-600">/</span> System configuration files
                         </p>
                     </div>
                 </div>
@@ -577,9 +607,71 @@ const ControlSystem = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="overflow-hidden rounded-xl border border-slate-700 bg-[#111923] shadow-2xl">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-700 bg-[#1a2631] px-4 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                        <span className="flex gap-1.5" aria-hidden="true">
+                            <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+                            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                        </span>
+                        <span className="border-l border-slate-600 pl-3 text-[10px] font-bold uppercase tracking-wider text-slate-300">SYSTEM MDM <span className="text-slate-500">/</span> CONTROL PANEL</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-400">{explorerFolders.reduce((count, folder) => count + folder.files.length, 0)} CONFIG FILES</span>
+                </div>
+
+                <div className="grid min-h-[620px] grid-cols-1 md:grid-cols-[230px_minmax(0,1fr)]">
+                    <aside className="border-b border-slate-700 bg-[#151f29] p-3 md:border-b-0 md:border-r">
+                        <div className="mb-3 flex items-center gap-2 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            <FaShieldAlt className="text-emerald-400" /> Workspace
+                        </div>
+                        <div className="mb-3 flex items-center gap-2 rounded-lg bg-[#202d38] px-2.5 py-2 text-xs font-semibold text-slate-200">
+                            <FaFolderOpen className="text-amber-400" /> This PC
+                        </div>
+                        <nav aria-label="Control system folders" className="space-y-4">
+                            {explorerFolders.map(folder => {
+                                const folderIsOpen = folder.files.some(file => file.id === activeExplorerFile.id);
+                                return (
+                                    <div key={folder.name}>
+                                        <div className="mb-1 flex items-center gap-2 px-2 text-[9px] font-bold tracking-wider text-slate-500">
+                                            {folderIsOpen ? <FaFolderOpen className="text-amber-400" /> : <FaFolder className="text-amber-500" />}
+                                            {folder.name}
+                                        </div>
+                                        <div className="space-y-0.5">
+                                            {folder.files.map(file => (
+                                                <button
+                                                    key={file.id}
+                                                    type="button"
+                                                    onClick={() => setActiveFile(file.id)}
+                                                    aria-current={activeExplorerFile.id === file.id ? 'page' : undefined}
+                                                    className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs transition-colors ${activeExplorerFile.id === file.id ? 'bg-[#294457] text-white ring-1 ring-inset ring-sky-400/40' : 'text-slate-400 hover:bg-[#202d38] hover:text-slate-100'}`}
+                                                >
+                                                    <span className={`shrink-0 ${file.color}`}>{file.icon}</span>
+                                                    <span className="truncate">{file.label}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </nav>
+                    </aside>
+
+                    <main className="min-w-0 bg-[#0e151c] p-3 sm:p-5">
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                            <div className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
+                                <FaFolder className="shrink-0 text-amber-500" />
+                                <span className="shrink-0">Control System</span>
+                                <span>/</span>
+                                <span className="truncate font-semibold text-slate-200">{activeExplorerFile.label}</span>
+                            </div>
+                            <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400">{selectedBrand || 'Global'} workspace</span>
+                        </div>
+
+            <div className="grid grid-cols-1 gap-4">
 
                 {/* Section 1: Lock Phone Display Text & Phone Number */}
+                {activeExplorerFile.id === 'lock-screen' && (
                 <div className="p-6 rounded-3xl glass-card border border-red-500/30 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-red-400 text-xs font-bold uppercase">
                         <FaPhoneAlt /> Lost Phone Lock Display Text & Hotline Number
@@ -624,8 +716,10 @@ const ControlSystem = () => {
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* Section 2: Installment Late Penalty Rules */}
+                {activeExplorerFile.id === 'penalties' && (
                 <div className="p-6 rounded-3xl glass-card border border-amber-500/30 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-amber-300 text-xs font-bold uppercase">
                         <FaDollarSign /> Installment Late Penalty Rules
@@ -752,8 +846,10 @@ const ControlSystem = () => {
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* Section 3: Roles Definition */}
+                {activeExplorerFile.id === 'roles' && (
                 <div className="p-6 rounded-3xl glass-card border border-gray-800 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-purple-300 text-xs font-bold uppercase">
                         <FaUserShield /> System User Roles Configurator
@@ -789,9 +885,11 @@ const ControlSystem = () => {
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* Section 4: Follow Up 4 System Customizer (Private Brand Reasons & Settings) */}
-                <div className="lg:col-span-2 p-6 rounded-3xl glass-card border border-rose-500/30 space-y-5 shadow-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90">
+                {activeExplorerFile.id === 'follow-up' && (
+                <div className="p-6 rounded-3xl glass-card border border-rose-500/30 space-y-5 shadow-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-800">
                         <div className="flex items-center gap-2 text-rose-400 text-sm font-bold uppercase">
                             <FaList className="text-rose-400" />
@@ -923,9 +1021,11 @@ const ControlSystem = () => {
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* Section 5: General Dynamic Droplists & Options */}
-                <div className="lg:col-span-2 p-6 rounded-3xl glass-card border border-gray-800 space-y-4 shadow-xl">
+                {activeExplorerFile.id === 'dropdowns' && (
+                <div className="p-6 rounded-3xl glass-card border border-gray-800 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-emerald-300 text-xs font-bold uppercase">
                         <FaList /> System Dropdown Lists & Dynamic Options (Droplists)
                         <OriginBadge fieldKey="droplists" />
@@ -983,11 +1083,12 @@ const ControlSystem = () => {
                         </div>
                     </div>
                 </div>
+                )}
 
             </div>
 
             {/* Section 5: Brand Management — Administrator + Global Config only */}
-            {user?.role === 'Administrator' && selectedBrand === '' && (
+            {activeExplorerFile.id === 'brands' && user?.role === 'Administrator' && selectedBrand === '' && (
                 <div className="p-6 rounded-3xl glass-card border border-amber-500/30 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-amber-300 text-xs font-bold uppercase">
                         <FaLayerGroup /> Brand Tenant Management (Global Config — Add / Remove Brands)
@@ -1039,6 +1140,9 @@ const ControlSystem = () => {
                     </div>
                 </div>
             )}
+                    </main>
+                </div>
+            </div>
 
             {/* Custom Brand Delete Confirmation Modal */}
             {deleteBrandModal.open && (
