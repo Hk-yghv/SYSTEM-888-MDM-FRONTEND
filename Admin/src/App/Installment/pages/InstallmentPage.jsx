@@ -415,7 +415,6 @@ const InstallmentPage = () => {
     const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
     const [scheduleModalContract, setScheduleModalContract] = useState(null);
     const [scheduleModalMonthIdx, setScheduleModalMonthIdx] = useState(null);
-    const [selectedMonthByContract, setSelectedMonthByContract] = useState({});
 
     // QR Payment state
     const [selectedQrContract, setSelectedQrContract] = useState(null);
@@ -483,43 +482,44 @@ const InstallmentPage = () => {
         fetchContracts(1, searchTerm, limit, dateFrom, dateTo);
     }, [searchTerm]);
 
-    // ── Visible Contracts after Urgency Droplist Filter ──────────────────────
-    const visibleContracts = useMemo(() => {
-        if (urgencyFilter === 'all') return contracts;
-        return contracts.filter((item, idx) => {
-            const schedule = item.repaymentSchedule || [];
-            const itemId = item._id || item.contractId || String(idx);
-            const displayRow = getDisplayValues(getDisplayRow(schedule, selectedMonthByContract[itemId] ?? null), item, latePenaltyRules);
-            const activeIdx = getActiveRowIdx(schedule);
-            const isAllDone = activeIdx === -1;
-            const urgency = getRowUrgency(displayRow, isAllDone);
-            return urgency.type === urgencyFilter;
-        });
-    }, [contracts, urgencyFilter, selectedMonthByContract, latePenaltyRules]);
+    // ── Visible rows: one row per repayment month ─────────────────────────────
+    const visibleRows = useMemo(() => contracts.flatMap((item, contractIdx) => {
+        const schedule = Array.isArray(item.repaymentSchedule) ? item.repaymentSchedule : [];
+        const itemId = item._id || item.contractId || String(contractIdx);
+        const activeIdx = getActiveRowIdx(schedule);
+        const scheduleRows = schedule.length > 0 ? schedule : [null];
+
+        return scheduleRows.map((scheduleRow, scheduleIdx) => {
+            const row = getDisplayValues(scheduleRow || getDisplayRow(schedule), item, latePenaltyRules);
+            const urgency = getRowUrgency(row, activeIdx === -1);
+            return { item, itemId, scheduleIdx, displayRow: row, urgency };
+        }).filter(row => urgencyFilter === 'all' || row.urgency.type === urgencyFilter);
+    }), [contracts, urgencyFilter, latePenaltyRules]);
 
     // ── Computed totals (visible page) ────────────────────────────────────────
     const totals = useMemo(() => {
         let loanAmount = 0, monthlyInterest = 0, totalInterest = 0, scheduledNoPenalty = 0, penalty = 0, currentScheduled = 0, payableWithPenalty = 0, paid = 0;
         let sumPercents = 0;
 
-        visibleContracts.forEach(c => {
-            const contractId = c._id || c.contractId;
-            const schedule = c.repaymentSchedule || [];
-            const row = getDisplayValues(getDisplayRow(schedule, selectedMonthByContract[contractId] ?? null), c, latePenaltyRules);
-            const calcs = getContractRepaymentCalculations(c, latePenaltyRules);
+        const countedContracts = new Set();
+        visibleRows.forEach(({ item, itemId, displayRow }) => {
+            const calcs = getContractRepaymentCalculations(item, latePenaltyRules);
 
-            loanAmount += Number(row?.loanAmount || c.amount || 0);
-            monthlyInterest += Number(calcs.monthlyInterest || 0);
-            totalInterest += Number(calcs.totalInterest || 0);
-            scheduledNoPenalty += Number(calcs.totalScheduledNoPenalty || 0);
-            penalty += Number(row?.penalty || 0);
-            currentScheduled += Number(row?.scheduledAmount || 0);
-            payableWithPenalty += Number(calcs.totalPayableWithPenalty || 0);
-            paid += Number(calcs.totalPaid || 0);
-            sumPercents += Number(calcs.percentPaidNum || 0);
+            penalty += Number(displayRow?.penalty || 0);
+            currentScheduled += Number(displayRow?.scheduledAmount || 0);
+            if (!countedContracts.has(itemId)) {
+                countedContracts.add(itemId);
+                loanAmount += Number(item.amount || displayRow?.loanAmount || 0);
+                monthlyInterest += Number(calcs.monthlyInterest || 0);
+                totalInterest += Number(calcs.totalInterest || 0);
+                scheduledNoPenalty += Number(calcs.totalScheduledNoPenalty || 0);
+                payableWithPenalty += Number(calcs.totalPayableWithPenalty || 0);
+                paid += Number(calcs.totalPaid || 0);
+                sumPercents += Number(calcs.percentPaidNum || 0);
+            }
         });
 
-        const avgPercentPaid = visibleContracts.length > 0 ? Math.round(sumPercents / visibleContracts.length) : 0;
+        const avgPercentPaid = countedContracts.size > 0 ? Math.round(sumPercents / countedContracts.size) : 0;
 
         return {
             loanAmount,
@@ -532,7 +532,7 @@ const InstallmentPage = () => {
             paid,
             avgPercentPaid
         };
-    }, [visibleContracts, latePenaltyRules, selectedMonthByContract]);
+    }, [visibleRows, latePenaltyRules]);
 
     // ── Pagination ────────────────────────────────────────────────────────────
     const totalPages = Math.ceil(total / limit) || 1;
@@ -570,33 +570,31 @@ const InstallmentPage = () => {
     };
 
     const selectMonthForOuterRow = (contract, monthIdx) => {
-        const contractId = contract._id || contract.contractId;
-        setSelectedMonthByContract(prev => ({ ...prev, [contractId]: monthIdx }));
+        openScheduleForMonth(contract, monthIdx);
     };
 
     // ── Export ────────────────────────────────────────────────────────────────
     const handleExportExcel = () => {
-        const data = visibleContracts.map((c, i) => {
-            const row = getDisplayRow(c.repaymentSchedule || []);
-            const calcs = getContractRepaymentCalculations(c, latePenaltyRules);
+        const data = visibleRows.map(({ item, displayRow }, i) => {
+            const calcs = getContractRepaymentCalculations(item, latePenaltyRules);
             return {
                 'No': i + 1,
-                'Loan Date': c.inputDate || '',
-                'Customer Name': `${c.customerNameEn || ''} (${c.customerNameKh || ''})`,
-                'Brand': c.brand || '',
-                'Model': c.model || '',
-                'ថ្ងៃខែត្រូវបង់': row?.dueDate || '',
-                'Total Loan Amount ($)': row?.loanAmount || c.amount || 0,
+                'Loan Date': item.inputDate || '',
+                'Customer Name': `${item.customerNameEn || ''} (${item.customerNameKh || ''})`,
+                'Brand': item.brand || '',
+                'Model': item.model || '',
+                'ថ្ងៃខែត្រូវបង់': displayRow?.dueDate || '',
+                'Total Loan Amount ($)': displayRow?.loanAmount || item.amount || 0,
                 'ការប្រាក់គណនា ($)': calcs.monthlyInterest || 0,
                 'ការប្រាក់សរុប ($)': calcs.totalInterest || 0,
                 'សរុបត្រូវបង់ (គ្មានពិន័យ) ($)': calcs.totalScheduledNoPenalty || 0,
-                'ពិន័យ ($)': row?.penalty || 0,
-                'ត្រូវបង់ខែនេះ ($)': row?.scheduledAmount || 0,
+                'ពិន័យ ($)': displayRow?.penalty || 0,
+                'ត្រូវបង់ខែនេះ ($)': displayRow?.scheduledAmount || 0,
                 'សរុបត្រូវបង់ទាំងអស់ (+ពិន័យ) ($)': calcs.totalPayableWithPenalty || 0,
                 'ភ្ញៀវបានបង់សរុប ($)': calcs.totalPaid || 0,
                 '% បានបង់': calcs.percentPaidStr,
-                'Comment': row?.comment || '',
-                'កាលបរិច្ឆេទបានបង់': row?.paidDate || '',
+                'Comment': displayRow?.comment || '',
+                'កាលបរិច្ឆេទបានបង់': displayRow?.paidDate || '',
             };
         });
         exportToExcel(data, 'Installment_Schedule');
@@ -609,6 +607,8 @@ const InstallmentPage = () => {
             { header: 'Model', accessor: 'model' },
             { header: 'Brand', accessor: 'brand' },
             { header: 'Loan Date', accessor: 'inputDate' },
+            { header: 'Due Date', accessor: 'dueDate' },
+            { header: 'This Month', accessor: (c) => `$${Number(c.scheduledAmount || 0).toLocaleString()}` },
             { header: 'Loan Amount', accessor: (c) => `$${Number(c.amount || 0).toLocaleString()}` },
             { header: 'Monthly Int', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).monthlyInterest).toLocaleString()}` },
             { header: 'Total Int', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalInterest).toLocaleString()}` },
@@ -616,7 +616,12 @@ const InstallmentPage = () => {
             { header: 'Total Paid', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalPaid).toLocaleString()}` },
             { header: '% Paid', accessor: (c) => getContractRepaymentCalculations(c, latePenaltyRules).percentPaidStr },
         ];
-        exportToPDF('Installment Schedule', columns, visibleContracts);
+        exportToPDF('Installment Schedule', columns, visibleRows.map(({ item, displayRow }) => ({
+            ...item,
+            inputDate: item.inputDate || '',
+            dueDate: displayRow?.dueDate || '',
+            scheduledAmount: displayRow?.scheduledAmount || 0,
+        })));
     };
 
     // ── Get the contract object for the currently-open menu ───────────────────
@@ -664,7 +669,7 @@ const InstallmentPage = () => {
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2 flex-wrap'>
                         <span>Installment</span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-normal">
-                            {visibleContracts.length} Records
+                            {visibleRows.length} Records
                         </span>
                         {user?.brand && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800 font-semibold">
@@ -788,27 +793,21 @@ const InstallmentPage = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
                             <tr><td colSpan={18} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
-                        ) : visibleContracts.length === 0 ? (
+                        ) : visibleRows.length === 0 ? (
                             <tr><td colSpan={18} className="text-center py-8 text-slate-500 italic font-medium">
                                 {searchTerm ? `No results found for "${searchTerm}"` : 'No installment records found matching this filter.'}
                             </td></tr>
                         ) : (
-                            visibleContracts.map((item, idx) => {
-                                const schedule = item.repaymentSchedule || [];
-                                const itemId = item._id || item.contractId || String(idx);
-                                const displayRow = getDisplayValues(getDisplayRow(schedule, selectedMonthByContract[itemId] ?? null), item, latePenaltyRules);
+                            visibleRows.map(({ item, itemId, scheduleIdx, displayRow, urgency }, idx) => {
                                 const calcs = getContractRepaymentCalculations(item, latePenaltyRules);
-                                const activeIdx = getActiveRowIdx(schedule);
-                                const isAllDone = activeIdx === -1;
                                 const menuKey = itemId;
-                                const urgency = getRowUrgency(displayRow, isAllDone);
 
                                 return (
-                                    <tr key={menuKey}
+                                    <tr key={`${menuKey}-${scheduleIdx}`}
                                         className={`transition-colors ${urgency.rowClass}`}>
 
                                         <td className='px-3 py-3 text-center font-mono text-slate-600 font-semibold'>
-                                            {(currentPage - 1) * limit + idx + 1}
+                                            {idx + 1}
                                         </td>
                                         <td className='px-3 py-3 font-mono text-slate-700'>{item.inputDate || '—'}</td>
                                         <td className='px-3 py-3'>
@@ -836,6 +835,11 @@ const InstallmentPage = () => {
                                                     )}
                                                 </div>
                                             ) : '—'}
+                                            {displayRow?.monthIndex != null && (
+                                                <div className="mt-1 text-[10px] font-semibold text-slate-500">
+                                                    {displayRow.labelName || `Month ${displayRow.monthIndex}`}
+                                                </div>
+                                            )}
                                         </td>
 
 
@@ -923,7 +927,7 @@ const InstallmentPage = () => {
                             <tr>
                                 {/* Col 1-6: No, Loan Date, Customer, Brand, Model, Due Date */}
                                 <td colSpan={6} className='px-3 py-3 text-center text-xs font-extrabold text-slate-600 uppercase tracking-wide'>
-                                    សរុប ({visibleContracts.length} records)
+                                    សរុប ({visibleRows.length} records)
                                 </td>
                                 {/* Col 7: សរុបត្រូវបង់ទាំងអស់ (payableWithPenalty) */}
                                 <td className='px-3 py-3 text-center font-mono font-extrabold text-emerald-600 text-xs border-l border-slate-200'>
@@ -980,7 +984,7 @@ const InstallmentPage = () => {
                         <span className="font-bold text-indigo-500">{endItem}</span>
                         {' of '}
                         <span className="font-bold text-slate-700">{total}</span>
-                        {' records'}
+                        {' contracts'}
                     </span>
 
                     <label className="flex items-center gap-1.5 text-slate-500">
