@@ -305,7 +305,7 @@ const KhmerCalendarPage = () => {
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <section aria-label="ប្រតិទិនប្រចាំខែ" className="min-w-0 border border-[var(--app-border,#dbe3e8)] bg-[var(--app-card,#fff)]">
-                    <div className="grid grid-cols-7 border-b border-[var(--app-border,#dbe3e8)] bg-emerald-950 text-center text-[10px] font-bold text-white sm:text-xs">
+                    <div className="grid grid-cols-7 border-b border-[var(--app-border,#dbe3e8)] bg-white text-center text-[10px] font-bold text-black sm:text-xs">
                         {WEEKDAYS.map((day) => <div key={day} className="py-2.5">{day}</div>)}
                     </div>
                     <div className="grid grid-cols-7">
