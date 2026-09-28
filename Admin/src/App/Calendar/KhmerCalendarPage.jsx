@@ -61,7 +61,7 @@ const KhmerCalendarPage = () => {
     const [refreshKey, setRefreshKey] = useState(0);
     const [formOpen, setFormOpen] = useState(false);
     const [editingId, setEditingId] = useState('');
-    const [form, setForm] = useState({ date: toDateKey(new Date()), title: '', note: '', type: 'note', brand: user?.brand || '' });
+    const [form, setForm] = useState({ date: toDateKey(new Date()), title: '', note: '', type: 'note', visibility: 'public', brand: user?.brand || '' });
 
     const isMaster = user?.isImmutable || user?.username === '@hakyonghouv' || user?.username === 'hakyonghouv' || user?.role === 'Administrator';
     const canCreate = hasPermission('/calendar', 'create');
@@ -214,14 +214,14 @@ const KhmerCalendarPage = () => {
     const startNewEvent = () => {
         setEditingId('');
         setFormError('');
-        setForm({ date: selectedDate, title: '', note: '', type: 'note', brand: user?.brand || '' });
+        setForm({ date: selectedDate, title: '', note: '', type: 'note', visibility: 'public', brand: user?.brand || '' });
         setFormOpen(true);
     };
 
     const startEditEvent = (event) => {
         setEditingId(event._id);
         setFormError('');
-        setForm({ date: event.date, title: event.title, note: event.note || '', type: event.type, brand: event.brand || '' });
+        setForm({ date: event.date, title: event.title, note: event.note || '', type: event.type, visibility: event.visibility || 'public', brand: event.brand || '' });
         setFormOpen(true);
     };
 
@@ -413,7 +413,7 @@ const KhmerCalendarPage = () => {
                                     {selectedEvents.map((event) => <li key={event._id} className="py-2.5">
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0">
-                                                <span className="text-[9px] font-bold uppercase text-amber-700">{EVENT_LABELS[event.type] || EVENT_LABELS.event}{event.brand ? ` · ${event.brand}` : ''}</span>
+                                                <span className="text-[9px] font-bold uppercase text-amber-700">{EVENT_LABELS[event.type] || EVENT_LABELS.event} · {event.visibility === 'private' ? 'Private' : 'Public'}{event.brand ? ` · ${event.brand}` : ''}</span>
                                                 <p className="mt-0.5 break-words text-xs font-bold text-slate-900">{event.title}</p>
                                                 {event.note && <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-slate-600">{event.note}</p>}
                                             </div>
@@ -441,6 +441,20 @@ const KhmerCalendarPage = () => {
                                 <option value="note">កំណត់ចំណាំ</option><option value="event">កម្មវិធី</option><option value="holiday">ថ្ងៃបុណ្យ</option>
                             </select>
                         </label>
+                        <fieldset className="space-y-1.5">
+                            <legend className="text-xs font-semibold text-slate-700">បង្ហាញចំណាំជា</legend>
+                            <div className="grid grid-cols-2 border border-slate-300 bg-slate-100 p-0.5" role="group" aria-label="Note visibility">
+                                {[
+                                    { value: 'public', label: 'Public' },
+                                    { value: 'private', label: 'Private' }
+                                ].map((option) => (
+                                    <label key={option.value} className={`cursor-pointer px-3 py-2 text-center text-xs font-bold ${form.visibility === option.value ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>
+                                        <input type="radio" name="calendar-visibility" value={option.value} checked={form.visibility === option.value} onChange={() => setForm((current) => ({ ...current, visibility: option.value }))} className="sr-only" />
+                                        {option.label}
+                                    </label>
+                                ))}
+                            </div>
+                        </fieldset>
                         <label className="block text-xs font-semibold text-slate-700">ចំណងជើង
                             <input required maxLength={120} value={form.title} onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))} placeholder="បញ្ចូលចំណងជើង" className="mt-1 w-full border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-emerald-600" />
                         </label>

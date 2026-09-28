@@ -54,14 +54,17 @@ const hasCalendarPermission = (identity, action) => (
 const serializeEvent = (event) => event?.toObject ? event.toObject() : { ...event };
 
 const canManageEvent = (event, identity) => (
-    isMasterAdmin(identity) || Boolean(identity.userBrand && event.brand === identity.userBrand)
+    event.visibility === 'private'
+        ? event.createdBy === identity.username
+        : isMasterAdmin(identity) || Boolean(identity.userBrand && event.brand === identity.userBrand)
 );
 
 const normalizeEventInput = (body) => ({
     date: String(body.date || '').trim(),
     title: String(body.title || '').trim(),
     note: String(body.note || '').trim(),
-    type: ['event', 'holiday', 'note'].includes(body.type) ? body.type : 'event'
+    type: ['event', 'holiday', 'note'].includes(body.type) ? body.type : 'event',
+    visibility: body.visibility === 'private' ? 'private' : 'public'
 });
 
 const validateEvent = ({ date, title, note }) => {
@@ -92,8 +95,17 @@ router.get('/', async (req, res) => {
 
         if (master) {
             if (brand && brand !== 'ALL') filter.brand = brand;
+            filter.$or = [
+                { visibility: { $ne: 'private' } },
+                { visibility: 'private', createdBy: identity.username }
+            ];
         } else {
-            filter.$or = [{ brand: identity.userBrand || '' }, { brand: '' }];
+            filter.$or = [
+                { brand: identity.userBrand || '', visibility: { $ne: 'private' } },
+                { brand: '', visibility: { $ne: 'private' } },
+                { brand: identity.userBrand || '', visibility: 'private', createdBy: identity.username },
+                { brand: '', visibility: 'private', createdBy: identity.username }
+            ];
         }
         if (startDate || endDate) {
             filter.date = {};
@@ -107,7 +119,8 @@ router.get('/', async (req, res) => {
                 const brandMatches = master
                     ? (!brand || brand === 'ALL' || event.brand === brand)
                     : event.brand === (identity.userBrand || '') || event.brand === '';
-                return brandMatches && (!startDate || event.date >= startDate) && (!endDate || event.date <= endDate);
+                const visibilityMatches = event.visibility !== 'private' || event.createdBy === identity.username;
+                return brandMatches && visibilityMatches && (!startDate || event.date >= startDate) && (!endDate || event.date <= endDate);
             });
 
         res.json({ data: events.map(serializeEvent) });

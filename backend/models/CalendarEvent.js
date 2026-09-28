@@ -5,6 +5,7 @@ const calendarEventSchema = new mongoose.Schema({
     title: { type: String, required: true, trim: true, maxlength: 120 },
     note: { type: String, default: '', maxlength: 2000 },
     type: { type: String, enum: ['event', 'holiday', 'note'], default: 'event' },
+    visibility: { type: String, enum: ['public', 'private'], default: 'public' },
     brand: { type: String, default: '' },
     createdBy: { type: String, default: '' },
     updatedBy: { type: String, default: '' }
