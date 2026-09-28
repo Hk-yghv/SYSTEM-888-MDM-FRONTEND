@@ -4,6 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { IoIosSettings } from 'react-icons/io';
 import { MdOutlineSync, MdAddCircle, MdDelete, MdSave, MdOutlineSettingsBackupRestore } from 'react-icons/md';
 import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup, FaGlobeAmericas, FaDollarSign, FaFolder, FaFolderOpen, FaShieldAlt } from 'react-icons/fa';
+import './ControlSystem.css';
 
 
 
@@ -499,31 +500,31 @@ const ControlSystem = () => {
         const origin = fieldOrigins[fieldKey];
         if (origin === 'private') {
             return (
-                <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[9px] font-bold uppercase tracking-wide">
+                <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-amber-50 border border-amber-300 text-amber-800 text-[9px] font-bold uppercase tracking-wide">
                     🏷️ Private Override
                 </span>
             );
         }
         return (
-            <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-[9px] font-bold uppercase tracking-wide">
+            <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-indigo-50 border border-indigo-200 text-indigo-700 text-[9px] font-bold uppercase tracking-wide">
                 🌐 Inherited Global
             </span>
         );
     };
 
     return (
-        <div className='w-full bg-transparent p-3 md:p-5 select-none space-y-4'>
-            <header className='p-3 w-full border border-slate-700 bg-[#111923] rounded-xl flex flex-col xl:flex-row xl:items-center justify-between gap-3 shadow-lg'>
+        <div id="control-system-explorer" className='w-full bg-transparent p-3 md:p-5 select-none space-y-4'>
+            <header className='p-3 w-full border border-slate-300 bg-white rounded-md flex flex-col xl:flex-row xl:items-center justify-between gap-3 shadow-sm'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl'>
+                    <div className='w-10 h-10 rounded-md bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-700 text-xl'>
                         <IoIosSettings />
                     </div>
                     <div>
-                        <h1 className='text-lg font-bold text-white flex items-center gap-2'>
+                        <h1 className='text-lg font-bold text-slate-800 flex items-center gap-2'>
                             {t('controlSystem')} Dynamic Configurations
                         </h1>
-                        <p className='text-xs text-slate-400 font-semibold'>
-                            Control Center <span className="text-slate-600">/</span> System configuration files
+                        <p className='text-xs text-slate-500 font-semibold'>
+                            System configuration registry
                         </p>
                     </div>
                 </div>
@@ -552,7 +553,7 @@ const ControlSystem = () => {
                     <button
                         onClick={fetchControlSystemConfigs}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-gray-800/80 hover:bg-gray-700 text-gray-200 rounded-xl text-xs cursor-pointer border border-gray-700 transition-all'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs cursor-pointer border border-slate-300 transition-all'
                     >
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-400' : ''} />
                         <p>{t('reload')}</p>
@@ -561,10 +562,10 @@ const ControlSystem = () => {
             </header>
 
             {user?.role === 'Administrator' ? (
-                <div className="p-4 bg-[#0f1426]/90 border border-gray-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-md">
+                <div className="p-3 bg-white border border-slate-300 rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
                     <div className="flex items-center gap-2">
                         <FaGlobeAmericas className="text-indigo-400 text-sm" />
-                        <span className="font-bold text-gray-200">
+                        <span className="font-bold text-slate-700">
                             Select Brand to Configure (កំណត់ការកំណត់តាម Brand):
                         </span>
                     </div>
@@ -572,7 +573,7 @@ const ControlSystem = () => {
                         <select
                             value={selectedBrand}
                             onChange={(e) => setSelectedBrand(e.target.value)}
-                            className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer outline-none focus:border-indigo-500"
+                            className="px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-800 font-semibold cursor-pointer outline-none focus:border-sky-500"
                         >
                             <option value="">🌐 Global Config (Master Default Template)</option>
                             {brandsList.map((br, idx) => (
@@ -585,7 +586,7 @@ const ControlSystem = () => {
                                 type="button"
                                 onClick={handleCloneFromGlobal}
                                 disabled={saving}
-                                className="px-3 py-2 bg-indigo-900/60 hover:bg-indigo-700 text-indigo-200 hover:text-white rounded-xl text-xs font-bold transition-all border border-indigo-600/50 flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                className="px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 rounded-md text-xs font-bold transition-all border border-sky-200 flex items-center gap-1.5 cursor-pointer"
                                 title="Copy all current Global configurations into this brand"
                             >
                                 <MdOutlineSettingsBackupRestore className="text-sm" />
@@ -595,46 +596,50 @@ const ControlSystem = () => {
                     </div>
                 </div>
             ) : (
-                <div className="p-4 bg-[#0f1426]/90 border border-gray-800 rounded-2xl flex items-center justify-between text-xs text-indigo-400 font-semibold">
-                    <span>Configuring tenant settings for brand: <span className="font-bold text-white">{selectedBrand || 'Global'}</span></span>
+                <div className="p-3 bg-white border border-slate-300 rounded-md flex items-center justify-between text-xs text-sky-700 font-semibold">
+                    <span>Configuring tenant settings for brand: <span className="font-bold text-slate-900">{selectedBrand || 'Global'}</span></span>
                 </div>
             )}
 
 
             {message && (
-                <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs font-semibold animate-fade-in">
+                <div className="p-3 rounded-md bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold animate-fade-in">
                     {message}
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-xl border border-slate-700 bg-[#111923] shadow-2xl">
-                <div className="flex items-center justify-between gap-3 border-b border-slate-700 bg-[#1a2631] px-4 py-2.5">
-                    <div className="flex items-center gap-2.5">
-                        <span className="flex gap-1.5" aria-hidden="true">
-                            <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
-                            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                        </span>
-                        <span className="border-l border-slate-600 pl-3 text-[10px] font-bold uppercase tracking-wider text-slate-300">SYSTEM MDM <span className="text-slate-500">/</span> CONTROL PANEL</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-slate-400">{explorerFolders.reduce((count, folder) => count + folder.files.length, 0)} CONFIG FILES</span>
+            <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-md">
+                <div className="flex items-center gap-2 border-b border-slate-300 bg-[#f3f3f3] px-3 py-2 text-xs text-slate-700">
+                    <FaFolderOpen className="text-sky-700" />
+                    <span className="font-semibold">System MDM - Registry Editor</span>
+                </div>
+                <div role="menubar" aria-label="Registry menu" className="flex gap-1 border-b border-slate-300 bg-white px-2 py-1 text-xs text-slate-700">
+                    {['File', 'Edit', 'View', 'Favorites', 'Help'].map(menu => (
+                        <span key={menu} role="menuitem" className="cursor-default px-2 py-1 hover:bg-sky-100">{menu}</span>
+                    ))}
+                </div>
+                <div className="flex min-h-9 items-center gap-2 border-b border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700">
+                    <FaGlobeAmericas className="text-sky-700" />
+                    <span>Computer</span><span className="text-slate-400">›</span>
+                    <span>System MDM</span><span className="text-slate-400">›</span>
+                    <span className="truncate font-semibold">{activeExplorerFile.label}</span>
                 </div>
 
-                <div className="grid min-h-[620px] grid-cols-1 md:grid-cols-[230px_minmax(0,1fr)]">
-                    <aside className="border-b border-slate-700 bg-[#151f29] p-3 md:border-b-0 md:border-r">
-                        <div className="mb-3 flex items-center gap-2 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                            <FaShieldAlt className="text-emerald-400" /> Workspace
+                <div className="grid min-h-[620px] grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
+                    <aside className="border-b border-slate-300 bg-white p-3 md:border-b-0 md:border-r">
+                        <div className="mb-3 flex items-center gap-2 px-2 text-xs font-semibold text-slate-600">
+                            <FaShieldAlt className="text-sky-700" /> Registry tree
                         </div>
-                        <div className="mb-3 flex items-center gap-2 rounded-lg bg-[#202d38] px-2.5 py-2 text-xs font-semibold text-slate-200">
-                            <FaFolderOpen className="text-amber-400" /> This PC
+                        <div className="mb-2 flex items-center gap-2 rounded-sm px-2.5 py-1.5 text-xs font-semibold text-slate-800">
+                            <FaFolderOpen className="text-sky-700" /> Computer
                         </div>
-                        <nav aria-label="Control system folders" className="space-y-4">
+                        <nav aria-label="Control system folders" className="space-y-2 pl-4">
                             {explorerFolders.map(folder => {
                                 const folderIsOpen = folder.files.some(file => file.id === activeExplorerFile.id);
                                 return (
                                     <div key={folder.name}>
-                                        <div className="mb-1 flex items-center gap-2 px-2 text-[9px] font-bold tracking-wider text-slate-500">
-                                            {folderIsOpen ? <FaFolderOpen className="text-amber-400" /> : <FaFolder className="text-amber-500" />}
+                                        <div className="mb-0.5 flex items-center gap-2 px-2 text-xs font-semibold text-slate-700">
+                                            {folderIsOpen ? <FaFolderOpen className="text-amber-500" /> : <FaFolder className="text-amber-500" />}
                                             {folder.name}
                                         </div>
                                         <div className="space-y-0.5">
@@ -644,7 +649,7 @@ const ControlSystem = () => {
                                                     type="button"
                                                     onClick={() => setActiveFile(file.id)}
                                                     aria-current={activeExplorerFile.id === file.id ? 'page' : undefined}
-                                                    className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs transition-colors ${activeExplorerFile.id === file.id ? 'bg-[#294457] text-white ring-1 ring-inset ring-sky-400/40' : 'text-slate-400 hover:bg-[#202d38] hover:text-slate-100'}`}
+                                                    className={`ml-5 flex w-[calc(100%-1.25rem)] items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-left text-xs transition-colors ${activeExplorerFile.id === file.id ? 'bg-sky-100 text-sky-900 ring-1 ring-inset ring-sky-300' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
                                                 >
                                                     <span className={`shrink-0 ${file.color}`}>{file.icon}</span>
                                                     <span className="truncate">{file.label}</span>
@@ -657,16 +662,16 @@ const ControlSystem = () => {
                         </nav>
                     </aside>
 
-                    <main className="min-w-0 bg-[#0e151c] p-3 sm:p-5">
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
-                            <div className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
-                                <FaFolder className="shrink-0 text-amber-500" />
-                                <span className="shrink-0">Control System</span>
-                                <span>/</span>
-                                <span className="truncate font-semibold text-slate-200">{activeExplorerFile.label}</span>
-                            </div>
-                            <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400">{selectedBrand || 'Global'} workspace</span>
+                    <main className="min-w-0 bg-white">
+                        <div className="grid grid-cols-[minmax(120px,1fr)_minmax(110px,.8fr)_minmax(100px,1fr)] border-b border-slate-300 bg-[#f3f3f3] px-3 py-2 text-xs font-semibold text-slate-700">
+                            <span>Name</span><span>Type</span><span>Data</span>
                         </div>
+                        <div className="grid grid-cols-[minmax(120px,1fr)_minmax(110px,.8fr)_minmax(100px,1fr)] items-center border-b border-slate-200 px-3 py-2 text-xs text-slate-700">
+                            <span className="flex min-w-0 items-center gap-2 truncate"><FaFolder className="shrink-0 text-amber-500" />{activeExplorerFile.label}</span>
+                            <span>Configuration file</span>
+                            <span className="truncate">{selectedBrand || 'Global'} settings</span>
+                        </div>
+                        <div className="p-3 sm:p-5">
 
             <div className="grid grid-cols-1 gap-4">
 
@@ -1140,6 +1145,7 @@ const ControlSystem = () => {
                     </div>
                 </div>
             )}
+                        </div>
                     </main>
                 </div>
             </div>
@@ -1147,7 +1153,7 @@ const ControlSystem = () => {
             {/* Custom Brand Delete Confirmation Modal */}
             {deleteBrandModal.open && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[999999] p-4">
-                    <div className="bg-[#121829] border border-red-500/50 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+                    <div className="bg-white border border-red-300 rounded-md p-6 w-full max-w-md shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-sm font-bold text-red-400 flex items-center gap-2">
                                 <MdDelete size={18} />
@@ -1180,7 +1186,7 @@ const ControlSystem = () => {
                             <button
                                 type="button"
                                 onClick={() => setDeleteBrandModal({ open: false, brandName: '' })}
-                                className="px-4 py-2 bg-gray-800 text-gray-300 rounded-xl text-xs font-bold hover:bg-gray-700 cursor-pointer"
+                                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md text-xs font-bold hover:bg-slate-200 cursor-pointer"
                             >
                                 បោះបង់ (Cancel)
                             </button>

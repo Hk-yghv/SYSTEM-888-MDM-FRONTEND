@@ -1,0 +1,69 @@
+#control-system-explorer {
+    color: #1f2937;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+#control-system-explorer .glass-card {
+    background-color: #ffffff;
+    background-image: none;
+    border-color: #cbd5e1;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 8%);
+    color: #1f2937;
+}
+
+#control-system-explorer input,
+#control-system-explorer select,
+#control-system-explorer textarea {
+    background-color: #ffffff;
+    border-color: #cbd5e1;
+    border-radius: 3px;
+    color: #1f2937;
+}
+
+#control-system-explorer input:focus,
+#control-system-explorer select:focus,
+#control-system-explorer textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+#control-system-explorer input::placeholder,
+#control-system-explorer textarea::placeholder {
+    color: #64748b;
+}
+
+#control-system-explorer [class~="bg-gray-900"],
+#control-system-explorer [class~="bg-gray-900/80"],
+#control-system-explorer [class~="bg-gray-900/60"],
+#control-system-explorer [class~="bg-gray-950/70"],
+#control-system-explorer [class~="bg-gray-950/60"],
+#control-system-explorer [class~="bg-slate-950"],
+#control-system-explorer [class~="bg-slate-950/70"],
+#control-system-explorer [class~="bg-slate-900/90"],
+#control-system-explorer [class~="bg-slate-800"],
+#control-system-explorer [class~="bg-slate-800/80"] {
+    background-color: #f8fafc;
+}
+
+#control-system-explorer [class~="text-gray-100"],
+#control-system-explorer [class~="text-gray-200"],
+#control-system-explorer [class~="text-gray-300"],
+#control-system-explorer [class~="text-gray-400"],
+#control-system-explorer [class~="text-slate-100"],
+#control-system-explorer [class~="text-slate-200"],
+#control-system-explorer [class~="text-slate-300"],
+#control-system-explorer [class~="text-slate-400"] {
+    color: #334155;
+}
+
+#control-system-explorer [class~="border-gray-800"],
+#control-system-explorer [class~="border-gray-700"],
+#control-system-explorer [class~="border-slate-800"],
+#control-system-explorer [class~="border-slate-700"] {
+    border-color: #d1d5db;
+}
+
+#control-system-explorer [class*="bg-gradient-to-b"] {
+    background-image: none;
+}
