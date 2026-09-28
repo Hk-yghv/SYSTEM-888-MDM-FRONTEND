@@ -58,6 +58,7 @@ import followUp4Routes from './routes/followUp4Routes.js';
 import mediaRoutes from './routes/mediaRoutes.js';
 import salaryRoutes from './routes/salaryRoutes.js';
 import calculateScheduleRoutes from './routes/calculateScheduleRoutes.js';
+import calendarEventRoutes from './routes/calendarEventRoutes.js';
 import { initTelegramBotService } from './services/telegramBotService.js';
 
 const app = express();
@@ -172,6 +173,7 @@ app.use('/api/salary', salaryRoutes);
 app.use('/salary', salaryRoutes);
 app.use('/api/calculate-schedules', calculateScheduleRoutes);
 app.use('/calculate-schedules', calculateScheduleRoutes);
+app.use('/api/calendar-events', calendarEventRoutes);
 
 // ── Interactive HTML Partner API Documentation Route ──
 const docsHtmlPath = path.resolve(__dirname, '../docs/index.html');

@@ -36,6 +36,7 @@ export const MEM_DB = {
     followUps: [],
     followUps2: [],
     followUpsSenSok: [],
+    calendarEvents: [],
     controlSystem: {
         droplists: [
             { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
@@ -74,7 +75,7 @@ const SYSTEM_PAGES = [
     '/history/login-history', '/history/device-history',
     '/report/all', '/report/activated', '/report/redeem', '/report/lock-phone', '/report/set-wallpaper', '/report/installment', '/report/follow-up',
     '/follow-up/follow-up-1', '/follow-up/follow-up-2', '/follow-up/follow-up-3', '/follow-up/sen-sok',
-    '/settings/all-account', '/settings/control-system', '/profile'
+    '/settings/all-account', '/settings/control-system', '/calendar', '/profile'
 ];
 
 export const ensureMasterAdmin = async () => {

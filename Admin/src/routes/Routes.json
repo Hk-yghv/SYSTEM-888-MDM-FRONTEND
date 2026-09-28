@@ -2,6 +2,7 @@
     "start": "/",
     "signin": "/signin",
     "dashboard": "/dashboard",
+    "calendar": "/calendar",
     "customer": "/customer",
     "device": "/device",
     "report": {

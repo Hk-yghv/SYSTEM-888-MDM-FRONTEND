@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt } from "react-icons/fa";
 
 
 const Left = ({ isOpen = false, onClose }) => {
@@ -72,6 +72,7 @@ const Left = ({ isOpen = false, onClose }) => {
                 </Link>
             )}
 
+
             {/* Contract */}
             {(hasPermission(json.contract.application, 'read') ||
                 hasPermission(json.contract.activated, 'read') ||
@@ -110,6 +111,13 @@ const Left = ({ isOpen = false, onClose }) => {
                         </div>
                     </div>
                 )}
+
+            {hasPermission(json.calendar || '/calendar', 'read') && (
+                <Link to={json.calendar || '/calendar'} className={navItemClass(json.calendar || '/calendar')}>
+                    <FaCalendarAlt size={18} className={isActive(json.calendar || '/calendar') ? "text-white" : "text-emerald-600"} />
+                    ប្រតិទិនខ្មែរ
+                </Link>
+            )}
 
             {/* Calculate */}
             {(hasPermission(json.calculate?.calculateSchedule1 || '/calculate/schedule-1', 'read') ||

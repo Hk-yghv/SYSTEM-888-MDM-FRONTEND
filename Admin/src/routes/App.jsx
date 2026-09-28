@@ -24,6 +24,7 @@ import Customer from "../App/Customer/pages/Customer";
 
 // Device
 import Device from "../App/Device/pages/Device";
+import KhmerCalendarPage from "../App/Calendar/KhmerCalendarPage";
 
 // Report Pages (each sub-route has its own dedicated component)
 import AllCustomersReport from "../App/Report/pages/AllCustomersReport";
@@ -180,6 +181,7 @@ const App = () => {
                 {/* Protected System Routes */}
                 <Route path={json.start} element={<RootRedirect />} />
                 <Route path={json.dashboard} element={<ProtectRoute pagePath={json.dashboard}> <MainLayout><Dashboard /></MainLayout> </ProtectRoute>} />
+                <Route path={json.calendar || '/calendar'} element={<ProtectRoute pagePath={json.calendar || '/calendar'}> <MainLayout><KhmerCalendarPage /></MainLayout> </ProtectRoute>} />
                 {/* Customer */}
                 <Route path={json.customer} element={<ProtectRoute pagePath={json.customer}> <MainLayout><Customer /></MainLayout> </ProtectRoute>} />
                 {/* Device */}

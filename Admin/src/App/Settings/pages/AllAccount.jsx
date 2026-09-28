@@ -17,6 +17,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Contract Management', path: '/contract/blacklist', label: 'Contract Blacklist', actions: ['read', 'export', 'create', 'edit', 'delete'] },
     { category: 'Calculation & Tools', path: '/calculate/schedule-1', label: 'Calculate Schedule 1 (គណនាការប្រាក់ & កាលវិភាគ)', actions: ['read', 'export'] },
     { category: 'Calculation & Tools', path: '/calculate/schedule-2', label: 'Calculate Schedule 2 (គណនាការប្រាក់ Schedule 2)', actions: ['read', 'export', 'create', 'edit', 'delete'] },
+    { category: 'Calculation & Tools', path: '/calendar', label: 'Khmer Calendar (ប្រតិទិនខ្មែរ)', actions: ['read', 'create', 'edit', 'delete'] },
 
     { category: 'Installment & Payment', path: '/installment/schedule', label: 'Installment Schedule (តារាងបង់ប្រាក់)', actions: ['read', 'edit', 'export'] },
     { category: 'Installment & Payment', path: '/installment/pad', label: 'Installment Pad', actions: ['read', 'edit', 'export'] },
