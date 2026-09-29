@@ -509,156 +509,114 @@ const AllCustomersReport = () => {
 
             {/* Tab 2: Detailed Customer Information */}
             {activeTab === 'detail' && (
-                <div className='w-full h-[calc(100vh-350px)] overflow-y-auto pb-14 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-md table-container'>
-                    {loading ? (
-                        <p className="py-10 text-center font-semibold text-indigo-600">Loading...</p>
-                    ) : dataList.length === 0 ? (
-                        <p className="py-8 text-center italic text-slate-500">No customers found.</p>
-                    ) : dataList.map((item, idx) => {
-                        const customerPayments = (paymentsByContract.get(item.contractId) || [])
-                            .slice()
-                            .sort((a, b) => String(b.paidDate || b.createdAt || '').localeCompare(String(a.paidDate || a.createdAt || '')));
-                        const totalReceived = customerPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
-                        const totalPenalty = customerPayments.reduce((sum, payment) => sum + (Number(payment.penalty) || 0), 0);
-                        const totalReceivable = Number(item.totalAmount) || Number(item.amount) || 0;
-                        const remainingBalance = Math.max(0, totalReceivable + totalPenalty - totalReceived);
-                        const value = (entry) => entry === undefined || entry === null || entry === '' ? '-' : entry;
-                        const money = (amount) => `$${(Number(amount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                        const renderField = (label, entry, className = '') => (
-                            <div key={label} className="min-w-0 border-b border-slate-100 py-1.5 last:border-0">
-                                <dt className="text-[10px] font-bold uppercase text-slate-500">{label}</dt>
-                                <dd className={`break-words text-xs font-medium text-slate-800 ${className}`}>{value(entry)}</dd>
-                            </div>
-                        );
-                        const renderLinkField = (label, url) => (
-                            <div key={label} className="min-w-0 border-b border-slate-100 py-1.5 last:border-0">
-                                <dt className="text-[10px] font-bold uppercase text-slate-500">{label}</dt>
-                                <dd className="break-all text-xs font-medium">
-                                    {url ? <a href={url} target="_blank" rel="noreferrer" className="text-indigo-700 underline">Open link</a> : '-' }
-                                </dd>
-                            </div>
-                        );
-                        const renderLinks = (label, links) => (
-                            <div key={label} className="min-w-0 border-b border-slate-100 py-1.5 last:border-0">
-                                <dt className="text-[10px] font-bold uppercase text-slate-500">{label}</dt>
-                                <dd className="flex flex-wrap gap-x-3 text-xs font-medium">
-                                    {links.length ? links.map((url, linkIndex) => <a key={`${url}-${linkIndex}`} href={url} target="_blank" rel="noreferrer" className="text-indigo-700 underline">Open {linkIndex + 1}</a>) : '-' }
-                                </dd>
-                            </div>
-                        );
+                <div className='w-full h-[calc(100vh-350px)] overflow-auto pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+                    <table className='w-full min-w-max text-left text-xs'>
+                        <thead className='sticky top-0 z-10 bg-slate-800 text-white uppercase tracking-wide'>
+                            <tr>
+                                {['No', 'Contract ID', 'Contract IID', 'Name (EN)', 'Name (KH)', 'ID Card', 'Date of Birth', 'Gender', 'Birth Address', 'Current Address', 'Phone', 'Relative Phone', 'Facebook Name', 'Telegram Name', 'Facebook URL', 'Mosyle URL', 'Model', 'Brand', 'Serial Number', 'IMEI 1', 'IMEI 2', 'MEID', 'Color', 'Version', 'Capacity', 'Device Problem', 'Principal Amount', 'Interest', 'Interest Type', 'Admin Fee', 'Duration', 'Total Receivable', 'Total Penalty', 'Total Received', 'Remaining Balance', 'Monthly Payment', 'Last Payment Date', 'Input Date', 'Redeem Date', 'Status', 'Phone Lock', 'Wallpaper Lock', 'Customer Photo', 'Google Drive Photos', 'Photos / Evidence', 'Created At', 'Updated At', 'Notes', 'Last Modified By', 'Payment / Schedule Details'].map(label => (
+                                    <th key={label} className='whitespace-nowrap border-b border-slate-600 px-3 py-3 text-left text-[10px]'>{label}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
+                            {loading ? (
+                                <tr><td colSpan={50} className="py-10 text-center font-semibold text-indigo-600">Loading...</td></tr>
+                            ) : dataList.length === 0 ? (
+                                <tr><td colSpan={50} className="py-8 text-center italic text-slate-500">No customers found.</td></tr>
+                            ) : dataList.map((item, idx) => {
+                                const customerPayments = (paymentsByContract.get(item.contractId) || [])
+                                    .slice()
+                                    .sort((a, b) => String(b.paidDate || b.createdAt || '').localeCompare(String(a.paidDate || a.createdAt || '')));
+                                const totalReceived = customerPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+                                const totalPenalty = customerPayments.reduce((sum, payment) => sum + (Number(payment.penalty) || 0), 0);
+                                const totalReceivable = Number(item.totalAmount) || Number(item.amount) || 0;
+                                const remainingBalance = Math.max(0, totalReceivable + totalPenalty - totalReceived);
+                                const value = (entry) => entry === undefined || entry === null || entry === '' ? '-' : entry;
+                                const money = (amount) => `$${(Number(amount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                const link = (url, label = 'Open') => url
+                                    ? <a href={url} title={url} target="_blank" rel="noreferrer" className="text-indigo-700 underline">{label}</a>
+                                    : '-';
+                                const cell = (content, className = '') => <td className={`max-w-64 px-3 py-2 align-top ${className}`}>{content}</td>;
+                                const photoLinks = [...(item.photos || []), ...(item.evidencePhotos || [])].filter(Boolean);
 
-                        return (
-                            <article key={item._id || item.contractId || idx} className="rounded-lg border border-slate-200 bg-white shadow-sm">
-                                <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-                                    <div>
-                                        <p className="text-sm font-bold text-slate-900">{item.customerNameEn || item.customerNameKh || 'Customer'} <span className="font-khmer text-slate-600">{item.customerNameKh}</span></p>
-                                        <p className="mt-0.5 text-[11px] text-slate-500">No. {(page - 1) * LIMIT + idx + 1} · Contract {item.contractId || '-'}</p>
-                                    </div>
-                                    <span className="rounded border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-800">{item.status || '-'}</span>
-                                </header>
-
-                                <div className="grid grid-cols-1 gap-x-6 gap-y-4 p-4 md:grid-cols-2 xl:grid-cols-4">
-                                    <section>
-                                        <h3 className="mb-1 border-b border-slate-200 pb-1 text-xs font-bold text-slate-800">Customer Information</h3>
-                                        <dl>
-                                            {renderField('English Name', item.customerNameEn)}
-                                            {renderField('Khmer Name', item.customerNameKh)}
-                                            {renderField('ID Card Number', item.idCardNumber)}
-                                            {renderField('Date of Birth', item.dob)}
-                                            {renderField('Gender', item.gender)}
-                                            {renderField('Birth Address', item.birthAddress)}
-                                            {renderField('Current Address', item.currentAddress)}
-                                            {renderField('Phone', item.phone)}
-                                            {renderField('Relative Phone', item.relativePhone)}
-                                            {renderField('Facebook Name', item.facebookName)}
-                                            {renderField('Telegram Name', item.telegramName)}
-                                            {renderLinkField('Facebook URL', item.urlFb || item.url_fb)}
-                                            {renderLinkField('Mosyle URL', item.mosyleUrl || item.mosyle_url || item.mosyleURL || item.urlMosyle)}
-                                            {renderLinkField('Customer Photo', item.customerPhoto)}
-                                            {renderLinkField('Google Drive Photos', item.googleDrivePhotoUrl)}
-                                            {renderLinks('Photos', [...(item.photos || []), ...(item.evidencePhotos || [])].filter(Boolean))}
-                                        </dl>
-                                    </section>
-
-                                    <section>
-                                        <h3 className="mb-1 border-b border-slate-200 pb-1 text-xs font-bold text-slate-800">Device Information</h3>
-                                        <dl>
-                                            {renderField('Model', item.model)}
-                                            {renderField('Brand', item.brand || user?.brand || 'SYSTEM')}
-                                            {renderField('Serial Number', item.serialNumber)}
-                                            {renderField('IMEI 1', item.imei1)}
-                                            {renderField('IMEI 2', item.imei2)}
-                                            {renderField('MEID', item.meid)}
-                                            {renderField('Color', item.color)}
-                                            {renderField('Version', item.version)}
-                                            {renderField('Capacity', item.capacity)}
-                                            {renderField('Device Problem', item.deviceProblem)}
-                                            {renderField('Phone Lock', item.lockPhoneStatus || 'Unlocked')}
-                                            {renderField('Wallpaper Lock', item.lockWallpaperStatus || 'Unlocked')}
-                                        </dl>
-                                    </section>
-
-                                    <section>
-                                        <h3 className="mb-1 border-b border-slate-200 pb-1 text-xs font-bold text-slate-800">Loan & Payment Summary</h3>
-                                        <dl>
-                                            {renderField('Principal Amount', money(item.amount), 'font-mono')}
-                                            {renderField('Interest', item.interest)}
-                                            {renderField('Interest Type', item.interestType)}
-                                            {renderField('Admin Fee', money(item.adminFee), 'font-mono')}
-                                            {renderField('Duration', item.duration)}
-                                            {renderField('Total Receivable', money(totalReceivable), 'font-mono font-bold text-blue-700')}
-                                            {renderField('Total Penalty', money(totalPenalty), 'font-mono font-bold text-rose-700')}
-                                            {renderField('Total Received', money(totalReceived), 'font-mono font-bold text-emerald-700')}
-                                            {renderField('Remaining Balance', money(remainingBalance), 'font-mono font-bold text-amber-700')}
-                                            {renderField('Monthly Payment', money(item.monthlyPayment), 'font-mono')}
-                                            {renderField('Last Payment Date', customerPayments[0]?.paidDate || customerPayments[0]?.createdAt?.slice(0, 10))}
-                                            {renderField('Redeem Date', item.redeemDate)}
-                                        </dl>
-                                    </section>
-
-                                    <section>
-                                        <h3 className="mb-1 border-b border-slate-200 pb-1 text-xs font-bold text-slate-800">Contract Information</h3>
-                                        <dl>
-                                            {renderField('Contract ID', item.contractId)}
-                                            {renderField('Contract IID', item.contractIid)}
-                                            {renderField('Input Date', item.inputDate)}
-                                            {renderField('Created At', item.createdAt ? new Date(item.createdAt).toLocaleString() : '')}
-                                            {renderField('Updated At', item.updatedAt ? new Date(item.updatedAt).toLocaleString() : '')}
-                                            {renderField('Notes', item.notes)}
-                                            {renderField('Last Modified By', item.lastModifiedBy)}
-                                        </dl>
-                                    </section>
-                                </div>
-
-                                {(customerPayments.length > 0 || item.repaymentSchedule?.length > 0) && (
-                                    <div className="space-y-2 border-t border-slate-200 px-4 py-3">
-                                        {customerPayments.length > 0 && (
-                                            <details>
-                                                <summary className="cursor-pointer text-xs font-bold text-indigo-700">Payment History ({customerPayments.length})</summary>
-                                                <div className="mt-2 overflow-x-auto">
-                                                    <table className="w-full min-w-[600px] text-left text-xs">
-                                                        <thead className="bg-slate-50 text-slate-600"><tr><th className="p-2">Paid Date</th><th className="p-2">Amount</th><th className="p-2">Penalty</th><th className="p-2">Payment Type</th><th className="p-2">Month</th><th className="p-2">Description</th></tr></thead>
-                                                        <tbody className="divide-y divide-slate-100">{customerPayments.map((payment, paymentIndex) => <tr key={payment._id || payment.paymentId || paymentIndex}><td className="p-2">{payment.paidDate || '-'}</td><td className="p-2 font-mono">{money(payment.amount)}</td><td className="p-2 font-mono text-rose-700">{money(payment.penalty)}</td><td className="p-2">{payment.paymentType || payment.paidBy || '-'}</td><td className="p-2">{payment.monthLabel || '-'}</td><td className="p-2 whitespace-normal">{payment.description || '-'}</td></tr>)}</tbody>
-                                                    </table>
-                                                </div>
-                                            </details>
+                                return (
+                                    <tr key={item._id || item.contractId || idx} className="hover:bg-indigo-50/50">
+                                        {cell((page - 1) * LIMIT + idx + 1, 'text-center font-mono')}
+                                        {cell(value(item.contractId), 'font-mono')}
+                                        {cell(value(item.contractIid), 'font-mono')}
+                                        {cell(value(item.customerNameEn), 'font-bold text-slate-900')}
+                                        {cell(value(item.customerNameKh), 'font-khmer')}
+                                        {cell(value(item.idCardNumber), 'font-mono')}
+                                        {cell(value(item.dob))}
+                                        {cell(value(item.gender))}
+                                        {cell(value(item.birthAddress), 'whitespace-normal min-w-40')}
+                                        {cell(value(item.currentAddress), 'whitespace-normal min-w-40')}
+                                        {cell(value(item.phone), 'font-mono')}
+                                        {cell(value(item.relativePhone), 'font-mono')}
+                                        {cell(value(item.facebookName))}
+                                        {cell(value(item.telegramName))}
+                                        {cell(link(item.urlFb || item.url_fb))}
+                                        {cell(link(item.mosyleUrl || item.mosyle_url || item.mosyleURL || item.urlMosyle))}
+                                        {cell(value(item.model))}
+                                        {cell(value(item.brand || user?.brand || 'SYSTEM'))}
+                                        {cell(value(item.serialNumber), 'font-mono')}
+                                        {cell(value(item.imei1), 'font-mono')}
+                                        {cell(value(item.imei2), 'font-mono')}
+                                        {cell(value(item.meid), 'font-mono')}
+                                        {cell(value(item.color))}
+                                        {cell(value(item.version))}
+                                        {cell(value(item.capacity))}
+                                        {cell(value(item.deviceProblem), 'whitespace-normal min-w-32')}
+                                        {cell(money(item.amount), 'text-right font-mono')}
+                                        {cell(value(item.interest))}
+                                        {cell(value(item.interestType))}
+                                        {cell(money(item.adminFee), 'text-right font-mono')}
+                                        {cell(value(item.duration))}
+                                        {cell(money(totalReceivable), 'text-right font-mono font-bold text-blue-700')}
+                                        {cell(money(totalPenalty), 'text-right font-mono font-bold text-rose-700')}
+                                        {cell(money(totalReceived), 'text-right font-mono font-bold text-emerald-700')}
+                                        {cell(money(remainingBalance), 'text-right font-mono font-bold text-amber-700')}
+                                        {cell(money(item.monthlyPayment), 'text-right font-mono')}
+                                        {cell(value(customerPayments[0]?.paidDate || customerPayments[0]?.createdAt?.slice(0, 10)))}
+                                        {cell(value(item.inputDate))}
+                                        {cell(value(item.redeemDate))}
+                                        {cell(value(item.status), 'font-bold')}
+                                        {cell(value(item.lockPhoneStatus || 'Unlocked'))}
+                                        {cell(value(item.lockWallpaperStatus || 'Unlocked'))}
+                                        {cell(link(item.customerPhoto))}
+                                        {cell(link(item.googleDrivePhotoUrl))}
+                                        {cell(photoLinks.length ? <div className="flex gap-2">{photoLinks.map((url, photoIndex) => <span key={`${url}-${photoIndex}`}>{link(url, String(photoIndex + 1))}</span>)}</div> : '-')}
+                                        {cell(value(item.createdAt ? new Date(item.createdAt).toLocaleString() : ''))}
+                                        {cell(value(item.updatedAt ? new Date(item.updatedAt).toLocaleString() : ''))}
+                                        {cell(value(item.notes), 'whitespace-normal min-w-40')}
+                                        {cell(value(item.lastModifiedBy))}
+                                        {cell(
+                                            <div className="min-w-48 space-y-2">
+                                                {customerPayments.length > 0 && (
+                                                    <details>
+                                                        <summary className="cursor-pointer whitespace-nowrap font-bold text-indigo-700">Payments ({customerPayments.length})</summary>
+                                                        <div className="mt-1 max-h-40 space-y-1 overflow-y-auto whitespace-normal">
+                                                            {customerPayments.map((payment, paymentIndex) => <p key={payment._id || payment.paymentId || paymentIndex} className="border-b border-slate-100 pb-1">{payment.paidDate || '-'} · {money(payment.amount)} · Penalty {money(payment.penalty)} · {payment.paymentType || payment.paidBy || '-'}</p>)}
+                                                        </div>
+                                                    </details>
+                                                )}
+                                                {item.repaymentSchedule?.length > 0 && (
+                                                    <details>
+                                                        <summary className="cursor-pointer whitespace-nowrap font-bold text-indigo-700">Schedule ({item.repaymentSchedule.length})</summary>
+                                                        <div className="mt-1 max-h-40 space-y-1 overflow-y-auto whitespace-normal">
+                                                            {item.repaymentSchedule.map((row, scheduleIndex) => <p key={row._id || scheduleIndex} className="border-b border-slate-100 pb-1">{row.monthLabel || row.month || scheduleIndex + 1} · {row.dueDate || '-'} · Due {money(row.scheduledAmount)} · Paid {money(row.paidAmount)} · Penalty {money(row.penalty)} · {row.status || '-'}</p>)}
+                                                        </div>
+                                                    </details>
+                                                )}
+                                                {!customerPayments.length && !item.repaymentSchedule?.length && '-'}
+                                            </div>,
+                                            'whitespace-normal'
                                         )}
-                                        {item.repaymentSchedule?.length > 0 && (
-                                            <details>
-                                                <summary className="cursor-pointer text-xs font-bold text-indigo-700">Repayment Schedule ({item.repaymentSchedule.length})</summary>
-                                                <div className="mt-2 overflow-x-auto">
-                                                    <table className="w-full min-w-[480px] text-left text-xs">
-                                                        <thead className="bg-slate-50 text-slate-600"><tr><th className="p-2">Month</th><th className="p-2">Due Date</th><th className="p-2">Scheduled</th><th className="p-2">Paid</th><th className="p-2">Penalty</th><th className="p-2">Status</th></tr></thead>
-                                                        <tbody className="divide-y divide-slate-100">{item.repaymentSchedule.map((row, scheduleIndex) => <tr key={row._id || scheduleIndex}><td className="p-2">{row.monthLabel || row.month || scheduleIndex + 1}</td><td className="p-2">{row.dueDate || '-'}</td><td className="p-2 font-mono">{money(row.scheduledAmount)}</td><td className="p-2 font-mono">{money(row.paidAmount)}</td><td className="p-2 font-mono text-rose-700">{money(row.penalty)}</td><td className="p-2">{row.status || '-'}</td></tr>)}</tbody>
-                                                    </table>
-                                                </div>
-                                            </details>
-                                        )}
-                                    </div>
-                                )}
-                            </article>
-                        );
-                    })}
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 </div>
             )}
 

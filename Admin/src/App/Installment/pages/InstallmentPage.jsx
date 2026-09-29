@@ -502,19 +502,29 @@ const InstallmentPage = () => {
         fetchContracts(1, searchTerm, limit, dateFrom, dateTo);
     }, [searchTerm]);
 
-    // ── Visible rows: one row per repayment month ─────────────────────────────
+    // ── Visible rows: next installment by default, matching dates when filtered ─
     const visibleRows = useMemo(() => contracts.flatMap((item, contractIdx) => {
         const schedule = Array.isArray(item.repaymentSchedule) ? item.repaymentSchedule : [];
         const itemId = item._id || item.contractId || String(contractIdx);
         const activeIdx = getActiveRowIdx(schedule);
-        const scheduleRows = schedule.length > 0 ? schedule : [null];
+        const hasDateFilter = Boolean(dateFrom || dateTo);
+        const scheduleRows = schedule.length > 0
+            ? schedule.map((scheduleRow, scheduleIdx) => ({ scheduleRow, scheduleIdx }))
+            : [{ scheduleRow: null, scheduleIdx: 0 }];
+        const defaultScheduleIdx = schedule.length === 0 ? 0 : activeIdx === -1 ? schedule.length - 1 : activeIdx;
+        const rowsToDisplay = hasDateFilter
+            ? scheduleRows.filter(({ scheduleRow }) => {
+                const row = getDisplayValues(scheduleRow, item, latePenaltyRules);
+                return row?.dueDate && (!dateFrom || row.dueDate >= dateFrom) && (!dateTo || row.dueDate <= dateTo);
+            })
+            : scheduleRows.filter(({ scheduleIdx }) => scheduleIdx === defaultScheduleIdx);
 
-        return scheduleRows.map((scheduleRow, scheduleIdx) => {
+        return rowsToDisplay.map(({ scheduleRow, scheduleIdx }) => {
             const row = getDisplayValues(scheduleRow || getDisplayRow(schedule), item, latePenaltyRules);
             const urgency = getRowUrgency(row, activeIdx === -1);
             return { item, itemId, scheduleIdx, displayRow: row, urgency };
         }).filter(row => urgencyFilter === 'all' || row.urgency.type === urgencyFilter);
-    }), [contracts, urgencyFilter, latePenaltyRules]);
+    }), [contracts, urgencyFilter, latePenaltyRules, dateFrom, dateTo]);
 
     // ── Computed totals (visible page) ────────────────────────────────────────
     const totals = useMemo(() => {
