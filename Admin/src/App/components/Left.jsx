@@ -231,10 +231,21 @@ const Left = ({ isOpen = false, onClose, collapsed = false, onToggleCollapse }) 
                         <span className="text-emerald-600 flex-shrink-0">{icon}</span>
                         <span className="sidebar-label truncate">{label}</span>
                     </p>
-                    <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 flex-shrink-0 ${isExpandOpen ? "rotate-180" : ""}`} />
+                    <IoMdArrowDropdown
+                        size={20}
+                        className={`transition-transform duration-300 text-emerald-600 flex-shrink-0 ${isExpandOpen ? "rotate-180" : "rotate-0"}`}
+                    />
                 </div>
-                <div className={`overflow-hidden transition-all duration-300 ${isExpandOpen ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
-                    {children}
+                <div
+                    className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                        isExpandOpen
+                            ? "grid-rows-[1fr] opacity-100 mt-1.5"
+                            : "grid-rows-[0fr] opacity-0 mt-0 pointer-events-none"
+                    }`}
+                >
+                    <div className="overflow-hidden space-y-1">
+                        {children}
+                    </div>
                 </div>
             </div>
         );
