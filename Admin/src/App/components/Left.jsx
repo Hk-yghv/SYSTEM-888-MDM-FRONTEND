@@ -9,19 +9,21 @@ import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "reac
 import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 // ─── Flyout Popup (for collapsed sidebar dropdowns) ────────────────────────
-const FlyoutMenu = ({ title, items = [], triggerRef, onClose }) => {
+const FlyoutMenu = ({ title, icon, items = [], triggerRef, onClose }) => {
     const menuRef = useRef(null);
     const [coords, setCoords] = useState({ top: 0, left: 68 });
 
     useEffect(() => {
         if (triggerRef?.current) {
             const rect = triggerRef.current.getBoundingClientRect();
-            const estHeight = items.length * 36 + 40;
-            const maxTop = window.innerHeight - estHeight - 16;
-            const calculatedTop = Math.max(12, Math.min(rect.top, maxTop));
+            const estHeight = Math.min(items.length * 40 + 56, window.innerHeight * 0.85);
+            let top = rect.top;
+            if (top + estHeight > window.innerHeight - 16) {
+                top = Math.max(16, window.innerHeight - estHeight - 16);
+            }
             setCoords({
-                top: calculatedTop,
-                left: Math.round(rect.right + 8),
+                top: Math.round(top),
+                left: Math.round(rect.right + 12),
             });
         }
     }, [triggerRef, items]);
@@ -53,45 +55,60 @@ const FlyoutMenu = ({ title, items = [], triggerRef, onClose }) => {
     return (
         <div
             ref={menuRef}
-            className="min-w-[190px] max-w-[260px] rounded-[10px] p-1.5 flex flex-col gap-1 shadow-2xl backdrop-blur-xl border select-none max-h-[80vh] overflow-y-auto"
+            className="fixed z-[9999] min-w-[210px] max-w-[280px] rounded-xl p-2 flex flex-col gap-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl border select-none max-h-[85vh] overflow-y-auto"
             style={{
                 top: coords.top,
                 left: coords.left,
-                position: "fixed",
-                zIndex: 9999,
-                backgroundColor: "var(--app-sidebar, rgba(248, 250, 252, 0.96))",
-                borderColor: "var(--app-border, rgba(226, 232, 240, 0.85))",
-                boxShadow: "0 12px 35px rgba(0,0,0,0.18), 0 3px 10px rgba(0,0,0,0.08)",
-                animation: "flyoutIn 0.16s cubic-bezier(0.16, 1, 0.3, 1)",
+                backgroundColor: "var(--app-sidebar, rgba(248, 250, 252, 0.97))",
+                borderColor: "var(--app-border, rgba(16, 185, 129, 0.25))",
+                animation: "flyoutIn 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
         >
             <style>{`
                 @keyframes flyoutIn {
-                    from { opacity: 0; transform: translateX(-6px) scale(0.96); }
+                    from { opacity: 0; transform: translateX(-8px) scale(0.95); }
                     to   { opacity: 1; transform: translateX(0) scale(1); }
                 }
             `}</style>
+
+            {/* Header with Title & Badge */}
             {title && (
-                <div className="px-3 py-1.5 border-b border-[var(--app-border,rgba(226,232,240,0.6))] mb-0.5">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
-                        {title}
+                <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-[var(--app-border,rgba(226,232,240,0.6))] mb-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                        {icon && <span className="text-emerald-600 flex-shrink-0 text-base">{icon}</span>}
+                        <span className="text-xs font-bold tracking-wide text-emerald-700 dark:text-emerald-400 truncate">
+                            {title}
+                        </span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 border border-emerald-500/20">
+                        {items.length}
                     </span>
                 </div>
             )}
-            {items.map((item, i) => (
-                <Link
-                    key={i}
-                    to={item.to}
-                    onClick={onClose}
-                    className={`flex items-center px-3 py-2 rounded-[6px] text-xs font-semibold whitespace-nowrap transition-all duration-150 border
-                        ${item.active
-                            ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                            : "text-[var(--app-text,#0f172a)] border-transparent hover:bg-emerald-500/12 hover:border-emerald-200"
-                        }`}
-                >
-                    {item.label}
-                </Link>
-            ))}
+
+            {/* Sub-menu Items */}
+            <div className="flex flex-col gap-1">
+                {items.map((item, i) => (
+                    <Link
+                        key={i}
+                        to={item.to}
+                        onClick={onClose}
+                        className={`group relative flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 border
+                            ${item.active
+                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-600/25"
+                                : "text-[var(--app-text,#0f172a)] border-transparent hover:bg-emerald-500/15 hover:border-emerald-300/40 hover:translate-x-0.5"
+                            }`}
+                    >
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${item.active ? "bg-white scale-125" : "bg-emerald-500/60 group-hover:bg-emerald-600 group-hover:scale-125"}`} />
+                            <span className="truncate">{item.label}</span>
+                        </div>
+                        {item.active && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        )}
+                    </Link>
+                ))}
+            </div>
         </div>
     );
 };
@@ -170,6 +187,7 @@ const Left = ({ isOpen = false, onClose, collapsed = false, onToggleCollapse }) 
                     {isFlyoutOpen && (
                         <FlyoutMenu
                             title={label}
+                            icon={icon}
                             items={flyout.items}
                             triggerRef={flyout.ref}
                             onClose={() => setFlyout(null)}
@@ -494,19 +512,23 @@ const Left = ({ isOpen = false, onClose, collapsed = false, onToggleCollapse }) 
                     </DropdownGroup>
                 )}
 
-            {/* ── Collapse Toggle Button ── */}
-            <div className="mt-auto pt-2 border-t border-[var(--app-border,rgba(226,232,240,0.6))]">
+            {/* ── Collapse/Expand Toggle Button (Fixed Pin/Lock) ── */}
+            <div className="mt-auto pt-2.5 border-t border-[var(--app-border,rgba(226,232,240,0.6))] flex items-center justify-center">
                 <button
                     onClick={onToggleCollapse}
                     type="button"
-                    title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    className={`w-full h-[38px] flex items-center rounded-[5px] text-xs font-semibold transition-all duration-200 border border-[var(--app-border,rgba(226,232,240,0.6))] bg-[var(--app-card,rgba(255,255,255,0.4))] hover:bg-emerald-500/15 text-[var(--app-text,#0f172a)] hover:text-emerald-600 backdrop-blur-md hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.98]
-                    ${collapsed ? "justify-center px-0" : "gap-2 px-3"}`}
+                    title={collapsed ? "ពង្រីក Menu (Expand)" : "បង្រួម Menu (Collapse)"}
+                    className={`group relative flex items-center justify-center rounded-lg transition-all duration-200 border border-[var(--app-border,rgba(226,232,240,0.7))] bg-[var(--app-card,rgba(255,255,255,0.45))] hover:bg-emerald-500/15 hover:border-emerald-500/40 text-[var(--app-text,#0f172a)] hover:text-emerald-600 backdrop-blur-xl shadow-xs hover:shadow-md hover:shadow-emerald-500/10 active:scale-95
+                    ${collapsed ? "w-10 h-10" : "w-full h-[38px] px-3 gap-2.5"}`}
                 >
-                    {collapsed
-                        ? <FaChevronRight size={13} className="text-emerald-600" />
-                        : <><FaChevronLeft size={13} className="text-emerald-600" /><span>បង្រួម</span></>
-                    }
+                    {collapsed ? (
+                        <FaChevronRight size={14} className="text-emerald-600 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    ) : (
+                        <>
+                            <FaChevronLeft size={13} className="text-emerald-600 transition-transform duration-200 group-hover:-translate-x-0.5" />
+                            <span className="text-xs font-bold tracking-wide">បង្រួម Menu</span>
+                        </>
+                    )}
                 </button>
             </div>
 
