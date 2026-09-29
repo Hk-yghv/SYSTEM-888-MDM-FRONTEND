@@ -571,9 +571,9 @@ const FollowUp3 = () => {
             </datalist>
 
             {/* Header Title & Actions */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm">
                 <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+                    <div className="w-12 h-12 rounded-[5px] bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
                         <FaMapMarkerAlt size={22} />
                     </div>
                     <div>
@@ -594,7 +594,7 @@ const FollowUp3 = () => {
                     <button
                         onClick={() => { fetchData(page, true); fetchDroplists(); }}
                         disabled={reloading || loading}
-                        className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer disabled:opacity-50"
+                        className="px-3.5 py-2 rounded-[5px] border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer disabled:opacity-50"
                         title="Reload Data"
                     >
                         <MdOutlineSync className={`text-base ${reloading ? 'animate-spin text-emerald-600' : ''}`} />
@@ -605,7 +605,7 @@ const FollowUp3 = () => {
                     {checkPermission('export') && (
                         <button
                             onClick={() => setIsExportModalOpen(true)}
-                            className="px-3.5 py-2 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer"
+                            className="px-3.5 py-2 rounded-[5px] border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer"
                         >
                             <FaFileDownload className="text-sm" />
                             <span>{t('export') || 'Export'}</span>
@@ -616,7 +616,7 @@ const FollowUp3 = () => {
                     {checkPermission('create') && (
                         <button
                             onClick={handleOpenCreate}
-                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs sm:text-sm flex items-center gap-2 transition shadow-md shadow-emerald-600/25 cursor-pointer"
+                            className="px-4 py-2 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs sm:text-sm flex items-center gap-2 transition shadow-md shadow-emerald-600/25 cursor-pointer"
                         >
                             <FaPlusCircle className="text-sm" />
                             <span>{t('create') || 'បង្កើតថ្មី'}</span>
@@ -628,7 +628,7 @@ const FollowUp3 = () => {
             {/* Metric Statistics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Total Leads / Records */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+                <div className="bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -639,14 +639,14 @@ const FollowUp3 = () => {
                             </h3>
                             <p className="text-xs text-slate-400 mt-1">អតិថិជនបានតាមដាន</p>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                        <div className="w-12 h-12 rounded-[5px] bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
                             <FaListUl />
                         </div>
                     </div>
                 </div>
 
                 {/* Total Requested Pawn Amount */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+                <div className="bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -657,7 +657,7 @@ const FollowUp3 = () => {
                             </h3>
                             <p className="text-xs text-slate-400 mt-1">ទឹកប្រាក់ស្នើសុំសរុប</p>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                        <div className="w-12 h-12 rounded-[5px] bg-teal-50 text-teal-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
                             <FaDollarSign />
                         </div>
                     </div>
@@ -665,7 +665,7 @@ const FollowUp3 = () => {
             </div>
 
             {/* Filter and Search Bar */}
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+            <div className="bg-white p-4 sm:p-5 rounded-[5px] border border-slate-100 shadow-sm space-y-3">
                 <div className="flex flex-col lg:flex-row items-center gap-3">
                     {/* Search Input */}
                     <div className="relative flex-1 w-full">
@@ -676,7 +676,7 @@ const FollowUp3 = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && fetchData(1)}
                             placeholder="ស្វែងរកតាម ឈ្មោះ, លេខទូរស័ព្ទ, ទីតាំង, អ្នកឆ្លើយតប, Username, បរិយាយ..."
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700 bg-slate-50/50 hover:bg-white transition"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700 bg-slate-50/50 hover:bg-white transition"
                         />
                     </div>
 
@@ -690,7 +690,7 @@ const FollowUp3 = () => {
                                 setStartDate('');
                                 setEndDate('');
                             }}
-                            className="w-full lg:w-auto px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
+                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                             title="Filter by Specific Date"
                         />
                     </div>
@@ -705,7 +705,7 @@ const FollowUp3 = () => {
                                 setFilterDate('');
                             }}
                             placeholder="ពីថ្ងៃ"
-                            className="w-full lg:w-auto px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
+                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                             title="Start Date"
                         />
                         <span className="text-slate-400 text-xs font-bold">ដល់</span>
@@ -717,7 +717,7 @@ const FollowUp3 = () => {
                                 setFilterDate('');
                             }}
                             placeholder="ដល់ថ្ងៃ"
-                            className="w-full lg:w-auto px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
+                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                             title="End Date"
                         />
                     </div>
@@ -727,7 +727,7 @@ const FollowUp3 = () => {
                         <select
                             value={selectedBrand}
                             onChange={(e) => setSelectedBrand(e.target.value)}
-                            className="w-full lg:w-auto px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
+                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                         >
                             <option value="">គ្រប់ Brand ទាំងអស់</option>
                             {brandsList.map(b => (
@@ -740,7 +740,7 @@ const FollowUp3 = () => {
                     <div className="flex items-center gap-2 w-full lg:w-auto">
                         <button
                             onClick={() => fetchData(1)}
-                            className="flex-1 lg:flex-none px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            className="flex-1 lg:flex-none px-4 py-2.5 rounded-[5px] bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
                         >
                             <FaFilter className="text-xs" />
                             <span>ស្វែងរក</span>
@@ -755,7 +755,7 @@ const FollowUp3 = () => {
                                     setEndDate('');
                                     setSelectedBrand('');
                                 }}
-                                className="px-3 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-500 text-xs sm:text-sm font-bold transition cursor-pointer"
+                                className="px-3 py-2.5 rounded-[5px] border border-slate-200 hover:bg-slate-100 text-slate-500 text-xs sm:text-sm font-bold transition cursor-pointer"
                                 title="Clear Filters"
                             >
                                 <FaTimes />
@@ -766,7 +766,7 @@ const FollowUp3 = () => {
             </div>
 
             {/* Table Card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[5px] border border-slate-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -988,7 +988,7 @@ const FollowUp3 = () => {
                         {/* Modal Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                                <div className="w-10 h-10 rounded-[5px] bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
                                     <FaMapMarkerAlt />
                                 </div>
                                 <div>
@@ -1010,7 +1010,7 @@ const FollowUp3 = () => {
 
                         {/* ⚡ Auto-Fill Notification Banner when previous match detected */}
                         {detectedMatch && (
-                            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="p-3.5 rounded-[5px] bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="flex items-start gap-2.5">
                                     <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
                                         <FaBolt />
@@ -1028,7 +1028,7 @@ const FollowUp3 = () => {
                                     <button
                                         type="button"
                                         onClick={() => handleAutoFill(detectedMatch)}
-                                        className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+                                        className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-[5px] bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
                                     >
                                         <FaCheckCircle className="text-xs" />
                                         <span>បំពេញស្វ័យប្រវត្តិ (Auto-fill)</span>
@@ -1059,7 +1059,7 @@ const FollowUp3 = () => {
                                         required
                                         value={formData.date}
                                         onChange={(e) => handleFieldChange('date', e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700"
+                                        className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700"
                                     />
                                 </div>
 
@@ -1076,7 +1076,7 @@ const FollowUp3 = () => {
                                         placeholder="បញ្ចូលឈ្មោះអតិថិជន..."
                                         value={formData.customerName}
                                         onChange={(e) => handleFieldChange('customerName', e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
+                                        className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
                                     />
                                 </div>
 
@@ -1091,7 +1091,7 @@ const FollowUp3 = () => {
                                         placeholder="012 345 678"
                                         value={formData.phone}
                                         onChange={(e) => handleFieldChange('phone', e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700"
+                                        className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700"
                                     />
                                 </div>
 
@@ -1107,7 +1107,7 @@ const FollowUp3 = () => {
                                         placeholder="វាយបញ្ចូល ឬជ្រើសរើសទីតាំង..."
                                         value={formData.location}
                                         onChange={(e) => handleFieldChange('location', e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
+                                        className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
                                     />
                                 </div>
 
@@ -1123,7 +1123,7 @@ const FollowUp3 = () => {
                                         placeholder="Facebook, Telegram, Walk-in..."
                                         value={formData.source}
                                         onChange={(e) => handleFieldChange('source', e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
+                                        className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
                                     />
                                 </div>
 
@@ -1140,7 +1140,7 @@ const FollowUp3 = () => {
                                         placeholder="ឧទាហរណ៍: 500"
                                         value={formData.requestedAmount}
                                         onChange={(e) => handleFieldChange('requestedAmount', e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-bold text-emerald-700"
+                                        className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-bold text-emerald-700"
                                     />
                                 </div>
 
@@ -1156,7 +1156,7 @@ const FollowUp3 = () => {
                                         placeholder="ទូរស័ព្ទ, ម៉ូតូ, ឡាន, ប្លង់ដី..."
                                         value={formData.collateralType}
                                         onChange={(e) => handleFieldChange('collateralType', e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
+                                        className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
                                     />
                                 </div>
 
@@ -1172,7 +1172,7 @@ const FollowUp3 = () => {
                                         placeholder="ឈ្មោះអ្នកឆ្លើយតប..."
                                         value={formData.responder}
                                         onChange={(e) => handleFieldChange('responder', e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
+                                        className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
                                     />
                                 </div>
 
@@ -1188,7 +1188,7 @@ const FollowUp3 = () => {
                                         placeholder="Staff Username..."
                                         value={formData.username}
                                         onChange={(e) => handleFieldChange('username', e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
+                                        className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
                                     />
                                 </div>
                             </div>
@@ -1204,7 +1204,7 @@ const FollowUp3 = () => {
                                     placeholder="https://facebook.com/..."
                                     value={formData.link}
                                     onChange={(e) => handleFieldChange('link', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700"
+                                    className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700"
                                 />
                             </div>
 
@@ -1219,7 +1219,7 @@ const FollowUp3 = () => {
                                     placeholder="បញ្ចូលការបរិយាយបន្ថែម ឬចំណាំ..."
                                     value={formData.description}
                                     onChange={(e) => handleFieldChange('description', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700"
+                                    className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700"
                                 />
                             </div>
 
@@ -1228,14 +1228,14 @@ const FollowUp3 = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsFormOpen(false)}
-                                    className="px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-xs sm:text-sm transition cursor-pointer"
+                                    className="px-5 py-2.5 rounded-[5px] border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-xs sm:text-sm transition cursor-pointer"
                                 >
                                     {t('cancel') || 'បោះបង់'}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs sm:text-sm transition shadow-md shadow-emerald-600/25 cursor-pointer disabled:opacity-50"
+                                    className="px-6 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs sm:text-sm transition shadow-md shadow-emerald-600/25 cursor-pointer disabled:opacity-50"
                                 >
                                     {submitting ? 'កំពុងរក្សាទុក...' : (editingItem ? 'កែប្រែទិន្នន័យ' : 'បង្កើតទិន្នន័យ')}
                                 </button>
@@ -1249,7 +1249,7 @@ const FollowUp3 = () => {
             {deleteModalItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in duration-200">
-                        <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mx-auto">
+                        <div className="w-12 h-12 rounded-[5px] bg-rose-50 text-rose-600 flex items-center justify-center text-xl mx-auto">
                             <FaTrashAlt />
                         </div>
                         <div className="text-center space-y-1.5">
@@ -1263,7 +1263,7 @@ const FollowUp3 = () => {
                             <button
                                 type="button"
                                 onClick={() => setDeleteModalItem(null)}
-                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-xs transition cursor-pointer"
+                                className="flex-1 px-4 py-2.5 rounded-[5px] border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-xs transition cursor-pointer"
                             >
                                 {t('cancel') || 'បោះបង់'}
                             </button>
@@ -1271,7 +1271,7 @@ const FollowUp3 = () => {
                                 type="button"
                                 disabled={deleting}
                                 onClick={confirmDelete}
-                                className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs transition shadow-md shadow-rose-600/25 cursor-pointer disabled:opacity-50"
+                                className="flex-1 px-4 py-2.5 rounded-[5px] bg-rose-600 hover:bg-rose-700 text-white font-black text-xs transition shadow-md shadow-rose-600/25 cursor-pointer disabled:opacity-50"
                             >
                                 {deleting ? 'កំពុងលុប...' : (t('delete') || 'លុបចេញ')}
                             </button>
@@ -1306,11 +1306,10 @@ const FollowUp3 = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('excel')}
-                                    className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
-                                        exportFormat === 'excel'
+                                    className={`p-3 rounded-[5px] border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${exportFormat === 'excel'
                                             ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
                                             : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                                    }`}
+                                        }`}
                                 >
                                     <FaFileExcel className="text-emerald-600 text-base" />
                                     <span>Excel (.xlsx)</span>
@@ -1318,11 +1317,10 @@ const FollowUp3 = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('pdf')}
-                                    className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
-                                        exportFormat === 'pdf'
+                                    className={`p-3 rounded-[5px] border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${exportFormat === 'pdf'
                                             ? 'border-rose-500 bg-rose-50 text-rose-700 shadow-sm'
                                             : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                                    }`}
+                                        }`}
                                 >
                                     <MdPictureAsPdf className="text-rose-600 text-base" />
                                     <span>PDF (.pdf)</span>
@@ -1338,7 +1336,7 @@ const FollowUp3 = () => {
                             <select
                                 value={exportScope}
                                 onChange={(e) => setExportScope(e.target.value)}
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             >
                                 <option value="month">ខែនេះ (This Month)</option>
                                 <option value="week">សប្តាហ៍នេះ (This Week)</option>
@@ -1357,7 +1355,7 @@ const FollowUp3 = () => {
                                         type="date"
                                         value={exportStartDate}
                                         onChange={(e) => setExportStartDate(e.target.value)}
-                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-700"
+                                        className="w-full px-3 py-2 rounded-[5px] border border-slate-200 text-xs text-slate-700"
                                     />
                                 </div>
                                 <div>
@@ -1366,7 +1364,7 @@ const FollowUp3 = () => {
                                         type="date"
                                         value={exportEndDate}
                                         onChange={(e) => setExportEndDate(e.target.value)}
-                                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-700"
+                                        className="w-full px-3 py-2 rounded-[5px] border border-slate-200 text-xs text-slate-700"
                                     />
                                 </div>
                             </div>
@@ -1377,7 +1375,7 @@ const FollowUp3 = () => {
                             <button
                                 type="button"
                                 onClick={() => setIsExportModalOpen(false)}
-                                className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-xs transition cursor-pointer"
+                                className="px-4 py-2.5 rounded-[5px] border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-xs transition cursor-pointer"
                             >
                                 {t('cancel') || 'បោះបង់'}
                             </button>
@@ -1385,7 +1383,7 @@ const FollowUp3 = () => {
                                 type="button"
                                 disabled={isExporting}
                                 onClick={handleExecuteExport}
-                                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs transition shadow-md shadow-emerald-600/25 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                                className="px-5 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs transition shadow-md shadow-emerald-600/25 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                             >
                                 <FaFileDownload className="text-xs" />
                                 <span>{isExporting ? 'កំពុងទាញយក...' : 'Export ឥឡូវនេះ'}</span>

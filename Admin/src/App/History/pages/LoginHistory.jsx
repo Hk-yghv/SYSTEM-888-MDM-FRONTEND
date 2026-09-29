@@ -205,7 +205,7 @@ const LoginHistory = () => {
             )}
 
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
@@ -232,7 +232,7 @@ const LoginHistory = () => {
             </header>
 
             {/* Telegram & Google Sheet Auto-Send Countdown Card (Clean White Light Theme) */}
-            <div className='w-full bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-4'>
+            <div className='w-full bg-white border border-slate-200 rounded-[5px] p-4 shadow-xs flex flex-wrap items-center justify-between gap-4'>
                 <div className='flex items-center gap-3.5'>
                     <div>
                         <div className='flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wider'>
@@ -287,7 +287,7 @@ const LoginHistory = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <div className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='relative flex-1 min-w-[240px]'>
                     <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs' />
                     <input
@@ -338,7 +338,7 @@ const LoginHistory = () => {
             </div>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-450px)] pb-28 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-450px)] pb-28 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>

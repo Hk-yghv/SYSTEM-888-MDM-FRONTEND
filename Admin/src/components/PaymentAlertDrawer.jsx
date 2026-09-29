@@ -428,7 +428,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                 {/* ── HEADER ── */}
                 <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between gap-3 shadow-md border-b border-slate-800">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-base relative shadow-inner">
+                        <div className="w-9 h-9 rounded-[5px] bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-base relative shadow-inner">
                             <FaBell />
                             {totalUnreadCount > 0 && (
                                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
@@ -491,7 +491,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <select
                                 value={activeTab}
                                 onChange={(e) => setActiveTab(e.target.value)}
-                                className="w-full pl-3 pr-8 py-2 bg-white border-2 border-emerald-500/40 hover:border-emerald-500 rounded-xl text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer appearance-none transition-all"
+                                className="w-full pl-3 pr-8 py-2 bg-white border-2 border-emerald-500/40 hover:border-emerald-500 rounded-[5px] text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer appearance-none transition-all"
                             >
                                 {alertCategories.map((cat) => (
                                     <option key={cat.key} value={cat.key}>
@@ -503,7 +503,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         </div>
 
                         {/* Active Category Counter Pill */}
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] bg-white border border-slate-200 shadow-2xs">
                             <span className="text-[11px] font-bold text-slate-700">ចំនួន:</span>
                             <span className="font-mono text-xs font-black text-emerald-600">
                                 {activeList.length}
@@ -525,7 +525,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                 placeholder="ស្វែងរកឈ្មោះ, ទូរស័ព្ទ, Serial..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
+                                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
                             />
                         </div>
 
@@ -536,7 +536,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                 onClose();
                                 navigate(currentCategory.route);
                             }}
-                            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-all shadow-2xs"
+                            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-all shadow-2xs"
                             title="ចូលទៅកាន់ទំព័រពេញលេញ"
                         >
                             <FaExternalLinkAlt className="text-[10px]" />
@@ -560,7 +560,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         </div>
                     ) : activeTab === 'followUp2Review' ? (
                         /* ── FollowUp2 Review Table ── */
-                        <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-md">
+                        <div className="overflow-x-auto rounded-[5px] border border-slate-300 bg-white shadow-md">
                             <table className="w-full text-left text-xs border-collapse">
                                 <thead className="bg-indigo-50 text-indigo-900 border-b border-indigo-200 font-bold uppercase tracking-wider text-[10px]">
                                     <tr>
@@ -646,7 +646,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         </div>
                     ) : activeTab === 'others' ? (
                         /* ── Others (Rejected Device Actions) Table with 7-Day Auto Purge ── */
-                        <div className="overflow-x-auto rounded-2xl border border-rose-200 bg-white shadow-md">
+                        <div className="overflow-x-auto rounded-[5px] border border-rose-200 bg-white shadow-md">
                             <table className="w-full text-left text-xs border-collapse">
                                 <thead className="bg-rose-50 text-rose-900 border-b border-rose-200 font-bold uppercase tracking-wider text-[10px]">
                                     <tr>
@@ -739,7 +739,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         </div>
                     ) : (
                         /* ── Standard Contract Payment Alert Table ── */
-                        <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white shadow-md">
+                        <div className="overflow-x-auto rounded-[5px] border border-slate-300 bg-white shadow-md">
                             <table className="w-full text-left text-xs border-collapse">
                                 <thead className="bg-slate-100 text-slate-800 border-b border-slate-300 font-bold uppercase tracking-wider text-[10px]">
                                     <tr>
@@ -880,7 +880,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     </div>
                     <button
                         onClick={onClose}
-                        className="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition-colors border border-slate-300"
+                        className="px-4 py-1.5 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition-colors border border-slate-300"
                     >
                         {t('close') || 'បិទ'}
                     </button>

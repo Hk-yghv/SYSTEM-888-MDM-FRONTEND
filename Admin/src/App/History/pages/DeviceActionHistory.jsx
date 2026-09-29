@@ -170,7 +170,7 @@ const DeviceActionHistory = () => {
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
@@ -197,7 +197,7 @@ const DeviceActionHistory = () => {
             </header>
 
             {/* Filter Bar */}
-            <div className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <div className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='relative flex-1 min-w-[240px]'>
                     <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs' />
                     <input
@@ -246,7 +246,7 @@ const DeviceActionHistory = () => {
             </div>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-350px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-350px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>
@@ -387,7 +387,7 @@ const DeviceActionHistory = () => {
             {/* Modal for Reject Confirmation */}
             {rejectingItem && (
                 <div className='fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 select-none'>
-                    <div className='bg-white rounded-2xl border border-slate-200 w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200'>
+                    <div className='bg-white rounded-[5px] border border-slate-200 w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200'>
                         <div className='p-4 bg-gradient-to-r from-red-600 to-red-700 text-white flex items-center justify-between'>
                             <h2 className='text-base font-bold flex items-center gap-2'>
                                 <FaBan />
@@ -402,7 +402,7 @@ const DeviceActionHistory = () => {
                         </div>
 
                         <form onSubmit={handleConfirmReject} className='p-5 space-y-4 text-xs'>
-                            <div className='p-3 bg-red-50 border border-red-100 rounded-xl space-y-1'>
+                            <div className='p-3 bg-red-50 border border-red-100 rounded-[5px] space-y-1'>
                                 <p className='font-bold text-slate-800 text-sm'>
                                     {rejectingItem.customerName}
                                 </p>

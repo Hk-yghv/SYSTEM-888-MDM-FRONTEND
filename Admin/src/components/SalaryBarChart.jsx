@@ -78,11 +78,11 @@ const SalaryBarChart = ({
     }, [filteredData]);
 
     return (
-        <div className="w-full bg-[var(--app-card,white)] rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-sm p-4 space-y-3 transition-colors">
+        <div className="w-full bg-[var(--app-card,white)] rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-sm p-4 space-y-3 transition-colors">
             {/* Header with Title & Year Toggle */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--app-border,#f1f5f9)]">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg border border-emerald-500/20">
+                    <div className="w-9 h-9 rounded-[5px] bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg border border-emerald-500/20">
                         <FaChartBar />
                     </div>
                     <div>
@@ -270,7 +270,7 @@ const SalaryBarChart = ({
                     {/* Interactive Tooltip Card */}
                     {hoveredBar !== null && filteredData[hoveredBar] && (
                         <div
-                            className="absolute top-2 right-2 bg-slate-900/90 text-white backdrop-blur-md px-3 py-2 rounded-xl border border-slate-700 shadow-xl text-xs space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-100"
+                            className="absolute top-2 right-2 bg-slate-900/90 text-white backdrop-blur-md px-3 py-2 rounded-[5px] border border-slate-700 shadow-xl text-xs space-y-1 pointer-events-none animate-in fade-in zoom-in-95 duration-100"
                         >
                             <div className="flex items-center gap-2 font-bold text-emerald-400">
                                 <FaCalendarAlt />
