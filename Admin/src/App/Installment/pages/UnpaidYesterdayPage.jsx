@@ -6,6 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
 import { MdOutlineSync, MdSearch, MdPictureAsPdf, MdQrCode2 } from 'react-icons/md';
 import { FaFileExcel, FaDollarSign, FaHistory } from 'react-icons/fa';
+import { AiOutlineMenu } from 'react-icons/ai';
 import RepaymentScheduleModal from '../../Contract/components/RepaymentScheduleModal';
 import QrPaymentModal from '../components/QrPaymentModal';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';

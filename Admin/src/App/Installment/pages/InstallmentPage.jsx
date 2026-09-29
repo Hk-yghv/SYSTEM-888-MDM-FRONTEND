@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -303,17 +303,37 @@ const getRowUrgency = (displayRow, isAllDone) => {
 const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMonth, onOpenQrModal }) => {
     const schedule = item?.repaymentSchedule || [];
     const activeIdx = getActiveRowIdx(schedule);
+    const menuRef = useRef(null);
+    const [top, setTop] = useState(pos.bottom + 4);
 
-    // Adjust position so dropdown doesn't overflow the viewport
     const dropdownWidth = 240;
     const left = Math.max(8, Math.min(pos.left, window.innerWidth - dropdownWidth - 8));
-    const top = pos.bottom + 4;
+
+    useLayoutEffect(() => {
+        const positionMenu = () => {
+            const menuHeight = menuRef.current?.getBoundingClientRect().height || 0;
+            const viewportPadding = 8;
+            const gap = 4;
+            const spaceBelow = window.innerHeight - pos.bottom - viewportPadding;
+            const canOpenAbove = pos.top - viewportPadding >= menuHeight + gap;
+            const nextTop = menuHeight > spaceBelow && canOpenAbove
+                ? pos.top - menuHeight - gap
+                : Math.min(pos.bottom + gap, window.innerHeight - menuHeight - viewportPadding);
+
+            setTop(Math.max(viewportPadding, nextTop));
+        };
+
+        positionMenu();
+        window.addEventListener('resize', positionMenu);
+        return () => window.removeEventListener('resize', positionMenu);
+    }, [pos.top, pos.bottom, schedule.length]);
 
     return ReactDOM.createPortal(
         <div
+            ref={menuRef}
             data-action-menu-root="true"
             style={{ position: 'fixed', top, left, width: dropdownWidth, zIndex: 999999 }}
-            className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+            className="max-h-[calc(100vh-16px)] overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}
         >
             {/* Header label */}
@@ -408,8 +428,8 @@ const InstallmentPage = () => {
         }
     }, [searchParams]);
 
-    // Dropdown state — { id: string|null, pos: { left, bottom } }
-    const [openMenu, setOpenMenu] = useState({ id: null, pos: { left: 0, bottom: 0 } });
+    // Dropdown state — { id: string|null, pos: { left, top, bottom } }
+    const [openMenu, setOpenMenu] = useState({ id: null, pos: { left: 0, top: 0, bottom: 0 } });
 
     // RepaymentScheduleModal state
     const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
@@ -427,7 +447,7 @@ const InstallmentPage = () => {
             if (target instanceof Element && target.closest('[data-action-menu-root]')) {
                 return;
             }
-            setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } });
+            setOpenMenu({ id: null, pos: { left: 0, top: 0, bottom: 0 } });
         };
         window.addEventListener('click', handler);
         return () => window.removeEventListener('click', handler);
@@ -552,13 +572,13 @@ const InstallmentPage = () => {
     const handleOpenMenu = (e, itemId) => {
         e.stopPropagation(); // prevent the window click handler from firing
         if (openMenu.id === itemId) {
-            setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } });
+            setOpenMenu({ id: null, pos: { left: 0, top: 0, bottom: 0 } });
             return;
         }
         const rect = e.currentTarget.getBoundingClientRect();
         setOpenMenu({
             id: itemId,
-            pos: { left: rect.right - 240, bottom: rect.bottom }
+            pos: { left: rect.right - 240, top: rect.top, bottom: rect.bottom }
         });
     };
 
@@ -656,7 +676,7 @@ const InstallmentPage = () => {
                 <ActionDropdownPortal
                     item={openMenuContract}
                     pos={openMenu.pos}
-                    onClose={() => setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } })}
+                    onClose={() => setOpenMenu({ id: null, pos: { left: 0, top: 0, bottom: 0 } })}
                     onOpenSchedule={openScheduleForMonth}
                     onSelectMonth={selectMonthForOuterRow}
                     onOpenQrModal={(c) => setSelectedQrContract(c)}
