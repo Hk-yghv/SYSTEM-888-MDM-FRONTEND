@@ -916,17 +916,17 @@ const CalculateSchedule2 = () => {
                                             <div
                                                 key={item._id}
                                                 onClick={() => handleLoadRecord(item)}
-                                                className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${isNewlyAdded
-                                                    ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-400 animate-pulse'
-                                                    : isActive
-                                                        ? 'bg-violet-50 border-violet-400 shadow-xs ring-1 ring-violet-400'
+                                                className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${isActive
+                                                    ? 'bg-sky-50 border-sky-400 shadow-xs ring-1 ring-sky-400'
+                                                    : isNewlyAdded
+                                                        ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-400 animate-pulse'
                                                         : 'bg-[#fff] border-slate-200 hover:border-violet-300 hover:bg-slate-50'
                                                     }`}>
                                                 <div className="flex items-start justify-between gap-1">
                                                     <div className="flex items-center gap-1.5 font-bold text-slate-800 truncate">
                                                         <span>{item.customerName || 'អតិថិជនទូទៅ'}</span>
                                                         {isNewlyAdded && (
-                                                            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-600 text-white font-bold tracking-tight animate-bounce">
+                                                            <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-sky-600 text-white font-bold tracking-tight animate-bounce">
                                                                 ថ្មី
                                                             </span>
                                                         )}
@@ -1144,10 +1144,15 @@ const CalculateSchedule2 = () => {
                                         មិនមានទិន្នន័យត្រូវបង្ហាញទេ
                                     </div>
                                 ) : (
-                                    filteredHistory.map((item) => (
+                                    filteredHistory.map((item) => {
+                                        const isActive = activeRecordId === item._id;
+                                        return (
                                         <div
                                             key={item._id}
-                                            className="p-3.5 rounded-xl border border-slate-200 hover:border-violet-300 hover:bg-violet-50/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                            className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isActive
+                                                ? 'bg-sky-50 border-sky-400 ring-1 ring-sky-400'
+                                                : 'border-slate-200 hover:border-violet-300 hover:bg-violet-50/20'
+                                                }`}>
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-black text-slate-800 text-sm">
@@ -1186,7 +1191,8 @@ const CalculateSchedule2 = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>
