@@ -365,7 +365,7 @@ const Activated = () => {
                                     required
                                     value={redeemDateInput}
                                     onChange={(e) => setRedeemDateInput(e.target.value)}
-                                    className="w-full h-11 px-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-sm focus:outline-emerald-500"
+                                    className="w-full h-11 px-3 bg-slate-50 border border-slate-300 rounded-5px text-slate-900 font-mono font-bold text-sm focus:outline-emerald-500"
                                 />
                                 <p className="text-[11px] text-slate-500 mt-1 italic">
                                     * បំពេញអូតូថ្ងៃបច្ចុប្បន្ន។ អ្នកអាចប្តូរដាក់ថ្ងៃផ្សេងៗបានតាមតម្រូវការ។
@@ -376,13 +376,13 @@ const Activated = () => {
                                 <button
                                     type="button"
                                     onClick={() => setRedeemItem(null)}
-                                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 cursor-pointer"
+                                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-5px text-xs font-bold hover:bg-slate-200 cursor-pointer"
                                 >
                                     {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700 shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5"
+                                    className="px-5 py-2 bg-purple-600 text-white rounded-5px text-xs font-bold hover:bg-purple-700 shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5"
                                 >
                                     <MdSwapHoriz size={16} /> Submit Redeem
                                 </button>
@@ -511,146 +511,146 @@ const Activated = () => {
                                 const hasAnyAction = canOpenMosyle || canOpenFb || canHistory || canComment || canLock || canWallpaper || canCheck || canBlacklist || !!matchingCalcSchedule;
 
                                 return (
-                                <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                                    <td className='px-4 py-3 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
-                                    <td className='px-4 py-3'>
-                                        <div className="flex items-center gap-2">
-                                            <div>
-                                                <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
-                                                <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' />
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className='px-4 py-3 text-center'>
-                                        <span className='px-3 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>
-                                            Activated
-                                        </span>
-                                    </td>
-                                    <td className='px-4 py-3 text-center font-mono text-indigo-700 font-bold'>
-                                        <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
-                                    </td>
-                                    <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
-                                    <td className='px-4 py-3'>
-                                        <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
-                                            {item.brand || '—'}
-                                        </span>
-                                    </td>
-                                    <td className='px-4 py-3 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber} className='font-mono text-slate-600 font-medium' /></td>
-                                    <td className='px-4 py-3 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
-                                    <td className="px-4 py-3 text-center relative">
-                                        <div className="flex items-center justify-center gap-2">
-                                            {hasAnyAction ? (
-                                                <div className="relative inline-block text-left">
-                                                    <button
-                                                        onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
-                                                        className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs"
-                                                    >
-                                                        <AiOutlineMenu size={16} />
-                                                    </button>
-
-                                                    {openMenuId === item._id && (
-                                                        <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
-                                                            {matchingCalcSchedule && (
-                                                                <button
-                                                                    onClick={() => {
-                                                                        navigate(`/calculate/schedule-2?customerName=${encodeURIComponent(matchingCalcSchedule.customerName || item.customerNameKh || '')}&id=${matchingCalcSchedule._id}`);
-                                                                        setOpenMenuId(null);
-                                                                    }}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50/80 hover:bg-emerald-100 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
-                                                                >
-                                                                    <FaCalendarAlt className="text-emerald-600 text-sm" />
-                                                                    <span>Payment Schedule</span>
-                                                                </button>
-                                                            )}
-                                                            {canOpenMosyle && (
-                                                                <button
-                                                                    onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <span>Open Mosyle</span>
-                                                                </button>
-                                                            )}
-                                                            {canOpenFb && (
-                                                                <button
-                                                                    onClick={() => window.open(item.urlFb, '_blank')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <span>Open Facebook</span>
-                                                                </button>
-                                                            )}
-
-                                                            {canHistory && (
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setSelectedHistoryItem(item);
-                                                                        setOpenMenuId(null);
-                                                                    }}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <FaHistory className="text-indigo-600 text-sm" />
-                                                                    <span>History (ប្រវត្តិសកម្មភាព)</span>
-                                                                </button>
-                                                            )}
-
-                                                            {canComment && (
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setSelectedCommentItem(item);
-                                                                        setCommentInput(item.notes || '');
-                                                                        setOpenMenuId(null);
-                                                                    }}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <MdComment className="text-cyan-600 text-base" />
-                                                                    <span>Comment</span>
-                                                                </button>
-                                                            )}
-                                                            {canLock && (
-                                                                <button
-                                                                    onClick={() => handleQuickDeviceAction(item, 'Lock Phone')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <FaLock className="text-red-600 text-sm" />
-                                                                    <span>Lock Device</span>
-                                                                </button>
-                                                            )}
-                                                            {canWallpaper && (
-                                                                <button
-                                                                    onClick={() => handleQuickDeviceAction(item, 'Set Wallpaper')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <MdOutlineWallpaper className="text-amber-600 text-sm" />
-                                                                    <span>Set Wallpaper</span>
-                                                                </button>
-                                                            )}
-                                                            {canCheck && (
-                                                                <button
-                                                                    onClick={() => handleChangeStatus(item, 'Check')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <MdSwapHoriz className="text-blue-600 text-base" />
-                                                                    <span>Check</span>
-                                                                </button>
-                                                            )}
-                                                            {canBlacklist && (
-                                                                <button
-                                                                    onClick={() => handleChangeStatus(item, 'Blacklist')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <MdSwapHoriz className="text-red-600 text-base" />
-                                                                    <span>Blacklist</span>
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                    <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
+                                        <td className='px-4 py-1.5 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                        <td className='px-4 py-1.5 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
+                                        <td className='px-4 py-1.5'>
+                                            <div className="flex items-center gap-2">
+                                                <div>
+                                                    <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
+                                                    <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' />
                                                 </div>
-                                            ) : (
-                                                <span className="text-slate-400 font-mono text-[11px]">—</span>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
+                                            </div>
+                                        </td>
+                                        <td className='px-4 py-1.5 text-center'>
+                                            <span className='px-3 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>
+                                                Activated
+                                            </span>
+                                        </td>
+                                        <td className='px-4 py-1.5 text-center font-mono text-indigo-700 font-bold'>
+                                            <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
+                                        </td>
+                                        <td className='px-4 py-1.5 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                        <td className='px-4 py-1.5'>
+                                            <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
+                                                {item.brand || '—'}
+                                            </span>
+                                        </td>
+                                        <td className='px-4 py-1.5 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber} className='font-mono text-slate-600 font-medium' /></td>
+                                        <td className='px-4 py-1.5 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
+                                        <td className="px-4 py-1.5 text-center relative">
+                                            <div className="flex items-center justify-center gap-2">
+                                                {hasAnyAction ? (
+                                                    <div className="relative inline-block text-left">
+                                                        <button
+                                                            onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
+                                                            className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs"
+                                                        >
+                                                            <AiOutlineMenu size={16} />
+                                                        </button>
+
+                                                        {openMenuId === item._id && (
+                                                            <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                                {matchingCalcSchedule && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            navigate(`/calculate/schedule-2?customerName=${encodeURIComponent(matchingCalcSchedule.customerName || item.customerNameKh || '')}&id=${matchingCalcSchedule._id}`);
+                                                                            setOpenMenuId(null);
+                                                                        }}
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50/80 hover:bg-emerald-100 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
+                                                                    >
+                                                                        <FaCalendarAlt className="text-emerald-600 text-sm" />
+                                                                        <span>Payment Schedule</span>
+                                                                    </button>
+                                                                )}
+                                                                {canOpenMosyle && (
+                                                                    <button
+                                                                        onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
+                                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-5px flex items-center gap-2 cursor-pointer"
+                                                                    >
+                                                                        <span>Open Mosyle</span>
+                                                                    </button>
+                                                                )}
+                                                                {canOpenFb && (
+                                                                    <button
+                                                                        onClick={() => window.open(item.urlFb, '_blank')}
+                                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-5px flex items-center gap-2 cursor-pointer"
+                                                                    >
+                                                                        <span>Open Facebook</span>
+                                                                    </button>
+                                                                )}
+
+                                                                {canHistory && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setSelectedHistoryItem(item);
+                                                                            setOpenMenuId(null);
+                                                                        }}
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    >
+                                                                        <FaHistory className="text-indigo-600 text-sm" />
+                                                                        <span>History (ប្រវត្តិសកម្មភាព)</span>
+                                                                    </button>
+                                                                )}
+
+                                                                {canComment && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setSelectedCommentItem(item);
+                                                                            setCommentInput(item.notes || '');
+                                                                            setOpenMenuId(null);
+                                                                        }}
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    >
+                                                                        <MdComment className="text-cyan-600 text-base" />
+                                                                        <span>Comment</span>
+                                                                    </button>
+                                                                )}
+                                                                {canLock && (
+                                                                    <button
+                                                                        onClick={() => handleQuickDeviceAction(item, 'Lock Phone')}
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    >
+                                                                        <FaLock className="text-red-600 text-sm" />
+                                                                        <span>Lock Device</span>
+                                                                    </button>
+                                                                )}
+                                                                {canWallpaper && (
+                                                                    <button
+                                                                        onClick={() => handleQuickDeviceAction(item, 'Set Wallpaper')}
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    >
+                                                                        <MdOutlineWallpaper className="text-amber-600 text-sm" />
+                                                                        <span>Set Wallpaper</span>
+                                                                    </button>
+                                                                )}
+                                                                {canCheck && (
+                                                                    <button
+                                                                        onClick={() => handleChangeStatus(item, 'Check')}
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    >
+                                                                        <MdSwapHoriz className="text-blue-600 text-base" />
+                                                                        <span>Check</span>
+                                                                    </button>
+                                                                )}
+                                                                {canBlacklist && (
+                                                                    <button
+                                                                        onClick={() => handleChangeStatus(item, 'Blacklist')}
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    >
+                                                                        <MdSwapHoriz className="text-red-600 text-base" />
+                                                                        <span>Blacklist</span>
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-400 font-mono text-[11px]">—</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
                                 );
                             })
                         )}
@@ -677,7 +677,7 @@ const Activated = () => {
                             <button type="button" onClick={() => setSelectedCommentItem(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold">✕</button>
                         </div>
 
-                        <div className="p-3 bg-gray-900/60 rounded-xl border border-gray-800 text-xs">
+                        <div className="p-3 bg-gray-900/60 rounded-5px border border-gray-800 text-xs">
                             <p className="text-gray-400">Customer: <span className="text-gray-100 font-bold">{selectedCommentItem.customerNameEn}</span></p>
                             <p className="text-gray-400">Model: <span className="text-gray-200 font-semibold">{selectedCommentItem.model}</span></p>
                         </div>
@@ -690,7 +690,7 @@ const Activated = () => {
                                 value={commentInput}
                                 onChange={(e) => setCommentInput(e.target.value)}
                                 placeholder="Type comment or notes about this contract..."
-                                className="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-xs text-gray-100 outline-none focus:border-cyan-500 font-sans"
+                                className="w-full p-3 bg-gray-900 border border-gray-700 rounded-5px text-xs text-gray-100 outline-none focus:border-cyan-500 font-sans"
                             ></textarea>
                         </div>
 
@@ -698,13 +698,13 @@ const Activated = () => {
                             <button
                                 type="button"
                                 onClick={() => setSelectedCommentItem(null)}
-                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold"
+                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-5px text-xs font-bold"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-600/30"
+                                className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-5px text-xs font-bold shadow-lg shadow-cyan-600/30"
                             >
                                 Submit Comment
                             </button>
@@ -738,14 +738,14 @@ const Activated = () => {
                         <div className="space-y-3">
                             <h4 className="text-xs font-bold text-indigo-300 uppercase">Customer Info</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Contract ID</span><span className="font-mono text-gray-200 font-bold">{selectedInfo.contractId}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">ID Card</span><span className="font-mono text-gray-200">{selectedInfo.idCardNumber || '-'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Phone</span><span className="font-mono text-gray-200">{selectedInfo.phone || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-5px border border-gray-800"><span className="text-gray-400 block text-[10px]">Contract ID</span><span className="font-mono text-gray-200 font-bold">{selectedInfo.contractId}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-5px border border-gray-800"><span className="text-gray-400 block text-[10px]">ID Card</span><span className="font-mono text-gray-200">{selectedInfo.idCardNumber || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-5px border border-gray-800"><span className="text-gray-400 block text-[10px]">Phone</span><span className="font-mono text-gray-200">{selectedInfo.phone || '-'}</span></div>
                             </div>
                         </div>
 
                         <div className="text-right pt-2">
-                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl cursor-pointer">Close</button>
+                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-5px cursor-pointer">Close</button>
                         </div>
                     </div>
                 </div>

@@ -92,7 +92,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
     return ReactDOM.createPortal(
         <div data-action-menu-root="true"
             style={{ position: 'fixed', top: pos.bottom + 4, left, width: dropdownWidth, zIndex: 999999 }}
-            className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white border border-slate-200 rounded-5px shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}>
             <div className="px-3 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Repayment Actions</div>
             <button onClick={() => { onOpenQrModal(item); onClose(); }}
@@ -216,7 +216,7 @@ const Overdue3DaysPage = () => {
         }
         const rect = e.currentTarget.getBoundingClientRect();
         setOpenMenu({ id: itemId, pos: { left: rect.right - 240, bottom: rect.bottom } });
-    }; 
+    };
 
     const openScheduleForMonth = (contract, monthIdx) => { setScheduleModalContract(contract); setScheduleModalMonthIdx(monthIdx); setScheduleModalOpen(true); };
     const selectMonthForOuterRow = (contract, monthIdx) => { const id = contract._id || contract.contractId; setSelectedMonthByContract(prev => ({ ...prev, [id]: monthIdx })); };
@@ -242,7 +242,7 @@ const Overdue3DaysPage = () => {
                 <ActionDropdownPortal item={openMenuContract} pos={openMenu.pos} onClose={() => setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } })} onOpenSchedule={openScheduleForMonth} onSelectMonth={selectMonthForOuterRow} onOpenQrModal={(c) => setSelectedQrContract(c)} />
             )}
 
-            <header className='p-3 w-full border border-orange-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-orange-200 bg-white rounded-5px flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-orange-500 flex items-center gap-2 flex-wrap'>
                         <FaExclamationTriangle className="text-orange-500" size={18} />
@@ -263,7 +263,7 @@ const Overdue3DaysPage = () => {
                 </div>
             </header>
 
-            <div className='w-full overflow-auto rounded-2xl border border-orange-100 bg-white shadow-md' style={{ maxHeight: 'calc(100vh - 260px)' }}>
+            <div className='w-full overflow-auto rounded-5px border border-orange-100 bg-white shadow-md' style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-orange-50 text-orange-800 uppercase tracking-wider border-b border-orange-100 sticky top-0 z-10'>
                         <tr>
@@ -295,21 +295,21 @@ const Overdue3DaysPage = () => {
                             const lateDays = getLateDays(displayRow?.dueDate);
                             return (
                                 <tr key={id} className="hover:bg-orange-50/40 transition-colors bg-orange-50/10">
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{idx + 1}</td>
-                                    <td className='px-4 py-3 font-mono text-slate-700'>{item.inputDate || '—'}</td>
-                                    <td className='px-4 py-3'><CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' /><CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' /></td>
-                                    <td className='px-4 py-3'><span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>{item.brand || '—'}</span></td>
-                                    <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
-                                    <td className='px-4 py-3 font-mono'>{displayRow?.dueDate ? <span className="font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">{displayRow.dueDate}</span> : '—'}</td>
-                                    <td className='px-4 py-3 text-center'><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 border border-orange-300 text-orange-700 font-extrabold text-[11px]">{lateDays}d</span></td>
-                                    <td className='px-4 py-3 text-right font-mono font-bold text-emerald-700'>${Number(displayRow?.loanAmount || item.amount || 0).toLocaleString()}</td>
-                                    <td className='px-4 py-3 text-right font-mono text-amber-600 font-bold'>${Number(displayRow?.penalty || 0).toLocaleString()}</td>
-                                    <td className='px-4 py-3 text-right font-mono text-sky-700 font-bold'>${Number(displayRow?.scheduledAmount || 0).toLocaleString()}</td>
-                                    <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-600'>${(Number(displayRow?.penalty || 0) + Number(displayRow?.scheduledAmount || 0)).toLocaleString()}</td>
-                                    <td className='px-4 py-3 text-right font-mono font-bold text-emerald-700'>${Number(displayRow?.paidAmount || 0).toLocaleString()}</td>
-                                    <td className='px-4 py-3 text-slate-500 italic text-[11px] max-w-[140px] truncate'>{displayRow?.comment || '—'}</td>
-                                    <td className='px-4 py-3 font-mono text-purple-600 font-bold'>{displayRow?.paidDate || '—'}</td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{idx + 1}</td>
+                                    <td className='px-4 py-1 font-mono text-slate-700'>{item.inputDate || '—'}</td>
+                                    <td className='px-4 py-1'><CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' /><CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' /></td>
+                                    <td className='px-4 py-1'><span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>{item.brand || '—'}</span></td>
+                                    <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                    <td className='px-4 py-1 font-mono'>{displayRow?.dueDate ? <span className="font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">{displayRow.dueDate}</span> : '—'}</td>
+                                    <td className='px-4 py-1 text-center'><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 border border-orange-300 text-orange-700 font-extrabold text-[11px]">{lateDays}d</span></td>
+                                    <td className='px-4 py-1 text-right font-mono font-bold text-emerald-700'>${Number(displayRow?.loanAmount || item.amount || 0).toLocaleString()}</td>
+                                    <td className='px-4 py-1 text-right font-mono text-amber-600 font-bold'>${Number(displayRow?.penalty || 0).toLocaleString()}</td>
+                                    <td className='px-4 py-1 text-right font-mono text-sky-700 font-bold'>${Number(displayRow?.scheduledAmount || 0).toLocaleString()}</td>
+                                    <td className='px-4 py-1 text-right font-mono font-extrabold text-emerald-600'>${(Number(displayRow?.penalty || 0) + Number(displayRow?.scheduledAmount || 0)).toLocaleString()}</td>
+                                    <td className='px-4 py-1 text-right font-mono font-bold text-emerald-700'>${Number(displayRow?.paidAmount || 0).toLocaleString()}</td>
+                                    <td className='px-4 py-1 text-slate-500 italic text-[11px] max-w-[140px] truncate'>{displayRow?.comment || '—'}</td>
+                                    <td className='px-4 py-1 font-mono text-purple-600 font-bold'>{displayRow?.paidDate || '—'}</td>
+                                    <td className="px-4 py-1 text-center">
                                         <button onClick={(e) => handleOpenMenu(e, id)} className={`w-8 h-8 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === id ? 'bg-orange-100 border-orange-400 text-orange-700' : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'}`}><AiOutlineMenu size={16} /></button>
                                     </td>
                                 </tr>

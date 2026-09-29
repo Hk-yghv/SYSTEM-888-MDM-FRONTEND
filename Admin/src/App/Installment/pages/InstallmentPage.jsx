@@ -293,7 +293,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
             ref={menuRef}
             data-action-menu-root="true"
             style={{ position: 'fixed', top, left, width: dropdownWidth, zIndex: 999999 }}
-            className="max-h-[calc(100vh-16px)] overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+            className="max-h-[calc(100vh-16px)] overflow-y-auto bg-white border border-slate-200 rounded-5px shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}
         >
             {/* Header label */}
@@ -654,7 +654,7 @@ const InstallmentPage = () => {
             )}
 
             {/* ── Header ────────────────────────────────────────────────── */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-5px flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2 flex-wrap'>
                         <span>Installment</span>
@@ -755,7 +755,7 @@ const InstallmentPage = () => {
             </header>
 
             {/* ── Table ─────────────────────────────────────────────────── */}
-            <div className='w-full overflow-auto rounded-2xl border border-slate-200 bg-white shadow-md'
+            <div className='w-full overflow-auto rounded-5px border border-slate-200 bg-white shadow-md'
                 style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10'>
@@ -796,25 +796,25 @@ const InstallmentPage = () => {
                                     <tr key={`${menuKey}-${scheduleIdx}`}
                                         className={`transition-colors ${urgency.rowClass}`}>
 
-                                        <td className='px-3 py-3 text-center font-mono text-slate-600 font-semibold'>
+                                        <td className='px-3 py-1 text-center font-mono text-slate-600 font-semibold'>
                                             {idx + 1}
                                         </td>
-                                        <td className='px-3 py-3 font-mono text-slate-700'>{item.inputDate || '—'}</td>
-                                        <td className='px-3 py-3'>
+                                        <td className='px-3 py-1 font-mono text-slate-700'>{item.inputDate || '—'}</td>
+                                        <td className='px-3 py-1'>
                                             <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
                                             <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' />
                                         </td>
-                                        <td className='px-3 py-3'>
+                                        <td className='px-3 py-1'>
                                             <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
                                                 {item.brand || '—'}
                                             </span>
                                         </td>
-                                        <td className='px-3 py-3 font-semibold text-slate-800'>
+                                        <td className='px-3 py-1 font-semibold text-slate-800'>
                                             <CopyCell text={item.model} className='font-semibold text-slate-800' />
                                         </td>
 
                                         {/* ថ្ងៃខែត្រូវបង់ */}
-                                        <td className='px-3 py-3 font-mono text-slate-700 whitespace-nowrap'>
+                                        <td className='px-3 py-1 font-mono text-slate-700 whitespace-nowrap'>
                                             {displayRow?.dueDate ? (
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-bold text-slate-900">{displayRow.dueDate}</span>
@@ -834,46 +834,46 @@ const InstallmentPage = () => {
 
 
                                         {/* សរុបត្រូវបង់ទាំងអស់ (+ពិន័យ) */}
-                                        <td className='px-3 py-3 text-center font-mono font-extrabold text-emerald-600'>
+                                        <td className='px-3 py-1 text-center font-mono font-extrabold text-emerald-600'>
                                             ${formatMoney(calcs.totalPayableWithPenalty || 0)}
                                         </td>
 
                                         {/* ការប្រាក់សរុប (Total Interest) */}
-                                        <td className='px-3 py-3 text-center font-mono font-bold text-indigo-700'>
+                                        <td className='px-3 py-1 text-center font-mono font-bold text-indigo-700'>
                                             ${formatMoney(calcs.totalInterest || 0)}
                                         </td>
 
                                         {/* សរុបត្រូវបង់ (គ្មានពិន័យ) */}
-                                        <td className='px-3 py-3 text-center font-mono font-bold text-blue-700'>
+                                        <td className='px-3 py-1 text-center font-mono font-bold text-blue-700'>
                                             ${formatMoney(calcs.totalScheduledNoPenalty || 0)}
                                         </td>
 
                                         {/* Total Loan Amount */}
-                                        <td className='px-3 py-3 text-center font-mono font-bold text-emerald-700'>
+                                        <td className='px-3 py-1 text-center font-mono font-bold text-emerald-700'>
                                             ${formatMoney(displayRow?.loanAmount || item.amount || 0)}
                                         </td>
                                         {/* ការប្រាក់គណនា (Monthly Interest) */}
-                                        <td className='px-3 py-3 text-center font-mono font-bold text-violet-700'>
+                                        <td className='px-3 py-1 text-center font-mono font-bold text-violet-700'>
                                             ${formatMoney(calcs.monthlyInterest || 0)}
                                         </td>
 
                                         {/* ត្រូវបង់ខែនេះ */}
-                                        <td className='px-3 py-3 text-center font-mono text-sky-700 font-bold'>
+                                        <td className='px-3 py-1 text-center font-mono text-sky-700 font-bold'>
                                             ${formatMoney(displayRow?.scheduledAmount || 0)}
                                         </td>
 
                                         {/* ពិន័យ */}
-                                        <td className='px-3 py-3 text-right font-mono text-amber-600 font-bold'>
+                                        <td className='px-3 py-1 text-right font-mono text-amber-600 font-bold'>
                                             ${formatMoney(displayRow?.penalty || 0)}
                                         </td>
 
                                         {/* ភ្ញៀវបានបង់សរុប */}
-                                        <td className='px-3 py-3 text-center font-mono font-bold text-emerald-700'>
+                                        <td className='px-3 py-1 text-center font-mono font-bold text-emerald-700'>
                                             ${formatMoney(calcs.totalPaid || 0)}
                                         </td>
 
                                         {/* % បានបង់ */}
-                                        <td className='px-3 py-3 text-center font-mono'>
+                                        <td className='px-3 py-1 text-center font-mono'>
                                             <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold border inline-block ${calcs.percentPaidNum >= 100 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
                                                 calcs.percentPaidNum >= 50 ? 'bg-indigo-100 text-indigo-800 border-indigo-300' :
                                                     calcs.percentPaidNum > 0 ? 'bg-amber-100 text-amber-800 border-amber-300' :
@@ -884,17 +884,17 @@ const InstallmentPage = () => {
                                         </td>
 
                                         {/* Comment */}
-                                        <td className='px-3 py-3 text-slate-500 italic text-[11px] max-w-[140px] truncate'>
+                                        <td className='px-3 py-1 text-slate-500 italic text-[11px] max-w-[140px] truncate'>
                                             {displayRow?.comment || '—'}
                                         </td>
 
                                         {/* កាលបរិច្ឆេទបានបង់ */}
-                                        <td className='px-3 py-3 font-mono text-purple-600 font-bold text-center'>
+                                        <td className='px-3 py-1 font-mono text-purple-600 font-bold text-center'>
                                             {displayRow?.paidDate || '—'}
                                         </td>
 
                                         {/* Action — opens portal dropdown */}
-                                        <td className="px-3 py-3 text-center">
+                                        <td className="px-3 py-1 text-center">
                                             <button
                                                 onClick={(e) => handleOpenMenu(e, menuKey)}
                                                 className={`w-8 h-8 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === menuKey
@@ -964,7 +964,7 @@ const InstallmentPage = () => {
             </div>
 
             {/* ── Pagination with page-size selector ────────────────────── */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-2xl text-xs shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-5px text-xs shadow-xs">
                 {/* Left: showing info + items-per-page */}
                 <div className="flex items-center gap-3 text-slate-500">
                     <span>

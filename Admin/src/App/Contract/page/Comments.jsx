@@ -156,23 +156,23 @@ const Comments = () => {
                         ) : (
                             contracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
-                                    <td className='px-4 py-3 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-4 py-1.5 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                    <td className='px-4 py-1.5 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
+                                    <td className='px-4 py-1.5'>
                                         <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
                                         {item.customerNameKh && <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs font-semibold' />}
                                     </td>
-                                    <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
-                                    <td className='px-4 py-3 text-teal-800 font-sans font-medium max-w-[260px] truncate' title={item.notes}>
+                                    <td className='px-4 py-1.5 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                    <td className='px-4 py-1.5 text-teal-800 font-sans font-medium max-w-[260px] truncate' title={item.notes}>
                                         💡 {item.notes || 'No comment provided'}
                                     </td>
-                                    <td className='px-4 py-3 text-center'>
+                                    <td className='px-4 py-1.5 text-center'>
                                         <span className='px-3 py-1 bg-teal-50 text-teal-800 border border-teal-300 rounded-full font-bold text-[10px] uppercase'>Comments</span>
                                     </td>
-                                    <td className='px-4 py-3 text-center font-mono text-indigo-700 font-bold'>
+                                    <td className='px-4 py-1.5 text-center font-mono text-indigo-700 font-bold'>
                                         <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
                                     </td>
-                                    <td className="px-4 py-3 text-center relative">
+                                    <td className="px-4 py-1.5 text-center relative">
                                         <div className="relative inline-block text-left">
                                             <button onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs">
                                                 <AiOutlineMenu size={16} />
