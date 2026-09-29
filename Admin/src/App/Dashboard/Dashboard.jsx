@@ -15,6 +15,7 @@ import {
     FaUnlock
 } from 'react-icons/fa';
 import LineChart from '../../components/LineChart';
+import { getAutomaticPenalty, getRowWithDueDate } from '../../utils/repaymentUtils';
 
 const Dashboard = () => {
     const { t } = useLanguage();
@@ -66,6 +67,7 @@ const Dashboard = () => {
     const [reloading, setReloading] = useState(false);
     const [rawContracts, setRawContracts] = useState([]);
     const [rawPayments, setRawPayments] = useState([]);
+    const [penaltyRulesByBrand, setPenaltyRulesByBrand] = useState({});
 
     // Active Brand Filter Scope
     const activeUserBrand = useMemo(() => {
@@ -125,6 +127,19 @@ const Dashboard = () => {
                 const cData = await cRes.json();
                 const contracts = cData.data || cData.contracts || (Array.isArray(cData) ? cData : []);
                 setRawContracts(contracts);
+
+                const brands = [...new Set(['', ...contracts.map(contract => String(contract.brand || '').trim())])];
+                const ruleEntries = await Promise.all(brands.map(async brand => {
+                    try {
+                        const configRes = await fetch(`${API_BASE1}/controlsystem?brand=${encodeURIComponent(brand)}`);
+                        if (!configRes.ok) return [brand, []];
+                        const config = await configRes.json();
+                        return [brand, Array.isArray(config?.late_penalty_rules) ? config.late_penalty_rules : []];
+                    } catch {
+                        return [brand, []];
+                    }
+                }));
+                setPenaltyRulesByBrand(Object.fromEntries(ruleEntries));
             }
             if (pRes.ok) {
                 const pData = await pRes.json();
@@ -235,7 +250,10 @@ const Dashboard = () => {
                 if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
                     c.repaymentSchedule.forEach(row => {
                         const scheduled = Number(row.scheduledAmount) || Number(row.amount) || Number(c.monthlyPayment) || 0;
-                        const penalty = Number(row.penalty) || 0;
+                        const brand = String(c.brand || '').trim();
+                        const rules = penaltyRulesByBrand[brand] || penaltyRulesByBrand[''] || [];
+                        const penaltyRow = getRowWithDueDate(row, c);
+                        const penalty = getAutomaticPenalty(penaltyRow, c, rules);
                         totalScheduled += scheduled;
                         totalPenalty += penalty;
                         totalExpected += (scheduled + penalty);
@@ -266,7 +284,7 @@ const Dashboard = () => {
             totalPenalty: totalPenalty || stats.totalPenaltyRepayment || 0,
             totalInterest: totalInterest || stats.totalInterest || 0
         };
-    }, [rawContracts, stats]);
+    }, [rawContracts, stats, penaltyRulesByBrand]);
 
     // ── Chart Trend Data (Identical format to /report/all-customers LineChart) ──
     const chartTrendData = useMemo(() => {
