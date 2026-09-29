@@ -69,7 +69,7 @@ const CalculateSchedule1 = () => {
 
         const monthsCount = durationUnit === 'days' ? Math.max(1, Math.ceil(duration / 30)) : duration;
         const principalCents = Math.round(principal * 100);
-        const principalPerMonth = Math.floor(principalCents / monthsCount) / 100;
+        const principalPerMonth = Math.round(principalCents / monthsCount) / 100;
         const paymentPerMonth = principalPerMonth + monthlyInterestUSD;
 
         const totalInterest = monthlyInterestUSD * monthsCount;

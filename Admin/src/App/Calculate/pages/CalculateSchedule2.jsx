@@ -225,8 +225,8 @@ const CalculateSchedule2 = () => {
         if (principal <= 0) return null;
 
         const monthlyInterest = principal * (ratePercent / 100);
-        const monthlyPrincipal = principal / months;
-        const monthlyTotalDue = monthlyPrincipal + monthlyInterest;
+        const principalCents = Math.round(principal * 100);
+        const monthlyPrincipal = Math.round(principalCents / months) / 100;
 
         const baseDate = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
         const originalDay = baseDate.getDate();
@@ -252,7 +252,7 @@ const CalculateSchedule2 = () => {
                 principal,
                 monthlyPrincipal: principalPayment,
                 interestAndFee: monthlyInterest,
-                totalDueMonth: monthlyTotalDue,
+                totalDueMonth: principalPayment + monthlyInterest,
 
                 // សមតុល្យនៅសល់
                 remainingBalance: Math.max(0, remainingBalance),

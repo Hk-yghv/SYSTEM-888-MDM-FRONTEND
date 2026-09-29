@@ -115,8 +115,8 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             setRows(newRows);
         } else {
             const monthlyInterest = round2(principal * (ratePercent / 100));
-            const monthlyPrincipal = round2(principal / months);
-            const monthlyTotalDue = round2(monthlyPrincipal + monthlyInterest);
+            const principalCents = Math.round(principal * 100);
+            const monthlyPrincipal = Math.round(principalCents / months) / 100;
 
             const addMonthsSafe = (bDate, origDay, mOffset) => {
                 const d = new Date(bDate);
@@ -128,18 +128,23 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             };
 
             const newRows = [];
+            let remainingPrincipal = principal;
             for (let i = 1; i <= months; i++) {
                 const d = addMonthsSafe(baseDate, originalDay, i);
                 const y = d.getFullYear();
                 const m = String(d.getMonth() + 1).padStart(2, '0');
                 const day = String(d.getDate()).padStart(2, '0');
                 const dateStr = `${y}-${m}-${day}`;
+                const principalPayment = i === months ? remainingPrincipal : monthlyPrincipal;
+                remainingPrincipal = round2(remainingPrincipal - principalPayment);
+                const monthlyTotalDue = round2(principalPayment + monthlyInterest);
 
                 newRows.push({
                     monthIndex: i,
                     labelName: `ខែទី ${i} (Month ${i})`,
                     dueDate: dateStr,
                     loanAmount: principal,
+                    monthlyPrincipal: principalPayment,
                     interest: monthlyInterest,
                     penalty: 0,
                     scheduledAmount: monthlyTotalDue,
