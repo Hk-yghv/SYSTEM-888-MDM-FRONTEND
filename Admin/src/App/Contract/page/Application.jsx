@@ -157,7 +157,7 @@ const Application = () => {
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('application')}</span>
@@ -204,7 +204,7 @@ const Application = () => {
             </header>
 
             {/* Application List Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>

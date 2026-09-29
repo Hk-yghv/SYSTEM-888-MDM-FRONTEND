@@ -97,7 +97,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
     return ReactDOM.createPortal(
         <div data-action-menu-root="true"
             style={{ position: 'fixed', top: pos.bottom + 4, left, width: dropdownWidth, zIndex: 999999 }}
-            className="bg-white border border-slate-200 rounded-5px shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white border border-slate-200 rounded-[5px] shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}>
             <div className="px-3 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Repayment Actions</div>
             <button onClick={() => { onOpenQrModal(item); onClose(); }}
@@ -240,7 +240,7 @@ const DueIn3DaysPage = () => {
                 <ActionDropdownPortal item={openMenuContract} pos={openMenu.pos} onClose={() => setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } })} onOpenSchedule={openScheduleForMonth} onSelectMonth={selectMonthForOuterRow} onOpenQrModal={(c) => setSelectedQrContract(c)} />
             )}
 
-            <header className='p-3 w-full border border-sky-200 bg-white rounded-5px flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-sky-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-sky-600 flex items-center gap-2 flex-wrap'>
                         <FaClock className="text-sky-500" size={18} />
@@ -261,7 +261,7 @@ const DueIn3DaysPage = () => {
                 </div>
             </header>
 
-            <div className='w-full overflow-auto rounded-5px border border-sky-100 bg-white shadow-md' style={{ maxHeight: 'calc(100vh - 260px)' }}>
+            <div className='w-full overflow-auto rounded-[5px] border border-sky-100 bg-white shadow-md' style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-sky-50 text-sky-800 uppercase tracking-wider border-b border-sky-100 sticky top-0 z-10'>
                         <tr>

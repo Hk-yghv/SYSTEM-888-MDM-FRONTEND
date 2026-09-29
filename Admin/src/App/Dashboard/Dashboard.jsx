@@ -371,11 +371,11 @@ const Dashboard = () => {
             {/* ═══════════════════════════════════════════════════════════
                 1. REFINED FINANCIAL CONTROL BAR (HIGH CONTRAST HEADER)
             ═══════════════════════════════════════════════════════════ */}
-            <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
 
                 {/* Left: Brand Identity & Title */}
                 <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-xl bg-slate-900 text-emerald-400 flex items-center justify-center text-2xl font-black shadow-sm">
+                    <div className="w-11 h-11 rounded-[5px] bg-slate-900 text-emerald-400 flex items-center justify-center text-2xl font-black shadow-sm">
                         <MdDashboard />
                     </div>
                     <div>
@@ -396,7 +396,7 @@ const Dashboard = () => {
                 {/* Right: Controls & High-Visibility Filters */}
                 <div className="flex flex-wrap items-center gap-3">
                     {/* Brand Scope Selector */}
-                    <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 border-2 border-slate-300 rounded-xl text-xs font-black text-slate-900">
+                    <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 border-2 border-slate-300 rounded-[5px] text-xs font-black text-slate-900">
                         <FaBuilding className="text-slate-700 text-sm" />
                         {isMasterAdmin && brandsList.length > 0 ? (
                             <select
@@ -418,7 +418,7 @@ const Dashboard = () => {
                     <button
                         onClick={fetchDashboardStats}
                         disabled={reloading}
-                        className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-2 border-2 border-emerald-500 shadow-sm active:scale-95"
+                        className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black rounded-[5px] cursor-pointer transition-all duration-200 flex items-center gap-2 border-2 border-emerald-500 shadow-sm active:scale-95"
                     >
                         <MdOutlineSync className={`text-base text-slate-950 ${reloading ? 'animate-spin' : ''}`} />
                         <span>{t('reload')}</span>
@@ -432,10 +432,10 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 {/* Metric 1: Total Loan Disbursed */}
-                <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-xs hover:border-blue-500 transition-all">
+                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-blue-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
                         <span className="text-xs font-black tracking-wide uppercase text-slate-800">ឥណទានបញ្ចេញសរុប</span>
-                        <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 border-2 border-blue-300 flex items-center justify-center text-lg font-black">
+                        <div className="w-9 h-9 rounded-[5px] bg-blue-100 text-blue-800 border-2 border-blue-300 flex items-center justify-center text-lg font-black">
                             <MdAccountBalanceWallet />
                         </div>
                     </div>
@@ -451,10 +451,10 @@ const Dashboard = () => {
                 </div>
 
                 {/* Metric 2: Revenue Collected */}
-                <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-xs hover:border-emerald-500 transition-all">
+                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-emerald-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
                         <span className="text-xs font-black tracking-wide uppercase text-slate-800">ប្រាក់ប្រមូលបានសរុប</span>
-                        <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 border-2 border-emerald-300 flex items-center justify-center text-lg font-black">
+                        <div className="w-9 h-9 rounded-[5px] bg-emerald-100 text-emerald-800 border-2 border-emerald-300 flex items-center justify-center text-lg font-black">
                             <MdTrendingUp />
                         </div>
                     </div>
@@ -470,10 +470,10 @@ const Dashboard = () => {
                 </div>
 
                 {/* Metric 3: Total Repayment Expected */}
-                <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-xs hover:border-purple-500 transition-all">
+                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-purple-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
                         <span className="text-xs font-black tracking-wide uppercase text-slate-800">ប្រាក់ត្រូវប្រមូលមកវិញ</span>
-                        <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-800 border-2 border-purple-300 flex items-center justify-center text-lg font-black">
+                        <div className="w-9 h-9 rounded-[5px] bg-purple-100 text-purple-800 border-2 border-purple-300 flex items-center justify-center text-lg font-black">
                             <FaCoins />
                         </div>
                     </div>
@@ -495,10 +495,10 @@ const Dashboard = () => {
                 </div>
 
                 {/* Metric 4: Outstanding Balance */}
-                <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-xs hover:border-amber-500 transition-all">
+                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-amber-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
                         <span className="text-xs font-black tracking-wide uppercase text-slate-800">ប្រាក់នៅសល់មិនទាន់ប្រមូល</span>
-                        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 border-2 border-amber-300 flex items-center justify-center text-lg font-black">
+                        <div className="w-9 h-9 rounded-[5px] bg-amber-100 text-amber-800 border-2 border-amber-300 flex items-center justify-center text-lg font-black">
                             <MdLock />
                         </div>
                     </div>
@@ -544,7 +544,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Right 1 Col: Contract & Security Overview */}
-                <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
+                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
                     <div>
                         <div className="flex items-center justify-between pb-3 border-b-2 border-slate-200">
                             <h3 className="text-sm font-black text-slate-950 uppercase tracking-wide">
@@ -564,7 +564,7 @@ const Dashboard = () => {
                                 { label: 'Redeem (បញ្ចប់កិច្ចសន្យា)', count: stats.redeemContracts, pct: redeemPct, color: 'text-purple-950 bg-purple-100 border-2 border-purple-400' },
                                 { label: 'Blacklist (បញ្ជីខ្មៅ)', count: stats.blacklistContracts, pct: blacklistPct, color: 'text-rose-950 bg-rose-100 border-2 border-rose-400' },
                             ].map(item => (
-                                <div key={item.label} className={`px-3.5 py-2 rounded-xl ${item.color} flex items-center justify-between font-black`}>
+                                <div key={item.label} className={`px-3.5 py-2 rounded-[5px] ${item.color} flex items-center justify-between font-black`}>
                                     <span>{item.label}</span>
                                     <span className="font-mono text-slate-950 text-sm">
                                         {item.count} <span className="text-xs text-slate-700 font-bold">({item.pct}%)</span>
@@ -596,7 +596,7 @@ const Dashboard = () => {
             {/* ═══════════════════════════════════════════════════════════
                 4. FULL COMPREHENSIVE BRAND PERFORMANCE BREAKDOWN TABLE
             ═══════════════════════════════════════════════════════════ */}
-            <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
+            <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 sm:p-6 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-slate-200">
                     <div>
                         <h2 className="text-sm sm:text-base font-black text-slate-950 uppercase tracking-wide flex items-center gap-2">
@@ -612,7 +612,7 @@ const Dashboard = () => {
                     </span>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border-2 border-slate-300">
+                <div className="overflow-x-auto rounded-[5px] border-2 border-slate-300">
                     <table className="w-full text-left text-xs border-collapse">
                         <thead className="bg-slate-950 text-white uppercase tracking-wider text-[11px] font-black">
                             <tr>

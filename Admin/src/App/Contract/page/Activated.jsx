@@ -351,7 +351,7 @@ const Activated = () => {
                         </div>
 
                         <form onSubmit={handleConfirmRedeem} className="space-y-4">
-                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl text-xs space-y-1">
+                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-[5px] text-xs space-y-1">
                                 <p className="font-bold text-purple-900">អតិថិជន៖ {redeemItem.customerNameEn} ({redeemItem.customerNameKh})</p>
                                 <p className="text-purple-700 font-mono">ម៉ូឌែល/Serial: {redeemItem.model} • {redeemItem.serialNumber}</p>
                             </div>
@@ -393,7 +393,7 @@ const Activated = () => {
             )}
 
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('activated')}</span>
@@ -447,7 +447,7 @@ const Activated = () => {
             </header>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -550,7 +550,7 @@ const Activated = () => {
                                                         </button>
 
                                                         {openMenuId === item._id && (
-                                                            <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                            <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
                                                                 {matchingCalcSchedule && (
                                                                     <button
                                                                         onClick={() => {
@@ -725,7 +725,7 @@ const Activated = () => {
                             <button onClick={() => setSelectedInfo(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold cursor-pointer">✕</button>
                         </div>
 
-                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-900/60 border border-gray-800">
+                        <div className="flex items-center gap-4 p-4 rounded-[5px] bg-gray-900/60 border border-gray-800">
                             <div className='flex gap-3 justify-center items-center'>
                                 <h4 className="text-base font-bold text-gray-100">{selectedInfo.customerNameEn}</h4>
                                 <p className="text-sm text-indigo-400 font-khmer">{selectedInfo.customerNameKh}</p>

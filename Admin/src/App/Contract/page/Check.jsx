@@ -115,7 +115,7 @@ const Check = () => {
 
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-base font-bold text-slate-900 flex items-center gap-2'>
                         <span>{t('check')}</span>
@@ -151,7 +151,7 @@ const Check = () => {
                 </div>
             </header>
 
-            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -192,7 +192,7 @@ const Check = () => {
                                             </button>
 
                                             {openMenuId === item._id && (
-                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
                                                     {hasPermission('/contract/check', 'edit') && (
                                                         <button onClick={() => handleMoveToActivated(item)} className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer">
                                                             <MdCheckCircle className="text-emerald-600" /> Move to Activated

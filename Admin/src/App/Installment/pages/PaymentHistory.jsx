@@ -159,7 +159,7 @@ const PaymentHistory = () => {
                     onClick={closeImageViewer}
                 >
                     <div
-                        className='relative bg-white rounded-5px shadow-2xl max-w-2xl w-full mx-4 overflow-hidden'
+                        className='relative bg-white rounded-[5px] shadow-2xl max-w-2xl w-full mx-4 overflow-hidden'
                         onClick={e => e.stopPropagation()}
                     >
                         <div className='flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50'>
@@ -213,8 +213,8 @@ const PaymentHistory = () => {
                                         key={i}
                                         onClick={() => setViewImageIdx(i)}
                                         className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${i === viewImageIdx
-                                                ? 'border-emerald-500 shadow-md'
-                                                : 'border-slate-200 hover:border-emerald-300'
+                                            ? 'border-emerald-500 shadow-md'
+                                            : 'border-slate-200 hover:border-emerald-300'
                                             }`}
                                     >
                                         <img src={img} alt={`thumb-${i}`} className='w-full h-full object-cover' />
@@ -226,7 +226,7 @@ const PaymentHistory = () => {
                 </div>
             )}
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-5px flex flex-col gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col gap-3 shadow-xs'>
                 <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
                     <div className='flex items-center gap-3'>
                         <div>
@@ -339,7 +339,7 @@ const PaymentHistory = () => {
             </header>
 
             {/* Payment History Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-310px)] pb-14 rounded-5px border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-310px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>

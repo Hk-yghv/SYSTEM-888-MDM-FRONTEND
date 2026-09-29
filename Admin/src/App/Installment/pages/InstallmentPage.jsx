@@ -293,7 +293,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
             ref={menuRef}
             data-action-menu-root="true"
             style={{ position: 'fixed', top, left, width: dropdownWidth, zIndex: 999999 }}
-            className="max-h-[calc(100vh-16px)] overflow-y-auto bg-white border border-slate-200 rounded-5px shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+            className="max-h-[calc(100vh-16px)] overflow-y-auto bg-white border border-slate-200 rounded-[5px] shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}
         >
             {/* Header label */}
@@ -654,7 +654,7 @@ const InstallmentPage = () => {
             )}
 
             {/* ── Header ────────────────────────────────────────────────── */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-5px flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2 flex-wrap'>
                         <span>Installment</span>
@@ -755,7 +755,7 @@ const InstallmentPage = () => {
             </header>
 
             {/* ── Table ─────────────────────────────────────────────────── */}
-            <div className='w-full overflow-auto rounded-5px border border-slate-200 bg-white shadow-md'
+            <div className='w-full overflow-auto rounded-[5px] border border-slate-200 bg-white shadow-md'
                 style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10'>
@@ -964,7 +964,7 @@ const InstallmentPage = () => {
             </div>
 
             {/* ── Pagination with page-size selector ────────────────────── */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-5px text-xs shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-[5px] text-xs shadow-xs">
                 {/* Left: showing info + items-per-page */}
                 <div className="flex items-center gap-3 text-slate-500">
                     <span>
