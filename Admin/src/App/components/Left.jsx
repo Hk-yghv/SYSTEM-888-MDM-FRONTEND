@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import json from "../../routes/Routes.json";
 import { useLanguage } from "../../context/LanguageContext";
@@ -8,24 +9,34 @@ import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWall
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
 import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-// ─── Flyout Popup (for collapsed sidebar dropdowns) ────────────────────────
+// ─── Flyout Popup (rendered directly in body via Portal to avoid clipping) ───
 const FlyoutMenu = ({ title, icon, items = [], triggerRef, onClose }) => {
     const menuRef = useRef(null);
-    const [coords, setCoords] = useState({ top: 0, left: 68 });
+    const [coords, setCoords] = useState({ top: 0, left: 74 });
 
     useEffect(() => {
-        if (triggerRef?.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
-            const estHeight = Math.min(items.length * 40 + 56, window.innerHeight * 0.85);
-            let top = rect.top;
-            if (top + estHeight > window.innerHeight - 16) {
-                top = Math.max(16, window.innerHeight - estHeight - 16);
+        const updateCoords = () => {
+            if (triggerRef?.current) {
+                const rect = triggerRef.current.getBoundingClientRect();
+                const estHeight = Math.min(items.length * 42 + 56, window.innerHeight * 0.85);
+                let top = rect.top;
+                if (top + estHeight > window.innerHeight - 16) {
+                    top = Math.max(12, window.innerHeight - estHeight - 16);
+                }
+                setCoords({
+                    top: Math.round(top),
+                    left: Math.round(rect.right + 10),
+                });
             }
-            setCoords({
-                top: Math.round(top),
-                left: Math.round(rect.right + 12),
-            });
-        }
+        };
+
+        updateCoords();
+        window.addEventListener("resize", updateCoords);
+        window.addEventListener("scroll", updateCoords, true);
+        return () => {
+            window.removeEventListener("resize", updateCoords);
+            window.removeEventListener("scroll", updateCoords, true);
+        };
     }, [triggerRef, items]);
 
     useEffect(() => {
@@ -42,45 +53,60 @@ const FlyoutMenu = ({ title, icon, items = [], triggerRef, onClose }) => {
             if (e.key === "Escape") onClose();
         };
 
-        document.addEventListener("mousedown", handleClick);
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("resize", onClose);
+        const timer = setTimeout(() => {
+            document.addEventListener("mousedown", handleClick);
+            window.addEventListener("keydown", handleKeyDown);
+        }, 20);
+
         return () => {
+            clearTimeout(timer);
             document.removeEventListener("mousedown", handleClick);
             window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("resize", onClose);
         };
     }, [onClose, triggerRef]);
 
-    return (
+    if (typeof document === "undefined") return null;
+
+    return createPortal(
         <div
             ref={menuRef}
-            className="fixed z-[9999] min-w-[210px] max-w-[280px] rounded-xl p-2 flex flex-col gap-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl border select-none max-h-[85vh] overflow-y-auto"
+            className="fixed z-[99999] min-w-[210px] max-w-[290px] rounded-2xl p-2 flex flex-col gap-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.28)] backdrop-blur-2xl border select-none max-h-[85vh] overflow-y-auto"
             style={{
                 top: coords.top,
                 left: coords.left,
-                backgroundColor: "var(--app-sidebar, rgba(248, 250, 252, 0.97))",
-                borderColor: "var(--app-border, rgba(16, 185, 129, 0.25))",
-                animation: "flyoutIn 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+                backgroundColor: "var(--app-sidebar, rgba(248, 250, 252, 0.98))",
+                borderColor: "var(--app-border, rgba(16, 185, 129, 0.3))",
+                boxShadow: "0 20px 45px -10px rgba(0,0,0,0.3), 0 0 20px rgba(16, 185, 129, 0.15)",
+                animation: "flyoutPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards",
             }}
         >
             <style>{`
-                @keyframes flyoutIn {
-                    from { opacity: 0; transform: translateX(-8px) scale(0.95); }
-                    to   { opacity: 1; transform: translateX(0) scale(1); }
+                @keyframes flyoutPop {
+                    0% {
+                        opacity: 0;
+                        transform: translateX(-12px) scale(0.92);
+                    }
+                    70% {
+                        opacity: 1;
+                        transform: translateX(2px) scale(1.02);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: translateX(0) scale(1);
+                    }
                 }
             `}</style>
 
-            {/* Header with Title & Badge */}
+            {/* Header with Category Title & Badge */}
             {title && (
-                <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-[var(--app-border,rgba(226,232,240,0.6))] mb-1">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--app-border,rgba(226,232,240,0.7))] mb-1 bg-emerald-500/5 rounded-xl">
                     <div className="flex items-center gap-2 min-w-0">
-                        {icon && <span className="text-emerald-600 flex-shrink-0 text-base">{icon}</span>}
+                        {icon && <span className="text-emerald-600 flex-shrink-0 text-lg">{icon}</span>}
                         <span className="text-xs font-bold tracking-wide text-emerald-700 dark:text-emerald-400 truncate">
                             {title}
                         </span>
                     </div>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 border border-emerald-500/20">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 border border-emerald-500/25">
                         {items.length}
                     </span>
                 </div>
@@ -93,23 +119,24 @@ const FlyoutMenu = ({ title, icon, items = [], triggerRef, onClose }) => {
                         key={i}
                         to={item.to}
                         onClick={onClose}
-                        className={`group relative flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 border
+                        className={`group relative flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border
                             ${item.active
-                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-600/25"
-                                : "text-[var(--app-text,#0f172a)] border-transparent hover:bg-emerald-500/15 hover:border-emerald-300/40 hover:translate-x-0.5"
+                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-600/30 font-bold"
+                                : "text-[var(--app-text,#0f172a)] border-transparent hover:bg-emerald-500/15 hover:border-emerald-300/40 hover:translate-x-1"
                             }`}
                     >
-                        <div className="flex items-center gap-2 min-w-0">
-                            <span className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${item.active ? "bg-white scale-125" : "bg-emerald-500/60 group-hover:bg-emerald-600 group-hover:scale-125"}`} />
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <span className={`w-2 h-2 rounded-full transition-all duration-200 ${item.active ? "bg-white scale-125" : "bg-emerald-500/50 group-hover:bg-emerald-600 group-hover:scale-125"}`} />
                             <span className="truncate">{item.label}</span>
                         </div>
                         {item.active && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                         )}
                     </Link>
                 ))}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
