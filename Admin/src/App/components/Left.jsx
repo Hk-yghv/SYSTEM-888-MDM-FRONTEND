@@ -218,7 +218,7 @@ const Left = ({ isOpen = false, onClose, collapsed = false, onToggleCollapse }) 
             onClick={(event) => {
                 if (event.target.closest('a')) onClose?.();
             }}
-            className={`app-sidebar h-full min-h-0 flex-shrink-0 border-r p-3 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-all duration-300 mobile-sidebar ${isOpen ? 'mobile-sidebar-open' : ''} ${collapsed ? 'w-[60px]' : 'w-[260px]'}`}
+            className={`app-sidebar h-full min-h-0 flex-shrink-0 border-r p-2.5 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-all duration-300 mobile-sidebar ${isOpen ? 'mobile-sidebar-open' : ''} ${collapsed ? 'w-[64px]' : 'w-[260px]'}`}
             style={{
                 backgroundColor: 'var(--app-sidebar, rgba(248, 250, 252, 0.9))',
                 borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'
