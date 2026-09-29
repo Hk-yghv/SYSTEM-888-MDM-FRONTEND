@@ -536,7 +536,7 @@ const AllCustomersReport = () => {
                                 const link = (url, label = 'Open') => url
                                     ? <a href={url} title={url} target="_blank" rel="noreferrer" className="text-indigo-700 underline">{label}</a>
                                     : '-';
-                                const cell = (content, className = '') => <td className={`max-w-64 px-3 py-2 align-top ${className}`}>{content}</td>;
+                                const cell = (content, className = '') => <td className={`max-w-9999999 px-3 py-2 align-top ${className}`}>{content}</td>;
                                 const photoLinks = [...(item.photos || []), ...(item.evidencePhotos || [])].filter(Boolean);
 
                                 return (
