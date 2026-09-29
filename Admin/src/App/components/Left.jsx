@@ -34,14 +34,14 @@ const Left = ({ isOpen = false, onClose }) => {
         }`;
 
     const dropdownHeaderClass = (menuName) =>
-        `group relative w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-[var(--app-card,rgba(255,255,255,0.4))] hover:bg-emerald-500/15 text-[var(--app-text,#0f172a)] border border-[var(--app-border,rgba(226,232,240,0.6))] rounded-[5px] cursor-pointer text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.005] hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.99] active:translate-y-[1px] shadow-2xs backdrop-blur-md`;
+        `sidebar-dropdown-header group relative w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-[var(--app-card,rgba(255,255,255,0.4))] hover:bg-emerald-500/15 text-[var(--app-text,#0f172a)] border border-[var(--app-border,rgba(226,232,240,0.6))] rounded-[5px] cursor-pointer text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.005] hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.99] active:translate-y-[1px] shadow-2xs backdrop-blur-md`;
 
     return (
         <div
             onClick={(event) => {
                 if (event.target.closest('a')) onClose?.();
             }}
-            className={`w-[260px] h-full min-h-0 flex-shrink-0 border-r p-3 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-colors mobile-sidebar ${isOpen ? 'mobile-sidebar-open' : ''}`}
+            className={`app-sidebar w-[260px] h-full min-h-0 flex-shrink-0 border-r p-3 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-colors mobile-sidebar ${isOpen ? 'mobile-sidebar-open' : ''}`}
             style={{
                 backgroundColor: 'var(--app-sidebar, rgba(248, 250, 252, 0.9))',
                 borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'
@@ -52,7 +52,7 @@ const Left = ({ isOpen = false, onClose }) => {
             {hasPermission('/dashboard', 'read') && (
                 <Link to={json.dashboard} className={navItemClass(json.dashboard)}>
                     <MdDashboard size={20} className={isActive(json.dashboard) ? "text-white" : "text-emerald-600"} />
-                    {t('dashboard')}
+                    <span className="sidebar-label">{t('dashboard')}</span>
                 </Link>
             )}
 
@@ -60,7 +60,7 @@ const Left = ({ isOpen = false, onClose }) => {
             {hasPermission('/customer', 'read') && (
                 <Link to={json.customer} className={navItemClass(json.customer)}>
                     <IoIosContact size={20} className={isActive(json.customer) ? "text-white" : "text-emerald-600"} />
-                    {t('customer')}
+                    <span className="sidebar-label">{t('customer')}</span>
                 </Link>
             )}
 
@@ -68,7 +68,7 @@ const Left = ({ isOpen = false, onClose }) => {
             {hasPermission('/device', 'read') && (
                 <Link to={json.device} className={navItemClass(json.device)}>
                     <MdOutlinePhoneIphone size={20} className={isActive(json.device) ? "text-white" : "text-emerald-600"} />
-                    {t('device')}
+                    <span className="sidebar-label">{t('device')}</span>
                 </Link>
             )}
 
@@ -84,7 +84,7 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div onClick={() => toggleMenu("contract")} className={dropdownHeaderClass("contract")}>
                             <p className="flex items-center gap-3">
                                 <MdOutlineContactPhone size={20} className="text-emerald-600" />
-                                {t('contract')}
+                                <span className="sidebar-label">{t('contract')}</span>
                             </p>
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "contract" ? "rotate-180" : ""}`} />
                         </div>
@@ -115,7 +115,7 @@ const Left = ({ isOpen = false, onClose }) => {
             {hasPermission(json.calendar || '/calendar', 'read') && (
                 <Link to={json.calendar || '/calendar'} className={navItemClass(json.calendar || '/calendar')}>
                     <FaCalendarAlt size={18} className={isActive(json.calendar || '/calendar') ? "text-white" : "text-emerald-600"} />
-                    ប្រតិទិនខ្មែរ
+                    <span className="sidebar-label">ប្រតិទិនខ្មែរ</span>
                 </Link>
             )}
 
@@ -126,7 +126,7 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div onClick={() => toggleMenu("calculate")} className={dropdownHeaderClass("calculate")}>
                             <p className="flex items-center gap-3">
                                 <MdCalculate size={20} className="text-emerald-600" />
-                                {t('calculate')}
+                                <span className="sidebar-label">{t('calculate')}</span>
                             </p>
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "calculate" ? "rotate-180" : ""}`} />
                         </div>
@@ -165,7 +165,7 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div onClick={() => toggleMenu("installment")} className={dropdownHeaderClass("installment")}>
                             <p className="flex items-center gap-3">
                                 <IoMdWallet size={20} className="text-emerald-600" />
-                                {t('installment')}
+                                <span className="sidebar-label">{t('installment')}</span>
                             </p>
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "installment" ? "rotate-180" : ""}`} />
                         </div>
@@ -223,7 +223,7 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div onClick={() => toggleMenu("lostphone")} className={dropdownHeaderClass("lostphone")}>
                             <p className="flex items-center gap-3">
                                 <MdOutlinePhoneIphone size={20} className="text-emerald-600" />
-                                {t('lostPhone')}
+                                <span className="sidebar-label">{t('lostPhone')}</span>
                             </p>
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "lostphone" ? "rotate-180" : ""}`} />
                         </div>
@@ -250,7 +250,7 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div onClick={() => toggleMenu("wallpaper")} className={dropdownHeaderClass("wallpaper")}>
                             <p className="flex items-center gap-3">
                                 <MdOutlineWallpaper size={20} className="text-emerald-600" />
-                                {t('wallpaper')}
+                                <span className="sidebar-label">{t('wallpaper')}</span>
                             </p>
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "wallpaper" ? "rotate-180" : ""}`} />
                         </div>
@@ -282,7 +282,7 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div onClick={() => toggleMenu("report")} className={dropdownHeaderClass("report")}>
                             <p className="flex items-center gap-3">
                                 <MdOutlineBarChart size={20} className="text-emerald-600" />
-                                <span>{t('report')}</span>
+                                <span className="sidebar-label">{t('report')}</span>
                             </p>
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "report" ? "rotate-180" : ""}`} />
                         </div>
@@ -324,7 +324,7 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div onClick={() => toggleMenu("history")} className={dropdownHeaderClass("history")}>
                             <p className="flex items-center gap-3">
                                 <FaHistory size={18} className="text-emerald-600" />
-                                {t('history')}
+                                <span className="sidebar-label">{t('history')}</span>
                             </p>
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "history" ? "rotate-180" : ""}`} />
                         </div>
@@ -351,7 +351,7 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div onClick={() => toggleMenu("followUp")} className={dropdownHeaderClass("followUp")}>
                             <p className="flex items-center gap-3">
                                 <FaClipboardCheck size={18} className="text-emerald-600" />
-                                <span>{t('followUp') || 'Follow up'}</span>
+                                <span className="sidebar-label">{t('followUp') || 'Follow up'}</span>
                             </p>
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "followUp" ? "rotate-180" : ""}`} />
                         </div>
@@ -387,7 +387,7 @@ const Left = ({ isOpen = false, onClose }) => {
             {hasPermission(json.salary || '/salary', 'read') && (
                 <Link to={json.salary || '/salary'} className={navItemClass(json.salary || '/salary')}>
                     <FaMoneyBillWave size={19} className={isActive(json.salary || '/salary') ? "text-white" : "text-emerald-600"} />
-                    {t('salary') || 'Salary'}
+                    <span className="sidebar-label">{t('salary') || 'Salary'}</span>
                 </Link>
             )}
 
@@ -399,7 +399,7 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div onClick={() => toggleMenu("setting")} className={dropdownHeaderClass("setting")}>
                             <p className="flex items-center gap-3">
                                 <IoIosSettings size={20} className="text-emerald-600" />
-                                {t('settings')}
+                                <span className="sidebar-label">{t('settings')}</span>
                             </p>
                             <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "setting" ? "rotate-180" : ""}`} />
                         </div>

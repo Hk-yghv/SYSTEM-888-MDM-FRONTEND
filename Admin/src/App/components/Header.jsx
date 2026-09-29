@@ -106,7 +106,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 setIsFullscreen(false);
             }
         } catch (error) {
-            console.error('Fullscreen error:', error);
+            
         }
     };
 

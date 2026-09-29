@@ -112,6 +112,44 @@
     transform: translateX(3px);
 }
 
+@media (min-width: 768px) {
+    .app-sidebar {
+        width: 72px;
+        padding-inline: 0.5rem;
+        transition: width 0.22s ease, padding 0.22s ease;
+    }
+
+    .app-sidebar:hover,
+    .app-sidebar:focus-within {
+        width: 260px;
+        padding-inline: 0.75rem;
+    }
+
+    .app-sidebar:not(:hover):not(:focus-within) .sidebar-label {
+        display: none;
+    }
+
+    .app-sidebar:not(:hover):not(:focus-within) a.glass-nav-item,
+    .app-sidebar:not(:hover):not(:focus-within) .sidebar-dropdown-header {
+        justify-content: center;
+        padding-inline: 0;
+    }
+
+    .app-sidebar:not(:hover):not(:focus-within) .sidebar-dropdown-header > p {
+        justify-content: center;
+        gap: 0;
+    }
+
+    .app-sidebar:not(:hover):not(:focus-within) .sidebar-dropdown-header > svg {
+        display: none;
+    }
+
+    .app-sidebar:not(:hover):not(:focus-within) > .flex-shrink-0 > div:nth-child(2) {
+        max-height: 0 !important;
+        margin-top: 0 !important;
+    }
+}
+
 @media (max-width: 767px) {
     html,
     body,
