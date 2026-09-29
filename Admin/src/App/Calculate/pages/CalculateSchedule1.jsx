@@ -68,11 +68,12 @@ const CalculateSchedule1 = () => {
         const monthlyInterestUSD = principal * rateDecimal;
 
         const monthsCount = durationUnit === 'days' ? Math.max(1, Math.ceil(duration / 30)) : duration;
-        const principalPerMonth = principal / monthsCount;
+        const principalCents = Math.round(principal * 100);
+        const principalPerMonth = Math.floor(principalCents / monthsCount) / 100;
         const paymentPerMonth = principalPerMonth + monthlyInterestUSD;
 
         const totalInterest = monthlyInterestUSD * monthsCount;
-        const totalRepayment = paymentPerMonth * monthsCount; // or principal + totalInterest
+        const totalRepayment = principal + totalInterest;
 
         // Generate schedule table rows
         const schedule = [];
@@ -102,7 +103,9 @@ const CalculateSchedule1 = () => {
                 dueDate = addMonthsSafe(baseDate, i);
             }
 
-            const currentPrincipalDue = principalPerMonth;
+            const currentPrincipalDue = i === monthsCount
+                ? remainingPrincipal
+                : principalPerMonth;
             remainingPrincipal = Math.max(0, remainingPrincipal - currentPrincipalDue);
 
             schedule.push({
@@ -111,7 +114,7 @@ const CalculateSchedule1 = () => {
                 dueDate: formatDateToYMD(dueDate),
                 principalDue: currentPrincipalDue,
                 interestDue: monthlyInterestUSD,
-                totalDueMonth: paymentPerMonth,
+                totalDueMonth: currentPrincipalDue + monthlyInterestUSD,
                 remainingPrincipal: remainingPrincipal
             });
         }
