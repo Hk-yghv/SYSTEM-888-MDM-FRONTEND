@@ -336,8 +336,8 @@ const Customer = () => {
 
                                 return (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                        <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                                        <td className='px-4 py-3'>
+                                        <td className='px-4 py-1.5 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                        <td className='px-4 py-1.5'>
                                             <div className="flex items-center gap-2">
                                                 <div>
                                                     <CopyCell text={item.customerNameEn} className='font-bold text-emerald-700 block' />
@@ -345,20 +345,20 @@ const Customer = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className='px-4 py-3 font-mono text-slate-600 text-[11px]'><CopyCell text={item.idCardNumber || '-'} className='font-mono text-slate-600 text-[11px]' /></td>
-                                        <td className='px-4 py-3 font-mono text-slate-700 font-medium'><CopyCell text={item.phone || '-'} className='font-mono text-slate-700 font-medium' /></td>
-                                        <td className='px-4 py-3'>
+                                        <td className='px-4 py-1.5 font-mono text-slate-600 text-[11px]'><CopyCell text={item.idCardNumber || '-'} className='font-mono text-slate-600 text-[11px]' /></td>
+                                        <td className='px-4 py-1.5 font-mono text-slate-700 font-medium'><CopyCell text={item.phone || '-'} className='font-mono text-slate-700 font-medium' /></td>
+                                        <td className='px-4 py-1.5'>
                                             <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
                                                 {item.brand || '—'}
                                             </span>
                                         </td>
-                                        <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
-                                        <td className='px-4 py-3 font-mono text-emerald-700 font-semibold text-[11px]'><CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-semibold text-[11px]' /></td>
-                                        <td className='px-4 py-3 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
-                                        <td className='px-4 py-3 text-center'>
+                                        <td className='px-4 py-1.5 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                        <td className='px-4 py-1.5 font-mono text-emerald-700 font-semibold text-[11px]'><CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-semibold text-[11px]' /></td>
+                                        <td className='px-4 py-1.5 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
+                                        <td className='px-4 py-1.5 text-center'>
                                             <span className='px-2.5 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>Activated</span>
                                         </td>
-                                        <td className='px-4 py-3 text-center'>
+                                        <td className='px-4 py-1.5 text-center'>
                                             {hasAnyAction ? (
                                                 <div className="relative inline-block text-left">
                                                     <button
