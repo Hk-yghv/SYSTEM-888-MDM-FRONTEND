@@ -459,14 +459,6 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <span className="hidden sm:inline">{t('markAllRead') || 'អានទាំងអស់'}</span>
                         </button>
                         <button
-                            onClick={fetchAlerts}
-                            disabled={loading}
-                            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer text-xs flex items-center gap-1 font-bold border border-slate-700 active:scale-95"
-                            title={t('refresh') || 'ទាញយកឡើងវិញ'}
-                        >
-                            <FaSync className={`text-xs ${loading ? 'animate-spin text-amber-400' : ''}`} />
-                        </button>
-                        <button
                             onClick={onClose}
                             className="p-2 rounded-lg bg-slate-800 hover:bg-rose-900/80 text-slate-300 hover:text-rose-200 transition-colors cursor-pointer text-sm border border-slate-700"
                             title={t('close')}

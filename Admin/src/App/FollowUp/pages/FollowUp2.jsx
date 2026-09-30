@@ -807,15 +807,6 @@ const FollowUp2 = () => {
 
                 {/* Top Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-                    <button
-                        onClick={() => fetchData(page)}
-                        disabled={reloading}
-                        className="px-3 py-2 bg-[var(--app-card,#ffffff)] hover:bg-[var(--app-border,#f1f5f9)] text-[var(--app-text,#334155)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
-                    >
-                        <MdOutlineSync size={16} className={reloading ? "animate-spin text-indigo-600" : ""} />
-                        <span>{t('reload') || 'Reload'}</span>
-                    </button>
-
                     {hasPermission('/follow-up/follow-up-2', 'export') && (
                         <ExportDropdown
                             onExportExcel={() => handleOpenExportModal('excel')}

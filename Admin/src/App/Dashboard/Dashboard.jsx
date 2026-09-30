@@ -405,15 +405,6 @@ const Dashboard = () => {
                         )}
                     </div>
 
-                    {/* Reload Button (High-Contrast Emerald with Dark Text) */}
-                    <button
-                        onClick={fetchDashboardStats}
-                        disabled={reloading}
-                        className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black rounded-[5px] cursor-pointer transition-all duration-200 flex items-center gap-2 border-2 border-emerald-500 shadow-sm active:scale-95"
-                    >
-                        <MdOutlineSync className={`text-base text-slate-950 ${reloading ? 'animate-spin' : ''}`} />
-                        <span>{t('reload')}</span>
-                    </button>
                 </div>
             </div>
 

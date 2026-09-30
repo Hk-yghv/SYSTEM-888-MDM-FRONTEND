@@ -130,14 +130,6 @@ const Actions = () => {
                             className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all w-64 shadow-2xs"
                         />
                     </div>
-                    <button
-                        onClick={fetchContracts}
-                        disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
-                    >
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
-                        <p>{t('reload')}</p>
-                    </button>
                 </div>
             </header>
 

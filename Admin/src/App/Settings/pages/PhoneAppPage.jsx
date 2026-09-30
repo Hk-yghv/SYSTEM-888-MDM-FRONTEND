@@ -324,14 +324,6 @@ const PhoneAppPage = () => {
                         </button>
                     )}
 
-                    <button
-                        onClick={fetchStatus}
-                        disabled={reloading}
-                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-[5px] text-xs font-bold flex items-center gap-2 cursor-pointer transition-all"
-                    >
-                        <FaSyncAlt className={reloading ? "animate-spin text-emerald-400" : ""} />
-                        <span>Refresh Status</span>
-                    </button>
                 </div>
             </header>
 

@@ -582,17 +582,6 @@ const FollowUp3 = () => {
                 </div>
 
                 <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto">
-                    {/* Reload Button */}
-                    <button
-                        onClick={() => { fetchData(page, true); fetchDroplists(); }}
-                        disabled={reloading || loading}
-                        className="px-3.5 py-2 rounded-[5px] border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer disabled:opacity-50"
-                        title="Reload Data"
-                    >
-                        <MdOutlineSync className={`text-base ${reloading ? 'animate-spin text-emerald-600' : ''}`} />
-                        <span className="hidden sm:inline">{t('reload') || 'ទាញយកឡើងវិញ'}</span>
-                    </button>
-
                     {/* Export Button */}
                     {checkPermission('export') && (
                         <button

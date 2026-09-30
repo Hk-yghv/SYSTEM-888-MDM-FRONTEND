@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getKhmerHolidays, toKhmerLunarDate } from 'khmer-chhankitek-calendar';
 import { useAuth } from '../../context/AuthContext';
-import { MdChevronLeft, MdChevronRight, MdDeleteOutline, MdEdit, MdEvent, MdRefresh } from 'react-icons/md';
+import { MdChevronLeft, MdChevronRight, MdDeleteOutline, MdEdit, MdEvent } from 'react-icons/md';
 import { FaPlus } from 'react-icons/fa';
 
 const WEEKDAYS = ['អាទិត្យ', 'ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
@@ -58,7 +58,6 @@ const KhmerCalendarPage = () => {
     const [saving, setSaving] = useState(false);
     const [loadError, setLoadError] = useState('');
     const [formError, setFormError] = useState('');
-    const [refreshKey, setRefreshKey] = useState(0);
     const [formOpen, setFormOpen] = useState(false);
     const [editingId, setEditingId] = useState('');
     const [form, setForm] = useState({ date: toDateKey(new Date()), title: '', note: '', type: 'note', visibility: 'public', brand: user?.brand || '' });
@@ -135,7 +134,7 @@ const KhmerCalendarPage = () => {
         };
         loadCalendar();
         return () => { cancelled = true; };
-    }, [API_BASE1, user, token, visibleStart, visibleEnd, refreshKey]);
+    }, [API_BASE1, user, token, visibleStart, visibleEnd]);
 
     const dueByDate = useMemo(() => {
         const grouped = new Map();
@@ -287,9 +286,6 @@ const KhmerCalendarPage = () => {
                     </button>
                     <button type="button" onClick={() => { const now = new Date(); setVisibleMonth(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDate(toDateKey(now)); }} className="h-9 border border-emerald-700 bg-emerald-700 px-3 text-xs font-bold text-white hover:bg-emerald-800">
                         ថ្ងៃនេះ
-                    </button>
-                    <button type="button" onClick={() => setRefreshKey((key) => key + 1)} title="ផ្ទុកទិន្នន័យឡើងវិញ" className="h-9 w-9 flex items-center justify-center border border-[var(--app-border,#cbd5e1)] bg-white text-slate-700 hover:bg-emerald-50">
-                        <MdRefresh size={18} className={loading ? 'animate-spin' : ''} />
                     </button>
                 </div>
             </header>

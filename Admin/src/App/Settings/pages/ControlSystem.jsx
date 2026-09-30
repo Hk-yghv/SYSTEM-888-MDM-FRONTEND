@@ -544,14 +544,6 @@ const ControlSystem = () => {
                         <MdSave size={16} />
                         <span>{saving ? 'រក្សាទុក...' : 'Save All Settings'}</span>
                     </button>
-                    <button
-                        onClick={fetchControlSystemConfigs}
-                        disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs cursor-pointer border border-slate-300 transition-all'
-                    >
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-400' : ''} />
-                        <p>{t('reload')}</p>
-                    </button>
                 </div>
             </header>
 

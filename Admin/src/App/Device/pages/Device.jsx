@@ -196,14 +196,6 @@ const Device = () => {
                         className="px-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-48 font-medium outline-none shadow-xs"
                     />
 
-                    <button
-                        onClick={() => fetchDevices(page, searchTerm, brandFilter)}
-                        disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
-                    >
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
-                        <p>{t('reload')}</p>
-                    </button>
                 </div>
             </header>
 

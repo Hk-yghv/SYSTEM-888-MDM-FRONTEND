@@ -686,14 +686,6 @@ const SalaryPage = () => {
                                 <span>បញ្ចូលប្រាក់ខែថ្មី (Create Entry)</span>
                             </button>
                         )}
-                        <button
-                            onClick={fetchStaffDirectory}
-                            disabled={staffLoading}
-                            className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs"
-                        >
-                            <FaSync className={staffLoading ? 'animate-spin text-emerald-600' : ''} />
-                            <span>{t('reload') || 'Reload'}</span>
-                        </button>
                     </div>
                 </header>
 
@@ -977,14 +969,6 @@ const SalaryPage = () => {
                             <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                         </>
                     )}
-                    <button
-                        onClick={() => { fetchSalaries(currentPage); fetchStats(); }}
-                        disabled={reloading}
-                        className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs"
-                    >
-                        <FaSync className={reloading ? 'animate-spin text-emerald-600' : ''} />
-                        <span>{t('reload')}</span>
-                    </button>
                 </div>
             </header>
 

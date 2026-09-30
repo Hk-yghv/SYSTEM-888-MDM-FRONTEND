@@ -248,7 +248,6 @@ const DueTodayPage = () => {
                         <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search name, model, serial..." className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-orange-500 w-52 outline-none font-medium shadow-xs" />
                     </div>
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
-                    <button onClick={() => fetchContracts(searchTerm)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'><MdOutlineSync size={16} className={reloading ? 'spin-reload text-orange-600' : ''} /><p>{t('reload')}</p></button>
                 </div>
             </header>
 

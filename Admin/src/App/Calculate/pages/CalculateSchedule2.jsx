@@ -52,7 +52,7 @@ const CalculateSchedule2 = () => {
             if (!/^\d+$/.test(value)) return max;
             return Math.max(max, parseInt(value, 10));
         }, 0);
-        return String(maxNumber + 1).padStart(3, '0');
+        return String(maxNumber + 1);
     };
 
     // ─── Load asset types from ControlSystem DB ────────────────────
