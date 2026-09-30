@@ -1408,17 +1408,17 @@ const SalaryPage = () => {
                 <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-[var(--app-border,#e2e8f0)]">
                         <tr>
-                            <th className="px-4 py-3 text-center">No</th>
-                            <th className="px-4 py-3">កាលបរិច្ឆេទ (Date)</th>
-                            <th className="px-4 py-3">ឈ្មោះបុគ្គលិក (Staff Name)</th>
-                            <th className="px-4 py-3">ថ្ងៃចូលបម្រើ</th>
-                            <th className="px-4 py-3 text-right">ចំនួនទឹកប្រាក់ (Amount)</th>
-                            <th className="px-4 py-3 text-center">វិធីសាស្ត្រទូទាត់</th>
-                            <th className="px-4 py-3">ប្រភេទ (Category)</th>
-                            <th className="px-4 py-3 text-center">រូបភាពភស្តុតាង</th>
-                            <th className="px-4 py-3">កំណត់ចំណាំ (Note)</th>
-                            <th className="px-4 py-3">បញ្ចូលដោយ</th>
-                            <th className="px-4 py-3 text-center">Actions</th>
+                            <th className="px-4 py-1 text-center">No</th>
+                            <th className="px-4 py-1">កាលបរិច្ឆេទ (Date)</th>
+                            <th className="px-4 py-1">ឈ្មោះបុគ្គលិក (Staff Name)</th>
+                            <th className="px-4 py-1">ថ្ងៃចូលបម្រើ</th>
+                            <th className="px-4 py-1 text-right">ចំនួនទឹកប្រាក់ (Amount)</th>
+                            <th className="px-4 py-1 text-center">វិធីសាស្ត្រទូទាត់</th>
+                            <th className="px-4 py-1">ប្រភេទ (Category)</th>
+                            <th className="px-4 py-1 text-center">រូបភាពភស្តុតាង</th>
+                            <th className="px-4 py-1">កំណត់ចំណាំ (Note)</th>
+                            <th className="px-4 py-1">បញ្ចូលដោយ</th>
+                            <th className="px-4 py-1 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-[var(--app-text,#0f172a)]">
@@ -1440,13 +1440,13 @@ const SalaryPage = () => {
                         ) : (
                             salaries.map((item, idx) => (
                                 <tr key={item._id || item.id || idx} className="hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 transition-colors">
-                                    <td className="px-4 py-3 text-center font-mono text-slate-500 font-semibold">
+                                    <td className="px-4 py-1 text-center font-mono text-slate-500 font-semibold">
                                         {(currentPage - 1) * itemsPerPage + idx + 1}
                                     </td>
-                                    <td className="px-4 py-3 font-mono font-bold text-slate-700 dark:text-slate-300">
+                                    <td className="px-4 py-1 font-mono font-bold text-slate-700 dark:text-slate-300">
                                         {item.date}
                                     </td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-1">
                                         <div>
                                             {item.staffNameKh && (
                                                 <p className="font-black text-slate-900 dark:text-white">{item.staffNameKh}</p>
@@ -1456,23 +1456,23 @@ const SalaryPage = () => {
                                             </p>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                    <td className="px-4 py-1 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
                                         {item.joinDate || '—'}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-mono font-black text-emerald-600 text-sm">
+                                    <td className="px-4 py-1 text-right font-mono font-black text-emerald-600 text-sm">
                                         ${Number(item.amount || 0).toLocaleString()}
                                     </td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className="px-4 py-1 text-center">
                                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-50 text-cyan-700 border border-cyan-200">
                                             {item.paymentMethod || 'ABA Bank'}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-1">
                                         <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                                             {item.category || 'Basic Salary'}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className="px-4 py-1 text-center">
                                         {item.proofPhoto ? (
                                             <button
                                                 type="button"
@@ -1491,13 +1491,13 @@ const SalaryPage = () => {
                                             <span className="text-slate-400 text-[10px] italic">គ្មានរូប</span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 max-w-[200px] truncate text-slate-600 dark:text-slate-400" title={item.note || ''}>
+                                    <td className="px-4 py-1 max-w-[200px] truncate text-slate-600 dark:text-slate-400" title={item.note || ''}>
                                         {item.note || '—'}
                                     </td>
-                                    <td className="px-4 py-3 text-slate-500 text-[11px] font-mono">
+                                    <td className="px-4 py-1 text-slate-500 text-[11px] font-mono">
                                         {item.createdBy || 'Administrator'}
                                     </td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className="px-4 py-1 text-center">
                                         <div className="flex items-center justify-center gap-1.5">
                                             {hasPermission('/salary', 'edit') && (
                                                 <button

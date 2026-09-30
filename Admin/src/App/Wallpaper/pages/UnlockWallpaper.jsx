@@ -64,13 +64,13 @@ const UnlockWallpaper = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-3 text-center'>No</th>
-                            <th className='px-4 py-3'>Unlocked Date & Time</th>
-                            <th className='px-4 py-3'>{t('customerName')}</th>
-                            <th className='px-4 py-3'>{t('model')}</th>
-                            <th className='px-4 py-3'>{t('serialNumber')}</th>
-                            <th className='px-4 py-3'>Brand</th>
-                            <th className='px-4 py-3'>Performed By</th>
+                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1'>Unlocked Date & Time</th>
+                            <th className='px-4 py-1'>{t('customerName')}</th>
+                            <th className='px-4 py-1'>{t('model')}</th>
+                            <th className='px-4 py-1'>{t('serialNumber')}</th>
+                            <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1'>Performed By</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -81,19 +81,19 @@ const UnlockWallpaper = () => {
                         ) : (
                             logs.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
-                                    <td className='px-4 py-3 font-mono text-blue-700 font-bold'>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                    <td className='px-4 py-1 font-mono text-blue-700 font-bold'>
                                         <CopyCell text={`${item.date} at ${item.time}`} className='font-mono text-blue-700 font-bold' />
                                     </td>
-                                    <td className='px-4 py-3 font-bold text-slate-900'><CopyCell text={item.customerName} className='font-bold text-slate-900' /></td>
-                                    <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
-                                    <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-semibold' /></td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-4 py-1 font-bold text-slate-900'><CopyCell text={item.customerName} className='font-bold text-slate-900' /></td>
+                                    <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                    <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-semibold' /></td>
+                                    <td className='px-4 py-1'>
                                         {item.brand
                                             ? <span className="px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]">{item.brand}</span>
                                             : <span className="text-slate-400">-</span>}
                                     </td>
-                                    <td className='px-4 py-3 text-slate-700 font-semibold'><CopyCell text={item.performedBy} className='text-slate-700 font-semibold' /></td>
+                                    <td className='px-4 py-1 text-slate-700 font-semibold'><CopyCell text={item.performedBy} className='text-slate-700 font-semibold' /></td>
                                 </tr>
                             ))
                         )}

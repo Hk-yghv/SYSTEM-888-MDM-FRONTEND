@@ -211,15 +211,15 @@ const Device = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-3 text-center'>No</th>
-                            <th className='px-4 py-3'>{t('model')}</th>
-                            <th className='px-4 py-3'>Version / OS</th>
-                            <th className='px-4 py-3'>Brand</th>
-                            <th className='px-4 py-3'>{t('serialNumber')}</th>
-                            <th className='px-4 py-3'>IMEI 1</th>
-                            <th className='px-4 py-3'>{t('customerName')}</th>
-                            <th className='px-4 py-3 text-center'>Phone Lock Status</th>
-                            <th className='px-4 py-3 text-center'>Actions</th>
+                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1'>{t('model')}</th>
+                            <th className='px-4 py-1'>Version / OS</th>
+                            <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1'>{t('serialNumber')}</th>
+                            <th className='px-4 py-1'>IMEI 1</th>
+                            <th className='px-4 py-1'>{t('customerName')}</th>
+                            <th className='px-4 py-1 text-center'>Phone Lock Status</th>
+                            <th className='px-4 py-1 text-center'>Actions</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -232,29 +232,29 @@ const Device = () => {
                         ) : (
                             filteredDevices.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
-                                    <td className='px-4 py-3 font-bold text-slate-900 flex items-center gap-2'>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                    <td className='px-4 py-1 font-bold text-slate-900 flex items-center gap-2'>
                                         <FaMobileAlt className="text-emerald-600 text-sm" />
                                         <CopyCell text={item.model} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
                                     </td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-4 py-1'>
                                         <CopyCell text={item.version || '—'} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
                                     </td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-4 py-1'>
                                         {item.brand || '—'}
                                     </td>
-                                    <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
-                                    <td className='px-4 py-3 font-mono text-slate-700 font-bold whitespace-nowrap'><CopyCell text={item.imei1} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
-                                    <td className='px-4 py-3 font-semibold text-slate-800'>
+                                    <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
+                                    <td className='px-4 py-1 font-mono text-slate-700 font-bold whitespace-nowrap'><CopyCell text={item.imei1} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
+                                    <td className='px-4 py-1 font-semibold text-slate-800'>
                                         <CopyCell text={item.customerNameEn} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /> <span className="text-emerald-700 font-khmer text-xs font-semibold"><CopyCell text={item.customerNameKh} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></span>
                                     </td>
-                                    <td className='px-4 py-3 text-center'>
+                                    <td className='px-4 py-1 text-center'>
                                         <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 w-24 mx-auto ${item.lockPhoneStatus === 'Locked' ? 'bg-red-50 border border-red-300 text-red-700' : 'bg-emerald-50 border border-emerald-300 text-emerald-800'}`}>
                                             {item.lockPhoneStatus === 'Locked' ? <FaLock size={10} /> : <FaUnlock size={10} />}
                                             {item.lockPhoneStatus || 'Unlocked'}
                                         </span>
                                     </td>
-                                    <td className='px-4 py-3 text-center'>
+                                    <td className='px-4 py-1 text-center'>
                                         {hasPermission('/device', 'information') ? (
                                             <button
                                                 onClick={() => setSelectedDevice(item)}

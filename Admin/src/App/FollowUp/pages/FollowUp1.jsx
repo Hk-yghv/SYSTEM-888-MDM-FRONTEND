@@ -815,19 +815,19 @@ const FollowUp1 = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[var(--app-bg,#f8fafc)] border-b border-[var(--app-border,#e2e8f0)] text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted,#64748b)]">
-                                <th className="py-3 px-3 w-10 text-center">#</th>
-                                <th className="py-3 px-3 min-w-[95px]">កាលបរិច្ឆេទ</th>
-                                <th className="py-3 px-2.5 text-center min-w-[75px]">Message សរុប</th>
-                                <th className="py-3 px-4 min-w-[120px]">Message សាកសួរ</th>
-                                <th className="py-3 px-2.5 text-center min-w-[65px]">Brand</th>
-                                <th className="py-3 px-2.5 text-center min-w-[75px]">មិនឆ្លើយតប</th>
-                                <th className="py-3 px-2.5 text-center min-w-[75px]">បានស្នើរ</th>
-                                <th className="py-3 px-2.5 text-center min-w-[75px]">Review</th>
-                                <th className="py-3 px-2.5 text-center min-w-[75px]">បរាជ័យ</th>
-                                <th className="py-3 px-2.5 text-center min-w-[75px]">ជោគជ័យ</th>
-                                <th className="py-3 px-2.5 text-center min-w-[75px]">អត្រា %</th>
-                                <th className="py-3 px-4 min-w-[150px]">មូលហេតុ</th>
-                                <th className="py-3 px-3 text-center min-w-[85px]">សកម្មភាព</th>
+                                <th className="py-1 px-3 w-10 text-center">#</th>
+                                <th className="py-1 px-3 min-w-[95px]">កាលបរិច្ឆេទ</th>
+                                <th className="py-1 px-2.5 text-center min-w-[75px]">Message សរុប</th>
+                                <th className="py-1 px-4 min-w-[120px]">Message សាកសួរ</th>
+                                <th className="py-1 px-2.5 text-center min-w-[65px]">Brand</th>
+                                <th className="py-1 px-2.5 text-center min-w-[75px]">មិនឆ្លើយតប</th>
+                                <th className="py-1 px-2.5 text-center min-w-[75px]">បានស្នើរ</th>
+                                <th className="py-1 px-2.5 text-center min-w-[75px]">Review</th>
+                                <th className="py-1 px-2.5 text-center min-w-[75px]">បរាជ័យ</th>
+                                <th className="py-1 px-2.5 text-center min-w-[75px]">ជោគជ័យ</th>
+                                <th className="py-1 px-2.5 text-center min-w-[75px]">អត្រា %</th>
+                                <th className="py-1 px-4 min-w-[150px]">មូលហេតុ</th>
+                                <th className="py-1 px-3 text-center min-w-[85px]">សកម្មភាព</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--app-border,#e2e8f0)] text-xs font-medium text-[var(--app-text,#0f172a)]">
@@ -858,62 +858,62 @@ const FollowUp1 = () => {
 
                                         return (
                                             <tr key={item._id || index} className="hover:bg-slate-500/5 transition-colors">
-                                                <td className="py-3 px-3 text-center text-slate-400 font-mono text-[11px]">
+                                                <td className="py-1 px-3 text-center text-slate-400 font-mono text-[11px]">
                                                     {(page - 1) * LIMIT + index + 1}
                                                 </td>
-                                                <td className="py-3 px-3 font-semibold whitespace-nowrap">
+                                                <td className="py-1 px-3 font-semibold whitespace-nowrap">
                                                     <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                                                         <FaRegCalendarAlt className="text-emerald-500 text-[11px]" />
                                                         {item.date ? item.date.split('T')[0] : 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-2.5 text-center">
+                                                <td className="py-1 px-2.5 text-center">
                                                     <span className="inline-block px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
                                                         {totalMsg.toLocaleString()}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-4 font-bold text-center font-mono text-[var(--app-text,#0f172a)]">
+                                                <td className="py-1 px-4 font-bold text-center font-mono text-[var(--app-text,#0f172a)]">
                                                     {item.message || '0'}
                                                 </td>
-                                                <td className="py-3 px-2.5 text-center">
+                                                <td className="py-1 px-2.5 text-center">
                                                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                                                         {item.brand || 'MDM'}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-2.5 text-center">
+                                                <td className="py-1 px-2.5 text-center">
                                                     <span className="inline-block px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-600 dark:text-slate-400 font-bold">
                                                         {noResp.toLocaleString()}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-2.5 text-center">
+                                                <td className="py-1 px-2.5 text-center">
                                                     <span className="inline-block px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
                                                         {req.toLocaleString()}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-2.5 text-center">
+                                                <td className="py-1 px-2.5 text-center">
                                                     <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold">
                                                         {rev.toLocaleString()}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-2.5 text-center">
+                                                <td className="py-1 px-2.5 text-center">
                                                     <span className="inline-block px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">
                                                         {fail.toLocaleString()}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-2.5 text-center">
+                                                <td className="py-1 px-2.5 text-center">
                                                     <span className="inline-block px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
                                                         {succ.toLocaleString()}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-2.5 text-center font-bold text-sky-600">
+                                                <td className="py-1 px-2.5 text-center font-bold text-sky-600">
                                                     {rate}%
                                                 </td>
-                                                <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
+                                                <td className="py-1 px-4 text-slate-600 dark:text-slate-400">
                                                     <p className="line-clamp-3 whitespace-pre-line text-xs" title={item.reason}>
                                                         {item.reason || '-'}
                                                     </p>
                                                 </td>
-                                                <td className="py-3 px-3 text-center">
+                                                <td className="py-1 px-3 text-center">
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         {hasPermission('/follow-up/follow-up-1', 'edit') && (
                                                             <button

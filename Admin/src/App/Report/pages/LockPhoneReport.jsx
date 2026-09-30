@@ -319,12 +319,12 @@ const LockPhoneReport = () => {
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                             <tr>
-                                <th className='px-4 py-3 text-center'>No</th>
-                                <th className='px-4 py-3'>Customer</th>
-                                <th className='px-4 py-3'>Model</th>
-                                <th className='px-4 py-3'>Serial Number</th>
-                                <th className='px-4 py-3'>Last Lock Date & Time</th>
-                                <th className='px-4 py-3'>Performed By</th>
+                                <th className='px-4 py-1 text-center'>No</th>
+                                <th className='px-4 py-1'>Customer</th>
+                                <th className='px-4 py-1'>Model</th>
+                                <th className='px-4 py-1'>Serial Number</th>
+                                <th className='px-4 py-1'>Last Lock Date & Time</th>
+                                <th className='px-4 py-1'>Performed By</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -335,12 +335,12 @@ const LockPhoneReport = () => {
                             ) : (
                                 dataList.map((item, idx) => (
                                     <tr key={item._id || idx} className='hover:bg-rose-50/40 transition-colors'>
-                                        <td className='px-4 py-3 text-center font-mono font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
-                                        <td className='px-4 py-3 font-bold text-slate-900'><CopyCell text={item.customerName || '-'} className='font-bold text-slate-900' /></td>
-                                        <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model || '-'} className='font-semibold text-slate-800' /></td>
-                                        <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber || '-'} className='font-mono text-emerald-700 font-semibold' /></td>
-                                        <td className='px-4 py-3 text-slate-600 font-mono'><CopyCell text={item.lastLockTime || `${item.date} ${item.time}`} className='text-slate-600 font-mono' /></td>
-                                        <td className='px-4 py-3 font-semibold text-indigo-700'><CopyCell text={item.performedBy || '-'} className='font-semibold text-indigo-700' /></td>
+                                        <td className='px-4 py-1 text-center font-mono font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                        <td className='px-4 py-1 font-bold text-slate-900'><CopyCell text={item.customerName || '-'} className='font-bold text-slate-900' /></td>
+                                        <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model || '-'} className='font-semibold text-slate-800' /></td>
+                                        <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber || '-'} className='font-mono text-emerald-700 font-semibold' /></td>
+                                        <td className='px-4 py-1 text-slate-600 font-mono'><CopyCell text={item.lastLockTime || `${item.date} ${item.time}`} className='text-slate-600 font-mono' /></td>
+                                        <td className='px-4 py-1 font-semibold text-indigo-700'><CopyCell text={item.performedBy || '-'} className='font-semibold text-indigo-700' /></td>
                                     </tr>
                                 ))
                             )}
@@ -362,25 +362,25 @@ const LockPhoneReport = () => {
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-rose-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                                 <tr>
-                                    <th className='px-3.5 py-3 text-center'>No</th>
-                                    <th className='px-3.5 py-3'>Brand Domain</th>
-                                    <th className='px-3.5 py-3 text-center'>Total Lock Actions</th>
-                                    <th className='px-3.5 py-3 text-center'>Unique Locked Customers</th>
-                                    <th className='px-3.5 py-3 text-center'>Lock Status</th>
+                                    <th className='px-3.5 py-1 text-center'>No</th>
+                                    <th className='px-3.5 py-1'>Brand Domain</th>
+                                    <th className='px-3.5 py-1 text-center'>Total Lock Actions</th>
+                                    <th className='px-3.5 py-1 text-center'>Unique Locked Customers</th>
+                                    <th className='px-3.5 py-1 text-center'>Lock Status</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
                                 {summaryBreakdown.rows.map((row, idx) => (
                                     <tr key={row.brand} className="hover:bg-rose-50/50 transition-colors">
-                                        <td className="px-3.5 py-3 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
-                                        <td className="px-3.5 py-3 font-black text-rose-900">
+                                        <td className="px-3.5 py-1 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
+                                        <td className="px-3.5 py-1 font-black text-rose-900">
                                             <span className="px-2.5 py-1 bg-rose-50 border border-rose-200 rounded-lg text-rose-900 font-bold">
                                                 {row.brand}
                                             </span>
                                         </td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-rose-700">{row.totalLockActions.toLocaleString()}</td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-slate-900">{row.uniqueCustomersCount.toLocaleString()}</td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-rose-700">Locked</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-rose-700">{row.totalLockActions.toLocaleString()}</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-slate-900">{row.uniqueCustomersCount.toLocaleString()}</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-rose-700">Locked</td>
                                     </tr>
                                 ))}
 

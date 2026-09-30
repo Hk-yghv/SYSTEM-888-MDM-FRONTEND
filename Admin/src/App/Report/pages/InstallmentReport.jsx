@@ -378,13 +378,13 @@ const InstallmentReport = () => {
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                             <tr>
-                                <th className='px-4 py-3 text-center'>No</th>
-                                <th className='px-4 py-3'>Customer</th>
-                                <th className='px-4 py-3'>Model</th>
-                                <th className='px-4 py-3'>Serial Number</th>
-                                <th className='px-4 py-3 text-center'>Paid Amount</th>
-                                <th className='px-4 py-3'>Method</th>
-                                <th className='px-4 py-3'>Paid Date</th>
+                                <th className='px-4 py-1 text-center'>No</th>
+                                <th className='px-4 py-1'>Customer</th>
+                                <th className='px-4 py-1'>Model</th>
+                                <th className='px-4 py-1'>Serial Number</th>
+                                <th className='px-4 py-1 text-center'>Paid Amount</th>
+                                <th className='px-4 py-1'>Method</th>
+                                <th className='px-4 py-1'>Paid Date</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -395,13 +395,13 @@ const InstallmentReport = () => {
                             ) : (
                                 dataList.map((item, idx) => (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/40 transition-colors'>
-                                        <td className='px-4 py-3 text-center font-mono font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
-                                        <td className='px-4 py-3 font-bold text-slate-900'><CopyCell text={item.customerName || '-'} className='font-bold text-slate-900' /></td>
-                                        <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model || '-'} className='font-semibold text-slate-800' /></td>
-                                        <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber || '-'} className='font-mono text-emerald-700 font-semibold' /></td>
-                                        <td className='px-4 py-3 text-center font-mono font-black text-emerald-700'>${item.amount || 0}</td>
-                                        <td className='px-4 py-3 font-semibold text-slate-700'>{item.paymentMethod || 'Cash'}</td>
-                                        <td className='px-4 py-3 font-mono text-slate-600'>{item.paidDate || '-'}</td>
+                                        <td className='px-4 py-1 text-center font-mono font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                        <td className='px-4 py-1 font-bold text-slate-900'><CopyCell text={item.customerName || '-'} className='font-bold text-slate-900' /></td>
+                                        <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model || '-'} className='font-semibold text-slate-800' /></td>
+                                        <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber || '-'} className='font-mono text-emerald-700 font-semibold' /></td>
+                                        <td className='px-4 py-1 text-center font-mono font-black text-emerald-700'>${item.amount || 0}</td>
+                                        <td className='px-4 py-1 font-semibold text-slate-700'>{item.paymentMethod || 'Cash'}</td>
+                                        <td className='px-4 py-1 font-mono text-slate-600'>{item.paidDate || '-'}</td>
                                     </tr>
                                 ))
                             )}
@@ -424,27 +424,27 @@ const InstallmentReport = () => {
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-emerald-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                                 <tr>
-                                    <th className='px-3.5 py-3 text-center'>No</th>
-                                    <th className='px-3.5 py-3'>Brand Domain</th>
-                                    <th className='px-3.5 py-3 text-center'>Total Transactions</th>
-                                    <th className='px-3.5 py-3 text-right text-emerald-200'>Total Revenue Collected ($)</th>
-                                    <th className='px-3.5 py-3 text-center'>Unique Paying Customers</th>
-                                    <th className='px-3.5 py-3 text-right'>Avg Payment ($)</th>
+                                    <th className='px-3.5 py-1 text-center'>No</th>
+                                    <th className='px-3.5 py-1'>Brand Domain</th>
+                                    <th className='px-3.5 py-1 text-center'>Total Transactions</th>
+                                    <th className='px-3.5 py-1 text-right text-emerald-200'>Total Revenue Collected ($)</th>
+                                    <th className='px-3.5 py-1 text-center'>Unique Paying Customers</th>
+                                    <th className='px-3.5 py-1 text-right'>Avg Payment ($)</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
                                 {summaryBreakdown.rows.map((row, idx) => (
                                     <tr key={row.brand} className="hover:bg-emerald-50/50 transition-colors">
-                                        <td className="px-3.5 py-3 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
-                                        <td className="px-3.5 py-3 font-black text-emerald-900">
+                                        <td className="px-3.5 py-1 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
+                                        <td className="px-3.5 py-1 font-black text-emerald-900">
                                             <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900 font-bold">
                                                 {row.brand}
                                             </span>
                                         </td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-slate-900">{row.totalTransactions.toLocaleString()}</td>
-                                        <td className="px-3.5 py-3 text-right font-mono font-bold text-emerald-700">${row.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-slate-900">{row.uniqueCustomersCount.toLocaleString()}</td>
-                                        <td className="px-3.5 py-3 text-right font-mono font-bold text-indigo-700">
+                                        <td className="px-3.5 py-1 text-center font-bold text-slate-900">{row.totalTransactions.toLocaleString()}</td>
+                                        <td className="px-3.5 py-1 text-right font-mono font-bold text-emerald-700">${row.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-slate-900">{row.uniqueCustomersCount.toLocaleString()}</td>
+                                        <td className="px-3.5 py-1 text-right font-mono font-bold text-indigo-700">
                                             ${row.totalTransactions > 0 ? (row.totalCollected / row.totalTransactions).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                                         </td>
                                     </tr>

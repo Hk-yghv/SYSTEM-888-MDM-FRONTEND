@@ -680,8 +680,8 @@ const FollowUpReport = () => {
                         <thead>
                             {/* Group Level 1 Header */}
                             <tr className="bg-slate-100/90 text-xs font-black text-slate-700 border-b border-slate-200">
-                                <th rowSpan={2} className="py-3 px-3 text-center border-r border-slate-200 w-12">#</th>
-                                <th rowSpan={2} className="py-3 px-4 border-r border-slate-200 min-w-[130px]">
+                                <th rowSpan={2} className="py-1 px-3 text-center border-r border-slate-200 w-12">#</th>
+                                <th rowSpan={2} className="py-1 px-4 border-r border-slate-200 min-w-[130px]">
                                     កាលបរិច្ឆេទ (Date)
                                 </th>
                                 {/* FU2 Main Group */}
@@ -758,31 +758,31 @@ const FollowUpReport = () => {
                                             className="hover:bg-slate-50/80 transition-colors"
                                         >
                                             {/* Index */}
-                                            <td className="py-3 px-3 text-center text-slate-400 font-semibold border-r border-slate-100">
+                                            <td className="py-1 px-3 text-center text-slate-400 font-semibold border-r border-slate-100">
                                                 {index + 1}
                                             </td>
 
                                             {/* Date */}
-                                            <td className="py-3 px-4 font-bold text-slate-800 border-r border-slate-100 whitespace-nowrap">
+                                            <td className="py-1 px-4 font-bold text-slate-800 border-r border-slate-100 whitespace-nowrap">
                                                 <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-mono text-[11px] font-bold">
                                                     {row.date}
                                                 </span>
                                             </td>
 
                                             {/* Follow Up 2 Values */}
-                                            <td className="py-3 px-3 text-right font-bold text-indigo-900 bg-indigo-50/10">
+                                            <td className="py-1 px-3 text-right font-bold text-indigo-900 bg-indigo-50/10">
                                                 {row.fu2.total > 0 ? Number(row.fu2.total).toLocaleString() : '—'}
                                             </td>
-                                            <td className="py-3 px-3 text-right font-bold text-emerald-600 bg-indigo-50/10">
+                                            <td className="py-1 px-3 text-right font-bold text-emerald-600 bg-indigo-50/10">
                                                 {row.fu2.success > 0 ? Number(row.fu2.success).toLocaleString() : '—'}
                                             </td>
-                                            <td className="py-3 px-3 text-right font-bold text-rose-600 bg-indigo-50/10">
+                                            <td className="py-1 px-3 text-right font-bold text-rose-600 bg-indigo-50/10">
                                                 {row.fu2.failed > 0 ? Number(row.fu2.failed).toLocaleString() : '—'}
                                             </td>
-                                            <td className="py-3 px-3 text-right font-bold text-amber-600 bg-indigo-50/10">
+                                            <td className="py-1 px-3 text-right font-bold text-amber-600 bg-indigo-50/10">
                                                 {row.fu2.review > 0 ? Number(row.fu2.review).toLocaleString() : '—'}
                                             </td>
-                                            <td className="py-3 px-3 text-right font-bold text-slate-800 bg-indigo-50/10 border-r border-indigo-100 whitespace-nowrap">
+                                            <td className="py-1 px-3 text-right font-bold text-slate-800 bg-indigo-50/10 border-r border-indigo-100 whitespace-nowrap">
                                                 {row.fu2.amount > 0 ? `$${Number(row.fu2.amount).toLocaleString()}` : '—'}
                                             </td>
 
@@ -790,7 +790,7 @@ const FollowUpReport = () => {
                                             {uniqueFu3Descriptions.map((desc, i) => {
                                                 const cnt = row.fu3.descCounts[desc] || 0;
                                                 return (
-                                                    <td key={`desc-val-${i}`} className="py-3 px-3 text-right font-semibold text-slate-700 bg-teal-50/10">
+                                                    <td key={`desc-val-${i}`} className="py-1 px-3 text-right font-semibold text-slate-700 bg-teal-50/10">
                                                         {cnt > 0 ? (
                                                             <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 font-bold">
                                                                 {cnt}
@@ -803,18 +803,18 @@ const FollowUpReport = () => {
                                             })}
 
                                             {/* FU3 Total & Amount */}
-                                            <td className="py-3 px-3 text-right font-black text-teal-900 bg-teal-50/20">
+                                            <td className="py-1 px-3 text-right font-black text-teal-900 bg-teal-50/20">
                                                 {row.fu3.total > 0 ? Number(row.fu3.total).toLocaleString() : '—'}
                                             </td>
-                                            <td className="py-3 px-3 text-right font-bold text-slate-800 bg-teal-50/20 border-r border-teal-100 whitespace-nowrap">
+                                            <td className="py-1 px-3 text-right font-bold text-slate-800 bg-teal-50/20 border-r border-teal-100 whitespace-nowrap">
                                                 {row.fu3.amount > 0 ? `$${Number(row.fu3.amount).toLocaleString()}` : '—'}
                                             </td>
 
                                             {/* Combined Daily Totals */}
-                                            <td className="py-3 px-3 text-right font-black text-emerald-900 bg-emerald-50/20">
+                                            <td className="py-1 px-3 text-right font-black text-emerald-900 bg-emerald-50/20">
                                                 {Number(combinedDailyLeads).toLocaleString()}
                                             </td>
-                                            <td className="py-3 px-3 text-right font-black text-emerald-700 bg-emerald-50/20 whitespace-nowrap">
+                                            <td className="py-1 px-3 text-right font-black text-emerald-700 bg-emerald-50/20 whitespace-nowrap">
                                                 ${Number(combinedDailyAmount).toLocaleString()}
                                             </td>
                                         </tr>

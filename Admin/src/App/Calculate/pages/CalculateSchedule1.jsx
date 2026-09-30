@@ -599,27 +599,27 @@ const CalculateSchedule1 = () => {
                                 <tbody className="divide-y divide-slate-200/70 text-slate-800 font-medium">
                                     {calculationResult.schedule.map((row) => (
                                         <tr key={row.monthIndex} className="hover:bg-emerald-50/30 transition-colors">
-                                            <td className="px-4 py-3 text-center font-bold text-slate-500">
+                                            <td className="px-4 py-1 text-center font-bold text-slate-500">
                                                 {row.monthIndex}
                                             </td>
-                                            <td className="px-4 py-3 font-bold text-slate-900">
+                                            <td className="px-4 py-1 font-bold text-slate-900">
                                                 <span className="px-2.5 py-1 rounded-lg bg-emerald-100/80 text-emerald-800 border border-emerald-300 font-bold text-xs">
                                                     {row.label}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-center font-mono font-bold text-slate-700">
+                                            <td className="px-4 py-1 text-center font-mono font-bold text-slate-700">
                                                 {row.dueDate}
                                             </td>
-                                            <td className="px-4 py-3 text-right font-mono font-bold text-slate-800">
+                                            <td className="px-4 py-1 text-right font-mono font-bold text-slate-800">
                                                 ${row.principalDue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </td>
-                                            <td className="px-4 py-3 text-right font-mono font-bold text-amber-600">
+                                            <td className="px-4 py-1 text-right font-mono font-bold text-amber-600">
                                                 ${row.interestDue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </td>
-                                            <td className="px-4 py-3 text-right font-mono font-black text-emerald-700 bg-emerald-50/20">
+                                            <td className="px-4 py-1 text-right font-mono font-black text-emerald-700 bg-emerald-50/20">
                                                 ${row.totalDueMonth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </td>
-                                            <td className="px-4 py-3 text-right font-mono text-slate-500">
+                                            <td className="px-4 py-1 text-right font-mono text-slate-500">
                                                 ${row.remainingPrincipal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </td>
                                         </tr>

@@ -564,15 +564,15 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <table className="w-full text-left text-xs border-collapse">
                                 <thead className="bg-indigo-50 text-indigo-900 border-b border-indigo-200 font-bold uppercase tracking-wider text-[10px]">
                                     <tr>
-                                        <th className="px-3.5 py-3 text-center">ល.រ</th>
-                                        <th className="px-3.5 py-3 text-center">ស្ថានភាព</th>
-                                        <th className="px-3.5 py-3">ឈ្មោះអតិថិជន</th>
-                                        <th className="px-3.5 py-3">ទូរស័ព្ទ</th>
-                                        <th className="px-3.5 py-3">Source</th>
-                                        <th className="px-3.5 py-3">Model / ប្រភេទ</th>
-                                        <th className="px-3.5 py-3 text-center">កាលបរិច្ឆេទ</th>
-                                        <th className="px-3.5 py-3">Brand</th>
-                                        <th className="px-3.5 py-3 text-center">ចូលទំព័រ</th>
+                                        <th className="px-3.5 py-1 text-center">ល.រ</th>
+                                        <th className="px-3.5 py-1 text-center">ស្ថានភាព</th>
+                                        <th className="px-3.5 py-1">ឈ្មោះអតិថិជន</th>
+                                        <th className="px-3.5 py-1">ទូរស័ព្ទ</th>
+                                        <th className="px-3.5 py-1">Source</th>
+                                        <th className="px-3.5 py-1">Model / ប្រភេទ</th>
+                                        <th className="px-3.5 py-1 text-center">កាលបរិច្ឆេទ</th>
+                                        <th className="px-3.5 py-1">Brand</th>
+                                        <th className="px-3.5 py-1 text-center">ចូលទំព័រ</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -650,16 +650,16 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <table className="w-full text-left text-xs border-collapse">
                                 <thead className="bg-rose-50 text-rose-900 border-b border-rose-200 font-bold uppercase tracking-wider text-[10px]">
                                     <tr>
-                                        <th className="px-3.5 py-3 text-center">ល.រ</th>
-                                        <th className="px-3.5 py-3 text-center">ស្ថានភាព</th>
-                                        <th className="px-3.5 py-3">ឈ្មោះអតិថិជន</th>
-                                        <th className="px-3.5 py-3 text-center">ប្រភេទ Action</th>
-                                        <th className="px-3.5 py-3">ម៉ូឌែល / Serial</th>
-                                        <th className="px-3.5 py-3">មូលហេតុបដិសេធ</th>
-                                        <th className="px-3.5 py-3 text-center">កាលបរិច្ឆេទ</th>
-                                        <th className="px-3.5 py-3">រៀបចំដោយ</th>
-                                        <th className="px-3.5 py-3 text-center">អាយុកាល Alert (៧ថ្ងៃ)</th>
-                                        <th className="px-3.5 py-3 text-center">ចូលទំព័រ</th>
+                                        <th className="px-3.5 py-1 text-center">ល.រ</th>
+                                        <th className="px-3.5 py-1 text-center">ស្ថានភាព</th>
+                                        <th className="px-3.5 py-1">ឈ្មោះអតិថិជន</th>
+                                        <th className="px-3.5 py-1 text-center">ប្រភេទ Action</th>
+                                        <th className="px-3.5 py-1">ម៉ូឌែល / Serial</th>
+                                        <th className="px-3.5 py-1">មូលហេតុបដិសេធ</th>
+                                        <th className="px-3.5 py-1 text-center">កាលបរិច្ឆេទ</th>
+                                        <th className="px-3.5 py-1">រៀបចំដោយ</th>
+                                        <th className="px-3.5 py-1 text-center">អាយុកាល Alert (៧ថ្ងៃ)</th>
+                                        <th className="px-3.5 py-1 text-center">ចូលទំព័រ</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -743,16 +743,16 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <table className="w-full text-left text-xs border-collapse">
                                 <thead className="bg-slate-100 text-slate-800 border-b border-slate-300 font-bold uppercase tracking-wider text-[10px]">
                                     <tr>
-                                        <th className="px-3.5 py-3 text-center">ល.រ</th>
-                                        <th className="px-3.5 py-3 text-center">Alert Status</th>
-                                        <th className="px-3.5 py-3">ឈ្មោះអតិថិជន</th>
-                                        <th className="px-3.5 py-3">លេខទូរស័ព្ទ</th>
-                                        <th className="px-3.5 py-3">ម៉ាក (Brand)</th>
-                                        <th className="px-3.5 py-3">ម៉ូឌែល / Serial</th>
-                                        <th className="px-3.5 py-3 text-center">ថ្ងៃត្រូវបង់</th>
-                                        <th className="px-3.5 py-3 text-center">ស្ថានភាពលើស/ដល់ថ្ងៃ</th>
-                                        <th className="px-3.5 py-3 text-center">Lock Status</th>
-                                        <th className="px-3.5 py-3 text-center">Action</th>
+                                        <th className="px-3.5 py-1 text-center">ល.រ</th>
+                                        <th className="px-3.5 py-1 text-center">Alert Status</th>
+                                        <th className="px-3.5 py-1">ឈ្មោះអតិថិជន</th>
+                                        <th className="px-3.5 py-1">លេខទូរស័ព្ទ</th>
+                                        <th className="px-3.5 py-1">ម៉ាក (Brand)</th>
+                                        <th className="px-3.5 py-1">ម៉ូឌែល / Serial</th>
+                                        <th className="px-3.5 py-1 text-center">ថ្ងៃត្រូវបង់</th>
+                                        <th className="px-3.5 py-1 text-center">ស្ថានភាពលើស/ដល់ថ្ងៃ</th>
+                                        <th className="px-3.5 py-1 text-center">Lock Status</th>
+                                        <th className="px-3.5 py-1 text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -872,7 +872,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                 </div>
 
                 {/* ── FOOTER ── */}
-                <div className="px-5 py-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 font-bold shadow-xs">
+                <div className="px-5 py-1 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 font-bold shadow-xs">
                     <div className="flex items-center gap-2">
                         <span>សរុប Alert: <strong className="text-slate-900">{summary.totalAlerts + followUp2ReviewList.length + othersRejectedList.length}</strong></span>
                         <span>•</span>

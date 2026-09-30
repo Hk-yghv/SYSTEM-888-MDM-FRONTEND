@@ -128,12 +128,12 @@ const Actions = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-3 text-center'>No</th>
-                            <th className='px-4 py-3'>{t('customerName')}</th>
-                            <th className='px-4 py-3'>{t('model')}</th>
-                            <th className='px-4 py-3'>{t('serialNumber')}</th>
-                            <th className='px-4 py-3 text-center'>Current Wallpaper Status</th>
-                            <th className='px-4 py-3 text-center'>Toggle Action</th>
+                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1'>{t('customerName')}</th>
+                            <th className='px-4 py-1'>{t('model')}</th>
+                            <th className='px-4 py-1'>{t('serialNumber')}</th>
+                            <th className='px-4 py-1 text-center'>Current Wallpaper Status</th>
+                            <th className='px-4 py-1 text-center'>Toggle Action</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -148,24 +148,24 @@ const Actions = () => {
                                 const isLocked = item.lockWallpaperStatus === 'Locked';
                                 return (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                        <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
-                                        <td className='px-4 py-3 font-bold text-slate-900'>
+                                        <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                        <td className='px-4 py-1 font-bold text-slate-900'>
                                             <CopyCell text={item.customerNameEn} className="font-bold text-slate-900 block" />
                                             {item.customerNameKh && <CopyCell text={item.customerNameKh} className="text-emerald-700 font-khmer text-xs font-semibold" />}
                                         </td>
-                                        <td className='px-4 py-3 font-semibold text-slate-800'>
+                                        <td className='px-4 py-1 font-semibold text-slate-800'>
                                             <CopyCell text={item.model} className="font-semibold text-slate-800" />
                                         </td>
-                                        <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'>
+                                        <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'>
                                             <CopyCell text={item.serialNumber} className="font-mono text-emerald-700 font-semibold" />
                                         </td>
-                                        <td className='px-4 py-3 text-center'>
+                                        <td className='px-4 py-1 text-center'>
                                             <span className={`px-3 py-1 rounded-full font-bold text-[10px] uppercase inline-flex items-center gap-1.5 ${isLocked ? 'bg-purple-50 border border-purple-300 text-purple-700' : 'bg-blue-50 border border-blue-300 text-blue-700'}`}>
                                                 {isLocked ? <FaLock size={10} /> : <FaUnlock size={10} />}
                                                 {item.lockWallpaperStatus || 'Unlocked'}
                                             </span>
                                         </td>
-                                        <td className='px-4 py-3 text-center'>
+                                        <td className='px-4 py-1 text-center'>
                                             {hasPermission('/wallpaper/actions', 'edit') || hasPermission('/wallpaper/actions', 'create') ? (
                                                 isLocked ? (
                                                     <button

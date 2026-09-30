@@ -1145,23 +1145,23 @@ const FollowUp4 = () => {
                             <table className="w-full text-xs text-left text-slate-200">
                                 <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
                                     <tr>
-                                        <th className="py-3 px-3 text-center w-10">#</th>
-                                        <th className="py-3 px-3">ថ្ងៃខែឆ្នាំ</th>
-                                        <th className="py-3 px-3">NAME</th>
-                                        <th className="py-3 px-3">USER NAME</th>
-                                        <th className="py-3 px-3">PHONE NUMBER</th>
-                                        <th className="py-3 px-3">NAME TELEGRAM</th>
-                                        <th className="py-3 px-3">មកពី</th>
-                                        <th className="py-3 px-3">PG/TL មកពី</th>
-                                        <th className="py-3 px-3">ទាក់ទង</th>
-                                        <th className="py-3 px-3">PG/TL ទាក់ទង</th>
-                                        <th className="py-3 px-3">វាយតម្លៃ</th>
-                                        <th className="py-3 px-3">បានស្នើ</th>
-                                        <th className="py-3 px-3">ប្រភេទទ្រព្យ</th>
-                                        <th className="py-3 px-3">MODEL</th>
-                                        <th className="py-3 px-3">STATUS</th>
-                                        <th className="py-3 px-3">បរិយាយ</th>
-                                        <th className="py-3 px-3 text-center">សកម្មភាព</th>
+                                        <th className="py-1 px-3 text-center w-10">#</th>
+                                        <th className="py-1 px-3">ថ្ងៃខែឆ្នាំ</th>
+                                        <th className="py-1 px-3">NAME</th>
+                                        <th className="py-1 px-3">USER NAME</th>
+                                        <th className="py-1 px-3">PHONE NUMBER</th>
+                                        <th className="py-1 px-3">NAME TELEGRAM</th>
+                                        <th className="py-1 px-3">មកពី</th>
+                                        <th className="py-1 px-3">PG/TL មកពី</th>
+                                        <th className="py-1 px-3">ទាក់ទង</th>
+                                        <th className="py-1 px-3">PG/TL ទាក់ទង</th>
+                                        <th className="py-1 px-3">វាយតម្លៃ</th>
+                                        <th className="py-1 px-3">បានស្នើ</th>
+                                        <th className="py-1 px-3">ប្រភេទទ្រព្យ</th>
+                                        <th className="py-1 px-3">MODEL</th>
+                                        <th className="py-1 px-3">STATUS</th>
+                                        <th className="py-1 px-3">បរិយាយ</th>
+                                        <th className="py-1 px-3 text-center">សកម្មភាព</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700/50">
@@ -1375,13 +1375,13 @@ const FollowUp4 = () => {
                             <table className="w-full text-xs text-left text-slate-200">
                                 <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
                                     <tr className='text-white'>
-                                        <th className="py-3 px-3 text-center w-10">#</th>
-                                        <th className="py-3 px-3">កាលបរិច្ឆេទ</th>
-                                        <th className="py-3 px-3 text-center font-bold text-rose-400">សរុប (TOTAL)</th>
+                                        <th className="py-1 px-3 text-center w-10">#</th>
+                                        <th className="py-1 px-3">កាលបរិច្ឆេទ</th>
+                                        <th className="py-1 px-3 text-center font-bold text-rose-400">សរុប (TOTAL)</th>
                                         {droplists.rejectSubmitReasons.map((reason, rIdx) => (
-                                            <th key={rIdx} className="py-3 px-3 text-center">{reason}</th>
+                                            <th key={rIdx} className="py-1 px-3 text-center">{reason}</th>
                                         ))}
-                                        <th className="py-3 px-3 text-center">សកម្មភាព</th>
+                                        <th className="py-1 px-3 text-center">សកម្មភាព</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y text-white divide-slate-700/50">
@@ -1521,13 +1521,13 @@ const FollowUp4 = () => {
                             <table className="w-full text-xs text-left text-slate-200">
                                 <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
                                     <tr>
-                                        <th className="py-3 px-3 text-center w-10">#</th>
-                                        <th className="py-3 px-3">កាលបរិច្ឆេទ</th>
-                                        <th className="py-3 px-3 text-center font-bold text-amber-400">សរុប (TOTAL)</th>
+                                        <th className="py-1 px-3 text-center w-10">#</th>
+                                        <th className="py-1 px-3">កាលបរិច្ឆេទ</th>
+                                        <th className="py-1 px-3 text-center font-bold text-amber-400">សរុប (TOTAL)</th>
                                         {droplists.rejectCsReasons.map((reason, rIdx) => (
-                                            <th key={rIdx} className="py-3 px-3 text-center">{reason}</th>
+                                            <th key={rIdx} className="py-1 px-3 text-center">{reason}</th>
                                         ))}
-                                        <th className="py-3 px-3 text-center">សកម្មភាព</th>
+                                        <th className="py-1 px-3 text-center">សកម្មភាព</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700/50">
@@ -1742,28 +1742,28 @@ const FollowUp4 = () => {
                                 {detailHistoryList.length > 0 && (
                                     <tfoot className="bg-gray-300 font-bold border-t-2 border-slate-600 text-[11px]">
                                         <tr className="divide-y divide-slate-700">
-                                            <td className="py-3 px-3 font-bold text-amber-400 uppercase tracking-wider">សរុប (TOTAL)</td>
-                                            <td className="py-3 px-2 text-center font-mono text-indigo-300 bg-indigo-950/30">{grandDetailTotals.message}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.page}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.telegram}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.noReply}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.inquire}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-rose-400">{grandDetailTotals.rejectCs}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-slate-200">{grandDetailTotals.more}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-emerald-400">{grandDetailTotals.pageSubmit}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-emerald-400">{grandDetailTotals.telegramSubmit}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-emerald-400 font-bold">{grandDetailTotals.call}</td>
-                                            <td className="py-3 px-2 text-center font-mono font-black text-emerald-200 bg-blue-300 border-x border-emerald-600 text-xs shadow-inner">
+                                            <td className="py-1 px-3 font-bold text-amber-400 uppercase tracking-wider">សរុប (TOTAL)</td>
+                                            <td className="py-1 px-2 text-center font-mono text-indigo-300 bg-indigo-950/30">{grandDetailTotals.message}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-slate-200">{grandDetailTotals.page}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-slate-200">{grandDetailTotals.telegram}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-slate-200">{grandDetailTotals.noReply}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-slate-200">{grandDetailTotals.inquire}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-rose-400">{grandDetailTotals.rejectCs}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-slate-200">{grandDetailTotals.more}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-emerald-400">{grandDetailTotals.pageSubmit}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-emerald-400">{grandDetailTotals.telegramSubmit}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-emerald-400 font-bold">{grandDetailTotals.call}</td>
+                                            <td className="py-1 px-2 text-center font-mono font-black text-emerald-200 bg-blue-300 border-x border-emerald-600 text-xs shadow-inner">
                                                 {grandDetailTotals.totalSubmit}
                                             </td>
-                                            <td className="py-3 px-2 text-center font-mono text-amber-400">{grandDetailTotals.review}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-rose-400">{grandDetailTotals.reject}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-teal-400">{grandDetailTotals.success1}</td>
-                                            <td className="py-3 px-2 text-center font-mono text-emerald-300">{grandDetailTotals.success2}</td>
-                                            <td className="py-3 px-2 text-center font-mono font-black text-teal-200 bg-green-300 border-x border-teal-600 text-xs shadow-inner">
+                                            <td className="py-1 px-2 text-center font-mono text-amber-400">{grandDetailTotals.review}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-rose-400">{grandDetailTotals.reject}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-teal-400">{grandDetailTotals.success1}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-emerald-300">{grandDetailTotals.success2}</td>
+                                            <td className="py-1 px-2 text-center font-mono font-black text-teal-200 bg-green-300 border-x border-teal-600 text-xs shadow-inner">
                                                 {grandDetailTotals.totalSuccess}
                                             </td>
-                                            <td className="py-3 px-2 text-center text-slate-500 font-mono">-</td>
+                                            <td className="py-1 px-2 text-center text-slate-500 font-mono">-</td>
                                         </tr>
                                     </tfoot>
                                 )}

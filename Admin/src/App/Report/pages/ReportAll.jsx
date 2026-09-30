@@ -442,17 +442,17 @@ const ReportAll = () => {
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-indigo-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                             <tr>
-                                <th className='px-3.5 py-3 text-center'>No</th>
-                                <th className='px-3.5 py-3'>Brand Name</th>
-                                <th className='px-3.5 py-3 text-center'>Total Customers</th>
-                                <th className='px-3.5 py-3 text-right'>Total Loan ($)</th>
-                                <th className='px-3.5 py-3 text-right text-emerald-200'>Total Paid ($)</th>
-                                <th className='px-3.5 py-3 text-right text-amber-200'>Remaining ($)</th>
-                                <th className='px-3.5 py-3 text-center'>Activated</th>
-                                <th className='px-3.5 py-3 text-center'>App / Check</th>
-                                <th className='px-3.5 py-3 text-center'>Redeem / Blacklist</th>
-                                <th className='px-3.5 py-3 text-center text-rose-200'>Lock Phone</th>
-                                <th className='px-3.5 py-3 text-center text-purple-200'>Lock Wallpaper</th>
+                                <th className='px-3.5 py-1 text-center'>No</th>
+                                <th className='px-3.5 py-1'>Brand Name</th>
+                                <th className='px-3.5 py-1 text-center'>Total Customers</th>
+                                <th className='px-3.5 py-1 text-right'>Total Loan ($)</th>
+                                <th className='px-3.5 py-1 text-right text-emerald-200'>Total Paid ($)</th>
+                                <th className='px-3.5 py-1 text-right text-amber-200'>Remaining ($)</th>
+                                <th className='px-3.5 py-1 text-center'>Activated</th>
+                                <th className='px-3.5 py-1 text-center'>App / Check</th>
+                                <th className='px-3.5 py-1 text-center'>Redeem / Blacklist</th>
+                                <th className='px-3.5 py-1 text-center text-rose-200'>Lock Phone</th>
+                                <th className='px-3.5 py-1 text-center text-purple-200'>Lock Wallpaper</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
@@ -471,21 +471,21 @@ const ReportAll = () => {
                             ) : (
                                 brandSummaryData.rows.map((row, idx) => (
                                     <tr key={row.brand} className="hover:bg-indigo-50/50 transition-colors">
-                                        <td className="px-3.5 py-3 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
-                                        <td className="px-3.5 py-3 font-black text-indigo-900">
+                                        <td className="px-3.5 py-1 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
+                                        <td className="px-3.5 py-1 font-black text-indigo-900">
                                             <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-lg text-indigo-900 font-bold">
                                                 {row.brand}
                                             </span>
                                         </td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-slate-900">{row.totalCustomers.toLocaleString()}</td>
-                                        <td className="px-3.5 py-3 text-right font-mono font-bold text-blue-700">${row.totalLoan.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="px-3.5 py-3 text-right font-mono font-bold text-emerald-700">${row.totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="px-3.5 py-3 text-right font-mono font-bold text-amber-700">${row.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-emerald-800">{row.activatedCount}</td>
-                                        <td className="px-3.5 py-3 text-center font-medium text-slate-600">{row.applicationCount} / {row.checkCount}</td>
-                                        <td className="px-3.5 py-3 text-center font-medium text-slate-600">{row.redeemCount} / {row.blacklistCount}</td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-rose-700 bg-rose-50/50">{row.lockedPhoneCount}</td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-purple-700 bg-purple-50/50">{row.lockedWallpaperCount}</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-slate-900">{row.totalCustomers.toLocaleString()}</td>
+                                        <td className="px-3.5 py-1 text-right font-mono font-bold text-blue-700">${row.totalLoan.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="px-3.5 py-1 text-right font-mono font-bold text-emerald-700">${row.totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="px-3.5 py-1 text-right font-mono font-bold text-amber-700">${row.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-emerald-800">{row.activatedCount}</td>
+                                        <td className="px-3.5 py-1 text-center font-medium text-slate-600">{row.applicationCount} / {row.checkCount}</td>
+                                        <td className="px-3.5 py-1 text-center font-medium text-slate-600">{row.redeemCount} / {row.blacklistCount}</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-rose-700 bg-rose-50/50">{row.lockedPhoneCount}</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-purple-700 bg-purple-50/50">{row.lockedWallpaperCount}</td>
                                     </tr>
                                 ))
                             )}

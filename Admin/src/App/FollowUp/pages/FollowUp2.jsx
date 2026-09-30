@@ -1019,20 +1019,20 @@ const FollowUp2 = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[var(--app-bg,#f8fafc)] border-b border-[var(--app-border,#e2e8f0)] text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted,#64748b)]">
-                                <th className="py-3 px-3 w-10 text-center">#</th>
-                                <th className="py-3 px-4 min-w-[130px]">ឈ្មោះអតិថិជន</th>
-                                <th className="py-3 px-3 min-w-[90px]">តាមរយៈ</th>
-                                <th className="py-3 px-3 min-w-[100px]">Tel</th>
-                                <th className="py-3 px-3 text-right min-w-[100px]">ចំនួនស្នើបញ្ចាំ</th>
-                                <th className="py-3 px-3 min-w-[120px]">ប្រភេទទ្រព្យ</th>
-                                <th className="py-3 px-3 min-w-[110px]">Model</th>
-                                <th className="py-3 px-3 min-w-[90px] text-center">រូបភាព</th>
-                                <th className="py-3 px-3 min-w-[110px]">អ្នកឆ្លើយតប</th>
-                                <th className="py-3 px-3 min-w-[95px]">កាលបរិច្ឆេទ</th>
-                                <th className="py-3 px-3 min-w-[120px]">វាយតម្លៃបាន</th>
-                                <th className="py-3 px-3 text-center min-w-[90px]">ស្ថានភាព</th>
-                                <th className="py-3 px-4 min-w-[130px]">មូលហេតុ</th>
-                                <th className="py-3 px-3 text-center min-w-[80px]">សកម្មភាព</th>
+                                <th className="py-1 px-3 w-10 text-center">#</th>
+                                <th className="py-1 px-4 min-w-[130px]">ឈ្មោះអតិថិជន</th>
+                                <th className="py-1 px-3 min-w-[90px]">តាមរយៈ</th>
+                                <th className="py-1 px-3 min-w-[100px]">Tel</th>
+                                <th className="py-1 px-3 text-right min-w-[100px]">ចំនួនស្នើបញ្ចាំ</th>
+                                <th className="py-1 px-3 min-w-[120px]">ប្រភេទទ្រព្យ</th>
+                                <th className="py-1 px-3 min-w-[110px]">Model</th>
+                                <th className="py-1 px-3 min-w-[90px] text-center">រូបភាព</th>
+                                <th className="py-1 px-3 min-w-[110px]">អ្នកឆ្លើយតប</th>
+                                <th className="py-1 px-3 min-w-[95px]">កាលបរិច្ឆេទ</th>
+                                <th className="py-1 px-3 min-w-[120px]">វាយតម្លៃបាន</th>
+                                <th className="py-1 px-3 text-center min-w-[90px]">ស្ថានភាព</th>
+                                <th className="py-1 px-4 min-w-[130px]">មូលហេតុ</th>
+                                <th className="py-1 px-3 text-center min-w-[80px]">សកម្មភាព</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--app-border,#e2e8f0)] text-xs font-medium text-[var(--app-text,#0f172a)]">
@@ -1072,33 +1072,33 @@ const FollowUp2 = () => {
 
                                                 return (
                                                     <tr key={item._id || itemIdx} className="hover:bg-slate-500/5 transition-colors">
-                                                        <td className="py-3 px-3 text-center text-slate-400 font-mono text-[11px]">
+                                                        <td className="py-1 px-3 text-center text-slate-400 font-mono text-[11px]">
                                                             <CopyCell text={runningIndex} />
                                                         </td>
-                                                        <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                                                        <td className="py-1 px-4 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                                                             <CopyCell text={item.customerName || '-'} />
                                                         </td>
-                                                        <td className="py-3 px-3 whitespace-nowrap">
+                                                        <td className="py-1 px-3 whitespace-nowrap">
                                                             <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400">
                                                                 <CopyCell text={item.source || 'Facebook'} />
                                                             </span>
                                                         </td>
-                                                        <td className="py-3 px-3 font-mono font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                                        <td className="py-1 px-3 font-mono font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                                                             {item.phone ? (
                                                                 <CopyCell text={item.phone} />
                                                             ) : '-'}
                                                         </td>
-                                                        <td className="py-3 px-3 text-right font-extrabold text-amber-600 dark:text-amber-400">
+                                                        <td className="py-1 px-3 text-right font-extrabold text-amber-600 dark:text-amber-400">
                                                             <CopyCell text={`$${amount.toLocaleString()}`} />
                                                         </td>
-                                                        <td className="py-3 px-3 text-slate-700 dark:text-slate-300">
+                                                        <td className="py-1 px-3 text-slate-700 dark:text-slate-300">
                                                             <CopyCell text={item.collateralType || '-'} />
                                                         </td>
-                                                        <td className="py-3 px-3 font-semibold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                                                        <td className="py-1 px-3 font-semibold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                                                             <CopyCell text={item.model || '-'} />
                                                         </td>
                                                         {/* Photo thumbnail cell */}
-                                                        <td className="py-3 px-3 text-center">
+                                                        <td className="py-1 px-3 text-center">
                                                             {imgList.length > 0 ? (
                                                                 <div
                                                                     onClick={() => handleOpenImageViewer(imgList, 0)}
@@ -1120,16 +1120,16 @@ const FollowUp2 = () => {
                                                                 <span className="text-slate-300 text-[11px]">គ្មាន</span>
                                                             )}
                                                         </td>
-                                                        <td className="py-3 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                                        <td className="py-1 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                                                             <CopyCell text={item.responder || '-'} />
                                                         </td>
-                                                        <td className="py-3 px-3 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                                        <td className="py-1 px-3 font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">
                                                             <CopyCell text={item.date ? item.date.split('T')[0] : 'N/A'} />
                                                         </td>
-                                                        <td className="py-3 px-3 text-indigo-600 dark:text-indigo-400 font-medium">
+                                                        <td className="py-1 px-3 text-indigo-600 dark:text-indigo-400 font-medium">
                                                             <CopyCell text={item.valuationRange || '-'} />
                                                         </td>
-                                                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                                                        <td className="py-1 px-3 text-center whitespace-nowrap">
                                                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold ${isSuccess
                                                                 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
                                                                 : isReview
@@ -1146,12 +1146,12 @@ const FollowUp2 = () => {
                                                                 <span>{item.status || 'ជោគជ័យ'}</span>
                                                             </span>
                                                         </td>
-                                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
+                                                        <td className="py-1 px-4 text-slate-600 dark:text-slate-400">
                                                             <p className="line-clamp-2" title={item.reason}>
                                                                 <CopyCell text={item.reason || '-'} />
                                                             </p>
                                                         </td>
-                                                        <td className="py-3 px-3 text-center">
+                                                        <td className="py-1 px-3 text-center">
                                                             <div className="flex items-center justify-center gap-1.5">
                                                                 {hasPermission('/follow-up/follow-up-2', 'edit') && (
                                                                     <button

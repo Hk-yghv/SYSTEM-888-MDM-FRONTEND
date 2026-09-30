@@ -754,24 +754,24 @@ const InstallmentPage = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10'>
                         <tr>
-                            <th className='px-3 py-3 text-center'>No</th>
-                            <th className='px-3 py-3'>Loan Date</th>
-                            <th className='px-3 py-3'>Customer Name</th>
-                            <th className='px-3 py-3'>Brand</th>
-                            <th className='px-3 py-3'>Model</th>
-                            <th className='px-3 py-3'>ថ្ងៃខែត្រូវបង់</th>
-                            <th className='px-3 py-3 text-right text-emerald-600 font-extrabold'>សរុបត្រូវបង់ទាំងអស់</th>
-                            <th className='px-3 py-3 text-right font-mono text-indigo-700'>ការប្រាក់សរុប</th>
-                            <th className='px-3 py-3 text-right font-mono text-blue-700'>សរុបត្រូវបង់ (គ្មានពិន័យ)</th>
-                            <th className='px-3 py-3 text-right font-mono text-emerald-700'>Total Loan Amount</th>
-                            <th className='px-3 py-3 text-right font-mono text-violet-700'>ការប្រាក់</th>
-                            <th className='px-3 py-3 text-right text-sky-600'>ត្រូវបង់ខែនេះ</th>
-                            <th className='px-3 py-3 text-right text-amber-600'>ពិន័យ</th>
-                            <th className='px-3 py-3 text-right text-emerald-700 font-bold'>ភ្ញៀវបានបង់សរុប</th>
-                            <th className='px-3 py-3 text-center text-indigo-700 font-extrabold'>% បានបង់</th>
-                            <th className='px-3 py-3'>Comment</th>
-                            <th className='px-3 py-3 text-purple-600'>កាលបរិច្ឆេទបានបង់</th>
-                            <th className='px-3 py-3 text-center'>Action</th>
+                            <th className='px-3 py-1 text-center'>No</th>
+                            <th className='px-3 py-1'>Loan Date</th>
+                            <th className='px-3 py-1'>Customer Name</th>
+                            <th className='px-3 py-1'>Brand</th>
+                            <th className='px-3 py-1'>Model</th>
+                            <th className='px-3 py-1'>ថ្ងៃខែត្រូវបង់</th>
+                            <th className='px-3 py-1 text-right text-emerald-600 font-extrabold'>សរុបត្រូវបង់ទាំងអស់</th>
+                            <th className='px-3 py-1 text-right font-mono text-indigo-700'>ការប្រាក់សរុប</th>
+                            <th className='px-3 py-1 text-right font-mono text-blue-700'>សរុបត្រូវបង់ (គ្មានពិន័យ)</th>
+                            <th className='px-3 py-1 text-right font-mono text-emerald-700'>Total Loan Amount</th>
+                            <th className='px-3 py-1 text-right font-mono text-violet-700'>ការប្រាក់</th>
+                            <th className='px-3 py-1 text-right text-sky-600'>ត្រូវបង់ខែនេះ</th>
+                            <th className='px-3 py-1 text-right text-amber-600'>ពិន័យ</th>
+                            <th className='px-3 py-1 text-right text-emerald-700 font-bold'>ភ្ញៀវបានបង់សរុប</th>
+                            <th className='px-3 py-1 text-center text-indigo-700 font-extrabold'>% បានបង់</th>
+                            <th className='px-3 py-1'>Comment</th>
+                            <th className='px-3 py-1 text-purple-600'>កាលបរិច្ឆេទបានបង់</th>
+                            <th className='px-3 py-1 text-center'>Action</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -790,25 +790,25 @@ const InstallmentPage = () => {
                                     <tr key={`${menuKey}-${scheduleIdx}`}
                                         className={`transition-colors ${urgency.rowClass}`}>
 
-                                        <td className='px-3 py-3 text-center font-mono text-slate-600 font-semibold'>
+                                        <td className='px-3 py-1 text-center font-mono text-slate-600 font-semibold'>
                                             {idx + 1}
                                         </td>
-                                        <td className='px-3 py-3 font-mono text-slate-700'>{item.inputDate || '—'}</td>
-                                        <td className='px-3 py-3'>
+                                        <td className='px-3 py-1 font-mono text-slate-700'>{item.inputDate || '—'}</td>
+                                        <td className='px-3 py-1'>
                                             <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
                                             <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' />
                                         </td>
-                                        <td className='px-3 py-3'>
+                                        <td className='px-3 py-1'>
                                             <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
                                                 {item.brand || '—'}
                                             </span>
                                         </td>
-                                        <td className='px-3 py-3 font-semibold text-slate-800'>
+                                        <td className='px-3 py-1 font-semibold text-slate-800'>
                                             <CopyCell text={item.model} className='font-semibold text-slate-800' />
                                         </td>
 
                                         {/* ថ្ងៃខែត្រូវបង់ */}
-                                        <td className='px-3 py-3 font-mono text-slate-700 whitespace-nowrap'>
+                                        <td className='px-3 py-1 font-mono text-slate-700 whitespace-nowrap'>
                                             {displayRow?.dueDate ? (
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-bold text-slate-900">{displayRow.dueDate}</span>
@@ -828,46 +828,46 @@ const InstallmentPage = () => {
 
 
                                         {/* សរុបត្រូវបង់ទាំងអស់ (+ពិន័យ) */}
-                                        <td className='px-3 py-3 text-center font-mono font-extrabold text-emerald-600'>
+                                        <td className='px-3 py-1 text-center font-mono font-extrabold text-emerald-600'>
                                             ${formatMoney(calcs.totalPayableWithPenalty || 0)}
                                         </td>
 
                                         {/* ការប្រាក់សរុប (Total Interest) */}
-                                        <td className='px-3 py-3 text-center font-mono font-bold text-indigo-700'>
+                                        <td className='px-3 py-1 text-center font-mono font-bold text-indigo-700'>
                                             ${formatMoney(calcs.totalInterest || 0)}
                                         </td>
 
                                         {/* សរុបត្រូវបង់ (គ្មានពិន័យ) */}
-                                        <td className='px-3 py-3 text-center font-mono font-bold text-blue-700'>
+                                        <td className='px-3 py-1 text-center font-mono font-bold text-blue-700'>
                                             ${formatMoney(calcs.totalScheduledNoPenalty || 0)}
                                         </td>
 
                                         {/* Total Loan Amount */}
-                                        <td className='px-3 py-3 text-center font-mono font-bold text-emerald-700'>
+                                        <td className='px-3 py-1 text-center font-mono font-bold text-emerald-700'>
                                             ${formatMoney(displayRow?.loanAmount || item.amount || 0)}
                                         </td>
                                         {/* ការប្រាក់គណនា (Monthly Interest) */}
-                                        <td className='px-3 py-3 text-center font-mono font-bold text-violet-700'>
+                                        <td className='px-3 py-1 text-center font-mono font-bold text-violet-700'>
                                             ${formatMoney(calcs.monthlyInterest || 0)}
                                         </td>
 
                                         {/* ត្រូវបង់ខែនេះ */}
-                                        <td className='px-3 py-3 text-center font-mono text-sky-700 font-bold'>
+                                        <td className='px-3 py-1 text-center font-mono text-sky-700 font-bold'>
                                             ${formatMoney(displayRow?.scheduledAmount || 0)}
                                         </td>
 
                                         {/* ពិន័យ */}
-                                        <td className='px-3 py-3 text-right font-mono text-amber-600 font-bold'>
+                                        <td className='px-3 py-1 text-right font-mono text-amber-600 font-bold'>
                                             ${formatMoney(displayRow?.penalty || 0)}
                                         </td>
 
                                         {/* ភ្ញៀវបានបង់សរុប */}
-                                        <td className='px-3 py-3 text-center font-mono font-bold text-emerald-700'>
+                                        <td className='px-3 py-1 text-center font-mono font-bold text-emerald-700'>
                                             ${formatMoney(calcs.totalPaid || 0)}
                                         </td>
 
                                         {/* % បានបង់ */}
-                                        <td className='px-3 py-3 text-center font-mono'>
+                                        <td className='px-3 py-1 text-center font-mono'>
                                             <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold border inline-block ${calcs.percentPaidNum >= 100 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
                                                 calcs.percentPaidNum >= 50 ? 'bg-indigo-100 text-indigo-800 border-indigo-300' :
                                                     calcs.percentPaidNum > 0 ? 'bg-amber-100 text-amber-800 border-amber-300' :
@@ -878,17 +878,17 @@ const InstallmentPage = () => {
                                         </td>
 
                                         {/* Comment */}
-                                        <td className='px-3 py-3 text-slate-500 italic text-[11px] max-w-[140px] truncate'>
+                                        <td className='px-3 py-1 text-slate-500 italic text-[11px] max-w-[140px] truncate'>
                                             {displayRow?.comment || '—'}
                                         </td>
 
                                         {/* កាលបរិច្ឆេទបានបង់ */}
-                                        <td className='px-3 py-3 font-mono text-purple-600 font-bold text-center'>
+                                        <td className='px-3 py-1 font-mono text-purple-600 font-bold text-center'>
                                             {displayRow?.paidDate || '—'}
                                         </td>
 
                                         {/* Action — opens portal dropdown */}
-                                        <td className="px-3 py-3 text-center">
+                                        <td className="px-3 py-1 text-center">
                                             <button
                                                 onClick={(e) => handleOpenMenu(e, menuKey)}
                                                 className={`w-8 h-8 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === menuKey
@@ -910,43 +910,43 @@ const InstallmentPage = () => {
                         <tfoot className='border-t-2 border-slate-300 bg-gradient-to-r from-slate-50 to-emerald-50/40'>
                             <tr>
                                 {/* Col 1-6: No, Loan Date, Customer, Brand, Model, Due Date */}
-                                <td colSpan={6} className='px-3 py-3 text-center text-xs font-extrabold text-slate-600 uppercase tracking-wide'>
+                                <td colSpan={6} className='px-3 py-1 text-center text-xs font-extrabold text-slate-600 uppercase tracking-wide'>
                                     សរុប ({visibleRows.length} records)
                                 </td>
                                 {/* Col 7: សរុបត្រូវបង់ទាំងអស់ (payableWithPenalty) */}
-                                <td className='px-3 py-3 text-center font-mono font-extrabold text-emerald-600 text-xs border-l border-slate-200'>
+                                <td className='px-3 py-1 text-center font-mono font-extrabold text-emerald-600 text-xs border-l border-slate-200'>
                                     ${formatMoney(totals.payableWithPenalty)}
                                 </td>
                                 {/* Col 8: ការប្រាក់សរុប (totalInterest) */}
-                                <td className='px-3 py-3 text-center font-mono font-extrabold text-indigo-700 text-xs'>
+                                <td className='px-3 py-1 text-center font-mono font-extrabold text-indigo-700 text-xs'>
                                     ${formatMoney(totals.totalInterest)}
                                 </td>
                                 {/* Col 9: សរុបត្រូវបង់ (គ្មានពិន័យ) (scheduledNoPenalty) */}
-                                <td className='px-3 py-3 text-center font-mono font-extrabold text-blue-700 text-xs'>
+                                <td className='px-3 py-1 text-center font-mono font-extrabold text-blue-700 text-xs'>
                                     ${formatMoney(totals.scheduledNoPenalty)}
                                 </td>
                                 {/* Col 10: Total Loan Amount (loanAmount) */}
-                                <td className='px-3 py-3 text-center font-mono font-extrabold text-emerald-700 text-xs'>
+                                <td className='px-3 py-1 text-center font-mono font-extrabold text-emerald-700 text-xs'>
                                     ${formatMoney(totals.loanAmount)}
                                 </td>
                                 {/* Col 11: ការប្រាក់ (monthlyInterest) */}
-                                <td className='px-3 py-3 text-center font-mono font-extrabold text-violet-700 text-xs'>
+                                <td className='px-3 py-1 text-center font-mono font-extrabold text-violet-700 text-xs'>
                                     ${formatMoney(totals.monthlyInterest)}
                                 </td>
                                 {/* Col 12: ត្រូវបង់ខែនេះ (currentScheduled) */}
-                                <td className='px-3 py-3 text-center font-mono font-extrabold text-sky-700 text-xs'>
+                                <td className='px-3 py-1 text-center font-mono font-extrabold text-sky-700 text-xs'>
                                     ${formatMoney(totals.currentScheduled)}
                                 </td>
                                 {/* Col 13: ពិន័យ (penalty) */}
-                                <td className='px-3 py-3 text-center font-mono font-extrabold text-amber-600 text-xs'>
+                                <td className='px-3 py-1 text-center font-mono font-extrabold text-amber-600 text-xs'>
                                     ${formatMoney(totals.penalty)}
                                 </td>
                                 {/* Col 14: ភ្ញៀវបានបង់សរុប (paid) */}
-                                <td className='px-3 py-3 text-center font-mono font-extrabold text-emerald-700 text-xs'>
+                                <td className='px-3 py-1 text-center font-mono font-extrabold text-emerald-700 text-xs'>
                                     ${formatMoney(totals.paid)}
                                 </td>
                                 {/* Col 15: % បានបង់ */}
-                                <td className='px-3 py-3 text-center font-mono font-extrabold text-indigo-700 text-xs'>
+                                <td className='px-3 py-1 text-center font-mono font-extrabold text-indigo-700 text-xs'>
                                     {totals.avgPercentPaid}%
                                 </td>
                                 {/* Col 16-18: Comment, PaidDate, Action */}

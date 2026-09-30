@@ -442,15 +442,15 @@ const PenaltyPage = () => {
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-bold'>
                                 <tr>
-                                    <th className='px-4 py-3 text-center'>No</th>
-                                    <th className='px-4 py-3'>Date</th>
-                                    <th className='px-4 py-3'>Payment Type</th>
-                                    <th className='px-4 py-3'>Category</th>
-                                    <th className='px-4 py-3 text-right'>Amount</th>
-                                    <th className='px-4 py-3'>Description</th>
-                                    <th className='px-4 py-3 text-center'>Receipt Image</th>
-                                    <th className='px-4 py-3'>Performed By</th>
-                                    <th className='px-4 py-3 text-center'>Actions</th>
+                                    <th className='px-4 py-1 text-center'>No</th>
+                                    <th className='px-4 py-1'>Date</th>
+                                    <th className='px-4 py-1'>Payment Type</th>
+                                    <th className='px-4 py-1'>Category</th>
+                                    <th className='px-4 py-1 text-right'>Amount</th>
+                                    <th className='px-4 py-1'>Description</th>
+                                    <th className='px-4 py-1 text-center'>Receipt Image</th>
+                                    <th className='px-4 py-1'>Performed By</th>
+                                    <th className='px-4 py-1 text-center'>Actions</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -461,31 +461,31 @@ const PenaltyPage = () => {
                                 ) : (
                                     dataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-amber-50/40 transition-colors'>
-                                            <td className='px-4 py-3 text-center font-mono font-bold text-slate-500'>{(page - 1) * LIMIT + idx + 1}</td>
-                                            <td className='px-4 py-3 font-mono font-bold text-slate-900'>{item.date || '-'}</td>
-                                            <td className='px-4 py-3'>
+                                            <td className='px-4 py-1 text-center font-mono font-bold text-slate-500'>{(page - 1) * LIMIT + idx + 1}</td>
+                                            <td className='px-4 py-1 font-mono font-bold text-slate-900'>{item.date || '-'}</td>
+                                            <td className='px-4 py-1'>
                                                 <span className={`px-2.5 py-1 rounded-lg font-bold ${item.paymentMethod === 'Bank' ? 'bg-blue-50 border border-blue-200 text-blue-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800'}`}>
                                                     {item.paymentMethod || 'Cash'}
                                                 </span>
                                             </td>
-                                            <td className='px-4 py-3 font-bold text-slate-900'>
+                                            <td className='px-4 py-1 font-bold text-slate-900'>
                                                 <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 font-bold">
                                                     {item.category || 'General'}
                                                 </span>
                                             </td>
-                                            <td className='px-4 py-3 text-right font-mono font-black text-amber-700'>
+                                            <td className='px-4 py-1 text-right font-mono font-black text-amber-700'>
                                                 {item.currency === 'KHR' ? `${(item.amount || 0).toLocaleString()} ៛` : `$${(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
                                             </td>
-                                            <td className='px-4 py-3 font-medium text-slate-700 max-w-xs truncate'>{item.description || '-'}</td>
-                                            <td className='px-4 py-3 text-center'>
+                                            <td className='px-4 py-1 font-medium text-slate-700 max-w-xs truncate'>{item.description || '-'}</td>
+                                            <td className='px-4 py-1 text-center'>
                                                 {item.photoUrl ? (
                                                     <button onClick={() => setSelectedImage(item.photoUrl)} className="text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center justify-center gap-1 mx-auto">
                                                         <FaImage /> <span>View</span>
                                                     </button>
                                                 ) : <span className="text-slate-400 italic">No image</span>}
                                             </td>
-                                            <td className='px-4 py-3 font-bold text-slate-800'>{item.performedBy || '-'}</td>
-                                            <td className='px-4 py-3 text-center'>
+                                            <td className='px-4 py-1 font-bold text-slate-800'>{item.performedBy || '-'}</td>
+                                            <td className='px-4 py-1 text-center'>
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button onClick={() => handleEdit(item)} title="Edit" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                                         <FaEdit />

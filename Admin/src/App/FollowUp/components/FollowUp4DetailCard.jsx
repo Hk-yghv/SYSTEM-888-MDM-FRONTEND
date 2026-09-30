@@ -223,7 +223,7 @@ const FollowUp4DetailCard = ({
                     <button
                         onClick={onSave}
                         disabled={saving || loading}
-                        className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-3 rounded-[5px] transition-all shadow-lg shadow-sky-600/20 cursor-pointer disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-1 rounded-[5px] transition-all shadow-lg shadow-sky-600/20 cursor-pointer disabled:opacity-50"
                     >
                         {saving ? <MdOutlineSync className="animate-spin text-base" /> : <FaSave size={14} />}
                         <span>{saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក DETAIL METRICS'}</span>

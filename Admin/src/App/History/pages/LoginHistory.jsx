@@ -335,15 +335,15 @@ const LoginHistory = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>
-                            <th className='px-4 py-3 text-center'>No</th>
-                            <th className='px-4 py-3'>{t('username')}</th>
-                            <th className='px-4 py-3'>Full Name</th>
-                            <th className='px-4 py-3 text-center'>{t('role')}</th>
-                            <th className='px-4 py-3'>Brand</th>
-                            <th className='px-4 py-3 font-mono'>IP Address</th>
-                            <th className='px-4 py-3'>Device & OS</th>
-                            <th className='px-4 py-3'>Date & Time</th>
-                            <th className='px-4 py-3 text-center'>{t('status')}</th>
+                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1'>{t('username')}</th>
+                            <th className='px-4 py-1'>Full Name</th>
+                            <th className='px-4 py-1 text-center'>{t('role')}</th>
+                            <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1 font-mono'>IP Address</th>
+                            <th className='px-4 py-1'>Device & OS</th>
+                            <th className='px-4 py-1'>Date & Time</th>
+                            <th className='px-4 py-1 text-center'>{t('status')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -360,35 +360,35 @@ const LoginHistory = () => {
                         ) : (
                             logs.map((item, idx) => (
                                 <tr key={item.id || idx} className='hover:bg-indigo-50/40 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>
                                         {(page - 1) * LIMIT + idx + 1}
                                     </td>
-                                    <td className='px-4 py-3 font-bold text-indigo-900 font-mono'>
+                                    <td className='px-4 py-1 font-bold text-indigo-900 font-mono'>
                                         <CopyCell text={item.username} className='font-bold text-indigo-900 font-mono' />
                                     </td>
-                                    <td className='px-4 py-3 font-semibold text-slate-900'>
+                                    <td className='px-4 py-1 font-semibold text-slate-900'>
                                         <CopyCell text={item.name} className='font-semibold text-slate-900' />
                                     </td>
-                                    <td className='px-4 py-3 text-center'>
+                                    <td className='px-4 py-1 text-center'>
                                         <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${item.role === 'Administrator' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                                             {item.role || 'User'}
                                         </span>
                                     </td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-4 py-1'>
                                         <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
                                             {item.brand || 'Global'}
                                         </span>
                                     </td>
-                                    <td className='px-4 py-3 font-mono text-slate-700 font-bold'>
+                                    <td className='px-4 py-1 font-mono text-slate-700 font-bold'>
                                         <CopyCell text={item.ip} className='font-mono text-slate-700 font-bold' />
                                     </td>
-                                    <td className='px-4 py-3 text-slate-700 font-medium'>
+                                    <td className='px-4 py-1 text-slate-700 font-medium'>
                                         <CopyCell text={item.deviceInfo} className='text-slate-700 font-medium' />
                                     </td>
-                                    <td className='px-4 py-3 text-slate-600 font-mono text-[11px]'>
+                                    <td className='px-4 py-1 text-slate-600 font-mono text-[11px]'>
                                         {item.timestamp ? new Date(item.timestamp).toLocaleString() : 'N/A'}
                                     </td>
-                                    <td className='px-4 py-3 text-center'>
+                                    <td className='px-4 py-1 text-center'>
                                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center gap-1 ${item.status === 'Failed' ? 'bg-red-100 border-red-300 text-red-800' : 'bg-emerald-100 border-emerald-300 text-emerald-800'}`}>
                                             {item.status === 'Failed' ? (
                                                 <>

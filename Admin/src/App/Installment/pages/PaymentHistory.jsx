@@ -163,7 +163,7 @@ const PaymentHistory = () => {
                         className='relative bg-white rounded-[5px] shadow-2xl max-w-2xl w-full mx-4 overflow-hidden'
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className='flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50'>
+                        <div className='flex items-center justify-between px-4 py-1 border-b border-slate-200 bg-slate-50'>
                             <span className='text-sm font-bold text-slate-700 flex items-center gap-2'>
                                 <FaImage className='text-emerald-600' />
                                 រូបភាពការបង់ប្រាក់
@@ -208,7 +208,7 @@ const PaymentHistory = () => {
                         </div>
                         {/* Thumbnail strip for multiple images */}
                         {viewImages.length > 1 && (
-                            <div className='flex gap-2 px-4 py-3 bg-slate-50 border-t border-slate-200 overflow-x-auto'>
+                            <div className='flex gap-2 px-4 py-1 bg-slate-50 border-t border-slate-200 overflow-x-auto'>
                                 {viewImages.map((img, i) => (
                                     <button
                                         key={i}
@@ -329,15 +329,15 @@ const PaymentHistory = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-3 text-center'>No</th>
-                            <th className='px-4 py-3'>{t('paidDate')}</th>
-                            <th className='px-4 py-3'>{t('customerName')}</th>
-                            <th className='px-4 py-3'>{t('model')} & Serial</th>
-                            <th className='px-4 py-3'>Brand</th>
-                            <th className='px-4 py-3'>{t('paidBy')}</th>
-                            <th className='px-4 py-3 text-right'>{t('amount')}</th>
-                            <th className='px-4 py-3 text-center'>រូបភាព</th>
-                            <th className='px-4 py-3'>{t('description')}</th>
+                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1'>{t('paidDate')}</th>
+                            <th className='px-4 py-1'>{t('customerName')}</th>
+                            <th className='px-4 py-1'>{t('model')} & Serial</th>
+                            <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1'>{t('paidBy')}</th>
+                            <th className='px-4 py-1 text-right'>{t('amount')}</th>
+                            <th className='px-4 py-1 text-center'>រូបភាព</th>
+                            <th className='px-4 py-1'>{t('description')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -352,9 +352,9 @@ const PaymentHistory = () => {
                         ) : (
                             payments.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
-                                    <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'>{item.paidDate}</td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                    <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'>{item.paidDate}</td>
+                                    <td className='px-4 py-1'>
                                         <div className="flex items-center gap-2.5">
                                             {/* {item.photo ? (
                                                 <img src={item.photo} alt="avatar" className="w-7 h-7 rounded-full object-cover border border-slate-200" />
@@ -364,21 +364,21 @@ const PaymentHistory = () => {
                                             <span className='font-bold text-slate-900'>{item.customerName}</span>
                                         </div>
                                     </td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-4 py-1'>
                                         <span className='text-slate-900 font-semibold block'>{item.model}</span>
                                         <span className='text-slate-500 font-mono text-[11px] block'>{item.serialNumber}</span>
                                     </td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-4 py-1'>
                                         {item.brand ? (
                                             <span className="px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]">{item.brand}</span>
                                         ) : <span className="text-slate-400 text-[10px]">-</span>}
                                     </td>
-                                    <td className='px-4 py-3 font-semibold text-slate-700'>{item.paidBy}</td>
-                                    <td className='px-4 py-3 text-right font-bold text-emerald-700 font-mono text-sm'>
+                                    <td className='px-4 py-1 font-semibold text-slate-700'>{item.paidBy}</td>
+                                    <td className='px-4 py-1 text-right font-bold text-emerald-700 font-mono text-sm'>
                                         ${Number(item.amount).toLocaleString()}
                                     </td>
                                     {/* Image Column */}
-                                    <td className='px-4 py-3 text-center'>
+                                    <td className='px-4 py-1 text-center'>
                                         {(() => {
                                             // Gather all image sources: paymentImages array + single fields
                                             const imgs = [
@@ -401,7 +401,7 @@ const PaymentHistory = () => {
                                             );
                                         })()}
                                     </td>
-                                    <td className='px-4 py-3 text-slate-600 text-[11px] font-medium'>{item.description || '-'}</td>
+                                    <td className='px-4 py-1 text-slate-600 text-[11px] font-medium'>{item.description || '-'}</td>
                                 </tr>
                             ))
                         )}
@@ -410,13 +410,13 @@ const PaymentHistory = () => {
                     {!loading && payments.length > 0 && (
                         <tfoot>
                             <tr className='bg-emerald-50 border-t-2 border-emerald-300'>
-                                <td colSpan={6} className='px-4 py-3 text-right text-xs font-black text-slate-700 uppercase tracking-wider'>
+                                <td colSpan={6} className='px-4 py-1 text-right text-xs font-black text-slate-700 uppercase tracking-wider'>
                                     សរុបទំព័រនេះ ({payments.length} records):
                                 </td>
-                                <td className='px-4 py-3 text-right font-black text-emerald-800 font-mono text-sm'>
+                                <td className='px-4 py-1 text-right font-black text-emerald-800 font-mono text-sm'>
                                     ${totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
-                                <td colSpan={2} className='px-4 py-3'></td>
+                                <td colSpan={2} className='px-4 py-1'></td>
                             </tr>
                         </tfoot>
                     )}

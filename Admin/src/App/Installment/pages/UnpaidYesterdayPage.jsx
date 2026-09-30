@@ -261,21 +261,21 @@ const UnpaidYesterdayPage = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-amber-50 text-amber-800 uppercase tracking-wider border-b border-amber-100 sticky top-0 z-10'>
                         <tr>
-                            <th className='px-4 py-3 text-center'>No</th>
-                            <th className='px-4 py-3'>Loan Date</th>
-                            <th className='px-4 py-3'>Customer Name</th>
-                            <th className='px-4 py-3'>Brand</th>
-                            <th className='px-4 py-3'>Model</th>
-                            <th className='px-4 py-3'>Due Date</th>
-                            <th className='px-4 py-3 text-center'>Late Days</th>
-                            <th className='px-4 py-3 text-right font-mono text-emerald-700'>Total Loan Amount</th>
-                            <th className='px-4 py-3 text-right text-amber-600'>Penalty</th>
-                            <th className='px-4 py-3 text-right text-sky-600'>Scheduled Amount</th>
-                            <th className='px-4 py-3 text-right text-emerald-600 font-extrabold'>Total</th>
-                            <th className='px-4 py-3 text-right text-emerald-700'>Paid Amount</th>
-                            <th className='px-4 py-3'>Comment</th>
-                            <th className='px-4 py-3 text-purple-600'>Paid Date</th>
-                            <th className='px-4 py-3 text-center'>Action</th>
+                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1'>Loan Date</th>
+                            <th className='px-4 py-1'>Customer Name</th>
+                            <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1'>Model</th>
+                            <th className='px-4 py-1'>Due Date</th>
+                            <th className='px-4 py-1 text-center'>Late Days</th>
+                            <th className='px-4 py-1 text-right font-mono text-emerald-700'>Total Loan Amount</th>
+                            <th className='px-4 py-1 text-right text-amber-600'>Penalty</th>
+                            <th className='px-4 py-1 text-right text-sky-600'>Scheduled Amount</th>
+                            <th className='px-4 py-1 text-right text-emerald-600 font-extrabold'>Total</th>
+                            <th className='px-4 py-1 text-right text-emerald-700'>Paid Amount</th>
+                            <th className='px-4 py-1'>Comment</th>
+                            <th className='px-4 py-1 text-purple-600'>Paid Date</th>
+                            <th className='px-4 py-1 text-center'>Action</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-amber-50 font-medium text-slate-800'>
@@ -289,21 +289,21 @@ const UnpaidYesterdayPage = () => {
                             const lateDays = getLateDays(displayRow?.dueDate);
                             return (
                                 <tr key={id} className="hover:bg-amber-50/40 transition-colors bg-amber-50/10">
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{idx + 1}</td>
-                                    <td className='px-4 py-3 font-mono text-slate-700'>{item.inputDate || '—'}</td>
-                                    <td className='px-4 py-3'><CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' /><CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' /></td>
-                                    <td className='px-4 py-3'><span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>{item.brand || '—'}</span></td>
-                                    <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
-                                    <td className='px-4 py-3 font-mono'>{displayRow?.dueDate ? <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">{displayRow.dueDate}</span> : '—'}</td>
-                                    <td className='px-4 py-3 text-center'><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-700 font-extrabold text-[11px]">{lateDays}d</span></td>
-                                    <td className='px-4 py-3 text-right font-mono font-bold text-emerald-700'>${Number(displayRow?.loanAmount || item.amount || 0).toLocaleString()}</td>
-                                    <td className='px-4 py-3 text-right font-mono text-amber-600 font-bold'>${Number(displayRow?.penalty || 0).toLocaleString()}</td>
-                                    <td className='px-4 py-3 text-right font-mono text-sky-700 font-bold'>${Number(displayRow?.scheduledAmount || 0).toLocaleString()}</td>
-                                    <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-600'>${(Number(displayRow?.penalty || 0) + Number(displayRow?.scheduledAmount || 0)).toLocaleString()}</td>
-                                    <td className='px-4 py-3 text-right font-mono font-bold text-emerald-700'>${Number(displayRow?.paidAmount || 0).toLocaleString()}</td>
-                                    <td className='px-4 py-3 text-slate-500 italic text-[11px] max-w-[140px] truncate'>{displayRow?.comment || '—'}</td>
-                                    <td className='px-4 py-3 font-mono text-purple-600 font-bold'>{displayRow?.paidDate || '—'}</td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{idx + 1}</td>
+                                    <td className='px-4 py-1 font-mono text-slate-700'>{item.inputDate || '—'}</td>
+                                    <td className='px-4 py-1'><CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' /><CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' /></td>
+                                    <td className='px-4 py-1'><span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>{item.brand || '—'}</span></td>
+                                    <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                    <td className='px-4 py-1 font-mono'>{displayRow?.dueDate ? <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">{displayRow.dueDate}</span> : '—'}</td>
+                                    <td className='px-4 py-1 text-center'><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-700 font-extrabold text-[11px]">{lateDays}d</span></td>
+                                    <td className='px-4 py-1 text-right font-mono font-bold text-emerald-700'>${Number(displayRow?.loanAmount || item.amount || 0).toLocaleString()}</td>
+                                    <td className='px-4 py-1 text-right font-mono text-amber-600 font-bold'>${Number(displayRow?.penalty || 0).toLocaleString()}</td>
+                                    <td className='px-4 py-1 text-right font-mono text-sky-700 font-bold'>${Number(displayRow?.scheduledAmount || 0).toLocaleString()}</td>
+                                    <td className='px-4 py-1 text-right font-mono font-extrabold text-emerald-600'>${(Number(displayRow?.penalty || 0) + Number(displayRow?.scheduledAmount || 0)).toLocaleString()}</td>
+                                    <td className='px-4 py-1 text-right font-mono font-bold text-emerald-700'>${Number(displayRow?.paidAmount || 0).toLocaleString()}</td>
+                                    <td className='px-4 py-1 text-slate-500 italic text-[11px] max-w-[140px] truncate'>{displayRow?.comment || '—'}</td>
+                                    <td className='px-4 py-1 font-mono text-purple-600 font-bold'>{displayRow?.paidDate || '—'}</td>
+                                    <td className="px-4 py-1 text-center">
                                         <button onClick={(e) => handleOpenMenu(e, id)} className={`w-8 h-8 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === id ? 'bg-amber-100 border-amber-400 text-amber-700' : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'}`}><AiOutlineMenu size={16} /></button>
                                     </td>
                                 </tr>
@@ -313,12 +313,12 @@ const UnpaidYesterdayPage = () => {
                     {!loading && unpaidYesterdayContracts.length > 0 && (
                         <tfoot className='border-t-2 border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50/40'>
                             <tr>
-                                <td colSpan={7} className='px-4 py-3 text-center text-xs font-extrabold text-amber-700 uppercase tracking-wide'>Total Unpaid Yesterday ({unpaidYesterdayContracts.length} records)</td>
-                                <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-700 text-sm border-l border-amber-100'>${totals.loanAmount.toLocaleString()}</td>
-                                <td className='px-4 py-3 text-right font-mono font-extrabold text-amber-600 text-sm'>${totals.penalty.toLocaleString()}</td>
-                                <td className='px-4 py-3 text-right font-mono font-extrabold text-sky-700 text-sm'>${totals.scheduled.toLocaleString()}</td>
-                                <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-600 text-sm'>${totals.total.toLocaleString()}</td>
-                                <td className='px-4 py-3 text-right font-mono font-extrabold text-emerald-700 text-sm'>${totals.paid.toLocaleString()}</td>
+                                <td colSpan={7} className='px-4 py-1 text-center text-xs font-extrabold text-amber-700 uppercase tracking-wide'>Total Unpaid Yesterday ({unpaidYesterdayContracts.length} records)</td>
+                                <td className='px-4 py-1 text-right font-mono font-extrabold text-emerald-700 text-sm border-l border-amber-100'>${totals.loanAmount.toLocaleString()}</td>
+                                <td className='px-4 py-1 text-right font-mono font-extrabold text-amber-600 text-sm'>${totals.penalty.toLocaleString()}</td>
+                                <td className='px-4 py-1 text-right font-mono font-extrabold text-sky-700 text-sm'>${totals.scheduled.toLocaleString()}</td>
+                                <td className='px-4 py-1 text-right font-mono font-extrabold text-emerald-600 text-sm'>${totals.total.toLocaleString()}</td>
+                                <td className='px-4 py-1 text-right font-mono font-extrabold text-emerald-700 text-sm'>${totals.paid.toLocaleString()}</td>
                                 <td colSpan={3} />
                             </tr>
                         </tfoot>

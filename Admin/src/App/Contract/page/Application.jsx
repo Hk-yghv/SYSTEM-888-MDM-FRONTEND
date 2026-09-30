@@ -196,15 +196,15 @@ const Application = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-3 text-center'>No</th>
-                            <th className='px-4 py-3'>{t('inputDate')}</th>
-                            <th className='px-4 py-3'>{t('customerName')}</th>
-                            <th className='px-4 py-3 text-center'>{t('status')}</th>
-                            <th className='px-4 py-3 text-center'>Contract</th>
-                            <th className='px-4 py-3'>{t('model')}</th>
-                            <th className='px-4 py-3'>Brand</th>
-                            <th className='px-4 py-3'>{t('serialNumber')}</th>
-                            <th className='px-4 py-3 text-center'>Actions</th>
+                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1'>{t('inputDate')}</th>
+                            <th className='px-4 py-1'>{t('customerName')}</th>
+                            <th className='px-4 py-1 text-center'>{t('status')}</th>
+                            <th className='px-4 py-1 text-center'>Contract</th>
+                            <th className='px-4 py-1'>{t('model')}</th>
+                            <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1'>{t('serialNumber')}</th>
+                            <th className='px-4 py-1 text-center'>Actions</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -224,9 +224,9 @@ const Application = () => {
 
                                 return (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                                    <td className='px-4 py-3 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                    <td className='px-4 py-1 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
+                                    <td className='px-4 py-1'>
                                         <div className="flex items-center gap-1.5 flex-wrap">
                                             <CopyCell text={item.customerNameEn} className='font-bold text-slate-900' />
                                             {item.customerNameKh && <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs font-semibold' />}
@@ -237,20 +237,20 @@ const Application = () => {
                                             )}
                                         </div>
                                     </td>
-                                    <td className='px-4 py-3 text-center'>
+                                    <td className='px-4 py-1 text-center'>
                                         <span className='px-3 py-1 bg-amber-50 border border-amber-300 text-amber-800 rounded-full font-bold text-[10px] uppercase'>
                                             Application
                                         </span>
                                     </td>
-                                    <td className='px-4 py-3 text-center font-mono text-indigo-700 font-bold'>
+                                    <td className='px-4 py-1 text-center font-mono text-indigo-700 font-bold'>
                                         <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
                                     </td>
-                                    <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                    <td className='px-4 py-1'>
                                         {item.brand || '—'}
                                     </td>
-                                    <td className='px-4 py-3 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber || 'Pending'} className='font-mono text-slate-600 font-medium' /></td>
-                                    <td className="px-4 py-3 text-center relative">
+                                    <td className='px-4 py-1 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber || 'Pending'} className='font-mono text-slate-600 font-medium' /></td>
+                                    <td className="px-4 py-1 text-center relative">
                                         {hasAnyAction ? (
                                             <div className="relative inline-block text-left">
                                                 <button

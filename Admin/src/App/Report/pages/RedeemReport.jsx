@@ -316,12 +316,12 @@ const RedeemReport = () => {
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                             <tr>
-                                <th className='px-4 py-3 text-center'>No</th>
-                                <th className='px-4 py-3'>Customer</th>
-                                <th className='px-4 py-3'>Model</th>
-                                <th className='px-4 py-3'>Serial Number</th>
-                                <th className='px-4 py-3'>Brand</th>
-                                <th className='px-4 py-3 text-center'>Status</th>
+                                <th className='px-4 py-1 text-center'>No</th>
+                                <th className='px-4 py-1'>Customer</th>
+                                <th className='px-4 py-1'>Model</th>
+                                <th className='px-4 py-1'>Serial Number</th>
+                                <th className='px-4 py-1'>Brand</th>
+                                <th className='px-4 py-1 text-center'>Status</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -332,12 +332,12 @@ const RedeemReport = () => {
                             ) : (
                                 dataList.map((item, idx) => (
                                     <tr key={item._id || idx} className='hover:bg-amber-50/40 transition-colors'>
-                                        <td className='px-4 py-3 text-center font-mono font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
-                                        <td className='px-4 py-3 font-bold text-slate-900'><CopyCell text={item.customerNameEn || '-'} className='font-bold text-slate-900' /></td>
-                                        <td className='px-4 py-3 font-semibold text-slate-800'><CopyCell text={item.model || '-'} className='font-semibold text-slate-800' /></td>
-                                        <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber || '-'} className='font-mono text-emerald-700 font-semibold' /></td>
-                                        <td className='px-4 py-3'><span className='px-2.5 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>{item.brand || user?.brand || 'SYSTEM'}</span></td>
-                                        <td className='px-4 py-3 text-center font-bold text-amber-700'>Redeem</td>
+                                        <td className='px-4 py-1 text-center font-mono font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                        <td className='px-4 py-1 font-bold text-slate-900'><CopyCell text={item.customerNameEn || '-'} className='font-bold text-slate-900' /></td>
+                                        <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model || '-'} className='font-semibold text-slate-800' /></td>
+                                        <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber || '-'} className='font-mono text-emerald-700 font-semibold' /></td>
+                                        <td className='px-4 py-1'><span className='px-2.5 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>{item.brand || user?.brand || 'SYSTEM'}</span></td>
+                                        <td className='px-4 py-1 text-center font-bold text-amber-700'>Redeem</td>
                                     </tr>
                                 ))
                             )}
@@ -359,25 +359,25 @@ const RedeemReport = () => {
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-amber-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                                 <tr>
-                                    <th className='px-3.5 py-3 text-center'>No</th>
-                                    <th className='px-3.5 py-3'>Brand Domain</th>
-                                    <th className='px-3.5 py-3 text-center'>Total Redeemed Count</th>
-                                    <th className='px-3.5 py-3 text-right'>Total Redeemed Loan Value ($)</th>
-                                    <th className='px-3.5 py-3 text-center'>Status</th>
+                                    <th className='px-3.5 py-1 text-center'>No</th>
+                                    <th className='px-3.5 py-1'>Brand Domain</th>
+                                    <th className='px-3.5 py-1 text-center'>Total Redeemed Count</th>
+                                    <th className='px-3.5 py-1 text-right'>Total Redeemed Loan Value ($)</th>
+                                    <th className='px-3.5 py-1 text-center'>Status</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
                                 {summaryBreakdown.rows.map((row, idx) => (
                                     <tr key={row.brand} className="hover:bg-amber-50/50 transition-colors">
-                                        <td className="px-3.5 py-3 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
-                                        <td className="px-3.5 py-3 font-black text-amber-900">
+                                        <td className="px-3.5 py-1 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
+                                        <td className="px-3.5 py-1 font-black text-amber-900">
                                             <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 font-bold">
                                                 {row.brand}
                                             </span>
                                         </td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-slate-900">{row.totalRedeem.toLocaleString()}</td>
-                                        <td className="px-3.5 py-3 text-right font-mono font-bold text-blue-700">${row.totalLoanValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="px-3.5 py-3 text-center font-bold text-amber-700">Redeem</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-slate-900">{row.totalRedeem.toLocaleString()}</td>
+                                        <td className="px-3.5 py-1 text-right font-mono font-bold text-blue-700">${row.totalLoanValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-amber-700">Redeem</td>
                                     </tr>
                                 ))}
 

@@ -133,7 +133,7 @@ const RejectSubmitCard = ({
             <button
                 onClick={onSave}
                 disabled={saving || loading || reasons.length === 0}
-                className="w-full flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm py-3 rounded-[5px] transition-all shadow-lg shadow-rose-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm py-1 rounded-[5px] transition-all shadow-lg shadow-rose-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {saving ? <MdOutlineSync className="animate-spin text-lg" /> : <FaSave size={15} />}
                 <span>{saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកទិន្នន័យ REJECT SUBMIT'}</span>

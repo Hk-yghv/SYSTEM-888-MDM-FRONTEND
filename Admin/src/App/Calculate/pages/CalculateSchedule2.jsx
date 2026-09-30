@@ -522,7 +522,7 @@ const CalculateSchedule2 = () => {
                         margin-right: 0 !important;
                     }
                     #cs2-print-area .grid-cols-2 {
-                        gap-x: 2.5rem !important;
+                        column-gap: 2.5rem !important;
                         padding-left: 0 !important;
                         padding-right: 0 !important;
                     }
@@ -545,10 +545,6 @@ const CalculateSchedule2 = () => {
                     #cs2-print-area table td {
                         border-color: #000000 !important;
                         color: #000000 !important;
-                    }
-                    #cs2-print-area .cs2-address-footer {
-                        margin-top: 50px !important;
-                        padding-top: 50px !important;
                     }
                     .no-print {
                         display: none !important;
@@ -873,7 +869,7 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Search in History */}
-                        <div className="py-3">
+                        <div className="py-1">
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs"><FaSearch /></span>
                                 <input

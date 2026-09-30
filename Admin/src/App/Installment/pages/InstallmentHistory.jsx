@@ -427,22 +427,22 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 <table className="w-full min-w-[1550px] border-collapse text-left text-xs">
                     <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-slate-700">
                         <tr>
-                            <th className="px-3 py-3 text-center">No.</th>
-                            <th className="px-3 py-3">Loan date</th>
-                            <th className="px-3 py-3">Customer / Contract</th>
-                            <th className="px-3 py-3">Brand</th>
-                            <th className="px-3 py-3">Model / Serial</th>
-                            <th className="px-3 py-3">Installment</th>
-                            <th className="px-3 py-3">Due date</th>
-                            <th className="px-3 py-3">Paid date</th>
-                            <th className="px-3 py-3">Due status</th>
-                            <th className="px-3 py-3 text-right">Amount due</th>
-                            <th className="px-3 py-3 text-right">Penalty</th>
-                            <th className="px-3 py-3 text-right">Paid</th>
-                            <th className="px-3 py-3 text-right">Unpaid</th>
-                            <th className="px-3 py-3 text-center">Image</th>
-                            <th className="px-3 py-3">Pad / Payoff / Redeem</th>
-                            {!isHistoryPage && <th className="px-3 py-3 text-center">Action</th>}
+                            <th className="px-3 py-1 text-center">No.</th>
+                            <th className="px-3 py-1">Loan date</th>
+                            <th className="px-3 py-1">Customer / Contract</th>
+                            <th className="px-3 py-1">Brand</th>
+                            <th className="px-3 py-1">Model / Serial</th>
+                            <th className="px-3 py-1">Installment</th>
+                            <th className="px-3 py-1">Due date</th>
+                            <th className="px-3 py-1">Paid date</th>
+                            <th className="px-3 py-1">Due status</th>
+                            <th className="px-3 py-1 text-right">Amount due</th>
+                            <th className="px-3 py-1 text-right">Penalty</th>
+                            <th className="px-3 py-1 text-right">Paid</th>
+                            <th className="px-3 py-1 text-right">Unpaid</th>
+                            <th className="px-3 py-1 text-center">Image</th>
+                            <th className="px-3 py-1">Pad / Payoff / Redeem</th>
+                            {!isHistoryPage && <th className="px-3 py-1 text-center">Action</th>}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -462,22 +462,22 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                         : row.type === 'Payoff' ? 'border-indigo-300 bg-indigo-50 text-indigo-800'
                                             : 'border-emerald-300 bg-emerald-50 text-emerald-800';
                                     return <tr key={row._id} className={row.isPaid ? 'bg-emerald-50/20' : row.daysUntilDue < 0 ? 'bg-rose-50/30' : row.daysUntilDue === 0 ? 'bg-amber-50/40' : 'hover:bg-slate-50'}>
-                                        <td className="px-3 py-3 text-center font-mono text-slate-500">{(page - 1) * PAGE_SIZE + index + 1}</td>
-                                        <td className="whitespace-nowrap px-3 py-3 font-mono text-slate-600">{row.loanDate || '—'}</td>
-                                        <td className="px-3 py-3"><div className="font-bold text-slate-900">{row.customerName}</div><div className="font-mono text-[10px] text-slate-500">{row.contractIid || '—'}</div></td>
-                                        <td className="px-3 py-3">{row.brand || '—'}</td>
-                                        <td className="px-3 py-3"><div className="font-semibold text-slate-800">{row.model || '—'}</div><div className="font-mono text-[10px] text-slate-500">{row.serialNumber || '—'}</div></td>
-                                        <td className="px-3 py-3 font-semibold text-slate-700">{row.labelName || row.monthLabel || `Month ${row.monthIndex || ''}`}</td>
-                                        <td className="whitespace-nowrap px-3 py-3 font-mono font-bold text-slate-900">{row.dueDate}</td>
-                                        <td className="whitespace-nowrap px-3 py-3 font-mono font-semibold text-purple-700">{row.paidDate || '—'}</td>
-                                        <td className="px-3 py-3"><span className={`whitespace-nowrap rounded-[4px] border px-2 py-1 font-bold ${statusClass}`}>{statusText}</span></td>
-                                        <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-semibold text-slate-700">${row.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-semibold text-amber-700">${row.penalty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-bold text-emerald-700">${row.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-bold text-rose-700">${row.unpaidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-3 text-center">{images.length ? <button onClick={() => openImageGallery(row)} className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800"><FaImage /> View{images.length > 1 ? ` (${images.length})` : ''}</button> : <span className="text-slate-300">—</span>}</td>
-                                        <td className="px-3 py-3">{row.type ? <span className={`inline-flex rounded-[4px] border px-2 py-1 font-bold ${typeClass}`}>{row.type}</span> : <span className="text-slate-300">—</span>}</td>
-                                        {!isHistoryPage && <td className="px-3 py-3">
+                                        <td className="px-3 py-1 text-center font-mono text-slate-500">{(page - 1) * PAGE_SIZE + index + 1}</td>
+                                        <td className="whitespace-nowrap px-3 py-1 font-mono text-slate-600">{row.loanDate || '—'}</td>
+                                        <td className="px-3 py-1"><div className="font-bold text-slate-900">{row.customerName}</div><div className="font-mono text-[10px] text-slate-500">{row.contractIid || '—'}</div></td>
+                                        <td className="px-3 py-1">{row.brand || '—'}</td>
+                                        <td className="px-3 py-1"><div className="font-semibold text-slate-800">{row.model || '—'}</div><div className="font-mono text-[10px] text-slate-500">{row.serialNumber || '—'}</div></td>
+                                        <td className="px-3 py-1 font-semibold text-slate-700">{row.labelName || row.monthLabel || `Month ${row.monthIndex || ''}`}</td>
+                                        <td className="whitespace-nowrap px-3 py-1 font-mono font-bold text-slate-900">{row.dueDate}</td>
+                                        <td className="whitespace-nowrap px-3 py-1 font-mono font-semibold text-purple-700">{row.paidDate || '—'}</td>
+                                        <td className="px-3 py-1"><span className={`whitespace-nowrap rounded-[4px] border px-2 py-1 font-bold ${statusClass}`}>{statusText}</span></td>
+                                        <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-semibold text-slate-700">${row.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-semibold text-amber-700">${row.penalty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-bold text-emerald-700">${row.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-bold text-rose-700">${row.unpaidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="px-3 py-1 text-center">{images.length ? <button onClick={() => openImageGallery(row)} className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800"><FaImage /> View{images.length > 1 ? ` (${images.length})` : ''}</button> : <span className="text-slate-300">—</span>}</td>
+                                        <td className="px-3 py-1">{row.type ? <span className={`inline-flex rounded-[4px] border px-2 py-1 font-bold ${typeClass}`}>{row.type}</span> : <span className="text-slate-300">—</span>}</td>
+                                        {!isHistoryPage && <td className="px-3 py-1">
                                             <div className="flex items-center justify-center gap-1.5">
                                                 <button onClick={() => openScheduleForRow(row)} title="Open Pad, Payoff, or Redeem actions" className="inline-flex items-center gap-1 rounded-[5px] border border-emerald-300 bg-emerald-50 px-2 py-1 font-bold text-emerald-800">
                                                     <FaDollarSign /> Pay / Redeem

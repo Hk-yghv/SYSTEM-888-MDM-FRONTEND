@@ -243,16 +243,16 @@ const DeviceActionHistory = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>
-                            <th className='px-4 py-3 text-center'>No</th>
-                            <th className='px-4 py-3'>Date & Time</th>
-                            <th className='px-4 py-3'>{t('customerName')}</th>
-                            <th className='px-4 py-3'>{t('model')}</th>
-                            <th className='px-4 py-3'>Brand</th>
-                            <th className='px-4 py-3 font-mono'>{t('serialNumber')}</th>
-                            <th className='px-4 py-3 text-center'>Action Type</th>
-                            <th className='px-4 py-3 text-center'>{t('status')}</th>
-                            <th className='px-4 py-3'>Performed By</th>
-                            <th className='px-4 py-3 text-center'>Actions (អនុម័ត / បដិសេធ)</th>
+                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1'>Date & Time</th>
+                            <th className='px-4 py-1'>{t('customerName')}</th>
+                            <th className='px-4 py-1'>{t('model')}</th>
+                            <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1 font-mono'>{t('serialNumber')}</th>
+                            <th className='px-4 py-1 text-center'>Action Type</th>
+                            <th className='px-4 py-1 text-center'>{t('status')}</th>
+                            <th className='px-4 py-1'>Performed By</th>
+                            <th className='px-4 py-1 text-center'>Actions (អនុម័ត / បដិសេធ)</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -277,27 +277,27 @@ const DeviceActionHistory = () => {
 
                                 return (
                                     <tr key={currentId || idx} className='hover:bg-amber-50/40 transition-colors'>
-                                        <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>
+                                        <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>
                                             {(page - 1) * LIMIT + idx + 1}
                                         </td>
-                                        <td className='px-4 py-3 text-slate-600 font-mono text-[11px] whitespace-nowrap'>
+                                        <td className='px-4 py-1 text-slate-600 font-mono text-[11px] whitespace-nowrap'>
                                             <CopyCell text={`${item.date} ${item.time}`} className='font-mono text-[11px] text-slate-600' />
                                         </td>
-                                        <td className='px-4 py-3 font-bold text-slate-900'>
+                                        <td className='px-4 py-1 font-bold text-slate-900'>
                                             <CopyCell text={item.customerName} className='font-bold text-slate-900' />
                                         </td>
-                                        <td className='px-4 py-3 font-semibold text-slate-800'>
+                                        <td className='px-4 py-1 font-semibold text-slate-800'>
                                             <CopyCell text={item.model} className='font-semibold text-slate-800' />
                                         </td>
-                                        <td className='px-4 py-3'>
+                                        <td className='px-4 py-1'>
                                             <span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>
                                                 {item.brand || '—'}
                                             </span>
                                         </td>
-                                        <td className='px-4 py-3 font-mono text-emerald-700 font-bold'>
+                                        <td className='px-4 py-1 font-mono text-emerald-700 font-bold'>
                                             <CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-bold' />
                                         </td>
-                                        <td className='px-4 py-3 text-center'>
+                                        <td className='px-4 py-1 text-center'>
                                             <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 border ${isLock ? 'bg-red-50 text-red-700 border-red-200' :
                                                 isWallpaper ? 'bg-purple-50 text-purple-700 border-purple-200' :
                                                     'bg-emerald-50 text-emerald-800 border-emerald-200'
@@ -306,7 +306,7 @@ const DeviceActionHistory = () => {
                                                 {item.actionType}
                                             </span>
                                         </td>
-                                        <td className='px-4 py-3 text-center'>
+                                        <td className='px-4 py-1 text-center'>
                                             {isPending ? (
                                                 <span className='px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 border border-amber-300 text-amber-900 inline-flex items-center gap-1 animate-pulse'>
                                                     <FaClock size={10} />
@@ -324,10 +324,10 @@ const DeviceActionHistory = () => {
                                                 </span>
                                             )}
                                         </td>
-                                        <td className='px-4 py-3 font-semibold text-slate-700'>
+                                        <td className='px-4 py-1 font-semibold text-slate-700'>
                                             <CopyCell text={item.performedBy || 'Administrator'} className='font-semibold text-slate-700' />
                                         </td>
-                                        <td className='px-4 py-3 text-center whitespace-nowrap'>
+                                        <td className='px-4 py-1 text-center whitespace-nowrap'>
                                             {isPending ? (
                                                 hasPermission('/history/device-history', 'edit') ? (
                                                     <div className="inline-flex items-center gap-1.5 justify-center">

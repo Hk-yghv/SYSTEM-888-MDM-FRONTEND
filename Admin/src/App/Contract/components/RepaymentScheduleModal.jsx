@@ -710,7 +710,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-xs text-slate-800">
 
                 {/* Header */}
-                <div className="px-5 py-3 border-b border-slate-200 bg-white flex items-center justify-between flex-shrink-0">
+                <div className="px-5 py-1 border-b border-slate-200 bg-white flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <div>
                             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
@@ -793,18 +793,18 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                     <table className="w-full text-left text-xs whitespace-nowrap border border-slate-200 rounded-[5px] overflow-hidden">
                         <thead className="bg-slate-50 text-indigo-950 font-bold uppercase tracking-wider border-b border-slate-200">
                             <tr>
-                                <th className="px-3 py-3 text-center">ខែ/ថ្ងៃ</th>
-                                <th className="px-3 py-3">ថ្ងៃខែត្រូវបង់</th>
-                                <th className="px-3 py-3 font-mono text-emerald-700">Total loan amount</th>
-                                <th className="px-3 py-3 text-violet-700 font-mono font-bold">ការប្រាក់</th>
-                                <th className="px-3 py-3 text-amber-600 font-bold">ពិន័យ</th>
-                                <th className="px-3 py-3 text-sky-700 font-bold">ត្រូវបង់</th>
-                                <th className="px-3 py-3 text-emerald-700 font-extrabold">Total</th>
-                                <th className="px-3 py-3 text-emerald-800">ភ្ញៀវបានបង់</th>
-                                <th className="px-3 py-3">Comment (Note)</th>
-                                <th className="px-3 py-3 text-purple-700">កាលបរិច្ឆេទបានបង់</th>
-                                <th className="px-3 py-3 text-center text-indigo-600">រូបភាព</th>
-                                {!isReadOnly && !isSetupActivate && <th className="px-3 py-3 text-center">Action ($)</th>}
+                                <th className="px-3 py-1 text-center">ខែ/ថ្ងៃ</th>
+                                <th className="px-3 py-1">ថ្ងៃខែត្រូវបង់</th>
+                                <th className="px-3 py-1 font-mono text-emerald-700">Total loan amount</th>
+                                <th className="px-3 py-1 text-violet-700 font-mono font-bold">ការប្រាក់</th>
+                                <th className="px-3 py-1 text-amber-600 font-bold">ពិន័យ</th>
+                                <th className="px-3 py-1 text-sky-700 font-bold">ត្រូវបង់</th>
+                                <th className="px-3 py-1 text-emerald-700 font-extrabold">Total</th>
+                                <th className="px-3 py-1 text-emerald-800">ភ្ញៀវបានបង់</th>
+                                <th className="px-3 py-1">Comment (Note)</th>
+                                <th className="px-3 py-1 text-purple-700">កាលបរិច្ឆេទបានបង់</th>
+                                <th className="px-3 py-1 text-center text-indigo-600">រូបភាព</th>
+                                {!isReadOnly && !isSetupActivate && <th className="px-3 py-1 text-center">Action ($)</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -1066,7 +1066,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 </div>
 
                 {/* Footer Buttons */}
-                <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2 flex-shrink-0">
+                <div className="px-5 py-1 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2 flex-shrink-0">
                     <button
                         type="button"
                         onClick={() => setOpen(false)}
@@ -1121,7 +1121,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                     className="relative bg-white rounded-[5px] shadow-2xl max-w-2xl w-full mx-4 overflow-hidden"
                     onClick={e => e.stopPropagation()}
                 >
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
+                    <div className="flex items-center justify-between px-4 py-1 border-b border-slate-200 bg-slate-50">
                         <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
                             <FaImage className="text-indigo-600" />
                             រូបភាពភស្តុតាងបង់ប្រាក់
@@ -1163,7 +1163,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         )}
                     </div>
                     {lightboxImages.length > 1 && (
-                        <div className="flex gap-2 px-4 py-3 bg-slate-50 border-t border-slate-200 overflow-x-auto">
+                        <div className="flex gap-2 px-4 py-1 bg-slate-50 border-t border-slate-200 overflow-x-auto">
                             {lightboxImages.map((img, i) => (
                                 <button
                                     key={i}

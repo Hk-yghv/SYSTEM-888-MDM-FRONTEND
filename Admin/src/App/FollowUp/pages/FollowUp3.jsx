@@ -799,24 +799,24 @@ const FollowUp3 = () => {
                                     return (
                                         <tr key={item._id || item.followUpId || idx} className="hover:bg-slate-50/70 transition">
                                             {/* Index */}
-                                            <td className="py-3 px-4 text-center font-bold text-slate-400 text-xs">
+                                            <td className="py-1 px-4 text-center font-bold text-slate-400 text-xs">
                                                 {rowNum}
                                             </td>
 
                                             {/* Date */}
-                                            <td className="py-3 px-4 font-semibold text-slate-700 whitespace-nowrap">
+                                            <td className="py-1 px-4 font-semibold text-slate-700 whitespace-nowrap">
                                                 {item.date ? item.date.split('T')[0] : '—'}
                                             </td>
 
                                             {/* Customer Name */}
-                                            <td className="py-3 px-4 font-bold text-slate-800 whitespace-nowrap">
+                                            <td className="py-1 px-4 font-bold text-slate-800 whitespace-nowrap">
                                                 <CopyCell text={item.customerName || '—'}>
                                                     <span className="hover:text-emerald-600 transition">{item.customerName || '—'}</span>
                                                 </CopyCell>
                                             </td>
 
                                             {/* Phone */}
-                                            <td className="py-3 px-4 whitespace-nowrap">
+                                            <td className="py-1 px-4 whitespace-nowrap">
                                                 {item.phone ? (
                                                     <div className="flex items-center gap-1.5">
                                                         <a
@@ -834,7 +834,7 @@ const FollowUp3 = () => {
                                             </td>
 
                                             {/* Location */}
-                                            <td className="py-3 px-4 whitespace-nowrap">
+                                            <td className="py-1 px-4 whitespace-nowrap">
                                                 {item.location ? (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200">
                                                         <FaMapMarkerAlt className="text-[10px]" />
@@ -846,7 +846,7 @@ const FollowUp3 = () => {
                                             </td>
 
                                             {/* Source */}
-                                            <td className="py-3 px-4 whitespace-nowrap">
+                                            <td className="py-1 px-4 whitespace-nowrap">
                                                 {item.source ? (
                                                     <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs">
                                                         {item.source}
@@ -857,21 +857,21 @@ const FollowUp3 = () => {
                                             </td>
 
                                             {/* Requested Amount */}
-                                            <td className="py-3 px-4 text-right font-black text-emerald-600 whitespace-nowrap">
+                                            <td className="py-1 px-4 text-right font-black text-emerald-600 whitespace-nowrap">
                                                 {item.requestedAmount !== undefined && item.requestedAmount !== ''
                                                     ? `$${Number(item.requestedAmount || 0).toLocaleString()}`
                                                     : '—'}
                                             </td>
 
                                             {/* Collateral Type */}
-                                            <td className="py-3 px-4 whitespace-nowrap">
+                                            <td className="py-1 px-4 whitespace-nowrap">
                                                 <span className="font-semibold text-slate-700">
                                                     {item.collateralType || '—'}
                                                 </span>
                                             </td>
 
                                             {/* Description */}
-                                            <td className="py-3 px-4 text-slate-600 max-w-xs break-words text-xs">
+                                            <td className="py-1 px-4 text-slate-600 max-w-xs break-words text-xs">
                                                 {item.description ? (
                                                     <p className="line-clamp-2" title={item.description}>
                                                         {item.description}
@@ -882,7 +882,7 @@ const FollowUp3 = () => {
                                             </td>
 
                                             {/* Link */}
-                                            <td className="py-3 px-4 text-center whitespace-nowrap">
+                                            <td className="py-1 px-4 text-center whitespace-nowrap">
                                                 {item.link ? (
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         <a
@@ -903,7 +903,7 @@ const FollowUp3 = () => {
                                             </td>
 
                                             {/* Responder (អ្នកឆ្លើយតប) */}
-                                            <td className="py-3 px-4 whitespace-nowrap">
+                                            <td className="py-1 px-4 whitespace-nowrap">
                                                 {item.responder ? (
                                                     <span className="inline-flex items-center gap-1 text-indigo-700 bg-indigo-50/70 border border-indigo-100 px-2 py-0.5 rounded-lg font-bold text-xs">
                                                         <FaComments className="text-indigo-500 text-[11px]" />
@@ -915,7 +915,7 @@ const FollowUp3 = () => {
                                             </td>
 
                                             {/* Username */}
-                                            <td className="py-3 px-4 whitespace-nowrap">
+                                            <td className="py-1 px-4 whitespace-nowrap">
                                                 {item.username ? (
                                                     <span className="inline-flex items-center gap-1 text-slate-700 font-semibold text-xs">
                                                         <FaUserTie className="text-slate-400 text-[11px]" />
@@ -927,7 +927,7 @@ const FollowUp3 = () => {
                                             </td>
 
                                             {/* Actions */}
-                                            <td className="py-3 px-4 text-center whitespace-nowrap">
+                                            <td className="py-1 px-4 text-center whitespace-nowrap">
                                                 <div className="flex items-center justify-center gap-1.5">
                                                     {checkPermission('edit') && (
                                                         <button
