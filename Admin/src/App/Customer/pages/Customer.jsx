@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { IoIosContact } from 'react-icons/io';
@@ -242,21 +242,26 @@ const Customer = () => {
     const repaymentPct = totalLoan > 0 ? Math.min(100, Math.round((totalPaidSum / totalLoan) * 100)) : 0;
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full p-4 select-none space-y-3.5'>
 
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200/90 bg-white/90 backdrop-blur-md rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
+                    <div className='w-2 h-5 rounded-full bg-emerald-600' />
                     <div>
-                        <h1 className='text-lg font-bold text-slate-900'>{t('customer')}</h1>
-                        <p className='text-xs text-emerald-700 font-bold'>{filteredCustomers.length} Active Customers</p>
+                        <h1 className='text-sm md:text-base font-extrabold text-slate-800 tracking-tight flex items-center gap-2'>
+                            {t('customer')}
+                            <span className='px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold'>
+                                {filteredCustomers.length} {t('records') || 'Customers'}
+                            </span>
+                        </h1>
                     </div>
                 </div>
 
                 <div className='flex flex-wrap items-center gap-2'>
                     {/* Search */}
                     <div className="relative">
-                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
+                        <MdSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
                         <input
                             type="text"
                             value={searchTerm}
@@ -265,45 +270,45 @@ const Customer = () => {
                                 setCurrentPage(1);
                             }}
                             placeholder="Search name, phone, model..."
-                            className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
+                            className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:border-emerald-400 transition-all w-48 sm:w-56 outline-none shadow-xs"
                         />
                     </div>
 
                     {/* Export to Excel & PDF */}
                     {hasPermission('/customer', 'export') && (
-                        <>
+                        <div className="flex items-center gap-1.5">
                             <button
                                 onClick={handleExportExcel}
-                                className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-[5px] text-xs cursor-pointer border border-emerald-300 transition-all font-bold shadow-xs'
+                                className='flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs cursor-pointer border border-emerald-200 transition-all font-bold shadow-xs'
                             >
-                                <FaFileExcel className="text-emerald-600 text-sm" />
+                                <FaFileExcel className="text-emerald-600 text-xs" />
                                 <span>Excel</span>
                             </button>
 
                             <button
                                 onClick={handleExportPDF}
-                                className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 rounded-[5px] text-xs cursor-pointer border border-red-300 transition-all font-bold shadow-xs'
+                                className='flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs cursor-pointer border border-rose-200 transition-all font-bold shadow-xs'
                             >
-                                <MdPictureAsPdf className="text-red-600 text-sm" />
+                                <MdPictureAsPdf className="text-rose-600 text-xs" />
                                 <span>PDF</span>
                             </button>
-                        </>
+                        </div>
                     )}
 
                     {/* Reload */}
                     <button
                         onClick={fetchCustomers}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs cursor-pointer border border-slate-300 transition-all font-bold shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs cursor-pointer border border-slate-200 transition-all font-bold shadow-xs'
                     >
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
+                        <MdOutlineSync size={15} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
             {/* Customer Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-300px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-300px)] pb-14 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -375,7 +380,7 @@ const Customer = () => {
 
                                                     {openMenuId === (item._id || item.contractId) && (
                                                         <div
-                                                            className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-[5px] shadow-xl z-50 py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100"
+                                                            className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 text-xs text-left animate-in fade-in zoom-in-95 duration-100"
                                                             onClick={(e) => e.stopPropagation()}
                                                         >
                                                             {/* See Photo */}
@@ -532,7 +537,7 @@ const Customer = () => {
                                 group flex items-center gap-2
                                 px-3 py-1
                                 cursor-pointer
-                                rounded-[5px]
+                                rounded-xl
                                 text-[11px] font-semibold
                                 text-gray-700
                                 bg-white
@@ -566,7 +571,7 @@ const Customer = () => {
                                 group flex items-center gap-2
                                 px-3 py-1
                                 cursor-pointer
-                                rounded-[5px]
+                                rounded-xl
                                 text-[11px] font-semibold
                                 text-gray-700
                                 bg-white
@@ -599,7 +604,7 @@ const Customer = () => {
                                 group flex items-center gap-2
                                 px-3 py-1
                                 cursor-pointer
-                                rounded-[5px]
+                                rounded-xl
                                 text-[11px] font-semibold
                                 text-gray-700
                                 bg-white
@@ -631,7 +636,7 @@ const Customer = () => {
                                     onClick={() => setSelectedCustomer(null)}
                                     className="
                             w-8 h-8
-                            rounded-[5px]
+                            rounded-xl
                             bg-gray-100
                             hover:bg-red-50
                             border border-gray-200
@@ -690,7 +695,7 @@ const Customer = () => {
                                             key={label}
                                             className="
                                     p-2.5
-                                    rounded-[5px]
+                                    rounded-xl
                                     border border-gray-200
                                     bg-gray-50
                                     hover:bg-emerald-50/40
@@ -756,7 +761,7 @@ const Customer = () => {
                                             key={label}
                                             className="
                                     p-2.5
-                                    rounded-[5px]
+                                    rounded-xl
                                     border border-gray-200
                                     bg-gray-50
                                     hover:bg-emerald-50/40
@@ -821,7 +826,7 @@ const Customer = () => {
                             p-3
                             bg-white
                             border border-amber-200
-                            rounded-[5px]
+                            rounded-xl
                             text-xs
                             text-gray-700
                             font-medium
@@ -861,7 +866,7 @@ const Customer = () => {
                                             key={label}
                                             className="
                                     p-2.5
-                                    rounded-[5px]
+                                    rounded-xl
                                     border border-gray-200
                                     bg-gray-50
                                     hover:bg-emerald-50
@@ -909,12 +914,12 @@ const Customer = () => {
                         p-3
                         bg-gray-50
                         border border-gray-200
-                        rounded-[5px]
+                        rounded-xl
                     ">
 
                                     <div className="grid grid-cols-3 gap-3 mb-2 text-center">
 
-                                        <div className="p-2 bg-white border border-gray-200 rounded-[5px]">
+                                        <div className="p-2 bg-white border border-gray-200 rounded-xl">
                                             <span className="text-gray-500 text-[10px] block">
                                                 Total Loan
                                             </span>
@@ -922,7 +927,7 @@ const Customer = () => {
                                             <CopyCell text={`$${totalLoan.toLocaleString()}`} copyValue={totalLoan} className="text-gray-900 font-mono font-bold text-sm" />
                                         </div>
 
-                                        <div className="p-2 bg-white border border-gray-200 rounded-[5px]">
+                                        <div className="p-2 bg-white border border-gray-200 rounded-xl">
                                             <span className="text-gray-500 text-[10px] block">
                                                 Total Paid So Far
                                             </span>
@@ -930,7 +935,7 @@ const Customer = () => {
                                             <CopyCell text={`$${totalPaidSum.toLocaleString()}`} copyValue={totalPaidSum} className="text-emerald-600 font-mono font-bold text-sm" />
                                         </div>
 
-                                        <div className="p-2 bg-white border border-gray-200 rounded-[5px]">
+                                        <div className="p-2 bg-white border border-gray-200 rounded-xl">
                                             <span className="text-gray-500 text-[10px] block">
                                                 Remaining Balance
                                             </span>
@@ -987,7 +992,7 @@ const Customer = () => {
                                 {/* Payment Table */}
                                 <div className="
                         overflow-x-auto
-                        rounded-[5px]
+                        rounded-xl
                         border border-gray-200
                         bg-white
                         max-h-56
@@ -1096,7 +1101,7 @@ const Customer = () => {
 
                             {/* ================= SECURITY LOCK ================= */}
                             <div className="
-                    rounded-[5px]
+                    rounded-xl
                     bg-white
                     border border-gray-200
                     p-4
@@ -1129,7 +1134,7 @@ const Customer = () => {
                                     <div className="
                             group
                             p-3
-                            rounded-[5px]
+                            rounded-xl
                             bg-gray-50
                             border border-gray-200
                             hover:border-emerald-300
@@ -1205,7 +1210,7 @@ const Customer = () => {
                                     <div className="
                             group
                             p-3
-                            rounded-[5px]
+                            rounded-xl
                             bg-gray-50
                             border border-gray-200
                             hover:border-emerald-300
@@ -1325,7 +1330,7 @@ const Customer = () => {
                                 onClick={() => setQrCustomer(null)}
                                 className="
                         w-7 h-7
-                        rounded-[5px]
+                        rounded-xl
                         bg-gray-100
                         hover:bg-red-50
                         border border-gray-200
@@ -1346,7 +1351,7 @@ const Customer = () => {
                         <div className="
                 bg-gray-50
                 p-3
-                rounded-[5px]
+                rounded-xl
                 border border-gray-200
                 text-left
             ">
@@ -1385,7 +1390,7 @@ const Customer = () => {
                         <div className="
                 bg-white
                 p-4
-                rounded-[5px]
+                rounded-xl
                 border-4
                 border-emerald-100
                 inline-block
@@ -1460,7 +1465,7 @@ const Customer = () => {
                         disabled:text-gray-400
                         disabled:cursor-not-allowed
                         text-white
-                        rounded-[5px]
+                        rounded-xl
                         text-xs
                         font-bold
                         cursor-pointer
@@ -1484,7 +1489,7 @@ const Customer = () => {
                         text-gray-600
                         hover:text-red-600
                         cursor-pointer
-                        rounded-[5px]
+                        rounded-xl
                         text-xs
                         font-bold
                         transition-all
@@ -1506,7 +1511,7 @@ const Customer = () => {
                     onClick={() => setPhotoGalleryCustomer(null)}
                 >
                     <div
-                        className="bg-slate-900 border border-slate-700 rounded-[5px] max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+                        className="bg-slate-900 border border-slate-700 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
@@ -1557,7 +1562,7 @@ const Customer = () => {
                                 return (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {photosList.map((pUrl, pIdx) => (
-                                            <div key={pIdx} className="bg-slate-950 border border-slate-800 rounded-[5px] overflow-hidden p-2 flex flex-col items-center shadow-lg">
+                                            <div key={pIdx} className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden p-2 flex flex-col items-center shadow-lg">
                                                 <img
                                                     src={pUrl}
                                                     alt={`Evidence ${pIdx + 1}`}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -293,7 +293,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
             ref={menuRef}
             data-action-menu-root="true"
             style={{ position: 'fixed', top, left, width: dropdownWidth, zIndex: 999999 }}
-            className="max-h-[calc(100vh-16px)] overflow-y-auto bg-white border border-slate-200 rounded-[5px] shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+            className="max-h-[calc(100vh-16px)] overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}
         >
             {/* Header label */}
@@ -336,7 +336,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
                             <button
                                 key={mIdx}
                                 onClick={() => { onSelectMonth(item, mIdx); onClose(); }}
-                                className={`w-full text-left px-2.5 py-1.5 text-[11px] font-semibold rounded-[5px] flex items-center justify-between gap-2 cursor-pointer transition-colors ${isCurrentMonth
+                                className={`w-full text-left px-2.5 py-1.5 text-[11px] font-semibold rounded-xl flex items-center justify-between gap-2 cursor-pointer transition-colors ${isCurrentMonth
                                     ? 'bg-amber-100 text-amber-800 border border-amber-300'
                                     : `hover:bg-slate-50 ${statusTextClass(row.status)}`
                                     }`}
@@ -621,7 +621,7 @@ const InstallmentPage = () => {
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
+        <div className='w-full p-4 select-none space-y-4 relative'>
 
             {/* ── RepaymentScheduleModal ─────────────────────────────────── */}
             <RepaymentScheduleModal
@@ -654,22 +654,23 @@ const InstallmentPage = () => {
             )}
 
             {/* ── Header ────────────────────────────────────────────────── */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
-                <div>
-                    <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2 flex-wrap'>
-                        <span>Installment</span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-normal">
-                            {visibleRows.length} Records
+            <header className='p-3 w-full border border-slate-200/90 bg-white/90 backdrop-blur-md rounded-2xl flex flex-col xl:flex-row xl:items-center justify-between gap-3 shadow-xs'>
+                <div className='flex items-center gap-3'>
+                    <div className='w-2 h-5 rounded-full bg-emerald-600' />
+                    <h1 className='text-sm md:text-base font-extrabold text-slate-800 tracking-tight flex items-center gap-2 flex-wrap'>
+                        <span>{t('installment') || 'Installment'}</span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                            {visibleRows.length} {t('records') || 'Records'}
                         </span>
                         {user?.brand && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800 font-semibold">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 border border-slate-200 font-semibold">
                                 {user.brand}
                             </span>
                         )}
                     </h1>
                 </div>
 
-                <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                     {/* Compact Space-Saving Urgency Filter Droplist */}
                     <div className="flex items-center gap-1.5">
                         <select
@@ -682,7 +683,7 @@ const InstallmentPage = () => {
                                 else newParams.set('urgency', val);
                                 setSearchParams(newParams);
                             }}
-                            className="px-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs font-bold text-slate-800 outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
+                            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-emerald-500 cursor-pointer shadow-xs"
                         >
                             <option value="all">ទាំងអស់ (All Status)</option>
                             <option value="overdue">🔴 លើសកំណត់ (Overdue)</option>
@@ -708,54 +709,56 @@ const InstallmentPage = () => {
                                 setSearchParams(newParams);
                             }}
                             placeholder="Search name, model, serial..."
-                            className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-48 sm:w-52 outline-none font-medium shadow-xs"
+                            className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 w-44 sm:w-48 outline-none font-medium shadow-xs"
                         />
                     </div>
-                    <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5">
+                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-1 rounded-xl shadow-xs">
                         <input
                             type="date"
                             value={dateFrom}
                             onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
-                            className="h-8 px-2 bg-white border border-slate-300 rounded-[5px] text-[11px] text-slate-700 outline-none focus:border-emerald-500"
+                            className="h-7 px-1.5 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-700 outline-none focus:border-emerald-500"
                         />
                         <span className="text-slate-500 text-[10px] font-bold uppercase">To</span>
                         <input
                             type="date"
                             value={dateTo}
                             onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
-                            className="h-8 px-2 bg-white border border-slate-300 rounded-[5px] text-[11px] text-slate-700 outline-none focus:border-emerald-500"
+                            className="h-7 px-1.5 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-700 outline-none focus:border-emerald-500"
                         />
                         {(dateFrom || dateTo) && (
                             <button
                                 type="button"
                                 onClick={() => { setDateFrom(''); setDateTo(''); setCurrentPage(1); }}
-                                className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-[5px] text-[10px] font-bold cursor-pointer"
+                                className="px-1.5 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md text-[10px] font-bold cursor-pointer"
                             >
-                                Clear
+                                ✕
                             </button>
                         )}
                     </div>
 
-                    <button onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
-                    </button>
-                    <button onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
-                    </button>
-                    <button
-                        onClick={() => fetchContracts(currentPage, searchTerm, limit)}
-                        disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
-                        <p>{t('reload')}</p>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                        <button onClick={handleExportExcel}
+                            className='flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                            <FaFileExcel className="text-emerald-600 text-xs" /><span>Excel</span>
+                        </button>
+                        <button onClick={handleExportPDF}
+                            className='flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                            <MdPictureAsPdf className="text-rose-600 text-xs" /><span>PDF</span>
+                        </button>
+                        <button
+                            onClick={() => fetchContracts(currentPage, searchTerm, limit)}
+                            disabled={reloading}
+                            className='flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer border border-slate-200 transition-all shadow-xs'>
+                            <MdOutlineSync size={15} className={reloading ? 'spin-reload text-emerald-600' : ''} />
+                            <p>{t('reload')}</p>
+                        </button>
+                    </div>
                 </div>
             </header>
 
             {/* ── Table ─────────────────────────────────────────────────── */}
-            <div className='w-full overflow-auto rounded-[5px] border border-slate-200 bg-white shadow-md'
+            <div className='w-full overflow-auto rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'
                 style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10'>
@@ -897,7 +900,7 @@ const InstallmentPage = () => {
                                         <td className="px-3 py-1 text-center">
                                             <button
                                                 onClick={(e) => handleOpenMenu(e, menuKey)}
-                                                className={`w-8 h-8 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === menuKey
+                                                className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === menuKey
                                                     ? 'bg-amber-100 border-amber-400 text-amber-700'
                                                     : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
                                                     }`}
@@ -964,7 +967,7 @@ const InstallmentPage = () => {
             </div>
 
             {/* ── Pagination with page-size selector ────────────────────── */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-[5px] text-xs shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-xl text-xs shadow-xs">
                 {/* Left: showing info + items-per-page */}
                 <div className="flex items-center gap-3 text-slate-500">
                     <span>

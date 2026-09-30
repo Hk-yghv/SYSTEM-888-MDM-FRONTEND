@@ -135,54 +135,58 @@ const Redeem = () => {
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
-                <div>
-                    <h1 className='text-base font-bold text-slate-900 flex items-center gap-2'>
+        <div className='w-full p-4 select-none space-y-3.5 relative'>
+            <header className='p-3 w-full border border-slate-200/90 bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-between gap-3 shadow-xs'>
+                <div className='flex items-center gap-3'>
+                    <div className='w-2 h-5 rounded-full bg-purple-500' />
+                    <h1 className='text-sm md:text-base font-extrabold text-slate-800 tracking-tight flex items-center gap-2'>
                         <span>{t('redeem')}</span>
+                        <span className='px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold'>
+                            {filteredContracts.length} {t('records') || 'Records'}
+                        </span>
                     </h1>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <div className="relative">
-                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                         <input
                             type="text"
                             placeholder="Search customer, model, serial..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all w-64 shadow-2xs"
+                            className="pl-8 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-purple-400 focus:bg-white transition-all w-52 shadow-xs"
                         />
                     </div>
                     {hasPermission('/contract/redeem', 'export') && (
-                        <>
+                        <div className="flex items-center gap-1.5">
                             <button
                                 onClick={handleExportExcel}
-                                className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                                className='flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                             >
-                                <FaFileExcel className="text-emerald-600 text-sm" />
+                                <FaFileExcel className="text-emerald-600 text-xs" />
                                 <span>Excel</span>
                             </button>
                             <button
                                 onClick={handleExportPDF}
-                                className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                                className='flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                             >
-                                <MdPictureAsPdf className="text-red-600 text-sm" />
+                                <MdPictureAsPdf className="text-rose-600 text-xs" />
                                 <span>PDF</span>
                             </button>
-                        </>
+                        </div>
                     )}
                     <button
                         onClick={fetchRedeemContracts}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer border border-slate-200 transition-all shadow-xs'
                     >
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
+                        <MdOutlineSync size={15} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
-            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -225,29 +229,29 @@ const Redeem = () => {
                                             </button>
 
                                             {openMenuId === item._id && (
-                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                <div className="absolute right-0 mt-2 w-48 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
                                                     <button
                                                         onClick={() => { setScheduleModalContract(item); setScheduleModalOpen(true); setOpenMenuId(null); }}
-                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-lg flex items-center gap-2 cursor-pointer"
                                                     >
                                                         <FaFileExcel className="text-indigo-600 text-sm" /> View Schedule ($)
                                                     </button>
                                                     {(user?.isImmutable || user?.username === '@hakyonghouv') && (
                                                         <button
                                                             onClick={() => handleRestoreToActivated(item)}
-                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-lg flex items-center gap-2 cursor-pointer"
                                                         >
                                                             <MdSwapHoriz className="text-emerald-600 text-base" />
                                                             <span>Move to Activated</span>
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/redeem', 'edit') && (
-                                                        <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2">
+                                                        <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-lg flex items-center gap-2">
                                                             <MdEdit className="text-amber-600" /> Edit
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/redeem', 'delete') && (
-                                                        <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2">
+                                                        <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-lg flex items-center gap-2">
                                                             <MdDelete className="text-red-600" /> Delete
                                                         </button>
                                                     )}

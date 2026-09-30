@@ -159,22 +159,22 @@ const Left = ({ isOpen = false, onClose, collapsed = false, onToggleCollapse }) 
 
     // ── Style helpers ──────────────────────────────────────────────────────
     const navItemClass = (path) =>
-        `group relative w-full flex-shrink-0 flex items-center rounded-[5px] text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-lg hover:shadow-emerald-500/10 active:scale-[0.98] active:translate-y-[1px] glass-nav-item
-        ${collapsed ? "h-[44px] justify-center px-0" : "h-[44px] gap-3 px-3"}
+        `group relative w-full flex-shrink-0 flex items-center rounded-xl text-xs font-semibold overflow-hidden transition-all duration-150 ease-out transform-gpu hover:translate-x-0.5 active:scale-[0.99]
+        ${collapsed ? "h-[40px] justify-center px-0" : "h-[40px] gap-2.5 px-3"}
         ${isActive(path)
-            ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 border border-emerald-500"
-            : "bg-[var(--app-card,rgba(255,255,255,0.4))] text-[var(--app-text,#0f172a)] hover:bg-emerald-500/15 border border-[var(--app-border,rgba(226,232,240,0.6))] shadow-2xs backdrop-blur-md"
+            ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/25 font-bold"
+            : "text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border border-transparent hover:border-slate-200/60"
         }`;
 
     const subItemClass = (path) =>
-        `group relative flex items-center gap-2 flex-shrink-0 px-3.5 py-2.5 ml-3 text-xs font-bold rounded-[5px] overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.98] active:translate-y-[1px] ${isActive(path)
-            ? "bg-emerald-600 text-white shadow-xs border border-emerald-500"
-            : "bg-[var(--app-card,rgba(255,255,255,0.3))] text-[var(--app-text,#0f172a)] hover:bg-emerald-500/15 border border-[var(--app-border,rgba(226,232,240,0.6))] backdrop-blur-md"
+        `group relative flex items-center gap-2 flex-shrink-0 px-3 py-2 ml-3 text-[11px] font-semibold rounded-lg overflow-hidden transition-all duration-150 ease-out transform-gpu hover:translate-x-0.5 active:scale-[0.99] ${isActive(path)
+            ? "bg-emerald-600 text-white shadow-xs font-bold"
+            : "text-slate-600 hover:text-emerald-700 hover:bg-slate-100/80 border border-transparent hover:border-slate-200/50"
         }`;
 
     const dropdownHeaderBaseClass = () =>
-        `sidebar-dropdown-header group relative w-full flex-shrink-0 flex items-center bg-[var(--app-card,rgba(255,255,255,0.4))] hover:bg-emerald-500/15 text-[var(--app-text,#0f172a)] border border-[var(--app-border,rgba(226,232,240,0.6))] rounded-[5px] cursor-pointer text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.005] hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.99] active:translate-y-[1px] shadow-2xs backdrop-blur-md
-        ${collapsed ? "h-[44px] justify-center px-0" : "h-[44px] justify-between px-3"}`;
+        `sidebar-dropdown-header group relative w-full flex-shrink-0 flex items-center text-slate-700 hover:text-emerald-700 hover:bg-slate-100/90 border border-transparent hover:border-slate-200/60 rounded-xl cursor-pointer text-xs font-semibold overflow-hidden transition-all duration-150 ease-out transform-gpu hover:translate-x-0.5 active:scale-[0.99]
+        ${collapsed ? "h-[40px] justify-center px-0" : "h-[40px] justify-between px-3"}`;
 
     // Handle collapsed flyout toggle
     const handleFlyoutToggle = (menuKey, items, ref) => {

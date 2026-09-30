@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../../context/AuthContext';
@@ -279,7 +279,7 @@ const PhoneAppPage = () => {
     return (
         <div className="w-full bg-transparent p-4 text-slate-800 select-none space-y-4 overflow-y-auto">
             {/* Header */}
-            <header className="p-4 border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+            <header className="p-4 border border-slate-200 bg-white rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
                 <div>
                     <h1 className="text-xl font-extrabold text-indigo-400 flex items-center gap-2">
                         <MdPhoneAndroid className="text-2xl" />
@@ -311,7 +311,7 @@ const PhoneAppPage = () => {
                         <button
                             onClick={handleConnect}
                             disabled={actionLoading}
-                            className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 rounded-[5px] text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg shadow-emerald-600/30 animate-pulse font-khmer"
+                            className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg shadow-emerald-600/30 animate-pulse font-khmer"
                         >
                             <FaPlug />
                             <span>{actionLoading ? 'កំពុងភ្ជាប់...' : '✅ Connect Device (អនុម័ត)'}</span>
@@ -323,7 +323,7 @@ const PhoneAppPage = () => {
                         <button
                             onClick={handleDisconnect}
                             disabled={actionLoading}
-                            className="px-3.5 py-2 bg-red-900 hover:bg-red-800 text-red-200 border border-red-700 rounded-[5px] text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg font-khmer"
+                            className="px-3.5 py-2 bg-red-900 hover:bg-red-800 text-red-200 border border-red-700 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg font-khmer"
                         >
                             <FaUnlink />
                             <span>{actionLoading ? 'កំពុងផ្តាច់...' : '⛔ Disconnect (ផ្តាច់)'}</span>
@@ -333,7 +333,7 @@ const PhoneAppPage = () => {
                     <button
                         onClick={fetchStatus}
                         disabled={reloading}
-                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-[5px] text-xs font-bold flex items-center gap-2 cursor-pointer transition-all"
+                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all"
                     >
                         <FaSyncAlt className={reloading ? "animate-spin text-emerald-400" : ""} />
                         <span>Refresh Status</span>
@@ -348,10 +348,10 @@ const PhoneAppPage = () => {
                 <div className="lg:col-span-7 space-y-4">
 
                     {/* Pairing Method Tab Buttons */}
-                    <div className="bg-[#0f1426] border border-gray-800 p-2 rounded-[5px] flex items-center gap-2">
+                    <div className="bg-[#0f1426] border border-gray-800 p-2 rounded-xl flex items-center gap-2">
                         <button
                             onClick={() => setActiveTab('qrcode')}
-                            className={`flex-1 py-2.5 px-3 rounded-[5px] text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeTab === 'qrcode'
+                            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeTab === 'qrcode'
                                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
                                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                                 }`}
@@ -361,7 +361,7 @@ const PhoneAppPage = () => {
                         </button>
                         <button
                             onClick={() => setActiveTab('wifi')}
-                            className={`flex-1 py-2.5 px-3 rounded-[5px] text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeTab === 'wifi'
+                            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeTab === 'wifi'
                                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
                                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                                 }`}
@@ -371,7 +371,7 @@ const PhoneAppPage = () => {
                         </button>
                         <button
                             onClick={() => setActiveTab('hotspot')}
-                            className={`flex-1 py-2.5 px-3 rounded-[5px] text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeTab === 'hotspot'
+                            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeTab === 'hotspot'
                                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
                                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                                 }`}
@@ -382,11 +382,11 @@ const PhoneAppPage = () => {
                     </div>
 
                     {/* Pairing Tab Content */}
-                    <div className="bg-[#0f1426] border border-gray-800 rounded-[5px] p-6 shadow-xl space-y-4">
+                    <div className="bg-[#0f1426] border border-gray-800 rounded-xl p-6 shadow-xl space-y-4">
                         {activeTab === 'qrcode' && (
                             <div className="flex flex-col md:flex-row items-center gap-6">
                                 {/* Real Static Scannable QRCodeSVG Box */}
-                                <div className="p-4 bg-white rounded-[5px] border-4 border-indigo-500 shadow-2xl flex flex-col items-center justify-center relative">
+                                <div className="p-4 bg-white rounded-xl border-4 border-indigo-500 shadow-2xl flex flex-col items-center justify-center relative">
                                     <QRCodeSVG
                                         value={JSON.stringify({
                                             apiUrl: API_BASE,
@@ -426,7 +426,7 @@ const PhoneAppPage = () => {
                                 <p className="text-xs text-slate-300 font-khmer">
                                     ប្រាកដថា Computer និង Phone របស់អ្នកស្ថិតក្នុងបណ្តាញ Wi-Fi តែមួយ៖
                                 </p>
-                                <div className="p-3 bg-slate-900 border border-slate-800 rounded-[5px] space-y-2 font-mono text-xs">
+                                <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2 font-mono text-xs">
                                     <div className="flex justify-between"><span className="text-slate-400">Server Host IP:</span><span className="text-indigo-400 font-bold">192.168.1.100</span></div>
                                     <div className="flex justify-between"><span className="text-slate-400">Pairing Port:</span><span className="text-emerald-400 font-bold">5000</span></div>
                                     <div className="flex justify-between"><span className="text-slate-400">Pairing PIN Code:</span><span className="text-amber-400 font-bold">882910</span></div>
@@ -442,7 +442,7 @@ const PhoneAppPage = () => {
                                 <p className="text-xs text-slate-300 font-khmer">
                                     បើក Mobile Hotspot លើទូរស័ព្ទដៃ រួចភ្ជាប់ Computer ទៅកាន់ Hotspot នោះ៖
                                 </p>
-                                <div className="p-3 bg-slate-900 border border-slate-800 rounded-[5px] space-y-2 font-mono text-xs">
+                                <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2 font-mono text-xs">
                                     <div className="flex justify-between"><span className="text-slate-400">Hotspot AP Name:</span><span className="text-amber-400 font-bold">SYSTEM_MDM_AP</span></div>
                                     <div className="flex justify-between"><span className="text-slate-400">Gateway IP:</span><span className="text-indigo-400 font-bold">192.168.43.1</span></div>
                                 </div>
@@ -451,11 +451,11 @@ const PhoneAppPage = () => {
                     </div>
 
                     {/* Detailed Connected Phone Information */}
-                    <div className="bg-[#0f1426] border border-gray-800 rounded-[5px] p-5 shadow-xl space-y-4">
+                    <div className="bg-[#0f1426] border border-gray-800 rounded-xl p-5 shadow-xl space-y-4">
 
                         {/* Action Message Feedback */}
                         {actionMsg && (
-                            <div className={`p-3 rounded-[5px] text-xs font-bold font-khmer flex items-center gap-2 border ${actionMsg.includes('ជោគជ័យ') || actionMsg.includes('Approved')
+                            <div className={`p-3 rounded-xl text-xs font-bold font-khmer flex items-center gap-2 border ${actionMsg.includes('ជោគជ័យ') || actionMsg.includes('Approved')
                                     ? 'bg-emerald-950 border-emerald-700 text-emerald-300'
                                     : 'bg-amber-950 border-amber-700 text-amber-300'
                                 }`}>
@@ -466,7 +466,7 @@ const PhoneAppPage = () => {
 
                         {/* Pending Request Banner */}
                         {deviceData?.isPending && !deviceData?.isConnected && (
-                            <div className="p-4 bg-amber-950/70 border border-amber-700/80 rounded-[5px] flex items-start gap-3 animate-pulse">
+                            <div className="p-4 bg-amber-950/70 border border-amber-700/80 rounded-xl flex items-start gap-3 animate-pulse">
                                 <FaExclamationTriangle className="text-amber-400 text-xl flex-shrink-0 mt-0.5" />
                                 <div>
                                     <p className="text-xs font-bold text-amber-300 font-khmer">⏳ Device ស្នើសុំភ្ជាប់ — រង់ចាំការអនុម័តពីអ្នក!</p>
@@ -495,29 +495,29 @@ const PhoneAppPage = () => {
                         </div>
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">Device Model</span>
                                 <span className="font-bold text-white">{deviceData?.model || '—'}</span>
                             </div>
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">IMEI 1</span>
                                 <span className="font-mono text-indigo-300">{deviceData?.imei1 || '—'}</span>
                             </div>
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">IMEI 2</span>
                                 <span className="font-mono text-indigo-300">{deviceData?.imei2 || '—'}</span>
                             </div>
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">Battery & Charging</span>
                                 <span className="font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
                                     <FaBatteryThreeQuarters /> {deviceData?.batteryLevel}% {deviceData?.isCharging ? '(Charging)' : ''}
                                 </span>
                             </div>
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">RAM & Storage</span>
                                 <span className="text-slate-200">{deviceData?.ram} • {deviceData?.storage}</span>
                             </div>
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">IP Address & Network</span>
                                 <span className="font-mono text-sky-400">{deviceData?.ip} ({deviceData?.carrier})</span>
                             </div>
@@ -530,7 +530,7 @@ const PhoneAppPage = () => {
                             </h4>
                             <div className="space-y-2">
                                 {deviceData?.recentSms?.map((sms, i) => (
-                                    <div key={i} className="p-2.5 bg-slate-900 rounded-[5px] border border-slate-800 text-xs flex justify-between items-start">
+                                    <div key={i} className="p-2.5 bg-slate-900 rounded-xl border border-slate-800 text-xs flex justify-between items-start">
                                         <div>
                                             <span className="font-bold text-indigo-400 block">{sms.sender}</span>
                                             <p className="text-slate-300 text-[11px]">{sms.text}</p>
@@ -544,7 +544,7 @@ const PhoneAppPage = () => {
                 </div>
 
                 {/* Right Column: Interactive 3D Device Viewer (5 cols) */}
-                <div className="lg:col-span-5 bg-[#0f1426] border border-gray-800 rounded-[5px] p-5 shadow-xl flex flex-col justify-between items-center relative overflow-hidden min-h-[500px]">
+                <div className="lg:col-span-5 bg-[#0f1426] border border-gray-800 rounded-xl p-5 shadow-xl flex flex-col justify-between items-center relative overflow-hidden min-h-[500px]">
                     <div className="w-full flex items-center justify-between border-b border-gray-800 pb-3">
                         <div>
                             <h3 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
@@ -563,7 +563,7 @@ const PhoneAppPage = () => {
                     <div ref={canvasRef} className="w-full h-[380px] flex items-center justify-center cursor-grab active:cursor-grabbing relative">
                     </div>
 
-                    <div className="w-full p-3 bg-slate-900/90 rounded-[5px] border border-slate-800 text-center">
+                    <div className="w-full p-3 bg-slate-900/90 rounded-xl border border-slate-800 text-center">
                         <p className="text-xs text-indigo-300 font-bold">
                             {deviceData?.model || 'Samsung Galaxy S24 Ultra'}
                         </p>

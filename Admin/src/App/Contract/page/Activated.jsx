@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -351,7 +351,7 @@ const Activated = () => {
                         </div>
 
                         <form onSubmit={handleConfirmRedeem} className="space-y-4">
-                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-[5px] text-xs space-y-1">
+                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs space-y-1">
                                 <p className="font-bold text-purple-900">អតិថិជន៖ {redeemItem.customerNameEn} ({redeemItem.customerNameKh})</p>
                                 <p className="text-purple-700 font-mono">ម៉ូឌែល/Serial: {redeemItem.model} • {redeemItem.serialNumber}</p>
                             </div>
@@ -393,61 +393,62 @@ const Activated = () => {
             )}
 
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
-                <div>
-                    <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
+            <header className='p-3 w-full border border-slate-200/90 bg-white/90 backdrop-blur-md rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+                <div className='flex items-center gap-3'>
+                    <div className='w-2 h-5 rounded-full bg-emerald-600' />
+                    <h1 className='text-sm md:text-base font-extrabold text-slate-800 tracking-tight flex items-center gap-2'>
                         <span>{t('activated')}</span>
-                        <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-normal">
-                            {filteredContracts.length} Records
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                            {total || filteredContracts.length} {t('records') || 'Records'}
                         </span>
                     </h1>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
                     <div className="relative">
                         <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                            placeholder="Search name, model, serial..."
-                            className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
+                            placeholder={`${t('search') || 'Search customer, model, serial...'}...`}
+                            className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-emerald-500 w-48 sm:w-56 outline-none font-medium shadow-xs"
                         />
                     </div>
 
                     {/* Export to Excel & PDF */}
                     {hasPermission('/contract/activated', 'export') && (
-                        <>
+                        <div className="flex items-center gap-1.5">
                             <button
                                 onClick={handleExportExcel}
-                                className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                                className='flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                             >
-                                <FaFileExcel className="text-emerald-600 text-sm" />
+                                <FaFileExcel className="text-emerald-600 text-xs" />
                                 <span>Excel</span>
                             </button>
                             <button
                                 onClick={handleExportPDF}
-                                className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                                className='flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                             >
-                                <MdPictureAsPdf className="text-red-600 text-sm" />
+                                <MdPictureAsPdf className="text-rose-600 text-xs" />
                                 <span>PDF</span>
                             </button>
-                        </>
+                        </div>
                     )}
 
                     <button
                         onClick={() => fetchActivatedContracts(currentPage, searchTerm)}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                        className='flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer border border-slate-200 transition-all shadow-xs'
                     >
-                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
+                        <MdOutlineSync size={15} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -544,20 +545,20 @@ const Activated = () => {
                                                     <div className="relative inline-block text-left">
                                                         <button
                                                             onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)}
-                                                            className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs"
+                                                            className="w-7 h-7 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:text-emerald-700 transition-all cursor-pointer shadow-2xs"
                                                         >
-                                                            <AiOutlineMenu size={16} />
+                                                            <AiOutlineMenu size={14} />
                                                         </button>
 
                                                         {openMenuId === item._id && (
-                                                            <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                            <div className="absolute right-0 mt-1.5 w-56 bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-0.5 animate-in fade-in duration-150">
                                                                 {matchingCalcSchedule && (
                                                                     <button
                                                                         onClick={() => {
                                                                             navigate(`/calculate/schedule-2?customerName=${encodeURIComponent(matchingCalcSchedule.customerName || item.customerNameKh || '')}&id=${matchingCalcSchedule._id}`);
                                                                             setOpenMenuId(null);
                                                                         }}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50/80 hover:bg-emerald-100 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50/80 hover:bg-emerald-100 rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <FaCalendarAlt className="text-emerald-600 text-sm" />
                                                                         <span>Payment Schedule</span>
@@ -566,7 +567,7 @@ const Activated = () => {
                                                                 {canOpenMosyle && (
                                                                     <button
                                                                         onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-5px flex items-center gap-2 cursor-pointer"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <span>Open Mosyle</span>
                                                                     </button>
@@ -574,7 +575,7 @@ const Activated = () => {
                                                                 {canOpenFb && (
                                                                     <button
                                                                         onClick={() => window.open(item.urlFb, '_blank')}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-5px flex items-center gap-2 cursor-pointer"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <span>Open Facebook</span>
                                                                     </button>
@@ -586,9 +587,9 @@ const Activated = () => {
                                                                             setSelectedHistoryItem(item);
                                                                             setOpenMenuId(null);
                                                                         }}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
-                                                                        <FaHistory className="text-indigo-600 text-sm" />
+                                                                        <FaHistory className="text-emerald-600 text-sm" />
                                                                         <span>History (ប្រវត្តិសកម្មភាព)</span>
                                                                     </button>
                                                                 )}
@@ -600,7 +601,7 @@ const Activated = () => {
                                                                             setCommentInput(item.notes || '');
                                                                             setOpenMenuId(null);
                                                                         }}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-cyan-700 hover:bg-cyan-50 rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <MdComment className="text-cyan-600 text-base" />
                                                                         <span>Comment</span>
@@ -609,16 +610,16 @@ const Activated = () => {
                                                                 {canLock && (
                                                                     <button
                                                                         onClick={() => handleQuickDeviceAction(item, 'Lock Phone')}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
-                                                                        <FaLock className="text-red-600 text-sm" />
+                                                                        <FaLock className="text-rose-600 text-sm" />
                                                                         <span>Lock Device</span>
                                                                     </button>
                                                                 )}
                                                                 {canWallpaper && (
                                                                     <button
                                                                         onClick={() => handleQuickDeviceAction(item, 'Set Wallpaper')}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <MdOutlineWallpaper className="text-amber-600 text-sm" />
                                                                         <span>Set Wallpaper</span>
@@ -627,7 +628,7 @@ const Activated = () => {
                                                                 {canCheck && (
                                                                     <button
                                                                         onClick={() => handleChangeStatus(item, 'Check')}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <MdSwapHoriz className="text-blue-600 text-base" />
                                                                         <span>Check</span>
@@ -636,9 +637,9 @@ const Activated = () => {
                                                                 {canBlacklist && (
                                                                     <button
                                                                         onClick={() => handleChangeStatus(item, 'Blacklist')}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
-                                                                        <MdSwapHoriz className="text-red-600 text-base" />
+                                                                        <MdSwapHoriz className="text-rose-600 text-base" />
                                                                         <span>Blacklist</span>
                                                                     </button>
                                                                 )}
@@ -725,7 +726,7 @@ const Activated = () => {
                             <button onClick={() => setSelectedInfo(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold cursor-pointer">✕</button>
                         </div>
 
-                        <div className="flex items-center gap-4 p-4 rounded-[5px] bg-gray-900/60 border border-gray-800">
+                        <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-900/60 border border-gray-800">
                             <div className='flex gap-3 justify-center items-center'>
                                 <h4 className="text-base font-bold text-gray-100">{selectedInfo.customerNameEn}</h4>
                                 <p className="text-sm text-indigo-400 font-khmer">{selectedInfo.customerNameKh}</p>

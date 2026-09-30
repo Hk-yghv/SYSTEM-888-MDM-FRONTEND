@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -92,7 +92,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
     return ReactDOM.createPortal(
         <div data-action-menu-root="true"
             style={{ position: 'fixed', top: pos.bottom + 4, left, width: dropdownWidth, zIndex: 999999 }}
-            className="bg-white border border-slate-200 rounded-[5px] shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white border border-slate-200 rounded-xl shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}>
             <div className="px-3 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Repayment Actions</div>
             <button onClick={() => { onOpenQrModal(item); onClose(); }}
@@ -110,7 +110,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
                         const isCurrent = mIdx === autoActiveIdx;
                         return (
                             <button key={mIdx} onClick={() => { onSelectMonth(item, mIdx); onClose(); }}
-                                className={`w-full text-left px-2.5 py-1.5 text-[11px] font-semibold rounded-[5px] flex items-center justify-between gap-2 cursor-pointer transition-colors ${isCurrent ? 'bg-violet-100 text-violet-800 border border-violet-300' : `hover:bg-slate-50 ${statusTextClass(row.status)}`}`}>
+                                className={`w-full text-left px-2.5 py-1.5 text-[11px] font-semibold rounded-xl flex items-center justify-between gap-2 cursor-pointer transition-colors ${isCurrent ? 'bg-violet-100 text-violet-800 border border-violet-300' : `hover:bg-slate-50 ${statusTextClass(row.status)}`}`}>
                                 <span>{row.labelName || `Month ${row.monthIndex}`}</span>
                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0 ${statusBadgeClass(row.status)}`}>{row.status}</span>
                             </button>
@@ -225,14 +225,14 @@ const Overdue7DaysPage = () => {
     const openMenuContract = openMenu.id ? contracts.find(c => (c._id || c.contractId) === openMenu.id) || null : null;
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
+        <div className='w-full p-4 select-none space-y-4 relative'>
             <RepaymentScheduleModal open={scheduleModalOpen} setOpen={setScheduleModalOpen} contract={scheduleModalContract} mode="view_edit" defaultMonthIdx={scheduleModalMonthIdx} onSaved={() => fetchContracts(searchTerm)} />
             <QrPaymentModal open={Boolean(selectedQrContract)} contract={selectedQrContract} onClose={() => setSelectedQrContract(null)} onSaved={() => fetchContracts(searchTerm)} />
             {openMenu.id && openMenuContract && (
                 <ActionDropdownPortal item={openMenuContract} pos={openMenu.pos} onClose={() => setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } })} onOpenSchedule={openScheduleForMonth} onSelectMonth={selectMonthForOuterRow} onOpenQrModal={(c) => setSelectedQrContract(c)} />
             )}
 
-            <header className='p-3 w-full border border-violet-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-violet-200 bg-white rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-violet-500 flex items-center gap-2 flex-wrap'>
                         <FaClock className="text-violet-500" size={18} />
@@ -245,15 +245,15 @@ const Overdue7DaysPage = () => {
                 <div className="flex items-center gap-3 flex-wrap">
                     <div className="relative">
                         <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
-                        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search name, model, serial..." className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 w-52 outline-none font-medium shadow-xs" />
+                        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search name, model, serial..." className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 w-52 outline-none font-medium shadow-xs" />
                     </div>
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'><FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span></button>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'><MdPictureAsPdf className="text-violet-600 text-sm" /><span>PDF</span></button>
-                    <button onClick={() => fetchContracts(searchTerm)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'><MdOutlineSync size={16} className={reloading ? 'spin-reload text-violet-600' : ''} /><p>{t('reload')}</p></button>
+                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'><FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span></button>
+                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'><MdPictureAsPdf className="text-violet-600 text-sm" /><span>PDF</span></button>
+                    <button onClick={() => fetchContracts(searchTerm)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'><MdOutlineSync size={16} className={reloading ? 'spin-reload text-violet-600' : ''} /><p>{t('reload')}</p></button>
                 </div>
             </header>
 
-            <div className='w-full overflow-auto rounded-[5px] border border-violet-100 bg-white shadow-md' style={{ maxHeight: 'calc(100vh - 260px)' }}>
+            <div className='w-full overflow-auto rounded-xl border border-violet-100 bg-white shadow-md' style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-violet-50 text-violet-800 uppercase tracking-wider border-b border-violet-100 sticky top-0 z-10'>
                         <tr>
@@ -300,7 +300,7 @@ const Overdue7DaysPage = () => {
                                     <td className='px-4 py-1 text-slate-500 italic text-[11px] max-w-[140px] truncate'>{displayRow?.comment || '—'}</td>
                                     <td className='px-4 py-1 font-mono text-purple-600 font-bold'>{displayRow?.paidDate || '—'}</td>
                                     <td className="px-4 py-1 text-center">
-                                        <button onClick={(e) => handleOpenMenu(e, id)} className={`w-8 h-8 rounded-[5px] border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === id ? 'bg-violet-100 border-violet-400 text-violet-700' : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'}`}><AiOutlineMenu size={16} /></button>
+                                        <button onClick={(e) => handleOpenMenu(e, id)} className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all cursor-pointer shadow-2xs ${openMenu.id === id ? 'bg-violet-100 border-violet-400 text-violet-700' : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'}`}><AiOutlineMenu size={16} /></button>
                                     </td>
                                 </tr>
                             );

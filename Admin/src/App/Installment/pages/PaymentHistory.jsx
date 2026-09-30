@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { MdOutlineSync, MdPictureAsPdf, MdChevronLeft, MdChevronRight } from "react-icons/md";
@@ -151,7 +151,7 @@ const PaymentHistory = () => {
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full p-4 select-none space-y-4'>
             {/* Image Viewer Modal — Gallery Support */}
             {viewImages.length > 0 && (
                 <div
@@ -159,7 +159,7 @@ const PaymentHistory = () => {
                     onClick={closeImageViewer}
                 >
                     <div
-                        className='relative bg-white rounded-[5px] shadow-2xl max-w-2xl w-full mx-4 overflow-hidden'
+                        className='relative bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden'
                         onClick={e => e.stopPropagation()}
                     >
                         <div className='flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50'>
@@ -226,7 +226,7 @@ const PaymentHistory = () => {
                 </div>
             )}
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-xl flex flex-col gap-3 shadow-xs'>
                 <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
                     <div className='flex items-center gap-3'>
                         <div>
@@ -249,14 +249,14 @@ const PaymentHistory = () => {
                             <>
                                 <button
                                     onClick={handleExportExcel}
-                                    className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                                    className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                                 >
                                     <FaFileExcel className="text-emerald-600 text-sm" />
                                     <span>Excel</span>
                                 </button>
                                 <button
                                     onClick={handleExportPDF}
-                                    className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                                    className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                                 >
                                     <MdPictureAsPdf className="text-red-600 text-sm" />
                                     <span>PDF</span>
@@ -271,9 +271,9 @@ const PaymentHistory = () => {
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
                                 placeholder={t('search')}
-                                className="px-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-44 font-medium outline-none shadow-xs"
+                                className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-44 font-medium outline-none shadow-xs"
                             />
-                            <button type="submit" className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs">
+                            <button type="submit" className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs">
                                 Go
                             </button>
                             {searchTerm && (
@@ -284,7 +284,7 @@ const PaymentHistory = () => {
                         <button
                             onClick={() => fetchPayments(page, searchTerm, activeDateFrom, activeDateTo)}
                             disabled={reloading}
-                            className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                            className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                         >
                             <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                             <p>{t('reload')}</p>
@@ -304,7 +304,7 @@ const PaymentHistory = () => {
                             type='date'
                             value={dateFrom}
                             onChange={e => setDateFrom(e.target.value)}
-                            className='px-2 py-1.5 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 outline-none focus:border-emerald-500 shadow-xs font-mono'
+                            className='px-2 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 outline-none focus:border-emerald-500 shadow-xs font-mono'
                         />
                     </div>
                     <div className='flex items-center gap-1'>
@@ -313,19 +313,19 @@ const PaymentHistory = () => {
                             type='date'
                             value={dateTo}
                             onChange={e => setDateTo(e.target.value)}
-                            className='px-2 py-1.5 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 outline-none focus:border-emerald-500 shadow-xs font-mono'
+                            className='px-2 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 outline-none focus:border-emerald-500 shadow-xs font-mono'
                         />
                     </div>
                     <button
                         onClick={handleApplyDateFilter}
-                        className='px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                        className='px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                     >
                         Apply
                     </button>
                     {hasDateFilter && (
                         <button
                             onClick={handleClearDateFilter}
-                            className='px-3 py-1.5 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-300 hover:border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
+                            className='px-3 py-1.5 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-300 hover:border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
                         >
                             Clear Filter
                         </button>
@@ -339,7 +339,7 @@ const PaymentHistory = () => {
             </header>
 
             {/* Payment History Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-310px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-310px)] pb-14 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>

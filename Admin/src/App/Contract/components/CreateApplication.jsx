@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
@@ -7,8 +7,8 @@ import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 
 /* ── Shared style tokens ── */
-const inp = "w-full p-2 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-100 text-xs outline-none transition-colors";
-const sel = "w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-gray-100 text-xs outline-none";
+const inp = "w-full p-2 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-xl text-gray-100 text-xs outline-none transition-colors";
+const sel = "w-full p-2 bg-gray-800/80 border border-gray-700 rounded-xl text-gray-100 text-xs outline-none";
 
 /* ── Autocomplete field with suggestions dropdown ── */
 const AutoField = ({ id, label, value, onChange, placeholder, list = [], onSelect, font = '' }) => {
@@ -528,11 +528,11 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     </div>
                     <div className="flex gap-2">
                         <button type="button" onClick={() => setOpen(false)}
-                            className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-[5px] text-xs cursor-pointer transition-all flex items-center gap-1.5">
+                            className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-xl text-xs cursor-pointer transition-all flex items-center gap-1.5">
                             <MdClose /> Cancel
                         </button>
                         <button type="submit" disabled={submitting}
-                            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all">
+                            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all">
                             {submitting ? 'Saving...' : 'Submit Contract'}
                         </button>
                     </div>
@@ -592,7 +592,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-1.5">
                                         <input
-                                            className="flex-1 p-2 bg-gray-800/80 border border-amber-600/50 focus:border-amber-500 rounded-[5px] text-gray-100 font-mono text-xs outline-none transition-colors"
+                                            className="flex-1 p-2 bg-gray-800/80 border border-amber-600/50 focus:border-amber-500 rounded-xl text-gray-100 font-mono text-xs outline-none transition-colors"
                                             type="text"
                                             value={inputPhotoUrl}
                                             onChange={(e) => setInputPhotoUrl(e.target.value)}
@@ -602,7 +602,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                         <button
                                             type="button"
                                             onClick={handleAddDirectPhotoUrl}
-                                            className="px-2.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[5px] text-[10px] font-bold flex items-center gap-1 cursor-pointer whitespace-nowrap transition-all"
+                                            className="px-2.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-bold flex items-center gap-1 cursor-pointer whitespace-nowrap transition-all"
                                         >
                                             Add URL
                                         </button>
@@ -610,7 +610,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                             type="button"
                                             onClick={() => photoFileRef.current?.click()}
                                             disabled={photoUploading}
-                                            className="px-2.5 py-2 bg-amber-600/80 hover:bg-amber-500 disabled:opacity-50 text-white rounded-[5px] text-[10px] font-bold flex items-center gap-1 cursor-pointer whitespace-nowrap transition-all"
+                                            className="px-2.5 py-2 bg-amber-600/80 hover:bg-amber-500 disabled:opacity-50 text-white rounded-xl text-[10px] font-bold flex items-center gap-1 cursor-pointer whitespace-nowrap transition-all"
                                         >
                                             {photoUploading ? 'Uploading...' : 'Upload Files'}
                                         </button>
@@ -709,7 +709,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                     <div><span className="text-gray-500 block text-[10px]">Color</span><span className="text-gray-100">{form.color || '—'}</span></div>
                                     <div><span className="text-gray-500 block text-[10px]">Brand</span><span className="text-gray-100 font-semibold">{form.brand || '—'}</span></div>
                                     {form.deviceProblem && (
-                                        <div className="col-span-4 p-2 bg-amber-900/20 border border-amber-700/40 rounded-[5px]">
+                                        <div className="col-span-4 p-2 bg-amber-900/20 border border-amber-700/40 rounded-xl">
                                             <span className="text-amber-400 block text-[10px] font-bold mb-0.5">Device Problem</span>
                                             <span className="text-amber-300 text-[11px] font-medium">{form.deviceProblem}</span>
                                         </div>
@@ -739,15 +739,15 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 </div>
                             </Field>
                             <Field label="Loan Date">
-                                <input className="w-full p-2 bg-gray-800/80 border border-indigo-600/70 rounded-[5px] text-gray-100 font-mono text-xs outline-none focus:border-indigo-500 font-bold"
+                                <input className="w-full p-2 bg-gray-800/80 border border-indigo-600/70 rounded-xl text-gray-100 font-mono text-xs outline-none focus:border-indigo-500 font-bold"
                                     type="date" id="inputDate" value={form.inputDate || ''} onChange={handleChange} required />
                             </Field>
                             <Field label="Total Loan Amount ($)">
-                                <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
+                                <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
                                     type="number" id="amount" value={form.amount || ''} onChange={handleChange} placeholder="Amount" />
                             </Field>
                             <Field label="Customer Received ($)">
-                                <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
+                                <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
                                     type="number" id="monthlyPayment" value={form.monthlyPayment || ''} onChange={handleChange} placeholder="Monthly Payment" />
                             </Field>
                             <Field label="Interest Rate"><input className={`${inp} font-mono`} type="text" id="interest" value={form.interest || ''} onChange={handleChange} placeholder="e.g. 14%" /></Field>
@@ -782,11 +782,11 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 text-xs">
-                                <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
+                                <div className="p-2 bg-gray-900/60 rounded-xl border border-gray-800">
                                     <span className="text-gray-500 text-[10px] block">Customer</span>
                                     <span className="text-gray-100 font-semibold">{form.customerNameEn || '—'}{form.customerNameKh ? ` (${form.customerNameKh})` : ''}</span>
                                 </div>
-                                <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
+                                <div className="p-2 bg-gray-900/60 rounded-xl border border-gray-800">
                                     <span className="text-gray-500 text-[10px] block">Device</span>
                                     <span className="text-gray-100 font-semibold">{form.model || '—'}{form.serialNumber ? ` · ${form.serialNumber}` : ''}</span>
                                 </div>

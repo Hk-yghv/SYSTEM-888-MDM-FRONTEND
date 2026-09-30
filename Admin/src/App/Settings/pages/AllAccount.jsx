@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { FaShieldAlt, FaUserPlus, FaLock, FaTelegramPlane, FaHistory, FaBan, FaUnlock } from 'react-icons/fa';
@@ -358,9 +358,9 @@ const AllAccount = () => {
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-[5px] bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 text-xl'>
+                    <div className='w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 text-xl'>
                         <FaShieldAlt />
                     </div>
                     <div>
@@ -377,7 +377,7 @@ const AllAccount = () => {
                     {hasPermission('/settings/all-account', 'create') && (
                         <button
                             onClick={() => setOpenCreateModal(true)}
-                            className='flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all'
+                            className='flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all'
                         >
                             <FaUserPlus size={14} />
                             <p>{t('create')} Account</p>
@@ -387,7 +387,7 @@ const AllAccount = () => {
                     <button
                         onClick={fetchUsers}
                         disabled={reloading}
-                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
@@ -410,7 +410,7 @@ const AllAccount = () => {
                                     <div
                                         key={item._id || idx}
                                         onClick={() => setSelectedAccount(item)}
-                                        className={`relative cursor-pointer rounded-[5px] border p-4 flex flex-col gap-3 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5 select-none
+                                        className={`relative cursor-pointer rounded-xl border p-4 flex flex-col gap-3 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5 select-none
                                             ${isMaster ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-300' : isBlocked ? 'bg-red-50/70 border-red-300' : 'bg-white border-slate-200 hover:border-emerald-400'}`}
                                     >
                                         {/* Master badge */}
@@ -424,7 +424,7 @@ const AllAccount = () => {
                                         )}
                                         {/* Avatar */}
                                         <div className='flex items-center gap-3'>
-                                            <div className={`w-12 h-12 rounded-[5px] flex items-center justify-center text-xl font-black text-white shadow-md
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-black text-white shadow-md
                                                 ${isMaster ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : isSalary ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-500 to-slate-700'}`}>
                                                 {(item.name || item.username || '?')[0].toUpperCase()}
                                             </div>
@@ -460,17 +460,17 @@ const AllAccount = () => {
                 </div>
             ) : (
                 /* Account Detail Panel */
-                <div className='w-full bg-white border border-slate-200 rounded-[5px] shadow-md overflow-hidden'>
+                <div className='w-full bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden'>
                     {/* Detail Header */}
                     <div className='flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50'>
                         <div className='flex items-center gap-3'>
                             <button
                                 onClick={() => setSelectedAccount(null)}
-                                className='flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 text-slate-600 hover:text-slate-900 rounded-[5px] text-xs font-bold cursor-pointer shadow-xs transition-all'
+                                className='flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 text-slate-600 hover:text-slate-900 rounded-xl text-xs font-bold cursor-pointer shadow-xs transition-all'
                             >
                                 ← ត្រឡប់ (Back)
                             </button>
-                            <div className={`w-10 h-10 rounded-[5px] flex items-center justify-center text-lg font-black text-white shadow-md
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black text-white shadow-md
                                 ${selectedAccount.isImmutable ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : selectedAccount.role?.toLowerCase() === 'salary' ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-500 to-slate-700'}`}>
                                 {(selectedAccount.name || selectedAccount.username || '?')[0].toUpperCase()}
                             </div>
@@ -485,7 +485,7 @@ const AllAccount = () => {
                                     {hasPermission('/settings/all-account', 'edit') && (
                                         <button
                                             onClick={() => handleOpenEditUserModal(selectedAccount)}
-                                            className='flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-[5px] text-xs font-bold cursor-pointer'
+                                            className='flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-xl text-xs font-bold cursor-pointer'
                                         >
                                             <MdEdit size={14} /> Edit
                                         </button>
@@ -493,7 +493,7 @@ const AllAccount = () => {
                                     {hasPermission('/settings/all-account', 'edit') && (
                                         <button
                                             onClick={() => { handleToggleBlock(selectedAccount); setSelectedAccount(prev => prev ? { ...prev, isBlocked: !prev.isBlocked } : null); }}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-[5px] text-xs font-bold cursor-pointer
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-xl text-xs font-bold cursor-pointer
                                                 ${selectedAccount.isBlocked ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-orange-50 border-orange-300 text-orange-700'}`}
                                         >
                                             {selectedAccount.isBlocked ? <><FaUnlock size={11} /> Unblock</> : <><FaBan size={11} /> Block</>}
@@ -502,7 +502,7 @@ const AllAccount = () => {
                                     {hasPermission('/settings/all-account', 'delete') && (
                                         <button
                                             onClick={() => { handleDeleteUser(selectedAccount); setSelectedAccount(null); }}
-                                            className='flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 rounded-[5px] text-xs font-bold cursor-pointer'
+                                            className='flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 rounded-xl text-xs font-bold cursor-pointer'
                                         >
                                             <MdDelete size={14} /> Delete
                                         </button>
@@ -511,7 +511,7 @@ const AllAccount = () => {
                             )}
                             <button
                                 onClick={() => { setSelectedHistoryUser(selectedAccount); setHistoryModalTab('online'); }}
-                                className='flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-300 text-indigo-700 rounded-[5px] text-xs font-bold cursor-pointer'
+                                className='flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-300 text-indigo-700 rounded-xl text-xs font-bold cursor-pointer'
                             >
                                 <FaHistory size={12} /> Sessions &amp; Logs
                             </button>
@@ -617,19 +617,19 @@ const AllAccount = () => {
                         <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
                             <button
                                 onClick={() => setHistoryModalTab('online')}
-                                className={`px-3 py-1.5 rounded-[5px] text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'online' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'online' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
                             >
                                 Online Sessions ({selectedHistoryUser.onlineHistory?.length || 0})
                             </button>
                             <button
                                 onClick={() => setHistoryModalTab('otp')}
-                                className={`px-3 py-1.5 rounded-[5px] text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'otp' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'otp' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
                             >
                                 OTP 6-Digit Codes ({selectedHistoryUser.otpHistory?.length || (selectedHistoryUser.lastOtp ? 1 : 0)})
                             </button>
                             <button
                                 onClick={() => setHistoryModalTab('login')}
-                                className={`px-3 py-1.5 rounded-[5px] text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${historyModalTab === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:text-slate-200'}`}
                             >
                                 Login Audit ({selectedHistoryUser.loginHistory?.length || 0})
                             </button>
@@ -647,7 +647,7 @@ const AllAccount = () => {
                                     selectedHistoryUser.onlineHistory.map((sess, sIdx) => {
                                         const isCurrent = !sess.logoutTime && selectedHistoryUser.status === 'Online';
                                         return (
-                                            <div key={sIdx} className={`p-3 rounded-[5px] border ${isCurrent ? 'bg-emerald-950/30 border-emerald-800/80' : 'bg-slate-900/70 border-slate-800'} space-y-1 font-mono`}>
+                                            <div key={sIdx} className={`p-3 rounded-xl border ${isCurrent ? 'bg-emerald-950/30 border-emerald-800/80' : 'bg-slate-900/70 border-slate-800'} space-y-1 font-mono`}>
                                                 <div className="flex items-center justify-between text-[11px]">
                                                     <span className="text-slate-300 font-bold flex items-center gap-1.5">
                                                         <span className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`}></span>
@@ -687,7 +687,7 @@ const AllAccount = () => {
                                     </div>
                                 ) : (
                                     (selectedHistoryUser.otpHistory?.length > 0 ? selectedHistoryUser.otpHistory : [{ otp: selectedHistoryUser.lastOtp, createdAt: new Date(), status: 'Recent', ip: '127.0.0.1' }]).map((otpLog, oIdx) => (
-                                        <div key={oIdx} className="p-3 bg-slate-900/70 border border-slate-800 rounded-[5px] flex items-center justify-between font-mono">
+                                        <div key={oIdx} className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl flex items-center justify-between font-mono">
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-amber-400 font-extrabold text-base tracking-widest bg-amber-950/60 border border-amber-800/80 px-2.5 py-0.5 rounded-lg">
@@ -718,7 +718,7 @@ const AllAccount = () => {
                                     <p className="text-slate-500 italic text-center py-8">No login audit logs recorded yet.</p>
                                 ) : (
                                     selectedHistoryUser.loginHistory.map((log, lIdx) => (
-                                        <div key={lIdx} className="p-3 bg-slate-900/70 border border-slate-800 rounded-[5px] space-y-1 font-mono">
+                                        <div key={lIdx} className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl space-y-1 font-mono">
                                             <div className="flex items-center justify-between text-[11px]">
                                                 <span className="text-indigo-300 font-bold">{new Date(log.timestamp).toLocaleString('en-GB')}</span>
                                                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${log.status === 'Success' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}`}>
@@ -734,7 +734,7 @@ const AllAccount = () => {
 
                         {/* Footer */}
                         <div className="text-right pt-2 border-t border-slate-800">
-                            <button onClick={() => setSelectedHistoryUser(null)} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[5px] text-xs font-bold transition-all cursor-pointer shadow-md">
+                            <button onClick={() => setSelectedHistoryUser(null)} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md">
                                 Close
                             </button>
                         </div>
@@ -764,7 +764,7 @@ const AllAccount = () => {
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         placeholder="e.g. John Doe"
-                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
+                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100"
                                     />
                                 </div>
 
@@ -776,7 +776,7 @@ const AllAccount = () => {
                                         value={formData.username}
                                         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                         placeholder="e.g. @johndoe"
-                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-mono"
+                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono"
                                     />
                                 </div>
 
@@ -788,7 +788,7 @@ const AllAccount = () => {
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         placeholder="e.g. john@example.com"
-                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
+                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100"
                                     />
                                 </div>
 
@@ -802,7 +802,7 @@ const AllAccount = () => {
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                         placeholder={editingUser ? 'Enter new password (optional)' : 'Enter account password'}
-                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
+                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100"
                                     />
                                 </div>
 
@@ -811,7 +811,7 @@ const AllAccount = () => {
                                     <select
                                         value={formData.role}
                                         onChange={(e) => handleRoleChange(e.target.value)}
-                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-semibold"
+                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold"
                                     >
                                         {roles.map((r, rIdx) => (
                                             <option key={rIdx} value={r}>{r}</option>
@@ -832,7 +832,7 @@ const AllAccount = () => {
                                         value={formData.role?.toLowerCase() === 'salary' ? '' : formData.brand}
                                         disabled={formData.role?.toLowerCase() === 'salary'}
                                         onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                                        className={`w-full h-10 px-3 border rounded-[5px] font-semibold transition-all ${formData.role?.toLowerCase() === 'salary'
+                                        className={`w-full h-10 px-3 border rounded-xl font-semibold transition-all ${formData.role?.toLowerCase() === 'salary'
                                                 ? 'bg-gray-800/60 border-gray-700/60 text-gray-400 cursor-not-allowed italic'
                                                 : 'bg-gray-900 border-gray-700 text-gray-100'
                                             }`}
@@ -892,7 +892,7 @@ const AllAccount = () => {
                                 </div>
 
                                 {formData.role?.toLowerCase() === 'salary' && (
-                                    <div className="p-2.5 bg-emerald-950/40 border border-emerald-600/40 rounded-[5px] text-xs text-emerald-300 flex items-center justify-between gap-2">
+                                    <div className="p-2.5 bg-emerald-950/40 border border-emerald-600/40 rounded-xl text-xs text-emerald-300 flex items-center justify-between gap-2">
                                         <span className="flex items-center gap-2">
                                             <span>💼</span>
                                             <span><strong>Salary Mode:</strong> បង្ហាញ និងបើកសិទ្ធិតែលើប្រព័ន្ធ Salary (គ្រប់គ្រងប្រាក់ខែ) តែប៉ុណ្ណោះ ហើយមុខងារផ្សេងទៀតទាំងអស់ត្រូវបានបិទ។</span>
@@ -909,7 +909,7 @@ const AllAccount = () => {
 
                                 {/* Quick Batch Toggles */}
                                 {formData.role?.toLowerCase() !== 'salary' && (
-                                    <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-950/80 border border-gray-800 rounded-[5px] text-[11px] font-semibold text-gray-300">
+                                    <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-950/80 border border-gray-800 rounded-xl text-[11px] font-semibold text-gray-300">
                                         <span className="text-gray-400 text-[10px] font-bold uppercase mr-1">Batch Toggles:</span>
                                         <button type="button" onClick={() => handleToggleAllAction('read')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-indigo-300 rounded border border-gray-700 cursor-pointer">✓ All Read</button>
                                         <button type="button" onClick={() => handleToggleAllAction('create')} className="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-300 rounded border border-gray-700 cursor-pointer">✓ All Create</button>
@@ -920,7 +920,7 @@ const AllAccount = () => {
                                     </div>
                                 )}
 
-                                <div className="max-h-72 overflow-y-auto rounded-[5px] border border-gray-800 bg-gray-900/60 p-3 space-y-3">
+                                <div className="max-h-72 overflow-y-auto rounded-xl border border-gray-800 bg-gray-900/60 p-3 space-y-3">
                                     {Object.entries(
                                         (formData.role?.toLowerCase() === 'salary'
                                             ? ALL_SYSTEM_PAGES.filter(pg => pg.path === '/salary' || pg.category === 'Salary System')
@@ -964,7 +964,7 @@ const AllAccount = () => {
                                                     redeem: { label: 'Redeem', color: 'text-orange-300' }
                                                 };
                                                 return (
-                                                    <div key={pg.path} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-[5px] bg-gray-950/60 border border-gray-800/80 hover:border-gray-700 text-xs transition-colors">
+                                                    <div key={pg.path} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-xl bg-gray-950/60 border border-gray-800/80 hover:border-gray-700 text-xs transition-colors">
                                                         <span className="font-bold text-gray-200">{pg.label} <span className="text-[10px] text-indigo-400 font-mono">({pg.path})</span></span>
                                                         <div className="flex flex-wrap items-center gap-3.5 mt-1 sm:mt-0 font-semibold text-gray-300 text-[11px]">
                                                             {availableActions.map(actKey => {
@@ -994,13 +994,13 @@ const AllAccount = () => {
                                 <button
                                     type="button"
                                     onClick={() => { setOpenCreateModal(false); setEditingUser(null); }}
-                                    className="px-4 py-2 bg-gray-800 text-gray-300 text-xs font-bold rounded-[5px] hover:bg-gray-700 cursor-pointer"
+                                    className="px-4 py-2 bg-gray-800 text-gray-300 text-xs font-bold rounded-xl hover:bg-gray-700 cursor-pointer"
                                 >
                                     {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-indigo-600 text-white text-xs font-bold rounded-[5px] hover:bg-indigo-500 cursor-pointer shadow-lg shadow-indigo-600/30"
+                                    className="px-5 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-500 cursor-pointer shadow-lg shadow-indigo-600/30"
                                 >
                                     {editingUser ? 'Update Account' : 'Save Account'}
                                 </button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import {
     FaUser, FaMobileAlt, FaDollarSign, FaCalendarAlt, FaLock,
@@ -370,7 +370,7 @@ const ContractFullDetailsModal = ({
                             type="button"
                             disabled={downloadingPdf}
                             onClick={handleDirectExportPdf}
-                            className={`px-3 py-1.5 ${downloadingPdf ? 'bg-rose-400 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 cursor-pointer'} text-white rounded-[5px] text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm`}
+                            className={`px-3 py-1.5 ${downloadingPdf ? 'bg-rose-400 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 cursor-pointer'} text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm`}
                             title="Download Customer Dossier & Repayment Schedule as PDF directly"
                         >
                             <FaFilePdf className={downloadingPdf ? 'animate-pulse' : ''} />
@@ -379,7 +379,7 @@ const ContractFullDetailsModal = ({
                         <button
                             type="button"
                             onClick={() => setOpen(false)}
-                            className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-[5px] text-xs cursor-pointer transition-all flex items-center gap-1.5"
+                            className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-xl text-xs cursor-pointer transition-all flex items-center gap-1.5"
                         >
                             <MdClose /> បិទ (Close)
                         </button>
@@ -439,12 +439,12 @@ const ContractFullDetailsModal = ({
                                     </div>
                                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
                                         {contract.urlFb && (
-                                            <a href={contract.urlFb} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-sky-950/60 hover:bg-sky-900 border border-sky-800 text-sky-300 rounded-[5px] text-xs font-semibold flex items-center gap-1 transition-colors">
+                                            <a href={contract.urlFb} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-sky-950/60 hover:bg-sky-900 border border-sky-800 text-sky-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors">
                                                 <FaExternalLinkAlt size={9} /> Facebook
                                             </a>
                                         )}
                                         {contract.mosyleUrl && (
-                                            <a href={contract.mosyleUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-800 text-indigo-300 rounded-[5px] text-xs font-semibold flex items-center gap-1 transition-colors">
+                                            <a href={contract.mosyleUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-800 text-indigo-300 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors">
                                                 <FaExternalLinkAlt size={9} /> Mosyle
                                             </a>
                                         )}
@@ -454,47 +454,47 @@ const ContractFullDetailsModal = ({
 
                             {/* Customer Info Grid */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Contract IID (Manual)</span>
                                     <span className="font-mono text-indigo-400 font-bold">{contract.contractIid || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Contract ID (Auto)</span>
                                     <span className="font-mono text-amber-300 font-bold">{contract.contractId || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">ID Card</span>
                                     <span className="font-mono text-gray-100 font-bold">{contract.idCardNumber || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Date of Birth</span>
                                     <span className="font-mono text-gray-200">{contract.dob || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Gender</span>
                                     <span className="text-gray-100 capitalize">{contract.gender || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Phone Number</span>
                                     <span className="font-mono text-emerald-400 font-bold">{contract.phone || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Relative Phone</span>
                                     <span className="font-mono text-gray-300">{contract.relativePhone || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Telegram</span>
                                     <span className="text-sky-400 font-semibold">{contract.telegramName || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Facebook</span>
                                     <span className="text-indigo-300 font-semibold">{contract.facebookName || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700 md:col-span-2">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700 md:col-span-2">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Current Address</span>
                                     <span className="text-gray-200">{contract.currentAddress || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700 md:col-span-2">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700 md:col-span-2">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Birth Address</span>
                                     <span className="text-gray-200">{contract.birthAddress || '—'}</span>
                                 </div>
@@ -506,49 +506,49 @@ const ContractFullDetailsModal = ({
                     {activeTab === 'device' && (
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Device Model</span>
                                     <span className="text-purple-300 font-bold">{contract.model || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Brand</span>
                                     <span className="text-gray-100 font-bold">{contract.brand || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700 md:col-span-2">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700 md:col-span-2">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Serial Number</span>
                                     <span className="font-mono text-cyan-400 font-bold">{contract.serialNumber || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">IMEI 1</span>
                                     <span className="font-mono text-gray-200 font-bold">{formatIMEI(contract.imei1)}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">IMEI 2</span>
                                     <span className="font-mono text-gray-300">{formatIMEI(contract.imei2)}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">MEID</span>
                                     <span className="font-mono text-pink-400 font-semibold">{contract.meid || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">OS Version</span>
                                     <span className="text-indigo-300 font-semibold">{contract.version || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Color</span>
                                     <span className="text-gray-200">{contract.color || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Capacity / Storage</span>
                                     <span className="text-gray-200 font-mono">{contract.capacity || '—'}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Phone Lock</span>
                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${contract.lockPhoneStatus === 'Locked' ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-emerald-950 text-emerald-400 border border-emerald-800'}`}>
                                         {contract.lockPhoneStatus || 'Unlocked'}
                                     </span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2.5 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Wallpaper Lock</span>
                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${contract.lockWallpaperStatus === 'Locked' ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-emerald-950 text-emerald-400 border border-emerald-800'}`}>
                                         {contract.lockWallpaperStatus || 'Unlocked'}
@@ -557,7 +557,7 @@ const ContractFullDetailsModal = ({
                             </div>
 
                             {contract.deviceProblem && (
-                                <div className="p-3 bg-amber-950/30 border border-amber-800/50 rounded-[5px] text-xs">
+                                <div className="p-3 bg-amber-950/30 border border-amber-800/50 rounded-xl text-xs">
                                     <span className="text-amber-400 block text-[10px] font-bold uppercase mb-0.5">Device Problem / Issues</span>
                                     <p className="text-amber-200 font-medium">{contract.deviceProblem}</p>
                                 </div>
@@ -569,39 +569,39 @@ const ContractFullDetailsModal = ({
                     {activeTab === 'loan' && (
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                                <div className="p-3 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-3 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Contract IID (Manual)</span>
                                     <span className="font-mono text-indigo-400 font-bold text-sm">{contract.contractIid || '—'}</span>
                                 </div>
-                                <div className="p-3 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-3 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Contract ID (Auto)</span>
                                     <span className="font-mono text-amber-300 font-bold text-sm">{contract.contractId || '—'}</span>
                                 </div>
-                                <div className="p-3 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-3 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Loan Input Date</span>
                                     <span className="font-mono text-amber-300 font-bold">{contract.inputDate || '—'}</span>
                                 </div>
-                                <div className="p-3 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-3 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Total Loan Amount</span>
                                     <span className="font-mono text-emerald-400 font-bold text-base">${Number(contract.amount || contract.totalAmount || 0).toLocaleString()}</span>
                                 </div>
-                                <div className="p-3 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-3 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Customer Received / Monthly</span>
                                     <span className="font-mono text-cyan-400 font-bold text-base">${Number(contract.monthlyPayment || 0).toLocaleString()}</span>
                                 </div>
-                                <div className="p-3 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-3 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Interest Rate</span>
                                     <span className="text-gray-100 font-bold">{contract.interest || contract.interestType || '14%'}</span>
                                 </div>
-                                <div className="p-3 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-3 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Loan Duration</span>
                                     <span className="text-gray-100 font-bold">{contract.duration || '12 Months'}</span>
                                 </div>
-                                <div className="p-3 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-3 bg-gray-800/80 rounded-xl border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Admin Fee</span>
                                     <span className="font-mono text-gray-200 font-bold">${Number(contract.adminFee || 0).toLocaleString()}</span>
                                 </div>
-                                <div className="p-3 bg-gray-800/80 rounded-[5px] border border-gray-700 md:col-span-2">
+                                <div className="p-3 bg-gray-800/80 rounded-xl border border-gray-700 md:col-span-2">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Payment Summary</span>
                                     <div className="flex items-center gap-3 text-xs mt-1">
                                         <span className="text-gray-300">Paid: <strong className="text-emerald-400 font-mono">${totalPaid.toLocaleString()}</strong></span>
@@ -618,26 +618,26 @@ const ContractFullDetailsModal = ({
                         <div className="space-y-3">
                             {/* Summary Info Cards */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                                <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-[5px]">
+                                <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-xl">
                                     <span className="text-gray-400 block text-[10px] uppercase font-bold">Total Loan</span>
                                     <span className="text-emerald-400 font-mono font-bold text-sm">${totalLoan.toLocaleString()}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-[5px]">
+                                <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-xl">
                                     <span className="text-gray-400 block text-[10px] uppercase font-bold">Total Scheduled</span>
                                     <span className="text-cyan-400 font-mono font-bold text-sm">${totalScheduled.toLocaleString()}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-[5px]">
+                                <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-xl">
                                     <span className="text-gray-400 block text-[10px] uppercase font-bold">Total Paid</span>
                                     <span className="text-emerald-400 font-mono font-bold text-sm">${totalPaid.toLocaleString()}</span>
                                 </div>
-                                <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-[5px]">
+                                <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-xl">
                                     <span className="text-gray-400 block text-[10px] uppercase font-bold">Remaining</span>
                                     <span className="text-amber-400 font-mono font-bold text-sm">${Math.max(0, totalScheduled - totalPaid).toLocaleString()}</span>
                                 </div>
                             </div>
 
                             {/* Repayment Table */}
-                            <div className="overflow-x-auto rounded-[5px] border border-gray-700 bg-gray-900 shadow-md">
+                            <div className="overflow-x-auto rounded-xl border border-gray-700 bg-gray-900 shadow-md">
                                 <table className="w-full text-left text-xs border-collapse">
                                     <thead>
                                         <tr className="bg-gray-800 text-gray-300 border-b border-gray-700 text-[11px] uppercase tracking-wider font-semibold">
@@ -671,7 +671,7 @@ const ContractFullDetailsModal = ({
                                                             type="date"
                                                             value={row.dueDate || ''}
                                                             onChange={e => handleRowChange(idx, 'dueDate', e.target.value)}
-                                                            className="px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-100 font-mono text-xs outline-none"
+                                                            className="px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-xl text-gray-100 font-mono text-xs outline-none"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2 text-right font-mono font-bold text-emerald-400">
@@ -679,7 +679,7 @@ const ContractFullDetailsModal = ({
                                                             type="number"
                                                             value={row.scheduledAmount ?? ''}
                                                             onChange={e => handleRowChange(idx, 'scheduledAmount', e.target.value)}
-                                                            className="w-20 px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-emerald-500 rounded-[5px] text-right font-mono text-emerald-300 text-xs outline-none"
+                                                            className="w-20 px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-emerald-500 rounded-xl text-right font-mono text-emerald-300 text-xs outline-none"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2 text-right font-mono text-amber-400">
@@ -687,7 +687,7 @@ const ContractFullDetailsModal = ({
                                                             type="number"
                                                             value={row.penalty ?? ''}
                                                             onChange={e => handleRowChange(idx, 'penalty', e.target.value)}
-                                                            className="w-16 px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-amber-500 rounded-[5px] text-right font-mono text-amber-300 text-xs outline-none"
+                                                            className="w-16 px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-amber-500 rounded-xl text-right font-mono text-amber-300 text-xs outline-none"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2 text-right font-mono font-bold text-cyan-300">
@@ -698,7 +698,7 @@ const ContractFullDetailsModal = ({
                                                             type="number"
                                                             value={row.paidAmount ?? ''}
                                                             onChange={e => handleRowChange(idx, 'paidAmount', e.target.value)}
-                                                            className="w-20 px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-emerald-500 rounded-[5px] text-right font-mono text-emerald-400 font-bold text-xs outline-none"
+                                                            className="w-20 px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-emerald-500 rounded-xl text-right font-mono text-emerald-400 font-bold text-xs outline-none"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2 text-center">
@@ -717,7 +717,7 @@ const ContractFullDetailsModal = ({
                                                             value={row.comment || ''}
                                                             onChange={e => handleRowChange(idx, 'comment', e.target.value)}
                                                             placeholder="Note / remark"
-                                                            className="w-full min-w-[100px] px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-200 text-xs outline-none"
+                                                            className="w-full min-w-[100px] px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-xl text-gray-200 text-xs outline-none"
                                                         />
                                                     </td>
                                                     <td className="px-3 py-2 text-center relative">
@@ -815,7 +815,7 @@ const ContractFullDetailsModal = ({
                             <button
                                 type="button"
                                 onClick={() => onRedeem(contract)}
-                                className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-purple-600/30 flex items-center gap-1.5 transition-all"
+                                className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-purple-600/30 flex items-center gap-1.5 transition-all"
                             >
                                 <MdSwapHoriz size={16} />
                                 <span>Redeem</span>
@@ -828,7 +828,7 @@ const ContractFullDetailsModal = ({
                                 type="button"
                                 onClick={handleSaveSchedule}
                                 disabled={submitting}
-                                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 transition-all"
+                                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl text-xs cursor-pointer shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 transition-all"
                             >
                                 <FaSave size={13} />
                                 <span>{submitting ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក Schedule'}</span>
@@ -839,7 +839,7 @@ const ContractFullDetailsModal = ({
                         <button
                             type="button"
                             onClick={() => setOpen(false)}
-                            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold rounded-[5px] text-xs cursor-pointer transition-all"
+                            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold rounded-xl text-xs cursor-pointer transition-all"
                         >
                             បិទ (Close)
                         </button>
