@@ -411,21 +411,12 @@ const FollowUpReport = () => {
     return (
         <div className="p-3 sm:p-6 space-y-6 max-w-[1700px] mx-auto min-h-screen">
             {/* Header Title & Actions */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-600 via-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-                        <MdOutlineBarChart size={24} />
-                    </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm">
+                <div>
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
                             {t('followUpReport') || 'របាយការណ៍ Follow Up'}
-                            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                Follow Up 2 & 3 Aggregation
-                            </span>
                         </h1>
-                        <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                            របាយការណ៍បូកសរុប និងរាប់ទិន្នន័យតាមកាលបរិច្ឆេទសម្រាប់ Follow Up 2 និង Follow Up 3
-                        </p>
                     </div>
                 </div>
 
@@ -434,7 +425,7 @@ const FollowUpReport = () => {
                     <button
                         onClick={() => fetchReportData(true)}
                         disabled={reloading || loading}
-                        className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer disabled:opacity-50"
+                        className="px-3.5 py-2 rounded-[5px] border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer disabled:opacity-50"
                         title="Reload Data"
                     >
                         <MdOutlineSync className={`text-base ${reloading ? 'animate-spin text-emerald-600' : ''}`} />
@@ -445,7 +436,7 @@ const FollowUpReport = () => {
                     {checkPermission('export') && (
                         <button
                             onClick={() => setIsExportModalOpen(true)}
-                            className="px-3.5 py-2 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer"
+                            className="px-3.5 py-2 rounded-[5px] border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer"
                         >
                             <FaFileDownload className="text-sm" />
                             <span>{t('export') || 'Export'}</span>
@@ -457,7 +448,7 @@ const FollowUpReport = () => {
             {/* Metric Statistics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Combined Total Leads */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+                <div className="bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -470,14 +461,14 @@ const FollowUpReport = () => {
                                 FU2: {grandSummary.fu2TotalCount} | FU3: {grandSummary.fu3TotalCount}
                             </p>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                        <div className="w-12 h-12 rounded-[5px] bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
                             <FaListUl />
                         </div>
                     </div>
                 </div>
 
                 {/* Follow Up 2 Summary */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+                <div className="bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -493,14 +484,14 @@ const FollowUpReport = () => {
                                 បរាជ័យ: {grandSummary.fu2FailedCount} | Review: {grandSummary.fu2ReviewCount}
                             </p>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                        <div className="w-12 h-12 rounded-[5px] bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
                             <FaCheckCircle />
                         </div>
                     </div>
                 </div>
 
                 {/* Follow Up 3 Summary */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+                <div className="bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -513,14 +504,14 @@ const FollowUpReport = () => {
                                 {uniqueFu3Descriptions.length > 0 ? `${uniqueFu3Descriptions.length} បរិយាយខុសៗគ្នា` : 'គ្មានបរិយាយ'}
                             </p>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                        <div className="w-12 h-12 rounded-[5px] bg-teal-50 text-teal-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
                             <FaTags />
                         </div>
                     </div>
                 </div>
 
                 {/* Combined Pawn Request Amount ($) */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+                <div className="bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -533,7 +524,7 @@ const FollowUpReport = () => {
                                 FU2: ${Number(grandSummary.fu2TotalAmount).toLocaleString()} | FU3: ${Number(grandSummary.fu3TotalAmount).toLocaleString()}
                             </p>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                        <div className="w-12 h-12 rounded-[5px] bg-amber-50 text-amber-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
                             <FaDollarSign />
                         </div>
                     </div>
@@ -541,7 +532,7 @@ const FollowUpReport = () => {
             </div>
 
             {/* Filter and Date Presets Bar */}
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+            <div className="bg-white p-4 sm:p-5 rounded-[5px] border border-slate-100 shadow-sm space-y-4">
                 {/* Date Presets Button Group */}
                 <div className="flex items-center flex-wrap gap-2">
                     <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
@@ -558,7 +549,7 @@ const FollowUpReport = () => {
                         <button
                             key={p.key}
                             onClick={() => applyDatePreset(p.key)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${datePreset === p.key
+                            className={`px-3 py-1.5 rounded-[5px] text-xs font-bold transition cursor-pointer ${datePreset === p.key
                                 ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30'
                                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                                 }`}
@@ -577,7 +568,7 @@ const FollowUpReport = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="ស្វែងរកតាម កាលបរិច្ឆេទ, ឈ្មោះ, លេខទូរស័ព្ទ, បរិយាយ, ស្ថានភាព..."
-                            className="w-full pl-4 pr-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700 bg-slate-50/50 hover:bg-white transition"
+                            className="w-full pl-4 pr-4 py-2 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700 bg-slate-50/50 hover:bg-white transition"
                         />
                     </div>
 
@@ -592,7 +583,7 @@ const FollowUpReport = () => {
                                 setEndDate('');
                                 setDatePreset('custom');
                             }}
-                            className="w-full lg:w-auto px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
+                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                             title="Filter by Specific Date"
                         />
                     </div>
@@ -608,7 +599,7 @@ const FollowUpReport = () => {
                                 setDatePreset('custom');
                             }}
                             placeholder="ពីថ្ងៃ"
-                            className="w-full lg:w-auto px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
+                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                             title="Start Date"
                         />
                         <span className="text-slate-400 text-xs font-bold">ដល់</span>
@@ -621,7 +612,7 @@ const FollowUpReport = () => {
                                 setDatePreset('custom');
                             }}
                             placeholder="ដល់ថ្ងៃ"
-                            className="w-full lg:w-auto px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
+                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                             title="End Date"
                         />
                     </div>
@@ -631,7 +622,7 @@ const FollowUpReport = () => {
                         <select
                             value={selectedBrand}
                             onChange={(e) => setSelectedBrand(e.target.value)}
-                            className="w-full lg:w-auto px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
+                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                         >
                             <option value="">គ្រប់ Brand ទាំងអស់</option>
                             {brandsList.map(b => (
@@ -644,7 +635,7 @@ const FollowUpReport = () => {
                     <div className="flex items-center gap-2 w-full lg:w-auto">
                         <button
                             onClick={() => fetchReportData(false)}
-                            className="flex-1 lg:flex-none px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            className="flex-1 lg:flex-none px-4 py-2 rounded-[5px] bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
                         >
                             <FaFilter className="text-xs" />
                             <span>ស្វែងរក</span>
@@ -657,7 +648,7 @@ const FollowUpReport = () => {
                                     setSelectedBrand('');
                                     applyDatePreset('thisMonth');
                                 }}
-                                className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-500 text-xs sm:text-sm font-bold transition cursor-pointer"
+                                className="px-3 py-2 rounded-[5px] border border-slate-200 hover:bg-slate-100 text-slate-500 text-xs sm:text-sm font-bold transition cursor-pointer"
                                 title="Clear Filters"
                             >
                                 <FaTimes />
@@ -668,7 +659,7 @@ const FollowUpReport = () => {
             </div>
 
             {/* Main Report Table Card */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[5px] border border-slate-100 shadow-sm overflow-hidden">
                 <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
                     <div>
                         <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
@@ -893,7 +884,7 @@ const FollowUpReport = () => {
                     <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                                <div className="w-10 h-10 rounded-[5px] bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
                                     <FaFileDownload />
                                 </div>
                                 <div>
@@ -903,7 +894,7 @@ const FollowUpReport = () => {
                             </div>
                             <button
                                 onClick={() => setIsExportModalOpen(false)}
-                                className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition cursor-pointer"
+                                className="p-2 rounded-[5px] text-slate-400 hover:bg-slate-100 transition cursor-pointer"
                             >
                                 <FaTimes />
                             </button>
@@ -916,7 +907,7 @@ const FollowUpReport = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('excel')}
-                                    className={`p-3.5 rounded-2xl border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'excel'
+                                    className={`p-3.5 rounded-[5px] border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'excel'
                                         ? 'border-emerald-500 bg-emerald-50/60 text-emerald-700 shadow-sm'
                                         : 'border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100'
                                         }`}
@@ -927,7 +918,7 @@ const FollowUpReport = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('pdf')}
-                                    className={`p-3.5 rounded-2xl border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'pdf'
+                                    className={`p-3.5 rounded-[5px] border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'pdf'
                                         ? 'border-rose-500 bg-rose-50/60 text-rose-700 shadow-sm'
                                         : 'border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100'
                                         }`}
@@ -943,7 +934,7 @@ const FollowUpReport = () => {
                             <button
                                 type="button"
                                 onClick={() => setIsExportModalOpen(false)}
-                                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
+                                className="flex-1 py-2.5 rounded-[5px] border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
                             >
                                 បោះបង់ (Cancel)
                             </button>
@@ -951,7 +942,7 @@ const FollowUpReport = () => {
                                 type="button"
                                 onClick={handleExecuteExport}
                                 disabled={isExporting}
-                                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                                className="flex-1 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
                             >
                                 {isExporting ? (
                                     <>

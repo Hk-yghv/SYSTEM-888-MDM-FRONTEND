@@ -8,7 +8,8 @@ import {
     FaCalculator, FaChartBar, FaHistory, FaCheckCircle
 } from 'react-icons/fa';
 import { MdOutlineSync } from 'react-icons/md';
-import { exportToExcel } from '../../../utils/exportUtils';
+import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import ExportDropdown from '../../../components/ExportDropdown';
 import CopyCell from '../../../components/CopyCell';
 
 // Modular Prop-driven Subcomponents (Center Screen Modals)
@@ -889,7 +890,16 @@ const FollowUp4 = () => {
     };
 
     // Excel Export Helper
-    const handleExportExcel = () => {
+    const handleExport = (format) => {
+        const downloadReport = (data, fileName) => {
+            if (format === 'excel') {
+                exportToExcel(data, fileName);
+                return;
+            }
+            const columns = Object.keys(data[0] || {}).map(key => ({ header: key, accessor: key }));
+            exportToPDF(fileName, columns, data, user?.brand || '');
+        };
+
         if (activeTab === 'submit') {
             const exportData = submitList.map((item, idx) => ({
                 '#': idx + 1,
@@ -910,7 +920,7 @@ const FollowUp4 = () => {
                 'បរិយាយ': item.description,
                 'BRAND': item.brand
             }));
-            exportToExcel(exportData, `FollowUp4_Submit_${new Date().toISOString().split('T')[0]}`);
+            downloadReport(exportData, `FollowUp4_Submit_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'rejectSubmit') {
             const exportData = groupedRejectSubmit.map((item, idx) => {
                 const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, 'សរុប (TOTAL)': item.total };
@@ -931,7 +941,7 @@ const FollowUp4 = () => {
                 });
                 exportData.push(totalRow);
             }
-            exportToExcel(exportData, `FollowUp4_Reject_Submit_${new Date().toISOString().split('T')[0]}`);
+            downloadReport(exportData, `FollowUp4_Reject_Submit_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'rejectCs') {
             const exportData = groupedRejectCs.map((item, idx) => {
                 const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, 'សរុប (TOTAL)': item.total };
@@ -952,7 +962,7 @@ const FollowUp4 = () => {
                 });
                 exportData.push(totalRow);
             }
-            exportToExcel(exportData, `FollowUp4_Reject_CS_${new Date().toISOString().split('T')[0]}`);
+            downloadReport(exportData, `FollowUp4_Reject_CS_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'detail') {
             const exportData = detailHistoryList.map((item, idx) => {
                 const message = (item.page || 0) + (item.telegram || 0) + (item.call || 0);
@@ -981,28 +991,24 @@ const FollowUp4 = () => {
                     'SUCCESS 2': item.success2 || 0
                 };
             });
-            exportToExcel(exportData, `FollowUp4_Detail_Metrics_${new Date().toISOString().split('T')[0]}`);
+            downloadReport(exportData, `FollowUp4_Detail_Metrics_${new Date().toISOString().split('T')[0]}`);
         }
     };
 
     return (
         <div className="p-4 md:p-6 bg-slate-900 text-slate-100 min-h-screen">
             {/* Header & Brand Switcher */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-slate-800/80 p-4 rounded-2xl border border-slate-700/60 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-slate-800/80 p-4 rounded-[5px] border border-slate-700/60 shadow-xl">
                 <div>
                     <h1 className="text-2xl font-bold text-emerald-400 flex items-center gap-2">
-                        <FaChartBar className="text-emerald-400" />
                         Follow Up 4 System
                     </h1>
-                    <p className="text-slate-400 text-xs mt-1">
-                        ប្រព័ន្ធគ្រប់គ្រង Lead Submit, Reject Reasons, & Automated Detail Metrics
-                    </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
                     {/* Brand Selector */}
                     {isMasterAdmin && (
-                        <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700 shadow-inner">
+                        <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-[5px] border border-slate-700 shadow-inner">
                             <FaBuilding className="text-emerald-400 text-sm" />
                             <span className="text-xs text-slate-300 font-semibold">Brand:</span>
                             <select
@@ -1018,13 +1024,12 @@ const FollowUp4 = () => {
                         </div>
                     )}
 
-                    <button
-                        onClick={handleExportExcel}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3.5 py-2 rounded-xl transition-all shadow-md cursor-pointer"
-                    >
-                        <FaFileExcel size={14} />
-                        <span>Export Excel</span>
-                    </button>
+                    <ExportDropdown
+                        onExportExcel={() => handleExport('excel')}
+                        onExportPDF={() => handleExport('pdf')}
+                        excelLabel="Export Excel"
+                        pdfLabel="Export PDF"
+                    />
                 </div>
             </div>
 
@@ -1032,7 +1037,7 @@ const FollowUp4 = () => {
             <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-700/80">
                 <button
                     onClick={() => setActiveTab('submit')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'submit'
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'submit'
                         ? 'bg-emerald-600 text-white border-b-2 border-emerald-400 shadow-md'
                         : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                         }`}
@@ -1043,7 +1048,7 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('rejectSubmit')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'rejectSubmit'
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'rejectSubmit'
                         ? 'bg-rose-600 text-white border-b-2 border-rose-400 shadow-md'
                         : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                         }`}
@@ -1054,7 +1059,7 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('rejectCs')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'rejectCs'
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'rejectCs'
                         ? 'bg-amber-600 text-white border-b-2 border-amber-400 shadow-md'
                         : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                         }`}
@@ -1065,7 +1070,7 @@ const FollowUp4 = () => {
 
                 <button
                     onClick={() => setActiveTab('detail')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'detail'
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'detail'
                         ? 'bg-sky-600 text-white border-b-2 border-sky-400 shadow-md'
                         : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                         }`}
@@ -1081,7 +1086,7 @@ const FollowUp4 = () => {
             {activeTab === 'submit' && (
                 <div className="space-y-4">
                     {/* Filters & Actions Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/60 p-4 rounded-xl border border-slate-700/50">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/60 p-4 rounded-[5px] border border-slate-700/50">
                         <div className="flex flex-wrap items-center gap-3 flex-1">
                             {/* Search */}
                             <div className="relative flex-1 min-w-[200px]">
@@ -1126,7 +1131,7 @@ const FollowUp4 = () => {
                         {hasPermission('/follow-up/follow-up-4', 'create') && (
                             <button
                                 onClick={handleOpenCreateSubmitForm}
-                                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
+                                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-md cursor-pointer"
                             >
                                 <FaPlusCircle size={15} />
                                 <span>+ បន្ថែម FOLLOW UP SUBMIT</span>
@@ -1135,7 +1140,7 @@ const FollowUp4 = () => {
                     </div>
 
                     {/* Submissions Table */}
-                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-xl overflow-hidden shadow-lg">
+                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-lg">
                         <div className="overflow-x-auto">
                             <table className="w-full text-xs text-left text-slate-200">
                                 <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
@@ -1308,7 +1313,7 @@ const FollowUp4 = () => {
             {activeTab === 'rejectSubmit' && (
                 <div className="space-y-4">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-[5px] border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-rose-400 flex items-center gap-2">
                                 <FaBan /> <span>REJECT SUBMIT SUMMARY</span>
@@ -1320,7 +1325,7 @@ const FollowUp4 = () => {
 
                         <div className="flex flex-wrap items-center gap-2">
                             {/* Date Filter */}
-                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700">
+                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-[5px] border border-slate-700">
                                 <FaRegCalendarAlt className="text-rose-400 text-xs" />
                                 <input
                                     type="date"
@@ -1350,7 +1355,7 @@ const FollowUp4 = () => {
                             {hasPermission('/follow-up/follow-up-4', 'create') && (
                                 <button
                                     onClick={() => handleOpenCreateRejectSubmit()}
-                                    className="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-rose-600/20 cursor-pointer"
+                                    className="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-lg shadow-rose-600/20 cursor-pointer"
                                 >
                                     <FaPlusCircle size={15} />
                                     <span>+ បញ្ចូល REJECT SUBMIT</span>
@@ -1360,7 +1365,7 @@ const FollowUp4 = () => {
                     </div>
 
                     {/* History Table */}
-                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl">
                         <div className="p-4 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-200">ប្រវត្តិទិន្នន័យ REJECT SUBMIT តាមកាលបរិច្ឆេទ</span>
                             <span className="text-xs text-rose-400 font-mono font-semibold">{groupedRejectSubmit.length} ថ្ងៃបានកត់ត្រា</span>
@@ -1454,7 +1459,7 @@ const FollowUp4 = () => {
             {activeTab === 'rejectCs' && (
                 <div className="space-y-4">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-[5px] border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-amber-400 flex items-center gap-2">
                                 <FaBan /> <span>REJECT CS SUMMARY</span>
@@ -1466,7 +1471,7 @@ const FollowUp4 = () => {
 
                         <div className="flex flex-wrap items-center gap-2">
                             {/* Date Filter */}
-                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700">
+                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-[5px] border border-slate-700">
                                 <FaRegCalendarAlt className="text-amber-400 text-xs" />
                                 <input
                                     type="date"
@@ -1496,7 +1501,7 @@ const FollowUp4 = () => {
                             {hasPermission('/follow-up/follow-up-4', 'create') && (
                                 <button
                                     onClick={() => handleOpenCreateRejectCs()}
-                                    className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-600/20 cursor-pointer"
+                                    className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-lg shadow-amber-600/20 cursor-pointer"
                                 >
                                     <FaPlusCircle size={15} />
                                     <span>+ បញ្ចូល REJECT CS</span>
@@ -1506,7 +1511,7 @@ const FollowUp4 = () => {
                     </div>
 
                     {/* History Table */}
-                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl">
                         <div className="p-4 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-200">ប្រវត្តិទិន្នន័យ REJECT CS តាមកាលបរិច្ឆេទ</span>
                             <span className="text-xs text-amber-400 font-mono font-semibold">{groupedRejectCs.length} ថ្ងៃបានកត់ត្រា</span>
@@ -1600,7 +1605,7 @@ const FollowUp4 = () => {
             {activeTab === 'detail' && (
                 <div className="space-y-6">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-2xl border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-[5px] border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-sky-400 flex items-center gap-2">
                                 <FaCalculator /> <span>DETAIL METRICS & AUTOMATED FORMULAS</span>
@@ -1612,7 +1617,7 @@ const FollowUp4 = () => {
 
                         <div className="flex flex-wrap items-center gap-2">
                             {/* Date Filter */}
-                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700">
+                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-[5px] border border-slate-700">
                                 <FaRegCalendarAlt className="text-sky-400 text-xs" />
                                 <input
                                     type="date"
@@ -1642,7 +1647,7 @@ const FollowUp4 = () => {
                             {hasPermission('/follow-up/follow-up-4', 'create') && (
                                 <button
                                     onClick={() => handleOpenCreateDetail()}
-                                    className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-sky-600/20 cursor-pointer"
+                                    className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-lg shadow-sky-600/20 cursor-pointer"
                                 >
                                     <FaPlusCircle size={15} />
                                     <span>+ បញ្ចូល DETAIL METRICS</span>
@@ -1652,7 +1657,7 @@ const FollowUp4 = () => {
                     </div>
 
                     {/* History Table */}
-                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl">
                         <div className="p-4 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-200">ប្រវត្តិ DETAIL METRICS តាមកាលបរិច្ឆេទ</span>
                             <span className="text-xs text-sky-400 font-mono font-semibold">{detailHistoryList.length} ថ្ងៃបានកត់ត្រា</span>
@@ -1830,7 +1835,7 @@ const FollowUp4 = () => {
             {/* 5. Delete Confirmation Modal */}
             {deleteModalItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
-                    <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center">
+                    <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl p-6 max-w-sm w-full text-center">
                         <FaTrashAlt className="text-rose-500 text-3xl mx-auto mb-3" />
                         <h4 className="text-base font-bold text-slate-100 mb-1">តើអ្នកប្រាកដជាចង់លុប?</h4>
                         <p className="text-xs text-slate-400 mb-6">
@@ -1839,13 +1844,13 @@ const FollowUp4 = () => {
                         <div className="flex items-center justify-center gap-3">
                             <button
                                 onClick={() => setDeleteModalItem(null)}
-                                className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer"
+                                className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2 rounded-[5px] transition-all cursor-pointer"
                             >
                                 បោះបង់
                             </button>
                             <button
                                 onClick={handleDeleteSubmit}
-                                className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer"
+                                className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold px-4 py-2 rounded-[5px] transition-all shadow-md cursor-pointer"
                             >
                                 លុបចេញ
                             </button>

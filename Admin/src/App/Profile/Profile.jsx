@@ -103,19 +103,15 @@ const Profile = () => {
     return (
         <div className="w-full bg-transparent p-6 select-none space-y-6">
             <div className="flex items-center gap-3 pb-4 border-b border-gray-800/80">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-2xl shadow-lg">
-                    <FaUserCircle />
-                </div>
                 <div>
                     <h1 className="text-xl font-bold text-gray-100 flex items-center gap-2">
                         {t('profile')} & Security Center
                     </h1>
-                    <p className="text-xs text-indigo-400">Detailed user account information & 2-Step Telegram OTP configuration</p>
                 </div>
             </div>
 
             {message && (
-                <div className="p-3 rounded-xl bg-indigo-950/80 border border-indigo-700 text-indigo-200 text-xs font-semibold animate-fade-in">
+                <div className="p-3 rounded-[5px] bg-indigo-950/80 border border-indigo-700 text-indigo-200 text-xs font-semibold animate-fade-in">
                     {message}
                 </div>
             )}
@@ -171,13 +167,13 @@ const Profile = () => {
                         </div>
 
                         {passwordMessage && (
-                            <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 font-semibold text-[11px]">
+                            <div className="p-2.5 rounded-[5px] bg-emerald-950/60 border border-emerald-800 text-emerald-300 font-semibold text-[11px]">
                                 {passwordMessage}
                             </div>
                         )}
 
                         {passwordError && (
-                            <div className="p-2.5 rounded-xl bg-red-950/60 border border-red-800 text-red-300 font-semibold text-[11px]">
+                            <div className="p-2.5 rounded-[5px] bg-red-950/60 border border-red-800 text-red-300 font-semibold text-[11px]">
                                 {passwordError}
                             </div>
                         )}
@@ -191,7 +187,7 @@ const Profile = () => {
                                     value={oldPassword}
                                     onChange={(e) => setOldPassword(e.target.value)}
                                     placeholder="Enter current password"
-                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-xl text-gray-100"
+                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-100"
                                 />
                             </div>
 
@@ -203,7 +199,7 @@ const Profile = () => {
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     placeholder="Enter new password"
-                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-xl text-gray-100"
+                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-100"
                                 />
                             </div>
 
@@ -215,14 +211,14 @@ const Profile = () => {
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     placeholder="Confirm new password"
-                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-xl text-gray-100"
+                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-100"
                                 />
                             </div>
 
                             <button
                                 type="submit"
                                 disabled={updatingPassword}
-                                className="w-full py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5"
+                                className="w-full py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-[5px] cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5"
                             >
                                 {updatingPassword ? 'Updating...' : 'Update Password'}
                             </button>
@@ -248,13 +244,13 @@ const Profile = () => {
                                 value={telegramId}
                                 onChange={(e) => setTelegramId(e.target.value)}
                                 placeholder="Enter Telegram ID (e.g. 12903120)"
-                                className="w-full h-11 px-4 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-xl text-xs text-gray-100 font-mono"
+                                className="w-full h-11 px-4 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-xs text-gray-100 font-mono"
                             />
                         </div>
 
                         {/* Automatic reveal of 2-Step Verification when Telegram ID is present */}
                         {telegramId && (
-                            <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-800/60 space-y-4 animate-in fade-in duration-300">
+                            <div className="p-4 rounded-[5px] bg-indigo-950/40 border border-indigo-800/60 space-y-4 animate-in fade-in duration-300">
                                 <div className="flex items-center justify-between">
                                     <span className="font-bold text-indigo-200 text-xs flex items-center gap-2">
                                         <FaShieldAlt className="text-indigo-400" /> Enable 2-Step Verification OTP
@@ -277,11 +273,11 @@ const Profile = () => {
                                         value={secondPassword}
                                         onChange={(e) => setSecondPassword(e.target.value)}
                                         placeholder="Enter second password to set/change"
-                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-xl text-xs text-gray-100 font-mono"
+                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-[5px] text-xs text-gray-100 font-mono"
                                     />
                                 </div>
 
-                                <div className="p-3 rounded-xl bg-gray-900/80 border border-gray-800 text-[11px] text-gray-300 space-y-2 leading-relaxed">
+                                <div className="p-3 rounded-[5px] bg-gray-900/80 border border-gray-800 text-[11px] text-gray-300 space-y-2 leading-relaxed">
                                     <p className="font-bold text-amber-400 flex items-center gap-1">
                                         📌 Telegram Bot Setup Guide / ការណែនាំភ្ជាប់ Telegram Bot:
                                     </p>
@@ -298,7 +294,7 @@ const Profile = () => {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 cursor-pointer transition-all flex items-center gap-2"
+                            className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-[5px] shadow-lg shadow-indigo-600/30 cursor-pointer transition-all flex items-center gap-2"
                         >
                             {saving ? (
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

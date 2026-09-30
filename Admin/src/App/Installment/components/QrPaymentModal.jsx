@@ -213,7 +213,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                            <div className="w-10 h-10 rounded-[5px] bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
                                 <FaMobileAlt className="text-xl" />
                             </div>
                             <div>
@@ -246,7 +246,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Left Column: Payment Entry Form */}
-                                <div className="p-5 rounded-2xl bg-[#090c17] border border-indigo-500/30 text-left space-y-4 relative shadow-inner flex flex-col justify-between">
+                                <div className="p-5 rounded-[5px] bg-[#090c17] border border-indigo-500/30 text-left space-y-4 relative shadow-inner flex flex-col justify-between">
                                     <div>
                                         <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-xs font-bold text-emerald-400">
                                             <FaMobileAlt className="text-base" />
@@ -260,7 +260,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                     required
                                                     value={phoneForm.paidDate}
                                                     onChange={(e) => setPhoneForm({ ...phoneForm, paidDate: e.target.value })}
-                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono"
+                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-mono"
                                                 />
                                             </div>
                                             <div>
@@ -269,7 +269,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                     required
                                                     value={phoneForm.paidBy}
                                                     onChange={(e) => setPhoneForm({ ...phoneForm, paidBy: e.target.value })}
-                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold cursor-pointer"
+                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-semibold cursor-pointer"
                                                 >
                                                     <option value="">-- Select Payment Method --</option>
                                                     {paymentMethods.map(m => (
@@ -285,7 +285,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                     step="any"
                                                     value={phoneForm.amount}
                                                     onChange={(e) => setPhoneForm({ ...phoneForm, amount: e.target.value })}
-                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-emerald-400 font-bold font-mono"
+                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-emerald-400 font-bold font-mono"
                                                 />
                                             </div>
                                             <div>
@@ -295,7 +295,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                     value={phoneForm.description}
                                                     onChange={(e) => setPhoneForm({ ...phoneForm, description: e.target.value })}
                                                     placeholder="Note or transaction ref"
-                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100"
+                                                    className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
                                                 />
                                             </div>
                                         </form>
@@ -305,7 +305,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                         type="submit"
                                         form="paymentForm"
                                         disabled={paymentSubmitting}
-                                        className="w-full h-10 mt-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
+                                        className="w-full h-10 mt-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-[5px] shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
                                     >
                                         {paymentSubmitting ? (
                                             <div className="flex items-center gap-2">
@@ -319,7 +319,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                 </div>
 
                                 {/* Right Column: Payment Proof / Receipt Image Upload */}
-                                <div className="p-5 rounded-2xl bg-gray-900/80 border border-gray-800 text-center space-y-3 flex flex-col justify-between">
+                                <div className="p-5 rounded-[5px] bg-gray-900/80 border border-gray-800 text-center space-y-3 flex flex-col justify-between">
                                     <div className="flex items-center justify-between pb-2 border-b border-gray-800">
                                         <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
                                             <FaImage className="text-sm" />
@@ -354,7 +354,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
 
                                     {receiptPreview ? (
                                         <div className="space-y-3 flex-1 flex flex-col justify-center">
-                                            <div className="relative group rounded-2xl overflow-hidden bg-black/70 border border-emerald-500/40 flex items-center justify-center h-52">
+                                            <div className="relative group rounded-[5px] overflow-hidden bg-black/70 border border-emerald-500/40 flex items-center justify-center h-52">
                                                 <img
                                                     src={receiptPreview}
                                                     alt="Payment Proof Receipt"
@@ -393,7 +393,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                     handleFileChange(e.dataTransfer.files[0]);
                                                 }
                                             }}
-                                            className="h-52 rounded-2xl bg-gray-950/60 border-2 border-dashed border-gray-700 hover:border-emerald-500/60 transition-all flex flex-col items-center justify-center p-4 cursor-pointer group space-y-2"
+                                            className="h-52 rounded-[5px] bg-gray-950/60 border-2 border-dashed border-gray-700 hover:border-emerald-500/60 transition-all flex flex-col items-center justify-center p-4 cursor-pointer group space-y-2"
                                         >
                                             <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-2xl text-emerald-400 group-hover:scale-110 transition-transform">
                                                 <FaCloudUploadAlt />
@@ -412,14 +412,14 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                         </div>
                                     )}
 
-                                    <div className="text-[10px] text-gray-400 text-left bg-gray-950/40 p-2.5 rounded-xl border border-gray-800">
+                                    <div className="text-[10px] text-gray-400 text-left bg-gray-950/40 p-2.5 rounded-[5px] border border-gray-800">
                                         💡 <span className="text-gray-300 font-medium">ចំណាំ៖</span> រូបភាពដែលបានភ្ជាប់នឹងត្រូវរក្សាទុកជាភស្តុតាងនៃការបង់ប្រាក់ ហើយលោតទៅបង្ហាញនៅជួររូបភាពក្នុងទំព័រ <span className="text-emerald-400 font-mono">Payment History</span>។
                                     </div>
                                 </div>
                             </div>
 
                             {/* Payment History Section */}
-                            <div className="p-5 rounded-2xl bg-gray-900/80 border border-sky-500/30 space-y-3">
+                            <div className="p-5 rounded-[5px] bg-gray-900/80 border border-sky-500/30 space-y-3">
                                 <div className="flex items-center justify-between border-b border-gray-800 pb-2">
                                     <h4 className="text-xs font-bold text-sky-300 uppercase tracking-wider">Payment History / ប្រវត្តិបង់ប្រាក់</h4>
                                     <span className="text-[10px] text-gray-400">{qrPayments.length} Transactions</span>
@@ -481,7 +481,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                         <img
                             src={receiptPreview}
                             alt="Full receipt preview"
-                            className="max-h-[80vh] max-w-full object-contain rounded-xl shadow-2xl border border-gray-700"
+                            className="max-h-[80vh] max-w-full object-contain rounded-[5px] shadow-2xl border border-gray-700"
                         />
                     </div>
                 </div>
@@ -504,7 +504,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                         <img
                             src={viewHistoryImage}
                             alt="History Payment Proof"
-                            className="max-h-[80vh] max-w-full object-contain rounded-xl shadow-2xl border border-emerald-500/40"
+                            className="max-h-[80vh] max-w-full object-contain rounded-[5px] shadow-2xl border border-emerald-500/40"
                         />
                     </div>
                 </div>

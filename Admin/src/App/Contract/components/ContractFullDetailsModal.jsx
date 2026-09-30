@@ -345,7 +345,7 @@ const ContractFullDetailsModal = ({
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 select-none animate-in fade-in duration-150">
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden grid grid-rows-[auto_auto_minmax(0,1fr)_auto] h-[90vh] text-xs">
+            <div className="bg-gray-900 border border-gray-700 rounded-[5px] w-full max-w-5xl shadow-2xl overflow-hidden grid grid-rows-[auto_auto_minmax(0,1fr)_auto] h-[90vh] text-xs">
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-700 bg-gray-800 flex-shrink-0">
@@ -411,15 +411,15 @@ const ContractFullDetailsModal = ({
                     {activeTab === 'info' && (
                         <div className="space-y-4">
                             {/* Top Overview Banner */}
-                            <div className="p-3.5 bg-gray-800/80 border border-gray-700 rounded-xl flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                            <div className="p-3.5 bg-gray-800/80 border border-gray-700 rounded-[5px] flex flex-col sm:flex-row items-center sm:items-start gap-4">
                                 {photoUrl ? (
                                     <img
                                         src={photoUrl}
                                         alt="Customer"
-                                        className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl border-2 border-indigo-500/60 shadow-lg flex-shrink-0"
+                                        className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-[5px] border-2 border-indigo-500/60 shadow-lg flex-shrink-0"
                                     />
                                 ) : (
-                                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-gray-900 border border-gray-700 flex items-center justify-center text-3xl text-gray-500 flex-shrink-0">
+                                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-[5px] bg-gray-900 border border-gray-700 flex items-center justify-center text-3xl text-gray-500 flex-shrink-0">
                                         <FaUser />
                                     </div>
                                 )}
@@ -735,7 +735,7 @@ const ContractFullDetailsModal = ({
                                                                 </button>
 
                                                                 {activeDropdownIdx === idx && (
-                                                                    <div className={`absolute right-0 ${idx >= rows.length - 2 && rows.length > 3 ? 'bottom-full mb-1' : 'top-full mt-1'} w-36 bg-gray-900 border border-indigo-500/80 rounded-xl shadow-2xl z-[99999] overflow-hidden animate-in zoom-in-95 duration-100`}>
+                                                                    <div className={`absolute right-0 ${idx >= rows.length - 2 && rows.length > 3 ? 'bottom-full mb-1' : 'top-full mt-1'} w-36 bg-gray-900 border border-indigo-500/80 rounded-[5px] shadow-2xl z-[99999] overflow-hidden animate-in zoom-in-95 duration-100`}>
                                                                         <div className="px-2.5 py-1 bg-indigo-950/80 border-b border-indigo-800 text-[9px] font-bold text-indigo-300 uppercase">
                                                                             Payment Options
                                                                         </div>

@@ -266,7 +266,7 @@ export const AuthProvider = ({ children }) => {
                             </p>
                         </div>
 
-                        <div className="w-full bg-gray-900/80 border border-red-800/50 rounded-2xl p-4 text-xs text-gray-400 space-y-1">
+                        <div className="w-full bg-gray-900/80 border border-red-800/50 rounded-[5px] p-4 text-xs text-gray-400 space-y-1">
                             <p className="flex justify-between">
                                 <span className="text-gray-500">Username</span>
                                 <span className="text-red-300 font-mono font-bold">{user?.username}</span>

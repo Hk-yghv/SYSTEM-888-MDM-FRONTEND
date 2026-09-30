@@ -762,7 +762,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         >
                             Auto Penalty
                         </button>
-                        <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer transition-all flex items-center justify-center">
+                        <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer transition-all flex items-center justify-center">
                             <MdClose size={18} />
                         </button>
                     </div>
@@ -772,7 +772,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 <div className="flex-1 overflow-x-auto overflow-y-auto p-4 pb-32 min-h-[350px] space-y-3">
                     {/* Top Prominent Action & Info Banner (Only when in setup & activate mode) */}
                     {isSetupActivate && (
-                        <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 text-slate-800 text-xs font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                        <div className="p-3 rounded-[5px] bg-indigo-50 border border-indigo-200 text-slate-800 text-xs font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                             <div className="flex items-center gap-2">
                                 <FaCalendarAlt className="text-indigo-600 text-lg flex-shrink-0" />
                                 <span>
@@ -782,7 +782,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             <button
                                 type="button"
                                 onClick={applyCalculateSchedule2}
-                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-md flex-shrink-0"
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-md flex-shrink-0"
                             >
                                 <FaCalculator size={13} />
                                 <span>គណនាតាម Calculate Schedule 2</span>
@@ -790,7 +790,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         </div>
                     )}
 
-                    <table className="w-full text-left text-xs whitespace-nowrap border border-slate-200 rounded-xl overflow-hidden">
+                    <table className="w-full text-left text-xs whitespace-nowrap border border-slate-200 rounded-[5px] overflow-hidden">
                         <thead className="bg-slate-50 text-indigo-950 font-bold uppercase tracking-wider border-b border-slate-200">
                             <tr>
                                 <th className="px-3 py-3 text-center">ខែ/ថ្ងៃ</th>
@@ -990,7 +990,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                         {activeDropdownIdx === idx && createPortal(
                                                             <div
                                                                 ref={dropdownRef}
-                                                                className="fixed w-44 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden"
+                                                                className="fixed w-44 bg-white border border-slate-200 rounded-[5px] shadow-2xl overflow-hidden"
                                                                 style={(() => {
                                                                     const btn = document.getElementById(`pay-btn-${idx}`);
                                                                     if (!btn) return { top: 0, left: 0, zIndex: 999999 };
@@ -1070,7 +1070,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                     <button
                         type="button"
                         onClick={() => setOpen(false)}
-                        className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                        className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-[5px] text-xs font-bold cursor-pointer transition-all"
                     >
                         បិទ (Close)
                     </button>
@@ -1081,7 +1081,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             type="button"
                             onClick={handleRedeem}
                             disabled={submitting}
-                            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5 transition-all"
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5 transition-all"
                         >
                             <MdSwapHoriz size={16} />
                             <span>Redeem</span>
@@ -1094,7 +1094,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             type="button"
                             onClick={() => handleSaveSchedule(isSetupActivate ? 'Activated' : null)}
                             disabled={submitting}
-                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30 cursor-pointer flex items-center gap-1.5 transition-all"
+                            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold shadow-lg shadow-emerald-600/30 cursor-pointer flex items-center gap-1.5 transition-all"
                         >
                             <FaSave size={14} />
                             <span>
@@ -1118,7 +1118,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 onClick={() => setLightboxImages([])}
             >
                 <div
-                    className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden"
+                    className="relative bg-white rounded-[5px] shadow-2xl max-w-2xl w-full mx-4 overflow-hidden"
                     onClick={e => e.stopPropagation()}
                 >
                     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
@@ -1184,7 +1184,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         {/* ── Payment Confirmation Modal ──────────────────────────────────── */}
         {payConfirm && (
             <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999999] p-4">
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[92vh] overflow-hidden">
+                <div className="bg-white border border-slate-200 rounded-[5px] shadow-2xl w-full max-w-md flex flex-col max-h-[92vh] overflow-hidden">
 
                     {/* Header */}
                     <div className={`px-5 py-4 flex items-center justify-between flex-shrink-0 ${
@@ -1193,7 +1193,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             : 'bg-gradient-to-r from-amber-500 to-amber-400'
                     }`}>
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                            <div className="w-9 h-9 rounded-[5px] bg-white/20 flex items-center justify-center text-white">
                                 {payConfirm.mode === 'PayOff' ? <FaLock size={15} /> : <FaCheckCircle size={15} />}
                             </div>
                             <div>
@@ -1222,7 +1222,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 step="any"
                                 value={payConfirm.amount}
                                 onChange={e => setPayConfirm(prev => ({ ...prev, amount: e.target.value }))}
-                                className="w-full h-10 px-3 bg-emerald-50 border border-emerald-200 focus:border-emerald-500 rounded-xl text-emerald-700 font-bold font-mono text-base outline-none shadow-sm"
+                                className="w-full h-10 px-3 bg-emerald-50 border border-emerald-200 focus:border-emerald-500 rounded-[5px] text-emerald-700 font-bold font-mono text-base outline-none shadow-sm"
                             />
                         </div>
 
@@ -1232,7 +1232,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             <select
                                 value={payConfirm.paidBy || ''}
                                 onChange={e => setPayConfirm(prev => ({ ...prev, paidBy: e.target.value }))}
-                                className="w-full h-10 px-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl text-slate-800 text-xs font-semibold outline-none shadow-sm cursor-pointer"
+                                className="w-full h-10 px-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-[5px] text-slate-800 text-xs font-semibold outline-none shadow-sm cursor-pointer"
                             >
                                 <option value="">-- ជ្រើសរើសវិធីបង់ប្រាក់ --</option>
                                 {paymentMethods.map(m => (
@@ -1249,7 +1249,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 value={payConfirm.description}
                                 onChange={e => setPayConfirm(prev => ({ ...prev, description: e.target.value }))}
                                 placeholder="Comment or transaction note..."
-                                className="w-full h-10 px-3 bg-slate-50 border border-slate-200 focus:border-indigo-400 rounded-xl text-slate-800 text-xs outline-none shadow-sm"
+                                className="w-full h-10 px-3 bg-slate-50 border border-slate-200 focus:border-indigo-400 rounded-[5px] text-slate-800 text-xs outline-none shadow-sm"
                             />
                         </div>
 
@@ -1261,7 +1261,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             </div>
 
                             {/* Upload button */}
-                            <label className="flex items-center gap-2.5 h-10 px-3 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 rounded-xl cursor-pointer transition-all group">
+                            <label className="flex items-center gap-2.5 h-10 px-3 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 rounded-[5px] cursor-pointer transition-all group">
                                 <div className="w-5 h-5 rounded-lg bg-slate-200 group-hover:bg-indigo-100 flex items-center justify-center transition-colors">
                                     <FaDollarSign size={10} className="text-slate-500 group-hover:text-indigo-600" />
                                 </div>
@@ -1279,7 +1279,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             {payConfirm.imageItems?.length > 0 && (
                                 <div className="mt-3 grid grid-cols-3 gap-2">
                                     {payConfirm.imageItems.map((item, imgIdx) => (
-                                        <div key={imgIdx} className="relative group rounded-xl overflow-hidden bg-slate-100 aspect-square border border-slate-200">
+                                        <div key={imgIdx} className="relative group rounded-[5px] overflow-hidden bg-slate-100 aspect-square border border-slate-200">
                                             <img
                                                 src={item.preview}
                                                 alt={`receipt-${imgIdx + 1}`}
@@ -1315,7 +1315,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             type="button"
                             onClick={() => setPayConfirm(null)}
                             disabled={payConfirmSubmitting}
-                            className="flex-1 h-10 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold cursor-pointer transition-all disabled:opacity-50"
+                            className="flex-1 h-10 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-[5px] text-xs font-bold cursor-pointer transition-all disabled:opacity-50"
                         >
                             ខ្វែង (Cancel)
                         </button>
@@ -1323,7 +1323,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             type="button"
                             onClick={handlePayConfirmSubmit}
                             disabled={payConfirmSubmitting}
-                            className={`flex-1 h-10 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 ${
+                            className={`flex-1 h-10 text-white rounded-[5px] text-xs font-bold cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 ${
                                 payConfirm.mode === 'PayOff'
                                     ? 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30'
                                     : 'bg-amber-500 hover:bg-amber-400 shadow-amber-500/30'

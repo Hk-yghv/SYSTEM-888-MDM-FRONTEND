@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import ExportDropdown from '../../../components/ExportDropdown';
 import ReactDOM from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -103,7 +104,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
     return ReactDOM.createPortal(
         <div data-action-menu-root="true"
             style={{ position: 'fixed', top: pos.bottom + 4, left, width: dropdownWidth, zIndex: 999999 }}
-            className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white border border-slate-200 rounded-[5px] shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}>
             <div className="px-3 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Repayment Actions</div>
             <button onClick={() => { onOpenQrModal(item); onClose(); }}
@@ -245,29 +246,26 @@ const OverduePage = () => {
             )}
 
             {/* ── Header ─────────────────────────────────────────────────── */}
-            <header className='p-3 w-full border border-red-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-red-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-red-500 flex items-center gap-2 flex-wrap'>
-                        <FaExclamationTriangle className="text-red-500" size={18} />
                         <span>Overdue Customers</span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-950 text-red-300 border border-red-800 font-normal">{overdueContracts.length} Records</span>
                         {user?.brand && <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800 font-semibold">{user.brand}</span>}
                     </h1>
-                    <p className="text-[11px] text-red-400 mt-0.5 font-medium">Customers whose payment due date has already passed</p>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
                     <div className="relative">
                         <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
                         <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search name, model, serial..." className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-red-500 w-52 outline-none font-medium shadow-xs" />
                     </div>
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'><FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span></button>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'><MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span></button>
+                    <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                     <button onClick={() => fetchContracts(searchTerm)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'><MdOutlineSync size={16} className={reloading ? 'spin-reload text-red-600' : ''} /><p>{t('reload')}</p></button>
                 </div>
             </header>
 
             {/* ── Table ─────────────────────────────────────────────────── */}
-            <div className='w-full overflow-auto rounded-2xl border border-red-100 bg-white shadow-md' style={{ maxHeight: 'calc(100vh - 260px)' }}>
+            <div className='w-full overflow-auto rounded-[5px] border border-red-100 bg-white shadow-md' style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-red-50 text-red-800 uppercase tracking-wider border-b border-red-100 sticky top-0 z-10'>
                         <tr>

@@ -37,7 +37,7 @@ const FollowUp4DetailCard = ({
             {/* Top Container: Inputs & Automated Calculations */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Left: Input metrics form */}
-                <div className="lg:col-span-6 bg-slate-800/90 border border-slate-700/80 p-6 rounded-2xl shadow-xl space-y-4">
+                <div className="lg:col-span-6 bg-slate-800/90 border border-slate-700/80 p-6 rounded-[5px] shadow-xl space-y-4">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-700">
                         <div>
                             <h2 className="text-base font-bold text-sky-400 flex items-center gap-2">
@@ -49,7 +49,7 @@ const FollowUp4DetailCard = ({
                         </div>
 
                         {/* Date Picker */}
-                        <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700">
+                        <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-[5px] border border-slate-700">
                             <FaRegCalendarAlt className="text-slate-400 text-xs" />
                             <input
                                 type="date"
@@ -62,7 +62,7 @@ const FollowUp4DetailCard = ({
 
                     {/* Input Fields Grid */}
                     <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">PAGE (FB Page Inquiries)</label>
                             <input
                                 type="number"
@@ -74,7 +74,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">TELEGRAM (Tg Inquiries)</label>
                             <input
                                 type="number"
@@ -86,7 +86,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">NO REPLY (មិនតប)</label>
                             <input
                                 type="number"
@@ -98,7 +98,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">INQUIRE (សួរនាំ)</label>
                             <input
                                 type="number"
@@ -110,7 +110,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">REJECT CS</label>
                             <input
                                 type="number"
@@ -122,7 +122,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">MORE (ផ្សេងៗ)</label>
                             <input
                                 type="number"
@@ -134,7 +134,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">PAGE SUBMIT</label>
                             <input
                                 type="number"
@@ -146,7 +146,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">TELEGRAM SUBMIT</label>
                             <input
                                 type="number"
@@ -158,7 +158,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">CALL</label>
                             <input
                                 type="number"
@@ -170,7 +170,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">REVIEW</label>
                             <input
                                 type="number"
@@ -182,7 +182,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">REJECT</label>
                             <input
                                 type="number"
@@ -194,7 +194,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">SUCCESS 1</label>
                             <input
                                 type="number"
@@ -206,7 +206,7 @@ const FollowUp4DetailCard = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">SUCCESS 2</label>
                             <input
                                 type="number"
@@ -223,7 +223,7 @@ const FollowUp4DetailCard = ({
                     <button
                         onClick={onSave}
                         disabled={saving || loading}
-                        className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-3 rounded-xl transition-all shadow-lg shadow-sky-600/20 cursor-pointer disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-3 rounded-[5px] transition-all shadow-lg shadow-sky-600/20 cursor-pointer disabled:opacity-50"
                     >
                         {saving ? <MdOutlineSync className="animate-spin text-base" /> : <FaSave size={14} />}
                         <span>{saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក DETAIL METRICS'}</span>
@@ -231,14 +231,14 @@ const FollowUp4DetailCard = ({
                 </div>
 
                 {/* Right: Automated Formulas Output */}
-                <div className="lg:col-span-6 bg-slate-800/90 border border-slate-700/80 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div className="lg:col-span-6 bg-slate-800/90 border border-slate-700/80 p-6 rounded-[5px] shadow-xl flex flex-col justify-between">
                     <div>
                         <div className="flex items-center gap-2 text-emerald-400 font-bold text-base pb-3 border-b border-slate-700 mb-4">
                             <FaChartBar /> <span>ការគណនាស្វ័យប្រវត្តិ (AUTOMATED FORMULAS)</span>
                         </div>
 
                         <div className="space-y-3">
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-700/60">
+                            <div className="flex items-center justify-between p-3 rounded-[5px] bg-slate-900/80 border border-slate-700/60">
                                 <div>
                                     <span className="text-xs font-bold text-slate-200">TOTAL INQUIRIES</span>
                                     <p className="text-[10px] text-slate-400">PAGE + TELEGRAM + CALL</p>
@@ -248,7 +248,7 @@ const FollowUp4DetailCard = ({
                                 </span>
                             </div>
 
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-700/60">
+                            <div className="flex items-center justify-between p-3 rounded-[5px] bg-slate-900/80 border border-slate-700/60">
                                 <div>
                                     <span className="text-xs font-bold text-slate-200">TOTAL SUBMITS</span>
                                     <p className="text-[10px] text-slate-400">PAGE SUBMIT + TELEGRAM SUBMIT + CALL</p>
@@ -258,7 +258,7 @@ const FollowUp4DetailCard = ({
                                 </span>
                             </div>
 
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-700/60">
+                            <div className="flex items-center justify-between p-3 rounded-[5px] bg-slate-900/80 border border-slate-700/60">
                                 <div>
                                     <span className="text-xs font-bold text-slate-200">TOTAL PROCESSED</span>
                                     <p className="text-[10px] text-slate-400">NO REPLY + INQUIRE + REJECT CS + MORE</p>
@@ -268,7 +268,7 @@ const FollowUp4DetailCard = ({
                                 </span>
                             </div>
 
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-700/60">
+                            <div className="flex items-center justify-between p-3 rounded-[5px] bg-slate-900/80 border border-slate-700/60">
                                 <div>
                                     <span className="text-xs font-bold text-slate-200">TOTAL SUCCESS</span>
                                     <p className="text-[10px] text-slate-400">SUCCESS 1 + SUCCESS 2</p>
@@ -278,7 +278,7 @@ const FollowUp4DetailCard = ({
                                 </span>
                             </div>
 
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/40">
+                            <div className="flex items-center justify-between p-3 rounded-[5px] bg-emerald-950/40 border border-emerald-800/40">
                                 <div>
                                     <span className="text-xs font-bold text-emerald-300">CONVERSION RATE</span>
                                     <p className="text-[10px] text-emerald-400/70">(TOTAL SUCCESS / TOTAL SUBMITS) * 100</p>
@@ -293,7 +293,7 @@ const FollowUp4DetailCard = ({
             </div>
 
             {/* Bottom: History Table */}
-            <div className="bg-slate-800/70 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl p-5">
+            <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl p-5">
                 <div className="flex items-center gap-2 text-slate-200 font-bold text-sm mb-4">
                     <FaHistory className="text-sky-400" />
                     <span>ប្រវត្តិកំណត់ត្រា DETAIL កន្លងមក ({brand || '888MDM'})</span>

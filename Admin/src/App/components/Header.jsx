@@ -134,7 +134,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 <button
                     type='button'
                     onClick={onToggleSidebar}
-                    className='md:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
+                    className='md:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
                     aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
                     title={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
                 >
@@ -180,7 +180,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 {hasAnyAlertPermission(user, hasPermission) && (
                     <button
                         onClick={onOpenAlerts}
-                        className='relative flex items-center justify-center gap-2 w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
+                        className='relative flex items-center justify-center gap-2 w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-3 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
                         title='ការជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)'
                     >
                         <FaBell className='text-sm animate-pulse text-slate-950' />
@@ -196,7 +196,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 {/* Fullscreen Button */}
                 <button
                     onClick={toggleFullscreen}
-                    className='hidden md:flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
+                    className='hidden md:flex items-center justify-center w-10 h-10 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
                     title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                 >
                     {isFullscreen ? (
@@ -218,7 +218,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     </button>
 
                     {langOpen && (
-                        <div className='absolute top-[5vh] right-0 bg-white border border-slate-200 rounded-2xl p-2 w-[220px] shadow-xl z-50 animate-in fade-in duration-200'>
+                        <div className='absolute top-[5vh] right-0 bg-white border border-slate-200 rounded-[5px] p-2 w-[220px] shadow-xl z-50 animate-in fade-in duration-200'>
                             <p className='text-[11px] font-bold text-slate-400 px-3 py-1 uppercase tracking-wider border-b border-slate-100 mb-1'>
                                 Select Language / ជ្រើសរើសភាសា
                             </p>
@@ -230,7 +230,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                                             changeLanguage(l.code);
                                             setLangOpen(false);
                                         }}
-                                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-all cursor-pointer ${lang === l.code ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-300' : 'hover:bg-slate-100 text-slate-700'}`}
+                                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-[5px] transition-all cursor-pointer ${lang === l.code ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-300' : 'hover:bg-slate-100 text-slate-700'}`}
                                     >
                                         <span className='flex items-center gap-2.5'>
                                             <span className='text-base'>{l.flag}</span>
@@ -264,7 +264,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     {/* Account Menu */}
                     {accountOpen && (
                         <div className='absolute top-[5vh] right-0 bg-white border border-slate-200 w-[220px] p-2 rounded-[5px] shadow-xl z-999999 animate-in fade-in duration-200'>
-                            <div className='p-3 border-b border-slate-100 mb-1 bg-slate-50 rounded-xl'>
+                            <div className='p-3 border-b border-slate-100 mb-1 bg-slate-50 rounded-[5px]'>
                                 <p className='text-xs font-bold text-slate-800'>{user?.name || 'BOY BOY'}</p>
                                 <p className='text-[11px] text-emerald-600 font-mono mt-0.5'>{user?.email || 'yonghouvh@gmail.com'}</p>
                                 <span className='inline-block text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 mt-1.5 border border-emerald-200'>
@@ -275,7 +275,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                             <Link
                                 to="/profile"
                                 onClick={() => setAccountOpen(false)}
-                                className='w-full h-[40px] flex items-center gap-3 px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-xl transition-all cursor-pointer text-xs font-medium'
+                                className='w-full h-[40px] flex items-center gap-3 px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[5px] transition-all cursor-pointer text-xs font-medium'
                             >
                                 <FaUserCog className='text-base text-emerald-600' />
                                 <p>{t('profile')}</p>
@@ -284,7 +284,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
                             <button
                                 onClick={handleLogout}
-                                className='w-full h-[40px] flex items-center gap-3 px-3 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-xl transition-all cursor-pointer text-xs font-semibold mt-1 border-t border-slate-100 pt-2'
+                                className='w-full h-[40px] flex items-center gap-3 px-3 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-[5px] transition-all cursor-pointer text-xs font-semibold mt-1 border-t border-slate-100 pt-2'
                             >
                                 <FaSignOutAlt className='text-base text-red-500' />
                                 <p>{t('logout')}</p>

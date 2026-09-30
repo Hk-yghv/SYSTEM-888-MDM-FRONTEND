@@ -9,6 +9,7 @@ import {
 import { MdCalculate, MdOutlineSchedule, MdOutlinePayments } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import CopyCell from '../../../components/CopyCell';
+import ExportDropdown from '../../../components/ExportDropdown';
 
 const RATE_PRESETS = ['11.5%', '10%', '12%', '15%', '8%', '5%', '3%', '1%'];
 const DURATION_PRESETS = [1, 2, 3, 4, 6, 12];
@@ -172,8 +173,7 @@ const CalculateSchedule1 = () => {
         setTimeout(() => setCopiedText(false), 2500);
     };
 
-    // Export to Excel
-    const handleExportExcel = () => {
+    const getExportData = () => {
         if (!calculationResult) return;
         const { principal, ratePercent, monthsCount, totalInterest, totalRepayment, schedule } = calculationResult;
 
@@ -198,7 +198,22 @@ const CalculateSchedule1 = () => {
             'សមតុល្យប្រាក់ដើមនៅសល់ ($)': 0
         });
 
-        exportToExcel(exportData, `Calculate_Schedule_1_${principal}_${monthsCount}Months`);
+        return {
+            exportData,
+            fileName: `Calculate_Schedule_1_${principal}_${monthsCount}Months`
+        };
+    };
+
+    const handleExportExcel = () => {
+        const result = getExportData();
+        if (result) exportToExcel(result.exportData, result.fileName);
+    };
+
+    const handleExportPDF = () => {
+        const result = getExportData();
+        if (!result) return;
+        const columns = Object.keys(result.exportData[0] || {}).map(key => ({ header: key, accessor: key }));
+        exportToPDF(result.fileName, columns, result.exportData);
     };
 
     // Print / PDF handler
@@ -209,21 +224,12 @@ const CalculateSchedule1 = () => {
     return (
         <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
             {/* Top Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--app-card,rgba(255,255,255,0.7))] border border-[var(--app-border,rgba(226,232,240,0.8))] p-5 rounded-2xl shadow-xs backdrop-blur-md">
-                <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/25">
-                        <MdCalculate className="text-2xl" />
-                    </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--app-card,rgba(255,255,255,0.7))] border border-[var(--app-border,rgba(226,232,240,0.8))] p-5 rounded-[5px] shadow-xs backdrop-blur-md">
+                <div>
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
                             Calculate Schedule 1
-                            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300">
-                                គណនាការប្រាក់ & កាលវិភាគ
-                            </span>
                         </h1>
-                        <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                            ប្រព័ន្ធគណនាការប្រាក់កម្ចី និងបង្កើតតារាងកាលវិភាគបង់ប្រាក់ប្រចាំខែដោយស្វ័យប្រវត្តិ
-                        </p>
                     </div>
                 </div>
 
@@ -232,7 +238,7 @@ const CalculateSchedule1 = () => {
                         <button
                             type="button"
                             onClick={handleCopySummary}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${copiedText
+                            className={`px-3.5 py-2 rounded-[5px] text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${copiedText
                                 ? 'bg-emerald-600 text-white shadow-emerald-500/20'
                                 : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300'
                                 }`}
@@ -240,17 +246,17 @@ const CalculateSchedule1 = () => {
                             {copiedText ? <FaCheckCircle className="text-white" /> : <FaCopy className="text-slate-500" />}
                             {copiedText ? 'បានចម្លងរួចរាល់!' : 'ចម្លងព័ត៌មាន (Copy)'}
                         </button>
-                        <button
-                            type="button"
-                            onClick={handleExportExcel}
-                            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
-                        >
-                            <FaFileExcel /> ទាញយក Excel
-                        </button>
+                        <ExportDropdown
+                            onExportExcel={handleExportExcel}
+                            onExportPDF={handleExportPDF}
+                            triggerLabel="Export"
+                            excelLabel="ទាញយក Excel"
+                            pdfLabel="ទាញយក PDF"
+                        />
                         <button
                             type="button"
                             onClick={handlePrint}
-                            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                            className="px-3.5 py-2 rounded-[5px] bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                         >
                             <FaPrint /> បោះពុម្ព (Print)
                         </button>
@@ -259,7 +265,7 @@ const CalculateSchedule1 = () => {
             </div>
 
             {/* Input Form & Quick Calculator Controls */}
-            <div className="bg-[var(--app-card,rgba(255,255,255,0.75))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-2xl p-5 sm:p-6 shadow-sm backdrop-blur-md">
+            <div className="bg-[var(--app-card,rgba(255,255,255,0.75))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-5 sm:p-6 shadow-sm backdrop-blur-md">
                 <form onSubmit={handleCalculate} className="space-y-5">
                     <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
                         <FaCalculator className="text-emerald-600" />
@@ -286,7 +292,7 @@ const CalculateSchedule1 = () => {
                                     onChange={(e) => setPrincipalInput(e.target.value)}
                                     placeholder="ឧ. 1000"
                                     required
-                                    className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
+                                    className="w-full pl-8 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
                                 />
                             </div>
                             {/* Preset Amount Chips */}
@@ -323,7 +329,7 @@ const CalculateSchedule1 = () => {
                                     onChange={(e) => setRateInput(e.target.value)}
                                     placeholder="ឧ. 11.5%"
                                     required
-                                    className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
+                                    className="w-full pl-8 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
                                 />
                                 <datalist id="interest-rate-droplist">
                                     {RATE_PRESETS.map(r => (
@@ -389,7 +395,7 @@ const CalculateSchedule1 = () => {
                                     onChange={(e) => setDurationInput(e.target.value)}
                                     placeholder={durationUnit === 'months' ? 'ឧ. 4' : 'ឧ. 120'}
                                     required
-                                    className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
+                                    className="w-full pl-8 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
                                 />
                             </div>
                             {/* Preset Duration Chips */}
@@ -423,7 +429,7 @@ const CalculateSchedule1 = () => {
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
+                                    className="w-full pl-9 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
                                 />
                             </div>
                             <p className="text-[11px] text-slate-400 font-medium">
@@ -436,7 +442,7 @@ const CalculateSchedule1 = () => {
                     <div className="flex flex-wrap items-center gap-3 pt-2">
                         <button
                             type="submit"
-                            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-sm flex items-center gap-2 shadow-md shadow-emerald-600/25 transition-all transform active:scale-95 cursor-pointer"
+                            className="px-6 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-sm flex items-center gap-2 shadow-md shadow-emerald-600/25 transition-all transform active:scale-95 cursor-pointer"
                         >
                             <MdCalculate className="text-lg" />
                             គណនា (Calculate)
@@ -444,7 +450,7 @@ const CalculateSchedule1 = () => {
                         <button
                             type="button"
                             onClick={handleReset}
-                            className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+                            className="px-4 py-2.5 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
                             <FaUndo className="text-xs text-slate-500" />
                             កំណត់ឡើងវិញ (Reset)
@@ -459,7 +465,7 @@ const CalculateSchedule1 = () => {
                     {/* KPI Result Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
                         {/* 1. Principal Amount */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-2xl p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
                                 <span>ប្រាក់ដើមកម្ចី</span>
                                 <FaDollarSign className="text-emerald-500" />
@@ -475,7 +481,7 @@ const CalculateSchedule1 = () => {
                         </div>
 
                         {/* 2. Interest Rate */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-2xl p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
                                 <span>អត្រាការប្រាក់</span>
                                 <FaPercentage className="text-indigo-500" />
@@ -491,7 +497,7 @@ const CalculateSchedule1 = () => {
                         </div>
 
                         {/* 3. Monthly Interest USD */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-2xl p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
                                 <span>ការប្រាក់ក្នុង ១ ខែ</span>
                                 <FaMoneyBillWave className="text-amber-500" />
@@ -507,7 +513,7 @@ const CalculateSchedule1 = () => {
                         </div>
 
                         {/* 4. Monthly Payment */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-emerald-300 rounded-2xl p-4 shadow-xs backdrop-blur-md flex flex-col justify-between bg-emerald-50/40">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-emerald-300 rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between bg-emerald-50/40">
                             <div className="flex items-center justify-between text-emerald-800 text-xs font-bold mb-1">
                                 <span>ត្រូវបង់ក្នុង ១ ខែ</span>
                                 <MdOutlinePayments className="text-emerald-600 text-lg" />
@@ -523,7 +529,7 @@ const CalculateSchedule1 = () => {
                         </div>
 
                         {/* 5. Total Interest */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-2xl p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
                                 <span>សរុបការប្រាក់ទាំងអស់</span>
                                 <FaChartPie className="text-rose-500" />
@@ -539,7 +545,7 @@ const CalculateSchedule1 = () => {
                         </div>
 
                         {/* 6. Total Repayment Return */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-indigo-300 rounded-2xl p-4 shadow-xs backdrop-blur-md flex flex-col justify-between bg-indigo-50/40">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-indigo-300 rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between bg-indigo-50/40">
                             <div className="flex items-center justify-between text-indigo-900 text-xs font-bold mb-1">
                                 <span>សរុបត្រូវបង់មកវិញ</span>
                                 <FaDollarSign className="text-indigo-600" />
@@ -556,7 +562,7 @@ const CalculateSchedule1 = () => {
                     </div>
 
                     {/* Schedule Table Card */}
-                    <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-2xl shadow-sm overflow-hidden backdrop-blur-md">
+                    <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] shadow-sm overflow-hidden backdrop-blur-md">
                         <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div className="flex items-center gap-2.5">
                                 <MdOutlineSchedule className="text-emerald-600 text-xl" />

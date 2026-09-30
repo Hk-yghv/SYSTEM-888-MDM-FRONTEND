@@ -2,10 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import ExportDropdown from '../../../components/ExportDropdown';
 import RepaymentScheduleModal from '../../Contract/components/RepaymentScheduleModal';
 import QrPaymentModal from '../components/QrPaymentModal';
-import { FaDollarSign, FaFileExcel, FaImage, FaTimes } from 'react-icons/fa';
-import { MdOutlineSync, MdPictureAsPdf, MdQrCode2 } from 'react-icons/md';
+import { FaDollarSign, FaImage, FaTimes } from 'react-icons/fa';
+import { MdOutlineSync, MdQrCode2 } from 'react-icons/md';
 
 const PAGE_SIZE = 25;
 const FETCH_LIMIT = 100000;
@@ -364,13 +365,9 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h1 className="text-lg font-bold text-slate-900">{pageTitle}</h1>
-                        <p className="text-xs text-slate-500">{isHistoryPage ? 'ប្រវត្តិភ្ញៀវដែលបានបង់ប្រាក់ តាមថ្ងៃបង់' : 'Installments due within the selected period'}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        {hasPermission(pagePath, 'export') && <>
-                            <button onClick={exportExcel} className="flex items-center gap-2 rounded-[5px] border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"><FaFileExcel /> Excel</button>
-                            <button onClick={exportPdf} className="flex items-center gap-2 rounded-[5px] border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-800"><MdPictureAsPdf /> PDF</button>
-                        </>}
+                        {hasPermission(pagePath, 'export') && <ExportDropdown onExportExcel={exportExcel} onExportPDF={exportPdf} />}
                         <button onClick={() => setReloadVersion(value => value + 1)} disabled={reloading} className="flex items-center gap-2 rounded-[5px] border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">
                             <MdOutlineSync className={reloading ? 'animate-spin' : ''} /> Refresh
                         </button>

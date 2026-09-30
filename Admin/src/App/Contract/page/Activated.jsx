@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ExportDropdown from '../../../components/ExportDropdown';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -351,7 +352,7 @@ const Activated = () => {
                         </div>
 
                         <form onSubmit={handleConfirmRedeem} className="space-y-4">
-                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl text-xs space-y-1">
+                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-[5px] text-xs space-y-1">
                                 <p className="font-bold text-purple-900">អតិថិជន៖ {redeemItem.customerNameEn} ({redeemItem.customerNameKh})</p>
                                 <p className="text-purple-700 font-mono">ម៉ូឌែល/Serial: {redeemItem.model} • {redeemItem.serialNumber}</p>
                             </div>
@@ -365,7 +366,7 @@ const Activated = () => {
                                     required
                                     value={redeemDateInput}
                                     onChange={(e) => setRedeemDateInput(e.target.value)}
-                                    className="w-full h-11 px-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono font-bold text-sm focus:outline-emerald-500"
+                                    className="w-full h-11 px-3 bg-slate-50 border border-slate-300 rounded-[5px] text-slate-900 font-mono font-bold text-sm focus:outline-emerald-500"
                                 />
                                 <p className="text-[11px] text-slate-500 mt-1 italic">
                                     * បំពេញអូតូថ្ងៃបច្ចុប្បន្ន។ អ្នកអាចប្តូរដាក់ថ្ងៃផ្សេងៗបានតាមតម្រូវការ។
@@ -376,13 +377,13 @@ const Activated = () => {
                                 <button
                                     type="button"
                                     onClick={() => setRedeemItem(null)}
-                                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 cursor-pointer"
+                                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-[5px] text-xs font-bold hover:bg-slate-200 cursor-pointer"
                                 >
                                     {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700 shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5"
+                                    className="px-5 py-2 bg-purple-600 text-white rounded-[5px] text-xs font-bold hover:bg-purple-700 shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5"
                                 >
                                     <MdSwapHoriz size={16} /> Submit Redeem
                                 </button>
@@ -393,7 +394,7 @@ const Activated = () => {
             )}
 
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('activated')}</span>
@@ -418,20 +419,7 @@ const Activated = () => {
                     {/* Export to Excel & PDF */}
                     {hasPermission('/contract/activated', 'export') && (
                         <>
-                            <button
-                                onClick={handleExportExcel}
-                                className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                            >
-                                <FaFileExcel className="text-emerald-600 text-sm" />
-                                <span>Excel</span>
-                            </button>
-                            <button
-                                onClick={handleExportPDF}
-                                className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                            >
-                                <MdPictureAsPdf className="text-red-600 text-sm" />
-                                <span>PDF</span>
-                            </button>
+                            <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                         </>
                     )}
 
@@ -447,7 +435,7 @@ const Activated = () => {
             </header>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -550,7 +538,7 @@ const Activated = () => {
                                                     </button>
 
                                                     {openMenuId === item._id && (
-                                                        <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                        <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
                                                             {matchingCalcSchedule && (
                                                                 <button
                                                                     onClick={() => {
@@ -566,7 +554,7 @@ const Activated = () => {
                                                             {canOpenMosyle && (
                                                                 <button
                                                                     onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <span>Open Mosyle</span>
                                                                 </button>
@@ -574,7 +562,7 @@ const Activated = () => {
                                                             {canOpenFb && (
                                                                 <button
                                                                     onClick={() => window.open(item.urlFb, '_blank')}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <span>Open Facebook</span>
                                                                 </button>
@@ -677,7 +665,7 @@ const Activated = () => {
                             <button type="button" onClick={() => setSelectedCommentItem(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold">✕</button>
                         </div>
 
-                        <div className="p-3 bg-gray-900/60 rounded-xl border border-gray-800 text-xs">
+                        <div className="p-3 bg-gray-900/60 rounded-[5px] border border-gray-800 text-xs">
                             <p className="text-gray-400">Customer: <span className="text-gray-100 font-bold">{selectedCommentItem.customerNameEn}</span></p>
                             <p className="text-gray-400">Model: <span className="text-gray-200 font-semibold">{selectedCommentItem.model}</span></p>
                         </div>
@@ -690,7 +678,7 @@ const Activated = () => {
                                 value={commentInput}
                                 onChange={(e) => setCommentInput(e.target.value)}
                                 placeholder="Type comment or notes about this contract..."
-                                className="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-xs text-gray-100 outline-none focus:border-cyan-500 font-sans"
+                                className="w-full p-3 bg-gray-900 border border-gray-700 rounded-[5px] text-xs text-gray-100 outline-none focus:border-cyan-500 font-sans"
                             ></textarea>
                         </div>
 
@@ -698,13 +686,13 @@ const Activated = () => {
                             <button
                                 type="button"
                                 onClick={() => setSelectedCommentItem(null)}
-                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold"
+                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-[5px] text-xs font-bold"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-600/30"
+                                className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-[5px] text-xs font-bold shadow-lg shadow-cyan-600/30"
                             >
                                 Submit Comment
                             </button>
@@ -725,7 +713,7 @@ const Activated = () => {
                             <button onClick={() => setSelectedInfo(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold cursor-pointer">✕</button>
                         </div>
 
-                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-900/60 border border-gray-800">
+                        <div className="flex items-center gap-4 p-4 rounded-[5px] bg-gray-900/60 border border-gray-800">
                             <div className='flex gap-3 justify-center items-center'>
                                 <h4 className="text-base font-bold text-gray-100">{selectedInfo.customerNameEn}</h4>
                                 <p className="text-sm text-indigo-400 font-khmer">{selectedInfo.customerNameKh}</p>
@@ -738,14 +726,14 @@ const Activated = () => {
                         <div className="space-y-3">
                             <h4 className="text-xs font-bold text-indigo-300 uppercase">Customer Info</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Contract ID</span><span className="font-mono text-gray-200 font-bold">{selectedInfo.contractId}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">ID Card</span><span className="font-mono text-gray-200">{selectedInfo.idCardNumber || '-'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-xl border border-gray-800"><span className="text-gray-400 block text-[10px]">Phone</span><span className="font-mono text-gray-200">{selectedInfo.phone || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Contract ID</span><span className="font-mono text-gray-200 font-bold">{selectedInfo.contractId}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">ID Card</span><span className="font-mono text-gray-200">{selectedInfo.idCardNumber || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Phone</span><span className="font-mono text-gray-200">{selectedInfo.phone || '-'}</span></div>
                             </div>
                         </div>
 
                         <div className="text-right pt-2">
-                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl cursor-pointer">Close</button>
+                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-[5px] cursor-pointer">Close</button>
                         </div>
                     </div>
                 </div>

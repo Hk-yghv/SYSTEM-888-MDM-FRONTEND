@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { MdOutlineBarChart, MdPictureAsPdf, MdOutlineSync, MdTableChart, MdPieChart } from 'react-icons/md';
@@ -211,22 +212,17 @@ const RedeemReport = () => {
 
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
-            <header className='p-4 w-full border border-slate-200 bg-white rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
+            <header className='p-4 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-xl font-black text-slate-900 flex items-center gap-2 tracking-wide'>
                             {t('redeemReport')}
                         </h1>
-                        <p className='text-xs text-amber-700 font-bold'>
-                            {t('redeemReport')} ({total})
-                        </p>
                     </div>
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <FaFileExcel className="text-emerald-600 text-sm" /><span>{t('exportExcel')}</span>
-                    </button>
+                    <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                     {/* PDF Orientation Toggle */}
                     <div className="flex items-center rounded-[5px] border border-slate-300 overflow-hidden shadow-xs">
                         <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
@@ -238,23 +234,21 @@ const RedeemReport = () => {
                             <span>🖼</span><span className="hidden sm:inline">Landscape</span>
                         </button>
                     </div>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>{activeTab === 'summary' ? 'PDF (Summary)' : t('exportPDF')}</span>
-                    </button>
+                    
                     <button onClick={() => { fetchData(page, searchTerm); fetchFullData(); }} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-amber-600' : ''} /><span>{t('reload')}</span>
                     </button>
                 </div>
             </header>
 
-            <div className="flex items-center border-b border-slate-200 bg-white rounded-t-2xl px-3 pt-2 gap-2 shadow-xs">
-                <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'dashboard' ? 'border-amber-600 text-amber-700 bg-amber-50/50 rounded-t-xl' : 'border-transparent text-slate-500'}`}>
+            <div className="flex items-center border-b border-slate-200 bg-white rounded-t-[5px] px-3 pt-2 gap-2 shadow-xs">
+                <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'dashboard' ? 'border-amber-600 text-amber-700 bg-amber-50/50 rounded-t-[5px]' : 'border-transparent text-slate-500'}`}>
                     <MdPieChart size={16} /><span>1. {t('dashboardAnalytics')}</span>
                 </button>
-                <button onClick={() => setActiveTab('detail')} className={`px-4 py-2.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'detail' ? 'border-amber-600 text-amber-700 bg-amber-50/50 rounded-t-xl' : 'border-transparent text-slate-500'}`}>
+                <button onClick={() => setActiveTab('detail')} className={`px-4 py-2.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'detail' ? 'border-amber-600 text-amber-700 bg-amber-50/50 rounded-t-[5px]' : 'border-transparent text-slate-500'}`}>
                     <MdTableChart size={16} /><span>2. {t('detailedInfo')}</span>
                 </button>
-                <button onClick={() => setActiveTab('summary')} className={`px-4 py-2.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'summary' ? 'border-amber-600 text-amber-700 bg-amber-50/50 rounded-t-xl' : 'border-transparent text-slate-500'}`}>
+                <button onClick={() => setActiveTab('summary')} className={`px-4 py-2.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'summary' ? 'border-amber-600 text-amber-700 bg-amber-50/50 rounded-t-[5px]' : 'border-transparent text-slate-500'}`}>
                     <MdOutlineBarChart size={16} /><span>3. {t('summaryTable')}</span>
                 </button>
             </div>
@@ -263,7 +257,7 @@ const RedeemReport = () => {
             {activeTab === 'dashboard' && (
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
+                        <div className="p-4 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-4">
                             <div className="w-12 h-12 rounded-[5px] bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-xl font-bold">
                                 <FaUndoAlt />
                             </div>
@@ -273,7 +267,7 @@ const RedeemReport = () => {
                             </div>
                         </div>
 
-                        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
+                        <div className="p-4 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-4">
                             <div className="w-12 h-12 rounded-[5px] bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-xl font-bold">
                                 <FaDollarSign />
                             </div>
@@ -295,19 +289,19 @@ const RedeemReport = () => {
                         ]}
                     />
 
-                    <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div className="p-5 bg-white rounded-[5px] border border-slate-200 shadow-xs space-y-4">
                         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                             <MdPieChart className="text-amber-600 text-lg" />
                             <span>Redeemed Devices Breakdown by Brand (ក្រាបឧបករណ៍លោះយកតាម Brand)</span>
                         </h3>
-                        <div className="h-56 w-full bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-end justify-around gap-4">
+                        <div className="h-56 w-full bg-slate-50 rounded-[5px] p-4 border border-slate-200 flex items-end justify-around gap-4">
                             {summaryBreakdown.rows.map((r) => {
                                 const maxVal = Math.max(...summaryBreakdown.rows.map(x => x.totalRedeem), 1);
                                 const pct = Math.min(100, Math.max(15, (r.totalRedeem / maxVal) * 100));
                                 return (
                                     <div key={r.brand} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
                                         <span className="text-[10px] font-bold text-slate-700 truncate max-w-[80px]">{r.brand} ({r.totalRedeem})</span>
-                                        <div style={{ height: `${pct}%` }} className="w-full bg-gradient-to-t from-amber-600 to-amber-400 rounded-t-xl shadow-md transition-all"></div>
+                                        <div style={{ height: `${pct}%` }} className="w-full bg-gradient-to-t from-amber-600 to-amber-400 rounded-t-[5px] shadow-md transition-all"></div>
                                     </div>
                                 );
                             })}
@@ -318,7 +312,7 @@ const RedeemReport = () => {
 
             {/* Tab 2: Detailed Info */}
             {activeTab === 'detail' && (
-                <div className='w-full overflow-x-auto h-[calc(100vh-350px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+                <div className='w-full overflow-x-auto h-[calc(100vh-350px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                             <tr>
@@ -354,7 +348,7 @@ const RedeemReport = () => {
 
             {/* Tab 3: Summary Table */}
             {activeTab === 'summary' && (
-                <div className='w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-md p-4 space-y-4'>
+                <div className='w-full overflow-x-auto rounded-[5px] border border-slate-200 bg-white shadow-md p-4 space-y-4'>
                     <div className="border-b border-slate-200 pb-2">
                         <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                             <MdTableChart className="text-amber-600 text-xl" />

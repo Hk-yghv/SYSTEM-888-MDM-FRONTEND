@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { FaHistory, FaFileExcel, FaSearch, FaUserShield, FaTelegramPlane, FaClock, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
@@ -205,25 +206,17 @@ const LoginHistory = () => {
             )}
 
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
                             {t('loginHistory')}
                         </h1>
-                        <p className='text-xs text-indigo-700 font-semibold'>
-                            Total: {total}
-                        </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
-                    </button>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
-                    </button>
+                    <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                     <button onClick={() => fetchLoginHistory(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-600' : ''} />
                         <p>{t('reload')}</p>
@@ -232,7 +225,7 @@ const LoginHistory = () => {
             </header>
 
             {/* Telegram & Google Sheet Auto-Send Countdown Card (Clean White Light Theme) */}
-            <div className='w-full bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-4'>
+            <div className='w-full bg-white border border-slate-200 rounded-[5px] p-4 shadow-xs flex flex-wrap items-center justify-between gap-4'>
                 <div className='flex items-center gap-3.5'>
                     <div>
                         <div className='flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wider'>
@@ -287,7 +280,7 @@ const LoginHistory = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <div className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='relative flex-1 min-w-[240px]'>
                     <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs' />
                     <input
@@ -338,7 +331,7 @@ const LoginHistory = () => {
             </div>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-450px)] pb-28 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-450px)] pb-28 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>

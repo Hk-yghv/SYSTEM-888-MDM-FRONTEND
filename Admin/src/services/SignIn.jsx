@@ -116,7 +116,7 @@ const SignIn = () => {
 
                 {/* Logo & Header */}
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 mx-auto flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-4 icon-animated-glow">
+                    <div className="w-16 h-16 rounded-[5px] bg-gradient-to-tr from-indigo-600 to-purple-600 mx-auto flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-4 icon-animated-glow">
                         <MdOutlineDashboard className="text-3xl text-white" />
                     </div>
                     <h1 className="text-2xl font-black gradient-text-blue tracking-wide">SYSTEM MDM</h1>
@@ -125,7 +125,7 @@ const SignIn = () => {
 
                 {/* Error Message */}
                 {error && (
-                    <div className={`mb-5 p-3 rounded-xl border text-xs font-semibold text-center flex items-start gap-2 ${isBlocked ? 'bg-amber-950/60 border-amber-700/80 text-amber-300' : 'bg-red-950/60 border-red-800/80 text-red-300'}`}>
+                    <div className={`mb-5 p-3 rounded-[5px] border text-xs font-semibold text-center flex items-start gap-2 ${isBlocked ? 'bg-amber-950/60 border-amber-700/80 text-amber-300' : 'bg-red-950/60 border-red-800/80 text-red-300'}`}>
                         {isBlocked ? <FaClock className="text-amber-400 text-sm flex-shrink-0 mt-0.5" /> : <FaExclamationTriangle className="text-red-400 text-sm flex-shrink-0 mt-0.5" />}
                         <span>{error}</span>
                     </div>
@@ -133,7 +133,7 @@ const SignIn = () => {
 
                 {/* Cooldown Timer Banner */}
                 {isBlocked && (
-                    <div className="mb-5 p-4 rounded-2xl bg-amber-950/50 border border-amber-700/60 text-center">
+                    <div className="mb-5 p-4 rounded-[5px] bg-amber-950/50 border border-amber-700/60 text-center">
                         <p className="text-amber-400 font-bold text-sm mb-1 flex items-center justify-center gap-2">
                             <FaClock className="animate-pulse" />
                             Login Locked — IP Cooldown Active
@@ -158,7 +158,7 @@ const SignIn = () => {
                                     onChange={(e) => setUsername(e.target.value)}
                                     placeholder="Enter username (e.g. @hakyonghouv)"
                                     disabled={isBlocked}
-                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-xl text-sm text-gray-100 placeholder-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-[5px] text-sm text-gray-100 placeholder-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
                         </div>
@@ -174,7 +174,7 @@ const SignIn = () => {
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter password"
                                     disabled={isBlocked}
-                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-xl text-sm text-gray-100 placeholder-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-[5px] text-sm text-gray-100 placeholder-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
                         </div>
@@ -189,7 +189,7 @@ const SignIn = () => {
                         <button
                             type="submit"
                             disabled={loading || isBlocked}
-                            className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all transform active:scale-95 cursor-pointer text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+                            className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-[5px] shadow-lg shadow-indigo-600/30 transition-all transform active:scale-95 cursor-pointer text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
                         >
                             {loading ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -209,7 +209,7 @@ const SignIn = () => {
                 ) : (
                     /* 2FA OTP Form */
                     <form onSubmit={handleVerifyOtp} className="space-y-5 animate-in fade-in duration-300">
-                        <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-800/60 text-center">
+                        <div className="p-4 rounded-[5px] bg-indigo-950/40 border border-indigo-800/60 text-center">
                             <FaTelegramPlane className="text-3xl text-indigo-400 mx-auto mb-2 animate-bounce" />
                             <h3 className="text-sm font-bold text-gray-100">{t('telegram2FA')}</h3>
                             <p className="text-xs text-gray-300 mt-1">
@@ -227,7 +227,7 @@ const SignIn = () => {
                                     value={secondPassword}
                                     onChange={(e) => setSecondPassword(e.target.value)}
                                     placeholder="Enter 2FA Password"
-                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-xl text-sm text-gray-100 placeholder-gray-500 transition-all"
+                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-[5px] text-sm text-gray-100 placeholder-gray-500 transition-all"
                                 />
                             </div>
                         </div>
@@ -243,7 +243,7 @@ const SignIn = () => {
                                     value={otp}
                                     onChange={(e) => setOtp(e.target.value)}
                                     placeholder="Enter 6-digit OTP"
-                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-xl text-center tracking-widest text-lg font-mono text-indigo-300 placeholder-gray-500 transition-all"
+                                    className="w-full h-12 pl-11 pr-4 bg-gray-900/80 border border-gray-700/80 focus:border-indigo-500 rounded-[5px] text-center tracking-widest text-lg font-mono text-indigo-300 placeholder-gray-500 transition-all"
                                 />
                             </div>
                         </div>
@@ -251,7 +251,7 @@ const SignIn = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full h-12 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/30 transition-all transform active:scale-95 cursor-pointer text-sm flex items-center justify-center gap-2"
+                            className="w-full h-12 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-[5px] shadow-lg shadow-purple-600/30 transition-all transform active:scale-95 cursor-pointer text-sm flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

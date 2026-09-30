@@ -276,12 +276,7 @@ const KhmerCalendarPage = () => {
         <main className="min-h-full bg-[var(--app-bg,#f4f6f8)] p-3 sm:p-5 space-y-4">
             <header className="flex flex-col gap-4 border-b border-[var(--app-border,#dbe3e8)] pb-4 xl:flex-row xl:items-end xl:justify-between">
                 <div>
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-emerald-700">
-                        <MdEvent size={16} />
-                        <span>ប្រតិទិនខ្មែរ</span>
-                    </div>
                     <h1 className="mt-1 text-2xl font-bold text-[var(--app-text,#102a2a)]">{monthTitle}</h1>
-                    {selectedDateInfo && <p className="mt-1 text-sm text-[var(--app-text-muted,#64748b)]">{selectedDateInfo.lunarDateText}</p>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <button type="button" onClick={() => moveMonth(-1)} aria-label="ខែមុន" className="h-9 w-9 flex items-center justify-center border border-[var(--app-border,#cbd5e1)] bg-white text-slate-700 hover:bg-emerald-50">

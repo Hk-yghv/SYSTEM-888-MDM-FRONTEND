@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import {
@@ -666,21 +667,12 @@ const SalaryPage = () => {
         return (
             <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-4 select-none space-y-5 relative min-h-screen">
                 {/* Header Bar */}
-                <header className="p-4 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
-                    <div className="flex items-center gap-3.5">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-cyan-600 text-white flex items-center justify-center text-2xl shadow-lg shadow-emerald-600/20">
-                            <FaUsers />
-                        </div>
+                <header className="p-4 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+                    <div>
                         <div>
                             <h1 className="text-base sm:text-lg font-black text-[var(--app-text,#0f172a)] flex items-center gap-2">
                                 <span>ផ្ទាំងជ្រើសរើសបុគ្គលិកដើម្បីពិនិត្យប្រាក់ខែ (Staff Salary Directory)</span>
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                    Admin View
-                                </span>
                             </h1>
-                            <p className="text-xs text-slate-500 font-medium">
-                                សូមចុចលើបុគ្គលិកណាម្នាក់ ដើម្បីពិនិត្យ ឬគ្រប់គ្រងកំណត់ត្រាប្រាក់ខែលម្អិតរបស់គាត់
-                            </p>
                         </div>
                     </div>
 
@@ -688,7 +680,7 @@ const SalaryPage = () => {
                         {hasPermission('/salary', 'create') && (
                             <button
                                 onClick={() => handleOpenCreate()}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/30 transition-all active:scale-95"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/30 transition-all active:scale-95"
                             >
                                 <FaPlus />
                                 <span>បញ្ចូលប្រាក់ខែថ្មី (Create Entry)</span>
@@ -697,7 +689,7 @@ const SalaryPage = () => {
                         <button
                             onClick={fetchStaffDirectory}
                             disabled={staffLoading}
-                            className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs"
+                            className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs"
                         >
                             <FaSync className={staffLoading ? 'animate-spin text-emerald-600' : ''} />
                             <span>{t('reload') || 'Reload'}</span>
@@ -707,7 +699,7 @@ const SalaryPage = () => {
 
                 {/* Directory Stats KPI Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">បុគ្គលិកសរុប (Total Staff)</p>
                             <h3 className="text-2xl font-black text-slate-800 dark:text-white font-khmer mt-1">
@@ -715,12 +707,12 @@ const SalaryPage = () => {
                             </h3>
                             <p className="text-[10px] text-slate-400 mt-0.5">គណនី និងបុគ្គលិកទាំងអស់</p>
                         </div>
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-2xl">
+                        <div className="w-12 h-12 rounded-[5px] bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-2xl">
                             <FaUsers />
                         </div>
                     </div>
 
-                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ទឹកប្រាក់បើកសរុប (Total Disbursed)</p>
                             <h3 className="text-2xl font-black text-emerald-600 font-mono mt-1">
@@ -728,12 +720,12 @@ const SalaryPage = () => {
                             </h3>
                             <p className="text-[10px] text-slate-400 mt-0.5">ទូទាំងប្រព័ន្ធបុគ្គលិក</p>
                         </div>
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-2xl">
+                        <div className="w-12 h-12 rounded-[5px] bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-2xl">
                             <FaDollarSign />
                         </div>
                     </div>
 
-                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">កំណត់ត្រាប្រាក់ខែសរុប (Total Records)</p>
                             <h3 className="text-2xl font-black text-cyan-600 font-mono mt-1">
@@ -741,14 +733,14 @@ const SalaryPage = () => {
                             </h3>
                             <p className="text-[10px] text-slate-400 mt-0.5">ទិន្នន័យប្រាក់ខែបានកត់ត្រា</p>
                         </div>
-                        <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center text-2xl">
+                        <div className="w-12 h-12 rounded-[5px] bg-cyan-500/10 text-cyan-600 flex items-center justify-center text-2xl">
                             <FaReceipt />
                         </div>
                     </div>
                 </div>
 
                 {/* Search Staff Bar */}
-                <div className="bg-[var(--app-card,white)] p-3 rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex items-center justify-between gap-3">
+                <div className="bg-[var(--app-card,white)] p-3 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex items-center justify-between gap-3">
                     <div className="relative flex-1">
                         <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                         <input
@@ -756,13 +748,13 @@ const SalaryPage = () => {
                             value={staffSearchTerm}
                             onChange={(e) => setStaffSearchTerm(e.target.value)}
                             placeholder="ស្វែងរកឈ្មោះបុគ្គលិក (ខ្មែរ / English), username, role, ឬសាខា..."
-                            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)] font-medium"
+                            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[5px] outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)] font-medium"
                         />
                     </div>
                     {staffSearchTerm && (
                         <button
                             onClick={() => setStaffSearchTerm('')}
-                            className="px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                            className="px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-[5px] transition cursor-pointer"
                         >
                             សម្អាត
                         </button>
@@ -776,7 +768,7 @@ const SalaryPage = () => {
                         <p className="text-xs font-semibold">កំពុងទាញយកបញ្ជីឈ្មោះបុគ្គលិកទាំងអស់...</p>
                     </div>
                 ) : filteredStaffDirectory.length === 0 ? (
-                    <div className="bg-[var(--app-card,white)] border border-dashed border-slate-300 rounded-2xl p-12 text-center text-slate-400">
+                    <div className="bg-[var(--app-card,white)] border border-dashed border-slate-300 rounded-[5px] p-12 text-center text-slate-400">
                         <FaUserTie className="text-4xl mx-auto opacity-30 mb-2" />
                         <p className="text-sm font-bold text-slate-600">មិនមានទិន្នន័យបុគ្គលិកត្រូវនឹងការស្វែងរកទេ</p>
                         <p className="text-xs text-slate-400 mt-1">សូមចុចប៊ូតុង "បញ្ចូលប្រាក់ខែថ្មី" ដើម្បីបង្កើតកំណត់ត្រាដំបូង</p>
@@ -791,7 +783,7 @@ const SalaryPage = () => {
                             return (
                                 <div
                                     key={staff.key || idx}
-                                    className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] hover:border-emerald-500/70 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative overflow-hidden"
+                                    className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] hover:border-emerald-500/70 rounded-[5px] p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative overflow-hidden"
                                 >
                                     {/* Top decorative accent */}
                                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 opacity-80 group-hover:h-1.5 transition-all"></div>
@@ -799,7 +791,7 @@ const SalaryPage = () => {
                                     <div className="space-y-3 pt-1">
                                         {/* Avatar & Main Identity */}
                                         <div className="flex items-start gap-3">
-                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center text-xl font-black shadow-md shadow-emerald-600/20 shrink-0">
+                                            <div className="w-12 h-12 rounded-[5px] bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center text-xl font-black shadow-md shadow-emerald-600/20 shrink-0">
                                                 {displayNameEn.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="min-w-0 flex-1">
@@ -825,7 +817,7 @@ const SalaryPage = () => {
                                         </div>
 
                                         {/* Employment Join Date */}
-                                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 space-y-1">
+                                        <div className="p-2.5 rounded-[5px] bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 space-y-1">
                                             <div className="flex items-center justify-between text-[11px]">
                                                 <span className="text-slate-400 flex items-center gap-1 font-medium">
                                                     <FaCalendarAlt className="text-amber-500" />
@@ -864,7 +856,7 @@ const SalaryPage = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleSelectStaff(staff)}
-                                            className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                                            className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5 active:scale-95"
                                         >
                                             <FaEye />
                                             <span>មើលប្រាក់ខែ</span>
@@ -872,7 +864,7 @@ const SalaryPage = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleOpenCreate(staff)}
-                                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[5px] text-xs font-bold cursor-pointer transition-all"
                                             title="បញ្ចូលប្រាក់ខែឱ្យបុគ្គលិកនេះ"
                                         >
                                             <FaPlus />
@@ -912,12 +904,12 @@ const SalaryPage = () => {
         <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-4 select-none space-y-4 relative min-h-screen">
             {/* Admin Switcher Top Banner */}
             {isAdmin && selectedStaff && (
-                <div className="p-3 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-700">
+                <div className="p-3 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[5px] shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-700">
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
                             onClick={handleBackToDirectory}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold cursor-pointer transition border border-white/20 active:scale-95"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-[5px] text-xs font-bold cursor-pointer transition border border-white/20 active:scale-95"
                         >
                             <FaArrowLeft />
                             <span>បញ្ជីបុគ្គលិកទាំងអស់ (All Staff)</span>
@@ -941,7 +933,7 @@ const SalaryPage = () => {
                                 const target = staffDirectory.find(s => (s.key || s.staffName) === e.target.value);
                                 if (target) handleSelectStaff(target);
                             }}
-                            className="px-3 py-1.5 bg-slate-800 text-white border border-slate-600 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                            className="px-3 py-1.5 bg-slate-800 text-white border border-slate-600 rounded-[5px] text-xs font-bold outline-none cursor-pointer"
                         >
                             {staffDirectory.map((s, idx) => (
                                 <option key={s.key || idx} value={s.key || s.staffName}>
@@ -954,18 +946,12 @@ const SalaryPage = () => {
             )}
 
             {/* Header Bar */}
-            <header className="p-3 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-green-500 flex items-center justify-center text-xl shadow-md shadow-emerald-600/30">
-                        <FaMoneyBillWave />
-                    </div>
+            <header className="p-3 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+                <div>
                     <div>
                         <h1 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
                             <span>គ្រប់គ្រងប្រាក់ខែ (Salary Management)</span>
                         </h1>
-                        <p className="text-xs text-slate-500">
-                            {selectedStaff ? `តាមដាន និងគ្រប់គ្រងទិន្នន័យប្រាក់ខែរបស់ ${savedStaffNameKh || savedStaffNameEn || selectedStaff.staffName}` : 'តាមដាន បញ្ចូល និងគ្រប់គ្រងទិន្នន័យប្រាក់ខែបុគ្គលិក'}
-                        </p>
                     </div>
                 </div>
 
@@ -988,20 +974,7 @@ const SalaryPage = () => {
                     )}
                     {hasPermission('/salary', 'export') && (
                         <>
-                            <button
-                                onClick={handleExportExcel}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
-                            >
-                                <FaFileExcel className="text-emerald-600 text-sm" />
-                                <span>Excel</span>
-                            </button>
-                            <button
-                                onClick={handleExportPDF}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
-                            >
-                                <FaFilePdf className="text-red-600 text-sm" />
-                                <span>PDF</span>
-                            </button>
+                            <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                         </>
                     )}
                     <button
@@ -1018,9 +991,9 @@ const SalaryPage = () => {
             {/* Top Employment Card: Names + Join Date + QR Code */}
             {savedJoinDate && !isEditingDate ? (
                 /* Saved State Card */
-                <div className="p-4 w-full border border-emerald-300/80 dark:border-emerald-700/60 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-cyan-950/30 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="p-4 w-full border border-emerald-300/80 dark:border-emerald-700/60 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-cyan-950/30 rounded-[5px] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex flex-col items-center justify-center shadow-lg shadow-emerald-600/30 shrink-0">
+                        <div className="w-14 h-14 rounded-[5px] bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex flex-col items-center justify-center shadow-lg shadow-emerald-600/30 shrink-0">
                             <span className="text-[10px] uppercase font-bold tracking-wider opacity-90">
                                 {getKhmerDateDetails(savedJoinDate).dayName}
                             </span>
@@ -1060,7 +1033,7 @@ const SalaryPage = () => {
                                     title: `រូបភាព QR Code របស់យើង (Our QR Code) - ${savedStaffNameKh || savedStaffNameEn || 'Staff'}`,
                                     filename: `Salary_QRCode_${(savedStaffNameKh || savedStaffNameEn || 'Staff').replace(/\s+/g, '_')}.png`
                                 })}
-                                className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/30 active:scale-95"
+                                className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/30 active:scale-95"
                                 title="ចុចដើម្បីបើកមើល QR Code របស់យើង និងទាញយក (View & Download QR Code)"
                             >
                                 <FaQrcode className="text-sm" />
@@ -1070,7 +1043,7 @@ const SalaryPage = () => {
                             <button
                                 type="button"
                                 onClick={handleEditDate}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-200 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
                                 title="បញ្ចូលរូបភាព QR Code ទទួលប្រាក់"
                             >
                                 <FaQrcode className="text-emerald-600" />
@@ -1081,7 +1054,7 @@ const SalaryPage = () => {
                         <button
                             type="button"
                             onClick={handleEditDate}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
+                            className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
                         >
                             <FaEdit />
                             <span>កែប្រែ</span>
@@ -1091,7 +1064,7 @@ const SalaryPage = () => {
                             <button
                                 type="button"
                                 onClick={() => handleOpenCreate()}
-                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-xl text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all active:scale-95 animate-in fade-in"
+                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-[5px] text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all active:scale-95 animate-in fade-in"
                             >
                                 <FaPlus />
                                 <span>បញ្ចូលប្រាក់ខែ (Create Salary)</span>
@@ -1101,9 +1074,9 @@ const SalaryPage = () => {
                 </div>
             ) : (
                 /* Edit & Setup State Card */
-                <div className="p-4 w-full border border-amber-300/80 dark:border-amber-700/60 bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-amber-50/90 dark:from-amber-950/30 dark:via-slate-900/60 dark:to-orange-950/20 rounded-2xl shadow-sm flex flex-col gap-4">
+                <div className="p-4 w-full border border-amber-300/80 dark:border-amber-700/60 bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-amber-50/90 dark:from-amber-950/30 dark:via-slate-900/60 dark:to-orange-950/20 rounded-[5px] shadow-sm flex flex-col gap-4">
                     <div className="flex items-start sm:items-center gap-3.5">
-                        <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-amber-500/30 shrink-0">
+                        <div className="w-12 h-12 rounded-[5px] bg-amber-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-amber-500/30 shrink-0">
                             <FaCalendarAlt />
                         </div>
                         <div>
@@ -1123,7 +1096,7 @@ const SalaryPage = () => {
 
                     {/* Name Fields Row */}
                     <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs flex-1 min-w-[160px]">
+                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs flex-1 min-w-[160px]">
                             <FaUserTie className="text-emerald-600 text-xs shrink-0" />
                             <input
                                 type="text"
@@ -1133,7 +1106,7 @@ const SalaryPage = () => {
                                 className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 outline-none w-full"
                             />
                         </div>
-                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs flex-1 min-w-[160px]">
+                        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs flex-1 min-w-[160px]">
                             <FaUserTie className="text-indigo-500 text-xs shrink-0" />
                             <input
                                 type="text"
@@ -1148,7 +1121,7 @@ const SalaryPage = () => {
                     {/* Date Fields Row */}
                     <div className="flex items-center gap-2 flex-wrap">
                         {/* Day Select */}
-                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs">
+                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs">
                             <span className="text-[11px] font-bold text-slate-500">ទី:</span>
                             <select
                                 value={tempDay}
@@ -1164,7 +1137,7 @@ const SalaryPage = () => {
                         </div>
 
                         {/* Month Select */}
-                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs">
+                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs">
                             <span className="text-[11px] font-bold text-slate-500">ខែ:</span>
                             <select
                                 value={tempMonth}
@@ -1180,7 +1153,7 @@ const SalaryPage = () => {
                         </div>
 
                         {/* Year Select */}
-                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs">
+                        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs">
                             <span className="text-[11px] font-bold text-slate-500">ឆ្នាំ:</span>
                             <select
                                 value={tempYear}
@@ -1196,7 +1169,7 @@ const SalaryPage = () => {
                         </div>
 
                         {/* Calendar Picker Sync */}
-                        <div className="flex items-center bg-white dark:bg-slate-800 px-2 py-1.5 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs" title="ឬជ្រើសពី Calendar">
+                        <div className="flex items-center bg-white dark:bg-slate-800 px-2 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs" title="ឬជ្រើសពី Calendar">
                             <input
                                 type="date"
                                 value={computeTempDateString(tempYear, tempMonth, tempDay)}
@@ -1217,7 +1190,7 @@ const SalaryPage = () => {
                     </div>
 
                     {/* QR Code Upload Row */}
-                    <div className="flex flex-wrap items-center gap-2 p-2.5 bg-white dark:bg-slate-800 rounded-xl border border-amber-300 dark:border-amber-600 shadow-xs">
+                    <div className="flex flex-wrap items-center gap-2 p-2.5 bg-white dark:bg-slate-800 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs">
                         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                             <FaQrcode className="text-emerald-600 text-sm shrink-0" />
                             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
@@ -1276,7 +1249,7 @@ const SalaryPage = () => {
                         <button
                             type="button"
                             onClick={handleSaveDate}
-                            className="flex items-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md shadow-emerald-600/30 transition-all active:scale-95"
+                            className="flex items-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/30 transition-all active:scale-95"
                         >
                             <FaSave />
                             <span>រក្សាទុក (Save Info & QR)</span>
@@ -1286,7 +1259,7 @@ const SalaryPage = () => {
                             <button
                                 type="button"
                                 onClick={() => setIsEditingDate(false)}
-                                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-[5px] text-xs font-bold cursor-pointer transition-all"
                             >
                                 បោះបង់
                             </button>
@@ -1298,7 +1271,7 @@ const SalaryPage = () => {
             {/* Summary Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                 {/* Grand Total */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">សរុបប្រាក់ខែ (Total Salary)</p>
                         <h3 className="text-xl font-black text-emerald-600 font-mono mt-1">
@@ -1306,13 +1279,13 @@ const SalaryPage = () => {
                         </h3>
                         <p className="text-[10px] text-slate-400 mt-0.5">({stats.totalRecords || total} កំណត់ត្រា)</p>
                     </div>
-                    <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-xl">
+                    <div className="w-11 h-11 rounded-[5px] bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-xl">
                         <FaDollarSign />
                     </div>
                 </div>
 
                 {/* This Month */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ប្រាក់ខែខែនេះ (This Month)</p>
                         <h3 className="text-xl font-black text-cyan-600 font-mono mt-1">
@@ -1320,13 +1293,13 @@ const SalaryPage = () => {
                         </h3>
                         <p className="text-[10px] text-slate-400 mt-0.5">{new Date().toISOString().slice(0, 7)}</p>
                     </div>
-                    <div className="w-11 h-11 rounded-2xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center text-xl">
+                    <div className="w-11 h-11 rounded-[5px] bg-cyan-500/10 text-cyan-600 flex items-center justify-center text-xl">
                         <FaCalendarCheck />
                     </div>
                 </div>
 
                 {/* Total Transactions */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ចំនួនកំណត់ត្រាសរុប (Total Records)</p>
                         <h3 className="text-xl font-black text-indigo-600 font-mono mt-1">
@@ -1334,13 +1307,13 @@ const SalaryPage = () => {
                         </h3>
                         <p className="text-[10px] text-slate-400 mt-0.5">ទិន្នន័យបានបញ្ចូល</p>
                     </div>
-                    <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-xl">
+                    <div className="w-11 h-11 rounded-[5px] bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-xl">
                         <FaUserTie />
                     </div>
                 </div>
 
                 {/* Monthly Average */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">មធ្យមភាគប្រចាំខែ (Avg / Month)</p>
                         <h3 className="text-xl font-black text-amber-600 font-mono mt-1">
@@ -1352,7 +1325,7 @@ const SalaryPage = () => {
                         </h3>
                         <p className="text-[10px] text-slate-400 mt-0.5">គណនាតាមខែដែលមានទិន្នន័យ</p>
                     </div>
-                    <div className="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-xl">
+                    <div className="w-11 h-11 rounded-[5px] bg-amber-500/10 text-amber-600 flex items-center justify-center text-xl">
                         <FaReceipt />
                     </div>
                 </div>
@@ -1367,7 +1340,7 @@ const SalaryPage = () => {
             />
 
             {/* Filter & Search Bar */}
-            <div className="bg-[var(--app-card,white)] p-3 rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-[var(--app-card,white)] p-3 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[260px]">
                     <div className="relative flex-1">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
@@ -1431,7 +1404,7 @@ const SalaryPage = () => {
             </div>
 
             {/* Salary Data Table */}
-            <div className="w-full overflow-x-auto rounded-2xl border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] shadow-md table-container">
+            <div className="w-full overflow-x-auto rounded-[5px] border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] shadow-md table-container">
                 <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-[var(--app-border,#e2e8f0)]">
                         <tr>
@@ -1590,7 +1563,7 @@ const SalaryPage = () => {
                     onClick={() => setPreviewImage(null)}
                 >
                     <div
-                        className="relative max-w-3xl max-h-[88vh] bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden p-2 shadow-2xl flex flex-col items-center"
+                        className="relative max-w-3xl max-h-[88vh] bg-slate-900 border border-slate-700 rounded-[5px] overflow-hidden p-2 shadow-2xl flex flex-col items-center"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="w-full flex items-center justify-between p-2 text-white border-b border-slate-800 mb-2 gap-3 flex-wrap">
@@ -1655,7 +1628,7 @@ const CreateEditSalaryModal = ({
 }) => {
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-150">
-            <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+            <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] w-full max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--app-border,#e2e8f0)] bg-emerald-600 text-white shrink-0">
                     <h3 className="text-sm font-bold flex items-center gap-2">
@@ -1834,7 +1807,7 @@ const CreateEditSalaryModal = ({
 
                             {/* Preview Box */}
                             {formData.proofPhoto && (
-                                <div className="relative inline-block border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden p-1 bg-slate-50 dark:bg-slate-800">
+                                <div className="relative inline-block border border-slate-300 dark:border-slate-700 rounded-[5px] overflow-hidden p-1 bg-slate-50 dark:bg-slate-800">
                                     <img
                                         src={formData.proofPhoto}
                                         alt="Receipt Preview"

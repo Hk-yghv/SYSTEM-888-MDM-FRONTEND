@@ -515,17 +515,11 @@ const ControlSystem = () => {
     return (
         <div id="control-system-explorer" className='w-full bg-transparent p-3 md:p-5 select-none space-y-4'>
             <header className='p-3 w-full border border-slate-300 bg-white rounded-md flex flex-col xl:flex-row xl:items-center justify-between gap-3 shadow-sm'>
-                <div className='flex items-center gap-3'>
-                    <div className='w-10 h-10 rounded-md bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-700 text-xl'>
-                        <IoIosSettings />
-                    </div>
+                <div>
                     <div>
                         <h1 className='text-lg font-bold text-slate-800 flex items-center gap-2'>
                             {t('controlSystem')} Dynamic Configurations
                         </h1>
-                        <p className='text-xs text-slate-500 font-semibold'>
-                            System configuration registry
-                        </p>
                     </div>
                 </div>
 
@@ -535,7 +529,7 @@ const ControlSystem = () => {
                             type="button"
                             onClick={handleRestoreFromFirebase}
                             disabled={restoring}
-                            className='flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-orange-600/20 transition-all border border-amber-400/30'
+                            className='flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold cursor-pointer shadow-md shadow-orange-600/20 transition-all border border-amber-400/30'
                             title="Restore and synchronize MongoDB from latest Firebase Backup"
                         >
                             <MdOutlineSettingsBackupRestore size={16} className={restoring ? 'spin-reload' : ''} />
@@ -545,7 +539,7 @@ const ControlSystem = () => {
                     <button
                         onClick={handleSaveAllConfigs}
                         disabled={saving}
-                        className='flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold cursor-pointer shadow-lg shadow-emerald-600/20 transition-all'
+                        className='flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold cursor-pointer shadow-lg shadow-emerald-600/20 transition-all'
                     >
                         <MdSave size={16} />
                         <span>{saving ? 'រក្សាទុក...' : 'Save All Settings'}</span>
@@ -690,7 +684,7 @@ const ControlSystem = () => {
                                 type="text"
                                 value={lockphoneDisplayText}
                                 onChange={(e) => setLockphoneDisplayText(e.target.value)}
-                                className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-khmer"
+                                className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-khmer"
                                 placeholder="e.g. ទូរស័ព្ទរបស់ {{customerName}} ត្រូវបានចាក់សោ"
                             />
                             <p className="mt-1.5 text-[10px] text-amber-400/80 font-mono leading-relaxed">
@@ -703,7 +697,7 @@ const ControlSystem = () => {
                                 type="text"
                                 value={lockphonePhoneNumber}
                                 onChange={(e) => setLockphonePhoneNumber(e.target.value)}
-                                className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono"
+                                className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-mono"
                                 placeholder="+855 12 903 120"
                             />
                         </div>
@@ -714,7 +708,7 @@ const ControlSystem = () => {
                                     saveConfigToMongoDB('lockphone_phone_number', lockphonePhoneNumber);
                                 }}
                                 disabled={saving}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-lg shadow-red-600/30"
+                                className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-[5px] font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-lg shadow-red-600/30"
                             >
                                 <MdSave size={16} /> Save Lock Config
                             </button>
@@ -738,7 +732,7 @@ const ControlSystem = () => {
                                 <select
                                     value={newPenaltyBrand}
                                     onChange={(e) => setNewPenaltyBrand(e.target.value)}
-                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold"
+                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-semibold"
                                 >
                                     <option value="">Global</option>
                                     {brandsList.map((b, idx) => (
@@ -754,7 +748,7 @@ const ControlSystem = () => {
                                     step="1"
                                     value={newPenaltyDays}
                                     onChange={(e) => setNewPenaltyDays(Number(e.target.value) || 0)}
-                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono"
+                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-mono"
                                 />
                             </div>
                             <div>
@@ -765,7 +759,7 @@ const ControlSystem = () => {
                                     step="0.01"
                                     value={newPenaltyAmount}
                                     onChange={(e) => setNewPenaltyAmount(Number(e.target.value) || 0)}
-                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-mono"
+                                    className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-mono"
                                 />
                             </div>
                         </div>
@@ -781,7 +775,7 @@ const ControlSystem = () => {
                                     setNewPenaltyDays(1);
                                     setNewPenaltyAmount(0);
                                 }}
-                                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold cursor-pointer"
+                                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-[5px] font-bold cursor-pointer"
                             >
                                 Add Rule
                             </button>
@@ -789,12 +783,12 @@ const ControlSystem = () => {
 
                         <div className="space-y-2">
                             {latePenaltyRules.length === 0 ? (
-                                <div className="p-3 rounded-xl bg-gray-950/70 border border-gray-800 text-gray-400 text-[11px] italic">
+                                <div className="p-3 rounded-[5px] bg-gray-950/70 border border-gray-800 text-gray-400 text-[11px] italic">
                                     No penalty rule configured yet.
                                 </div>
                             ) : (
                                 latePenaltyRules.map((rule, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 p-2.5 rounded-xl bg-gray-950/60 border border-gray-800">
+                                    <div key={idx} className="flex items-center gap-2 p-2.5 rounded-[5px] bg-gray-950/60 border border-gray-800">
                                         <input
                                             type="text"
                                             value={rule.brand || ''}
@@ -844,7 +838,7 @@ const ControlSystem = () => {
                             <button
                                 onClick={() => saveConfigToMongoDB('late_penalty_rules', latePenaltyRules)}
                                 disabled={saving}
-                                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-lg shadow-amber-600/30"
+                                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-[5px] font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-lg shadow-amber-600/30"
                             >
                                 <MdSave size={16} /> Save Late Penalty Rules
                             </button>
@@ -868,11 +862,11 @@ const ControlSystem = () => {
                                 value={newRoleInput}
                                 onChange={(e) => setNewRoleInput(e.target.value)}
                                 placeholder="Add new role (e.g. Supervisor)"
-                                className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100"
+                                className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
                             />
                             <button
                                 onClick={handleAddRole}
-                                className="px-4 h-10 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold flex items-center gap-1 cursor-pointer"
+                                className="px-4 h-10 bg-purple-600 hover:bg-purple-500 text-white rounded-[5px] font-bold flex items-center gap-1 cursor-pointer"
                             >
                                 <MdAddCircle size={16} /> Add Role
                             </button>
@@ -880,7 +874,7 @@ const ControlSystem = () => {
 
                         <div className="flex flex-wrap gap-2 pt-2">
                             {roles.map((r, rIdx) => (
-                                <div key={rIdx} className="flex items-center gap-2 px-3 py-1.5 bg-gray-900/80 border border-gray-700 rounded-xl font-semibold text-gray-200">
+                                <div key={rIdx} className="flex items-center gap-2 px-3 py-1.5 bg-gray-900/80 border border-gray-700 rounded-[5px] font-semibold text-gray-200">
                                     <span>{r}</span>
                                     {r !== 'Administrator' && (
                                         <button onClick={() => handleDeleteRole(rIdx)} className="text-red-400 hover:text-red-300">✕</button>
@@ -914,7 +908,7 @@ const ControlSystem = () => {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                         {/* Box A: Reject Submit Reasons */}
-                        <div className="p-4 rounded-2xl bg-slate-900/90 border border-rose-600/30 space-y-3">
+                        <div className="p-4 rounded-[5px] bg-slate-900/90 border border-rose-600/30 space-y-3">
                             <div className="flex items-center justify-between border-b border-rose-900/40 pb-2">
                                 <h4 className="text-xs font-bold text-rose-400 uppercase flex items-center gap-1.5">
                                     <span>🛑</span> មូលហេតុ REJECT SUBMIT (Reject Submit Reasons)
@@ -931,13 +925,13 @@ const ControlSystem = () => {
                                     onChange={(e) => setNewRejectSubmitInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleAddSpecificReason('Reject Submit Reasons', newRejectSubmitInput, setNewRejectSubmitInput)}
                                     placeholder="បញ្ចូលមូលហេតុ Reject Submit ថ្មី (ឧ. ភ្ញៀវមិនឆ្លើយតប)..."
-                                    className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 text-xs focus:border-rose-500 outline-none"
+                                    className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-[5px] text-slate-100 text-xs focus:border-rose-500 outline-none"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => handleAddSpecificReason('Reject Submit Reasons', newRejectSubmitInput, setNewRejectSubmitInput)}
                                     disabled={!newRejectSubmitInput.trim()}
-                                    className="px-3.5 h-9 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-rose-600/20"
+                                    className="px-3.5 h-9 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white rounded-[5px] text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-rose-600/20"
                                 >
                                     <MdAddCircle size={15} /> <span>បន្ថែម</span>
                                 </button>
@@ -948,7 +942,7 @@ const ControlSystem = () => {
                                 {(droplists.find(d => d.category === 'Reject Submit Reasons')?.items || []).map((reason, rIdx) => (
                                     <div
                                         key={rIdx}
-                                        className="flex items-center justify-between p-2 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs transition-colors"
+                                        className="flex items-center justify-between p-2 rounded-[5px] bg-slate-950/70 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs transition-colors"
                                     >
                                         <span className="flex items-center gap-2">
                                             <span className="w-4 h-4 rounded-full bg-slate-800 text-slate-400 text-[10px] flex items-center justify-center font-mono">
@@ -970,7 +964,7 @@ const ControlSystem = () => {
                         </div>
 
                         {/* Box B: Reject CS Reasons */}
-                        <div className="p-4 rounded-2xl bg-slate-900/90 border border-amber-600/30 space-y-3">
+                        <div className="p-4 rounded-[5px] bg-slate-900/90 border border-amber-600/30 space-y-3">
                             <div className="flex items-center justify-between border-b border-amber-900/40 pb-2">
                                 <h4 className="text-xs font-bold text-amber-400 uppercase flex items-center gap-1.5">
                                     <span>⚠️</span> មូលហេតុ REJECT CS (Reject CS Reasons)
@@ -987,13 +981,13 @@ const ControlSystem = () => {
                                     onChange={(e) => setNewRejectCsInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleAddSpecificReason('Reject CS Reasons', newRejectCsInput, setNewRejectCsInput)}
                                     placeholder="បញ្ចូលមូលហេតុ Reject CS ថ្មី (ឧ. តម្លៃមិនព្រម, គ្មានលទ្ធភាព)..."
-                                    className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 text-xs focus:border-amber-500 outline-none"
+                                    className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-[5px] text-slate-100 text-xs focus:border-amber-500 outline-none"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => handleAddSpecificReason('Reject CS Reasons', newRejectCsInput, setNewRejectCsInput)}
                                     disabled={!newRejectCsInput.trim()}
-                                    className="px-3.5 h-9 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-amber-600/20"
+                                    className="px-3.5 h-9 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white rounded-[5px] text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-amber-600/20"
                                 >
                                     <MdAddCircle size={15} /> <span>បន្ថែម</span>
                                 </button>
@@ -1004,7 +998,7 @@ const ControlSystem = () => {
                                 {(droplists.find(d => d.category === 'Reject CS Reasons')?.items || []).map((reason, rIdx) => (
                                     <div
                                         key={rIdx}
-                                        className="flex items-center justify-between p-2 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs transition-colors"
+                                        className="flex items-center justify-between p-2 rounded-[5px] bg-slate-950/70 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs transition-colors"
                                     >
                                         <span className="flex items-center gap-2">
                                             <span className="w-4 h-4 rounded-full bg-slate-800 text-slate-400 text-[10px] flex items-center justify-center font-mono">
@@ -1042,7 +1036,7 @@ const ControlSystem = () => {
                             <select
                                 value={selectedCategoryIdx}
                                 onChange={(e) => setSelectedCategoryIdx(Number(e.target.value))}
-                                className="h-9 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 font-semibold"
+                                className="h-9 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-semibold"
                             >
                                 {droplists.map((d, dIdx) => (
                                     <option key={dIdx} value={dIdx}>{d.category}</option>
@@ -1056,11 +1050,11 @@ const ControlSystem = () => {
                                 value={newItemInput}
                                 onChange={(e) => setNewItemInput(e.target.value)}
                                 placeholder={`Add item to ${droplists[selectedCategoryIdx]?.category}...`}
-                                className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100"
+                                className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
                             />
                             <button
                                 onClick={handleAddItemToCategory}
-                                className="px-4 h-10 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center gap-1 cursor-pointer"
+                                className="px-4 h-10 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] font-bold flex items-center gap-1 cursor-pointer"
                             >
                                 <MdAddCircle size={16} /> Add Option
                             </button>
@@ -1068,7 +1062,7 @@ const ControlSystem = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                             {droplists.map((cat, catIdx) => (
-                                <div key={catIdx} className="p-4 rounded-2xl bg-gray-950/60 border border-gray-800 space-y-2">
+                                <div key={catIdx} className="p-4 rounded-[5px] bg-gray-950/60 border border-gray-800 space-y-2">
                                     <h4 className="font-bold text-gray-200 border-b border-gray-800 pb-1.5">{cat.category}</h4>
                                     <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
                                         {cat.items.map((item, itemIdx) => (
@@ -1110,12 +1104,12 @@ const ControlSystem = () => {
                             onChange={(e) => setNewBrandInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddBrand()}
                             placeholder="New brand name (e.g. SuperTech)"
-                            className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-xl text-gray-100 focus:border-amber-500 outline-none"
+                            className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 focus:border-amber-500 outline-none"
                         />
                         <button
                             onClick={handleAddBrand}
                             disabled={saving || !newBrandInput.trim()}
-                            className="px-4 h-10 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1 cursor-pointer transition-all"
+                            className="px-4 h-10 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-[5px] font-bold flex items-center gap-1 cursor-pointer transition-all"
                         >
                             <MdAddCircle size={16} /> Add Brand
                         </button>
@@ -1128,7 +1122,7 @@ const ControlSystem = () => {
                         {brandsList.map((br, brIdx) => (
                             <div
                                 key={brIdx}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-amber-950/40 border border-amber-600/40 rounded-xl text-amber-200 text-xs font-semibold"
+                                className="flex items-center gap-2 px-3 py-1.5 bg-amber-950/40 border border-amber-600/40 rounded-[5px] text-amber-200 text-xs font-semibold"
                             >
                                 <FaLayerGroup size={11} className="text-amber-400" />
                                 <span>{br}</span>
@@ -1166,7 +1160,7 @@ const ControlSystem = () => {
                             <p className="font-bold text-sm text-white">
                                 តើអ្នកពិតជាចង់លុប Brand <span className="text-amber-400 font-mono">"{deleteBrandModal.brandName}"</span> នេះមែនទេ?
                             </p>
-                            <div className="p-3 bg-red-950/50 border border-red-800/80 rounded-2xl space-y-1.5 text-red-200">
+                            <div className="p-3 bg-red-950/50 border border-red-800/80 rounded-[5px] space-y-1.5 text-red-200">
                                 <p className="font-bold uppercase text-[10px] text-red-400 tracking-wider">⚠️ ការប្រុងប្រយ័ត្នខ្ពស់ (High Alert Warning):</p>
                                 <p className="text-[11px] leading-relaxed">
                                     នៅពេលលុប Brand នេះ ព័ត៌មាន និងទិន្នន័យទាំងអស់ដែលពាក់ព័ន្ធនឹង Brand <span className="font-mono font-bold text-amber-300">"{deleteBrandModal.brandName}"</span> រួមមាន៖
@@ -1194,7 +1188,7 @@ const ControlSystem = () => {
                                 type="button"
                                 onClick={handleConfirmDeleteBrand}
                                 disabled={saving}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-lg shadow-red-600/30 cursor-pointer flex items-center gap-1.5"
+                                className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold shadow-lg shadow-red-600/30 cursor-pointer flex items-center gap-1.5"
                             >
                                 <MdDelete size={16} /> {saving ? 'Purging Data...' : 'លុប Brand និងទិន្នន័យទាំងអស់'}
                             </button>

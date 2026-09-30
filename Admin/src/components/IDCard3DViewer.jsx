@@ -5,7 +5,7 @@ const IDCard3DViewer = ({ customer }) => {
     if (!customer) return null;
 
     return (
-        <div className="w-full bg-gray-200 rounded-xl p-5 text-slate-100 space-y-4 shadow-xl select-none">
+        <div className="w-full bg-gray-200 rounded-[5px] p-5 text-slate-100 space-y-4 shadow-xl select-none">
             <div className="flex items-center justify-between border-b border-indigo-500/30 pb-3">
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-indigo-300 font-khmer">

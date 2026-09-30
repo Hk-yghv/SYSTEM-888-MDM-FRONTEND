@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -156,15 +157,12 @@ const Device = () => {
 
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
                             {t('device')}
                         </h1>
-                        <p className='text-xs text-purple-700 font-bold'>
-                            {total} Registered Activated Devices
-                        </p>
                     </div>
                 </div>
 
@@ -172,20 +170,7 @@ const Device = () => {
                     {/* Export to Excel & PDF */}
                     {hasPermission('/device', 'export') && (
                         <>
-                            <button
-                                onClick={handleExportExcel}
-                                className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                            >
-                                <FaFileExcel className="text-emerald-600 text-sm" />
-                                <span>Excel</span>
-                            </button>
-                            <button
-                                onClick={handleExportPDF}
-                                className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                            >
-                                <MdPictureAsPdf className="text-red-600 text-sm" />
-                                <span>PDF</span>
-                            </button>
+                            <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                         </>
                     )}
 
@@ -222,7 +207,7 @@ const Device = () => {
                 </div>
             </header>
 
-            <div className='w-full overflow-x-auto h-[calc(100vh-260px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-260px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -273,7 +258,7 @@ const Device = () => {
                                         {hasPermission('/device', 'information') ? (
                                             <button
                                                 onClick={() => setSelectedDevice(item)}
-                                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 mx-auto cursor-pointer"
+                                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[5px] text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 mx-auto cursor-pointer"
                                             >
                                                 <FaMobileAlt />
                                                 <span>Info</span>
@@ -313,7 +298,7 @@ const Device = () => {
 
                                     <div className="
                             w-11 h-11
-                            rounded-2xl
+                            rounded-[5px]
                             bg-gray-100
                             border border-gray-200
                             flex items-center justify-center
@@ -367,7 +352,7 @@ const Device = () => {
                                     onClick={() => setSelectedDevice(null)}
                                     className="
                             w-8 h-8
-                            rounded-xl
+                            rounded-[5px]
                             bg-gray-100
                             hover:bg-gray-200
                             text-gray-400
@@ -413,7 +398,7 @@ const Device = () => {
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
 
                                     {/* Model */}
-                                    <div className="p-3 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Model Name
                                         </span>
@@ -423,7 +408,7 @@ const Device = () => {
 
 
                                     {/* Version */}
-                                    <div className="p-3 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Version / OS
                                         </span>
@@ -433,7 +418,7 @@ const Device = () => {
 
 
                                     {/* Serial */}
-                                    <div className="p-3 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Serial Number
                                         </span>
@@ -443,7 +428,7 @@ const Device = () => {
 
 
                                     {/* IMEI 1 */}
-                                    <div className="p-3 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             IMEI 1
                                         </span>
@@ -453,7 +438,7 @@ const Device = () => {
 
 
                                     {/* IMEI 2 */}
-                                    <div className="p-3 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             IMEI 2
                                         </span>
@@ -463,7 +448,7 @@ const Device = () => {
 
 
                                     {/* MEID */}
-                                    <div className="p-3 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             MEID
                                         </span>
@@ -473,7 +458,7 @@ const Device = () => {
 
 
                                     {/* Color */}
-                                    <div className="p-3 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Color
                                         </span>
@@ -483,7 +468,7 @@ const Device = () => {
 
 
                                     {/* Brand */}
-                                    <div className="p-3 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Brand
                                         </span>
@@ -503,7 +488,7 @@ const Device = () => {
                                 <div className="
                         p-4
                         bg-white
-                        rounded-2xl
+                        rounded-[5px]
                         border border-gray-200
                     ">
 
@@ -559,7 +544,7 @@ const Device = () => {
                                 <div className="
                         p-4
                         bg-white
-                        rounded-2xl
+                        rounded-[5px]
                         border border-gray-200
                     ">
 
@@ -596,7 +581,7 @@ const Device = () => {
                                 flex-1
                                 p-2.5
                                 bg-white
-                                rounded-xl
+                                rounded-[5px]
                                 border border-gray-200
                             ">
 
@@ -633,7 +618,7 @@ const Device = () => {
                                 flex-1
                                 p-2.5
                                 bg-white
-                                rounded-xl
+                                rounded-[5px]
                                 border border-gray-200
                             ">
 
@@ -672,7 +657,7 @@ const Device = () => {
 
                             {/* ================= LOCK / WALLPAPER ACTIONS ================= */}
                             {hasPermission('/device', 'deviceAction') && (
-                                <div className="p-4 bg-white border border-indigo-200 rounded-2xl">
+                                <div className="p-4 bg-white border border-indigo-200 rounded-[5px]">
                                     <div className="flex items-center gap-2 mb-3">
                                         <span className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs">🔧</span>
                                         <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Device Actions (Lock / Wallpaper)</h4>
@@ -709,7 +694,7 @@ const Device = () => {
                                                     setActionLoading(false);
                                                 }
                                             }}
-                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-red-600/20 transition-all cursor-pointer active:scale-95"
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white rounded-[5px] text-xs font-bold shadow-md shadow-red-600/20 transition-all cursor-pointer active:scale-95"
                                         >
                                             <FaLock size={12} />
                                             <span>Lock Phone</span>
@@ -746,7 +731,7 @@ const Device = () => {
                                                     setActionLoading(false);
                                                 }
                                             }}
-                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-95"
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white rounded-[5px] text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-95"
                                         >
                                             <FaUnlock size={12} />
                                             <span>Unlock Phone</span>
@@ -783,7 +768,7 @@ const Device = () => {
                                                     setActionLoading(false);
                                                 }
                                             }}
-                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/20 transition-all cursor-pointer active:scale-95"
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white rounded-[5px] text-xs font-bold shadow-md shadow-purple-600/20 transition-all cursor-pointer active:scale-95"
                                         >
                                             <MdOutlineWallpaper size={14} />
                                             <span>Set Wallpaper</span>
@@ -792,7 +777,7 @@ const Device = () => {
                                         {/* View History */}
                                         <button
                                             onClick={() => { setSelectedDevice(null); navigate('/history/device-history'); }}
-                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold shadow-md shadow-slate-700/20 transition-all cursor-pointer active:scale-95"
+                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-[5px] text-xs font-bold shadow-md shadow-slate-700/20 transition-all cursor-pointer active:scale-95"
                                         >
                                             <FaHistory size={11} />
                                             <span>View History</span>
@@ -810,7 +795,7 @@ const Device = () => {
                     p-4
                     bg-white
                     border border-amber-200
-                    rounded-2xl
+                    rounded-[5px]
                 ">
 
                                 <div className="flex items-center gap-2 mb-2">
@@ -859,7 +844,7 @@ const Device = () => {
                             <div className="
                     bg-white
                     p-4
-                    rounded-2xl
+                    rounded-[5px]
                     border border-gray-200
                 ">
 
@@ -906,7 +891,7 @@ const Device = () => {
                                 onClick={() => setSelectedDevice(null)}
                                 className="
                         px-5 py-2
-                        rounded-xl
+                        rounded-[5px]
                         bg-gray-900
                         hover:bg-gray-800
                         text-white

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { MdOutlineBarChart, MdPictureAsPdf, MdOutlineSync, MdTableChart, MdFilterList, MdPieChart } from 'react-icons/md';
@@ -280,7 +281,7 @@ const ReportAll = () => {
     return (
         <div className='w-full p-4 select-none space-y-4'>
             {/* Top Header */}
-            <header className='p-4 w-full border border-slate-200 bg-white rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
+            <header className='p-4 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-xl font-black text-slate-900 flex items-center gap-2 tracking-wide'>
@@ -325,21 +326,7 @@ const ReportAll = () => {
                         </button>
                     </div>
 
-                    <button
-                        onClick={handleExportExcel}
-                        className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                    >
-                        <FaFileExcel className="text-emerald-600 text-sm" />
-                        <span>{t('exportExcel')}</span>
-                    </button>
-
-                    <button
-                        onClick={handleExportPDF}
-                        className='flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-indigo-600/20'
-                    >
-                        <MdPictureAsPdf className="text-white text-sm" />
-                        <span>Export PDF ({pdfOrientation === 'landscape' ? 'ផ្តេក' : 'បញ្ឈរ'})</span>
-                    </button>
+                    <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
 
                     <button
                         onClick={fetchAllData}
@@ -354,7 +341,7 @@ const ReportAll = () => {
 
             {/* KPI Executive Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-                <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center text-lg font-bold">
                         <FaUsers />
                     </div>
@@ -364,7 +351,7 @@ const ReportAll = () => {
                     </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-lg font-bold">
                         <FaDollarSign />
                     </div>
@@ -374,7 +361,7 @@ const ReportAll = () => {
                     </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg font-bold">
                         <FaMoneyBillWave />
                     </div>
@@ -384,7 +371,7 @@ const ReportAll = () => {
                     </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg font-bold">
                         <FaExchangeAlt />
                     </div>
@@ -394,7 +381,7 @@ const ReportAll = () => {
                     </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center text-lg font-bold">
                         <FaLock />
                     </div>
@@ -404,7 +391,7 @@ const ReportAll = () => {
                     </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center text-lg font-bold">
                         <FaImage />
                     </div>
@@ -428,7 +415,7 @@ const ReportAll = () => {
             />
 
             {/* Main Master Summary Table */}
-            <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-md p-4 space-y-3">
+            <div className="w-full bg-white rounded-[5px] border border-slate-200 shadow-md p-4 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
                     <div>
                         <h2 className="text-base font-black text-slate-900 flex items-center gap-2">

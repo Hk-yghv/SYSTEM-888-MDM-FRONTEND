@@ -37,7 +37,7 @@ const FollowUp4DetailModal = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
-            <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col">
+            <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/80">
                     <div>
@@ -59,7 +59,7 @@ const FollowUp4DetailModal = ({
                 {/* Modal Body */}
                 <div className="p-6 overflow-y-auto space-y-5 flex-1">
                     {/* Date Selector & Live Auto-Formulas Overview */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-3.5 rounded-xl border border-slate-700">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-3.5 rounded-[5px] border border-slate-700">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <FaRegCalendarAlt className="text-sky-400 text-sm" />
                             <span className="text-xs font-semibold text-slate-300">កាលបរិច្ឆេទ៖</span>
@@ -89,7 +89,7 @@ const FollowUp4DetailModal = ({
 
                     {/* Input Fields Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-xs">
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-indigo-600/40">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-indigo-600/40">
                             <label className="block text-indigo-300 font-semibold mb-1">MESSAGE (PG + TG + CALL)</label>
                             <input
                                 type="number"
@@ -102,7 +102,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">PAGE (FB Page)</label>
                             <input
                                 type="number"
@@ -114,7 +114,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">TELEGRAM (Tg)</label>
                             <input
                                 type="number"
@@ -126,7 +126,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">NO REPLY (មិនតប)</label>
                             <input
                                 type="number"
@@ -138,7 +138,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">INQUIRE (សួរនាំ)</label>
                             <input
                                 type="number"
@@ -150,7 +150,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">REJECT CS</label>
                             <input
                                 type="number"
@@ -162,7 +162,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">MORE (ផ្សេងៗ)</label>
                             <input
                                 type="number"
@@ -174,7 +174,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">PAGE SUBMIT</label>
                             <input
                                 type="number"
@@ -186,7 +186,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">TELEGRAM SUBMIT</label>
                             <input
                                 type="number"
@@ -198,7 +198,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">CALL</label>
                             <input
                                 type="number"
@@ -210,7 +210,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">REVIEW</label>
                             <input
                                 type="number"
@@ -222,7 +222,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">REJECT</label>
                             <input
                                 type="number"
@@ -234,7 +234,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">SUCCESS 1</label>
                             <input
                                 type="number"
@@ -246,7 +246,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">SUCCESS 2</label>
                             <input
                                 type="number"
@@ -265,7 +265,7 @@ const FollowUp4DetailModal = ({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all cursor-pointer"
+                        className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-[5px] transition-all cursor-pointer"
                     >
                         បោះបង់
                     </button>
@@ -273,7 +273,7 @@ const FollowUp4DetailModal = ({
                         type="button"
                         onClick={onSave}
                         disabled={saving}
-                        className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-sky-600/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-5 py-2.5 rounded-[5px] transition-all shadow-lg shadow-sky-600/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
                         {saving ? <MdOutlineSync className="animate-spin text-sm" /> : <FaSave />}
                         <span>{saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកទិន្នន័យ DETAIL'}</span>

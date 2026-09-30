@@ -13,7 +13,7 @@ const Loading = () => {
 
                 <div className="absolute w-16 h-16 border-4 border-purple-500/20 border-b-purple-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.2s' }}></div>
 
-                <div className="absolute w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/40 icon-animated-glow">
+                <div className="absolute w-10 h-10 rounded-[5px] bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/40 icon-animated-glow">
                     <MdOutlineDashboard className="text-white text-xl" />
                 </div>
             </div>

@@ -43,7 +43,7 @@ const FollowUp4SubmitModal = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
-            <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto">
+            <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/60 sticky top-0 z-10">
                     <div className="flex items-center gap-2 text-emerald-400 font-bold text-base">

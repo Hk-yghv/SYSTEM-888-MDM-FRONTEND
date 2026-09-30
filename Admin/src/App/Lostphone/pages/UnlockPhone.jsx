@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { FaUnlock, FaFileExcel } from 'react-icons/fa';
@@ -101,22 +102,16 @@ const UnlockPhone = () => {
 
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900'>{t('unlockPhone')}</h1>
-                        <p className='text-xs text-red-700 font-bold'>Total: {total}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     {hasPermission('/lost-phone/unlock-phone', 'export') && (
                         <>
-                            <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                                <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
-                            </button>
-                            <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                                <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
-                            </button>
+                            <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                         </>
                     )}
                     <button onClick={() => fetchUnlockLogs(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
@@ -126,7 +121,7 @@ const UnlockPhone = () => {
                 </div>
             </header>
 
-            <div className='w-full overflow-x-auto h-[calc(100vh-300px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-300px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs whitespace-nowrap'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap'>
                         <tr>

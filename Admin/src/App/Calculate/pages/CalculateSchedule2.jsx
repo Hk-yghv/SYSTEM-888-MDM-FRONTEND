@@ -559,18 +559,12 @@ const CalculateSchedule2 = () => {
             <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 bg-[#fff]">
 
                 {/* ── Header ────────────────────────────────────────── */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#fff] p-5 rounded-2xl border border-slate-200 shadow-xs">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-violet-600 to-purple-500 flex items-center justify-center text-white shadow-md shadow-violet-500/20">
-                            <FaFileContract className="text-2xl" />
-                        </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#fff] p-5 rounded-[5px] border border-slate-200 shadow-xs">
+                    <div>
                         <div>
                             <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
                                 កាលវិភាគបញ្ចាំ — Schedule 2
                             </h1>
-                            <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                                គណនាកាលវិភាគសងប្រាក់បញ្ចាំ
-                            </p>
                         </div>
                     </div>
 
@@ -580,14 +574,14 @@ const CalculateSchedule2 = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowHistoryModal(true)}
-                                className="px-4 py-2.5 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs sm:text-sm flex items-center gap-2 border border-violet-200 transition-all cursor-pointer">
+                                className="px-4 py-2.5 rounded-[5px] bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs sm:text-sm flex items-center gap-2 border border-violet-200 transition-all cursor-pointer">
                                 <FaHistory /> បញ្ជីចាស់ៗ ({savedHistory.length})
                             </button>
                         )}
                         {result && (
                             <>
                                 {/* Orientation Selection Toggle */}
-                                <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                                <div className="flex items-center bg-slate-100 p-1 rounded-[5px] border border-slate-200 text-xs font-bold">
                                     <button
                                         type="button"
                                         onClick={() => setPrintOrientation('portrait')}
@@ -616,14 +610,14 @@ const CalculateSchedule2 = () => {
                                     type="button"
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer">
+                                    className="px-4 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer">
                                     {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
                                     រក្សាទុក (Save)
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handlePrint}
-                                    className="px-4 py-2.5 rounded-xl bg-green-800 hover:bg-slate-800 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
+                                    className="px-4 py-2.5 rounded-[5px] bg-green-800 hover:bg-slate-800 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
                                     <FaPrint /> បោះពុម្ព (Print)
                                 </button>
                             </>
@@ -633,7 +627,7 @@ const CalculateSchedule2 = () => {
 
                 {/* Save Success Alert */}
                 {saveSuccessMsg && (
-                    <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3 animate-fadeIn">
+                    <div className="p-4 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3 animate-fadeIn">
                         <FaCheckCircle className="text-emerald-600 text-lg" />
                         <span>{saveSuccessMsg} ព័ត៌មានត្រូវបានរក្សាទុក ដោយជោគជ័យ។</span>
                     </div>
@@ -644,7 +638,7 @@ const CalculateSchedule2 = () => {
 
                     {/* ── Left Column (2 cols): Input Form ──────────── */}
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-[#fff] border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs">
+                        <div className="bg-[#fff] border border-slate-200 rounded-[5px] p-5 sm:p-6 shadow-xs">
                             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
                                 <FaCalculator className="text-violet-600 text-base" />
                                 <h2 className="text-base text-slate-800">
@@ -667,7 +661,7 @@ const CalculateSchedule2 = () => {
                                                 value={startDate}
                                                 onChange={(e) => setStartDate(e.target.value)}
                                                 required
-                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
+                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
                                             />
                                         </div>
                                     </div>
@@ -685,7 +679,7 @@ const CalculateSchedule2 = () => {
                                                 onChange={(e) => setCustomerName(e.target.value)}
                                                 placeholder="ឧ. ចន ពេជ្រច័ន្ទដារ៉ា"
                                                 required
-                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
+                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
                                             />
                                         </div>
                                     </div>
@@ -704,7 +698,7 @@ const CalculateSchedule2 = () => {
                                                 onChange={(e) => setAssetName(e.target.value)}
                                                 placeholder="ឧ. iPhone 14"
                                                 required
-                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
+                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
                                             />
                                             <datalist id="cs2-asset-list">
                                                 {assetTypes.map((item, i) => <option key={i} value={item} />)}
@@ -729,7 +723,7 @@ const CalculateSchedule2 = () => {
                                                 onChange={(e) => setDurationMonths(e.target.value)}
                                                 placeholder="4"
                                                 required
-                                                className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
+                                                className="w-full pl-8 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
                                             />
                                         </div>
                                         <div className="flex flex-wrap gap-1">
@@ -760,7 +754,7 @@ const CalculateSchedule2 = () => {
                                                 value={contractNumber}
                                                 onChange={(e) => setContractNumber(e.target.value)}
                                                 placeholder="ឧ. 013"
-                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
+                                                className="w-full pl-9 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
                                             />
                                         </div>
                                     </div>
@@ -780,7 +774,7 @@ const CalculateSchedule2 = () => {
                                                 onChange={(e) => setPrincipalInput(e.target.value)}
                                                 placeholder="120"
                                                 required
-                                                className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
+                                                className="w-full pl-8 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
                                             />
                                         </div>
                                         <div className="flex flex-wrap gap-1">
@@ -812,7 +806,7 @@ const CalculateSchedule2 = () => {
                                                 onChange={(e) => setRateInput(e.target.value)}
                                                 placeholder="11.5"
                                                 required
-                                                className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
+                                                className="w-full pl-8 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
                                             />
                                         </div>
                                         <div className="flex flex-wrap gap-1">
@@ -836,7 +830,7 @@ const CalculateSchedule2 = () => {
                                 <div className="flex flex-wrap items-center gap-3 pt-3">
                                     <button
                                         type="submit"
-                                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-black text-sm flex items-center gap-2 shadow-md shadow-violet-600/25 transition-all transform active:scale-95 cursor-pointer">
+                                        className="px-6 py-2.5 rounded-[5px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-black text-sm flex items-center gap-2 shadow-md shadow-violet-600/25 transition-all transform active:scale-95 cursor-pointer">
                                         <MdCalculate className="text-lg" /> គណនា (Calculate)
                                     </button>
 
@@ -844,7 +838,7 @@ const CalculateSchedule2 = () => {
                                         type="button"
                                         onClick={handleSave}
                                         disabled={saving}
-                                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 cursor-pointer">
+                                        className="px-5 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 cursor-pointer">
                                         {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
                                         រក្សាទុក (Save)
                                     </button>
@@ -852,7 +846,7 @@ const CalculateSchedule2 = () => {
                                     <button
                                         type="button"
                                         onClick={handleReset}
-                                        className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm flex items-center gap-1.5 transition-colors cursor-pointer">
+                                        className="px-4 py-2.5 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm flex items-center gap-1.5 transition-colors cursor-pointer">
                                         <FaUndo className="text-xs text-slate-500" /> Reset
                                     </button>
                                 </div>
@@ -861,7 +855,7 @@ const CalculateSchedule2 = () => {
                     </div>
 
                     {/* ── Right Column (1 col): Saved History Props List ── */}
-                    <div className="lg:col-span-1 bg-[#fff] border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col h-[480px]">
+                    <div className="lg:col-span-1 bg-[#fff] border border-slate-200 rounded-[5px] p-5 shadow-xs flex flex-col h-[480px]">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                             <div className="flex items-center gap-2">
                                 <FaHistory className="text-violet-600" />
@@ -916,7 +910,7 @@ const CalculateSchedule2 = () => {
                                             <div
                                                 key={item._id}
                                                 onClick={() => handleLoadRecord(item)}
-                                                className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${isNewlyAdded
+                                                className={`p-3 rounded-[5px] border text-xs cursor-pointer transition-all ${isNewlyAdded
                                                     ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-400 animate-pulse'
                                                     : isActive
                                                         ? 'bg-violet-50 border-violet-400 shadow-xs ring-1 ring-violet-400'
@@ -1109,7 +1103,7 @@ const CalculateSchedule2 = () => {
                 {/* ── Full History Modal (if user wants bigger view) ──── */}
                 {showHistoryModal && (
                     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-                        <div className="bg-[#fff] rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
+                        <div className="bg-[#fff] rounded-[5px] max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
                             <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <FaHistory className="text-violet-600 text-lg" />
@@ -1133,7 +1127,7 @@ const CalculateSchedule2 = () => {
                                         value={historySearch}
                                         onChange={(e) => setHistorySearch(e.target.value)}
                                         placeholder="ស្វែងរកតាមឈ្មោះអតិថិជន លេខកិច្ចសន្យា ឬប្រភេទទ្រព្យ..."
-                                        className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 text-sm bg-slate-50 focus:bg-[#fff] focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                        className="w-full pl-9 pr-3.5 py-2 rounded-[5px] border border-slate-200 text-sm bg-slate-50 focus:bg-[#fff] focus:outline-none focus:ring-2 focus:ring-violet-500"
                                     />
                                 </div>
                             </div>
@@ -1147,7 +1141,7 @@ const CalculateSchedule2 = () => {
                                     filteredHistory.map((item) => (
                                         <div
                                             key={item._id}
-                                            className="p-3.5 rounded-xl border border-slate-200 hover:border-violet-300 hover:bg-violet-50/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                            className="p-3.5 rounded-[5px] border border-slate-200 hover:border-violet-300 hover:bg-violet-50/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-black text-slate-800 text-sm">
