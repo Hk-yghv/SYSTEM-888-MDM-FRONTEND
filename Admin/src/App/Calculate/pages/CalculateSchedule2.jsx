@@ -31,7 +31,6 @@ const CalculateSchedule2 = () => {
     const [contractNumber, setContractNumber] = useState('');
     const [principalInput, setPrincipalInput] = useState('');
     const [rateInput, setRateInput] = useState('');
-    const [roundingMode, setRoundingMode] = useState('up');
     const [notes, setNotes] = useState('');
 
     // ─── Result & UI States ─────────────────────────────────────────
@@ -228,7 +227,7 @@ const CalculateSchedule2 = () => {
 
         const monthlyInterest = roundMoney(principal * (ratePercent / 100));
         const principalCents = toCurrencyCents(principal);
-        const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / months, roundingMode);
+        const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / months, 'up');
 
         const baseDate = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
         const originalDay = baseDate.getDate();
@@ -266,7 +265,6 @@ const CalculateSchedule2 = () => {
             principal,
             ratePercent,
             months,
-            roundingMode,
             monthlyPrincipal: schedule[0]?.monthlyPrincipal || 0,
             monthlyTotalDue: schedule[0]?.totalDueMonth || 0,
             monthlyInterest,
@@ -291,7 +289,7 @@ const CalculateSchedule2 = () => {
         } else {
             setResult(null);
         }
-    }, [startDate, principalInput, rateInput, durationMonths, customerName, assetName, contractNumber, roundingMode]);
+    }, [startDate, principalInput, rateInput, durationMonths, customerName, assetName, contractNumber]);
 
     // ─── Save to Database ──────────────────────────────────────────
     const handleSave = async () => {
@@ -412,7 +410,6 @@ const CalculateSchedule2 = () => {
         setCustomerName('');
         setPrincipalInput('');
         setRateInput('');
-        setRoundingMode('up');
         setDurationMonths('');
         setStartDate(formatDateToYMD(new Date()));
         setAssetName('');
@@ -827,28 +824,6 @@ const CalculateSchedule2 = () => {
                                                 </button>
                                             ))}
                                         </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <span className="text-xs font-bold text-slate-700">បង្គត់ប្រាក់ដើម (2 ខ្ទង់)</span>
-                                    <div className="inline-flex rounded-[5px] border border-slate-200 bg-slate-100 p-1" role="group" aria-label="Principal rounding mode">
-                                        <button
-                                            type="button"
-                                            onClick={() => setRoundingMode('up')}
-                                            aria-pressed={roundingMode === 'up'}
-                                            className={`px-3 py-1.5 rounded-[4px] text-xs font-bold transition-colors ${roundingMode === 'up' ? 'bg-white text-violet-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
-                                        >
-                                            បង្គត់ឡើង
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setRoundingMode('down')}
-                                            aria-pressed={roundingMode === 'down'}
-                                            className={`px-3 py-1.5 rounded-[4px] text-xs font-bold transition-colors ${roundingMode === 'down' ? 'bg-white text-violet-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
-                                        >
-                                            បង្គត់ចុះ
-                                        </button>
                                     </div>
                                 </div>
 

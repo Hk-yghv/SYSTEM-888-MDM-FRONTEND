@@ -33,7 +33,6 @@ const CalculateSchedule1 = () => {
     const [rateInput, setRateInput] = useState('11.5%');
     const [durationInput, setDurationInput] = useState('4');
     const [durationUnit, setDurationUnit] = useState('months'); // 'months' | 'days'
-    const [roundingMode, setRoundingMode] = useState('up');
     const [startDate, setStartDate] = useState(() => formatDateToYMD(new Date()));
 
     // Calculation result state
@@ -72,7 +71,7 @@ const CalculateSchedule1 = () => {
 
         const monthsCount = durationUnit === 'days' ? Math.max(1, Math.ceil(duration / 30)) : duration;
         const principalCents = toCurrencyCents(principal);
-        const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / monthsCount, roundingMode);
+        const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / monthsCount, 'up');
 
         // Generate schedule table rows
         const schedule = [];
@@ -131,7 +130,6 @@ const CalculateSchedule1 = () => {
             monthsCount,
             duration,
             durationUnit,
-            roundingMode,
             monthlyInterestUSD,
             principalPerMonth,
             paymentPerMonth,
@@ -147,7 +145,6 @@ const CalculateSchedule1 = () => {
         setRateInput('11.5%');
         setDurationInput('4');
         setDurationUnit('months');
-        setRoundingMode('up');
         setStartDate(formatDateToYMD(new Date()));
         setCalculationResult(null);
         setCopiedText(false);
@@ -445,14 +442,6 @@ const CalculateSchedule1 = () => {
                             <p className="text-[11px] text-slate-400 font-medium">
                                 សម្រាប់គណនាកាលបរិច្ឆេទត្រូវបង់តាមខែនីមួយៗ
                             </p>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3">
-                        <span className="text-xs font-bold text-slate-700">បង្គត់ប្រាក់ដើម (2 ខ្ទង់)</span>
-                        <div className="inline-flex rounded-[5px] border border-slate-200 bg-slate-100 p-1" role="group" aria-label="Principal rounding mode">
-                            <button type="button" onClick={() => setRoundingMode('up')} aria-pressed={roundingMode === 'up'} className={`px-3 py-1.5 rounded-[4px] text-xs font-bold transition-colors ${roundingMode === 'up' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>បង្គត់ឡើង</button>
-                            <button type="button" onClick={() => setRoundingMode('down')} aria-pressed={roundingMode === 'down'} className={`px-3 py-1.5 rounded-[4px] text-xs font-bold transition-colors ${roundingMode === 'down' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>បង្គត់ចុះ</button>
                         </div>
                     </div>
 

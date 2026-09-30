@@ -173,13 +173,11 @@ async function getNextContractNumber(brand) {
 }
 
 /** Calculate pawn schedule */
-function calcPawnSchedule(principal, ratePercent, months, startDateStr, roundingMode = 'up') {
+function calcPawnSchedule(principal, ratePercent, months, startDateStr) {
     const monthlyInterest = Math.round((principal * (ratePercent / 100) + 1e-8) * 100) / 100;
     const principalCents = Math.round((principal + 1e-8) * 100);
     const monthlyPrincipalCents = (principal / months) * 100;
-    const roundedMonthlyPrincipalCents = roundingMode === 'up'
-        ? Math.ceil(monthlyPrincipalCents - 1e-8)
-        : Math.floor(monthlyPrincipalCents + 1e-8);
+    const roundedMonthlyPrincipalCents = Math.ceil(monthlyPrincipalCents - 1e-8);
     const baseDate = new Date(`${startDateStr}T00:00:00`);
     const origDay = baseDate.getDate();
 
@@ -1103,15 +1101,6 @@ export function initTelegramBotService(bot) {
                 return;
             }
 
-            if (data.startsWith('pawn_round:')) {
-                const session = sessions.get(chatId);
-                if (!session || !session.pawn) return;
-                session.pawn.roundingMode = data.split('pawn_round:')[1] === 'up' ? 'up' : 'down';
-                sessions.set(chatId, session);
-                await sendPawnPreview(chatId, session);
-                return;
-            }
-
             // ── 12. Pawn: Back to model selection ──
             if (data === 'pawn_back:model') {
                 const session = sessions.get(chatId);
@@ -1144,7 +1133,7 @@ export function initTelegramBotService(bot) {
                 try {
                     const startDate = new Date().toISOString().split('T')[0];
                     const { monthlyInterest, totalInterest, schedule } = calcPawnSchedule(
-                        p.principal, p.ratePercent, p.months, p.startDate || startDate, p.roundingMode || 'up'
+                        p.principal, p.ratePercent, p.months, p.startDate || startDate
                     );
 
                     const newDoc = {
@@ -1297,15 +1286,6 @@ export function initTelegramBotService(bot) {
                 return;
             }
 
-            if (data.startsWith('calc_round:')) {
-                const session = sessions.get(chatId);
-                if (!session || !session.calc) return;
-                session.calc.roundingMode = data.split('calc_round:')[1] === 'up' ? 'up' : 'down';
-                sessions.set(chatId, session);
-                await sendCalcResult(chatId, session.calc);
-                return;
-            }
-
         } catch (err) {
             console.error('[TelegramBot] Callback query error:', err);
         }
@@ -1389,8 +1369,7 @@ export function initTelegramBotService(bot) {
         const p = session.pawn;
         const today = new Date().toISOString().split('T')[0];
         p.startDate = p.startDate || today;
-        const roundingMode = p.roundingMode || 'up';
-        const { monthlyInterest, totalInterest, schedule } = calcPawnSchedule(p.principal, p.ratePercent, p.months, p.startDate, roundingMode);
+        const { monthlyInterest, totalInterest, schedule } = calcPawnSchedule(p.principal, p.ratePercent, p.months, p.startDate);
 
         const [y, m, d] = p.startDate.split('-');
         const fmtD = `${d}-${m}-${y}`;
@@ -1406,10 +1385,6 @@ export function initTelegramBotService(bot) {
             `💰 <b>ការប្រាក់/ខែ:</b> $${fmt2(monthlyInterest)} | <b>សរុបការប្រាក់:</b> $${fmt2(totalInterest)}`;
 
         const inlineKeyboard = [
-            [
-                { text: `${roundingMode === 'up' ? '✓ ' : ''}បង្គត់ឡើង`, callback_data: 'pawn_round:up' },
-                { text: `${roundingMode === 'down' ? '✓ ' : ''}បង្គត់ចុះ`, callback_data: 'pawn_round:down' }
-            ],
             [{ text: '✅ Save ចូល Schedule 2', callback_data: 'pawn_save:confirm' }],
             [{ text: '❌ Cancel', callback_data: 'pawn_save:cancel' }]
         ];
@@ -1453,10 +1428,7 @@ export function initTelegramBotService(bot) {
         const monthlyPrincipal = principal / months;
         const principalCents = Math.round((principal + 1e-8) * 100);
         const monthlyPrincipalCents = monthlyPrincipal * 100;
-        const roundingMode = calc.roundingMode || 'up';
-        const roundedMonthlyPrincipalCents = roundingMode === 'up'
-            ? Math.ceil(monthlyPrincipalCents - 1e-8)
-            : Math.floor(monthlyPrincipalCents + 1e-8);
+        const roundedMonthlyPrincipalCents = Math.ceil(monthlyPrincipalCents - 1e-8);
         let remainingCents = principalCents;
         const installmentTotals = [];
         for (let month = 1; month <= months; month++) {
@@ -1488,10 +1460,6 @@ export function initTelegramBotService(bot) {
 
         await bot.sendMessage(chatId, result, {
             reply_markup: { inline_keyboard: [
-                [
-                    { text: `${roundingMode === 'up' ? '✓ ' : ''}បង្គត់ឡើង`, callback_data: 'calc_round:up' },
-                    { text: `${roundingMode === 'down' ? '✓ ' : ''}បង្គត់ចុះ`, callback_data: 'calc_round:down' }
-                ],
                 [{ text: '🧮 គណនាថ្មីទៀត', callback_data: 'calc:restart' }],
                 [{ text: '🏠 ត្រឡប់ទៅមេនូ (Menu)', callback_data: 'cmd:search_again' }]
             ]}

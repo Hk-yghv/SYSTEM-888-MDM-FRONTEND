@@ -25,7 +25,6 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     );
 
     const [rows, setRows] = useState([]);
-    const [roundingMode, setRoundingMode] = useState('up');
     const [latePenaltyRules, setLatePenaltyRules] = useState([]);
     const [paymentMethods, setPaymentMethods] = useState(['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer']);
     const [submitting, setSubmitting] = useState(false);
@@ -113,7 +112,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             setRows(newRows);
         } else {
             const monthlyInterest = round2(principal * (ratePercent / 100));
-            const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / months, roundingMode);
+            const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / months, 'up');
             let remainingPrincipalCents = toCurrencyCents(principal);
 
             const addMonthsSafe = (bDate, origDay, mOffset) => {
@@ -782,20 +781,14 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                     សូមកំណត់កាលបរិច្ឆេទថ្ងៃខែត្រូវបង់ និងទឹកប្រាក់សម្រាប់ខែនីមួយៗ ឬចុចប៊ូតុង <strong>"គណនាតាម Calculate Schedule 2"</strong> ដើម្បីបំពេញអូតូ រួចចុច <strong>"រក្សាទុក & Activate Contract"</strong>!
                                 </span>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
-                                <div className="inline-flex rounded-[5px] border border-indigo-200 bg-white p-1" role="group" aria-label="Principal rounding mode">
-                                    <button type="button" onClick={() => setRoundingMode('up')} aria-pressed={roundingMode === 'up'} className={`px-2.5 py-1.5 rounded-[4px] text-[11px] font-bold ${roundingMode === 'up' ? 'bg-indigo-600 text-white' : 'text-slate-600'}`}>បង្គត់ឡើង</button>
-                                    <button type="button" onClick={() => setRoundingMode('down')} aria-pressed={roundingMode === 'down'} className={`px-2.5 py-1.5 rounded-[4px] text-[11px] font-bold ${roundingMode === 'down' ? 'bg-indigo-600 text-white' : 'text-slate-600'}`}>បង្គត់ចុះ</button>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={applyCalculateSchedule2}
-                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-md"
-                                >
-                                    <FaCalculator size={13} />
-                                    <span>គណនាតាម Calculate Schedule 2</span>
-                                </button>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={applyCalculateSchedule2}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-md flex-shrink-0"
+                            >
+                                <FaCalculator size={13} />
+                                <span>គណនាតាម Calculate Schedule 2</span>
+                            </button>
                         </div>
                     )}
 
