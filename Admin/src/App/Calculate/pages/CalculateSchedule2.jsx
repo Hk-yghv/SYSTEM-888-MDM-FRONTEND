@@ -30,6 +30,7 @@ const CalculateSchedule2 = () => {
     const [contractNumber, setContractNumber] = useState('');
     const [principalInput, setPrincipalInput] = useState('');
     const [rateInput, setRateInput] = useState('');
+    const [roundingMode, setRoundingMode] = useState('down');
     const [notes, setNotes] = useState('');
 
     // ─── Result & UI States ─────────────────────────────────────────
@@ -224,27 +225,31 @@ const CalculateSchedule2 = () => {
 
         if (principal <= 0) return null;
 
-        const monthlyInterest = principal * (ratePercent / 100);
+        const monthlyInterest = Number((principal * (ratePercent / 100)).toFixed(2));
+        const principalCents = Math.round(principal * 100);
         const monthlyPrincipal = principal / months;
-        const monthlyTotalDue = monthlyPrincipal + monthlyInterest;
 
         const baseDate = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
         const originalDay = baseDate.getDate();
 
         const schedule = [];
-        let remainingBalance = principal;
+        let remainingPrincipalCents = principalCents;
 
         for (let i = 1; i <= months; i++) {
             const dueDate = addMonthsSafe(baseDate, originalDay, i);
 
             // ប្រាក់ដើមដែលត្រូវបង់ក្នុងខែនេះ
-            const principalPayment =
-                i === months
-                    ? remainingBalance
-                    : monthlyPrincipal;
+            const roundedMonthlyPrincipalCents = roundingMode === 'up'
+                ? Math.ceil((principal / months) * 100 - Number.EPSILON)
+                : Math.floor((principal / months) * 100 + Number.EPSILON);
+            const principalPaymentCents = i === months
+                ? remainingPrincipalCents
+                : Math.min(remainingPrincipalCents, roundedMonthlyPrincipalCents);
+            const principalPayment = principalPaymentCents / 100;
+            const totalDueMonth = Number((principalPayment + monthlyInterest).toFixed(2));
 
             // ដកប្រាក់ដើមដែលបានបង់
-            remainingBalance -= principalPayment;
+            remainingPrincipalCents -= principalPaymentCents;
 
             schedule.push({
                 no: i,
@@ -255,7 +260,7 @@ const CalculateSchedule2 = () => {
                 totalDueMonth: monthlyTotalDue,
 
                 // សមតុល្យនៅសល់
-                remainingBalance: Math.max(0, remainingBalance),
+                remainingBalance: Math.max(0, remainingPrincipalCents / 100),
             });
         }
 
@@ -263,8 +268,12 @@ const CalculateSchedule2 = () => {
             principal,
             ratePercent,
             months,
+            roundingMode,
+            monthlyPrincipal: schedule[0]?.monthlyPrincipal || 0,
+            monthlyTotalDue: schedule[0]?.totalDueMonth || 0,
             monthlyInterest,
-            totalInterest: monthlyInterest * months,
+            totalInterest: Number((monthlyInterest * months).toFixed(2)),
+            totalRepayment: Number(schedule.reduce((sum, row) => sum + row.totalDueMonth, 0).toFixed(2)),
             schedule,
             startDate,
             customerName: customerName.trim(),
@@ -284,7 +293,7 @@ const CalculateSchedule2 = () => {
         } else {
             setResult(null);
         }
-    }, [startDate, principalInput, rateInput, durationMonths, customerName, assetName, contractNumber]);
+    }, [startDate, principalInput, rateInput, durationMonths, customerName, assetName, contractNumber, roundingMode]);
 
     // ─── Save to Database ──────────────────────────────────────────
     const handleSave = async () => {
@@ -405,6 +414,7 @@ const CalculateSchedule2 = () => {
         setCustomerName('');
         setPrincipalInput('');
         setRateInput('');
+        setRoundingMode('down');
         setDurationMonths('');
         setStartDate(formatDateToYMD(new Date()));
         setAssetName('');
@@ -819,6 +829,28 @@ const CalculateSchedule2 = () => {
                                                 </button>
                                             ))}
                                         </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <span className="text-xs font-bold text-slate-700">បង្គត់ប្រាក់ដើម (2 ខ្ទង់)</span>
+                                    <div className="inline-flex rounded-[5px] border border-slate-200 bg-slate-100 p-1" role="group" aria-label="Principal rounding mode">
+                                        <button
+                                            type="button"
+                                            onClick={() => setRoundingMode('up')}
+                                            aria-pressed={roundingMode === 'up'}
+                                            className={`px-3 py-1.5 rounded-[4px] text-xs font-bold transition-colors ${roundingMode === 'up' ? 'bg-white text-violet-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                        >
+                                            បង្គត់ឡើង
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setRoundingMode('down')}
+                                            aria-pressed={roundingMode === 'down'}
+                                            className={`px-3 py-1.5 rounded-[4px] text-xs font-bold transition-colors ${roundingMode === 'down' ? 'bg-white text-violet-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                                        >
+                                            បង្គត់ចុះ
+                                        </button>
                                     </div>
                                 </div>
 
