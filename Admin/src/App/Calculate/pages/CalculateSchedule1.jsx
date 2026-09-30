@@ -10,6 +10,7 @@ import { MdCalculate, MdOutlineSchedule, MdOutlinePayments } from 'react-icons/m
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import CopyCell from '../../../components/CopyCell';
 import ExportDropdown from '../../../components/ExportDropdown';
+import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
 
 const RATE_PRESETS = ['11.5%', '10%', '12%', '15%', '8%', '5%', '3%', '1%'];
 const DURATION_PRESETS = [1, 2, 3, 4, 6, 12];
@@ -32,6 +33,7 @@ const CalculateSchedule1 = () => {
     const [rateInput, setRateInput] = useState('11.5%');
     const [durationInput, setDurationInput] = useState('4');
     const [durationUnit, setDurationUnit] = useState('months'); // 'months' | 'days'
+    const [roundingMode, setRoundingMode] = useState('down');
     const [startDate, setStartDate] = useState(() => formatDateToYMD(new Date()));
 
     // Calculation result state
@@ -66,18 +68,15 @@ const CalculateSchedule1 = () => {
         // Calculation formulas:
         // Monthly interest in USD = Principal * (Rate% / 100)
         const rateDecimal = ratePercent / 100;
-        const monthlyInterestUSD = principal * rateDecimal;
+        const monthlyInterestUSD = roundMoney(principal * rateDecimal);
 
         const monthsCount = durationUnit === 'days' ? Math.max(1, Math.ceil(duration / 30)) : duration;
-        const principalPerMonth = principal / monthsCount;
-        const paymentPerMonth = principalPerMonth + monthlyInterestUSD;
-
-        const totalInterest = monthlyInterestUSD * monthsCount;
-        const totalRepayment = paymentPerMonth * monthsCount; // or principal + totalInterest
+        const principalCents = toCurrencyCents(principal);
+        const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / monthsCount, roundingMode);
 
         // Generate schedule table rows
         const schedule = [];
-        let remainingPrincipal = principal;
+        let remainingPrincipalCents = principalCents;
         const baseDate = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
 
         // Safe addMonths: always tries the original start day, only clamps when target month is shorter.
@@ -103,8 +102,12 @@ const CalculateSchedule1 = () => {
                 dueDate = addMonthsSafe(baseDate, i);
             }
 
-            const currentPrincipalDue = principalPerMonth;
-            remainingPrincipal = Math.max(0, remainingPrincipal - currentPrincipalDue);
+            const currentPrincipalCents = i === monthsCount
+                ? remainingPrincipalCents
+                : Math.min(remainingPrincipalCents, roundedMonthlyPrincipalCents);
+            const currentPrincipalDue = currentPrincipalCents / 100;
+            remainingPrincipalCents -= currentPrincipalCents;
+            const totalDueMonth = roundMoney(currentPrincipalDue + monthlyInterestUSD);
 
             schedule.push({
                 monthIndex: i,
@@ -112,10 +115,15 @@ const CalculateSchedule1 = () => {
                 dueDate: formatDateToYMD(dueDate),
                 principalDue: currentPrincipalDue,
                 interestDue: monthlyInterestUSD,
-                totalDueMonth: paymentPerMonth,
-                remainingPrincipal: remainingPrincipal
+                totalDueMonth,
+                remainingPrincipal: Math.max(0, remainingPrincipalCents / 100)
             });
         }
+
+        const principalPerMonth = schedule[0]?.principalDue || 0;
+        const paymentPerMonth = schedule[0]?.totalDueMonth || 0;
+        const totalInterest = roundMoney(monthlyInterestUSD * monthsCount);
+        const totalRepayment = roundMoney(schedule.reduce((sum, row) => sum + row.totalDueMonth, 0));
 
         setCalculationResult({
             principal,
@@ -123,6 +131,7 @@ const CalculateSchedule1 = () => {
             monthsCount,
             duration,
             durationUnit,
+            roundingMode,
             monthlyInterestUSD,
             principalPerMonth,
             paymentPerMonth,
@@ -138,6 +147,7 @@ const CalculateSchedule1 = () => {
         setRateInput('11.5%');
         setDurationInput('4');
         setDurationUnit('months');
+        setRoundingMode('down');
         setStartDate(formatDateToYMD(new Date()));
         setCalculationResult(null);
         setCopiedText(false);
@@ -435,6 +445,14 @@ const CalculateSchedule1 = () => {
                             <p className="text-[11px] text-slate-400 font-medium">
                                 សម្រាប់គណនាកាលបរិច្ឆេទត្រូវបង់តាមខែនីមួយៗ
                             </p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-xs font-bold text-slate-700">បង្គត់ប្រាក់ដើម (2 ខ្ទង់)</span>
+                        <div className="inline-flex rounded-[5px] border border-slate-200 bg-slate-100 p-1" role="group" aria-label="Principal rounding mode">
+                            <button type="button" onClick={() => setRoundingMode('up')} aria-pressed={roundingMode === 'up'} className={`px-3 py-1.5 rounded-[4px] text-xs font-bold transition-colors ${roundingMode === 'up' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>បង្គត់ឡើង</button>
+                            <button type="button" onClick={() => setRoundingMode('down')} aria-pressed={roundingMode === 'down'} className={`px-3 py-1.5 rounded-[4px] text-xs font-bold transition-colors ${roundingMode === 'down' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>បង្គត់ចុះ</button>
                         </div>
                     </div>
 

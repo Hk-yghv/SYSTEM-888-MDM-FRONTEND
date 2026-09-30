@@ -8,6 +8,7 @@ import {
     FaSearch, FaCheckCircle, FaSpinner, FaFileInvoiceDollar
 } from 'react-icons/fa';
 import { MdCalculate } from 'react-icons/md';
+import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
 
 const CalculateSchedule2 = () => {
     const { t } = useLanguage();
@@ -225,9 +226,9 @@ const CalculateSchedule2 = () => {
 
         if (principal <= 0) return null;
 
-        const monthlyInterest = Number((principal * (ratePercent / 100)).toFixed(2));
-        const principalCents = Math.round(principal * 100);
-        const monthlyPrincipal = principal / months;
+        const monthlyInterest = roundMoney(principal * (ratePercent / 100));
+        const principalCents = toCurrencyCents(principal);
+        const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / months, roundingMode);
 
         const baseDate = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
         const originalDay = baseDate.getDate();
@@ -239,14 +240,11 @@ const CalculateSchedule2 = () => {
             const dueDate = addMonthsSafe(baseDate, originalDay, i);
 
             // ប្រាក់ដើមដែលត្រូវបង់ក្នុងខែនេះ
-            const roundedMonthlyPrincipalCents = roundingMode === 'up'
-                ? Math.ceil((principal / months) * 100 - Number.EPSILON)
-                : Math.floor((principal / months) * 100 + Number.EPSILON);
             const principalPaymentCents = i === months
                 ? remainingPrincipalCents
                 : Math.min(remainingPrincipalCents, roundedMonthlyPrincipalCents);
             const principalPayment = principalPaymentCents / 100;
-            const totalDueMonth = Number((principalPayment + monthlyInterest).toFixed(2));
+            const totalDueMonth = roundMoney(principalPayment + monthlyInterest);
 
             // ដកប្រាក់ដើមដែលបានបង់
             remainingPrincipalCents -= principalPaymentCents;
@@ -272,8 +270,8 @@ const CalculateSchedule2 = () => {
             monthlyPrincipal: schedule[0]?.monthlyPrincipal || 0,
             monthlyTotalDue: schedule[0]?.totalDueMonth || 0,
             monthlyInterest,
-            totalInterest: Number((monthlyInterest * months).toFixed(2)),
-            totalRepayment: Number(schedule.reduce((sum, row) => sum + row.totalDueMonth, 0).toFixed(2)),
+            totalInterest: roundMoney(monthlyInterest * months),
+            totalRepayment: roundMoney(schedule.reduce((sum, row) => sum + row.totalDueMonth, 0)),
             schedule,
             startDate,
             customerName: customerName.trim(),
