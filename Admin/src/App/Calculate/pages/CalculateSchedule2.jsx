@@ -219,18 +219,8 @@ const CalculateSchedule2 = () => {
     const followsInstallmentFormula = (record) => {
         const principal = Number(record?.principal);
         const months = Number(record?.months);
-        const ratePercent = Number(record?.ratePercent);
         const schedule = record?.schedule;
-        if (!Number.isFinite(principal) || principal <= 0 || !Number.isInteger(months) || months < 1 || !Number.isFinite(ratePercent) || !Array.isArray(schedule) || schedule.length !== months) {
-            return false;
-        }
-
-        const monthlyInterestCents = toCurrencyCents(roundMoney(principal * (ratePercent / 100)));
-        const totalInterestCents = toCurrencyCents(roundMoney((monthlyInterestCents / 100) * months));
-        const matchesCents = (value, expectedCents) =>
-            value !== undefined && value !== null && value !== '' && Number.isFinite(Number(value)) && toCurrencyCents(value) === expectedCents;
-
-        if (!matchesCents(record.monthlyInterest, monthlyInterestCents) || !matchesCents(record.totalInterest, totalInterestCents)) {
+        if (!Number.isFinite(principal) || principal <= 0 || !Number.isInteger(months) || months < 1 || !Array.isArray(schedule) || schedule.length !== months) {
             return false;
         }
 
@@ -239,21 +229,20 @@ const CalculateSchedule2 = () => {
 
         for (let index = 0; index < months; index++) {
             const row = schedule[index];
-            if (!row || Number(row.no) !== index + 1) return false;
+            if (!row) return false;
+
+            const storedPaymentCents = row.monthlyPrincipal !== undefined && row.monthlyPrincipal !== null && row.monthlyPrincipal !== ''
+                ? toCurrencyCents(row.monthlyPrincipal)
+                : row.totalDueMonth !== undefined && row.interestAndFee !== undefined
+                    ? toCurrencyCents(Number(row.totalDueMonth) - Number(row.interestAndFee))
+                    : null;
+            if (storedPaymentCents === null) return false;
 
             const expectedPaymentCents = index === months - 1
                 ? remainingCents
                 : Math.min(remainingCents, regularPaymentCents);
-            const expectedTotalDueCents = toCurrencyCents(roundMoney(expectedPaymentCents / 100 + monthlyInterestCents / 100));
-            if (
-                !matchesCents(row.monthlyPrincipal, expectedPaymentCents) ||
-                !matchesCents(row.interestAndFee, monthlyInterestCents) ||
-                !matchesCents(row.totalDueMonth, expectedTotalDueCents)
-            ) {
-                return false;
-            }
+            if (storedPaymentCents !== expectedPaymentCents) return false;
             remainingCents -= expectedPaymentCents;
-            if (!matchesCents(row.remainingBalance, remainingCents)) return false;
         }
 
         return remainingCents === 0;
