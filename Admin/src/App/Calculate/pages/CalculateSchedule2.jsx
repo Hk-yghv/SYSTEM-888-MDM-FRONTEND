@@ -217,35 +217,23 @@ const CalculateSchedule2 = () => {
     };
 
     const followsInstallmentFormula = (record) => {
-        const principal = Number(record?.principal);
         const months = Number(record?.months);
         const schedule = record?.schedule;
-        if (!Number.isFinite(principal) || principal <= 0 || !Number.isInteger(months) || months < 1 || !Array.isArray(schedule) || schedule.length !== months) {
+        if (!Number.isInteger(months) || months < 2 || !Array.isArray(schedule) || schedule.length !== months) {
             return false;
         }
 
-        let remainingCents = toCurrencyCents(principal);
-        const regularPaymentCents = roundPrincipalToCents(principal / months);
+        const totalDueAmounts = schedule.map(row => {
+            if (row?.totalDueMonth === undefined || row?.totalDueMonth === null || row.totalDueMonth === '') return null;
+            const amount = Number(row.totalDueMonth);
+            return Number.isFinite(amount) ? toCurrencyCents(amount) : null;
+        });
+        if (totalDueAmounts.some(amount => amount === null)) return false;
 
-        for (let index = 0; index < months; index++) {
-            const row = schedule[index];
-            if (!row) return false;
-
-            const storedPaymentCents = row.monthlyPrincipal !== undefined && row.monthlyPrincipal !== null && row.monthlyPrincipal !== ''
-                ? toCurrencyCents(row.monthlyPrincipal)
-                : row.totalDueMonth !== undefined && row.interestAndFee !== undefined
-                    ? toCurrencyCents(Number(row.totalDueMonth) - Number(row.interestAndFee))
-                    : null;
-            if (storedPaymentCents === null) return false;
-
-            const expectedPaymentCents = index === months - 1
-                ? remainingCents
-                : Math.min(remainingCents, regularPaymentCents);
-            if (storedPaymentCents !== expectedPaymentCents) return false;
-            remainingCents -= expectedPaymentCents;
-        }
-
-        return remainingCents === 0;
+        const regularAmount = totalDueAmounts[0];
+        const regularMonthsMatch = totalDueAmounts.slice(1, -1).every(amount => amount === regularAmount);
+        const finalMonthDiffers = totalDueAmounts[months - 1] !== regularAmount;
+        return regularMonthsMatch && finalMonthDiffers;
     };
 
     // ─── Calculate ─────────────────────────────────────────────────
