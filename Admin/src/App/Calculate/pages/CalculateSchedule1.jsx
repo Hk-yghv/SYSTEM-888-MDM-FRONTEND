@@ -71,7 +71,7 @@ const CalculateSchedule1 = () => {
 
         const monthsCount = durationUnit === 'days' ? Math.max(1, Math.ceil(duration / 30)) : duration;
         const principalCents = toCurrencyCents(principal);
-        const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / monthsCount, 'up');
+        const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / monthsCount);
 
         // Generate schedule table rows
         const schedule = [];

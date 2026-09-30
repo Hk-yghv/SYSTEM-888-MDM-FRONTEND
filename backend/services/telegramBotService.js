@@ -177,7 +177,7 @@ function calcPawnSchedule(principal, ratePercent, months, startDateStr) {
     const monthlyInterest = Math.round((principal * (ratePercent / 100) + 1e-8) * 100) / 100;
     const principalCents = Math.round((principal + 1e-8) * 100);
     const monthlyPrincipalCents = (principal / months) * 100;
-    const roundedMonthlyPrincipalCents = Math.ceil(monthlyPrincipalCents - 1e-8);
+    const roundedMonthlyPrincipalCents = Math.round(monthlyPrincipalCents + 1e-8);
     const baseDate = new Date(`${startDateStr}T00:00:00`);
     const origDay = baseDate.getDate();
 
@@ -1428,7 +1428,7 @@ export function initTelegramBotService(bot) {
         const monthlyPrincipal = principal / months;
         const principalCents = Math.round((principal + 1e-8) * 100);
         const monthlyPrincipalCents = monthlyPrincipal * 100;
-        const roundedMonthlyPrincipalCents = Math.ceil(monthlyPrincipalCents - 1e-8);
+        const roundedMonthlyPrincipalCents = Math.round(monthlyPrincipalCents + 1e-8);
         let remainingCents = principalCents;
         const installmentTotals = [];
         for (let month = 1; month <= months; month++) {

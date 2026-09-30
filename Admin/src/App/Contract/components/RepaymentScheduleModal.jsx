@@ -112,7 +112,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             setRows(newRows);
         } else {
             const monthlyInterest = round2(principal * (ratePercent / 100));
-            const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / months, 'up');
+            const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / months);
             let remainingPrincipalCents = toCurrencyCents(principal);
 
             const addMonthsSafe = (bDate, origDay, mOffset) => {

@@ -227,7 +227,7 @@ const CalculateSchedule2 = () => {
 
         const monthlyInterest = roundMoney(principal * (ratePercent / 100));
         const principalCents = toCurrencyCents(principal);
-        const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / months, 'up');
+        const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / months);
 
         const baseDate = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
         const originalDay = baseDate.getDate();
