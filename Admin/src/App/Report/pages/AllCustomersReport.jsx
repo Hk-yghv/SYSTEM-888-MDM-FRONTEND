@@ -338,7 +338,7 @@ const AllCustomersReport = () => {
                                     <span>🖼</span><span className="hidden sm:inline">Landscape</span>
                                 </button>
                             </div>
-                            
+
                         </>
                     )}
                     <button onClick={() => { fetchData(page, searchTerm); fetchFullData(); }} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
@@ -530,7 +530,7 @@ const AllCustomersReport = () => {
                                 const link = (url, label = 'Open') => url
                                     ? <a href={url} title={url} target="_blank" rel="noreferrer" className="text-indigo-700 underline">{label}</a>
                                     : '-';
-                                const cell = (content, className = '') => <td className={`max-w-64 px-3 py-2 align-top ${className}`}>{content}</td>;
+                                const cell = (content, className = '') => <td className={`max-w-99999999 px-3 py-2 align-top ${className}`}>{content}</td>;
                                 const photoLinks = [...(item.photos || []), ...(item.evidencePhotos || [])].filter(Boolean);
 
                                 return (
