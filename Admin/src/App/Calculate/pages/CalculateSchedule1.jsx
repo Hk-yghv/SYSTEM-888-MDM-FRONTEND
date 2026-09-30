@@ -33,7 +33,7 @@ const CalculateSchedule1 = () => {
     const [rateInput, setRateInput] = useState('11.5%');
     const [durationInput, setDurationInput] = useState('4');
     const [durationUnit, setDurationUnit] = useState('months'); // 'months' | 'days'
-    const [roundingMode, setRoundingMode] = useState('down');
+    const [roundingMode, setRoundingMode] = useState('up');
     const [startDate, setStartDate] = useState(() => formatDateToYMD(new Date()));
 
     // Calculation result state
@@ -147,7 +147,7 @@ const CalculateSchedule1 = () => {
         setRateInput('11.5%');
         setDurationInput('4');
         setDurationUnit('months');
-        setRoundingMode('down');
+        setRoundingMode('up');
         setStartDate(formatDateToYMD(new Date()));
         setCalculationResult(null);
         setCopiedText(false);

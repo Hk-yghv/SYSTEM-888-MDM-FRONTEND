@@ -31,7 +31,7 @@ const CalculateSchedule2 = () => {
     const [contractNumber, setContractNumber] = useState('');
     const [principalInput, setPrincipalInput] = useState('');
     const [rateInput, setRateInput] = useState('');
-    const [roundingMode, setRoundingMode] = useState('down');
+    const [roundingMode, setRoundingMode] = useState('up');
     const [notes, setNotes] = useState('');
 
     // ─── Result & UI States ─────────────────────────────────────────
@@ -255,7 +255,7 @@ const CalculateSchedule2 = () => {
                 principal,
                 monthlyPrincipal: principalPayment,
                 interestAndFee: monthlyInterest,
-                totalDueMonth: monthlyTotalDue,
+                totalDueMonth,
 
                 // សមតុល្យនៅសល់
                 remainingBalance: Math.max(0, remainingPrincipalCents / 100),
@@ -412,7 +412,7 @@ const CalculateSchedule2 = () => {
         setCustomerName('');
         setPrincipalInput('');
         setRateInput('');
-        setRoundingMode('down');
+        setRoundingMode('up');
         setDurationMonths('');
         setStartDate(formatDateToYMD(new Date()));
         setAssetName('');

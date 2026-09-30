@@ -173,7 +173,7 @@ async function getNextContractNumber(brand) {
 }
 
 /** Calculate pawn schedule */
-function calcPawnSchedule(principal, ratePercent, months, startDateStr, roundingMode = 'down') {
+function calcPawnSchedule(principal, ratePercent, months, startDateStr, roundingMode = 'up') {
     const monthlyInterest = Math.round((principal * (ratePercent / 100) + 1e-8) * 100) / 100;
     const principalCents = Math.round((principal + 1e-8) * 100);
     const monthlyPrincipalCents = (principal / months) * 100;
@@ -1144,7 +1144,7 @@ export function initTelegramBotService(bot) {
                 try {
                     const startDate = new Date().toISOString().split('T')[0];
                     const { monthlyInterest, totalInterest, schedule } = calcPawnSchedule(
-                        p.principal, p.ratePercent, p.months, p.startDate || startDate, p.roundingMode || 'down'
+                        p.principal, p.ratePercent, p.months, p.startDate || startDate, p.roundingMode || 'up'
                     );
 
                     const newDoc = {
@@ -1389,7 +1389,7 @@ export function initTelegramBotService(bot) {
         const p = session.pawn;
         const today = new Date().toISOString().split('T')[0];
         p.startDate = p.startDate || today;
-        const roundingMode = p.roundingMode || 'down';
+        const roundingMode = p.roundingMode || 'up';
         const { monthlyInterest, totalInterest, schedule } = calcPawnSchedule(p.principal, p.ratePercent, p.months, p.startDate, roundingMode);
 
         const [y, m, d] = p.startDate.split('-');
@@ -1453,7 +1453,7 @@ export function initTelegramBotService(bot) {
         const monthlyPrincipal = principal / months;
         const principalCents = Math.round((principal + 1e-8) * 100);
         const monthlyPrincipalCents = monthlyPrincipal * 100;
-        const roundingMode = calc.roundingMode || 'down';
+        const roundingMode = calc.roundingMode || 'up';
         const roundedMonthlyPrincipalCents = roundingMode === 'up'
             ? Math.ceil(monthlyPrincipalCents - 1e-8)
             : Math.floor(monthlyPrincipalCents + 1e-8);

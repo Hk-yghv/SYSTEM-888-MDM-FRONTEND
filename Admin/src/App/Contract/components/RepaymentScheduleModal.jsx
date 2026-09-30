@@ -25,7 +25,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     );
 
     const [rows, setRows] = useState([]);
-    const [roundingMode, setRoundingMode] = useState('down');
+    const [roundingMode, setRoundingMode] = useState('up');
     const [latePenaltyRules, setLatePenaltyRules] = useState([]);
     const [paymentMethods, setPaymentMethods] = useState(['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer']);
     const [submitting, setSubmitting] = useState(false);
