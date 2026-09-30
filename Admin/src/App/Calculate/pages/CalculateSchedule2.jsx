@@ -216,6 +216,31 @@ const CalculateSchedule2 = () => {
         return `${d}-${m}-${y}`;
     };
 
+    const followsInstallmentFormula = (record) => {
+        const principal = Number(record?.principal);
+        const months = Number(record?.months);
+        const schedule = record?.schedule;
+        if (!Number.isFinite(principal) || principal <= 0 || !Number.isInteger(months) || months < 1 || !Array.isArray(schedule) || schedule.length !== months) {
+            return false;
+        }
+
+        let remainingCents = toCurrencyCents(principal);
+        const regularPaymentCents = roundPrincipalToCents(principal / months);
+
+        for (let index = 0; index < months; index++) {
+            const row = schedule[index];
+            if (row?.monthlyPrincipal === undefined || row?.monthlyPrincipal === null || row.monthlyPrincipal === '') return false;
+
+            const expectedPaymentCents = index === months - 1
+                ? remainingCents
+                : Math.min(remainingCents, regularPaymentCents);
+            if (toCurrencyCents(row.monthlyPrincipal) !== expectedPaymentCents) return false;
+            remainingCents -= expectedPaymentCents;
+        }
+
+        return remainingCents === 0;
+    };
+
     // ─── Calculate ─────────────────────────────────────────────────
     const handleCalculate = (e) => {
         if (e) e.preventDefault();
@@ -907,11 +932,14 @@ const CalculateSchedule2 = () => {
                                     {displayedHistory.map((item) => {
                                         const isNewlyAdded = newlyAddedId === item._id;
                                         const isActive = activeRecordId === item._id;
+                                        const followsFormula = followsInstallmentFormula(item);
                                         return (
                                             <div
                                                 key={item._id}
                                                 onClick={() => handleLoadRecord(item)}
-                                                className={`p-3 rounded-[5px] border text-xs cursor-pointer transition-all ${isNewlyAdded
+                                                className={`p-3 rounded-[5px] border text-xs cursor-pointer transition-all ${followsFormula
+                                                    ? 'bg-red-50 border-red-500 shadow-xs ring-1 ring-red-400'
+                                                    : isNewlyAdded
                                                     ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-400 animate-pulse'
                                                     : isActive
                                                         ? 'bg-violet-50 border-violet-400 shadow-xs ring-1 ring-violet-400'
@@ -1142,7 +1170,7 @@ const CalculateSchedule2 = () => {
                                     filteredHistory.map((item) => (
                                         <div
                                             key={item._id}
-                                            className="p-3.5 rounded-[5px] border border-slate-200 hover:border-violet-300 hover:bg-violet-50/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                            className={`p-3.5 rounded-[5px] border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${followsInstallmentFormula(item) ? 'border-red-500 bg-red-50/30' : 'border-slate-200 hover:border-violet-300 hover:bg-violet-50/20'}`}>
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-black text-slate-800 text-sm">
