@@ -30,7 +30,7 @@ const CalculateSchedule2 = () => {
     const [durationMonths, setDurationMonths] = useState('');
     const [contractNumber, setContractNumber] = useState('');
     const [principalInput, setPrincipalInput] = useState('');
-    const [rateInput, setRateInput] = useState('');
+    const [rateInput, setRateInput] = useState('11.5');
     const [notes, setNotes] = useState('');
 
     // ─── Result & UI States ─────────────────────────────────────────
@@ -45,6 +45,15 @@ const CalculateSchedule2 = () => {
     const [displayLimit, setDisplayLimit] = useState(10);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [printOrientation, setPrintOrientation] = useState('landscape'); // 'portrait' | 'landscape'
+
+    const getNextContractNumber = (records) => {
+        const maxNumber = records.reduce((max, record) => {
+            const value = String(record?.contractNumber || '').trim();
+            if (!/^\d+$/.test(value)) return max;
+            return Math.max(max, parseInt(value, 10));
+        }, 0);
+        return String(maxNumber + 1).padStart(3, '0');
+    };
 
     // ─── Load asset types from ControlSystem DB ────────────────────
     useEffect(() => {
@@ -96,6 +105,7 @@ const CalculateSchedule2 = () => {
                 const data = await res.json();
                 if (data.success && Array.isArray(data.data)) {
                     setSavedHistory(data.data);
+                    setContractNumber(current => current || getNextContractNumber(data.data));
                 }
             }
         } catch (err) {
@@ -429,11 +439,11 @@ const CalculateSchedule2 = () => {
     const handleReset = () => {
         setCustomerName('');
         setPrincipalInput('');
-        setRateInput('');
+        setRateInput('11.5');
         setDurationMonths('');
         setStartDate(formatDateToYMD(new Date()));
         setAssetName('');
-        setContractNumber('');
+        setContractNumber(getNextContractNumber(savedHistory));
         setNotes('');
         setResult(null);
         setActiveRecordId(null);
