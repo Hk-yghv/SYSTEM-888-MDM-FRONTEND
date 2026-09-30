@@ -21,9 +21,9 @@ const Pagination = ({ currentPage = 1, totalItems = 0, itemsPerPage = 10, onPage
     };
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-xl text-xs select-none shadow-xs">
-            <div className="text-slate-500 font-medium">
-                Showing <span className="font-bold text-emerald-700">{startItem}</span> – <span className="font-bold text-emerald-700">{endItem}</span> of <span className="font-extrabold text-slate-800">{totalItems}</span> records
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-2xl text-xs select-none shadow-xs">
+            <div className="text-gray-400">
+                Showing <span className="font-bold text-indigo-400">{startItem}</span> – <span className="font-bold text-indigo-400">{endItem}</span> of <span className="font-bold text-gray-100">{totalItems}</span> records
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -31,14 +31,14 @@ const Pagination = ({ currentPage = 1, totalItems = 0, itemsPerPage = 10, onPage
                 <button
                     onClick={() => onPageChange(1)}
                     disabled={currentPage === 1}
-                    className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-slate-50 disabled:cursor-not-allowed text-slate-700 rounded-lg font-bold border border-slate-200 transition-all cursor-pointer shadow-xs"
+                    className="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-300 rounded-xl font-bold border border-gray-700 transition-all cursor-pointer"
                 >«</button>
 
                 {/* Prev */}
                 <button
                     onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
                     disabled={currentPage === 1}
-                    className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-slate-50 disabled:cursor-not-allowed text-slate-700 rounded-lg font-semibold border border-slate-200 transition-all cursor-pointer shadow-xs"
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-200 rounded-xl font-semibold border border-gray-700 transition-all cursor-pointer"
                 >
                     <MdChevronLeft size={16} />
                 </button>
@@ -48,10 +48,11 @@ const Pagination = ({ currentPage = 1, totalItems = 0, itemsPerPage = 10, onPage
                     <button
                         key={pg}
                         onClick={() => onPageChange(pg)}
-                        className={`w-8 h-8 rounded-lg font-bold border transition-all cursor-pointer text-xs ${pg === currentPage
-                                ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm shadow-emerald-600/30'
-                                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
-                            }`}
+                        className={`w-8 h-8 rounded-xl font-bold border transition-all cursor-pointer ${
+                            pg === currentPage
+                                ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/30'
+                                : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`}
                     >
                         {pg}
                     </button>
@@ -61,7 +62,7 @@ const Pagination = ({ currentPage = 1, totalItems = 0, itemsPerPage = 10, onPage
                 <button
                     onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-slate-50 disabled:cursor-not-allowed text-slate-700 rounded-lg font-semibold border border-slate-200 transition-all cursor-pointer shadow-xs"
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-200 rounded-xl font-semibold border border-gray-700 transition-all cursor-pointer"
                 >
                     <MdChevronRight size={16} />
                 </button>
@@ -70,7 +71,7 @@ const Pagination = ({ currentPage = 1, totalItems = 0, itemsPerPage = 10, onPage
                 <button
                     onClick={() => onPageChange(totalPages)}
                     disabled={currentPage === totalPages}
-                    className="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-slate-50 disabled:cursor-not-allowed text-slate-700 rounded-lg font-bold border border-slate-200 transition-all cursor-pointer shadow-xs"
+                    className="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-300 rounded-xl font-bold border border-gray-700 transition-all cursor-pointer"
                 >»</button>
             </div>
         </div>

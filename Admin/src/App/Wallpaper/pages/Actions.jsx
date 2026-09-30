@@ -92,43 +92,39 @@ const Actions = () => {
     };
 
     return (
-        <div className='w-full p-4 select-none space-y-3.5'>
-            <header className='p-3 w-full border border-slate-200/90 bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-between gap-3 shadow-xs'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-2 h-5 rounded-full bg-purple-500' />
                     <div>
-                        <h1 className='text-sm md:text-base font-extrabold text-slate-800 tracking-tight flex items-center gap-2'>
+                        <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
                             Wallpaper
-                            <span className='px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold'>
-                                {total} {t('records') || 'Records'}
-                            </span>
                         </h1>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     <div className="relative">
-                        <MdSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
                             type="text"
                             placeholder="Search customer, model, serial..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-8 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-purple-400 focus:bg-white transition-all w-52 shadow-xs"
+                            className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:bg-white transition-all w-64 shadow-2xs"
                         />
                     </div>
                     <button
                         onClick={fetchContracts}
                         disabled={reloading}
-                        className='flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer border border-slate-200 transition-all shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
-                        <MdOutlineSync size={15} className={reloading ? 'spin-reload text-emerald-600' : ''} />
+                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
-            <div className='w-full overflow-x-auto h-[calc(100vh-300px)] pb-14 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-300px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -175,7 +171,7 @@ const Actions = () => {
                                                     <button
                                                         onClick={() => handleToggleWallpaper(item, 'Unlocked')}
                                                         disabled={togglingId === item._id}
-                                                        className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+                                                        className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-blue-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
                                                     >
                                                         <FaUnlock size={11} />
                                                         <span>Set to Unlock Wallpaper</span>
@@ -184,7 +180,7 @@ const Actions = () => {
                                                     <button
                                                         onClick={() => handleToggleWallpaper(item, 'Locked')}
                                                         disabled={togglingId === item._id}
-                                                        className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+                                                        className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-purple-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
                                                     >
                                                         <FaLock size={11} />
                                                         <span>Set to Lock Wallpaper</span>

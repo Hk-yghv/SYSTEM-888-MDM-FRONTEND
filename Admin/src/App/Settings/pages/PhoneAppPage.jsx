@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../../context/AuthContext';
@@ -279,7 +279,7 @@ const PhoneAppPage = () => {
     return (
         <div className="w-full bg-transparent p-4 text-slate-800 select-none space-y-4 overflow-y-auto">
             {/* Header */}
-            <header className="p-4 border border-slate-200 bg-white rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+            <header className="p-4 border border-slate-200 bg-white rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
                 <div>
                     <h1 className="text-xl font-extrabold text-indigo-400 flex items-center gap-2">
                         <MdPhoneAndroid className="text-2xl" />
@@ -295,15 +295,16 @@ const PhoneAppPage = () => {
 
                 <div className="flex items-center gap-3 flex-wrap">
                     {/* Connection Status Badge */}
-                    <span className={`px-3 py-1.5 text-xs font-bold rounded-full border flex items-center gap-1.5 ${deviceData?.isConnected
+                    <span className={`px-3 py-1.5 text-xs font-bold rounded-full border flex items-center gap-1.5 ${
+                        deviceData?.isConnected
                             ? 'bg-emerald-950 border-emerald-700 text-emerald-400'
                             : deviceData?.isPending
-                                ? 'bg-amber-950 border-amber-700 text-amber-400 animate-pulse'
-                                : 'bg-red-950 border-red-800 text-red-400'
-                        }`}>
+                            ? 'bg-amber-950 border-amber-700 text-amber-400 animate-pulse'
+                            : 'bg-red-950 border-red-800 text-red-400'
+                    }`}>
                         {deviceData?.isConnected ? <><FaPlug /> 🟢 Connected</>
                             : deviceData?.isPending ? <><FaHourglass className="animate-spin" /> ⏳ Pending Approval</>
-                                : <><FaTimesCircle /> 🔴 Disconnected</>}
+                            : <><FaTimesCircle /> 🔴 Disconnected</>}
                     </span>
 
                     {/* APPROVE CONNECT Button (when device is Pending) */}
@@ -343,38 +344,41 @@ const PhoneAppPage = () => {
 
             {/* Connection Mode Selection & Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-
+                
                 {/* Left Column: Connection Pairing Modes (8 cols) */}
                 <div className="lg:col-span-7 space-y-4">
-
+                    
                     {/* Pairing Method Tab Buttons */}
-                    <div className="bg-[#0f1426] border border-gray-800 p-2 rounded-xl flex items-center gap-2">
+                    <div className="bg-[#0f1426] border border-gray-800 p-2 rounded-2xl flex items-center gap-2">
                         <button
                             onClick={() => setActiveTab('qrcode')}
-                            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeTab === 'qrcode'
+                            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                activeTab === 'qrcode'
                                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
                                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                                }`}
+                            }`}
                         >
                             <FaQrcode className="text-base" />
                             <span>QR Code Connect</span>
                         </button>
                         <button
                             onClick={() => setActiveTab('wifi')}
-                            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeTab === 'wifi'
+                            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                activeTab === 'wifi'
                                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
                                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                                }`}
+                            }`}
                         >
                             <FaWifi className="text-base" />
                             <span>Wi-Fi Network</span>
                         </button>
                         <button
                             onClick={() => setActiveTab('hotspot')}
-                            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeTab === 'hotspot'
+                            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                activeTab === 'hotspot'
                                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
                                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                                }`}
+                            }`}
                         >
                             <FaBroadcastTower className="text-base" />
                             <span>Hotspot AP</span>
@@ -382,11 +386,11 @@ const PhoneAppPage = () => {
                     </div>
 
                     {/* Pairing Tab Content */}
-                    <div className="bg-[#0f1426] border border-gray-800 rounded-xl p-6 shadow-xl space-y-4">
+                    <div className="bg-[#0f1426] border border-gray-800 rounded-2xl p-6 shadow-xl space-y-4">
                         {activeTab === 'qrcode' && (
                             <div className="flex flex-col md:flex-row items-center gap-6">
                                 {/* Real Static Scannable QRCodeSVG Box */}
-                                <div className="p-4 bg-white rounded-xl border-4 border-indigo-500 shadow-2xl flex flex-col items-center justify-center relative">
+                                <div className="p-4 bg-white rounded-2xl border-4 border-indigo-500 shadow-2xl flex flex-col items-center justify-center relative">
                                     <QRCodeSVG
                                         value={JSON.stringify({
                                             apiUrl: API_BASE,
@@ -451,14 +455,15 @@ const PhoneAppPage = () => {
                     </div>
 
                     {/* Detailed Connected Phone Information */}
-                    <div className="bg-[#0f1426] border border-gray-800 rounded-xl p-5 shadow-xl space-y-4">
+                    <div className="bg-[#0f1426] border border-gray-800 rounded-2xl p-5 shadow-xl space-y-4">
 
                         {/* Action Message Feedback */}
                         {actionMsg && (
-                            <div className={`p-3 rounded-xl text-xs font-bold font-khmer flex items-center gap-2 border ${actionMsg.includes('ជោគជ័យ') || actionMsg.includes('Approved')
+                            <div className={`p-3 rounded-xl text-xs font-bold font-khmer flex items-center gap-2 border ${
+                                actionMsg.includes('ជោគជ័យ') || actionMsg.includes('Approved')
                                     ? 'bg-emerald-950 border-emerald-700 text-emerald-300'
                                     : 'bg-amber-950 border-amber-700 text-amber-300'
-                                }`}>
+                            }`}>
                                 <FaCheckCircle className="flex-shrink-0" />
                                 <span>{actionMsg}</span>
                             </div>
@@ -482,15 +487,16 @@ const PhoneAppPage = () => {
                             <h3 className="text-sm font-bold text-indigo-400 flex items-center gap-2">
                                 <FaMobileAlt /> Connected Device Telemetry & Specifications
                             </h3>
-                            <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border ${deviceData?.isConnected
+                            <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border ${
+                                deviceData?.isConnected
                                     ? 'bg-emerald-950 border-emerald-700 text-emerald-400'
                                     : deviceData?.isPending
-                                        ? 'bg-amber-950 border-amber-700 text-amber-400'
-                                        : 'bg-red-950 border-red-800 text-red-400'
-                                }`}>
+                                    ? 'bg-amber-950 border-amber-700 text-amber-400'
+                                    : 'bg-red-950 border-red-800 text-red-400'
+                            }`}>
                                 {deviceData?.isConnected ? '🟢 ACTIVE CONNECTED'
                                     : deviceData?.isPending ? '⏳ PENDING APPROVAL'
-                                        : '🔴 DISCONNECTED'}
+                                    : '🔴 DISCONNECTED'}
                             </span>
                         </div>
 
@@ -544,7 +550,7 @@ const PhoneAppPage = () => {
                 </div>
 
                 {/* Right Column: Interactive 3D Device Viewer (5 cols) */}
-                <div className="lg:col-span-5 bg-[#0f1426] border border-gray-800 rounded-xl p-5 shadow-xl flex flex-col justify-between items-center relative overflow-hidden min-h-[500px]">
+                <div className="lg:col-span-5 bg-[#0f1426] border border-gray-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between items-center relative overflow-hidden min-h-[500px]">
                     <div className="w-full flex items-center justify-between border-b border-gray-800 pb-3">
                         <div>
                             <h3 className="text-sm font-bold text-emerald-400 flex items-center gap-2">

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -1316,7 +1316,7 @@ const FollowUp2 = () => {
             {/* Create / Edit Form Modal */}
             {isFormOpen && (
                 <div className="fixed inset-0 z-500000 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-                    <div className="bg-[var(--app-card,#ffffff)] w-full max-w-xl rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
+                    <div className="bg-[var(--app-card,#ffffff)] w-full max-w-xl rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
                             <h2 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
@@ -1730,7 +1730,7 @@ const FollowUp2 = () => {
             {/* Export Range Props Modal */}
             {isExportModalOpen && (
                 <div className="fixed inset-0 z-5000 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-                    <div className="bg-[var(--app-card,#ffffff)] w-full max-w-md rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-[var(--app-card,#ffffff)] w-full max-w-md rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
                             <h2 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
@@ -1908,7 +1908,7 @@ const FollowUp2 = () => {
             {/* Duplicate Detection Modal */}
             {isDuplicateModalOpen && duplicateData && (
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl border border-amber-400/50 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl border border-amber-400/50 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="flex items-center gap-3 px-5 py-4 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-700">
                             <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center text-amber-600 text-lg flex-shrink-0">

@@ -145,7 +145,7 @@ const LineChart = ({
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-[5px] bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-lg font-bold shadow-2xs">
+                    <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-lg font-bold shadow-2xs">
                         <FaChartLine />
                     </div>
                     <div>
@@ -169,12 +169,12 @@ const LineChart = ({
 
                     {/* Time Filter Buttons */}
                     {timeFilterOptions && timeFilterOptions.length > 0 && (
-                        <div className="flex items-center p-1 bg-slate-100 border border-slate-200 rounded-[5px] text-xs font-bold">
+                        <div className="flex items-center p-1 bg-slate-100 border border-slate-200 rounded-2xl text-xs font-bold">
                             {timeFilterOptions.map(opt => (
                                 <button
                                     key={opt}
                                     onClick={() => setSelectedFilter(opt)}
-                                    className={`px-3 py-1 rounded-[5px] cursor-pointer transition-all ${selectedFilter === opt
+                                    className={`px-3 py-1 rounded-xl cursor-pointer transition-all ${selectedFilter === opt
                                         ? 'bg-blue-900 text-white shadow-xs'
                                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                                         }`}
@@ -189,11 +189,11 @@ const LineChart = ({
 
             {/* SVG Chart Container */}
             {pointsData.length === 0 ? (
-                <div className="w-full h-48 flex items-center justify-center bg-slate-50/50 rounded-[5px] border border-dashed border-slate-200 text-slate-400 text-xs font-bold">
+                <div className="w-full h-48 flex items-center justify-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs font-bold">
                     ពុំមានទិន្នន័យសម្រាប់បង្ហាញ (No chart data available)
                 </div>
             ) : (
-                <div className="relative w-full overflow-visible bg-slate-50/40 rounded-[5px] border border-slate-100 p-2">
+                <div className="relative w-full overflow-visible bg-slate-50/40 rounded-2xl border border-slate-100 p-2">
                     <svg
                         viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
                         className="w-full h-auto overflow-visible"
@@ -327,7 +327,7 @@ const LineChart = ({
                         // Check vertical position of the highest dot in active series
                         const minY = Math.min(...series.map(s => pointsData[hoveredIndex].seriesCoords[s.key]?.y ?? 100));
                         const yRatio = minY / viewBoxHeight;
-
+                        
                         // If dot is high (upper 48% of chart) or near top border, drop tooltip DOWN; otherwise float UP
                         const isNearTop = yRatio < 0.48;
                         const transformY = isNearTop ? 'translate-y-4' : '-translate-y-[112%]';
@@ -335,7 +335,7 @@ const LineChart = ({
 
                         return (
                             <div
-                                className={`absolute pointer-events-none z-50 bg-slate-950/95 text-white text-xs p-3 rounded-[5px] shadow-2xl border-2 border-emerald-400 space-y-1.5 transform ${transformX} ${transformY} transition-all duration-150 animate-in fade-in zoom-in-95 backdrop-blur-md min-w-[200px] whitespace-nowrap`}
+                                className={`absolute pointer-events-none z-50 bg-slate-950/95 text-white text-xs p-3 rounded-xl shadow-2xl border-2 border-emerald-400 space-y-1.5 transform ${transformX} ${transformY} transition-all duration-150 animate-in fade-in zoom-in-95 backdrop-blur-md min-w-[200px] whitespace-nowrap`}
                                 style={{
                                     left: `${(pointsData[hoveredIndex].x / viewBoxWidth) * 100}%`,
                                     top: topPosition

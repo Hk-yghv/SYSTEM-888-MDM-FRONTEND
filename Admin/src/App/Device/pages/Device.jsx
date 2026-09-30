@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -155,39 +155,38 @@ const Device = () => {
     };
 
     return (
-        <div className='w-full p-4 select-none space-y-3.5'>
-            <header className='p-3 w-full border border-slate-200/90 bg-white/90 backdrop-blur-md rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-2 h-5 rounded-full bg-indigo-500' />
                     <div>
-                        <h1 className='text-sm md:text-base font-extrabold text-slate-800 tracking-tight flex items-center gap-2'>
+                        <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
                             {t('device')}
-                            <span className='px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold'>
-                                {total} {t('records') || 'Devices'}
-                            </span>
                         </h1>
+                        <p className='text-xs text-purple-700 font-bold'>
+                            {total} Registered Activated Devices
+                        </p>
                     </div>
                 </div>
 
-                <div className='flex items-center gap-2 flex-wrap'>
+                <div className='flex items-center gap-3 flex-wrap'>
                     {/* Export to Excel & PDF */}
                     {hasPermission('/device', 'export') && (
-                        <div className="flex items-center gap-1.5">
+                        <>
                             <button
                                 onClick={handleExportExcel}
-                                className='flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                                className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                             >
-                                <FaFileExcel className="text-emerald-600 text-xs" />
+                                <FaFileExcel className="text-emerald-600 text-sm" />
                                 <span>Excel</span>
                             </button>
                             <button
                                 onClick={handleExportPDF}
-                                className='flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'
+                                className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
                             >
-                                <MdPictureAsPdf className="text-rose-600 text-xs" />
+                                <MdPictureAsPdf className="text-red-600 text-sm" />
                                 <span>PDF</span>
                             </button>
-                        </div>
+                        </>
                     )}
 
                     {/* Brand Filter Dropdown — Administrator only */}
@@ -195,7 +194,7 @@ const Device = () => {
                         <select
                             value={brandFilter}
                             onChange={(e) => setBrandFilter(e.target.value)}
-                            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:border-indigo-400 outline-none shadow-xs cursor-pointer"
+                            className="px-3 py-2 bg-white border border-purple-300 rounded-[5px] text-xs text-purple-900 font-semibold focus:border-purple-500 outline-none shadow-xs cursor-pointer"
                         >
                             <option value="">All Brands</option>
                             {brandsList.map((b, i) => (
@@ -204,28 +203,26 @@ const Device = () => {
                         </select>
                     )}
 
-                    <div className="relative">
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder={t('search')}
-                            className="pl-3 pr-3 py-1.5 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-400 transition-all w-44 outline-none shadow-xs"
-                        />
-                    </div>
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder={t('search')}
+                        className="px-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-48 font-medium outline-none shadow-xs"
+                    />
 
                     <button
                         onClick={() => fetchDevices(page, searchTerm, brandFilter)}
                         disabled={reloading}
-                        className='flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer border border-slate-200 transition-all shadow-xs'
+                        className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'
                     >
-                        <MdOutlineSync size={15} className={reloading ? 'spin-reload text-emerald-600' : ''} />
+                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
-            <div className='w-full overflow-x-auto h-[calc(100vh-260px)] pb-14 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-260px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -250,29 +247,29 @@ const Device = () => {
                         ) : (
                             filteredDevices.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1.5 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
-                                    <td className='px-4 py-1.5 font-bold text-slate-900 flex items-center gap-2'>
+                                    <td className='px-4 py-3 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                    <td className='px-4 py-3 font-bold text-slate-900 flex items-center gap-2'>
                                         <FaMobileAlt className="text-emerald-600 text-sm" />
                                         <CopyCell text={item.model} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
                                     </td>
-                                    <td className='px-4 py-1.5'>
+                                    <td className='px-4 py-3'>
                                         <CopyCell text={item.version || '—'} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
                                     </td>
-                                    <td className='px-4 py-1.5'>
+                                    <td className='px-4 py-3'>
                                         {item.brand || '—'}
                                     </td>
-                                    <td className='px-4 py-1.5 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
-                                    <td className='px-4 py-1.5 font-mono text-slate-700 font-bold whitespace-nowrap'><CopyCell text={item.imei1} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
-                                    <td className='px-4 py-1.5 font-semibold text-slate-800'>
+                                    <td className='px-4 py-3 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
+                                    <td className='px-4 py-3 font-mono text-slate-700 font-bold whitespace-nowrap'><CopyCell text={item.imei1} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
+                                    <td className='px-4 py-3 font-semibold text-slate-800'>
                                         <CopyCell text={item.customerNameEn} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /> <span className="text-emerald-700 font-khmer text-xs font-semibold"><CopyCell text={item.customerNameKh} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></span>
                                     </td>
-                                    <td className='px-4 py-1.5 text-center'>
+                                    <td className='px-4 py-3 text-center'>
                                         <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 w-24 mx-auto ${item.lockPhoneStatus === 'Locked' ? 'bg-red-50 border border-red-300 text-red-700' : 'bg-emerald-50 border border-emerald-300 text-emerald-800'}`}>
                                             {item.lockPhoneStatus === 'Locked' ? <FaLock size={10} /> : <FaUnlock size={10} />}
                                             {item.lockPhoneStatus || 'Unlocked'}
                                         </span>
                                     </td>
-                                    <td className='px-4 py-1.5 text-center'>
+                                    <td className='px-4 py-3 text-center'>
                                         {hasPermission('/device', 'information') ? (
                                             <button
                                                 onClick={() => setSelectedDevice(item)}
@@ -316,7 +313,7 @@ const Device = () => {
 
                                     <div className="
                             w-11 h-11
-                            rounded-xl
+                            rounded-2xl
                             bg-gray-100
                             border border-gray-200
                             flex items-center justify-center
@@ -506,7 +503,7 @@ const Device = () => {
                                 <div className="
                         p-4
                         bg-white
-                        rounded-xl
+                        rounded-2xl
                         border border-gray-200
                     ">
 
@@ -562,7 +559,7 @@ const Device = () => {
                                 <div className="
                         p-4
                         bg-white
-                        rounded-xl
+                        rounded-2xl
                         border border-gray-200
                     ">
 
@@ -675,7 +672,7 @@ const Device = () => {
 
                             {/* ================= LOCK / WALLPAPER ACTIONS ================= */}
                             {hasPermission('/device', 'deviceAction') && (
-                                <div className="p-4 bg-white border border-indigo-200 rounded-xl">
+                                <div className="p-4 bg-white border border-indigo-200 rounded-2xl">
                                     <div className="flex items-center gap-2 mb-3">
                                         <span className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs">🔧</span>
                                         <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Device Actions (Lock / Wallpaper)</h4>
@@ -813,7 +810,7 @@ const Device = () => {
                     p-4
                     bg-white
                     border border-amber-200
-                    rounded-xl
+                    rounded-2xl
                 ">
 
                                 <div className="flex items-center gap-2 mb-2">
@@ -862,7 +859,7 @@ const Device = () => {
                             <div className="
                     bg-white
                     p-4
-                    rounded-xl
+                    rounded-2xl
                     border border-gray-200
                 ">
 

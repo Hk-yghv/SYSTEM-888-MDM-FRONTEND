@@ -121,39 +121,38 @@ const LockPhone = () => {
     };
 
     return (
-        <div className='w-full p-4 select-none space-y-3.5'>
-            <header className='p-3 w-full border border-slate-200/90 bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-between gap-3 shadow-xs'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
-                    <div className='w-2 h-5 rounded-full bg-red-600' />
                     <div>
-                        <h1 className='text-sm md:text-base font-extrabold text-slate-800 tracking-tight flex items-center gap-2'>
+                        <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
                             {t('lockPhone')}
-                            <span className='px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 text-[10px] font-bold'>
-                                {total} {t('records') || 'Logs'}
-                            </span>
                         </h1>
+                        <p className='text-xs text-red-700 font-bold'>
+                            Tota: {total}
+                        </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     {hasPermission('/lost-phone/lock-phone', 'export') && (
-                        <div className="flex items-center gap-1.5">
-                            <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                                <FaFileExcel className="text-emerald-600 text-xs" /><span>Excel</span>
+                        <>
+                            <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                                <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
                             </button>
-                            <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                                <MdPictureAsPdf className="text-rose-600 text-xs" /><span>PDF</span>
+                            <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                                <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
                             </button>
-                        </div>
+                        </>
                     )}
-                    <button onClick={() => fetchLockLogs(page)} disabled={reloading} className='flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer border border-slate-200 transition-all shadow-xs'>
-                        <MdOutlineSync size={15} className={reloading ? 'spin-reload text-emerald-600' : ''} />
+                    <button onClick={() => fetchLockLogs(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
+                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
-            <div className='w-full overflow-x-auto h-[calc(100vh-300px)] pb-14 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-300px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs whitespace-nowrap'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap'>
                         <tr>

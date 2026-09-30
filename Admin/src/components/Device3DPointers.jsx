@@ -9,7 +9,7 @@ const Device3DPointers = ({ device }) => {
     w-full
     bg-white
     border border-gray-200
-    rounded-[5px]
+    rounded-2xl
     p-5
     text-gray-900
     space-y-4
@@ -29,7 +29,7 @@ const Device3DPointers = ({ device }) => {
                     <div className="
                 w-10 h-10
                 shrink-0
-                rounded-[5px]
+                rounded-xl
                 bg-emerald-50
                 border border-emerald-100
                 flex items-center justify-center
@@ -101,7 +101,7 @@ const Device3DPointers = ({ device }) => {
                 <div className="
             p-3
             bg-gray-50
-            rounded-[5px]
+            rounded-xl
             border border-gray-200
             space-y-1.5
             hover:border-sky-200
@@ -133,7 +133,7 @@ const Device3DPointers = ({ device }) => {
                 <div className="
             p-3
             bg-gray-50
-            rounded-[5px]
+            rounded-xl
             border border-gray-200
             space-y-1.5
             hover:border-sky-200
@@ -165,7 +165,7 @@ const Device3DPointers = ({ device }) => {
                 <div className="
             p-3
             bg-gray-50
-            rounded-[5px]
+            rounded-xl
             border border-gray-200
             space-y-1.5
             hover:border-amber-200
@@ -195,7 +195,7 @@ const Device3DPointers = ({ device }) => {
                 <div className="
             p-3
             bg-gray-50
-            rounded-[5px]
+            rounded-xl
             border border-gray-200
             space-y-1.5
             hover:border-indigo-200
@@ -225,7 +225,7 @@ const Device3DPointers = ({ device }) => {
                 <div className="
             p-3
             bg-gray-50
-            rounded-[5px]
+            rounded-xl
             border border-gray-200
             space-y-1.5
             hover:border-emerald-200
@@ -257,7 +257,7 @@ const Device3DPointers = ({ device }) => {
                 <div className="
             p-3
             bg-gray-50
-            rounded-[5px]
+            rounded-xl
             border border-gray-200
             space-y-1.5
             hover:border-purple-200

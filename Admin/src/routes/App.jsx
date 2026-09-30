@@ -97,26 +97,6 @@ const MainLayout = ({ children }) => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem("sidebar_collapsed") === "true";
-    } catch {
-      return false;
-    }
-  });
-
-  const handleToggleSidebarCollapse = () => {
-    setIsSidebarCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem("sidebar_collapsed", String(next));
-      } catch (e) {
-        console.error(e);
-      }
-      return next;
-    });
-  };
-
   const { theme } = useTheme();
 
   return (
@@ -163,12 +143,7 @@ const MainLayout = ({ children }) => {
             onClick={() => setIsSidebarOpen(false)}
             aria-hidden="true"
           />
-          <Left
-            isOpen={isSidebarOpen}
-            onClose={() => setIsSidebarOpen(false)}
-            collapsed={isSidebarCollapsed}
-            onToggleCollapse={handleToggleSidebarCollapse}
-          />
+          <Left isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
           <MobileResponsiveContent className="flex-1 min-w-0 overflow-auto mobile-content-area">
             {children}
           </MobileResponsiveContent>

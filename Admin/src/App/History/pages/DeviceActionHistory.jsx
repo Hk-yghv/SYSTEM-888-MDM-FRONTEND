@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { FaLock, FaUnlock, FaFileExcel, FaSearch, FaCheckCircle, FaClock, FaPlus, FaMobileAlt, FaTimesCircle, FaBan } from 'react-icons/fa';
@@ -170,7 +170,7 @@ const DeviceActionHistory = () => {
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
@@ -182,22 +182,22 @@ const DeviceActionHistory = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-wrap">
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <FaFileExcel className="text-emerald-600 text-xs" /><span>Excel</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                        <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
                     </button>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <MdPictureAsPdf className="text-rose-600 text-xs" /><span>PDF</span>
+                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
                     </button>
-                    <button onClick={() => fetchDeviceActionLogs(page)} disabled={reloading} className='flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer border border-slate-200 transition-all shadow-xs'>
-                        <MdOutlineSync size={15} className={reloading ? 'spin-reload text-emerald-600' : ''} />
+                    <button onClick={() => fetchDeviceActionLogs(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
+                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-emerald-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
             {/* Filter Bar */}
-            <div className='p-3 w-full border border-slate-200/90 bg-white/90 backdrop-blur-md rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <div className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='relative flex-1 min-w-[240px]'>
                     <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs' />
                     <input
@@ -208,17 +208,17 @@ const DeviceActionHistory = () => {
                             setPage(1);
                         }}
                         placeholder={t('search')}
-                        className='w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-amber-400 bg-slate-50 focus:bg-white transition-all'
+                        className='w-full pl-9 pr-3 py-2 border border-slate-300 rounded-[5px] text-xs font-medium focus:outline-none focus:border-amber-500 bg-slate-50'
                     />
                 </div>
 
-                <div className='flex items-center gap-2 flex-wrap'>
+                <div className='flex items-center gap-3 flex-wrap'>
                     <div className='flex items-center gap-2'>
                         <label className='text-xs font-bold text-slate-600'>Status:</label>
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className='px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold bg-slate-50 text-slate-700 focus:outline-none focus:border-amber-400 cursor-pointer'
+                            className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer'
                         >
                             <option value=''>All Status</option>
                             <option value='Pending'>Pending (រង់ចាំ)</option>
@@ -232,7 +232,7 @@ const DeviceActionHistory = () => {
                         <select
                             value={actionFilter}
                             onChange={(e) => setActionFilter(e.target.value)}
-                            className='px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold bg-slate-50 text-slate-700 focus:outline-none focus:border-amber-400 cursor-pointer'
+                            className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer'
                         >
                             <option value=''>All Actions</option>
                             <option value='Lock Phone'>Lock Phone</option>
@@ -246,7 +246,7 @@ const DeviceActionHistory = () => {
             </div>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-350px)] pb-14 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-350px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>
@@ -342,7 +342,7 @@ const DeviceActionHistory = () => {
                                                         <button
                                                             onClick={() => handleMarkDone(item)}
                                                             disabled={isItemLoading}
-                                                            className='px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow-xs inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95'
+                                                            className='px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[5px] font-bold text-xs shadow-xs inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95'
                                                             title="អនុម័ត / ចាក់សោរួចរាល់ (Mark Done)"
                                                         >
                                                             <FaCheckCircle size={11} />
@@ -356,7 +356,7 @@ const DeviceActionHistory = () => {
                                                                 setRejectReason('');
                                                             }}
                                                             disabled={isItemLoading}
-                                                            className='px-2.5 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-xl font-bold text-xs shadow-xs inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95'
+                                                            className='px-2.5 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-[5px] font-bold text-xs shadow-xs inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95'
                                                             title="បដិសេធសំណើនេះ (Reject)"
                                                         >
                                                             <FaTimesCircle size={11} />
@@ -387,7 +387,7 @@ const DeviceActionHistory = () => {
             {/* Modal for Reject Confirmation */}
             {rejectingItem && (
                 <div className='fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 select-none'>
-                    <div className='bg-white rounded-xl border border-slate-200 w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200'>
+                    <div className='bg-white rounded-2xl border border-slate-200 w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200'>
                         <div className='p-4 bg-gradient-to-r from-red-600 to-red-700 text-white flex items-center justify-between'>
                             <h2 className='text-base font-bold flex items-center gap-2'>
                                 <FaBan />
@@ -421,7 +421,7 @@ const DeviceActionHistory = () => {
                                     onChange={(e) => setRejectReason(e.target.value)}
                                     rows={3}
                                     placeholder='ឧទាហរណ៍៖ អតិថិជនបានបង់ប្រាក់រួចរាល់ ឬមិនអនុវត្ត...'
-                                    className='w-full px-3 py-2 border border-slate-300 rounded-xl font-medium focus:outline-none focus:border-red-500 bg-slate-50 resize-none'
+                                    className='w-full px-3 py-2 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-red-500 bg-slate-50 resize-none'
                                 />
                             </div>
 
@@ -429,14 +429,14 @@ const DeviceActionHistory = () => {
                                 <button
                                     type='button'
                                     onClick={() => setRejectingItem(null)}
-                                    className='px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all cursor-pointer'
+                                    className='px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[5px] font-bold transition-all cursor-pointer'
                                 >
                                     {t('cancel')}
                                 </button>
                                 <button
                                     type='submit'
                                     disabled={submittingReject}
-                                    className='px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-600/20 transition-all cursor-pointer'
+                                    className='px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-[5px] font-bold shadow-lg shadow-red-600/20 transition-all cursor-pointer'
                                 >
                                     {submittingReject ? 'កំពុងបដិសេធ...' : 'បញ្ជាក់បដិសេធ (Reject)'}
                                 </button>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import {
@@ -666,9 +666,9 @@ const SalaryPage = () => {
         return (
             <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-4 select-none space-y-5 relative min-h-screen">
                 {/* Header Bar */}
-                <header className="p-4 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+                <header className="p-4 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
                     <div className="flex items-center gap-3.5">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-cyan-600 text-white flex items-center justify-center text-2xl shadow-lg shadow-emerald-600/20">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-cyan-600 text-white flex items-center justify-center text-2xl shadow-lg shadow-emerald-600/20">
                             <FaUsers />
                         </div>
                         <div>
@@ -707,7 +707,7 @@ const SalaryPage = () => {
 
                 {/* Directory Stats KPI Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-xl p-4 shadow-sm flex items-center justify-between">
+                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">បុគ្គលិកសរុប (Total Staff)</p>
                             <h3 className="text-2xl font-black text-slate-800 dark:text-white font-khmer mt-1">
@@ -715,12 +715,12 @@ const SalaryPage = () => {
                             </h3>
                             <p className="text-[10px] text-slate-400 mt-0.5">គណនី និងបុគ្គលិកទាំងអស់</p>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-2xl">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-2xl">
                             <FaUsers />
                         </div>
                     </div>
 
-                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-xl p-4 shadow-sm flex items-center justify-between">
+                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ទឹកប្រាក់បើកសរុប (Total Disbursed)</p>
                             <h3 className="text-2xl font-black text-emerald-600 font-mono mt-1">
@@ -728,12 +728,12 @@ const SalaryPage = () => {
                             </h3>
                             <p className="text-[10px] text-slate-400 mt-0.5">ទូទាំងប្រព័ន្ធបុគ្គលិក</p>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-2xl">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-2xl">
                             <FaDollarSign />
                         </div>
                     </div>
 
-                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-xl p-4 shadow-sm flex items-center justify-between">
+                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">កំណត់ត្រាប្រាក់ខែសរុប (Total Records)</p>
                             <h3 className="text-2xl font-black text-cyan-600 font-mono mt-1">
@@ -741,14 +741,14 @@ const SalaryPage = () => {
                             </h3>
                             <p className="text-[10px] text-slate-400 mt-0.5">ទិន្នន័យប្រាក់ខែបានកត់ត្រា</p>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center text-2xl">
+                        <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center text-2xl">
                             <FaReceipt />
                         </div>
                     </div>
                 </div>
 
                 {/* Search Staff Bar */}
-                <div className="bg-[var(--app-card,white)] p-3 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex items-center justify-between gap-3">
+                <div className="bg-[var(--app-card,white)] p-3 rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex items-center justify-between gap-3">
                     <div className="relative flex-1">
                         <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                         <input
@@ -776,7 +776,7 @@ const SalaryPage = () => {
                         <p className="text-xs font-semibold">កំពុងទាញយកបញ្ជីឈ្មោះបុគ្គលិកទាំងអស់...</p>
                     </div>
                 ) : filteredStaffDirectory.length === 0 ? (
-                    <div className="bg-[var(--app-card,white)] border border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-400">
+                    <div className="bg-[var(--app-card,white)] border border-dashed border-slate-300 rounded-2xl p-12 text-center text-slate-400">
                         <FaUserTie className="text-4xl mx-auto opacity-30 mb-2" />
                         <p className="text-sm font-bold text-slate-600">មិនមានទិន្នន័យបុគ្គលិកត្រូវនឹងការស្វែងរកទេ</p>
                         <p className="text-xs text-slate-400 mt-1">សូមចុចប៊ូតុង "បញ្ចូលប្រាក់ខែថ្មី" ដើម្បីបង្កើតកំណត់ត្រាដំបូង</p>
@@ -791,7 +791,7 @@ const SalaryPage = () => {
                             return (
                                 <div
                                     key={staff.key || idx}
-                                    className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] hover:border-emerald-500/70 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative overflow-hidden"
+                                    className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] hover:border-emerald-500/70 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative overflow-hidden"
                                 >
                                     {/* Top decorative accent */}
                                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 opacity-80 group-hover:h-1.5 transition-all"></div>
@@ -799,7 +799,7 @@ const SalaryPage = () => {
                                     <div className="space-y-3 pt-1">
                                         {/* Avatar & Main Identity */}
                                         <div className="flex items-start gap-3">
-                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center text-xl font-black shadow-md shadow-emerald-600/20 shrink-0">
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center text-xl font-black shadow-md shadow-emerald-600/20 shrink-0">
                                                 {displayNameEn.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="min-w-0 flex-1">
@@ -912,7 +912,7 @@ const SalaryPage = () => {
         <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-4 select-none space-y-4 relative min-h-screen">
             {/* Admin Switcher Top Banner */}
             {isAdmin && selectedStaff && (
-                <div className="p-3 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-xl shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-700">
+                <div className="p-3 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-700">
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
@@ -954,7 +954,7 @@ const SalaryPage = () => {
             )}
 
             {/* Header Bar */}
-            <header className="p-3 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+            <header className="p-3 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-emerald-600 text-green-500 flex items-center justify-center text-xl shadow-md shadow-emerald-600/30">
                         <FaMoneyBillWave />
@@ -979,7 +979,7 @@ const SalaryPage = () => {
                                 title: `រូបភាព QR Code របស់យើង (Our QR Code) - ${savedStaffNameKh || savedStaffNameEn || 'Staff'}`,
                                 filename: `Salary_QRCode_${(savedStaffNameKh || savedStaffNameEn || 'Staff').replace(/\s+/g, '_')}.png`
                             })}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs active:scale-95"
+                            className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs active:scale-95"
                             title="ចុចដើម្បីបើកមើល QR Code របស់យើង និងទាញយក"
                         >
                             <FaQrcode className="text-white text-sm" />
@@ -990,14 +990,14 @@ const SalaryPage = () => {
                         <>
                             <button
                                 onClick={handleExportExcel}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
                             >
                                 <FaFileExcel className="text-emerald-600 text-sm" />
                                 <span>Excel</span>
                             </button>
                             <button
                                 onClick={handleExportPDF}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
                             >
                                 <FaFilePdf className="text-red-600 text-sm" />
                                 <span>PDF</span>
@@ -1007,7 +1007,7 @@ const SalaryPage = () => {
                     <button
                         onClick={() => { fetchSalaries(currentPage); fetchStats(); }}
                         disabled={reloading}
-                        className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs"
+                        className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs"
                     >
                         <FaSync className={reloading ? 'animate-spin text-emerald-600' : ''} />
                         <span>{t('reload')}</span>
@@ -1018,9 +1018,9 @@ const SalaryPage = () => {
             {/* Top Employment Card: Names + Join Date + QR Code */}
             {savedJoinDate && !isEditingDate ? (
                 /* Saved State Card */
-                <div className="p-4 w-full border border-emerald-300/80 dark:border-emerald-700/60 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-cyan-950/30 rounded-xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="p-4 w-full border border-emerald-300/80 dark:border-emerald-700/60 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-cyan-950/30 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex flex-col items-center justify-center shadow-lg shadow-emerald-600/30 shrink-0">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex flex-col items-center justify-center shadow-lg shadow-emerald-600/30 shrink-0">
                             <span className="text-[10px] uppercase font-bold tracking-wider opacity-90">
                                 {getKhmerDateDetails(savedJoinDate).dayName}
                             </span>
@@ -1101,9 +1101,9 @@ const SalaryPage = () => {
                 </div>
             ) : (
                 /* Edit & Setup State Card */
-                <div className="p-4 w-full border border-amber-300/80 dark:border-amber-700/60 bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-amber-50/90 dark:from-amber-950/30 dark:via-slate-900/60 dark:to-orange-950/20 rounded-xl shadow-sm flex flex-col gap-4">
+                <div className="p-4 w-full border border-amber-300/80 dark:border-amber-700/60 bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-amber-50/90 dark:from-amber-950/30 dark:via-slate-900/60 dark:to-orange-950/20 rounded-2xl shadow-sm flex flex-col gap-4">
                     <div className="flex items-start sm:items-center gap-3.5">
-                        <div className="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-amber-500/30 shrink-0">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-amber-500/30 shrink-0">
                             <FaCalendarAlt />
                         </div>
                         <div>
@@ -1298,7 +1298,7 @@ const SalaryPage = () => {
             {/* Summary Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                 {/* Grand Total */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">សរុបប្រាក់ខែ (Total Salary)</p>
                         <h3 className="text-xl font-black text-emerald-600 font-mono mt-1">
@@ -1306,13 +1306,13 @@ const SalaryPage = () => {
                         </h3>
                         <p className="text-[10px] text-slate-400 mt-0.5">({stats.totalRecords || total} កំណត់ត្រា)</p>
                     </div>
-                    <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-xl">
+                    <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-xl">
                         <FaDollarSign />
                     </div>
                 </div>
 
                 {/* This Month */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ប្រាក់ខែខែនេះ (This Month)</p>
                         <h3 className="text-xl font-black text-cyan-600 font-mono mt-1">
@@ -1320,13 +1320,13 @@ const SalaryPage = () => {
                         </h3>
                         <p className="text-[10px] text-slate-400 mt-0.5">{new Date().toISOString().slice(0, 7)}</p>
                     </div>
-                    <div className="w-11 h-11 rounded-xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center text-xl">
+                    <div className="w-11 h-11 rounded-2xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center text-xl">
                         <FaCalendarCheck />
                     </div>
                 </div>
 
                 {/* Total Transactions */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ចំនួនកំណត់ត្រាសរុប (Total Records)</p>
                         <h3 className="text-xl font-black text-indigo-600 font-mono mt-1">
@@ -1334,13 +1334,13 @@ const SalaryPage = () => {
                         </h3>
                         <p className="text-[10px] text-slate-400 mt-0.5">ទិន្នន័យបានបញ្ចូល</p>
                     </div>
-                    <div className="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-xl">
+                    <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-xl">
                         <FaUserTie />
                     </div>
                 </div>
 
                 {/* Monthly Average */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl p-4 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">មធ្យមភាគប្រចាំខែ (Avg / Month)</p>
                         <h3 className="text-xl font-black text-amber-600 font-mono mt-1">
@@ -1352,7 +1352,7 @@ const SalaryPage = () => {
                         </h3>
                         <p className="text-[10px] text-slate-400 mt-0.5">គណនាតាមខែដែលមានទិន្នន័យ</p>
                     </div>
-                    <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-xl">
+                    <div className="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-xl">
                         <FaReceipt />
                     </div>
                 </div>
@@ -1367,7 +1367,7 @@ const SalaryPage = () => {
             />
 
             {/* Filter & Search Bar */}
-            <div className="bg-[var(--app-card,white)] p-3 rounded-xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-[var(--app-card,white)] p-3 rounded-2xl border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[260px]">
                     <div className="relative flex-1">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
@@ -1431,7 +1431,7 @@ const SalaryPage = () => {
             </div>
 
             {/* Salary Data Table */}
-            <div className="w-full overflow-x-auto rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container">
+            <div className="w-full overflow-x-auto rounded-2xl border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] shadow-md table-container">
                 <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-[var(--app-border,#e2e8f0)]">
                         <tr>
@@ -1508,7 +1508,7 @@ const SalaryPage = () => {
                                                     title: `រូបភាពភស្តុតាងវិក្កយបត្រ (Salary Evidence Photo) - ${item.staffNameKh || item.staffNameEn || 'Staff'}`,
                                                     filename: `Salary_Receipt_${(item.staffNameKh || item.staffNameEn || 'Staff').replace(/\s+/g, '_')}_${item.date || 'date'}.png`
                                                 })}
-                                                className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-[10px] font-bold cursor-pointer transition-all shadow-2xs active:scale-95"
+                                                className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-[5px] text-[10px] font-bold cursor-pointer transition-all shadow-2xs active:scale-95"
                                                 title="មើលរូបភាពភស្តុតាង និងទាញយក (View & Download Receipt)"
                                             >
                                                 <FaEye />
@@ -1590,7 +1590,7 @@ const SalaryPage = () => {
                     onClick={() => setPreviewImage(null)}
                 >
                     <div
-                        className="relative max-w-3xl max-h-[88vh] bg-slate-900 border border-slate-700 rounded-xl overflow-hidden p-2 shadow-2xl flex flex-col items-center"
+                        className="relative max-w-3xl max-h-[88vh] bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden p-2 shadow-2xl flex flex-col items-center"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="w-full flex items-center justify-between p-2 text-white border-b border-slate-800 mb-2 gap-3 flex-wrap">
@@ -1655,7 +1655,7 @@ const CreateEditSalaryModal = ({
 }) => {
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-150">
-            <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+            <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--app-border,#e2e8f0)] bg-emerald-600 text-white shrink-0">
                     <h3 className="text-sm font-bold flex items-center gap-2">

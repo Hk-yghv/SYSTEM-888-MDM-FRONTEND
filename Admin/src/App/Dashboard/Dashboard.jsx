@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -371,7 +371,7 @@ const Dashboard = () => {
             {/* ═══════════════════════════════════════════════════════════
                 1. REFINED FINANCIAL CONTROL BAR (HIGH CONTRAST HEADER)
             ═══════════════════════════════════════════════════════════ */}
-            <div className="bg-white border-2 border-slate-300 rounded-xl p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
 
                 {/* Left: Brand Identity & Title */}
                 <div className="flex items-center gap-3.5">
@@ -432,7 +432,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 {/* Metric 1: Total Loan Disbursed */}
-                <div className="bg-white border-2 border-slate-300 rounded-xl p-5 shadow-xs hover:border-blue-500 transition-all">
+                <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-xs hover:border-blue-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
                         <span className="text-xs font-black tracking-wide uppercase text-slate-800">ឥណទានបញ្ចេញសរុប</span>
                         <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 border-2 border-blue-300 flex items-center justify-center text-lg font-black">
@@ -451,7 +451,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Metric 2: Revenue Collected */}
-                <div className="bg-white border-2 border-slate-300 rounded-xl p-5 shadow-xs hover:border-emerald-500 transition-all">
+                <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-xs hover:border-emerald-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
                         <span className="text-xs font-black tracking-wide uppercase text-slate-800">ប្រាក់ប្រមូលបានសរុប</span>
                         <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 border-2 border-emerald-300 flex items-center justify-center text-lg font-black">
@@ -470,7 +470,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Metric 3: Total Repayment Expected */}
-                <div className="bg-white border-2 border-slate-300 rounded-xl p-5 shadow-xs hover:border-purple-500 transition-all">
+                <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-xs hover:border-purple-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
                         <span className="text-xs font-black tracking-wide uppercase text-slate-800">ប្រាក់ត្រូវប្រមូលមកវិញ</span>
                         <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-800 border-2 border-purple-300 flex items-center justify-center text-lg font-black">
@@ -495,7 +495,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Metric 4: Outstanding Balance */}
-                <div className="bg-white border-2 border-slate-300 rounded-xl p-5 shadow-xs hover:border-amber-500 transition-all">
+                <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-xs hover:border-amber-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
                         <span className="text-xs font-black tracking-wide uppercase text-slate-800">ប្រាក់នៅសល់មិនទាន់ប្រមូល</span>
                         <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 border-2 border-amber-300 flex items-center justify-center text-lg font-black">
@@ -544,7 +544,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Right 1 Col: Contract & Security Overview */}
-                <div className="bg-white border-2 border-slate-300 rounded-xl p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
+                <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
                     <div>
                         <div className="flex items-center justify-between pb-3 border-b-2 border-slate-200">
                             <h3 className="text-sm font-black text-slate-950 uppercase tracking-wide">
@@ -596,7 +596,7 @@ const Dashboard = () => {
             {/* ═══════════════════════════════════════════════════════════
                 4. FULL COMPREHENSIVE BRAND PERFORMANCE BREAKDOWN TABLE
             ═══════════════════════════════════════════════════════════ */}
-            <div className="bg-white border-2 border-slate-300 rounded-xl p-5 sm:p-6 shadow-sm space-y-4">
+            <div className="bg-white border-2 border-slate-300 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-slate-200">
                     <div>
                         <h2 className="text-sm sm:text-base font-black text-slate-950 uppercase tracking-wide flex items-center gap-2">

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
@@ -368,10 +368,10 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         {hasPermission(pagePath, 'export') && <>
-                            <button onClick={exportExcel} className="flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"><FaFileExcel /> Excel</button>
-                            <button onClick={exportPdf} className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-800"><MdPictureAsPdf /> PDF</button>
+                            <button onClick={exportExcel} className="flex items-center gap-2 rounded-[5px] border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"><FaFileExcel /> Excel</button>
+                            <button onClick={exportPdf} className="flex items-center gap-2 rounded-[5px] border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-800"><MdPictureAsPdf /> PDF</button>
                         </>}
-                        <button onClick={() => setReloadVersion(value => value + 1)} disabled={reloading} className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">
+                        <button onClick={() => setReloadVersion(value => value + 1)} disabled={reloading} className="flex items-center gap-2 rounded-[5px] border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">
                             <MdOutlineSync className={reloading ? 'animate-spin' : ''} /> Refresh
                         </button>
                     </div>
@@ -399,7 +399,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 <div className="flex flex-wrap items-end gap-3 border-t border-slate-100 pt-3">
                     <div>
                         <div className="mb-1 text-[10px] font-bold text-slate-500">{isHistoryPage ? 'Payment date' : 'Due date'}</div>
-                        <div className="inline-flex flex-wrap rounded-xl border border-slate-300 bg-slate-100 p-0.5" role="group" aria-label="Due period">
+                        <div className="inline-flex flex-wrap rounded-[5px] border border-slate-300 bg-slate-100 p-0.5" role="group" aria-label="Due period">
                             {presetOptions.map(option => (
                                 <button key={option} onClick={() => setPeriod(option)} className={`rounded-[4px] px-3 py-2 text-xs font-semibold ${period === option ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white'}`}>
                                     {option}
@@ -408,16 +408,16 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                         </div>
                     </div>
                     {period === 'Custom' && <>
-                        <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">From<input type="date" value={customFrom} onChange={event => setCustomFrom(event.target.value)} className="h-9 rounded-xl border border-slate-300 px-2 text-xs font-mono text-slate-800" /></label>
-                        <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">To<input type="date" value={customTo} onChange={event => setCustomTo(event.target.value)} className="h-9 rounded-xl border border-slate-300 px-2 text-xs font-mono text-slate-800" /></label>
+                        <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">From<input type="date" value={customFrom} onChange={event => setCustomFrom(event.target.value)} className="h-9 rounded-[5px] border border-slate-300 px-2 text-xs font-mono text-slate-800" /></label>
+                        <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">To<input type="date" value={customTo} onChange={event => setCustomTo(event.target.value)} className="h-9 rounded-[5px] border border-slate-300 px-2 text-xs font-mono text-slate-800" /></label>
                     </>}
                     <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">
                         Search
-                        <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Customer, contract, serial..." className="h-9 w-56 rounded-xl border border-slate-300 px-2 text-xs font-medium text-slate-800 outline-none focus:border-emerald-500" />
+                        <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Customer, contract, serial..." className="h-9 w-56 rounded-[5px] border border-slate-300 px-2 text-xs font-medium text-slate-800 outline-none focus:border-emerald-500" />
                     </label>
                     {isMasterAdmin && <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">
                         Brand
-                        <select value={selectedBrand} onChange={event => setSelectedBrand(event.target.value)} className="h-9 min-w-40 rounded-xl border border-slate-300 bg-white px-2 text-xs text-slate-800">
+                        <select value={selectedBrand} onChange={event => setSelectedBrand(event.target.value)} className="h-9 min-w-40 rounded-[5px] border border-slate-300 bg-white px-2 text-xs text-slate-800">
                             <option value="">All brands</option>
                             {brands.map(brand => <option key={brand} value={brand}>{brand}</option>)}
                         </select>
@@ -478,14 +478,14 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                         <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-semibold text-amber-700">${row.penalty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-bold text-emerald-700">${row.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="whitespace-nowrap px-3 py-3 text-right font-mono font-bold text-rose-700">${row.unpaidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-3 text-center">{images.length ? <button onClick={() => openImageGallery(row)} className="inline-flex items-center gap-1 rounded-xl border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800"><FaImage /> View{images.length > 1 ? ` (${images.length})` : ''}</button> : <span className="text-slate-300">—</span>}</td>
+                                        <td className="px-3 py-3 text-center">{images.length ? <button onClick={() => openImageGallery(row)} className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800"><FaImage /> View{images.length > 1 ? ` (${images.length})` : ''}</button> : <span className="text-slate-300">—</span>}</td>
                                         <td className="px-3 py-3">{row.type ? <span className={`inline-flex rounded-[4px] border px-2 py-1 font-bold ${typeClass}`}>{row.type}</span> : <span className="text-slate-300">—</span>}</td>
                                         {!isHistoryPage && <td className="px-3 py-3">
                                             <div className="flex items-center justify-center gap-1.5">
-                                                <button onClick={() => openScheduleForRow(row)} title="Open Pad, Payoff, or Redeem actions" className="inline-flex items-center gap-1 rounded-xl border border-emerald-300 bg-emerald-50 px-2 py-1 font-bold text-emerald-800">
+                                                <button onClick={() => openScheduleForRow(row)} title="Open Pad, Payoff, or Redeem actions" className="inline-flex items-center gap-1 rounded-[5px] border border-emerald-300 bg-emerald-50 px-2 py-1 font-bold text-emerald-800">
                                                     <FaDollarSign /> Pay / Redeem
                                                 </button>
-                                                <button onClick={() => setSelectedQrContract(row.contract)} title="Open QR payment" className="inline-flex items-center gap-1 rounded-xl border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800">
+                                                <button onClick={() => setSelectedQrContract(row.contract)} title="Open QR payment" className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800">
                                                     <MdQrCode2 /> QR
                                                 </button>
                                             </div>

@@ -42,7 +42,7 @@ const PenaltyPage = () => {
         amount: '',
         currency: 'USD',
         paymentMethod: 'Cash',
-        category: '????????? (General Penalty)',
+        category: 'ពិន័យទូទៅ (General Penalty)',
         description: '',
         photoUrl: ''
     });
@@ -133,7 +133,7 @@ const PenaltyPage = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (!formData.amount || Number(formData.amount) <= 0) {
-            alert('????????????????????????????????????! (Please enter a valid amount)');
+            alert('សូមបញ្ចូលចំនួនទឹកប្រាក់ដែលត្រឹមត្រូវ! (Please enter a valid amount)');
             return;
         }
 
@@ -171,7 +171,7 @@ const PenaltyPage = () => {
                     amount: '',
                     currency: 'USD',
                     paymentMethod: 'Cash',
-                    category: '????????? (General Penalty)',
+                    category: 'ពិន័យទូទៅ (General Penalty)',
                     description: '',
                     photoUrl: ''
                 });
@@ -194,7 +194,7 @@ const PenaltyPage = () => {
             amount: item.amount || '',
             currency: item.currency || 'USD',
             paymentMethod: item.paymentMethod || 'Cash',
-            category: item.category || '????????? (General Penalty)',
+            category: item.category || 'ពិន័យទូទៅ (General Penalty)',
             description: item.description || '',
             photoUrl: item.photoUrl || ''
         });
@@ -202,7 +202,7 @@ const PenaltyPage = () => {
     };
 
     const handleDelete = async (item) => {
-        if (!window.confirm('??????????????????????????????????????? (Are you sure you want to delete this record?)')) {
+        if (!window.confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យពិន័យនេះមែនទេ? (Are you sure you want to delete this record?)')) {
             return;
         }
         try {
@@ -252,12 +252,12 @@ const PenaltyPage = () => {
             { header: 'Date', accessor: 'date' },
             { header: 'Payment Type', accessor: 'paymentMethod' },
             { header: 'Category', accessor: 'category' },
-            { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ?` : `$${r.amount?.toLocaleString()}` },
+            { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
             { header: 'Amount USD Est.', cell: (r) => `$${(r.amountUSD || 0).toFixed(2)}` },
             { header: 'Description', accessor: 'description' },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
-        exportToExcel('Penalty Report (?????)', columns, allData, user?.brand || '');
+        exportToExcel('Penalty Report (ពិន័យ)', columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async () => {
@@ -267,11 +267,11 @@ const PenaltyPage = () => {
             { header: 'Date', accessor: 'date' },
             { header: 'Payment Type', accessor: 'paymentMethod' },
             { header: 'Category', accessor: 'category' },
-            { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ?` : `$${r.amount?.toLocaleString()}` },
+            { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
             { header: 'Description', accessor: 'description' },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
-        exportToPDF('Penalty Report (?????)', columns, allData, user?.brand || '', pdfOrientation);
+        exportToPDF('Penalty Report (ពិន័យ)', columns, allData, user?.brand || '', pdfOrientation);
     };
 
     // Trend data for chart (group by date)
@@ -290,9 +290,9 @@ const PenaltyPage = () => {
     }, [allDataForChart, dataList]);
 
     return (
-        <div className='w-full p-4 select-none space-y-4'>
+        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             {/* Header */}
-            <header className='p-4 w-full border border-slate-200 bg-white rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
+            <header className='p-4 w-full border border-slate-200 bg-white rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-xl font-black text-slate-900 flex items-center gap-2 tracking-wide'>
@@ -302,27 +302,27 @@ const PenaltyPage = () => {
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
-                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', paymentMethod: 'Cash', category: '????????? (General Penalty)', description: '', photoUrl: '' }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md shadow-amber-600/20'>
-                        <FaPlus className="text-xs" /><span>{t('create')} (???????????)</span>
+                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', paymentMethod: 'Cash', category: 'ពិន័យទូទៅ (General Penalty)', description: '', photoUrl: '' }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-amber-600/20'>
+                        <FaPlus className="text-xs" /><span>{t('create')} (បង្កើតពិន័យ)</span>
                     </button>
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <FaFileExcel className="text-amber-600 text-sm" /><span>{t('exportExcel')}</span>
                     </button>
                     {/* PDF Orientation Toggle */}
-                    <div className="flex items-center rounded-xl border border-slate-300 overflow-hidden shadow-xs">
-                        <button onClick={() => setPdfOrientation('portrait')} title="Portrait (?????)"
+                    <div className="flex items-center rounded-[5px] border border-slate-300 overflow-hidden shadow-xs">
+                        <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>??</span><span className="hidden sm:inline">Portrait</span>
+                            <span>📄</span><span className="hidden sm:inline">Portrait</span>
                         </button>
-                        <button onClick={() => setPdfOrientation('landscape')} title="Landscape (?????)"
+                        <button onClick={() => setPdfOrientation('landscape')} title="Landscape (ផ្តេក)"
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer border-l border-slate-300 ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>??</span><span className="hidden sm:inline">Landscape</span>
+                            <span>🖼</span><span className="hidden sm:inline">Landscape</span>
                         </button>
                     </div>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
                         <MdPictureAsPdf className="text-red-600 text-sm" /><span>{t('exportPDF')}</span>
                     </button>
-                    <button onClick={() => fetchData(page, searchTerm, startDate, endDate)} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
+                    <button onClick={() => fetchData(page, searchTerm, startDate, endDate)} disabled={reloading} className='flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
                         <MdOutlineSync size={16} className={reloading ? 'spin-reload text-amber-600' : ''} /><span>{t('reload')}</span>
                     </button>
                 </div>
@@ -343,8 +343,8 @@ const PenaltyPage = () => {
                 <div className="space-y-4">
                     {/* KPI Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg">
+                        <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-[5px] bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg">
                                 <FaDollarSign />
                             </div>
                             <div>
@@ -353,18 +353,18 @@ const PenaltyPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg font-bold">
-                                ?
+                        <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-[5px] bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg font-bold">
+                                ៛
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total KHR Penalty (?)</p>
-                                <h3 className="text-lg font-black text-amber-700 mt-0.5">{kpi.totalKHR.toLocaleString()} ?</h3>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total KHR Penalty (៛)</p>
+                                <h3 className="text-lg font-black text-amber-700 mt-0.5">{kpi.totalKHR.toLocaleString()} ៛</h3>
                             </div>
                         </div>
 
-                        <div className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center text-lg">
+                        <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-[5px] bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center text-lg">
                                 <FaMoneyBillWave />
                             </div>
                             <div>
@@ -373,8 +373,8 @@ const PenaltyPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center text-lg">
+                        <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-[5px] bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center text-lg">
                                 <FaListUl />
                             </div>
                             <div>
@@ -386,12 +386,12 @@ const PenaltyPage = () => {
 
                     {/* Line Chart - Penalty Trend */}
                     <LineChart
-                        title="??????????????????????? (Penalty Trend Line Chart)"
-                        subtitle="????????????????????????????? ???????????????????????/??"
+                        title="ក្រាបខ្សែនិន្នាប្រាកចូល (Penalty Trend Line Chart)"
+                        subtitle="បង្ហាញពីការកើនឡើងចំនួនចូលច្រង និងតម្លៃចំនួនប្រចាំថ្ងៃ/ខែ"
                         data={chartTrendData}
                         series={[
-                            { key: 'count', label: '???????????????', color: '#10b981', isCurrency: false },
-                            { key: 'totalUSD', label: '????????? ($)', color: '#3b82f6', isCurrency: true }
+                            { key: 'count', label: 'ចំនួនផ័កចូលច្រង', color: '#10b981', isCurrency: false },
+                            { key: 'totalUSD', label: 'តម្លៃសរុប ($)', color: '#3b82f6', isCurrency: true }
                         ]}
                     />
                 </div>
@@ -401,33 +401,33 @@ const PenaltyPage = () => {
             {activeTab === 'detail' && (
                 <div className="space-y-4">
                     {/* Filter Bar */}
-                    <div className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                    <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2 flex-wrap">
                             <div className="relative">
                                 <FaSearch className="absolute left-3 top-3 text-slate-400 text-xs" />
                                 <input
                                     type="text"
-                                    placeholder="??????? category/ description..."
+                                    placeholder="ស្វែងរក category/ description..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-amber-500 w-52 sm:w-64"
+                                    className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold focus:outline-none focus:border-amber-500 w-52 sm:w-64"
                                 />
                             </div>
                             <div className="flex items-center gap-1 text-xs font-bold text-slate-600">
                                 <FaRegCalendarAlt className="text-slate-400" />
-                                <span>??????:</span>
+                                <span>ចាប់ពី:</span>
                                 <input
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold"
                                 />
-                                <span>???:</span>
+                                <span>ដល់:</span>
                                 <input
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                                    className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold"
                                 />
                                 {(startDate || endDate) && (
                                     <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-xs text-amber-600 hover:underline font-bold ml-1">Clear</button>
@@ -435,13 +435,13 @@ const PenaltyPage = () => {
                             </div>
                         </div>
 
-                        <button onClick={() => setIsFormOpen(true)} className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
-                            <FaPlus /> <span>???????????</span>
+                        <button onClick={() => setIsFormOpen(true)} className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
+                            <FaPlus /> <span>បន្ថែមពិន័យ</span>
                         </button>
                     </div>
 
                     {/* Data Table */}
-                    <div className='w-full overflow-x-auto h-[calc(100vh-360px)] pb-14 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'>
+                    <div className='w-full overflow-x-auto h-[calc(100vh-360px)] pb-14 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-bold'>
                                 <tr>
@@ -460,35 +460,35 @@ const PenaltyPage = () => {
                                 {loading ? (
                                     <tr><td colSpan={9} className="text-center py-10 text-amber-600 font-semibold">Loading...</td></tr>
                                 ) : dataList.length === 0 ? (
-                                    <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic">?????????????????????? (No penalty records found.)</td></tr>
+                                    <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic">មិនមានទិន្នន័យពិន័យទេ។ (No penalty records found.)</td></tr>
                                 ) : (
                                     dataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-amber-50/40 transition-colors'>
-                                            <td className='px-4 py-1.5 text-center font-mono font-bold text-slate-500'>{(page - 1) * LIMIT + idx + 1}</td>
-                                            <td className='px-4 py-1.5 font-mono font-bold text-slate-900'>{item.date || '-'}</td>
-                                            <td className='px-4 py-1.5'>
+                                            <td className='px-4 py-3 text-center font-mono font-bold text-slate-500'>{(page - 1) * LIMIT + idx + 1}</td>
+                                            <td className='px-4 py-3 font-mono font-bold text-slate-900'>{item.date || '-'}</td>
+                                            <td className='px-4 py-3'>
                                                 <span className={`px-2.5 py-1 rounded-lg font-bold ${item.paymentMethod === 'Bank' ? 'bg-blue-50 border border-blue-200 text-blue-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800'}`}>
                                                     {item.paymentMethod || 'Cash'}
                                                 </span>
                                             </td>
-                                            <td className='px-4 py-1.5 font-bold text-slate-900'>
+                                            <td className='px-4 py-3 font-bold text-slate-900'>
                                                 <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 font-bold">
                                                     {item.category || 'General'}
                                                 </span>
                                             </td>
-                                            <td className='px-4 py-1.5 text-right font-mono font-black text-amber-700'>
-                                                {item.currency === 'KHR' ? `${(item.amount || 0).toLocaleString()} ?` : `$${(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                                            <td className='px-4 py-3 text-right font-mono font-black text-amber-700'>
+                                                {item.currency === 'KHR' ? `${(item.amount || 0).toLocaleString()} ៛` : `$${(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
                                             </td>
-                                            <td className='px-4 py-1.5 font-medium text-slate-700 max-w-xs truncate'>{item.description || '-'}</td>
-                                            <td className='px-4 py-1.5 text-center'>
+                                            <td className='px-4 py-3 font-medium text-slate-700 max-w-xs truncate'>{item.description || '-'}</td>
+                                            <td className='px-4 py-3 text-center'>
                                                 {item.photoUrl ? (
                                                     <button onClick={() => setSelectedImage(item.photoUrl)} className="text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center justify-center gap-1 mx-auto">
                                                         <FaImage /> <span>View</span>
                                                     </button>
                                                 ) : <span className="text-slate-400 italic">No image</span>}
                                             </td>
-                                            <td className='px-4 py-1.5 font-bold text-slate-800'>{item.performedBy || '-'}</td>
-                                            <td className='px-4 py-1.5 text-center'>
+                                            <td className='px-4 py-3 font-bold text-slate-800'>{item.performedBy || '-'}</td>
+                                            <td className='px-4 py-3 text-center'>
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button onClick={() => handleEdit(item)} title="Edit" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                                         <FaEdit />
@@ -512,28 +512,28 @@ const PenaltyPage = () => {
             {/* Create & Edit Modal Form */}
             {isFormOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
                         <div className="p-4 bg-amber-600 text-black flex items-center justify-between">
                             <h3 className="font-bold text-sm flex items-center gap-2">
-                                <FaPlusCircle /> <span>{editingItem ? '???????????????????' : '??????????????????? (Create Penalty)'}</span>
+                                <FaPlusCircle /> <span>{editingItem ? 'កែប្រែទិន្នន័យពិន័យ' : 'បញ្ចូលទិន្នន័យពិន័យ (Create Penalty)'}</span>
                             </h3>
                             <button onClick={() => { setIsFormOpen(false); setEditingItem(null); }} className="text-white hover:text-slate-200 font-bold text-lg cursor-pointer">&times;</button>
                         </div>
                         <form onSubmit={handleFormSubmit} className="p-5 space-y-3.5 text-xs font-semibold text-slate-700">
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">??????????? (Date)</label>
+                                <label className="block text-slate-700 font-bold mb-1">កាលបរិច្ឆេទ (Date)</label>
                                 <input
                                     type="date"
                                     required
                                     value={formData.date}
                                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:outline-none focus:border-amber-500"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-amber-500"
                                 />
                             </div>
 
                             <div className="grid grid-cols-3 gap-2">
                                 <div className="col-span-2">
-                                    <label className="block text-slate-700 font-bold mb-1">?????????????? (Amount)</label>
+                                    <label className="block text-slate-700 font-bold mb-1">ចំនួនទឹកប្រាក់ (Amount)</label>
                                     <input
                                         type="number"
                                         step="any"
@@ -541,87 +541,87 @@ const PenaltyPage = () => {
                                         placeholder="0.00"
                                         value={formData.amount}
                                         onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-amber-700 focus:outline-none focus:border-amber-500"
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-bold text-amber-700 focus:outline-none focus:border-amber-500"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-slate-700 font-bold mb-1">??????????</label>
+                                    <label className="block text-slate-700 font-bold mb-1">រូបិយប័ណ្ណ</label>
                                     <select
                                         value={formData.currency}
                                         onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-amber-500"
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-bold text-slate-800 focus:outline-none focus:border-amber-500"
                                     >
                                         <option value="USD">$ USD</option>
-                                        <option value="KHR">? KHR</option>
+                                        <option value="KHR">៛ KHR</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">??????????????? (Payment Type)</label>
+                                <label className="block text-slate-700 font-bold mb-1">ប្រភេទបង់ប្រាក់ (Payment Type)</label>
                                 <select
                                     value={formData.paymentMethod}
                                     onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-amber-500"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-bold text-slate-800 focus:outline-none focus:border-amber-500"
                                 >
-                                    <option value="Cash">Cash (??????????)</option>
-                                    <option value="Bank">Bank (??????)</option>
+                                    <option value="Cash">Cash (សាច់ប្រាក់)</option>
+                                    <option value="Bank">Bank (ធនាគារ)</option>
                                 </select>
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">??????????? (Category)</label>
+                                <label className="block text-slate-700 font-bold mb-1">ប្រភេទចំណូល (Category)</label>
                                 <input
                                     type="text"
-                                    placeholder="???????? ?????????????, ????????????????????, ???????????..."
+                                    placeholder="ឧទាហរណ៍៖ ចំណូលសេវាកម្ម, ប្រាក់បង់រំលស់បន្ថែម, ចំណូលផ្សេងៗ..."
                                     value={formData.category}
                                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:outline-none focus:border-amber-500"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-amber-500"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">?????? (Description)</label>
+                                <label className="block text-slate-700 font-bold mb-1">បរិយាយ (Description)</label>
                                 <textarea
                                     rows="2"
-                                    placeholder="???????????????????????..."
+                                    placeholder="ពិពណ៌នាបន្ថែមពីចំណូលនេះ..."
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-medium focus:outline-none focus:border-amber-500"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-amber-500"
                                 ></textarea>
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">??????/?????????? (Choose Image File &amp; Upload Cloudinary)</label>
+                                <label className="block text-slate-700 font-bold mb-1">រូបភាព/វិក្កយបត្រ (Choose Image File &amp; Upload Cloudinary)</label>
                                 <div className="space-y-2">
                                     <input
                                         type="file"
                                         accept="image/*"
                                         onChange={handleFileUpload}
-                                        className="w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
+                                        className="w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-[5px] file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
                                     />
-                                    {uploadingImage && <p className="text-[11px] text-amber-600 font-bold animate-pulse">?? ????? Upload ???????? Cloudinary...</p>}
+                                    {uploadingImage && <p className="text-[11px] text-amber-600 font-bold animate-pulse">☁️ កំពុង Upload រូបភាពទៅ Cloudinary...</p>}
                                     <input
                                         type="text"
-                                        placeholder="?????????? URL: https://res.cloudinary.com/..."
+                                        placeholder="ឬបិទភ្ជាប់ URL: https://res.cloudinary.com/..."
                                         value={formData.photoUrl}
                                         onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
-                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-mono text-[11px] focus:outline-none focus:border-amber-500"
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-mono text-[11px] focus:outline-none focus:border-amber-500"
                                     />
                                     {formData.photoUrl && (
                                         <div className="flex items-center gap-2 pt-1">
                                             <img src={formData.photoUrl} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs" />
-                                            <span className="text-[10px] text-amber-700 font-bold">? ??????????????????????</span>
+                                            <span className="text-[10px] text-amber-700 font-bold">✓ រូបភាពបានបញ្ចូលរួចរាល់</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             <div className="pt-2 flex items-center justify-end gap-2">
-                                <button type="button" onClick={() => { setIsFormOpen(false); setEditingItem(null); }} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer">
+                                <button type="button" onClick={() => { setIsFormOpen(false); setEditingItem(null); }} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-[5px] cursor-pointer">
                                     {t('cancel')}
                                 </button>
-                                <button type="submit" disabled={submitting} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl cursor-pointer shadow-md shadow-amber-600/20">
+                                <button type="submit" disabled={submitting} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-[5px] cursor-pointer shadow-md shadow-amber-600/20">
                                     {submitting ? 'Saving...' : t('submit')}
                                 </button>
                             </div>
@@ -633,9 +633,9 @@ const PenaltyPage = () => {
             {/* Image Preview Modal */}
             {selectedImage && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-4" onClick={() => setSelectedImage(null)}>
-                    <div className="relative bg-white rounded-xl p-2 max-w-xl max-h-[85vh] overflow-hidden border border-slate-200 shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <img src={selectedImage} alt="Receipt" className="max-w-full max-h-[75vh] object-contain rounded-xl" />
-                        <button onClick={() => setSelectedImage(null)} className="mt-2 w-full py-1.5 bg-amber-600 text-white font-bold rounded-xl text-xs">Close</button>
+                    <div className="relative bg-white rounded-2xl p-2 max-w-xl max-h-[85vh] overflow-hidden border border-slate-200 shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <img src={selectedImage} alt="Receipt" className="max-w-full max-h-[75vh] object-contain rounded-[5px]" />
+                        <button onClick={() => setSelectedImage(null)} className="mt-2 w-full py-1.5 bg-amber-600 text-white font-bold rounded-[5px] text-xs">Close</button>
                     </div>
                 </div>
             )}

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { FaShieldAlt, FaUserPlus, FaLock, FaTelegramPlane, FaHistory, FaBan, FaUnlock } from 'react-icons/fa';
@@ -358,7 +358,7 @@ const AllAccount = () => {
     return (
         <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-xl flex items-center justify-between shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div className='w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 text-xl'>
                         <FaShieldAlt />
@@ -410,7 +410,7 @@ const AllAccount = () => {
                                     <div
                                         key={item._id || idx}
                                         onClick={() => setSelectedAccount(item)}
-                                        className={`relative cursor-pointer rounded-xl border p-4 flex flex-col gap-3 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5 select-none
+                                        className={`relative cursor-pointer rounded-2xl border p-4 flex flex-col gap-3 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5 select-none
                                             ${isMaster ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-300' : isBlocked ? 'bg-red-50/70 border-red-300' : 'bg-white border-slate-200 hover:border-emerald-400'}`}
                                     >
                                         {/* Master badge */}
@@ -424,7 +424,7 @@ const AllAccount = () => {
                                         )}
                                         {/* Avatar */}
                                         <div className='flex items-center gap-3'>
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-black text-white shadow-md
+                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-md
                                                 ${isMaster ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : isSalary ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-500 to-slate-700'}`}>
                                                 {(item.name || item.username || '?')[0].toUpperCase()}
                                             </div>
@@ -460,7 +460,7 @@ const AllAccount = () => {
                 </div>
             ) : (
                 /* Account Detail Panel */
-                <div className='w-full bg-white border border-slate-200 rounded-xl shadow-md overflow-hidden'>
+                <div className='w-full bg-white border border-slate-200 rounded-2xl shadow-md overflow-hidden'>
                     {/* Detail Header */}
                     <div className='flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50'>
                         <div className='flex items-center gap-3'>
@@ -492,7 +492,7 @@ const AllAccount = () => {
                                     )}
                                     {hasPermission('/settings/all-account', 'edit') && (
                                         <button
-                                            onClick={() => { handleToggleBlock(selectedAccount); setSelectedAccount(prev => prev ? { ...prev, isBlocked: !prev.isBlocked } : null); }}
+                                            onClick={() => { handleToggleBlock(selectedAccount); setSelectedAccount(prev => prev ? {...prev, isBlocked: !prev.isBlocked} : null); }}
                                             className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-xl text-xs font-bold cursor-pointer
                                                 ${selectedAccount.isBlocked ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-orange-50 border-orange-300 text-orange-700'}`}
                                         >
@@ -647,7 +647,7 @@ const AllAccount = () => {
                                     selectedHistoryUser.onlineHistory.map((sess, sIdx) => {
                                         const isCurrent = !sess.logoutTime && selectedHistoryUser.status === 'Online';
                                         return (
-                                            <div key={sIdx} className={`p-3 rounded-xl border ${isCurrent ? 'bg-emerald-950/30 border-emerald-800/80' : 'bg-slate-900/70 border-slate-800'} space-y-1 font-mono`}>
+                                            <div key={sIdx} className={`p-3 rounded-2xl border ${isCurrent ? 'bg-emerald-950/30 border-emerald-800/80' : 'bg-slate-900/70 border-slate-800'} space-y-1 font-mono`}>
                                                 <div className="flex items-center justify-between text-[11px]">
                                                     <span className="text-slate-300 font-bold flex items-center gap-1.5">
                                                         <span className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`}></span>
@@ -687,7 +687,7 @@ const AllAccount = () => {
                                     </div>
                                 ) : (
                                     (selectedHistoryUser.otpHistory?.length > 0 ? selectedHistoryUser.otpHistory : [{ otp: selectedHistoryUser.lastOtp, createdAt: new Date(), status: 'Recent', ip: '127.0.0.1' }]).map((otpLog, oIdx) => (
-                                        <div key={oIdx} className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl flex items-center justify-between font-mono">
+                                        <div key={oIdx} className="p-3 bg-slate-900/70 border border-slate-800 rounded-2xl flex items-center justify-between font-mono">
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-amber-400 font-extrabold text-base tracking-widest bg-amber-950/60 border border-amber-800/80 px-2.5 py-0.5 rounded-lg">
@@ -718,7 +718,7 @@ const AllAccount = () => {
                                     <p className="text-slate-500 italic text-center py-8">No login audit logs recorded yet.</p>
                                 ) : (
                                     selectedHistoryUser.loginHistory.map((log, lIdx) => (
-                                        <div key={lIdx} className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl space-y-1 font-mono">
+                                        <div key={lIdx} className="p-3 bg-slate-900/70 border border-slate-800 rounded-2xl space-y-1 font-mono">
                                             <div className="flex items-center justify-between text-[11px]">
                                                 <span className="text-indigo-300 font-bold">{new Date(log.timestamp).toLocaleString('en-GB')}</span>
                                                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${log.status === 'Success' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}`}>
@@ -832,10 +832,11 @@ const AllAccount = () => {
                                         value={formData.role?.toLowerCase() === 'salary' ? '' : formData.brand}
                                         disabled={formData.role?.toLowerCase() === 'salary'}
                                         onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                                        className={`w-full h-10 px-3 border rounded-xl font-semibold transition-all ${formData.role?.toLowerCase() === 'salary'
+                                        className={`w-full h-10 px-3 border rounded-xl font-semibold transition-all ${
+                                            formData.role?.toLowerCase() === 'salary'
                                                 ? 'bg-gray-800/60 border-gray-700/60 text-gray-400 cursor-not-allowed italic'
                                                 : 'bg-gray-900 border-gray-700 text-gray-100'
-                                            }`}
+                                        }`}
                                     >
                                         {formData.role?.toLowerCase() === 'salary' ? (
                                             <option value="">No Brand (គ្មាន Brand / មិនកំណត់ម៉ាក)</option>
@@ -920,49 +921,49 @@ const AllAccount = () => {
                                     </div>
                                 )}
 
-                                <div className="max-h-72 overflow-y-auto rounded-xl border border-gray-800 bg-gray-900/60 p-3 space-y-3">
+                                <div className="max-h-72 overflow-y-auto rounded-2xl border border-gray-800 bg-gray-900/60 p-3 space-y-3">
                                     {Object.entries(
                                         (formData.role?.toLowerCase() === 'salary'
                                             ? ALL_SYSTEM_PAGES.filter(pg => pg.path === '/salary' || pg.category === 'Salary System')
                                             : ALL_SYSTEM_PAGES
                                         ).reduce((acc, pg) => {
-                                            const cat = pg.category || 'Other';
-                                            if (!acc[cat]) acc[cat] = [];
-                                            acc[cat].push(pg);
-                                            return acc;
-                                        }, {})
-                                    ).map(([category, pages]) => (
-                                        <div key={category} className="space-y-1.5">
-                                            <div className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider px-1 pt-1 flex items-center justify-between border-b border-gray-800/80 pb-1">
-                                                <span>{category}</span>
-                                                <span className="text-[10px] text-gray-500 font-mono">({pages.length} Pages)</span>
-                                            </div>
-                                            {pages.map((pg) => {
-                                                const pState = formData.permissions[pg.path] || {};
-                                                const availableActions = pg.actions || ['read', 'create', 'edit', 'delete'];
-                                                const ACTION_LABELS = {
-                                                    read: { label: 'Read (មើលទំព័រ)', color: 'text-indigo-300' },
-                                                    export: { label: 'Export', color: 'text-emerald-400' },
-                                                    seePhoto: { label: 'See Photo (រូប)', color: 'text-pink-300' },
-                                                    detail: { label: 'Detail (ព័ត៌មាន)', color: 'text-blue-300' },
-                                                    qrcode: { label: 'QR Code', color: 'text-violet-300' },
-                                                    information: { label: 'Info (ព័ត៌មាន)', color: 'text-sky-300' },
-                                                    deviceAction: { label: 'Device Actions (Lock/WP)', color: 'text-rose-400' },
-                                                    openFacebook: { label: 'Open FB', color: 'text-blue-400' },
-                                                    history: { label: 'History (ប្រវត្តិ)', color: 'text-amber-300' },
-                                                    comment: { label: 'Comment (មតិ)', color: 'text-cyan-300' },
-                                                    lockDevice: { label: 'Lock Device', color: 'text-red-400' },
-                                                    unlockPhone: { label: 'Unlock Phone', color: 'text-teal-300' },
-                                                    setWallpaper: { label: 'Set Wallpaper', color: 'text-amber-400' },
-                                                    unlockWallpaper: { label: 'Unlock WP', color: 'text-lime-300' },
-                                                    check: { label: 'Check', color: 'text-blue-300' },
-                                                    blacklist: { label: 'Blacklist', color: 'text-red-500' },
-                                                    activate: { label: 'Activate (ដំណើរការ)', color: 'text-emerald-300' },
-                                                    create: { label: 'Create (បង្កើត)', color: 'text-emerald-300' },
-                                                    edit: { label: 'Edit (កែប្រែ)', color: 'text-purple-300' },
-                                                    delete: { label: 'Delete (លុប)', color: 'text-red-400' },
-                                                    redeem: { label: 'Redeem', color: 'text-orange-300' }
-                                                };
+                                             const cat = pg.category || 'Other';
+                                             if (!acc[cat]) acc[cat] = [];
+                                             acc[cat].push(pg);
+                                             return acc;
+                                         }, {})
+                                     ).map(([category, pages]) => (
+                                         <div key={category} className="space-y-1.5">
+                                             <div className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider px-1 pt-1 flex items-center justify-between border-b border-gray-800/80 pb-1">
+                                                 <span>{category}</span>
+                                                 <span className="text-[10px] text-gray-500 font-mono">({pages.length} Pages)</span>
+                                             </div>
+                                             {pages.map((pg) => {
+                                                 const pState = formData.permissions[pg.path] || {};
+                                                 const availableActions = pg.actions || ['read', 'create', 'edit', 'delete'];
+                                                 const ACTION_LABELS = {
+                                                     read: { label: 'Read (មើលទំព័រ)', color: 'text-indigo-300' },
+                                                     export: { label: 'Export', color: 'text-emerald-400' },
+                                                     seePhoto: { label: 'See Photo (រូប)', color: 'text-pink-300' },
+                                                     detail: { label: 'Detail (ព័ត៌មាន)', color: 'text-blue-300' },
+                                                     qrcode: { label: 'QR Code', color: 'text-violet-300' },
+                                                     information: { label: 'Info (ព័ត៌មាន)', color: 'text-sky-300' },
+                                                     deviceAction: { label: 'Device Actions (Lock/WP)', color: 'text-rose-400' },
+                                                     openFacebook: { label: 'Open FB', color: 'text-blue-400' },
+                                                     history: { label: 'History (ប្រវត្តិ)', color: 'text-amber-300' },
+                                                     comment: { label: 'Comment (មតិ)', color: 'text-cyan-300' },
+                                                     lockDevice: { label: 'Lock Device', color: 'text-red-400' },
+                                                     unlockPhone: { label: 'Unlock Phone', color: 'text-teal-300' },
+                                                     setWallpaper: { label: 'Set Wallpaper', color: 'text-amber-400' },
+                                                     unlockWallpaper: { label: 'Unlock WP', color: 'text-lime-300' },
+                                                     check: { label: 'Check', color: 'text-blue-300' },
+                                                     blacklist: { label: 'Blacklist', color: 'text-red-500' },
+                                                     activate: { label: 'Activate (ដំណើរការ)', color: 'text-emerald-300' },
+                                                     create: { label: 'Create (បង្កើត)', color: 'text-emerald-300' },
+                                                     edit: { label: 'Edit (កែប្រែ)', color: 'text-purple-300' },
+                                                     delete: { label: 'Delete (លុប)', color: 'text-red-400' },
+                                                     redeem: { label: 'Redeem', color: 'text-orange-300' }
+                                                 };
                                                 return (
                                                     <div key={pg.path} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-xl bg-gray-950/60 border border-gray-800/80 hover:border-gray-700 text-xs transition-colors">
                                                         <span className="font-bold text-gray-200">{pg.label} <span className="text-[10px] text-indigo-400 font-mono">({pg.path})</span></span>

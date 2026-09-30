@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { FaHistory, FaFileExcel, FaSearch, FaUserShield, FaTelegramPlane, FaClock, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
@@ -195,7 +195,7 @@ const LoginHistory = () => {
 
             {/* Notification Toast */}
             {toast && (
-                <div className={`p-3.5 rounded-xl border shadow-sm flex items-center justify-between transition-all ${toast.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-red-50 border-red-300 text-red-900'}`}>
+                <div className={`p-3.5 rounded-[5px] border shadow-sm flex items-center justify-between transition-all ${toast.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-red-50 border-red-300 text-red-900'}`}>
                     <div className='flex items-center gap-2.5 text-xs font-bold'>
                         {toast.type === 'success' ? <FaCheckCircle className='text-emerald-600 text-base' /> : <FaExclamationTriangle className='text-red-600 text-base' />}
                         <span>{toast.message}</span>
@@ -205,7 +205,7 @@ const LoginHistory = () => {
             )}
 
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <header className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
@@ -217,22 +217,22 @@ const LoginHistory = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-wrap">
-                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <FaFileExcel className="text-emerald-600 text-xs" /><span>Excel</span>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <button onClick={handleExportExcel} className='flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                        <FaFileExcel className="text-emerald-600 text-sm" /><span>Excel</span>
                     </button>
-                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs'>
-                        <MdPictureAsPdf className="text-rose-600 text-xs" /><span>PDF</span>
+                    <button onClick={handleExportPDF} className='flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'>
+                        <MdPictureAsPdf className="text-red-600 text-sm" /><span>PDF</span>
                     </button>
-                    <button onClick={() => fetchLoginHistory(page)} disabled={reloading} className='flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer border border-slate-200 transition-all shadow-xs'>
-                        <MdOutlineSync size={15} className={reloading ? 'spin-reload text-indigo-600' : ''} />
+                    <button onClick={() => fetchLoginHistory(page)} disabled={reloading} className='flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-[5px] text-xs font-bold cursor-pointer border border-slate-300 transition-all shadow-xs'>
+                        <MdOutlineSync size={16} className={reloading ? 'spin-reload text-indigo-600' : ''} />
                         <p>{t('reload')}</p>
                     </button>
                 </div>
             </header>
 
-            {/* Telegram & Google Sheet Auto-Send Countdown Card */}
-            <div className='w-full bg-white/90 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-4'>
+            {/* Telegram & Google Sheet Auto-Send Countdown Card (Clean White Light Theme) */}
+            <div className='w-full bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-4'>
                 <div className='flex items-center gap-3.5'>
                     <div>
                         <div className='flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wider'>
@@ -244,22 +244,22 @@ const LoginHistory = () => {
                 <div className='flex items-center gap-4 flex-wrap'>
                     {/* Countdown Display Units (Light Slate Clean Style) */}
                     <div className='flex items-center gap-1.5 font-mono'>
-                        <div className='flex flex-col items-center bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl min-w-[52px]'>
+                        <div className='flex flex-col items-center bg-slate-50 border border-slate-200 px-3 py-1 rounded-[5px] min-w-[52px]'>
                             <span className='text-base font-extrabold text-blue-700 tabular-nums'>{countdown.days}</span>
                             <span className='text-[9px] text-slate-500 font-bold uppercase tracking-tight'>ថ្ងៃ</span>
                         </div>
                         <span className='text-slate-400 font-bold text-sm'>:</span>
-                        <div className='flex flex-col items-center bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl min-w-[52px]'>
+                        <div className='flex flex-col items-center bg-slate-50 border border-slate-200 px-3 py-1 rounded-[5px] min-w-[52px]'>
                             <span className='text-base font-extrabold text-blue-700 tabular-nums'>{String(countdown.hours).padStart(2, '0')}</span>
                             <span className='text-[9px] text-slate-500 font-bold uppercase tracking-tight'>ម៉ោង</span>
                         </div>
                         <span className='text-slate-400 font-bold text-sm'>:</span>
-                        <div className='flex flex-col items-center bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl min-w-[52px]'>
+                        <div className='flex flex-col items-center bg-slate-50 border border-slate-200 px-3 py-1 rounded-[5px] min-w-[52px]'>
                             <span className='text-base font-extrabold text-blue-700 tabular-nums'>{String(countdown.minutes).padStart(2, '0')}</span>
                             <span className='text-[9px] text-slate-500 font-bold uppercase tracking-tight'>នាទី</span>
                         </div>
                         <span className='text-slate-400 font-bold text-sm'>:</span>
-                        <div className='flex flex-col items-center bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl min-w-[52px]'>
+                        <div className='flex flex-col items-center bg-slate-50 border border-slate-200 px-3 py-1 rounded-[5px] min-w-[52px]'>
                             <span className='text-base font-extrabold text-blue-600 tabular-nums'>{String(countdown.seconds).padStart(2, '0')}</span>
                             <span className='text-[9px] text-slate-500 font-bold uppercase tracking-tight'>វិនាទី</span>
                         </div>
@@ -269,7 +269,7 @@ const LoginHistory = () => {
                     <button
                         onClick={handleSendTelegramReport}
                         disabled={sendingTelegram}
-                        className='px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
+                        className='px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
                     >
                         {sendingTelegram ? (
                             <>
@@ -287,7 +287,7 @@ const LoginHistory = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className='p-3 w-full border border-slate-200/90 bg-white/90 backdrop-blur-md rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <div className='p-3 w-full border border-slate-200 bg-white rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='relative flex-1 min-w-[240px]'>
                     <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs' />
                     <input
@@ -298,7 +298,7 @@ const LoginHistory = () => {
                             setPage(1);
                         }}
                         placeholder={t('search')}
-                        className='w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-indigo-400 bg-slate-50 focus:bg-white transition-all'
+                        className='w-full pl-9 pr-3 py-2 border border-slate-300 rounded-[5px] text-xs font-medium focus:outline-none focus:border-indigo-500 bg-slate-50'
                     />
                 </div>
 
@@ -310,7 +310,7 @@ const LoginHistory = () => {
                         <select
                             value={roleFilter}
                             onChange={(e) => setRoleFilter(e.target.value)}
-                            className='px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold bg-slate-50 text-slate-700 focus:outline-none focus:border-indigo-400 cursor-pointer'
+                            className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer'
                         >
                             <option value=''>All Roles</option>
                             <option value='Administrator'>Administrator</option>
@@ -327,7 +327,7 @@ const LoginHistory = () => {
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className='px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold bg-slate-50 text-slate-700 focus:outline-none focus:border-indigo-400 cursor-pointer'
+                            className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer'
                         >
                             <option value=''>All Statuses</option>
                             <option value='Success'>Success Only</option>
@@ -338,7 +338,7 @@ const LoginHistory = () => {
             </div>
 
             {/* Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-450px)] pb-28 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-md shadow-xs table-container'>
+            <div className='w-full overflow-x-auto h-[calc(100vh-450px)] pb-28 rounded-2xl border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>

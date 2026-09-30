@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import {
@@ -571,7 +571,7 @@ const FollowUp3 = () => {
             </datalist>
 
             {/* Header Title & Actions */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
                 <div className="flex items-center gap-3.5">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
                         <FaMapMarkerAlt size={22} />
@@ -628,7 +628,7 @@ const FollowUp3 = () => {
             {/* Metric Statistics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Total Leads / Records */}
-                <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -646,7 +646,7 @@ const FollowUp3 = () => {
                 </div>
 
                 {/* Total Requested Pawn Amount */}
-                <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
+                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -665,7 +665,7 @@ const FollowUp3 = () => {
             </div>
 
             {/* Filter and Search Bar */}
-            <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-100 shadow-sm space-y-3">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
                 <div className="flex flex-col lg:flex-row items-center gap-3">
                     {/* Search Input */}
                     <div className="relative flex-1 w-full">
@@ -766,7 +766,7 @@ const FollowUp3 = () => {
             </div>
 
             {/* Table Card */}
-            <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -1010,7 +1010,7 @@ const FollowUp3 = () => {
 
                         {/* ⚡ Auto-Fill Notification Banner when previous match detected */}
                         {detectedMatch && (
-                            <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="flex items-start gap-2.5">
                                     <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
                                         <FaBolt />
@@ -1249,7 +1249,7 @@ const FollowUp3 = () => {
             {deleteModalItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in duration-200">
-                        <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mx-auto">
+                        <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mx-auto">
                             <FaTrashAlt />
                         </div>
                         <div className="text-center space-y-1.5">
@@ -1306,10 +1306,11 @@ const FollowUp3 = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('excel')}
-                                    className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${exportFormat === 'excel'
+                                    className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
+                                        exportFormat === 'excel'
                                             ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
                                             : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                                        }`}
+                                    }`}
                                 >
                                     <FaFileExcel className="text-emerald-600 text-base" />
                                     <span>Excel (.xlsx)</span>
@@ -1317,10 +1318,11 @@ const FollowUp3 = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('pdf')}
-                                    className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${exportFormat === 'pdf'
+                                    className={`p-3 rounded-xl border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
+                                        exportFormat === 'pdf'
                                             ? 'border-rose-500 bg-rose-50 text-rose-700 shadow-sm'
                                             : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                                        }`}
+                                    }`}
                                 >
                                     <MdPictureAsPdf className="text-rose-600 text-base" />
                                     <span>PDF (.pdf)</span>
