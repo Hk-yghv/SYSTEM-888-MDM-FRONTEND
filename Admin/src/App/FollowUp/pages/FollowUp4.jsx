@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
+import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
     FaEdit, FaSearch, FaRegCalendarAlt,
@@ -1100,31 +1101,11 @@ const FollowUp4 = () => {
                                 />
                             </div>
 
-                            {/* Date Filter */}
-                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-slate-700">
-                                <FaRegCalendarAlt className="text-slate-400 text-xs" />
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
-                                />
-                                <span className="text-slate-500 text-xs">ដល់</span>
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
-                                />
-                                {(startDate || endDate) && (
-                                    <button
-                                        onClick={() => { setStartDate(''); setEndDate(''); }}
-                                        className="text-[11px] text-rose-400 hover:text-rose-300 ml-1 font-semibold cursor-pointer underline"
-                                    >
-                                        Clear
-                                    </button>
-                                )}
-                            </div>
+                            <DateRangeDropdown
+                                from={startDate}
+                                to={endDate}
+                                onApplyRange={(from, to) => { setStartDate(from); setEndDate(to); }}
+                            />
                         </div>
 
                         {/* Add Button */}

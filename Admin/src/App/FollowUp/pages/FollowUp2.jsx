@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
+import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
     FaEdit, FaSearch, FaRegCalendarAlt,
@@ -916,34 +917,16 @@ const FollowUp2 = () => {
                     />
                 </div>
 
-                {/* Specific Date Filter */}
-                <div className="flex items-center gap-1.5 min-w-[140px]">
-                    <span className="text-xs text-[var(--app-text-muted,#64748b)] font-semibold whitespace-nowrap">កាលបរិច្ឆេទ:</span>
-                    <input
-                        type="date"
-                        value={filterDate}
-                        onChange={(e) => { setFilterDate(e.target.value); setStartDate(''); setEndDate(''); }}
-                        className="px-2.5 py-1.5 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                    />
-                </div>
-
-                {/* Date Range Filters */}
-                <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-[var(--app-text-muted,#64748b)] font-semibold whitespace-nowrap">ពី:</span>
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => { setStartDate(e.target.value); setFilterDate(''); }}
-                        className="px-2.5 py-1.5 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                    />
-                    <span className="text-xs text-[var(--app-text-muted,#64748b)] font-semibold whitespace-nowrap">ដល់:</span>
-                    <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => { setEndDate(e.target.value); setFilterDate(''); }}
-                        className="px-2.5 py-1.5 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                    />
-                </div>
+                <DateRangeDropdown
+                    from={startDate || filterDate}
+                    to={endDate || filterDate}
+                    onApplyRange={(from, to) => {
+                        setFilterDate('');
+                        setStartDate(from);
+                        setEndDate(to);
+                    }}
+                    onClear={() => setFilterDate('')}
+                />
 
                 {/* Status Filter */}
                 <div className="flex items-center gap-1.5 min-w-[120px]">

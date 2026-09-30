@@ -10,6 +10,7 @@ import {
 import { MdOutlineSync, MdPictureAsPdf, MdPieChart, MdTableChart } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
+import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import LineChart from '../../../components/LineChart';
 import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
@@ -404,26 +405,11 @@ const CashOutPage = () => {
                                     className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold focus:outline-none focus:border-rose-500 w-52 sm:w-64"
                                 />
                             </div>
-                            <div className="flex items-center gap-1 text-xs font-bold text-slate-600">
-                                <FaRegCalendarAlt className="text-slate-400" />
-                                <span>ចាប់ពី:</span>
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold"
-                                />
-                                <span>ដល់:</span>
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold"
-                                />
-                                {(startDate || endDate) && (
-                                    <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-xs text-rose-600 hover:underline font-bold ml-1">Clear</button>
-                                )}
-                            </div>
+                            <DateRangeDropdown
+                                from={startDate}
+                                to={endDate}
+                                onApplyRange={(from, to) => { setStartDate(from); setEndDate(to); }}
+                            />
                         </div>
 
                         <button onClick={() => setIsFormOpen(true)} className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-[5px] text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">

@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
+import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import { AiOutlineMenu } from 'react-icons/ai';
 import { MdOutlineSync, MdSearch, MdPictureAsPdf, MdQrCode2 } from 'react-icons/md';
 import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
@@ -712,30 +713,11 @@ const InstallmentPage = () => {
                             className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-48 sm:w-52 outline-none font-medium shadow-xs"
                         />
                     </div>
-                    <div className="flex items-center gap-2 bg-slate-50 px-2 py-1.5">
-                        <input
-                            type="date"
-                            value={dateFrom}
-                            onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
-                            className="h-8 px-2 bg-white border border-slate-300 rounded-[5px] text-[11px] text-slate-700 outline-none focus:border-emerald-500"
-                        />
-                        <span className="text-slate-500 text-[10px] font-bold uppercase">To</span>
-                        <input
-                            type="date"
-                            value={dateTo}
-                            onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
-                            className="h-8 px-2 bg-white border border-slate-300 rounded-[5px] text-[11px] text-slate-700 outline-none focus:border-emerald-500"
-                        />
-                        {(dateFrom || dateTo) && (
-                            <button
-                                type="button"
-                                onClick={() => { setDateFrom(''); setDateTo(''); setCurrentPage(1); }}
-                                className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-[5px] text-[10px] font-bold cursor-pointer"
-                            >
-                                Clear
-                            </button>
-                        )}
-                    </div>
+                    <DateRangeDropdown
+                        from={dateFrom}
+                        to={dateTo}
+                        onApplyRange={(from, to) => { setDateFrom(from); setDateTo(to); setCurrentPage(1); }}
+                    />
 
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                     <button

@@ -9,6 +9,7 @@ import {
 import { MdOutlineSync, MdPictureAsPdf, MdOutlineRateReview, MdOutlineBarChart, MdTableChart } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import CopyCell from '../../../components/CopyCell';
+import DateRangeDropdown from '../../../components/DateRangeDropdown';
 
 const FollowUpReport = () => {
     const { t } = useLanguage();
@@ -572,50 +573,17 @@ const FollowUpReport = () => {
                         />
                     </div>
 
-                    {/* Single Date */}
-                    <div className="flex items-center gap-2 w-full lg:w-auto">
-                        <input
-                            type="date"
-                            value={filterDate}
-                            onChange={(e) => {
-                                setFilterDate(e.target.value);
-                                setStartDate('');
-                                setEndDate('');
-                                setDatePreset('custom');
-                            }}
-                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
-                            title="Filter by Specific Date"
-                        />
-                    </div>
-
-                    {/* Date Range */}
-                    <div className="flex items-center gap-2 w-full lg:w-auto">
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => {
-                                setStartDate(e.target.value);
-                                setFilterDate('');
-                                setDatePreset('custom');
-                            }}
-                            placeholder="ពីថ្ងៃ"
-                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
-                            title="Start Date"
-                        />
-                        <span className="text-slate-400 text-xs font-bold">ដល់</span>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => {
-                                setEndDate(e.target.value);
-                                setFilterDate('');
-                                setDatePreset('custom');
-                            }}
-                            placeholder="ដល់ថ្ងៃ"
-                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
-                            title="End Date"
-                        />
-                    </div>
+                    <DateRangeDropdown
+                        from={startDate || filterDate}
+                        to={endDate || filterDate}
+                        onApplyRange={(from, to) => {
+                            setFilterDate('');
+                            setDatePreset('custom');
+                            setStartDate(from);
+                            setEndDate(to);
+                        }}
+                        onClear={() => setDatePreset('all')}
+                    />
 
                     {/* Brand Selector for Admin */}
                     {(user?.role === 'Administrator' || user?.role === 'Admin' || user?.isImmutable) && (

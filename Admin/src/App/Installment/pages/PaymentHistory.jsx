@@ -6,6 +6,7 @@ import { MdOutlineSync, MdPictureAsPdf, MdChevronLeft, MdChevronRight } from "re
 import { FaFileExcel, FaImage, FaTimes, FaFilter } from 'react-icons/fa';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
+import DateRangeDropdown from '../../../components/DateRangeDropdown';
 
 const LIMIT = 10;
 
@@ -79,9 +80,11 @@ const PaymentHistory = () => {
         setPage(1);
     };
 
-    const handleApplyDateFilter = () => {
-        setActiveDateFrom(dateFrom);
-        setActiveDateTo(dateTo);
+    const handleApplyDateFilter = (from = dateFrom, to = dateTo) => {
+        setDateFrom(from);
+        setDateTo(to);
+        setActiveDateFrom(from);
+        setActiveDateTo(to);
         setPage(1);
     };
 
@@ -284,38 +287,12 @@ const PaymentHistory = () => {
                         <FaFilter className='text-slate-400 text-[10px]' />
                         <span>Filter ថ្ងៃ:</span>
                     </div>
-                    <div className='flex items-center gap-1'>
-                        <label className='text-[10px] font-bold text-slate-500'>ពី</label>
-                        <input
-                            type='date'
-                            value={dateFrom}
-                            onChange={e => setDateFrom(e.target.value)}
-                            className='px-2 py-1.5 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 outline-none focus:border-emerald-500 shadow-xs font-mono'
-                        />
-                    </div>
-                    <div className='flex items-center gap-1'>
-                        <label className='text-[10px] font-bold text-slate-500'>ដល់</label>
-                        <input
-                            type='date'
-                            value={dateTo}
-                            onChange={e => setDateTo(e.target.value)}
-                            className='px-2 py-1.5 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 outline-none focus:border-emerald-500 shadow-xs font-mono'
-                        />
-                    </div>
-                    <button
-                        onClick={handleApplyDateFilter}
-                        className='px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                    >
-                        Apply
-                    </button>
-                    {hasDateFilter && (
-                        <button
-                            onClick={handleClearDateFilter}
-                            className='px-3 py-1.5 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-300 hover:border-red-300 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs'
-                        >
-                            Clear Filter
-                        </button>
-                    )}
+                    <DateRangeDropdown
+                        from={dateFrom}
+                        to={dateTo}
+                        onApplyRange={handleApplyDateFilter}
+                        onClear={handleClearDateFilter}
+                    />
                     {hasDateFilter && (
                         <span className='text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-[4px]'>
                             {activeDateFrom || '...'} → {activeDateTo || '...'}

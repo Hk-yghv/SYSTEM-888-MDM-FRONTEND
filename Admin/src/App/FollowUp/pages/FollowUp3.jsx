@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
+import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
     FaEdit, FaSearch, FaRegCalendarAlt,
@@ -671,47 +672,16 @@ const FollowUp3 = () => {
                         />
                     </div>
 
-                    {/* Single Date */}
-                    <div className="flex items-center gap-2 w-full lg:w-auto">
-                        <input
-                            type="date"
-                            value={filterDate}
-                            onChange={(e) => {
-                                setFilterDate(e.target.value);
-                                setStartDate('');
-                                setEndDate('');
-                            }}
-                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
-                            title="Filter by Specific Date"
-                        />
-                    </div>
-
-                    {/* Date Range */}
-                    <div className="flex items-center gap-2 w-full lg:w-auto">
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => {
-                                setStartDate(e.target.value);
-                                setFilterDate('');
-                            }}
-                            placeholder="ពីថ្ងៃ"
-                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
-                            title="Start Date"
-                        />
-                        <span className="text-slate-400 text-xs font-bold">ដល់</span>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => {
-                                setEndDate(e.target.value);
-                                setFilterDate('');
-                            }}
-                            placeholder="ដល់ថ្ងៃ"
-                            className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
-                            title="End Date"
-                        />
-                    </div>
+                    <DateRangeDropdown
+                        from={startDate || filterDate}
+                        to={endDate || filterDate}
+                        onApplyRange={(from, to) => {
+                            setFilterDate('');
+                            setStartDate(from);
+                            setEndDate(to);
+                        }}
+                        onClear={() => setFilterDate('')}
+                    />
 
                     {/* Brand Selector for Admin */}
                     {(user?.role === 'Administrator' || user?.role === 'Admin' || user?.isImmutable) && (
