@@ -3,19 +3,19 @@ import { getSecureItem } from './secureStorage';
 
 const normalizeUrl = (url) => (url ? url.replace(/\/$/, '') : '');
 
-const rawApiPool = [
+const rawApiPool = import.meta.env.DEV ? [
     import.meta.env.VITE_API_BACKEND,
     import.meta.env.VITE_API_BACKEND1,
     import.meta.env.VITE_API_BACKEND2,
     import.meta.env.VITE_API_BACKEND3,
-].map(normalizeUrl).filter(Boolean);
+].map(normalizeUrl).filter(Boolean) : [];
 
-export const API_POOL = rawApiPool.length > 0 ? rawApiPool : [
+export const API_POOL = rawApiPool.length > 0 ? rawApiPool : import.meta.env.DEV ? [
     '/api',
     'http://localhost:5000/api',
     'http://localhost:5001/api',
     'http://localhost:5002/api'
-];
+] : ['/api'];
 
 let activeApiIndex = 0;
 

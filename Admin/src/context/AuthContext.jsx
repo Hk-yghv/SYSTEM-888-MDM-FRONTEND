@@ -5,10 +5,12 @@ import { getSecureItem, setSecureItem, clearSecureAuth } from '../utils/secureSt
 
 const AuthContext = createContext();
 
-// All API_BASE pointers fallback and route through the active failover API pool
-const API_BASE = import.meta.env.VITE_API_BACKEND || 'http://localhost:5000/api';
-const API_BASE1 = import.meta.env.VITE_API_BACKEND1 || API_BASE;
-const API_BASE2 = import.meta.env.VITE_API_BACKEND2 || API_BASE;
+// Production requests go through Vercel's same-origin proxy; local development uses the backend directly.
+const API_BASE = import.meta.env.DEV
+    ? (import.meta.env.VITE_API_BACKEND || 'http://localhost:5000/api')
+    : '/api';
+const API_BASE1 = import.meta.env.DEV ? (import.meta.env.VITE_API_BACKEND1 || API_BASE) : API_BASE;
+const API_BASE2 = import.meta.env.DEV ? (import.meta.env.VITE_API_BACKEND2 || API_BASE) : API_BASE;
 
 
 export const AuthProvider = ({ children }) => {
