@@ -180,7 +180,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 {hasAnyAlertPermission(user, hasPermission) && (
                     <button
                         onClick={onOpenAlerts}
-                        className='relative flex items-center justify-center gap-2 w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-1 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
+                        className='relative flex items-center justify-center gap-2 w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-1 rounded-2xl bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
                         title='ការជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)'
                     >
                         <FaBell className='text-sm animate-pulse text-slate-950' />
