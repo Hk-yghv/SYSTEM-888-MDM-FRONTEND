@@ -1,7 +1,7 @@
 {
   "name": "SYSTEM MDM",
   "private": true,
-  "version": "6.4.48",
+  "version": "6.4.49",
   "type": "module",
   "scripts": {
     "dev": "vite",
