@@ -608,10 +608,15 @@ const TelegramPage = () => {
         setNewChatName("");
         setNewChatInitialMessage("");
       } else {
-        setNewChatError(
-          data.description ||
-            "មិនអាចផ្ញើសារបានទេ។ ប្រសិនបើជា User សូមប្រាកដថា User ធ្លាប់បានចុច /start ក្នុង Bot របស់អ្នកជាមុនសិន។"
-        );
+        const desc = data.description || "";
+        if (desc.includes("bot can't initiate conversation") || desc.includes("Forbidden")) {
+          const botUser = activeAccount?.botInfo?.username || activeAccount?.username?.replace("@", "");
+          setNewChatError(
+            `bot_cant_initiate:${botUser || ""}`
+          );
+        } else {
+          setNewChatError(desc || "មិនអាចផ្ញើសារបានទេ សូមពិនិត្យមើល Chat ID ម្តងទៀត។");
+        }
       }
     } catch (err) {
       setNewChatError("បរាជ័យក្នុងការភ្ជាប់ទៅកាន់ Telegram Server");
@@ -713,8 +718,23 @@ const TelegramPage = () => {
           </div>
         </div>
 
-        {/* Right Sync & Settings status */}
+        {/* Right Sync & Bot Link */}
         <div className="flex items-center gap-2 pl-3">
+          {activeAccount?.username && (
+            <button
+              onClick={() => {
+                const url = `https://t.me/${activeAccount.username.replace("@", "")}`;
+                navigator.clipboard.writeText(url);
+                alert(`បានចម្លង Link Bot៖ ${url}\nផ្ញើ Link នេះទៅកាន់ User ដើម្បីឱ្យគាត់ចុច START!`);
+              }}
+              title="ចម្លង Link Bot ដើម្បីផ្ញើឱ្យ User ចុច START"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 transition-colors border border-sky-200 cursor-pointer"
+            >
+              <FaExternalLinkAlt className="text-[10px]" />
+              <span className="hidden sm:inline">Link Bot: {activeAccount.username}</span>
+            </button>
+          )}
+
           {activeAccount?.botToken && (
             <button
               onClick={handleManualSync}
@@ -1372,9 +1392,63 @@ const TelegramPage = () => {
               </div>
 
               {newChatError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-start gap-2">
-                  <FaExclamationTriangle className="text-rose-600 flex-shrink-0 mt-0.5" />
-                  <span className="leading-relaxed">{newChatError}</span>
+                <div>
+                  {newChatError.startsWith("bot_cant_initiate:") ? (
+                    <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-950 space-y-2.5">
+                      <div className="flex items-start gap-2">
+                        <FaExclamationTriangle className="text-amber-600 flex-shrink-0 mt-0.5 text-sm" />
+                        <div>
+                          <div className="font-bold text-slate-900">
+                            គោលការណ៍ Telegram (Telegram Policy)
+                          </div>
+                          <div className="text-[11px] text-slate-800 leading-relaxed mt-0.5">
+                            Bot មិនអាចផ្ញើសារទៅកាន់ User មុនបានឡើយ ប្រសិនបើ User នោះមិនទាន់ធ្លាប់បានចុច <strong>START</strong> ក្នុង Bot របស់អ្នកជាមុនសិន។
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bot Link & Action */}
+                      {newChatError.split(":")[1] && (
+                        <div className="bg-white p-2.5 rounded-lg border border-amber-200 flex items-center justify-between gap-2">
+                          <div className="truncate font-mono text-[11px] text-sky-800 font-bold">
+                            https://t.me/{newChatError.split(":")[1]}
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  `https://t.me/${newChatError.split(":")[1]}`
+                                );
+                                alert("បានចម្លង Link Bot រួចរាល់! សូមផ្ញើ Link នេះទៅកាន់ User ដើម្បីឱ្យគាត់ចុច START។");
+                              }}
+                              className="px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-[10px] rounded-md border border-sky-200 cursor-pointer"
+                            >
+                              Copy Link
+                            </button>
+                            <a
+                              href={`https://t.me/${newChatError.split(":")[1]}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-[10px] rounded-md flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>បើក Telegram</span>
+                              <FaExternalLinkAlt className="text-[8px]" />
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="text-[10px] text-slate-700">
+                        💡 <strong>វិធីដោះស្រាយ៖</strong> គ្រាន់តែឱ្យ User ម្ចាស់ Chat ID នេះចុចបើក Bot រួចចុច <strong>START</strong> (ឬផ្ញើសារមួយម៉ាត់) នោះប្រព័ន្ធនឹងចាប់ផ្ដើមឆាតបានភ្លាមៗ!
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-start gap-2">
+                      <FaExclamationTriangle className="text-rose-600 flex-shrink-0 mt-0.5" />
+                      <span className="leading-relaxed">{newChatError}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
