@@ -516,27 +516,40 @@ const CalculateSchedule2 = () => {
             <style>{`
                 @page {
                     size: A4 ${printOrientation};
-                    margin: ${printOrientation === 'landscape' ? '12mm' : '15mm 20mm'};
+                    margin: ${printOrientation === 'landscape' ? '8mm' : '10mm 15mm'};
                 }
                 @media print {
                     html, body {
                         width: 100% !important;
-                        height: 100% !important;
+                        height: auto !important;
+                        min-height: 0 !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         background: #ffffff !important;
                         color: #000000 !important;
+                        overflow: visible !important;
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                     }
-                    body * {
+                    .no-print,
+                    .no-print * {
+                        display: none !important;
+                        height: 0 !important;
+                        min-height: 0 !important;
+                        max-height: 0 !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
                         visibility: hidden !important;
+                        overflow: hidden !important;
+                    }
+                    body * {
+                        visibility: hidden;
                     }
                     #cs2-print-area, #cs2-print-area * {
                         visibility: visible !important;
                     }
                     #cs2-print-area {
-                        position: absolute !important;
+                        position: relative !important;
                         left: 0 !important;
                         right: 0 !important;
                         top: 0 !important;
@@ -549,6 +562,10 @@ const CalculateSchedule2 = () => {
                         background: #ffffff !important;
                         overflow: visible !important;
                         min-height: auto !important;
+                        page-break-after: avoid !important;
+                        page-break-inside: avoid !important;
+                        break-after: avoid !important;
+                        break-inside: avoid !important;
                     }
                     #cs2-print-area div.overflow-x-auto,
                     #cs2-print-area div[class*="overflow-x-auto"] {
@@ -602,9 +619,6 @@ const CalculateSchedule2 = () => {
                         margin: 64px auto 0 auto !important;
                         border-bottom: 1px dotted #94a3b8 !important;
                     }
-                    .no-print {
-                        display: none !important;
-                    }
                 }
                 #cs2-print-area .cs2-page-margin {
                     padding-left: 150px;
@@ -624,7 +638,7 @@ const CalculateSchedule2 = () => {
             <div className="p-2 sm:p-2 max-w-7xl mx-auto space-y-6 bg-[#fff]">
 
                 {/* ── Header ────────────────────────────────────────── */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#fff] p-5 rounded-[5px] border border-slate-200 shadow-xs">
+                <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#fff] p-5 rounded-[5px] border border-slate-200 shadow-xs">
                     <div>
                         <div>
                             <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
@@ -692,14 +706,14 @@ const CalculateSchedule2 = () => {
 
                 {/* Save Success Alert */}
                 {saveSuccessMsg && (
-                    <div className="p-2 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3 animate-fadeIn">
+                    <div className="no-print p-2 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3 animate-fadeIn">
                         <FaCheckCircle className="text-emerald-600 text-lg" />
                         <span>{saveSuccessMsg} ព័ត៌មានត្រូវបានរក្សាទុក ដោយជោគជ័យ។</span>
                     </div>
                 )}
 
                 {/* Main Grid: Form Inputs + Saved Records Sidebar */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" >
+                <div className="no-print grid grid-cols-1 lg:grid-cols-3 gap-6" >
 
                     {/* ── Left Column (2 cols): Input Form ──────────── */}
                     <div className="lg:col-span-2 space-y-6">
@@ -1166,7 +1180,7 @@ const CalculateSchedule2 = () => {
 
                 {/* ── Full History Modal (if user wants bigger view) ──── */}
                 {showHistoryModal && (
-                    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2">
+                    <div className="no-print fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2">
                         <div className="bg-[#fff] rounded-[5px] max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
                             <div className="p-2 sm:p-2 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
