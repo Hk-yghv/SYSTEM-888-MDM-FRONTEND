@@ -79,7 +79,9 @@ const Dashboard = () => {
     const [lastSyncTime, setLastSyncTime] = useState('មុននេះបន្តិច');
 
     // Timeframe Filter State
-    const [selectedTimeframe, setSelectedTimeframe] = useState('monthly'); // 'today' | '7d' | '30d' | 'monthly' | 'all' | 'custom'
+    const [selectedTimeframe, setSelectedTimeframe] = useState('monthly'); // 'today' | '7d' | '30d' | 'monthly' | 'month_select' | 'all' | 'custom'
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
     const [isCustomPopoverOpen, setIsCustomPopoverOpen] = useState(false);
@@ -229,19 +231,69 @@ const Dashboard = () => {
         fetchRawData();
     };
 
-    // ── Timeframe Descriptions ──
-    const now = new Date();
-    const currentMonthKhmer = useMemo(() => {
-        const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
-        return `${khmerMonths[now.getMonth()]} ${now.getFullYear()}`;
-    }, []);
+    // ── Timeframe Descriptions & Unified Range Computation ──
+    const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+
+    const dateRange = useMemo(() => {
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+
+        if (selectedTimeframe === 'all') {
+            return { start: null, end: null, isAll: true };
+        }
+        if (selectedTimeframe === 'today') {
+            return { start: todayStr, end: todayStr, isAll: false };
+        }
+        if (selectedTimeframe === '7d') {
+            const d = new Date(today);
+            d.setDate(d.getDate() - 7);
+            return { start: d.toISOString().split('T')[0], end: todayStr, isAll: false };
+        }
+        if (selectedTimeframe === '30d') {
+            const d = new Date(today);
+            d.setDate(d.getDate() - 30);
+            return { start: d.toISOString().split('T')[0], end: todayStr, isAll: false };
+        }
+        if (selectedTimeframe === 'monthly') {
+            const curY = today.getFullYear();
+            const curM = today.getMonth() + 1;
+            const lastDay = new Date(curY, curM, 0).getDate();
+            const start = `${curY}-${String(curM).padStart(2, '0')}-01`;
+            const end = `${curY}-${String(curM).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+            return { start, end, isAll: false, month: curM, year: curY };
+        }
+        if (selectedTimeframe === 'month_select') {
+            const m = Number(selectedMonth) || (today.getMonth() + 1);
+            const y = Number(selectedYear) || today.getFullYear();
+            const lastDay = new Date(y, m, 0).getDate();
+            const start = `${y}-${String(m).padStart(2, '0')}-01`;
+            const end = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+            return { start, end, isAll: false, month: m, year: y };
+        }
+        if (selectedTimeframe === 'custom') {
+            if (customStartDate && customEndDate) {
+                return { start: customStartDate, end: customEndDate, isAll: false };
+            }
+            return { start: null, end: null, isAll: true };
+        }
+        return { start: null, end: null, isAll: true };
+    }, [selectedTimeframe, selectedMonth, selectedYear, customStartDate, customEndDate]);
+
+    const isDateInRange = (dateStr, range) => {
+        if (!range || range.isAll || !range.start || !range.end) return true;
+        if (!dateStr) return false;
+        const d = String(dateStr).split('T')[0];
+        return d >= range.start && d <= range.end;
+    };
 
     const timeframeLabel = useMemo(() => {
         switch (selectedTimeframe) {
-            case 'today': return `ថ្ងៃនេះ (${now.toISOString().split('T')[0]})`;
+            case 'today': return `ថ្ងៃនេះ (${new Date().toISOString().split('T')[0]})`;
             case '7d': return '៧ ថ្ងៃចុងក្រោយ';
             case '30d': return '៣០ ថ្ងៃចុងក្រោយ';
             case 'all': return 'ទិន្នន័យទាំងអស់ (All Time)';
+            case 'month_select':
+                return `ខែ ${khmerMonths[(selectedMonth || 1) - 1]} ${selectedYear}`;
             case 'custom':
                 if (customStartDate && customEndDate) {
                     return `${customStartDate} ដល់ ${customEndDate}`;
@@ -249,79 +301,40 @@ const Dashboard = () => {
                 return 'កំណត់តាមកាលបរិច្ឆេទ';
             case 'monthly':
             default:
-                return `ប្រចាំខែ (${currentMonthKhmer})`;
+                return `ប្រចាំខែ (${khmerMonths[new Date().getMonth()]} ${new Date().getFullYear()})`;
         }
-    }, [selectedTimeframe, customStartDate, customEndDate, currentMonthKhmer]);
+    }, [selectedTimeframe, selectedMonth, selectedYear, customStartDate, customEndDate]);
 
-    // ── Filter Contracts by Timeframe ──
+    // ── Filter Contracts by Timeframe (Matching Loan Date or Installment Due Date) ──
     const filteredContracts = useMemo(() => {
         if (!rawContracts || rawContracts.length === 0) return [];
-        if (selectedTimeframe === 'all') return rawContracts;
-
-        const todayStr = now.toISOString().split('T')[0];
+        if (dateRange.isAll) return rawContracts;
 
         return rawContracts.filter(c => {
-            const dateStr = String(c.date || c.createdAt || c.inputDate || '').split('T')[0];
-            if (!dateStr) return true;
+            const cDate = String(c.inputDate || c.date || c.createdAt || '').split('T')[0];
+            const isContractDateMatch = cDate ? isDateInRange(cDate, dateRange) : false;
 
-            if (selectedTimeframe === 'today') {
-                return dateStr === todayStr;
-            }
-            if (selectedTimeframe === '7d') {
-                const diff = (now - new Date(dateStr)) / (1000 * 60 * 60 * 24);
-                return diff >= 0 && diff <= 7;
-            }
-            if (selectedTimeframe === '30d') {
-                const diff = (now - new Date(dateStr)) / (1000 * 60 * 60 * 24);
-                return diff >= 0 && diff <= 30;
-            }
-            if (selectedTimeframe === 'monthly') {
-                const cDate = new Date(dateStr);
-                return cDate.getMonth() === now.getMonth() && cDate.getFullYear() === now.getFullYear();
-            }
-            if (selectedTimeframe === 'custom') {
-                if (customStartDate && customEndDate) {
-                    return dateStr >= customStartDate && dateStr <= customEndDate;
-                }
-            }
-            return true;
+            const schedule = Array.isArray(c.repaymentSchedule) ? c.repaymentSchedule : [];
+            const isScheduleMatch = schedule.some(row => {
+                const due = row.dueDate ? String(row.dueDate).split('T')[0] : '';
+                const paid = row.paidDate ? String(row.paidDate).split('T')[0] : '';
+                return (due && isDateInRange(due, dateRange)) || (paid && isDateInRange(paid, dateRange));
+            });
+
+            return isContractDateMatch || isScheduleMatch;
         });
-    }, [rawContracts, selectedTimeframe, customStartDate, customEndDate]);
+    }, [rawContracts, dateRange]);
 
     // ── Filter Payments by Timeframe ──
     const filteredPayments = useMemo(() => {
         if (!rawPayments || rawPayments.length === 0) return [];
-        if (selectedTimeframe === 'all') return rawPayments;
-
-        const todayStr = now.toISOString().split('T')[0];
+        if (dateRange.isAll) return rawPayments;
 
         return rawPayments.filter(p => {
             const dateStr = String(p.paidDate || p.date || p.createdAt || '').split('T')[0];
-            if (!dateStr) return true;
-
-            if (selectedTimeframe === 'today') {
-                return dateStr === todayStr;
-            }
-            if (selectedTimeframe === '7d') {
-                const diff = (now - new Date(dateStr)) / (1000 * 60 * 60 * 24);
-                return diff >= 0 && diff <= 7;
-            }
-            if (selectedTimeframe === '30d') {
-                const diff = (now - new Date(dateStr)) / (1000 * 60 * 60 * 24);
-                return diff >= 0 && diff <= 30;
-            }
-            if (selectedTimeframe === 'monthly') {
-                const pDate = new Date(dateStr);
-                return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
-            }
-            if (selectedTimeframe === 'custom') {
-                if (customStartDate && customEndDate) {
-                    return dateStr >= customStartDate && dateStr <= customEndDate;
-                }
-            }
-            return true;
+            return isDateInRange(dateStr, dateRange);
         });
-    }, [rawPayments, selectedTimeframe, customStartDate, customEndDate, now]);
+    }, [rawPayments, dateRange]);
 
     // ── Contract Statuses Pipeline Metrics (Filtered) ──
     const totalCount = filteredContracts.length || 0;
@@ -366,8 +379,13 @@ const Dashboard = () => {
         let totalPaidInstallmentsCount = 0;
 
         filteredContracts.forEach(contract => {
-            const principal = Number(contract.amount || contract.loanAmount || contract.totalAmount || 0);
-            totalPrincipal += principal;
+            const cDate = String(contract.inputDate || contract.date || contract.createdAt || '').split('T')[0];
+            const isContractInTimeframe = isDateInRange(cDate, dateRange);
+
+            if (dateRange.isAll || isContractInTimeframe) {
+                const principal = Number(contract.amount || contract.loanAmount || contract.totalAmount || 0);
+                totalPrincipal += principal;
+            }
 
             const rules = penaltyRulesByBrand[String(contract.brand || '').trim()] || [];
             const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
@@ -379,18 +397,31 @@ const Dashboard = () => {
                     const schedAmt = Number(rowData.scheduledAmount || rowData.amount || 0);
                     const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
 
-                    totalScheduledFromInstallment += schedAmt;
-                    totalPenaltyFromInstallment += Number(penalty || 0);
-                    totalCollectedFromInstallment += paidAmt;
-                    if (paidAmt > 0) {
-                        totalPaidInstallmentsCount += 1;
+                    const dueStr = rowData.dueDate ? String(rowData.dueDate).split('T')[0] : '';
+                    const paidStr = rowData.paidDate ? String(rowData.paidDate).split('T')[0] : '';
+
+                    const isDueInRange = isDateInRange(dueStr, dateRange);
+                    const isPaidInRange = paidStr ? isDateInRange(paidStr, dateRange) : isDueInRange;
+
+                    if (dateRange.isAll || isDueInRange) {
+                        totalScheduledFromInstallment += schedAmt;
+                        totalPenaltyFromInstallment += Number(penalty || 0);
+                    }
+
+                    if (dateRange.isAll || isPaidInRange) {
+                        totalCollectedFromInstallment += paidAmt;
+                        if (paidAmt > 0) {
+                            totalPaidInstallmentsCount += 1;
+                        }
                     }
                 });
             } else {
-                const monthlyPayment = Number(contract.monthlyPayment || 0);
-                const durationMatch = String(contract.duration || '').match(/\d+/);
-                const months = durationMatch ? Math.max(1, Number(durationMatch[0])) : 1;
-                totalScheduledFromInstallment += monthlyPayment > 0 ? (monthlyPayment * months) : principal;
+                if (dateRange.isAll || isContractInTimeframe) {
+                    const monthlyPayment = Number(contract.monthlyPayment || 0);
+                    const durationMatch = String(contract.duration || '').match(/\d+/);
+                    const months = durationMatch ? Math.max(1, Number(durationMatch[0])) : 1;
+                    totalScheduledFromInstallment += monthlyPayment > 0 ? (monthlyPayment * months) : Number(contract.amount || 0);
+                }
             }
         });
 
@@ -406,7 +437,7 @@ const Dashboard = () => {
             totalOutstanding,
             totalPaidInstallmentsCount
         };
-    }, [filteredContracts, penaltyRulesByBrand]);
+    }, [filteredContracts, penaltyRulesByBrand, dateRange]);
 
     // Active Installment Rows extracted directly from each contract's installment schedule (Filtered)
     const installmentCustomerRows = useMemo(() => {
@@ -636,9 +667,21 @@ const Dashboard = () => {
         const end = new Date();
         const start = new Date();
         start.setDate(start.getDate() - days);
-        setCustomStartDate(start.toISOString().split('T')[0]);
-        setCustomEndDate(end.toISOString().split('T')[0]);
+        const sStr = start.toISOString().split('T')[0];
+        const eStr = end.toISOString().split('T')[0];
+        setCustomStartDate(sStr);
+        setCustomEndDate(eStr);
         setCustomDateError(null);
+        setSelectedTimeframe('custom');
+        setIsCustomPopoverOpen(false);
+    };
+
+    const handleApplyMonthPreset = (m, y) => {
+        setSelectedMonth(Number(m));
+        setSelectedYear(Number(y));
+        setSelectedTimeframe('month_select');
+        setCustomDateError(null);
+        setIsCustomPopoverOpen(false);
     };
 
     const handleApplyCustomDateRange = () => {
@@ -924,9 +967,48 @@ const Dashboard = () => {
                                         </div>
 
                                         <div className="popover-shortcuts">
-                                            <button type="button" onClick={() => handleApplyDatePreset(7)}>៧ ថ្ងៃកន្លងទៅ</button>
-                                            <button type="button" onClick={() => handleApplyDatePreset(14)}>១៤ ថ្ងៃកន្លងទៅ</button>
-                                            <button type="button" onClick={() => handleApplyDatePreset(30)}>៣០ ថ្ងៃកន្លងទៅ</button>
+                                            <button type="button" onClick={() => handleApplyDatePreset(7)}>៧ ថ្ងៃ</button>
+                                            <button type="button" onClick={() => handleApplyDatePreset(14)}>១៤ ថ្ងៃ</button>
+                                            <button type="button" onClick={() => handleApplyDatePreset(30)}>៣០ ថ្ងៃ</button>
+                                            <button type="button" onClick={() => {
+                                                const d = new Date();
+                                                d.setMonth(d.getMonth() - 1);
+                                                handleApplyMonthPreset(d.getMonth() + 1, d.getFullYear());
+                                            }}>ខែមុន</button>
+                                        </div>
+
+                                        {/* Month & Year Select Section */}
+                                        <div style={{ marginBottom: 10, padding: '8px 0', borderTop: '1px dashed var(--dash-line)', borderBottom: '1px dashed var(--dash-line)' }}>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--dash-ink)', marginBottom: 6 }}>
+                                                📅 ជ្រើសរើសខែ និងឆ្នាំជាក់លាក់
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 6, marginBottom: 6 }}>
+                                                <select
+                                                    value={selectedMonth}
+                                                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                                                    style={{ padding: '4px 6px', fontSize: '11.5px', borderRadius: 5, border: '1px solid var(--dash-line)', background: 'var(--dash-bg)', color: 'var(--dash-ink)' }}
+                                                >
+                                                    {khmerMonths.map((mName, idx) => (
+                                                        <option key={idx + 1} value={idx + 1}>ខែ {mName}</option>
+                                                    ))}
+                                                </select>
+                                                <select
+                                                    value={selectedYear}
+                                                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                                    style={{ padding: '4px 6px', fontSize: '11.5px', borderRadius: 5, border: '1px solid var(--dash-line)', background: 'var(--dash-bg)', color: 'var(--dash-ink)' }}
+                                                >
+                                                    {[2024, 2025, 2026, 2027, 2028].map(y => (
+                                                        <option key={y} value={y}>{y}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleApplyMonthPreset(selectedMonth, selectedYear)}
+                                                style={{ width: '100%', padding: '4px', fontSize: '11px', fontWeight: 600, background: '#059669', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer' }}
+                                            >
+                                                ត្រងតាមខែដែលបានជ្រើស
+                                            </button>
                                         </div>
 
                                         <div className="popover-inputs">
@@ -971,7 +1053,7 @@ const Dashboard = () => {
                                                 className="btn-popover-apply"
                                                 onClick={handleApplyCustomDateRange}
                                             >
-                                                ត្រងទិន្នន័យ
+                                                ត្រងចន្លោះថ្ងៃ
                                             </button>
                                         </div>
                                     </div>
