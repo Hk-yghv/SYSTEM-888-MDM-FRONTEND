@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaBell, FaBars, FaTimes } from 'react-icons/fa';
+import { FaBell, FaBars, FaTimes, FaChevronUp } from 'react-icons/fa';
 import { getFirstAllowedRoute, hasAnyAlertPermission } from '../../utils/permissionUtils';
 
-const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleSidebar }) => {
+const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleSidebar, onHideHeader }) => {
     const { t } = useLanguage();
     const { user, API_BASE, API_BASE1, hasPermission } = useAuth();
     const navigate = useNavigate();
@@ -83,10 +83,10 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
     return (
         <header
-            className='w-full h-[7vh] flex items-center justify-between px-3 md:px-6 border-b z-40 select-none shadow-sm transition-colors backdrop-blur-md'
+            className='w-full h-[7vh] min-h-[50px] flex items-center justify-between px-3 md:px-6 border-b z-40 select-none shadow-xs transition-colors bg-white'
             style={{
-                backgroundColor: 'var(--app-header, rgba(255, 255, 255, 0.9))',
-                borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'
+                backgroundColor: '#ffffff',
+                borderColor: '#e2e8f0'
             }}
         >
             <div className='flex items-center gap-3 md:gap-4 min-w-0'>
@@ -137,10 +137,11 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 )}
             </div>
 
-            <div className='flex items-center gap-1.5 md:gap-3 flex-shrink-0'>
+            <div className='flex items-center gap-1.5 md:gap-2.5 flex-shrink-0'>
                 {/* Payment Alerts Button — only show if user has permission to at least one alert page */}
                 {hasAnyAlertPermission(user, hasPermission) && (
                     <button
+                        type='button'
                         onClick={onOpenAlerts}
                         className='relative flex items-center justify-center gap-2 w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-3 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
                         title={t('paymentDueAlerts')}

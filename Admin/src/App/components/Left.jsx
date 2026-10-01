@@ -6,10 +6,9 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash } from "react-icons/fa";
 
-
-const Left = ({ isOpen = false, onClose }) => {
+const Left = ({ isOpen = false, onClose, onHideHeader }) => {
     const [openMenu, setOpenMenu] = useState("");
     const [accountOpen, setAccountOpen] = useState(false);
     const [langSubmenuOpen, setLangSubmenuOpen] = useState(false);
@@ -74,19 +73,19 @@ const Left = ({ isOpen = false, onClose }) => {
     const isActive = (path) => location.pathname === path;
 
     const navItemClass = (path) =>
-        `group relative w-full h-[44px] flex-shrink-0 flex items-center gap-3 px-3 rounded-[5px] text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-lg hover:shadow-emerald-500/10 active:scale-[0.98] active:translate-y-[1px] glass-nav-item ${isActive(path)
+        `group relative w-full h-[44px] flex-shrink-0 flex items-center gap-3 px-3 rounded-[6px] text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.98] active:translate-y-[1px] ${isActive(path)
             ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 border border-emerald-500"
-            : "bg-[var(--app-card,rgba(255,255,255,0.4))] text-[var(--app-text,#0f172a)] hover:bg-emerald-500/15 border border-[var(--app-border,rgba(226,232,240,0.6))] shadow-2xs backdrop-blur-md"
+            : "bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 shadow-2xs"
         }`;
 
     const subItemClass = (path) =>
-        `group relative flex items-center gap-2 flex-shrink-0 px-3.5 py-2.5 ml-3 text-xs font-bold rounded-[5px] overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.98] active:translate-y-[1px] ${isActive(path)
+        `group relative flex items-center gap-2 flex-shrink-0 px-3.5 py-2.5 ml-3 text-xs font-bold rounded-[6px] overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-sm hover:shadow-emerald-500/10 active:scale-[0.98] active:translate-y-[1px] ${isActive(path)
             ? "bg-emerald-600 text-white shadow-xs border border-emerald-500"
-            : "bg-[var(--app-card,rgba(255,255,255,0.3))] text-[var(--app-text,#0f172a)] hover:bg-emerald-500/15 border border-[var(--app-border,rgba(226,232,240,0.6))] backdrop-blur-md"
+            : "bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200"
         }`;
 
     const dropdownHeaderClass = (menuName) =>
-        `group relative w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-[var(--app-card,rgba(255,255,255,0.4))] hover:bg-emerald-500/15 text-[var(--app-text,#0f172a)] border border-[var(--app-border,rgba(226,232,240,0.6))] rounded-[5px] cursor-pointer text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.005] hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.99] active:translate-y-[1px] shadow-2xs backdrop-blur-md`;
+        `group relative w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 rounded-[6px] cursor-pointer text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.005] hover:shadow-sm hover:shadow-emerald-500/10 active:scale-[0.99] active:translate-y-[1px] shadow-2xs`;
 
     return (
         <aside
@@ -97,14 +96,14 @@ const Left = ({ isOpen = false, onClose }) => {
                     }
                 }
             }}
-            className={`h-full min-h-0 flex-shrink-0 border-r flex flex-col justify-between select-none backdrop-blur-md transition-all duration-300 ease-in-out mobile-sidebar ${
+            className={`h-full min-h-0 flex-shrink-0 border-r flex flex-col justify-between select-none bg-white transition-all duration-300 ease-in-out mobile-sidebar ${
                 isOpen
                     ? 'w-[260px] opacity-100 p-2 mobile-sidebar-open'
                     : 'w-0 !p-0 !border-r-0 opacity-0 overflow-hidden pointer-events-none'
             }`}
             style={{
-                backgroundColor: 'var(--app-sidebar, rgba(248, 250, 252, 0.9))',
-                borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'
+                backgroundColor: '#ffffff',
+                borderColor: '#e2e8f0'
             }}
         >
             {/* Top Scrollable Navigation Section */}
@@ -481,11 +480,14 @@ const Left = ({ isOpen = false, onClose }) => {
             </div>
 
             {/* Bottom Account User Badge Section */}
-            <div id="account-badge-container" className="mt-auto pt-2 border-t border-[var(--app-border,rgba(226,232,240,0.8))] relative flex-shrink-0">
+            <div id="account-badge-container" className="mt-auto pt-2 border-t border-slate-200 relative flex-shrink-0">
                 {/* Account Menu Popover (Opens to the RIGHT side so it does NOT cover menu items) */}
                 {accountOpen && (
-                    <div className="absolute left-[calc(100%+8px)] bottom-0 w-[240px] bg-white border border-slate-200 rounded-[12px] p-2.5 shadow-2xl z-[99999] animate-in fade-in slide-in-from-left-2 duration-200 backdrop-blur-md">
-                        <div className="p-2.5 border-b border-slate-100 mb-1.5 bg-slate-50 rounded-[8px]">
+                    <div
+                        className="absolute left-[calc(100%+8px)] bottom-0 w-[240px] bg-white border border-slate-200 rounded-[12px] p-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.18)] z-[99999] animate-in fade-in slide-in-from-left-2 duration-200 opacity-100"
+                        style={{ backgroundColor: '#ffffff' }}
+                    >
+                        <div className="p-2.5 border-b border-slate-100 mb-1.5 bg-slate-50 rounded-[8px]" style={{ backgroundColor: '#f8fafc' }}>
                             <p className="text-xs font-bold text-slate-800 truncate">{user?.name || 'HAK YONGHOUV'}</p>
                             <p className="text-[11px] text-emerald-600 font-mono mt-0.5 truncate">{user?.email || 'yonghouvh@gmail.com'}</p>
                             <span className="inline-block text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 mt-1.5 border border-emerald-200">
@@ -535,7 +537,10 @@ const Left = ({ isOpen = false, onClose }) => {
 
                             {/* Language Flyout Submenu to the RIGHT side */}
                             {langSubmenuOpen && (
-                                <div className="absolute left-[calc(100%+8px)] bottom-0 w-[210px] bg-white border border-slate-200 rounded-[12px] p-2 shadow-2xl z-[100000] animate-in fade-in slide-in-from-left-2 duration-200 max-h-[280px] overflow-y-auto space-y-1 custom-scrollbar backdrop-blur-md">
+                                <div
+                                    className="absolute left-[calc(100%+8px)] bottom-0 w-[210px] bg-white border border-slate-200 rounded-[12px] p-2 shadow-[0_12px_40px_rgba(0,0,0,0.18)] z-[100000] animate-in fade-in slide-in-from-left-2 duration-200 max-h-[280px] overflow-y-auto space-y-1 custom-scrollbar opacity-100"
+                                    style={{ backgroundColor: '#ffffff' }}
+                                >
                                     <p className="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider border-b border-slate-100 mb-1">
                                         {t('selectLanguage') || 'ជ្រើសរើសភាសា'}
                                     </p>
@@ -562,6 +567,19 @@ const Left = ({ isOpen = false, onClose }) => {
                             )}
                         </div>
 
+                        {/* Hide Header Button (Placed right below language selector) */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onHideHeader?.();
+                                setAccountOpen(false);
+                            }}
+                            className="w-full h-[36px] flex items-center gap-2.5 px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[6px] transition-all cursor-pointer text-xs font-medium"
+                        >
+                            <FaEyeSlash className="text-sm text-emerald-600" />
+                            <span>{t('hideHeader') || 'លាក់ Header'}</span>
+                        </button>
+
                         {/* Logout Button */}
                         <button
                             type="button"
@@ -577,7 +595,8 @@ const Left = ({ isOpen = false, onClose }) => {
                 {/* Account Badge Pill */}
                 <div
                     onClick={() => setAccountOpen(!accountOpen)}
-                    className="w-full flex items-center gap-2.5 p-2 rounded-[12px] bg-[var(--app-card,rgba(255,255,255,0.7))] border border-[var(--app-border,rgba(226,232,240,0.8))] hover:border-emerald-500/60 transition-all cursor-pointer shadow-2xs hover:shadow-md backdrop-blur-md group"
+                    className="w-full flex items-center gap-2.5 p-2 rounded-[12px] bg-white border border-slate-200 hover:border-emerald-500/60 transition-all cursor-pointer shadow-2xs hover:shadow-md group opacity-100"
+                    style={{ backgroundColor: '#ffffff' }}
                     title={user?.name || 'User Account'}
                 >
                     <div className="w-8 h-8 rounded-full bg-emerald-600 p-0.5 shadow-xs flex-shrink-0">

@@ -93,6 +93,8 @@ import Profile from "../App/Profile/Profile";
 // import DesktopOnlyGuard from "../components/DesktopOnlyGuard";
 import PaymentAlertDrawer from "../components/PaymentAlertDrawer";
 
+import { FaChevronDown } from "react-icons/fa";
+
 const MainLayout = ({ children }) => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
@@ -102,6 +104,25 @@ const MainLayout = ({ children }) => {
     }
     return true;
   });
+  const [isHeaderOpen, setIsHeaderOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('isHeaderOpen');
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleHeader = (val) => {
+    setIsHeaderOpen((prev) => {
+      const next = typeof val === 'boolean' ? val : !prev;
+      try {
+        localStorage.setItem('isHeaderOpen', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const { theme } = useTheme();
 
   return (
@@ -136,19 +157,34 @@ const MainLayout = ({ children }) => {
       )}
 
       <div className="relative z-10 flex flex-col h-full overflow-hidden">
-        <Header
-          onOpenAlerts={() => setIsAlertOpen(true)}
-          alertCount={alertCount}
-          isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen((isOpen) => !isOpen)}
-        />
+        {/* Collapsible Header Container */}
+        <div
+          className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
+            isHeaderOpen
+              ? 'max-h-[80px] opacity-100 overflow-visible'
+              : 'max-h-0 opacity-0 overflow-hidden pointer-events-none'
+          }`}
+        >
+          <Header
+            onOpenAlerts={() => setIsAlertOpen(true)}
+            alertCount={alertCount}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen((isOpen) => !isOpen)}
+            onHideHeader={() => handleToggleHeader(false)}
+          />
+        </div>
+
         <div className="flex flex-1 overflow-hidden">
           <div
             className={`mobile-sidebar-backdrop ${isSidebarOpen ? 'mobile-sidebar-backdrop-open' : ''}`}
             onClick={() => setIsSidebarOpen(false)}
             aria-hidden="true"
           />
-          <Left isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+          <Left
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+            onHideHeader={() => handleToggleHeader(false)}
+          />
           <MobileResponsiveContent className="flex-1 min-w-0 overflow-auto mobile-content-area">
             {children}
           </MobileResponsiveContent>
@@ -160,6 +196,20 @@ const MainLayout = ({ children }) => {
           alertCount={alertCount}
           setAlertCount={setAlertCount}
         />
+
+        {/* Floating Button at Bottom-Right to Show Header when Hidden */}
+        {!isHeaderOpen && (
+          <button
+            type="button"
+            onClick={() => handleToggleHeader(true)}
+            className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[99999] flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xl border border-white/40 transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer select-none group animate-in fade-in slide-in-from-bottom-3"
+            title="បង្ហាញ Header ឡើងវិញ (Show Header)"
+            aria-label="Show Header"
+          >
+            <FaChevronDown className="text-xs transition-transform duration-200 group-hover:translate-y-0.5" />
+            <span className="text-xs font-bold tracking-wide select-none">Header</span>
+          </button>
+        )}
       </div>
     </div>
   );

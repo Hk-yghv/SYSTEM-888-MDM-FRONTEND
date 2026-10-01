@@ -219,7 +219,9 @@
     "customRange": "Custom Date Range",
     "totalRequested": "Total Requested",
     "totalFailed": "Total Failed",
-    "totalSuccess": "Total Success"
+    "totalSuccess": "Total Success",
+    "hideHeader": "Hide Header",
+    "showHeader": "Show Header"
   },
   "km": {
     "systemTitle": "ប្រព័ន្ធ SYSTEM MDM",
@@ -561,7 +563,9 @@
     "deviceProblem": "ปัญหาอุปกรณ์",
     "overdueCustomers": "ลูกค้าชำระล่าช้า",
     "dueToday": "ชำระภายในวันนี้",
-    "dueIn3Days": "ชำระภายใน 3 วัน"
+    "dueIn3Days": "ชำระภายใน 3 วัน",
+    "hideHeader": "ซ่อนส่วนหัว",
+    "showHeader": "แสดงส่วนหัว"
   },
   "vi": {
     "systemTitle": "SYSTEM MDM",
@@ -685,7 +689,9 @@
     "deviceProblem": "设备问题",
     "overdueCustomers": "逾期客户",
     "dueToday": "今日到期",
-    "dueIn3Days": "3天内到期"
+    "dueIn3Days": "3天内到期",
+    "hideHeader": "隐藏页眉",
+    "showHeader": "显示页眉"
   },
   "ko": {
     "systemTitle": "SYSTEM MDM",
