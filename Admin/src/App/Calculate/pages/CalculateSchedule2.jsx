@@ -578,8 +578,45 @@ const CalculateSchedule2 = () => {
                         align-items: center !important;
                         width: 100% !important;
                     }
+                    #cs2-print-area .cs2-page-margin {
+                        padding-left: 150px !important;
+                        padding-right: 150px !important;
+                    }
+                    #cs2-print-area .cs2-signature-grid {
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        width: 100% !important;
+                        column-gap: 48px !important;
+                        text-align: center !important;
+                    }
+                    #cs2-print-area .cs2-signature-col {
+                        display: flex !important;
+                        flex-direction: column !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        text-align: center !important;
+                        width: 100% !important;
+                    }
+                    #cs2-print-area .cs2-signature-line {
+                        width: 180px !important;
+                        margin: 64px auto 0 auto !important;
+                        border-bottom: 1px dotted #94a3b8 !important;
+                    }
                     .no-print {
                         display: none !important;
+                    }
+                }
+                #cs2-print-area .cs2-page-margin {
+                    padding-left: 150px;
+                    padding-right: 150px;
+                }
+                #cs2-print-area .cs2-signature-line {
+                    margin: 64px auto 0 auto;
+                }
+                @media (max-width: 768px) {
+                    #cs2-print-area .cs2-page-margin {
+                        padding-left: 16px;
+                        padding-right: 16px;
                     }
                 }
             `}</style>
@@ -1024,7 +1061,7 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Meta Info */}
-                        <div className="cs2-meta-grid px-4 sm:px-8 md:px-[150px] print:px-[150px] py-4 grid grid-cols-2 gap-x-12 gap-y-2 text-xs w-full">
+                        <div className="cs2-meta-grid cs2-page-margin py-4 grid grid-cols-2 gap-x-12 gap-y-2 text-xs w-full">
                             {/* Left Meta */}
                             <div className="space-y-2 w-full">
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
@@ -1071,7 +1108,7 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Schedule Table */}
-                        <div className="overflow-x-auto px-4 sm:px-8 md:px-[150px] print:px-[150px]">
+                        <div className="overflow-x-auto cs2-page-margin">
                             <table className="w-full border-collapse border border-black text-xs sm:text-sm">
                                 <tbody>
                                     <tr className='border border-black'>
@@ -1109,19 +1146,19 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Signature Block */}
-                        <div className="w-full mt-6 px-4 sm:px-8 md:px-[150px] print:px-[150px] pb-1 grid grid-cols-2 gap-12 text-xs text-slate-800">
-                            <div className="flex flex-col items-center justify-center text-center">
-                                <p className="text-[13px] font-bold text-slate-800" style={{ fontFamily: 'moul' }}>តំណាងក្រុមហ៊ុន</p>
-                                <div className="mt-16 border-b border-dotted border-slate-400 w-[180px]" />
+                        <div className="cs2-signature-grid w-full mt-6 cs2-page-margin pb-1 grid grid-cols-2 gap-12 text-xs text-slate-800">
+                            <div className="cs2-signature-col flex flex-col items-center justify-center text-center w-full">
+                                <p className="text-[13px] font-bold text-slate-800 text-center w-full" style={{ fontFamily: 'moul' }}>តំណាងក្រុមហ៊ុន</p>
+                                <div className="cs2-signature-line mt-16 border-b border-dotted border-slate-400 w-[180px] mx-auto" />
                             </div>
-                            <div className="flex flex-col items-center justify-center text-center">
-                                <p className="text-[13px] font-bold text-slate-800" style={{ fontFamily: 'moul' }}>ឈ្មោះអតិថិជន</p>
-                                <div className="mt-16 border-b border-dotted border-slate-400 w-[180px]" />
+                            <div className="cs2-signature-col flex flex-col items-center justify-center text-center w-full">
+                                <p className="text-[13px] font-bold text-slate-800 text-center w-full" style={{ fontFamily: 'moul' }}>ឈ្មោះអតិថិជន</p>
+                                <div className="cs2-signature-line mt-16 border-b border-dotted border-slate-400 w-[180px] mx-auto" />
                             </div>
                         </div>
 
                         {/* Address Footer */}
-                        <div className="cs2-address-footer text-center pb-4 text-[12px] pt-8 mt-6 px-4 sm:px-8 md:px-[150px] print:px-[150px]" style={{ fontFamily: 'khmer' }}>
+                        <div className="cs2-address-footer text-center pb-4 text-[12px] pt-8 mt-6 cs2-page-margin" style={{ fontFamily: 'khmer' }}>
                             អាសយដ្ឋាន: អគារលេខ378A ផ្លូវ1928 ភូមិកោះអណ្តែត សង្កាត់ទួលសង្កែទី២ ខណ្ឌឬស្សីកែវ រាជធានីភ្នំពេញ
                         </div>
                     </div>
