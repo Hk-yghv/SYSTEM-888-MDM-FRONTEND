@@ -134,11 +134,14 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 <button
                     type='button'
                     onClick={onToggleSidebar}
-                    className='md:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
+                    className='flex-shrink-0 flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-[8px] bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 hover:border-emerald-400 shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer active:scale-95 group'
                     aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
-                    title={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                    title={isSidebarOpen ? 'បិទ Menu (Close Menu)' : 'បើក Menu (Open Menu)'}
                 >
-                    {isSidebarOpen ? <FaTimes className='text-sm' /> : <FaBars className='text-sm' />}
+                    <div className='relative w-4 h-4 md:w-5 md:h-5 flex items-center justify-center'>
+                        <FaBars className={`absolute text-emerald-700 transition-all duration-300 transform ${isSidebarOpen ? 'rotate-90 opacity-0 scale-50' : 'rotate-0 opacity-100 scale-100'}`} />
+                        <FaTimes className={`absolute text-rose-500 transition-all duration-300 transform ${isSidebarOpen ? 'rotate-0 opacity-100 scale-100' : '-rotate-90 opacity-0 scale-50'}`} />
+                    </div>
                 </button>
                 <Link to={getFirstAllowedRoute(user, hasPermission)} className='flex items-center gap-2.5 group'>
                     <h1 className="text-base md:text-xl font-extrabold tracking-wider text-emerald-700 hover:text-emerald-800 transition-colors whitespace-nowrap">

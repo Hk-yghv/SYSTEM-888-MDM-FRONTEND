@@ -37,11 +37,19 @@ const Left = ({ isOpen = false, onClose }) => {
         `group relative w-full h-[44px] flex-shrink-0 flex items-center justify-between px-3 bg-[var(--app-card,rgba(255,255,255,0.4))] hover:bg-emerald-500/15 text-[var(--app-text,#0f172a)] border border-[var(--app-border,rgba(226,232,240,0.6))] rounded-[5px] cursor-pointer text-sm font-semibold overflow-hidden transition-all duration-200 ease-out transform-gpu hover:-translate-y-0.5 hover:scale-[1.005] hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.99] active:translate-y-[1px] shadow-2xs backdrop-blur-md`;
 
     return (
-        <div
+        <aside
             onClick={(event) => {
-                if (event.target.closest('a')) onClose?.();
+                if (event.target.closest('a')) {
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                        onClose?.();
+                    }
+                }
             }}
-            className={`w-[260px] h-full min-h-0 flex-shrink-0 border-r p-2 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-colors mobile-sidebar ${isOpen ? 'mobile-sidebar-open' : ''}`}
+            className={`h-full min-h-0 flex-shrink-0 border-r flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-all duration-300 ease-in-out mobile-sidebar ${
+                isOpen
+                    ? 'w-[260px] opacity-100 p-2 mobile-sidebar-open'
+                    : 'w-0 !p-0 !border-r-0 opacity-0 overflow-hidden pointer-events-none'
+            }`}
             style={{
                 backgroundColor: 'var(--app-sidebar, rgba(248, 250, 252, 0.9))',
                 borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'
@@ -418,7 +426,7 @@ const Left = ({ isOpen = false, onClose }) => {
                     </div>
                 )}
 
-        </div>
+        </aside>
     );
 };
 
