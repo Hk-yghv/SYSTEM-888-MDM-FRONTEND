@@ -550,16 +550,6 @@ const CalculateSchedule2 = () => {
                         overflow: visible !important;
                         min-height: auto !important;
                     }
-                    #cs2-print-area > div.grid-cols-2 {
-                        padding-left: ${printOrientation === 'landscape' ? '15.625%' : '0'} !important;
-                        padding-right: ${printOrientation === 'landscape' ? '15.625%' : '0'} !important;
-                    }
-                    #cs2-print-area > div.overflow-x-auto {
-                        margin-left: ${printOrientation === 'landscape' ? '5.625%' : '0'} !important;
-                        margin-right: ${printOrientation === 'landscape' ? '5.625%' : '0'} !important;
-                        padding-left: ${printOrientation === 'landscape' ? '10%' : '0'} !important;
-                        padding-right: ${printOrientation === 'landscape' ? '10%' : '0'} !important;
-                    }
                     #cs2-print-area div.overflow-x-auto,
                     #cs2-print-area div[class*="overflow-x-auto"] {
                         min-height: auto !important;
@@ -1022,7 +1012,7 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Meta Info */}
-                        <div className="px-50 py-5 grid grid-cols-2 gap-x-40 gap-y-2 text-xs">
+                        <div className="px-8 py-5 grid grid-cols-2 gap-x-8 gap-y-2 text-xs">
                             {/* Left Meta */}
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between gap-2">
@@ -1041,7 +1031,7 @@ const CalculateSchedule2 = () => {
                                     <span className="text-slate-800">រយៈពេល (ចំនួនខែ):</span>
                                     <span className="text-blue-400 font-bold text-right ml-1">{result.months}</span>
                                 </div>
-                                <div className="flex items-center justify-between gap-">
+                                <div className="flex items-center justify-between gap-2">
                                     <span>ការប្រាក់ នឹង សេវ៉ាជួល:</span>
                                     <span className="font-black ml-1 text-right text-blue-400">
                                         {result.monthlyInterest.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
@@ -1050,7 +1040,7 @@ const CalculateSchedule2 = () => {
                             </div>
 
                             {/* Right Meta */}
-                            <div className="space-y-2 text-left ">
+                            <div className="space-y-2 text-left">
                                 <div className='flex justify-between items-center'>
                                     <span className="text-slate-800">ឈ្មោះអតិថិជន:&nbsp;</span>{' '}
                                     <span className="text-blue-400 font-bold text-right">{result.customerName || '—'}</span>
@@ -1069,7 +1059,7 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Schedule Table */}
-                        <div className="overflow-x-auto px-6 sm:px-32 ml-18 mr-18">
+                        <div className="overflow-x-auto px-8">
                             <table className="w-full border-collapse border border-black text-xs sm:text-sm">
                                 <tbody>
                                     <tr className='border border-black'>
