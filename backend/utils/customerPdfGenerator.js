@@ -266,22 +266,20 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
             drawSectionHeader(nextSection(), 'Repayment Schedule ($)');
 
             const cols = [
-                { title: '#', width: 24, align: 'center' },
-                { title: 'Due Date', width: 70, align: 'left' },
-                { title: 'Schedule ($)', width: 68, align: 'right' },
-                { title: 'Penalty ($)', width: 56, align: 'right' },
-                { title: 'Total Due ($)', width: 68, align: 'right' },
-                { title: 'Paid ($)', width: 60, align: 'right' },
-                { title: 'Paid Date', width: 68, align: 'center' },
-                { title: 'Status', width: 56, align: 'center' },
-                { title: 'Notes', width: 53.28, align: 'left' }
+                { title: 'Date', width: 76, align: 'center' },
+                { title: 'Amount due', width: 70, align: 'right' },
+                { title: 'Penalty', width: 60, align: 'right' },
+                { title: 'Paid', width: 65, align: 'right' },
+                { title: 'Unpaid', width: 65, align: 'right' },
+                { title: 'Status', width: 60, align: 'center' },
+                { title: 'Comment', width: 127.28, align: 'left' }
             ];
 
             const renderScheduleTableHeader = () => {
                 doc.rect(margin, y, contentWidth, 16).fill(brandNavy);
                 let currX = margin;
                 cols.forEach(col => {
-                    doc.fillColor('#ffffff').fontSize(7).font(FONT_BOLD)
+                    doc.fillColor('#ffffff').fontSize(7.5).font(FONT_BOLD)
                         .text(col.title, currX + 2, y + 4.5, { width: col.width - 4, align: col.align, lineBreak: false });
                     currX += col.width;
                 });
@@ -310,65 +308,55 @@ export function generateCustomerPdf(contract, payments = [], brandName = '') {
 
                     doc.rect(margin, y, contentWidth, rowHeight).fillAndStroke(rowBg, borderColor);
 
-                    const monthNum = row.month || row.term || (idx + 1);
-                    const dueDate = row.dueDate || '—';
-                    const schedAmount = (parseFloat(row.amount || row.monthlyPayment || 0) || 0).toFixed(2);
+                    const dueDate = row.dueDate || row.date || '—';
+                    const schedAmount = (parseFloat(row.amount || row.monthlyPayment || row.scheduledAmount || 0) || 0).toFixed(2);
                     const penalty = (parseFloat(row.penalty || row.latePenalty || 0) || 0).toFixed(2);
-                    const totalDue = (parseFloat(row.totalAmount || (parseFloat(schedAmount) + parseFloat(penalty))) || 0).toFixed(2);
-                    const paid = (parseFloat(row.paidAmount || 0) || 0).toFixed(2);
-                    const paidDate = row.paidDate || '—';
-                    const status = row.status || (parseFloat(paid) >= parseFloat(totalDue) && parseFloat(totalDue) > 0 ? 'Paid' : 'Unpaid');
-                    const note = row.notes || row.comment || '';
+                    const totalScheduled = (parseFloat(schedAmount) + parseFloat(penalty));
+                    const paid = (parseFloat(row.paidAmount || (row.status === 'Paid' ? (row.totalAmount || row.amount) : 0) || 0) || 0).toFixed(2);
+                    const unpaid = Math.max(0, totalScheduled - parseFloat(paid)).toFixed(2);
+
+                    let status = row.status || (parseFloat(paid) >= totalScheduled && totalScheduled > 0 ? 'Paid' : (parseFloat(paid) > 0 ? 'Partial' : 'Unpaid'));
+                    const comment = row.notes || row.comment || row.description || '—';
 
                     let currX = margin;
 
-                    // #
+                    // 1. Date
                     doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
-                        .text(String(monthNum), currX + 2, y + 3.5, { width: cols[0].width - 4, align: cols[0].align, lineBreak: false });
+                        .text(dueDate, currX + 2, y + 3.5, { width: cols[0].width - 4, align: cols[0].align, lineBreak: false });
                     currX += cols[0].width;
 
-                    // Due Date
-                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
-                        .text(dueDate, currX + 2, y + 3.5, { width: cols[1].width - 4, align: cols[1].align, lineBreak: false });
+                    // 2. Amount due ($)
+                    doc.fillColor(textDark).fontSize(7).font(FONT_BOLD)
+                        .text(`$${schedAmount}`, currX + 2, y + 3.5, { width: cols[1].width - 4, align: cols[1].align, lineBreak: false });
                     currX += cols[1].width;
 
-                    // Scheduled ($)
-                    doc.fillColor(textDark).fontSize(7).font(FONT_REGULAR)
-                        .text(`$${schedAmount}`, currX + 2, y + 3.5, { width: cols[2].width - 4, align: cols[2].align, lineBreak: false });
+                    // 3. Penalty ($)
+                    doc.fillColor(parseFloat(penalty) > 0 ? dangerColor : textMuted).fontSize(7).font(FONT_REGULAR)
+                        .text(parseFloat(penalty) > 0 ? `$${penalty}` : '$0.00', currX + 2, y + 3.5, { width: cols[2].width - 4, align: cols[2].align, lineBreak: false });
                     currX += cols[2].width;
 
-                    // Penalty ($)
-                    doc.fillColor(parseFloat(penalty) > 0 ? dangerColor : textMuted).fontSize(7).font(FONT_REGULAR)
-                        .text(parseFloat(penalty) > 0 ? `$${penalty}` : '$0.00', currX + 2, y + 3.5, { width: cols[3].width - 4, align: cols[3].align, lineBreak: false });
+                    // 4. Paid ($)
+                    doc.fillColor(parseFloat(paid) > 0 ? successColor : textMuted).fontSize(7).font(FONT_BOLD)
+                        .text(`$${paid}`, currX + 2, y + 3.5, { width: cols[3].width - 4, align: cols[3].align, lineBreak: false });
                     currX += cols[3].width;
 
-                    // Total Due ($)
-                    doc.fillColor(textDark).fontSize(7).font(FONT_BOLD)
-                        .text(`$${totalDue}`, currX + 2, y + 3.5, { width: cols[4].width - 4, align: cols[4].align, lineBreak: false });
+                    // 5. Unpaid ($)
+                    doc.fillColor(parseFloat(unpaid) > 0 ? dangerColor : textMuted).fontSize(7).font(FONT_BOLD)
+                        .text(`$${unpaid}`, currX + 2, y + 3.5, { width: cols[4].width - 4, align: cols[4].align, lineBreak: false });
                     currX += cols[4].width;
 
-                    // Paid ($)
-                    doc.fillColor(parseFloat(paid) > 0 ? successColor : textMuted).fontSize(7).font(FONT_BOLD)
-                        .text(`$${paid}`, currX + 2, y + 3.5, { width: cols[5].width - 4, align: cols[5].align, lineBreak: false });
-                    currX += cols[5].width;
-
-                    // Paid Date
-                    doc.fillColor(textDark).fontSize(6.5).font(FONT_REGULAR)
-                        .text(paidDate, currX + 2, y + 3.5, { width: cols[6].width - 4, align: cols[6].align, lineBreak: false });
-                    currX += cols[6].width;
-
-                    // Status
+                    // 6. Status
                     let statusColor = dangerColor;
                     if (status.toLowerCase().includes('paid') || status.toLowerCase().includes('settled')) statusColor = successColor;
                     else if (status.toLowerCase().includes('partial') || status.toLowerCase().includes('due')) statusColor = warningColor;
 
                     doc.fillColor(statusColor).fontSize(7).font(FONT_BOLD)
-                        .text(status, currX + 2, y + 3.5, { width: cols[7].width - 4, align: cols[7].align, lineBreak: false });
-                    currX += cols[7].width;
+                        .text(status, currX + 2, y + 3.5, { width: cols[5].width - 4, align: cols[5].align, lineBreak: false });
+                    currX += cols[5].width;
 
-                    // Notes
-                    doc.fillColor(textMuted).fontSize(6).font(FONT_KHMER)
-                        .text(note || '—', currX + 2, y + 3.5, { width: cols[8].width - 4, align: cols[8].align, ellipsis: true, lineBreak: false });
+                    // 7. Comment
+                    doc.fillColor(textMuted).fontSize(6.5).font(FONT_KHMER)
+                        .text(comment, currX + 2, y + 3.5, { width: cols[6].width - 4, align: cols[6].align, ellipsis: true, lineBreak: false });
 
                     y += rowHeight;
                 });
