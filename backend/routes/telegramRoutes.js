@@ -438,8 +438,17 @@ router.post(
             return res.status(400).json({ error: 'A non-empty file is required' });
         }
 
-        const mediaType = req.get('x-telegram-media-type');
-        if (!['photo', 'voice', 'audio', 'video', 'document'].includes(mediaType)) {
+        const supportedMediaTypes = ['photo', 'voice', 'audio', 'video', 'document'];
+        const requestedMediaType = (req.get('x-telegram-media-type') || '').trim().toLowerCase();
+        const mimeType = (req.get('x-file-mime-type') || '').trim().toLowerCase();
+        const inferredMediaType = mimeType.startsWith('image/') ? 'photo'
+            : mimeType.startsWith('audio/') ? 'audio'
+                : mimeType.startsWith('video/') ? 'video'
+                    : null;
+        const mediaType = supportedMediaTypes.includes(requestedMediaType)
+            ? requestedMediaType
+            : inferredMediaType;
+        if (!mediaType) {
             return res.status(400).json({ error: 'Unsupported Telegram media type' });
         }
 
@@ -467,7 +476,7 @@ router.post(
             message.mediaType = mediaType;
             message.mediaFileName = fileName;
             message.mediaFileSize = file.length;
-            message.mediaMimeType = req.get('x-file-mime-type') || 'application/octet-stream';
+            message.mediaMimeType = mimeType || 'application/octet-stream';
             return res.json({ success: true, message });
         } catch (err) {
             console.error('[Telegram] User file send failed:', err.message);
