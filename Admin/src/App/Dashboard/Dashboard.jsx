@@ -88,7 +88,7 @@ const Dashboard = () => {
         return () => document.removeEventListener('fullscreenchange', handler);
     }, []);
 
-    // ── Core States ──
+    // ── Core API States ──
     const [stats, setStats] = useState({
         totalContracts: 0,
         activatedContracts: 0,
@@ -96,12 +96,21 @@ const Dashboard = () => {
         checkContracts: 0,
         redeemContracts: 0,
         blacklistContracts: 0,
+        commentsContracts: 0,
         lockedPhones: 0,
         unlockedPhones: 0,
+        lockedWallpapers: 0,
+        unlockedWallpapers: 0,
         totalRevenue: 0,
+        paymentCount: 0,
         totalLoanAmount: 0,
         totalCustomerReceived: 0,
-        totalBorrowers: 0
+        totalBorrowers: 0,
+        outstandingBalance: 0,
+        totalRepaymentExpected: 0,
+        totalScheduledRepayment: 0,
+        totalPenaltyRepayment: 0,
+        totalInterest: 0
     });
 
     const [brandFilter, setBrandFilter] = useState('');
@@ -113,22 +122,22 @@ const Dashboard = () => {
     const [penaltyRulesByBrand, setPenaltyRulesByBrand] = useState({});
     const [lastSyncTime, setLastSyncTime] = useState('មុននេះបន្តិច');
 
-    // Timeframe filter state
+    // Timeframe Filter State
     const [selectedTimeframe, setSelectedTimeframe] = useState('monthly'); // 'today' | '7d' | '30d' | 'monthly' | 'all' | 'custom'
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
     const [isCustomPopoverOpen, setIsCustomPopoverOpen] = useState(false);
     const [customDateError, setCustomDateError] = useState(null);
 
-    // Overdue Filter State in Late section
-    const [lateSectionFilter, setLateSectionFilter] = useState('all'); // 'all' | 'filtered'
+    // Overdue Table Filter: 'all' | 'filtered'
+    const [lateSectionFilter, setLateSectionFilter] = useState('all');
 
-    // Receipt image modal preview
+    // Receipt image preview modal
     const [previewImage, setPreviewImage] = useState(null);
 
     const popoverRef = useRef(null);
 
-    // Close popover on outside click or escape
+    // Close popover on outside click or Escape
     useEffect(() => {
         if (!isCustomPopoverOpen) return;
         const handleClick = (e) => {
@@ -147,7 +156,7 @@ const Dashboard = () => {
         };
     }, [isCustomPopoverOpen]);
 
-    // Active Brand Filter Scope
+    // Active Brand Scope
     const activeUserBrand = useMemo(() => {
         if (!isMasterAdmin && user?.brand) return user.brand;
         return brandFilter;
@@ -166,18 +175,23 @@ const Dashboard = () => {
         return () => clearInterval(interval);
     }, [reloading]);
 
-    // ── API Fetchers ──
+    // ── Fetch Brands List ──
     const fetchBrands = async () => {
         try {
             const res = await fetch(`${API_BASE}/controlsystem?brand=`);
             if (res.ok) {
                 const data = await res.json();
                 const brandCat = data.droplists?.find(d => d.category === 'Brands');
-                if (brandCat) setBrandsList(brandCat.items || []);
+                if (brandCat && Array.isArray(brandCat.items)) {
+                    setBrandsList(brandCat.items || []);
+                }
             }
-        } catch { }
+        } catch (e) {
+            console.error('Fetch brands error:', e);
+        }
     };
 
+    // ── Fetch Live Dashboard Stats from Backend API ──
     const fetchDashboardStats = useCallback(async () => {
         setReloading(true);
         try {
@@ -196,10 +210,11 @@ const Dashboard = () => {
             console.error('Failed to fetch dashboard stats:', err);
         } finally {
             setLoading(false);
-            setTimeout(() => setReloading(false), 400);
+            setTimeout(() => setReloading(false), 300);
         }
     }, [API_BASE, activeUserBrand, user]);
 
+    // ── Fetch Raw Contracts, Payments, and Penalty Rules ──
     const fetchRawData = useCallback(async () => {
         try {
             const params = new URLSearchParams();
@@ -219,6 +234,7 @@ const Dashboard = () => {
                 const contracts = cData.data || cData.contracts || (Array.isArray(cData) ? cData : []);
                 setRawContracts(contracts);
 
+                // Fetch Penalty Rules for all active brands in contracts
                 const brands = [...new Set(['', ...contracts.map(contract => String(contract.brand || '').trim())])];
                 const ruleEntries = await Promise.all(brands.map(async brand => {
                     try {
@@ -232,6 +248,7 @@ const Dashboard = () => {
                 }));
                 setPenaltyRulesByBrand(Object.fromEntries(ruleEntries));
             }
+
             if (pRes.ok) {
                 const pData = await pRes.json();
                 const payments = pData.data || pData.payments || (Array.isArray(pData) ? pData : []);
@@ -256,7 +273,7 @@ const Dashboard = () => {
         fetchRawData();
     };
 
-    // ── Contract & Repayment Data Processing ──
+    // ── Timeframe Descriptions ──
     const now = new Date();
     const currentMonthKhmer = useMemo(() => {
         const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
@@ -280,7 +297,7 @@ const Dashboard = () => {
         }
     }, [selectedTimeframe, customStartDate, customEndDate, currentMonthKhmer]);
 
-    // Filtered Contracts by Timeframe
+    // ── Filter Contracts by Timeframe ──
     const filteredContracts = useMemo(() => {
         if (!rawContracts || rawContracts.length === 0) return [];
         if (selectedTimeframe === 'all') return rawContracts;
@@ -288,7 +305,7 @@ const Dashboard = () => {
         const todayStr = now.toISOString().split('T')[0];
 
         return rawContracts.filter(c => {
-            const dateStr = String(c.date || c.createdAt || c.startDate || '').split('T')[0];
+            const dateStr = String(c.date || c.createdAt || c.inputDate || '').split('T')[0];
             if (!dateStr) return true;
 
             if (selectedTimeframe === 'today') {
@@ -315,13 +332,13 @@ const Dashboard = () => {
         });
     }, [rawContracts, selectedTimeframe, customStartDate, customEndDate]);
 
-    // ── Core Computed Metrics ──
-    const totalCount = stats.totalContracts || filteredContracts.length || 1;
-    const activatedCount = stats.activatedContracts || filteredContracts.filter(c => c.status === 'Activated' || c.status === 'ដំណើរការ').length || 0;
-    const applicationCount = stats.applicationContracts || filteredContracts.filter(c => c.status === 'Application' || c.status === 'ពាក្យស្នើសុំ').length || 0;
-    const checkCount = stats.checkContracts || filteredContracts.filter(c => c.status === 'Check' || c.status === 'កំពុងត្រួតពិនិត្យ').length || 0;
-    const redeemCount = stats.redeemContracts || filteredContracts.filter(c => c.status === 'Redeem' || c.status === 'បញ្ចាំ/ដោះដូរ').length || 0;
-    const blacklistCount = stats.blacklistContracts || filteredContracts.filter(c => c.status === 'BlackList' || c.status === 'បញ្ជីខ្មៅ').length || 0;
+    // ── Contract Statuses Pipeline Metrics ──
+    const totalCount = stats.totalContracts || rawContracts.length || 1;
+    const activatedCount = stats.activatedContracts || rawContracts.filter(c => c.status === 'Activated' || c.status === 'ដំណើរការ').length || 0;
+    const applicationCount = stats.applicationContracts || rawContracts.filter(c => c.status === 'Application' || c.status === 'ពាក្យស្នើសុំ').length || 0;
+    const checkCount = stats.checkContracts || rawContracts.filter(c => c.status === 'Check' || c.status === 'កំពុងត្រួតពិនិត្យ').length || 0;
+    const redeemCount = stats.redeemContracts || rawContracts.filter(c => c.status === 'Redeem' || c.status === 'បញ្ចាំ/ដោះដូរ').length || 0;
+    const blacklistCount = stats.blacklistContracts || rawContracts.filter(c => c.status === 'Blacklist' || c.status === 'BlackList' || c.status === 'បញ្ជីខ្មៅ').length || 0;
 
     const activatedPct = ((activatedCount / totalCount) * 100).toFixed(2);
     const applicationPct = ((applicationCount / totalCount) * 100).toFixed(2);
@@ -329,12 +346,12 @@ const Dashboard = () => {
     const redeemPct = ((redeemCount / totalCount) * 100).toFixed(2);
     const blacklistPct = ((blacklistCount / totalCount) * 100).toFixed(2);
 
-    const lockedPhones = stats.lockedPhones || 0;
+    const lockedPhones = stats.lockedPhones || rawContracts.filter(c => c.lockPhoneStatus === 'Locked').length || 0;
     const unlockedPhones = Math.max(0, totalCount - lockedPhones);
     const lockedRatio = totalCount > 0 ? ((lockedPhones / totalCount) * 100).toFixed(2) : '0.00';
     const unlockedRatio = (100 - Number(lockedRatio)).toFixed(2);
 
-    // ── Repayments & Customers Computation ──
+    // ── Repayments & Active Customers Computation ──
     const repaymentRows = useMemo(() => {
         const rows = [];
         rawContracts.forEach(contract => {
@@ -347,7 +364,7 @@ const Dashboard = () => {
                     const scheduledAmt = Number(rowData.scheduledAmount || rowData.amount || rowData.due || 0);
                     const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
                     const unpaidAmt = Math.max(0, scheduledAmt - paidAmt);
-                    const isPaid = rowData.isPaid || (unpaidAmt <= 0 && scheduledAmt > 0);
+                    const isPaid = rowData.isPaid || rowData.status === 'Paid' || rowData.status === 'PayOff' || (unpaidAmt <= 0 && scheduledAmt > 0);
 
                     rows.push({
                         id: `${contract._id || contract.id || 'c'}-${idx}`,
@@ -380,44 +397,44 @@ const Dashboard = () => {
         return repaymentRows.filter(r => !r.isPaid && (r.penaltyAmount > 0 || r.daysUntilDue < 0));
     }, [repaymentRows]);
 
+    // Penalty payment records from /payments
     const penaltyPaymentRows = useMemo(() => {
-        // Collect penalty payments or raw payments with penalty category
         const pRows = [];
         rawPayments.forEach((p, idx) => {
             const isPenalty = p.type === 'penalty' || p.category === 'Penalty' || String(p.description || '').toLowerCase().includes('penalty') || String(p.description || '').toLowerCase().includes('ពិន័យ');
             if (isPenalty || Number(p.penaltyAmount || 0) > 0) {
+                const singleImg = p.photo || p.image || p.receiptImage || (Array.isArray(p.paymentImages) && p.paymentImages[0]) || null;
                 pRows.push({
                     id: p._id || p.id || `p-${idx}`,
-                    dueDate: p.date ? String(p.date).split('T')[0] : new Date().toISOString().split('T')[0],
+                    dueDate: p.paidDate ? String(p.paidDate).split('T')[0] : (p.date ? String(p.date).split('T')[0] : new Date().toISOString().split('T')[0]),
                     paymentMethod: p.paymentMethod || p.method || 'Cash',
                     category: p.customerName || p.customer || p.category || 'ពិន័យយឺត',
-                    penaltyAmount: Number(p.amount || p.penaltyAmount || 0),
+                    penaltyAmount: Number(p.penaltyAmount || p.amount || 0),
                     description: p.description || p.notes || 'ការទូទាត់ប្រាក់ពិន័យ',
-                    photoUrl: p.photoUrl || p.image || p.receiptUrl || null
+                    photoUrl: singleImg
                 });
             }
         });
         return pRows;
     }, [rawPayments]);
 
-    // Aggregate totals for KPI Cards
-    const totalDisbursedAmount = stats.totalLoanAmount || filteredContracts.reduce((s, c) => s + Number(c.amount || c.loanAmount || 0), 0);
+    // ── Live KPI Financial Totals ──
+    const totalDisbursedAmount = stats.totalLoanAmount || rawContracts.filter(c => c.status === 'Activated').reduce((s, c) => s + Number(c.amount || c.loanAmount || 0), 0);
     const totalCollectedRevenue = stats.totalRevenue || rawPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
-    const totalScheduledAmount = useMemo(() => repaymentRows.reduce((s, r) => s + r.scheduledAmount, 0), [repaymentRows]);
-    const totalPenaltyAmount = useMemo(() => repaymentRows.reduce((s, r) => s + r.penaltyAmount, 0), [repaymentRows]);
+    const totalScheduledAmount = stats.totalScheduledRepayment || repaymentRows.reduce((s, r) => s + r.scheduledAmount, 0);
+    const totalPenaltyAmount = stats.totalPenaltyRepayment || repaymentRows.reduce((s, r) => s + r.penaltyAmount, 0);
     const totalObligation = totalScheduledAmount + totalPenaltyAmount;
-    const totalOutstandingAmount = useMemo(() => repaymentRows.filter(r => !r.isPaid).reduce((s, r) => s + r.outstandingAmount + r.penaltyAmount, 0), [repaymentRows]);
+    const totalOutstandingAmount = stats.outstandingBalance || Math.max(totalObligation - totalCollectedRevenue, 0);
 
-    // Summary counts for sections
+    // Section Summary Totals
     const dueTotalPaid = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.paidAmount, 0), [dueCustomerRows]);
     const dueTotalRemaining = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.outstandingAmount + r.penaltyAmount, 0), [dueCustomerRows]);
     const lateTotalPenalty = useMemo(() => overdueCustomerRows.reduce((s, r) => s + r.penaltyAmount, 0), [overdueCustomerRows]);
     const penaltyTotalAmount = useMemo(() => penaltyPaymentRows.reduce((s, r) => s + r.penaltyAmount, 0), [penaltyPaymentRows]);
 
-    // Overdue alert count
     const totalOverdueAlertCount = overdueCustomerRows.length;
 
-    // ── Chart Points (Dynamic Daily/Monthly Timeline) ──
+    // ── Dynamic Chart Data Points ──
     const chartPoints = useMemo(() => {
         const pointsMap = {};
         const today = new Date();
@@ -427,16 +444,17 @@ const Dashboard = () => {
             hours.forEach(h => {
                 pointsMap[h] = { label: h, collected: 0, disbursed: 0, customers: 0 };
             });
-            // Distribute today's data
             const todayStr = today.toISOString().split('T')[0];
-            filteredContracts.forEach(c => {
-                if (String(c.date || '').startsWith(todayStr)) {
+            rawContracts.forEach(c => {
+                const cDate = String(c.date || c.createdAt || c.inputDate || '').split('T')[0];
+                if (cDate === todayStr) {
                     pointsMap['12:00'].disbursed += Number(c.amount || c.loanAmount || 0);
                     pointsMap['12:00'].customers += 1;
                 }
             });
             rawPayments.forEach(p => {
-                if (String(p.date || '').startsWith(todayStr)) {
+                const pDate = String(p.paidDate || p.date || p.createdAt || '').split('T')[0];
+                if (pDate === todayStr) {
                     pointsMap['12:00'].collected += Number(p.amount || 0);
                 }
             });
@@ -450,8 +468,8 @@ const Dashboard = () => {
                 pointsMap[dStr] = { label, collected: 0, disbursed: 0, customers: 0 };
             }
 
-            filteredContracts.forEach(c => {
-                const cDate = String(c.date || c.createdAt || '').split('T')[0];
+            rawContracts.forEach(c => {
+                const cDate = String(c.date || c.createdAt || c.inputDate || '').split('T')[0];
                 if (pointsMap[cDate]) {
                     pointsMap[cDate].disbursed += Number(c.amount || c.loanAmount || 0);
                     pointsMap[cDate].customers += 1;
@@ -459,27 +477,28 @@ const Dashboard = () => {
             });
 
             rawPayments.forEach(p => {
-                const pDate = String(p.date || p.createdAt || '').split('T')[0];
+                const pDate = String(p.paidDate || p.date || p.createdAt || '').split('T')[0];
                 if (pointsMap[pDate]) {
                     pointsMap[pDate].collected += Number(p.amount || 0);
                 }
             });
         } else {
-            // 'all' -> Group by month
+            // 'all' -> Group by months
             const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+            const curYear = today.getFullYear();
             months.forEach(m => {
-                const mKey = `2026-${m}`;
-                pointsMap[mKey] = { label: mKey, collected: 0, disbursed: 0, customers: 0 };
+                const mKey = `${curYear}-${m}`;
+                pointsMap[mKey] = { label: `${m}/${curYear.toString().slice(-2)}`, collected: 0, disbursed: 0, customers: 0 };
             });
-            filteredContracts.forEach(c => {
-                const cMonth = String(c.date || c.createdAt || '').slice(0, 7);
+            rawContracts.forEach(c => {
+                const cMonth = String(c.date || c.createdAt || c.inputDate || '').slice(0, 7);
                 if (pointsMap[cMonth]) {
                     pointsMap[cMonth].disbursed += Number(c.amount || c.loanAmount || 0);
                     pointsMap[cMonth].customers += 1;
                 }
             });
             rawPayments.forEach(p => {
-                const pMonth = String(p.date || p.createdAt || '').slice(0, 7);
+                const pMonth = String(p.paidDate || p.date || p.createdAt || '').slice(0, 7);
                 if (pointsMap[pMonth]) {
                     pointsMap[pMonth].collected += Number(p.amount || 0);
                 }
@@ -487,7 +506,7 @@ const Dashboard = () => {
         }
 
         return Object.values(pointsMap);
-    }, [selectedTimeframe, filteredContracts, rawPayments]);
+    }, [selectedTimeframe, rawContracts, rawPayments]);
 
     // Handle Custom Popover Shortcut
     const handleApplyDatePreset = (days) => {
@@ -513,7 +532,6 @@ const Dashboard = () => {
         setSelectedTimeframe('custom');
     };
 
-    // Print Action
     const handlePrint = () => {
         window.print();
     };
@@ -718,7 +736,7 @@ const Dashboard = () => {
 
             {/* ── Middle Dashboard Row ── */}
             <div className="middle-dashboard-row">
-                {/* Left: Chart Card */}
+                {/* Left: Interactive Line & Area Chart Card */}
                 <div className="chart-card flow-trend-card">
                     <div className="c-head-row">
                         <div className="c-title-box">
