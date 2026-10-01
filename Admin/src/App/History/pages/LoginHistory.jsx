@@ -196,7 +196,7 @@ const LoginHistory = () => {
 
             {/* Notification Toast */}
             {toast && (
-                <div className={`p-1.5 rounded-[5px] border shadow-sm flex items-center justify-between transition-all ${toast.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-red-50 border-red-300 text-red-900'}`}>
+                <div className={`p-2 rounded-[5px] border shadow-sm flex items-center justify-between transition-all ${toast.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-red-50 border-red-300 text-red-900'}`}>
                     <div className='flex items-center gap-2.5 text-xs font-bold'>
                         {toast.type === 'success' ? <FaCheckCircle className='text-emerald-600 text-base' /> : <FaExclamationTriangle className='text-red-600 text-base' />}
                         <span>{toast.message}</span>
@@ -206,7 +206,7 @@ const LoginHistory = () => {
             )}
 
             {/* Header */}
-            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
@@ -276,7 +276,7 @@ const LoginHistory = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
+            <div className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
                 <div className='relative flex-1 min-w-[240px]'>
                     <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs' />
                     <input

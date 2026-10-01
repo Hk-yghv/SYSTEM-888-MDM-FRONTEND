@@ -41,7 +41,7 @@ const Left = ({ isOpen = false, onClose }) => {
             onClick={(event) => {
                 if (event.target.closest('a')) onClose?.();
             }}
-            className={`w-[260px] h-full min-h-0 flex-shrink-0 border-r p-1 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-colors mobile-sidebar ${isOpen ? 'mobile-sidebar-open' : ''}`}
+            className={`w-[260px] h-full min-h-0 flex-shrink-0 border-r p-2 flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-colors mobile-sidebar ${isOpen ? 'mobile-sidebar-open' : ''}`}
             style={{
                 backgroundColor: 'var(--app-sidebar, rgba(248, 250, 252, 0.9))',
                 borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'

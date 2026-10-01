@@ -99,7 +99,7 @@ const SalaryBarChart = ({
                 </div>
 
                 {/* Year Filter Buttons */}
-                <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-100 dark:bg-slate-800 p-2 rounded-lg">
                     <button
                         onClick={() => setSelectedYear('ALL')}
                         className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${selectedYear === 'ALL'

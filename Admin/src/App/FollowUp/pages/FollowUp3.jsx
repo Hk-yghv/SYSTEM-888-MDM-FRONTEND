@@ -533,7 +533,7 @@ const FollowUp3 = () => {
     };
 
     return (
-        <div className="p-1 sm:p-2 space-y-6 max-w-[1600px] mx-auto min-h-screen">
+        <div className="p-2 sm:p-2 space-y-6 max-w-[1600px] mx-auto min-h-screen">
             {/* HTML Datalists for Dynamic Droplists */}
             <datalist id="fu3-location-list">
                 {dynamicSuggestions.locations.map((item, i) => (
@@ -848,7 +848,7 @@ const FollowUp3 = () => {
                                                             href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition inline-flex items-center gap-1 text-xs font-bold"
+                                                            className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition inline-flex items-center gap-1 text-xs font-bold"
                                                             title={item.link}
                                                         >
                                                             <FaExternalLinkAlt className="text-xs" />
@@ -891,7 +891,7 @@ const FollowUp3 = () => {
                                                     {checkPermission('edit') && (
                                                         <button
                                                             onClick={() => handleOpenEdit(item)}
-                                                            className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition cursor-pointer"
+                                                            className="p-2 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition cursor-pointer"
                                                             title="Edit"
                                                         >
                                                             <FaEdit className="text-xs" />
@@ -900,7 +900,7 @@ const FollowUp3 = () => {
                                                     {checkPermission('delete') && (
                                                         <button
                                                             onClick={() => setDeleteModalItem(item)}
-                                                            className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer"
+                                                            className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer"
                                                             title="Delete"
                                                         >
                                                             <FaTrashAlt className="text-xs" />
@@ -933,7 +933,7 @@ const FollowUp3 = () => {
 
             {/* Create & Edit Modal (With flexible droplists / datalists & Auto-Fill Detection) */}
             {isFormOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-1 sm:p-2 overflow-y-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-2 overflow-y-auto">
                     <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-2xl w-full p-6 sm:p-2 space-y-5 my-8 animate-in fade-in zoom-in duration-200">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -960,7 +960,7 @@ const FollowUp3 = () => {
 
                         {/* ⚡ Auto-Fill Notification Banner when previous match detected */}
                         {detectedMatch && (
-                            <div className="p-1.5 rounded-[5px] bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="p-2 rounded-[5px] bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="flex items-start gap-2.5">
                                     <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
                                         <FaBolt />
@@ -986,7 +986,7 @@ const FollowUp3 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setDetectedMatch(null)}
-                                        className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                                        className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
                                         title="Dismiss"
                                     >
                                         <FaTimes className="text-xs" />
@@ -1256,7 +1256,7 @@ const FollowUp3 = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('excel')}
-                                    className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
+                                    className={`p-2 rounded-[5px] border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
                                         exportFormat === 'excel'
                                             ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
                                             : 'border-slate-200 hover:bg-slate-50 text-slate-600'
@@ -1268,7 +1268,7 @@ const FollowUp3 = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('pdf')}
-                                    className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
+                                    className={`p-2 rounded-[5px] border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
                                         exportFormat === 'pdf'
                                             ? 'border-rose-500 bg-rose-50 text-rose-700 shadow-sm'
                                             : 'border-slate-200 hover:bg-slate-50 text-slate-600'

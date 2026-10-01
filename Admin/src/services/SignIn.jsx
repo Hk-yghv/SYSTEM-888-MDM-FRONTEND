@@ -125,7 +125,7 @@ const SignIn = () => {
 
                 {/* Error Message */}
                 {error && (
-                    <div className={`mb-5 p-1 rounded-[5px] border text-xs font-semibold text-center flex items-start gap-2 ${isBlocked ? 'bg-amber-950/60 border-amber-700/80 text-amber-300' : 'bg-red-950/60 border-red-800/80 text-red-300'}`}>
+                    <div className={`mb-5 p-2 rounded-[5px] border text-xs font-semibold text-center flex items-start gap-2 ${isBlocked ? 'bg-amber-950/60 border-amber-700/80 text-amber-300' : 'bg-red-950/60 border-red-800/80 text-red-300'}`}>
                         {isBlocked ? <FaClock className="text-amber-400 text-sm flex-shrink-0 mt-0.5" /> : <FaExclamationTriangle className="text-red-400 text-sm flex-shrink-0 mt-0.5" />}
                         <span>{error}</span>
                     </div>

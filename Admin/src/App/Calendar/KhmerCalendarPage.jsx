@@ -272,7 +272,7 @@ const KhmerCalendarPage = () => {
     const monthTitle = `${MONTH_NAMES[visibleMonth.getMonth()]} ${visibleMonth.getFullYear()}`;
 
     return (
-        <main className="min-h-full bg-[var(--app-bg,#f4f6f8)] p-1 sm:p-2 space-y-4">
+        <main className="min-h-full bg-[var(--app-bg,#f4f6f8)] p-2 sm:p-2 space-y-4">
             <header className="flex flex-col gap-4 border-b border-[var(--app-border,#dbe3e8)] pb-4 xl:flex-row xl:items-end xl:justify-between">
                 <div>
                     <h1 className="mt-1 text-2xl font-bold text-[var(--app-text,#102a2a)]">{monthTitle}</h1>
@@ -317,7 +317,7 @@ const KhmerCalendarPage = () => {
                                     onClick={() => handleSelectDate(date)}
                                     aria-label={`${dateKey}${dueCount ? `, ${dueCount} due` : ''}`}
                                     aria-pressed={isSelected}
-                                    className={`relative min-h-[82px] border-b border-r border-[var(--app-border,#e2e8f0)] p-1.5 text-left transition-colors sm:min-h-[104px] sm:p-2 ${isSelected ? 'bg-emerald-50 ring-2 ring-inset ring-emerald-600' : 'hover:bg-slate-50'} ${!inMonth ? 'bg-slate-50/70' : ''}`}
+                                    className={`relative min-h-[82px] border-b border-r border-[var(--app-border,#e2e8f0)] p-2 text-left transition-colors sm:min-h-[104px] sm:p-2 ${isSelected ? 'bg-emerald-50 ring-2 ring-inset ring-emerald-600' : 'hover:bg-slate-50'} ${!inMonth ? 'bg-slate-50/70' : ''}`}
                                 >
                                     <div className="flex items-start justify-between gap-1">
                                         <span className={`flex h-6 min-w-6 items-center justify-center text-xs font-bold ${isToday ? 'bg-emerald-700 text-white' : dayHolidays.length ? 'text-rose-700' : inMonth ? 'text-slate-800' : 'text-slate-400'}`}>

@@ -110,7 +110,7 @@ const Actions = () => {
 
     return (
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
-            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>

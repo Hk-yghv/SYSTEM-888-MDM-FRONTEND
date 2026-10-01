@@ -68,7 +68,7 @@ const RejectCsCard = ({
             </div>
 
             {/* Total summary badge */}
-            <div className="flex items-center justify-between bg-amber-950/40 border border-amber-800/40 p-1 rounded-[5px] mb-4 text-xs">
+            <div className="flex items-center justify-between bg-amber-950/40 border border-amber-800/40 p-2 rounded-[5px] mb-4 text-xs">
                 <span className="text-amber-300 font-semibold">សរុប REJECT CS ប្រចាំថ្ងៃ ({date})៖</span>
                 <span className="text-amber-400 font-mono font-bold text-base bg-amber-900/60 px-3 py-0.5 rounded-lg">
                     {totalCount} ករណី
@@ -92,7 +92,7 @@ const RejectCsCard = ({
                     {reasons.map((reason, idx) => (
                         <div
                             key={idx}
-                            className="flex items-center justify-between bg-slate-900/80 hover:bg-slate-900 p-1.5 rounded-[5px] border border-slate-700/60 hover:border-slate-600 transition-all shadow-xs"
+                            className="flex items-center justify-between bg-slate-900/80 hover:bg-slate-900 p-2 rounded-[5px] border border-slate-700/60 hover:border-slate-600 transition-all shadow-xs"
                         >
                             <span className="text-xs font-semibold text-slate-200 flex items-center gap-2">
                                 <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-[10px] font-mono">

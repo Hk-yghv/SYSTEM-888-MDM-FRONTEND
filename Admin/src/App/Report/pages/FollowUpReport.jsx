@@ -411,7 +411,7 @@ const FollowUpReport = () => {
     };
 
     return (
-        <div className="p-1 sm:p-2 space-y-6 max-w-[1700px] mx-auto min-h-screen">
+        <div className="p-2 sm:p-2 space-y-6 max-w-[1700px] mx-auto min-h-screen">
             {/* Header Title & Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm">
                 <div>
@@ -865,7 +865,7 @@ const FollowUpReport = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('excel')}
-                                    className={`p-1.5 rounded-[5px] border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'excel'
+                                    className={`p-2 rounded-[5px] border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'excel'
                                         ? 'border-emerald-500 bg-emerald-50/60 text-emerald-700 shadow-sm'
                                         : 'border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100'
                                         }`}
@@ -876,7 +876,7 @@ const FollowUpReport = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('pdf')}
-                                    className={`p-1.5 rounded-[5px] border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'pdf'
+                                    className={`p-2 rounded-[5px] border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'pdf'
                                         ? 'border-rose-500 bg-rose-50/60 text-rose-700 shadow-sm'
                                         : 'border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100'
                                         }`}

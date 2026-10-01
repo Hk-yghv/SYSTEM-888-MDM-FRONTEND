@@ -332,7 +332,7 @@ const CashOutPage = () => {
                 <div className="space-y-4">
                     {/* KPI Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center text-lg">
                                 <FaDollarSign />
                             </div>
@@ -342,7 +342,7 @@ const CashOutPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg font-bold">
                                 ៛
                             </div>
@@ -352,7 +352,7 @@ const CashOutPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center text-lg">
                                 <FaMoneyBillWave />
                             </div>
@@ -362,7 +362,7 @@ const CashOutPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center text-lg">
                                 <FaListUl />
                             </div>
@@ -390,7 +390,7 @@ const CashOutPage = () => {
             {activeTab === 'detail' && (
                 <div className="space-y-4">
                     {/* Filter Bar */}
-                    <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                    <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2 flex-wrap">
                             <div className="relative">
                                 <FaSearch className="absolute left-3 top-3 text-slate-400 text-xs" />
@@ -458,10 +458,10 @@ const CashOutPage = () => {
                                             <td className='px-4 py-1 font-bold text-slate-800'>{item.performedBy || '-'}</td>
                                             <td className='px-4 py-1 text-center'>
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <button onClick={() => handleEdit(item)} title="Edit" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                                    <button onClick={() => handleEdit(item)} title="Edit" className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                                         <FaEdit />
                                                     </button>
-                                                    <button onClick={() => handleDelete(item)} title="Delete" className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+                                                    <button onClick={() => handleDelete(item)} title="Delete" className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
                                                         <FaTrashAlt />
                                                     </button>
                                                 </div>

@@ -158,7 +158,7 @@ const Application = () => {
     return (
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
             {/* Header */}
-            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('application')}</span>
@@ -253,7 +253,7 @@ const Application = () => {
                                                 </button>
 
                                                 {openMenuId === item._id && (
-                                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-2 space-y-1 animate-in fade-in duration-150">
                                                         {canInfo && (
                                                             <button
                                                                 onClick={() => { setInfoData(item); setOpenMenuId(null); }}
@@ -370,7 +370,7 @@ const Application = () => {
                         {infoData.deviceProblem && (
                             <div className="space-y-1 pt-2 border-t border-gray-800">
                                 <h4 className="text-xs font-bold text-amber-400 uppercase flex items-center gap-1.5">🔧 {t('deviceProblem')}</h4>
-                                <div className="p-1 bg-amber-900/15 border border-amber-700/40 rounded-[5px] text-xs text-amber-300 font-medium leading-relaxed whitespace-pre-wrap">
+                                <div className="p-2 bg-amber-900/15 border border-amber-700/40 rounded-[5px] text-xs text-amber-300 font-medium leading-relaxed whitespace-pre-wrap">
                                     {infoData.deviceProblem}
                                 </div>
                             </div>

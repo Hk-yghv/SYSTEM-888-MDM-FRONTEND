@@ -30,7 +30,7 @@ const ExportDropdown = ({
                 <span>{resolvedTrigger}</span>
                 <MdKeyboardArrowDown className="text-base" />
             </summary>
-            <div className="absolute right-0 z-50 mt-1 min-w-44 overflow-hidden rounded-[5px] border border-slate-200 bg-white p-1 shadow-lg divide-y divide-slate-100">
+            <div className="absolute right-0 z-50 mt-1 min-w-44 overflow-hidden rounded-[5px] border border-slate-200 bg-white p-2 shadow-lg divide-y divide-slate-100">
                 <button
                     type="button"
                     onClick={() => runExport(onExportExcel)}

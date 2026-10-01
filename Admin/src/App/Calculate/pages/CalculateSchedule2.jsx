@@ -612,7 +612,7 @@ const CalculateSchedule2 = () => {
                         {result && (
                             <>
                                 {/* Orientation Selection Toggle */}
-                                <div className="flex items-center bg-slate-100 p-1 rounded-[5px] border border-slate-200 text-xs font-bold">
+                                <div className="flex items-center bg-slate-100 p-2 rounded-[5px] border border-slate-200 text-xs font-bold">
                                     <button
                                         type="button"
                                         onClick={() => setPrintOrientation('portrait')}
@@ -942,7 +942,7 @@ const CalculateSchedule2 = () => {
                                             <div
                                                 key={item._id}
                                                 onClick={() => handleLoadRecord(item)}
-                                                className={`p-1 rounded-[5px] border text-xs cursor-pointer transition-all ${followsFormula
+                                                className={`p-2 rounded-[5px] border text-xs cursor-pointer transition-all ${followsFormula
                                                     ? 'bg-red-50 border-red-500 shadow-xs ring-1 ring-red-400'
                                                     : isNewlyAdded
                                                     ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-400 animate-pulse'
@@ -964,7 +964,7 @@ const CalculateSchedule2 = () => {
                                                             type="button"
                                                             onClick={(e) => handleDeleteRecord(item._id, e)}
                                                             title="លុប"
-                                                            className="p-1 rounded hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition-colors">
+                                                            className="p-2 rounded hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition-colors">
                                                             <FaTrash className="text-[10px]" />
                                                         </button>
                                                     </div>
@@ -1175,7 +1175,7 @@ const CalculateSchedule2 = () => {
                                     filteredHistory.map((item) => (
                                         <div
                                             key={item._id}
-                                            className={`p-1.5 rounded-[5px] border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${followsInstallmentFormula(item) ? 'border-red-500 bg-red-50/30' : 'border-slate-200 hover:border-violet-300 hover:bg-violet-50/20'}`}>
+                                            className={`p-2 rounded-[5px] border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${followsInstallmentFormula(item) ? 'border-red-500 bg-red-50/30' : 'border-slate-200 hover:border-violet-300 hover:bg-violet-50/20'}`}>
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-black text-slate-800 text-sm">

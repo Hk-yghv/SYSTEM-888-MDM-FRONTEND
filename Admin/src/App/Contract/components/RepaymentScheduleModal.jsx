@@ -776,7 +776,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 <div className="flex-1 overflow-x-auto overflow-y-auto p-2 pb-32 min-h-[350px] space-y-3">
                     {/* Top Prominent Action & Info Banner (Only when in setup & activate mode) */}
                     {isSetupActivate && (
-                        <div className="p-1 rounded-[5px] bg-indigo-50 border border-indigo-200 text-slate-800 text-xs font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                        <div className="p-2 rounded-[5px] bg-indigo-50 border border-indigo-200 text-slate-800 text-xs font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                             <div className="flex items-center gap-2">
                                 <FaCalendarAlt className="text-indigo-600 text-lg flex-shrink-0" />
                                 <span>
@@ -1137,7 +1137,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         </span>
                         <button
                             onClick={() => setLightboxImages([])}
-                            className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-red-600 transition-colors cursor-pointer"
+                            className="p-2 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-red-600 transition-colors cursor-pointer"
                         >
                             <FaTimes size={14} />
                         </button>

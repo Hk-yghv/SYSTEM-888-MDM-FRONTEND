@@ -157,7 +157,7 @@ const Device = () => {
 
     return (
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
-            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
@@ -390,7 +390,7 @@ const Device = () => {
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
 
                                     {/* Model */}
-                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Model Name
                                         </span>
@@ -400,7 +400,7 @@ const Device = () => {
 
 
                                     {/* Version */}
-                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Version / OS
                                         </span>
@@ -410,7 +410,7 @@ const Device = () => {
 
 
                                     {/* Serial */}
-                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Serial Number
                                         </span>
@@ -420,7 +420,7 @@ const Device = () => {
 
 
                                     {/* IMEI 1 */}
-                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             IMEI 1
                                         </span>
@@ -430,7 +430,7 @@ const Device = () => {
 
 
                                     {/* IMEI 2 */}
-                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             IMEI 2
                                         </span>
@@ -440,7 +440,7 @@ const Device = () => {
 
 
                                     {/* MEID */}
-                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             MEID
                                         </span>
@@ -450,7 +450,7 @@ const Device = () => {
 
 
                                     {/* Color */}
-                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Color
                                         </span>
@@ -460,7 +460,7 @@ const Device = () => {
 
 
                                     {/* Brand */}
-                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Brand
                                         </span>

@@ -52,7 +52,7 @@ const FollowUp4DetailModal = ({
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+                        className="text-slate-400 hover:text-white p-2 rounded-lg transition-colors cursor-pointer"
                     >
                         <FaTimes size={18} />
                     </button>
@@ -61,7 +61,7 @@ const FollowUp4DetailModal = ({
                 {/* Modal Body */}
                 <div className="p-6 overflow-y-auto space-y-5 flex-1">
                     {/* Date Selector & Live Auto-Formulas Overview */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-1.5 rounded-[5px] border border-slate-700">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-2 rounded-[5px] border border-slate-700">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <FaRegCalendarAlt className="text-sky-400 text-sm" />
                             <span className="text-xs font-semibold text-slate-300">កាលបរិច្ឆេទ៖</span>
@@ -91,7 +91,7 @@ const FollowUp4DetailModal = ({
 
                     {/* Input Fields Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-xs">
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-indigo-600/40">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-indigo-600/40">
                             <label className="block text-indigo-300 font-semibold mb-1">MESSAGE (PG + TG + CALL)</label>
                             <input
                                 type="number"
@@ -104,7 +104,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">PAGE (FB Page)</label>
                             <input
                                 type="number"
@@ -116,7 +116,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">TELEGRAM (Tg)</label>
                             <input
                                 type="number"
@@ -128,7 +128,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">{t('noReply')}</label>
                             <input
                                 type="number"
@@ -140,7 +140,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">{t('inquire')}</label>
                             <input
                                 type="number"
@@ -152,7 +152,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">REJECT CS</label>
                             <input
                                 type="number"
@@ -164,7 +164,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">{t('more')}</label>
                             <input
                                 type="number"
@@ -176,7 +176,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">PAGE SUBMIT</label>
                             <input
                                 type="number"
@@ -188,7 +188,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">TELEGRAM SUBMIT</label>
                             <input
                                 type="number"
@@ -200,7 +200,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">CALL</label>
                             <input
                                 type="number"
@@ -212,7 +212,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">REVIEW</label>
                             <input
                                 type="number"
@@ -224,7 +224,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">REJECT</label>
                             <input
                                 type="number"
@@ -236,7 +236,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">SUCCESS 1</label>
                             <input
                                 type="number"
@@ -248,7 +248,7 @@ const FollowUp4DetailModal = ({
                             />
                         </div>
 
-                        <div className="bg-slate-900/70 p-1 rounded-[5px] border border-slate-700/60">
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">SUCCESS 2</label>
                             <input
                                 type="number"

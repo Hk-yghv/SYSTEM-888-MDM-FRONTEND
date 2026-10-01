@@ -61,7 +61,7 @@ const RejectCsModal = ({
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+                        className="text-slate-400 hover:text-white p-2 rounded-lg transition-colors cursor-pointer"
                     >
                         <FaTimes size={18} />
                     </button>
@@ -70,7 +70,7 @@ const RejectCsModal = ({
                 {/* Modal Body */}
                 <div className="p-6 overflow-y-auto space-y-4 flex-1">
                     {/* Date Selector & Total summary */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-1.5 rounded-[5px] border border-slate-700">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-2 rounded-[5px] border border-slate-700">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <FaRegCalendarAlt className="text-amber-400 text-sm" />
                             <span className="text-xs font-semibold text-slate-300">កាលបរិច្ឆេទ៖</span>
@@ -105,7 +105,7 @@ const RejectCsModal = ({
                             {reasons.map((reason, idx) => (
                                 <div
                                     key={idx}
-                                    className="flex items-center justify-between bg-slate-900/80 hover:bg-slate-900 p-1 rounded-[5px] border border-slate-700/70 hover:border-slate-600 transition-all shadow-xs"
+                                    className="flex items-center justify-between bg-slate-900/80 hover:bg-slate-900 p-2 rounded-[5px] border border-slate-700/70 hover:border-slate-600 transition-all shadow-xs"
                                 >
                                     <span className="text-xs font-semibold text-slate-200 flex items-center gap-2">
                                         <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-[10px] font-mono">

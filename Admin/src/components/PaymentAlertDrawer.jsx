@@ -469,7 +469,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                 </div>
 
                 {/* ── SPACE-SAVING DROPLIST CATEGORY & FILTER TOOLBAR ── */}
-                <div className="p-1 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <div className="p-2 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
 
                     {/* Left: Category Droplist + Active Stat Badge */}
                     <div className="flex items-center gap-2.5 flex-1 min-w-[280px]">
@@ -838,7 +838,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                                 <a
                                                                     href={`tel:${item.phone}`}
                                                                     onClick={(e) => e.stopPropagation()}
-                                                                    className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs transition-colors"
+                                                                    className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs transition-colors"
                                                                     title={t('callNow')}
                                                                 >
                                                                     <FaPhone size={10} />

@@ -357,7 +357,7 @@ const AllAccount = () => {
     return (
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
             {/* Header */}
-            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
@@ -632,7 +632,7 @@ const AllAccount = () => {
                                     selectedHistoryUser.onlineHistory.map((sess, sIdx) => {
                                         const isCurrent = !sess.logoutTime && selectedHistoryUser.status === 'Online';
                                         return (
-                                            <div key={sIdx} className={`p-1 rounded-[5px] border ${isCurrent ? 'bg-emerald-950/30 border-emerald-800/80' : 'bg-slate-900/70 border-slate-800'} space-y-1 font-mono`}>
+                                            <div key={sIdx} className={`p-2 rounded-[5px] border ${isCurrent ? 'bg-emerald-950/30 border-emerald-800/80' : 'bg-slate-900/70 border-slate-800'} space-y-1 font-mono`}>
                                                 <div className="flex items-center justify-between text-[11px]">
                                                     <span className="text-slate-300 font-bold flex items-center gap-1.5">
                                                         <span className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`}></span>
@@ -672,7 +672,7 @@ const AllAccount = () => {
                                     </div>
                                 ) : (
                                     (selectedHistoryUser.otpHistory?.length > 0 ? selectedHistoryUser.otpHistory : [{ otp: selectedHistoryUser.lastOtp, createdAt: new Date(), status: 'Recent', ip: '127.0.0.1' }]).map((otpLog, oIdx) => (
-                                        <div key={oIdx} className="p-1 bg-slate-900/70 border border-slate-800 rounded-[5px] flex items-center justify-between font-mono">
+                                        <div key={oIdx} className="p-2 bg-slate-900/70 border border-slate-800 rounded-[5px] flex items-center justify-between font-mono">
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-amber-400 font-extrabold text-base tracking-widest bg-amber-950/60 border border-amber-800/80 px-2.5 py-0.5 rounded-lg">
@@ -703,7 +703,7 @@ const AllAccount = () => {
                                     <p className="text-slate-500 italic text-center py-8">No login audit logs recorded yet.</p>
                                 ) : (
                                     selectedHistoryUser.loginHistory.map((log, lIdx) => (
-                                        <div key={lIdx} className="p-1 bg-slate-900/70 border border-slate-800 rounded-[5px] space-y-1 font-mono">
+                                        <div key={lIdx} className="p-2 bg-slate-900/70 border border-slate-800 rounded-[5px] space-y-1 font-mono">
                                             <div className="flex items-center justify-between text-[11px]">
                                                 <span className="text-indigo-300 font-bold">{new Date(log.timestamp).toLocaleString('en-GB')}</span>
                                                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${log.status === 'Success' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}`}>
@@ -906,7 +906,7 @@ const AllAccount = () => {
                                     </div>
                                 )}
 
-                                <div className="max-h-72 overflow-y-auto rounded-[5px] border border-gray-800 bg-gray-900/60 p-1 space-y-3">
+                                <div className="max-h-72 overflow-y-auto rounded-[5px] border border-gray-800 bg-gray-900/60 p-2 space-y-3">
                                     {Object.entries(
                                         (formData.role?.toLowerCase() === 'salary'
                                             ? ALL_SYSTEM_PAGES.filter(pg => pg.path === '/salary' || pg.category === 'Salary System')

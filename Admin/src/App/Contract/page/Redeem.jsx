@@ -137,7 +137,7 @@ const Redeem = () => {
 
     return (
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
-            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-base font-bold text-slate-900 flex items-center gap-2'>
                         <span>{t('redeem')}</span>
@@ -205,7 +205,7 @@ const Redeem = () => {
                                             </button>
 
                                             {openMenuId === item._id && (
-                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-2 space-y-1 animate-in fade-in duration-150">
                                                     <button
                                                         onClick={() => { setScheduleModalContract(item); setScheduleModalOpen(true); setOpenMenuId(null); }}
                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"

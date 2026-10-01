@@ -413,7 +413,7 @@ const ContractFullDetailsModal = ({
                     {activeTab === 'info' && (
                         <div className="space-y-4">
                             {/* Top Overview Banner */}
-                            <div className="p-1.5 bg-gray-800/80 border border-gray-700 rounded-[5px] flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                            <div className="p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] flex flex-col sm:flex-row items-center sm:items-start gap-4">
                                 {photoUrl ? (
                                     <img
                                         src={photoUrl}
@@ -559,7 +559,7 @@ const ContractFullDetailsModal = ({
                             </div>
 
                             {contract.deviceProblem && (
-                                <div className="p-1 bg-amber-950/30 border border-amber-800/50 rounded-[5px] text-xs">
+                                <div className="p-2 bg-amber-950/30 border border-amber-800/50 rounded-[5px] text-xs">
                                     <span className="text-amber-400 block text-[10px] font-bold uppercase mb-0.5">Device Problem / Issues</span>
                                     <p className="text-amber-200 font-medium">{contract.deviceProblem}</p>
                                 </div>
@@ -571,39 +571,39 @@ const ContractFullDetailsModal = ({
                     {activeTab === 'loan' && (
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                                <div className="p-1 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Contract IID (Manual)</span>
                                     <span className="font-mono text-indigo-400 font-bold text-sm">{contract.contractIid || '—'}</span>
                                 </div>
-                                <div className="p-1 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Contract ID (Auto)</span>
                                     <span className="font-mono text-amber-300 font-bold text-sm">{contract.contractId || '—'}</span>
                                 </div>
-                                <div className="p-1 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Loan Input Date</span>
                                     <span className="font-mono text-amber-300 font-bold">{contract.inputDate || '—'}</span>
                                 </div>
-                                <div className="p-1 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Total Loan Amount</span>
                                     <span className="font-mono text-emerald-400 font-bold text-base">${Number(contract.amount || contract.totalAmount || 0).toLocaleString()}</span>
                                 </div>
-                                <div className="p-1 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Customer Received / Monthly</span>
                                     <span className="font-mono text-cyan-400 font-bold text-base">${Number(contract.monthlyPayment || 0).toLocaleString()}</span>
                                 </div>
-                                <div className="p-1 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Interest Rate</span>
                                     <span className="text-gray-100 font-bold">{contract.interest || contract.interestType || '14%'}</span>
                                 </div>
-                                <div className="p-1 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Loan Duration</span>
                                     <span className="text-gray-100 font-bold">{contract.duration || '12 Months'}</span>
                                 </div>
-                                <div className="p-1 bg-gray-800/80 rounded-[5px] border border-gray-700">
+                                <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Admin Fee</span>
                                     <span className="font-mono text-gray-200 font-bold">${Number(contract.adminFee || 0).toLocaleString()}</span>
                                 </div>
-                                <div className="p-1 bg-gray-800/80 rounded-[5px] border border-gray-700 md:col-span-2">
+                                <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700 md:col-span-2">
                                     <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Payment Summary</span>
                                     <div className="flex items-center gap-3 text-xs mt-1">
                                         <span className="text-gray-300">Paid: <strong className="text-emerald-400 font-mono">${totalPaid.toLocaleString()}</strong></span>

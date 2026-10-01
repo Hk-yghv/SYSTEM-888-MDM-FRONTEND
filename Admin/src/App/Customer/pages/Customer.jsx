@@ -246,7 +246,7 @@ const Customer = () => {
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
 
             {/* Header */}
-            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900'>{t('customer')}</h1>
@@ -795,7 +795,7 @@ const Customer = () => {
                                     </h4>
 
                                     <div className="
-                            p-1
+                            p-2
                             bg-white
                             border border-amber-200
                             rounded-[5px]
@@ -883,7 +883,7 @@ const Customer = () => {
 
                                 {/* Financial Summary */}
                                 <div className="
-                        p-1
+                        p-2
                         bg-gray-50
                         border border-gray-200
                         rounded-[5px]
@@ -1105,7 +1105,7 @@ const Customer = () => {
                                     {/* Phone Lock */}
                                     <div className="
                             group
-                            p-1
+                            p-2
                             rounded-[5px]
                             bg-gray-50
                             border border-gray-200
@@ -1181,7 +1181,7 @@ const Customer = () => {
                                     {/* Wallpaper Lock */}
                                     <div className="
                             group
-                            p-1
+                            p-2
                             rounded-[5px]
                             bg-gray-50
                             border border-gray-200
@@ -1322,7 +1322,7 @@ const Customer = () => {
                         {/* Customer Summary */}
                         <div className="
                 bg-gray-50
-                p-1
+                p-2
                 rounded-[5px]
                 border border-gray-200
                 text-left
@@ -1506,7 +1506,7 @@ const Customer = () => {
                             </div>
                             <button
                                 onClick={() => setPhotoGalleryCustomer(null)}
-                                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer transition-colors"
+                                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer transition-colors"
                             >
                                 <MdClose size={20} />
                             </button>

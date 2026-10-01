@@ -178,7 +178,7 @@ const PaymentHistory = () => {
                             </span>
                             <button
                                 onClick={closeImageViewer}
-                                className='p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-red-600 transition-colors cursor-pointer'
+                                className='p-2 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-red-600 transition-colors cursor-pointer'
                             >
                                 <FaTimes />
                             </button>
@@ -231,7 +231,7 @@ const PaymentHistory = () => {
                 </div>
             )}
             {/* Header */}
-            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col gap-3 shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col gap-3 shadow-xs'>
                 <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
                     <div className='flex items-center gap-3'>
                         <div>

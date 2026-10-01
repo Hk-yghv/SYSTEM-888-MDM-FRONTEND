@@ -54,7 +54,7 @@ const FollowUp4SubmitModal = ({
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+                        className="text-slate-400 hover:text-white p-2 rounded-lg transition-colors cursor-pointer"
                     >
                         <FaTimes size={18} />
                     </button>
@@ -64,7 +64,7 @@ const FollowUp4SubmitModal = ({
                 <form onSubmit={onSubmit} className="p-6 space-y-4">
                     {/* Brand selection for master admin */}
                     {isMasterAdmin && (
-                        <div className="bg-slate-900/50 p-1 rounded-lg border border-slate-700/80 mb-2">
+                        <div className="bg-slate-900/50 p-2 rounded-lg border border-slate-700/80 mb-2">
                             <label className="block text-xs font-semibold text-emerald-400 mb-1">BRAND (Master Admin)</label>
                             <select
                                 value={formData.brand}
@@ -262,7 +262,7 @@ const FollowUp4SubmitModal = ({
                             placeholder="ការបរិយាយបន្ថែម..."
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full bg-slate-900 text-slate-100 text-xs p-1 rounded border border-slate-700 outline-none focus:border-emerald-500"
+                            className="w-full bg-slate-900 text-slate-100 text-xs p-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
                         />
                     </div>
 

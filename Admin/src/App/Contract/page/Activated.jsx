@@ -352,7 +352,7 @@ const Activated = () => {
                         </div>
 
                         <form onSubmit={handleConfirmRedeem} className="space-y-4">
-                            <div className="p-1 bg-purple-50 border border-purple-200 rounded-[5px] text-xs space-y-1">
+                            <div className="p-2 bg-purple-50 border border-purple-200 rounded-[5px] text-xs space-y-1">
                                 <p className="font-bold text-purple-900">អតិថិជន៖ {redeemItem.customerNameEn} ({redeemItem.customerNameKh})</p>
                                 <p className="text-purple-700 font-mono">ម៉ូឌែល/Serial: {redeemItem.model} • {redeemItem.serialNumber}</p>
                             </div>
@@ -394,7 +394,7 @@ const Activated = () => {
             )}
 
             {/* Header */}
-            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('activated')}</span>
@@ -530,7 +530,7 @@ const Activated = () => {
                                                     </button>
 
                                                     {openMenuId === item._id && (
-                                                        <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                        <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-2 space-y-1 animate-in fade-in duration-150">
                                                             {matchingCalcSchedule && (
                                                                 <button
                                                                     onClick={() => {
@@ -657,7 +657,7 @@ const Activated = () => {
                             <button type="button" onClick={() => setSelectedCommentItem(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold">✕</button>
                         </div>
 
-                        <div className="p-1 bg-gray-900/60 rounded-[5px] border border-gray-800 text-xs">
+                        <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800 text-xs">
                             <p className="text-gray-400">Customer: <span className="text-gray-100 font-bold">{selectedCommentItem.customerNameEn}</span></p>
                             <p className="text-gray-400">Model: <span className="text-gray-200 font-semibold">{selectedCommentItem.model}</span></p>
                         </div>
@@ -670,7 +670,7 @@ const Activated = () => {
                                 value={commentInput}
                                 onChange={(e) => setCommentInput(e.target.value)}
                                 placeholder="Type comment or notes about this contract..."
-                                className="w-full p-1 bg-gray-900 border border-gray-700 rounded-[5px] text-xs text-gray-100 outline-none focus:border-cyan-500 font-sans"
+                                className="w-full p-2 bg-gray-900 border border-gray-700 rounded-[5px] text-xs text-gray-100 outline-none focus:border-cyan-500 font-sans"
                             ></textarea>
                         </div>
 

@@ -621,7 +621,7 @@ const FollowUp1 = () => {
             {/* KPI Summary Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 {/* Total Records */}
-                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>កំណត់ត្រាសរុប</span>
                         <FaListUl className="text-slate-500" size={13} />
@@ -633,7 +633,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Total Messages */}
-                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalMessages')}</span>
                         <FaComments className="text-blue-500" size={13} />
@@ -645,7 +645,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* No Response */}
-                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('noResponse') || 'មិនឆ្លើយតប'}</span>
                         <FaCommentSlash className="text-slate-500" size={13} />
@@ -657,7 +657,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Total Requested */}
-                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalRequested') || 'សរុបបានស្នើរ'}</span>
                         <FaQuestionCircle className="text-amber-500" size={13} />
@@ -669,7 +669,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Review */}
-                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>កំពុងពិនិត្យ</span>
                         <MdOutlineRateReview className="text-indigo-500" size={15} />
@@ -681,7 +681,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Total Failed */}
-                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalFailed') || 'សរុបបរាជ័យ'}</span>
                         <FaTimesCircle className="text-rose-500" size={13} />
@@ -693,7 +693,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Total Success & Rate */}
-                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalSuccess') || 'សរុបជោគជ័យ'}</span>
                         <FaCheckCircle className="text-emerald-500" size={13} />
@@ -894,7 +894,7 @@ const FollowUp1 = () => {
                                                         {hasPermission('/follow-up/follow-up-1', 'edit') && (
                                                             <button
                                                                 onClick={() => handleOpenEdit(item)}
-                                                                className="p-1.5 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
+                                                                className="p-2 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
                                                                 title="កែប្រែ"
                                                             >
                                                                 <FaEdit size={14} />
@@ -903,7 +903,7 @@ const FollowUp1 = () => {
                                                         {hasPermission('/follow-up/follow-up-1', 'delete') && (
                                                             <button
                                                                 onClick={() => handleDelete(item)}
-                                                                className="p-1.5 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
+                                                                className="p-2 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
                                                                 title="លុប"
                                                             >
                                                                 <FaTrashAlt size={13} />
@@ -983,7 +983,7 @@ const FollowUp1 = () => {
                             </h2>
                             <button
                                 onClick={() => setIsFormOpen(false)}
-                                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer"
+                                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-2 cursor-pointer"
                             >
                                 &times;
                             </button>
@@ -992,7 +992,7 @@ const FollowUp1 = () => {
                         {/* Modal Body */}
                         <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
                             {/* Follow Up 2 Sync Banner */}
-                            <div className="p-1 bg-emerald-500/10 border border-emerald-500/30 rounded-[5px] flex items-center justify-between gap-2">
+                            <div className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-[5px] flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
                                     <MdOutlineSync className={`text-emerald-600 text-base shrink-0 ${fetchingFu2 ? 'animate-spin' : ''}`} />
                                     <span>
@@ -1209,7 +1209,7 @@ const FollowUp1 = () => {
                             </h2>
                             <button
                                 onClick={() => setIsExportModalOpen(false)}
-                                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer"
+                                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-2 cursor-pointer"
                             >
                                 &times;
                             </button>
@@ -1226,7 +1226,7 @@ const FollowUp1 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setExportFormat('excel')}
-                                        className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'excel'
+                                        className={`p-2 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'excel'
                                             ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-emerald-500/10'
                                             }`}
@@ -1238,7 +1238,7 @@ const FollowUp1 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setExportFormat('pdf')}
-                                        className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'pdf'
+                                        className={`p-2 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'pdf'
                                             ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-500/20'
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-rose-500/10'
                                             }`}
@@ -1303,7 +1303,7 @@ const FollowUp1 = () => {
 
                             {/* Custom Date Range Picker */}
                             {exportScope === 'custom' && (
-                                <div className="p-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-[5px] space-y-3 animate-in fade-in duration-200">
+                                <div className="p-2 bg-emerald-500/5 border border-emerald-500/20 rounded-[5px] space-y-3 animate-in fade-in duration-200">
                                     <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
                                         ជ្រើសរើសពីថ្ងៃណា ដល់ថ្ងៃណា:
                                     </div>
@@ -1331,7 +1331,7 @@ const FollowUp1 = () => {
                             )}
 
                             {/* Info Box */}
-                            <div className="p-1 bg-slate-100 dark:bg-slate-800/80 rounded-[5px] text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            <div className="p-2 bg-slate-100 dark:bg-slate-800/80 rounded-[5px] text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                 <p className="font-semibold flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 mb-1">
                                     <FaCheckCircle size={13} />
                                     <span>{t('summaryTable')}</span>

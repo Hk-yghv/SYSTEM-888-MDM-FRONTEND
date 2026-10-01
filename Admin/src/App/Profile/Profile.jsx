@@ -111,7 +111,7 @@ const Profile = () => {
             </div>
 
             {message && (
-                <div className="p-1 rounded-[5px] bg-indigo-950/80 border border-indigo-700 text-indigo-200 text-xs font-semibold animate-fade-in">
+                <div className="p-2 rounded-[5px] bg-indigo-950/80 border border-indigo-700 text-indigo-200 text-xs font-semibold animate-fade-in">
                     {message}
                 </div>
             )}
@@ -122,7 +122,7 @@ const Profile = () => {
                 <div className="space-y-6">
                     {/* Account Summary Card */}
                     <div className="p-6 rounded-3xl glass-card border border-gray-800 space-y-5 text-center shadow-xl">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 p-1 mx-auto shadow-2xl icon-animated-glow">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 p-2 mx-auto shadow-2xl icon-animated-glow">
                             <div className="w-full h-full rounded-full bg-gray-900 flex items-center justify-center">
                                 <FaUserCircle className="text-5xl text-indigo-300" />
                             </div>
@@ -277,7 +277,7 @@ const Profile = () => {
                                     />
                                 </div>
 
-                                <div className="p-1 rounded-[5px] bg-gray-900/80 border border-gray-800 text-[11px] text-gray-300 space-y-2 leading-relaxed">
+                                <div className="p-2 rounded-[5px] bg-gray-900/80 border border-gray-800 text-[11px] text-gray-300 space-y-2 leading-relaxed">
                                     <p className="font-bold text-amber-400 flex items-center gap-1">
                                         📌 Telegram Bot Setup Guide / ការណែនាំភ្ជាប់ Telegram Bot:
                                     </p>

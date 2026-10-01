@@ -267,7 +267,7 @@ const InstallmentReport = () => {
                 <div className="space-y-4">
                     {/* KPI Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg">
                                 <FaWallet />
                             </div>
@@ -277,7 +277,7 @@ const InstallmentReport = () => {
                             </div>
                         </div>
 
-                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-lg">
                                 <FaDollarSign />
                             </div>
@@ -287,7 +287,7 @@ const InstallmentReport = () => {
                             </div>
                         </div>
 
-                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center text-lg">
                                 <FaMoneyBillWave />
                             </div>
@@ -297,7 +297,7 @@ const InstallmentReport = () => {
                             </div>
                         </div>
 
-                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg">
                                 <FaUsers />
                             </div>

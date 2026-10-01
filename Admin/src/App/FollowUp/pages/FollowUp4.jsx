@@ -1198,7 +1198,7 @@ const FollowUp4 = () => {
                                                                         {hasPermission('/follow-up/follow-up-4', 'edit') && (
                                                                             <button
                                                                                 onClick={() => handleOpenEditSubmitForm(item)}
-                                                                                className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
+                                                                                className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
                                                                                 title="កែប្រែ"
                                                                             >
                                                                                 <FaEdit size={14} />
@@ -1207,7 +1207,7 @@ const FollowUp4 = () => {
                                                                         {hasPermission('/follow-up/follow-up-4', 'delete') && (
                                                                             <button
                                                                                 onClick={() => setDeleteModalItem(item)}
-                                                                                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
+                                                                                className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
                                                                                 title="លុប"
                                                                             >
                                                                                 <FaTrashAlt size={13} />

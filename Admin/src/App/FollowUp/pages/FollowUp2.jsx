@@ -1078,7 +1078,7 @@ const FollowUp2 = () => {
                                                             {imgList.length > 0 ? (
                                                                 <div
                                                                     onClick={() => handleOpenImageViewer(imgList, 0)}
-                                                                    className="inline-flex items-center gap-1.5 cursor-pointer group p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                                                                    className="inline-flex items-center gap-1.5 cursor-pointer group p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                                                                     title="ចុចដើម្បីមើលរូបភាពធំ"
                                                                 >
                                                                     <div className="w-8 h-8 rounded-md overflow-hidden border border-indigo-400 shadow-2xs relative flex-shrink-0 bg-slate-100">
@@ -1132,7 +1132,7 @@ const FollowUp2 = () => {
                                                                 {hasPermission('/follow-up/follow-up-2', 'edit') && (
                                                                     <button
                                                                         onClick={() => handleOpenEdit(item)}
-                                                                        className="p-1.5 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
+                                                                        className="p-2 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
                                                                         title="កែប្រែ"
                                                                     >
                                                                         <FaEdit size={14} />
@@ -1141,7 +1141,7 @@ const FollowUp2 = () => {
                                                                 {hasPermission('/follow-up/follow-up-2', 'delete') && (
                                                                     <button
                                                                         onClick={() => handleDelete(item)}
-                                                                        className="p-1.5 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
+                                                                        className="p-2 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
                                                                         title="លុប"
                                                                     >
                                                                         <FaTrashAlt size={13} />
@@ -1272,7 +1272,7 @@ const FollowUp2 = () => {
                             </h2>
                             <button
                                 onClick={() => setIsFormOpen(false)}
-                                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer"
+                                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-2 cursor-pointer"
                             >
                                 &times;
                             </button>
@@ -1282,7 +1282,7 @@ const FollowUp2 = () => {
                         <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
                             {/* ⚡ Auto-Fill Notification Banner when previous match detected */}
                             {detectedMatch && (
-                                <div className="p-1 rounded-[5px] bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex items-center justify-between gap-3 animate-in fade-in">
+                                <div className="p-2 rounded-[5px] bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex items-center justify-between gap-3 animate-in fade-in">
                                     <div>
                                         <p className="text-xs font-bold text-emerald-900">
                                             ⚡ រកឃើញទិន្នន័យអតិថិជនធ្លាប់បញ្ចូលពីមុន៖ {detectedMatch.customerName} {detectedMatch.phone ? `(${detectedMatch.phone})` : ''}
@@ -1302,7 +1302,7 @@ const FollowUp2 = () => {
                                         <button
                                             type="button"
                                             onClick={() => setDetectedMatch(null)}
-                                            className="p-1 text-slate-400 hover:text-slate-600 rounded"
+                                            className="p-2 text-slate-400 hover:text-slate-600 rounded"
                                         >
                                             &times;
                                         </button>
@@ -1458,7 +1458,7 @@ const FollowUp2 = () => {
                             </div>
 
                             {/* Multiple Images Upload Box */}
-                            <div className="p-1.5 bg-slate-500/5 rounded-[5px] border border-dashed border-indigo-300 dark:border-indigo-700/60 space-y-3">
+                            <div className="p-2 bg-slate-500/5 rounded-[5px] border border-dashed border-indigo-300 dark:border-indigo-700/60 space-y-3">
                                 <div className="flex items-center justify-between">
                                     <label className="text-xs font-bold text-[var(--app-text,#334155)] flex items-center gap-1.5">
                                         <FaCamera className="text-indigo-600" size={14} />
@@ -1471,7 +1471,7 @@ const FollowUp2 = () => {
 
                                 {/* Custom Upload Button */}
                                 <div>
-                                    <label className="flex items-center justify-center gap-2 p-1 bg-[var(--app-card,#ffffff)] hover:bg-indigo-500/10 border border-indigo-300 dark:border-indigo-700 rounded-[5px] cursor-pointer transition-all text-xs font-semibold text-indigo-600 dark:text-indigo-400 shadow-2xs">
+                                    <label className="flex items-center justify-center gap-2 p-2 bg-[var(--app-card,#ffffff)] hover:bg-indigo-500/10 border border-indigo-300 dark:border-indigo-700 rounded-[5px] cursor-pointer transition-all text-xs font-semibold text-indigo-600 dark:text-indigo-400 shadow-2xs">
                                         <MdCloudUpload size={18} />
                                         <span>ចុចទីនេះដើម្បីជ្រើសរើសរូបភាព (អាចជ្រើសរើសបានច្រើនសន្លឹក)</span>
                                         <input
@@ -1499,7 +1499,7 @@ const FollowUp2 = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleRemoveSelectedImage(imgIdx)}
-                                                    className="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity shadow-sm cursor-pointer"
+                                                    className="absolute top-1 right-1 p-2 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity shadow-sm cursor-pointer"
                                                     title="លុបរូបភាពនេះ"
                                                 >
                                                     <FaTimes size={10} />
@@ -1642,14 +1642,14 @@ const FollowUp2 = () => {
                             <>
                                 <button
                                     onClick={() => setPreviewIndex(prev => (prev > 0 ? prev - 1 : previewImages.length - 1))}
-                                    className="absolute left-2 sm:-left-12 top-1/2 -translate-y-1/2 p-1 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
+                                    className="absolute left-2 sm:-left-12 top-1/2 -translate-y-1/2 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
                                     title="Previous"
                                 >
                                     <FaChevronLeft size={18} />
                                 </button>
                                 <button
                                     onClick={() => setPreviewIndex(prev => (prev < previewImages.length - 1 ? prev + 1 : 0))}
-                                    className="absolute right-2 sm:-right-12 top-1/2 -translate-y-1/2 p-1 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
+                                    className="absolute right-2 sm:-right-12 top-1/2 -translate-y-1/2 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
                                     title="Next"
                                 >
                                     <FaChevronRight size={18} />
@@ -1658,7 +1658,7 @@ const FollowUp2 = () => {
                         )}
 
                         {/* Counter & Thumbnails Bar */}
-                        <div className="mt-4 flex items-center gap-2 overflow-x-auto p-1 bg-black/40 rounded-[5px]">
+                        <div className="mt-4 flex items-center gap-2 overflow-x-auto p-2 bg-black/40 rounded-[5px]">
                             {previewImages.map((img, idx) => (
                                 <img
                                     key={idx}
@@ -1686,7 +1686,7 @@ const FollowUp2 = () => {
                             </h2>
                             <button
                                 onClick={() => setIsExportModalOpen(false)}
-                                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer"
+                                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-2 cursor-pointer"
                             >
                                 &times;
                             </button>
@@ -1703,7 +1703,7 @@ const FollowUp2 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setExportFormat('excel')}
-                                        className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'excel'
+                                        className={`p-2 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'excel'
                                             ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-emerald-500/10'
                                             }`}
@@ -1715,7 +1715,7 @@ const FollowUp2 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setExportFormat('pdf')}
-                                        className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'pdf'
+                                        className={`p-2 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'pdf'
                                             ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-500/20'
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-rose-500/10'
                                             }`}
@@ -1780,7 +1780,7 @@ const FollowUp2 = () => {
 
                             {/* Custom Date Range Picker */}
                             {exportScope === 'custom' && (
-                                <div className="p-1.5 bg-indigo-500/5 border border-indigo-500/20 rounded-[5px] space-y-3 animate-in fade-in duration-200">
+                                <div className="p-2 bg-indigo-500/5 border border-indigo-500/20 rounded-[5px] space-y-3 animate-in fade-in duration-200">
                                     <div className="text-xs font-bold text-indigo-800 dark:text-indigo-300">
                                         ជ្រើសរើសពីថ្ងៃណា ដល់ថ្ងៃណា:
                                     </div>
@@ -1808,7 +1808,7 @@ const FollowUp2 = () => {
                             )}
 
                             {/* Info Box */}
-                            <div className="p-1 bg-slate-100 dark:bg-slate-800/80 rounded-[5px] text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            <div className="p-2 bg-slate-100 dark:bg-slate-800/80 rounded-[5px] text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                 <p className="font-semibold flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 mb-1">
                                     <FaCheckCircle size={13} />
                                     <span>{t('summaryTable')}</span>

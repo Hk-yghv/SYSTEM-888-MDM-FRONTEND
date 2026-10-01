@@ -161,7 +161,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
                 </div>
 
                 {/* Customer Quick Summary Pill */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-slate-50 p-1 rounded-[5px] border border-slate-200">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-slate-50 p-2 rounded-[5px] border border-slate-200">
                     <div>
                         <span className="text-[10px] text-slate-400 block font-semibold uppercase">Device Model</span>
                         <span className="font-bold text-slate-800">{contract.model || '—'}</span>
@@ -203,7 +203,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
                                     </div>
 
                                     {/* Event Card */}
-                                    <div className="p-1 bg-white border border-slate-200 rounded-[5px] shadow-xs hover:border-indigo-300 transition-all space-y-1">
+                                    <div className="p-2 bg-white border border-slate-200 rounded-[5px] shadow-xs hover:border-indigo-300 transition-all space-y-1">
                                         <div className="flex items-center justify-between">
                                             <span className="font-bold text-slate-900 text-xs">{evt.title}</span>
                                             <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase border ${evt.badgeColor}`}>

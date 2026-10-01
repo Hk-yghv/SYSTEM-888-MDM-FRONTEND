@@ -67,7 +67,7 @@ const DateRangeDropdown = ({
                 <div
                     role="dialog"
                     aria-label={defaultLabel}
-                    className="absolute right-0 top-full z-50 mt-2 w-72 rounded-[5px] border border-slate-200 bg-white p-1 shadow-xl"
+                    className="absolute right-0 top-full z-50 mt-2 w-72 rounded-[5px] border border-slate-200 bg-white p-2 shadow-xl"
                 >
                     <div className="grid grid-cols-2 gap-2">
                         <label className="flex min-w-0 flex-col gap-1 text-[11px] font-semibold text-slate-600">

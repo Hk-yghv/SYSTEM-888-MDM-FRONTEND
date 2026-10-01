@@ -731,7 +731,7 @@ const SalaryPage = () => {
                 </div>
 
                 {/* Search Staff Bar */}
-                <div className="bg-[var(--app-card,white)] p-1 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex items-center justify-between gap-3">
+                <div className="bg-[var(--app-card,white)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex items-center justify-between gap-3">
                     <div className="relative flex-1">
                         <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                         <input
@@ -895,7 +895,7 @@ const SalaryPage = () => {
         <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-4 relative min-h-screen">
             {/* Admin Switcher Top Banner */}
             {isAdmin && selectedStaff && (
-                <div className="p-1 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[5px] shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-700">
+                <div className="p-2 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[5px] shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-700">
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
@@ -937,7 +937,7 @@ const SalaryPage = () => {
             )}
 
             {/* Header Bar */}
-            <header className="p-1 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+            <header className="p-2 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
                 <div>
                     <div>
                         <h1 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
@@ -1218,7 +1218,7 @@ const SalaryPage = () => {
                                 <button
                                     type="button"
                                     onClick={() => setTempQrCodePhoto('')}
-                                    className="text-rose-500 hover:text-rose-700 text-xs p-1"
+                                    className="text-rose-500 hover:text-rose-700 text-xs p-2"
                                     title={t('delete')}
                                 >
                                     <FaTimes />
@@ -1323,7 +1323,7 @@ const SalaryPage = () => {
             />
 
             {/* Filter & Search Bar */}
-            <div className="bg-[var(--app-card,white)] p-1 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-[var(--app-card,white)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[260px]">
                     <div className="relative flex-1">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
@@ -1485,7 +1485,7 @@ const SalaryPage = () => {
                                             {hasPermission('/salary', 'edit') && (
                                                 <button
                                                     onClick={() => handleOpenEdit(item)}
-                                                    className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-md transition-colors cursor-pointer"
+                                                    className="p-2 text-amber-600 hover:bg-amber-50 rounded-md transition-colors cursor-pointer"
                                                     title={t('edit')}
                                                 >
                                                     <FaEdit size={13} />
@@ -1494,7 +1494,7 @@ const SalaryPage = () => {
                                             {hasPermission('/salary', 'delete') && (
                                                 <button
                                                     onClick={() => handleDelete(item._id || item.id)}
-                                                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                                                    className="p-2 text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
                                                     title={t('delete')}
                                                 >
                                                     <FaTrash size={12} />
@@ -1510,7 +1510,7 @@ const SalaryPage = () => {
 
                 {/* Pagination */}
                 {total > itemsPerPage && (
-                    <div className="p-1 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
+                    <div className="p-2 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
                         <Pagination
                             currentPage={currentPage}
                             totalItems={total}
@@ -1573,7 +1573,7 @@ const SalaryPage = () => {
                                 </button>
                                 <button
                                     onClick={() => setPreviewImage(null)}
-                                    className="text-slate-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
+                                    className="text-slate-400 hover:text-white p-2 rounded-md transition-colors cursor-pointer"
                                     title="បិទ (Close)"
                                 >
                                     <FaTimes size={16} />
@@ -1620,7 +1620,7 @@ const CreateEditSalaryModal = ({
                     </h3>
                     <button
                         onClick={() => setOpenModal(false)}
-                        className="text-white/80 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
+                        className="text-white/80 hover:text-white p-2 rounded-md transition-colors cursor-pointer"
                     >
                         <FaTimes size={16} />
                     </button>
@@ -1790,7 +1790,7 @@ const CreateEditSalaryModal = ({
 
                             {/* Preview Box */}
                             {formData.proofPhoto && (
-                                <div className="relative inline-block border border-slate-300 dark:border-slate-700 rounded-[5px] overflow-hidden p-1 bg-slate-50 dark:bg-slate-800">
+                                <div className="relative inline-block border border-slate-300 dark:border-slate-700 rounded-[5px] overflow-hidden p-2 bg-slate-50 dark:bg-slate-800">
                                     <img
                                         src={formData.proofPhoto}
                                         alt="Receipt Preview"
@@ -1799,7 +1799,7 @@ const CreateEditSalaryModal = ({
                                     <button
                                         type="button"
                                         onClick={() => setFormData({ ...formData, proofPhoto: '' })}
-                                        className="absolute top-2 right-2 bg-rose-600 text-white p-1 rounded-full text-[9px] hover:bg-rose-500 cursor-pointer shadow-md"
+                                        className="absolute top-2 right-2 bg-rose-600 text-white p-2 rounded-full text-[9px] hover:bg-rose-500 cursor-pointer shadow-md"
                                         title="ដករូបចេញ"
                                     >
                                         <FaTimes />
