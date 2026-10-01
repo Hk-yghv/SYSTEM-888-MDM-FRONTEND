@@ -330,6 +330,64 @@ router.get('/accounts/:id/chats', async (req, res) => {
     }
 });
 
+// ── GET /api/telegram/accounts/:id/forum-topics/:chatId
+router.get('/accounts/:id/forum-topics/:chatId', async (req, res) => {
+    const owner = getOwner(req);
+    if (!owner) return res.status(401).json({ error: 'Unauthorized' });
+
+    const account = await getOwnedAccount(owner, req.params.id);
+    if (!account || (account.accountType || 'bot') !== 'user') {
+        return res.status(404).json({ error: 'Telegram user account not found' });
+    }
+
+    let client;
+    try {
+        client = await openUserClient(account);
+        const dialogs = await client.getDialogs({ limit: 500 });
+        const dialog = dialogs.find(item => String(item.id) === String(req.params.chatId));
+        if (!dialog?.entity) return res.status(404).json({ error: 'Telegram group not found in this user account' });
+
+        const topics = [];
+        const seenTopicIds = new Set();
+        let offsetDate = 0;
+        let offsetId = 0;
+        let offsetTopic = 0;
+
+        for (let pageNumber = 0; pageNumber < 20; pageNumber += 1) {
+            const page = await client.invoke(new Api.messages.GetForumTopics({
+                channel: dialog.entity,
+                offsetDate,
+                offsetId,
+                offsetTopic,
+                limit: 100
+            }));
+            const pageTopics = page.topics || [];
+            for (const topic of pageTopics) {
+                const topicId = String(topic.id);
+                if (!seenTopicIds.has(topicId) && topic.title) {
+                    seenTopicIds.add(topicId);
+                    topics.push({ id: topicId, name: topic.title, closed: Boolean(topic.closed) });
+                }
+            }
+
+            if (pageTopics.length < 100 || topics.length >= Number(page.count || 0)) break;
+            const lastTopic = pageTopics[pageTopics.length - 1];
+            const topMessage = page.messages?.find(message => Number(message.id) === Number(lastTopic.topMessage));
+            if (!topMessage || seenTopicIds.size === pageTopics.length) break;
+            offsetDate = Number(topMessage.date) || 0;
+            offsetId = Number(lastTopic.topMessage) || 0;
+            offsetTopic = Number(lastTopic.id) || 0;
+        }
+
+        return res.json({ topics });
+    } catch (err) {
+        console.error('[Telegram] Forum topics fetch failed:', err.message);
+        return res.status(400).json({ error: err.message || 'Could not load Telegram forum topics' });
+    } finally {
+        if (client) await client.disconnect().catch(() => {});
+    }
+});
+
 // ── GET /api/telegram/accounts/:id/chats/:chatId/messages
 router.get('/accounts/:id/chats/:chatId/messages', async (req, res) => {
     const owner = getOwner(req);

@@ -316,6 +316,11 @@ const TelegramPage = () => {
   const [newChatTargetId, setNewChatTargetId] = useState("");
   const [newChatName, setNewChatName] = useState("");
   const [newChatType, setNewChatType] = useState("personal"); // personal, group, channel
+  const [newChatGroupMode, setNewChatGroupMode] = useState("regular");
+  const [topicUserAccountId, setTopicUserAccountId] = useState("");
+  const [forumTopics, setForumTopics] = useState([]);
+  const [selectedForumTopicId, setSelectedForumTopicId] = useState("");
+  const [isLoadingForumTopics, setIsLoadingForumTopics] = useState(false);
   const [newChatInitialMessage, setNewChatInitialMessage] = useState("");
   const [isSendingNewChat, setIsSendingNewChat] = useState(false);
   const [newChatError, setNewChatError] = useState("");
@@ -586,8 +591,13 @@ const TelegramPage = () => {
             rawDate: msg.date
           };
 
+          const messageThreadId = msg.message_thread_id ? String(msg.message_thread_id) : null;
+          const chatStorageId = messageThreadId ? `${chatId}:topic:${messageThreadId}` : chatId;
           processedUpdates.push({
             chatId,
+            chatStorageId,
+            messageThreadId,
+            topicName: msg.forum_topic_created?.name || null,
             chatTitle,
             chatType,
             chatUsername: msg.chat.username ? `@${msg.chat.username}` : "",
@@ -602,8 +612,9 @@ const TelegramPage = () => {
 
             let updatedChats = [...(acc.chats || [])];
 
-            processedUpdates.forEach(({ chatId, chatTitle, chatType, chatUsername, msgObj }) => {
-              const existingChatIndex = updatedChats.findIndex((c) => String(c.id) === chatId);
+            processedUpdates.forEach(({ chatId, chatStorageId, messageThreadId, topicName, chatTitle, chatType, chatUsername, msgObj }) => {
+              const existingChatIndex = updatedChats.findIndex((c) => String(c.id) === chatStorageId);
+              const topicChatName = topicName || updatedChats[existingChatIndex]?.topicName;
 
               if (existingChatIndex >= 0) {
                 const existingChat = updatedChats[existingChatIndex];
@@ -616,7 +627,10 @@ const TelegramPage = () => {
                   const isCurrentlyActive = activeChatId === chatId && activeAccountId === acc.id;
                   updatedChats[existingChatIndex] = {
                     ...existingChat,
-                    name: chatTitle,
+                    name: messageThreadId
+                      ? existingChat.customName || `${chatTitle} · ${topicChatName || `Topic ${messageThreadId}`}`
+                      : existingChat.customName || chatTitle,
+                    topicName: topicChatName,
                     username: chatUsername || existingChat.username,
                     unreadCount: isCurrentlyActive
                       ? 0
@@ -627,8 +641,13 @@ const TelegramPage = () => {
               } else {
                 // Create new chat
                 updatedChats.unshift({
-                  id: chatId,
-                  name: chatTitle,
+                  id: chatStorageId,
+                  telegramChatId: chatId,
+                  messageThreadId,
+                  topicName,
+                  name: messageThreadId
+                    ? `${chatTitle} · ${topicName || `Topic ${messageThreadId}`}`
+                    : chatTitle,
                   type: chatType,
                   username: chatUsername,
                   unreadCount: msgObj.sender === "them" ? 1 : 0,
@@ -1148,8 +1167,9 @@ const TelegramPage = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chat_id: activeChat.id,
-          text: text
+          chat_id: activeChat.telegramChatId || activeChat.id,
+          text,
+          ...(activeChat.messageThreadId ? { message_thread_id: Number(activeChat.messageThreadId) } : {})
         })
       });
 
@@ -1273,7 +1293,10 @@ const TelegramPage = () => {
       }
 
       const formData = new FormData();
-      formData.append("chat_id", activeChat.id);
+      formData.append("chat_id", activeChat.telegramChatId || activeChat.id);
+      if (activeChat.messageThreadId) {
+        formData.append("message_thread_id", activeChat.messageThreadId);
+      }
 
       let apiMethod = "sendDocument";
       if (isImage) {
@@ -1410,12 +1433,49 @@ const TelegramPage = () => {
     setIsRecordingVoice(false);
   };
 
+  const loadForumTopics = async () => {
+    const groupId = newChatTargetId.trim();
+    const userAccount = accounts.find((account) => account.id === topicUserAccountId)
+      || accounts.find((account) => account.type === "user");
+    if (!groupId) {
+      setNewChatError("សូមបញ្ចូល Group ID ជាមុនសិន");
+      return;
+    }
+    if (!userAccount) {
+      setNewChatError("សូមភ្ជាប់ Telegram User Account ដែលបានចូលក្នុង Group នេះជាមុនសិន");
+      return;
+    }
+
+    setIsLoadingForumTopics(true);
+    setNewChatError("");
+    setForumTopics([]);
+    setSelectedForumTopicId("");
+    try {
+      const response = await fetch(
+        `${API_BASE}/telegram/accounts/${userAccount.id}/forum-topics/${encodeURIComponent(groupId)}`,
+        { headers: getAuthHeaders() }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "មិនអាចទាញ Topic បានទេ");
+      setForumTopics(data.topics || []);
+      if (!data.topics?.length) setNewChatError("រកមិនឃើញ Topic ក្នុង Group នេះទេ");
+    } catch (error) {
+      setNewChatError(error.message || "មិនអាចទាញ Topic បានទេ");
+    } finally {
+      setIsLoadingForumTopics(false);
+    }
+  };
+
   // Real Telegram API: Create New Chat and Send First Message
   const handleCreateNewChat = async (e) => {
     e.preventDefault();
     const targetChatId = newChatTargetId.trim();
     if (!targetChatId || !activeAccount?.botToken) {
       setNewChatError("សូមបញ្ចូល Telegram Chat ID ឬ Username");
+      return;
+    }
+    if (newChatType === "group" && newChatGroupMode === "topic" && !selectedForumTopicId) {
+      setNewChatError("សូមទាញ និងជ្រើស Topic មួយជាមុនសិន");
       return;
     }
 
@@ -1432,7 +1492,10 @@ const TelegramPage = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: targetChatId,
-          text: initialText
+          text: initialText,
+          ...(newChatType === "group" && newChatGroupMode === "topic"
+            ? { message_thread_id: Number(selectedForumTopicId) }
+            : {})
         })
       });
 
@@ -1440,13 +1503,15 @@ const TelegramPage = () => {
 
       if (data.ok && data.result) {
         const sentChat = data.result.chat;
-        const chatIdStr = String(sentChat.id);
+        const telegramChatId = String(sentChat.id);
+        const topic = forumTopics.find((item) => item.id === selectedForumTopicId);
+        const chatIdStr = topic ? `${telegramChatId}:topic:${topic.id}` : telegramChatId;
         const resolvedName =
           newChatName.trim() ||
           sentChat.title ||
           [sentChat.first_name, sentChat.last_name].filter(Boolean).join(" ") ||
           sentChat.username ||
-          `Chat ${chatIdStr}`;
+          `Chat ${telegramChatId}`;
 
         const newMsgObj = {
           id: `tg_${data.result.message_id}`,
@@ -1460,7 +1525,13 @@ const TelegramPage = () => {
 
         const newChatObj = {
           id: chatIdStr,
-          name: resolvedName,
+          telegramChatId,
+          messageThreadId: topic?.id || null,
+          topicName: topic?.name || null,
+          name: topic ? `${resolvedName} · ${topic.name}` : resolvedName,
+          customName: newChatName.trim()
+            ? (topic ? `${newChatName.trim()} · ${topic.name}` : newChatName.trim())
+            : undefined,
           type: newChatType,
           username: sentChat.username ? `@${sentChat.username}` : "",
           unreadCount: 0,
@@ -1493,6 +1564,8 @@ const TelegramPage = () => {
         setNewChatTargetId("");
         setNewChatName("");
         setNewChatInitialMessage("");
+        setForumTopics([]);
+        setSelectedForumTopicId("");
       } else {
         const desc = data.description || "";
         if (desc.includes("bot can't initiate conversation") || desc.includes("Forbidden")) {
@@ -1509,6 +1582,25 @@ const TelegramPage = () => {
     } finally {
       setIsSendingNewChat(false);
     }
+  };
+
+  const handleRenameChat = (chat) => {
+    const name = window.prompt("បញ្ចូលឈ្មោះថ្មីសម្រាប់ Chat នេះ", chat.name);
+    if (!name?.trim()) return;
+    setAccounts((previous) => previous.map((account) => account.id !== activeAccountId ? account : ({
+      ...account,
+      chats: account.chats.map((item) => item.id === chat.id
+        ? { ...item, name: name.trim(), customName: name.trim() }
+        : item)
+    })));
+  };
+
+  const handleDeleteChat = (chat) => {
+    if (!window.confirm(`លុប "${chat.name}" ចេញពីបញ្ជី Chat ក្នុងកម្មវិធីនេះ?`)) return;
+    setAccounts((previous) => previous.map((account) => account.id !== activeAccountId ? account : ({
+      ...account,
+      chats: account.chats.filter((item) => item.id !== chat.id)
+    })));
   };
 
   // Filter chats by category & search query
@@ -1878,7 +1970,7 @@ const TelegramPage = () => {
                           })
                         );
                       }}
-                      className={`p-2.5 flex items-start gap-2.5 cursor-pointer transition-all border-l-4 ${
+                      className={`group p-2.5 flex items-start gap-2.5 cursor-pointer transition-all border-l-4 ${
                         isSelected
                           ? "bg-sky-50/90 border-sky-600 shadow-2xs"
                           : "hover:bg-slate-50 border-transparent"
@@ -1906,11 +1998,35 @@ const TelegramPage = () => {
                           <h4 className="text-xs font-bold text-slate-900 truncate">
                             {chat.name}
                           </h4>
-                          {lastMsg && (
-                            <span className="text-[9px] text-slate-400 font-medium whitespace-nowrap">
-                              {lastMsg.time}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {lastMsg && (
+                              <span className="text-[9px] text-slate-400 font-medium whitespace-nowrap">
+                                {lastMsg.time}
+                              </span>
+                            )}
+                            {activeAccount?.type !== "user" && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(event) => { event.stopPropagation(); handleRenameChat(chat); }}
+                                  className="p-1 text-slate-400 hover:text-sky-700 hover:bg-sky-50 rounded cursor-pointer"
+                                  title="កែឈ្មោះ Chat"
+                                  aria-label={`កែឈ្មោះ ${chat.name}`}
+                                >
+                                  <FaEdit className="text-[10px]" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(event) => { event.stopPropagation(); handleDeleteChat(chat); }}
+                                  className="p-1 text-slate-400 hover:text-rose-700 hover:bg-rose-50 rounded cursor-pointer"
+                                  title="លុប Chat ចេញពីបញ្ជី"
+                                  aria-label={`លុប ${chat.name} ចេញពីបញ្ជី`}
+                                >
+                                  <FaTrash className="text-[10px]" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex items-center justify-between gap-2">
@@ -1964,12 +2080,13 @@ const TelegramPage = () => {
                     <div className="flex items-center gap-2">
                       <h3 className="text-xs sm:text-sm font-black text-slate-900 truncate">{activeChat.name}</h3>
                       <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[9px] font-bold uppercase flex-shrink-0">
-                        {activeChat.type}
+                        {activeChat.messageThreadId ? "group topic" : activeChat.type}
                       </span>
                     </div>
                     <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1 mt-0.2 truncate">
                       <span>Chat ID:</span>
-                      <code className="text-sky-700 font-bold bg-sky-50 px-1 py-0.2 rounded font-mono">{activeChat.id}</code>
+                      <code className="text-sky-700 font-bold bg-sky-50 px-1 py-0.2 rounded font-mono">{activeChat.telegramChatId || activeChat.id}</code>
+                      {activeChat.messageThreadId && <span>• Topic ID: {activeChat.messageThreadId}</span>}
                       {activeChat.username && <span>• {activeChat.username}</span>}
                     </div>
                   </div>
@@ -2706,11 +2823,96 @@ const TelegramPage = () => {
                   type="text"
                   placeholder="ឧ. 123456789 ឬ -100123456789 ឬ @username"
                   value={newChatTargetId}
-                  onChange={(e) => setNewChatTargetId(e.target.value)}
+                  onChange={(e) => {
+                    setNewChatTargetId(e.target.value);
+                    setForumTopics([]);
+                    setSelectedForumTopicId("");
+                  }}
                   required
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono font-medium"
                 />
               </div>
+
+              {newChatType === "group" && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-900 mb-1">ប្រភេទ Group</label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { id: "regular", label: "Group ធម្មតា" },
+                      { id: "topic", label: "Group មាន Topics" }
+                    ].map((mode) => (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => {
+                          setNewChatGroupMode(mode.id);
+                          setForumTopics([]);
+                          setSelectedForumTopicId("");
+                        }}
+                        className={`py-1.5 px-2 rounded-lg border text-xs font-bold transition-colors cursor-pointer ${
+                          newChatGroupMode === mode.id
+                            ? "bg-sky-50 border-sky-400 text-sky-700"
+                            : "border-slate-200 hover:bg-slate-50 text-slate-600"
+                        }`}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {newChatType === "group" && newChatGroupMode === "topic" && (
+                <div className="space-y-2 rounded-lg border border-slate-200 p-3 bg-slate-50">
+                  <label className="block text-xs font-bold text-slate-900" htmlFor="topic-user-account">
+                    Telegram User Account សម្រាប់ទាញ Topic
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      id="topic-user-account"
+                      value={topicUserAccountId || accounts.find((account) => account.type === "user")?.id || ""}
+                      onChange={(event) => setTopicUserAccountId(event.target.value)}
+                      className="min-w-0 flex-1 px-2 py-2 text-xs bg-white border border-slate-200 rounded-lg"
+                    >
+                      {accounts.filter((account) => account.type === "user").map((account) => (
+                        <option key={account.id} value={account.id}>{account.name}</option>
+                      ))}
+                      {!accounts.some((account) => account.type === "user") && (
+                        <option value="">គ្មាន User Account</option>
+                      )}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={loadForumTopics}
+                      disabled={isLoadingForumTopics || !accounts.some((account) => account.type === "user")}
+                      className="px-3 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 rounded-lg disabled:opacity-50 cursor-pointer"
+                    >
+                      {isLoadingForumTopics ? "កំពុងទាញ..." : "ទាញ Topics"}
+                    </button>
+                  </div>
+                  {forumTopics.length > 0 && (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-900 mb-1" htmlFor="forum-topic-select">
+                        ជ្រើស Topic
+                      </label>
+                      <select
+                        id="forum-topic-select"
+                        value={selectedForumTopicId}
+                        onChange={(event) => setSelectedForumTopicId(event.target.value)}
+                        className="w-full px-2 py-2 text-xs bg-white border border-slate-200 rounded-lg"
+                        required
+                      >
+                        <option value="">ជ្រើស Topic មួយ</option>
+                        {forumTopics.map((topic) => (
+                          <option key={topic.id} value={topic.id} disabled={topic.closed}>
+                            {topic.name}{topic.closed ? " (បិទ)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-900 mb-1">
