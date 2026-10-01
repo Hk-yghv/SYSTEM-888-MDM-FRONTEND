@@ -566,6 +566,18 @@ const CalculateSchedule2 = () => {
                         border-color: #000000 !important;
                         color: #000000 !important;
                     }
+                    #cs2-print-area .cs2-meta-grid {
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        width: 100% !important;
+                        column-gap: 48px !important;
+                    }
+                    #cs2-print-area .cs2-meta-row {
+                        display: flex !important;
+                        justify-content: space-between !important;
+                        align-items: center !important;
+                        width: 100% !important;
+                    }
                     .no-print {
                         display: none !important;
                     }
@@ -1012,46 +1024,46 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Meta Info */}
-                        <div className="px-8 py-5 grid grid-cols-2 gap-x-8 gap-y-2 text-xs">
+                        <div className="cs2-meta-grid px-4 sm:px-8 md:px-[150px] print:px-[150px] py-4 grid grid-cols-2 gap-x-12 gap-y-2 text-xs w-full">
                             {/* Left Meta */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-2">
+                            <div className="space-y-2 w-full">
+                                <div className="cs2-meta-row flex items-center justify-between w-full">
                                     <span className="whitespace-nowrap text-slate-800">ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ:</span>
-                                    <span className="text-blue-400 ml-1 font-bold">
+                                    <span className="text-blue-500 font-bold">
                                         {formatDate(result.startDate)}
                                     </span>
                                 </div>
-                                <div className="flex items-center justify-between gap-2">
+                                <div className="cs2-meta-row flex items-center justify-between w-full">
                                     <span className="text-slate-800">ចំនួនទឹកប្រាក់បញ្ចាំ:</span>
-                                    <span className="text-blue-400 ml-1 font-bold">
+                                    <span className="text-blue-500 font-bold">
                                         {result.principal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} USD
                                     </span>
                                 </div>
-                                <div className="flex items-center justify-between gap-2">
+                                <div className="cs2-meta-row flex items-center justify-between w-full">
                                     <span className="text-slate-800">រយៈពេល (ចំនួនខែ):</span>
-                                    <span className="text-blue-400 font-bold text-right ml-1">{result.months}</span>
+                                    <span className="text-blue-500 font-bold text-right">{result.months}</span>
                                 </div>
-                                <div className="flex items-center justify-between gap-2">
-                                    <span>ការប្រាក់ នឹង សេវ៉ាជួល:</span>
-                                    <span className="font-black ml-1 text-right text-blue-400">
+                                <div className="cs2-meta-row flex items-center justify-between w-full">
+                                    <span className="text-slate-800">ការប្រាក់ នឹង សេវ៉ាជួល:</span>
+                                    <span className="font-black text-right text-blue-500">
                                         {result.monthlyInterest.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
                                     </span>
                                 </div>
                             </div>
 
                             {/* Right Meta */}
-                            <div className="space-y-2 text-left">
-                                <div className='flex justify-between items-center'>
-                                    <span className="text-slate-800">ឈ្មោះអតិថិជន:&nbsp;</span>{' '}
-                                    <span className="text-blue-400 font-bold text-right">{result.customerName || '—'}</span>
+                            <div className="space-y-2 text-left w-full">
+                                <div className="cs2-meta-row flex items-center justify-between w-full">
+                                    <span className="text-slate-800">ឈ្មោះអតិថិជន:</span>
+                                    <span className="text-blue-500 font-bold text-right">{result.customerName || '—'}</span>
                                 </div>
-                                <div className='flex justify-between items-center'>
-                                    <span className="text-slate-800">ប្រភេទទ្រព្យបញ្ចាំ:&nbsp;</span>{' '}
-                                    <span className="text-blue-400 font-bold text-right">{result.assetName}</span>
+                                <div className="cs2-meta-row flex items-center justify-between w-full">
+                                    <span className="text-slate-800">ប្រភេទទ្រព្យបញ្ចាំ:</span>
+                                    <span className="text-blue-500 font-bold text-right">{result.assetName || '—'}</span>
                                 </div>
-                                <div className='flex justify-between items-center'>
-                                    <span className="text-slate-800">លេខកិច្ចសន្យា:&nbsp;</span>{' '}
-                                    <span className="text-blue-400 font-bold text-right">
+                                <div className="cs2-meta-row flex items-center justify-between w-full">
+                                    <span className="text-slate-800">លេខកិច្ចសន្យា:</span>
+                                    <span className="text-blue-500 font-bold text-right">
                                         {result.contractNumber || '—'}
                                     </span>
                                 </div>
@@ -1059,7 +1071,7 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Schedule Table */}
-                        <div className="overflow-x-auto px-8">
+                        <div className="overflow-x-auto px-4 sm:px-8 md:px-[150px] print:px-[150px]">
                             <table className="w-full border-collapse border border-black text-xs sm:text-sm">
                                 <tbody>
                                     <tr className='border border-black'>
@@ -1097,23 +1109,19 @@ const CalculateSchedule2 = () => {
                         </div>
 
                         {/* Signature Block */}
-                        <div className="w-4/5 mx-auto mt-4 px-8 pb-1 grid grid-cols-2 gap-12 text-xs text-slate-800">
-                            <div className="text-center">
-                                <p className="font-bold text-[12px] text-sm font-normal" style={{ fontFamily: 'moul' }}>តំណាងក្រុមហ៊ុន</p>
-                                <div className='flex items-center justify-center'>
-                                    <div className="mt-16 border-b border-dotted border-slate-400 mx-6 w-[150px]" />
-                                </div>
+                        <div className="w-full mt-6 px-4 sm:px-8 md:px-[150px] print:px-[150px] pb-1 grid grid-cols-2 gap-12 text-xs text-slate-800">
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <p className="text-[13px] font-bold text-slate-800" style={{ fontFamily: 'moul' }}>តំណាងក្រុមហ៊ុន</p>
+                                <div className="mt-16 border-b border-dotted border-slate-400 w-[180px]" />
                             </div>
-                            <div className="text-center">
-                                <p className="font-bold text-[12px] text-sm font-normal" style={{ fontFamily: 'moul' }}>ឈ្មោះអតិថិជន</p>
-                                <div className='flex items-center justify-center'>
-                                    <div className="mt-16 border-b border-dotted border-slate-400 mx-6 w-[150px]" />
-                                </div>
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <p className="text-[13px] font-bold text-slate-800" style={{ fontFamily: 'moul' }}>ឈ្មោះអតិថិជន</p>
+                                <div className="mt-16 border-b border-dotted border-slate-400 w-[180px]" />
                             </div>
                         </div>
 
                         {/* Address Footer */}
-                        <div className="cs2-address-footer text-center pb-4 text-[12px] pt-8 mt-6 px-8" style={{ fontFamily: 'khmer' }}>
+                        <div className="cs2-address-footer text-center pb-4 text-[12px] pt-8 mt-6 px-4 sm:px-8 md:px-[150px] print:px-[150px]" style={{ fontFamily: 'khmer' }}>
                             អាសយដ្ឋាន: អគារលេខ378A ផ្លូវ1928 ភូមិកោះអណ្តែត សង្កាត់ទួលសង្កែទី២ ខណ្ឌឬស្សីកែវ រាជធានីភ្នំពេញ
                         </div>
                     </div>
