@@ -264,6 +264,14 @@ export const verifySecurityAuth = (req, res, next) => {
 
     // Internal system key — full access
     if (systemKey === SYSTEM_API_KEY) {
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
+                req.user = decoded;
+            } catch (err) {
+                // ignore invalid token if system key is valid
+            }
+        }
         return next();
     }
 

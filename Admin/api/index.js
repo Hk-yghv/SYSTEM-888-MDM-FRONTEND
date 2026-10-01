@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',
-        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-system-api-key, X-Partner-API-Key, x-partner-api-key'
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-system-api-key, X-Partner-API-Key, x-partner-api-key, x-username, X-Username'
     );
 
     if (req.method === 'OPTIONS') {
@@ -157,6 +157,9 @@ export default async function handler(req, res) {
     }
     if (req.headers['accept']) {
         forwardHeaders['accept'] = req.headers['accept'];
+    }
+    if (req.headers['x-username']) {
+        forwardHeaders['x-username'] = req.headers['x-username'];
     }
 
     let lastError = null;

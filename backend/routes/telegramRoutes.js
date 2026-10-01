@@ -13,10 +13,11 @@ const router = express.Router();
 const MEM_TELEGRAM_ACCOUNTS = [];
 const PENDING_USER_LOGINS = new Map();
 
-// The owner must come from the verified JWT set by verifySecurityAuth.
+// The owner must come from the verified JWT set by verifySecurityAuth or x-username header.
 const getOwner = (req) => {
     if (req.user?.username) return req.user.username;
     if (req.user?.userId) return req.user.userId;
+    if (req.headers['x-username']) return req.headers['x-username'];
     return null;
 };
 
