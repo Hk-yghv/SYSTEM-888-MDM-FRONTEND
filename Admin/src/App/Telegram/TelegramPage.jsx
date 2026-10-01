@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
+import { getSecureItem } from "../../utils/secureStorage";
 import {
   FaTelegramPlane,
   FaPlus,
@@ -200,29 +201,26 @@ const TelegramPage = () => {
   const accountDropdownRef = useRef(null);
   const fileInputRef = useRef(null);
   const mediaCacheRef = useRef({});
+  const savePendingRef = useRef(null); // debounce ref for DB sync
 
-  // Storage key is scoped to the logged-in system user
-  const storageKey = `telegram_real_accounts_${user?.username || "default"}`;
+  // API base helper (mirrors AuthContext pattern)
+  const API_BASE = import.meta.env.DEV
+    ? (import.meta.env.VITE_API_BACKEND || "http://localhost:5000/api")
+    : "/api";
 
-  // Accounts state (Max 5 real accounts)
-  const [accounts, setAccounts] = useState(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.slice(0, 5);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to parse saved telegram accounts:", e);
-    }
-    return [];
-  });
+  const getAuthHeaders = () => {
+    const token = getSecureItem("mdm_token") || "";
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+  };
 
-  const [activeAccountId, setActiveAccountId] = useState(() => {
-    return accounts[0]?.id || null;
-  });
+  // Accounts state — starts empty, loaded from DB on mount
+  const [accounts, setAccounts] = useState([]);
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
+
+  const [activeAccountId, setActiveAccountId] = useState(null);
 
   const activeAccount = accounts.find((a) => a.id === activeAccountId) || accounts[0] || null;
 
@@ -273,14 +271,57 @@ const TelegramPage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Save accounts to localStorage whenever changed
+  // ── Load accounts from DB on mount
   useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(accounts));
-    } catch (e) {
-      console.error("Failed to save telegram accounts:", e);
-    }
-  }, [accounts, storageKey]);
+    const loadAccounts = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/telegram/accounts`, {
+          headers: getAuthHeaders()
+        });
+        if (!res.ok) throw new Error("load failed");
+        const data = await res.json();
+        const loaded = (data.accounts || []).map(acc => ({
+          ...acc,
+          botToken: acc.token // API returns `token` to bypass masking middleware
+        }));
+        setAccounts(loaded.slice(0, 5));
+        if (loaded.length > 0) {
+          setActiveAccountId(loaded[0].id);
+        }
+      } catch (err) {
+        console.warn("[Telegram] Could not load accounts from DB, using empty state.", err.message);
+      } finally {
+        setAccountsLoaded(true);
+      }
+    };
+    loadAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Debounced save: sync chats/lastUpdateId changes back to DB (500ms debounce)
+  useEffect(() => {
+    if (!accountsLoaded || accounts.length === 0) return;
+
+    if (savePendingRef.current) clearTimeout(savePendingRef.current);
+    savePendingRef.current = setTimeout(async () => {
+      try {
+        await Promise.all(
+          accounts.map(acc =>
+            fetch(`${API_BASE}/telegram/accounts/${acc.id}/chats`, {
+              method: "PATCH",
+              headers: getAuthHeaders(),
+              body: JSON.stringify({ chats: acc.chats || [], lastUpdateId: acc.lastUpdateId || 0 })
+            }).catch(() => {})
+          )
+        );
+      } catch {}
+    }, 500);
+
+    return () => {
+      if (savePendingRef.current) clearTimeout(savePendingRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accounts, accountsLoaded]);
 
   // Set active account if none selected
   useEffect(() => {
@@ -699,57 +740,75 @@ const TelegramPage = () => {
     const finalUsername = cleanUsername || (botInfo?.username ? `@${botInfo.username}` : "");
     const accountName = modalAccountName.trim() || botInfo?.first_name || finalUsername || "Telegram Bot";
 
+    const targetId = editingAccountId || `acc_${Date.now()}`;
+
+    const accountPayload = {
+      id: targetId,
+      name: accountName,
+      token: token, // API expects `token` field
+      color: modalColor,
+      botInfo: botInfo || { first_name: accountName, username: finalUsername.replace("@", "") },
+      username: finalUsername,
+      lastUpdateId: editingAccountId
+        ? (accounts.find(a => a.id === editingAccountId)?.lastUpdateId || 0)
+        : 0,
+      chats: editingAccountId
+        ? (accounts.find(a => a.id === editingAccountId)?.chats || [])
+        : []
+    };
+
+    // Persist to DB
+    try {
+      const res = await fetch(`${API_BASE}/telegram/accounts`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(accountPayload)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setVerifyError(err.error || "រក្សាទុកបានបរាជ័យ");
+        return;
+      }
+    } catch {
+      setVerifyError("មិនអាចភ្ជាប់ Server បានទេ");
+      return;
+    }
+
+    // Update local state (botToken = token for frontend use)
+    const localAccount = { ...accountPayload, botToken: token };
+
     if (editingAccountId) {
-      // Edit existing
-      setAccounts((prev) =>
-        prev.map((a) =>
-          a.id === editingAccountId
-            ? {
-                ...a,
-                name: accountName,
-                botToken: token,
-                color: modalColor,
-                botInfo: botInfo || a.botInfo,
-                username: finalUsername
-              }
-            : a
-        )
-      );
+      setAccounts((prev) => prev.map((a) => (a.id === editingAccountId ? localAccount : a)));
     } else {
-      // Add new (Limit to 5)
       if (accounts.length >= 5) {
         alert("អ្នកអាចភ្ជាប់គណនី Telegram បានអតិបរមាត្រឹមតែ 5 Accounts ប៉ុណ្ណោះ។");
         return;
       }
-
-      const newId = `acc_${Date.now()}`;
-      const newAccount = {
-        id: newId,
-        name: accountName,
-        botToken: token,
-        color: modalColor,
-        botInfo: botInfo || { first_name: accountName, username: finalUsername.replace("@", "") },
-        username: finalUsername,
-        lastUpdateId: 0,
-        chats: []
-      };
-
-      setAccounts((prev) => [...prev, newAccount]);
-      setActiveAccountId(newId);
+      setAccounts((prev) => [...prev, localAccount]);
+      setActiveAccountId(targetId);
     }
 
     closeAccountModal();
   };
 
   // Delete Account
-  const handleDeleteAccount = (accId, e) => {
+  const handleDeleteAccount = async (accId, e) => {
     e?.stopPropagation();
-    if (window.confirm("តើលោកអ្នកពិតជាចង់លុបគណនី Telegram នេះចេញពីប្រព័ន្ធមែនទេ?")) {
-      setAccounts((prev) => prev.filter((a) => a.id !== accId));
-      if (activeAccountId === accId) {
-        const remaining = accounts.filter((a) => a.id !== accId);
-        setActiveAccountId(remaining[0]?.id || null);
-      }
+    if (!window.confirm("តើលោកអ្នកពិតជាចង់លុបគណនី Telegram នេះចេញពីប្រព័ន្ធមែនទេ?")) return;
+
+    // Remove from DB
+    try {
+      await fetch(`${API_BASE}/telegram/accounts/${accId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders()
+      });
+    } catch {}
+
+    // Remove from local state
+    setAccounts((prev) => prev.filter((a) => a.id !== accId));
+    if (activeAccountId === accId) {
+      const remaining = accounts.filter((a) => a.id !== accId);
+      setActiveAccountId(remaining[0]?.id || null);
     }
   };
 
