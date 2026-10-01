@@ -224,6 +224,8 @@ const TelegramPage = () => {
   const [activeAccountId, setActiveAccountId] = useState(null);
 
   const activeAccount = accounts.find((a) => a.id === activeAccountId) || accounts[0] || null;
+  const botAccountCount = accounts.filter((account) => account.type !== "user").length;
+  const userAccountCount = accounts.filter((account) => account.type === "user").length;
 
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [activeChatId, setActiveChatId] = useState(null);
@@ -251,6 +253,30 @@ const TelegramPage = () => {
   const [verifyingToken, setVerifyingToken] = useState(false);
   const [verifiedBotInfo, setVerifiedBotInfo] = useState(null);
   const [verifyError, setVerifyError] = useState("");
+
+  const [isUserLoginModalOpen, setIsUserLoginModalOpen] = useState(false);
+  const [userLoginStep, setUserLoginStep] = useState("details");
+  const [userEnvironment, setUserEnvironment] = useState("production");
+  const [userAppConfigs, setUserAppConfigs] = useState({
+    production: { apiId: "", apiHash: "", appTitle: "", appShortName: "" },
+    test: { apiId: "", apiHash: "", appTitle: "", appShortName: "" }
+  });
+  const [userPhoneNumber, setUserPhoneNumber] = useState("");
+  const [userLoginCode, setUserLoginCode] = useState("");
+  const [userLoginPassword, setUserLoginPassword] = useState("");
+  const [userLoginChallengeId, setUserLoginChallengeId] = useState("");
+  const [userCodeViaApp, setUserCodeViaApp] = useState(false);
+  const [userNeedsPassword, setUserNeedsPassword] = useState(false);
+  const [userLoginBusy, setUserLoginBusy] = useState(false);
+  const [userLoginError, setUserLoginError] = useState("");
+  const selectedUserAppConfig = userAppConfigs[userEnvironment];
+
+  const updateUserAppConfig = (field, value) => {
+    setUserAppConfigs((previous) => ({
+      ...previous,
+      [userEnvironment]: { ...previous[userEnvironment], [field]: value }
+    }));
+  };
 
   // New Chat Modal States
   const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
@@ -283,9 +309,9 @@ const TelegramPage = () => {
         const data = await res.json();
         const loaded = (data.accounts || []).map(acc => ({
           ...acc,
-          botToken: acc.token // API returns `token` to bypass masking middleware
+          botToken: acc.type === "user" ? "" : acc.token // API returns `token` to bypass masking middleware
         }));
-        setAccounts(loaded.slice(0, 5));
+        setAccounts(loaded.slice(0, 10));
         if (loaded.length > 0) {
           setActiveAccountId(loaded[0].id);
         }
@@ -654,8 +680,58 @@ const TelegramPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAccount?.id, activeAccount?.botToken]);
 
-  // Real-Time Polling Effect for active account (Every 4 seconds, safe non-overlapping)
+  const syncTelegramUserChats = useCallback(async (account) => {
+    if (!account || account.type !== "user") return;
+    try {
+      const response = await fetch(`${API_BASE}/telegram/accounts/${account.id}/chats`, {
+        headers: getAuthHeaders()
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Could not load Telegram conversations");
+      setAccounts((previous) => previous.map((item) => {
+        if (item.id !== account.id) return item;
+        const oldChats = new Map((item.chats || []).map((chat) => [chat.id, chat]));
+        return {
+          ...item,
+          chats: (data.chats || []).map((chat) => ({
+            ...chat,
+            messages: [
+              ...(oldChats.get(chat.id)?.messages || []).filter((message) =>
+                !(chat.messages || []).some((latest) => latest.id === message.id)
+              ),
+              ...(chat.messages || [])
+            ].sort((left, right) => (left.rawDate || 0) - (right.rawDate || 0))
+          }))
+        };
+      }));
+      if (activeAccountId === account.id && activeChatId) {
+        const historyResponse = await fetch(`${API_BASE}/telegram/accounts/${account.id}/chats/${activeChatId}/messages`, {
+          headers: getAuthHeaders()
+        });
+        const history = await historyResponse.json().catch(() => ({}));
+        if (historyResponse.ok) {
+          setAccounts((previous) => previous.map((item) => item.id !== account.id ? item : ({
+            ...item,
+            chats: item.chats.map((chat) => chat.id === activeChatId ? { ...chat, messages: history.messages || [] } : chat)
+          })));
+        }
+      }
+      setSyncError(null);
+    } catch (err) {
+      setSyncError(err.message || "Could not sync Telegram account");
+    }
+  }, [API_BASE, activeAccountId, activeChatId, authToken, user?.username]);
+
+  // Real-Time Polling Effect for active account
   useEffect(() => {
+    if (activeAccount?.type === "user") {
+      syncTelegramUserChats(activeAccount);
+      pollingRef.current = setInterval(() => syncTelegramUserChats(activeAccount), 30000);
+      return () => {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+      };
+    }
+
     if (!activeAccount?.botToken) {
       if (pollingRef.current) clearInterval(pollingRef.current);
       return;
@@ -671,10 +747,39 @@ const TelegramPage = () => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [activeAccount?.id, activeAccount?.botToken, syncTelegramUpdates]);
+  }, [activeAccount?.id, activeAccount?.type, activeAccount?.botToken, syncTelegramUpdates, syncTelegramUserChats]);
+
+  useEffect(() => {
+    if (activeAccount?.type !== "user" || !activeChatId) return;
+    let cancelled = false;
+    const loadUserMessages = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/telegram/accounts/${activeAccount.id}/chats/${activeChatId}/messages`, {
+          headers: getAuthHeaders()
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not load Telegram messages");
+        if (cancelled) return;
+        setAccounts((previous) => previous.map((item) => item.id !== activeAccount.id ? item : ({
+          ...item,
+          chats: item.chats.map((chat) => chat.id === activeChatId ? { ...chat, messages: data.messages || [] } : chat)
+        })));
+      } catch (err) {
+        if (!cancelled) setSyncError(err.message || "Could not load Telegram messages");
+      }
+    };
+    loadUserMessages();
+    return () => { cancelled = true; };
+  }, [API_BASE, activeAccount?.id, activeAccount?.type, activeChatId, authToken, user?.username]);
 
   // Manual Refresh Button
   const handleManualSync = async () => {
+    if (activeAccount?.type === "user") {
+      setIsSyncing(true);
+      await syncTelegramUserChats(activeAccount);
+      setIsSyncing(false);
+      return;
+    }
     if (!activeAccount?.botToken) return;
     setIsSyncing(true);
     await syncTelegramUpdates(activeAccount);
@@ -721,6 +826,10 @@ const TelegramPage = () => {
   // Save Account (Add or Edit with Custom Bot Name and Custom Username)
   const handleSaveAccount = async (e) => {
     e.preventDefault();
+    if (!editingAccountId && botAccountCount >= 5) {
+      alert("អ្នកអាចភ្ជាប់ Telegram Bot បានអតិបរមា 5 គណនី។");
+      return;
+    }
     const token = modalBotToken.trim();
     if (!token) {
       setVerifyError("សូមបញ្ចូល Telegram Bot Token");
@@ -745,6 +854,7 @@ const TelegramPage = () => {
 
     const accountPayload = {
       id: targetId,
+      type: "bot",
       name: accountName,
       token: token, // API expects `token` field
       color: modalColor,
@@ -782,15 +892,95 @@ const TelegramPage = () => {
     if (editingAccountId) {
       setAccounts((prev) => prev.map((a) => (a.id === editingAccountId ? localAccount : a)));
     } else {
-      if (accounts.length >= 5) {
-        alert("អ្នកអាចភ្ជាប់គណនី Telegram បានអតិបរមាត្រឹមតែ 5 Accounts ប៉ុណ្ណោះ។");
-        return;
-      }
       setAccounts((prev) => [...prev, localAccount]);
       setActiveAccountId(targetId);
     }
 
     closeAccountModal();
+  };
+
+  const openUserLoginModal = () => {
+    setIsAccountDropdownOpen(false);
+    if (userAccountCount >= 5) {
+      alert("អ្នកអាចភ្ជាប់ Telegram Account ពិតបានអតិបរមា 5 គណនី។");
+      return;
+    }
+    setUserLoginStep("details");
+    setUserLoginChallengeId("");
+    setUserLoginCode("");
+    setUserLoginPassword("");
+    setUserNeedsPassword(false);
+    setUserLoginError("");
+    setIsUserLoginModalOpen(true);
+  };
+
+  const closeUserLoginModal = () => {
+    setIsUserLoginModalOpen(false);
+    setUserLoginStep("details");
+    setUserLoginChallengeId("");
+    setUserLoginCode("");
+    setUserLoginPassword("");
+    setUserNeedsPassword(false);
+    setUserLoginError("");
+  };
+
+  const handleRequestUserCode = async (e) => {
+    e.preventDefault();
+    setUserLoginBusy(true);
+    setUserLoginError("");
+    try {
+      const response = await fetch(`${API_BASE}/telegram/user-auth/send-code`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          ...selectedUserAppConfig,
+          phoneNumber: userPhoneNumber.trim(),
+          environment: userEnvironment,
+          color: COLOR_PALETTE[(accounts.length + 1) % COLOR_PALETTE.length]
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "មិនអាចផ្ញើលេខកូដបានទេ");
+      setUserLoginChallengeId(data.challengeId);
+      setUserCodeViaApp(Boolean(data.codeSentViaApp));
+      setUserLoginStep("verify");
+    } catch (err) {
+      setUserLoginError(err.message || "មិនអាចភ្ជាប់ Telegram បានទេ");
+    } finally {
+      setUserLoginBusy(false);
+    }
+  };
+
+  const handleVerifyUserCode = async (e) => {
+    e.preventDefault();
+    setUserLoginBusy(true);
+    setUserLoginError("");
+    try {
+      const response = await fetch(`${API_BASE}/telegram/user-auth/verify-code`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          challengeId: userLoginChallengeId,
+          code: userLoginCode.trim(),
+          password: userNeedsPassword ? userLoginPassword : undefined
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "ការផ្ទៀងផ្ទាត់មិនជោគជ័យ");
+      if (data.requiresPassword) {
+        setUserNeedsPassword(true);
+        setUserLoginError("គណនីនេះបានបើក Two-Step Verification។ សូមបញ្ចូល password Telegram របស់អ្នក។");
+        return;
+      }
+      if (!data.account) throw new Error("មិនអាចរក្សាទុក Telegram Account បានទេ");
+      setAccounts((previous) => [...previous, data.account]);
+      setActiveAccountId(data.account.id);
+      closeUserLoginModal();
+    } catch (err) {
+      setUserLoginError(err.message || "ការផ្ទៀងផ្ទាត់មិនជោគជ័យ");
+    } finally {
+      setUserLoginBusy(false);
+    }
   };
 
   // Delete Account
@@ -832,15 +1022,15 @@ const TelegramPage = () => {
   // Open Add Modal
   const openAddAccountModal = () => {
     setIsAccountDropdownOpen(false);
-    if (accounts.length >= 5) {
-      alert("អ្នកអាចភ្ជាប់គណនី Telegram បានអតិបរមាត្រឹមតែ 5 Accounts ប៉ុណ្ណោះ។");
+    if (botAccountCount >= 5) {
+      alert("អ្នកអាចភ្ជាប់ Telegram Bot បានអតិបរមា 5 គណនី។");
       return;
     }
     setEditingAccountId(null);
     setModalAccountName("");
     setModalBotToken("");
     setModalBotUsername("");
-    setModalColor(COLOR_PALETTE[accounts.length % COLOR_PALETTE.length]);
+    setModalColor(COLOR_PALETTE[botAccountCount % COLOR_PALETTE.length]);
     setVerifiedBotInfo(null);
     setVerifyError("");
     setShowTokenPassword(false);
@@ -862,7 +1052,7 @@ const TelegramPage = () => {
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     const text = messageInput.trim();
-    if (!text || !activeChat || !activeAccount?.botToken) return;
+    if (!text || !activeChat || (activeAccount?.type !== "user" && !activeAccount?.botToken)) return;
 
     setMessageInput("");
     setShowEmojiPicker(false);
@@ -897,6 +1087,26 @@ const TelegramPage = () => {
     );
 
     try {
+      if (activeAccount.type === "user") {
+        const response = await fetch(`${API_BASE}/telegram/accounts/${activeAccount.id}/messages`, {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ chatId: activeChat.id, text })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Telegram message send failed");
+        setAccounts((previous) => previous.map((account) => account.id !== activeAccountId ? account : ({
+          ...account,
+          chats: account.chats.map((chat) => chat.id !== activeChat.id ? chat : ({
+            ...chat,
+            messages: chat.messages.map((message) => message.id === tempMsgId
+              ? { ...data.message, status: "delivered" }
+              : message)
+          }))
+        })));
+        return;
+      }
+
       const res = await fetch(`https://api.telegram.org/bot${activeAccount.botToken}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -940,7 +1150,7 @@ const TelegramPage = () => {
       }
     } catch (err) {
       console.error("Failed to send telegram message:", err);
-      alert("ផ្ញើសារមិនជោគជ័យ៖ មិនអាចភ្ជាប់ទៅកាន់ Telegram Server");
+      alert(`ផ្ញើសារមិនជោគជ័យ៖ ${err.message || "មិនអាចភ្ជាប់ទៅកាន់ Telegram Server"}`);
     }
   };
 
@@ -1213,7 +1423,7 @@ const TelegramPage = () => {
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Online / Active"></span>
             )}
             <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">
-              ({accounts.length}/5 Bot)
+              ({botAccountCount}/5 Bot • {userAccountCount}/5 Account)
             </span>
           </div>
         </div>
@@ -1252,16 +1462,26 @@ const TelegramPage = () => {
                 <div className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                   <div className="px-3.5 py-1.5 border-b border-slate-100 flex items-center justify-between">
                     <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                      គណនី Bot ({accounts.length}/5)
+                      Telegram ({botAccountCount}/5 Bot • {userAccountCount}/5 Account)
                     </span>
-                    <button
-                      onClick={openAddAccountModal}
-                      disabled={accounts.length >= 5}
-                      className="text-[11px] font-bold text-sky-600 hover:text-sky-800 hover:underline disabled:opacity-40 disabled:no-underline cursor-pointer flex items-center gap-1"
-                    >
-                      <FaPlus className="text-[9px]" />
-                      <span>ភ្ជាប់ Bot ថ្មី</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={openUserLoginModal}
+                        disabled={userAccountCount >= 5}
+                        className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                      >
+                        <FaUser className="text-[9px]" />
+                        <span>Login</span>
+                      </button>
+                      <button
+                        onClick={openAddAccountModal}
+                        disabled={botAccountCount >= 5}
+                        className="text-[10px] font-bold text-sky-600 hover:text-sky-800 disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                      >
+                        <FaPlus className="text-[9px]" />
+                        <span>Bot</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* List of Accounts */}
@@ -1288,6 +1508,9 @@ const TelegramPage = () => {
                             ></span>
                             <div className="min-w-0">
                               <div className="truncate text-xs font-bold text-slate-900">{acc.name}</div>
+                              <div className={`text-[9px] font-bold uppercase ${acc.type === "user" ? "text-emerald-700" : "text-sky-700"}`}>
+                                {acc.type === "user" ? "Real account" : "Bot"}
+                              </div>
                               {acc.username && (
                                 <div className="text-[10px] text-sky-700 font-mono truncate">{acc.username}</div>
                               )}
@@ -1300,15 +1523,17 @@ const TelegramPage = () => {
                                 ដំណើរការ
                               </span>
                             )}
+                            {acc.type !== "user" && (
+                              <button
+                                title="កែសម្រួលគណនី Bot"
+                                onClick={(e) => openEditAccountModal(acc, e)}
+                                className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                              >
+                                <FaEdit className="text-xs" />
+                              </button>
+                            )}
                             <button
-                              title="កែសម្រួលគណនី Bot"
-                              onClick={(e) => openEditAccountModal(acc, e)}
-                              className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                            >
-                              <FaEdit className="text-xs" />
-                            </button>
-                            <button
-                              title="លុបគណនី Bot"
+                              title="លុប Telegram account"
                               onClick={(e) => handleDeleteAccount(acc.id, e)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
                             >
@@ -1323,13 +1548,24 @@ const TelegramPage = () => {
               )}
             </div>
           ) : (
-            <button
-              onClick={openAddAccountModal}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 border border-dashed border-sky-300 hover:bg-sky-100 transition-all cursor-pointer shadow-2xs"
-            >
-              <FaPlus className="text-[10px]" />
-              <span>+ ភ្ជាប់ Telegram Bot</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={openUserLoginModal}
+                disabled={userAccountCount >= 5}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 border border-dashed border-emerald-300 hover:bg-emerald-100 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <FaUser className="text-[10px]" />
+                <span>Login Account</span>
+              </button>
+              <button
+                onClick={openAddAccountModal}
+                disabled={botAccountCount >= 5}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 border border-dashed border-sky-300 hover:bg-sky-100 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
+              >
+                <FaPlus className="text-[10px]" />
+                <span>ភ្ជាប់ Bot</span>
+              </button>
+            </div>
           )}
 
           {/* Copy Bot Link Button */}
@@ -1352,6 +1588,17 @@ const TelegramPage = () => {
           )}
 
           {/* Sync Button */}
+          {activeAccount?.type === "user" && (
+            <button
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              title="ទាញយកសារថ្មីៗពី Telegram"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all border border-slate-200 cursor-pointer shadow-2xs"
+            >
+              <FaSyncAlt className={`text-xs ${isSyncing ? "animate-spin text-emerald-600" : ""}`} />
+              <span className="hidden sm:inline">Sync</span>
+            </button>
+          )}
           {activeAccount?.botToken && (
             <button
               onClick={handleManualSync}
@@ -1373,20 +1620,27 @@ const TelegramPage = () => {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center text-3xl mb-3 shadow-xl shadow-sky-500/25">
             <FaTelegramPlane />
           </div>
-          <h2 className="text-base font-black text-slate-900 mb-1">
-            ភ្ជាប់ Telegram Bot របស់អ្នក (Custom Bot Name & Username)
-          </h2>
+          <h2 className="text-base font-black text-slate-900 mb-1">ភ្ជាប់ Telegram Account</h2>
           <p className="text-xs text-slate-600 max-w-lg mb-4 leading-relaxed">
-            ដើម្បីផ្ញើ និងទទួលសារ Telegram ផ្ទាល់ក្នុងប្រព័ន្ធ MDM សូមបញ្ចូល <strong>Bot Token</strong>, <strong>Username</strong>, និង <strong>ឈ្មោះ Bot តាមចិត្តរបស់អ្នក</strong>។ អ្នកអាចភ្ជាប់បានរហូតដល់ <strong>5 Bots</strong> ផ្សេងគ្នា។
+            អ្នកអាចភ្ជាប់បានអតិបរមា <strong>5 Bots</strong> និង <strong>5 គណនី Telegram ពិត</strong>។ គណនីនីមួយៗត្រូវបានរក្សាដាច់ដោយឡែកតាម user។
           </p>
 
-          <button
-            onClick={openAddAccountModal}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold text-xs shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
-          >
-            <FaPlus />
-            <span>+ ភ្ជាប់ Telegram Bot ឥឡូវនេះ</span>
-          </button>
+          <div className="flex flex-wrap justify-center gap-2">
+            <button
+              onClick={openUserLoginModal}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-lg shadow-emerald-700/20 transition-all cursor-pointer"
+            >
+              <FaUser />
+              <span>Login Telegram Account</span>
+            </button>
+            <button
+              onClick={openAddAccountModal}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs shadow-lg shadow-sky-700/20 transition-all cursor-pointer"
+            >
+              <FaPlus />
+              <span>ភ្ជាប់ Telegram Bot</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="flex-1 flex overflow-hidden min-h-0">
@@ -1437,13 +1691,15 @@ const TelegramPage = () => {
                   </button>
                 )}
               </div>
-              <button
-                onClick={() => setIsNewChatModalOpen(true)}
-                title="ផ្ញើសារទៅកាន់ Telegram Chat ID ថ្មី"
-                className="p-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-all shadow-xs cursor-pointer flex-shrink-0"
-              >
-                <FaPlus className="text-xs" />
-              </button>
+              {activeAccount?.type !== "user" && (
+                <button
+                  onClick={() => setIsNewChatModalOpen(true)}
+                  title="ផ្ញើសារទៅកាន់ Telegram Chat ID ថ្មី"
+                  className="p-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-all shadow-xs cursor-pointer flex-shrink-0"
+                >
+                  <FaPlus className="text-xs" />
+                </button>
+              )}
             </div>
 
             {/* Sync Alert Banner if error */}
@@ -1465,15 +1721,17 @@ const TelegramPage = () => {
                     មិនទាន់មានការសន្ទនានៅឡើយទេ
                   </div>
                   <div className="text-[10px] text-slate-500 mb-2.5 max-w-[190px] mx-auto">
-                    ចុចប៊ូតុង <strong>+</strong> ខាងលើដើម្បីចាប់ផ្តើមឆាត ឬឱ្យ User ចុច Start ក្នុង Bot។
+                    {activeAccount?.type === "user" ? "ការសន្ទនានឹងបង្ហាញនៅទីនេះក្រោយ Sync។" : "ឱ្យ User ចុច Start ក្នុង Bot ឬចាប់ផ្តើមឆាតថ្មី។"}
                   </div>
-                  <button
-                    onClick={() => setIsNewChatModalOpen(true)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 transition-all cursor-pointer"
-                  >
-                    <FaPlus className="text-[9px]" />
-                    <span>+ ចាប់ផ្តើមឆាតថ្មី</span>
-                  </button>
+                  {activeAccount?.type !== "user" && (
+                    <button
+                      onClick={() => setIsNewChatModalOpen(true)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 transition-all cursor-pointer"
+                    >
+                      <FaPlus className="text-[9px]" />
+                      <span>+ ចាប់ផ្តើមឆាតថ្មី</span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 filteredChats.map((chat) => {
@@ -1817,15 +2075,17 @@ const TelegramPage = () => {
                 </button>
 
                 {/* Attachment Button (Send Photo/Audio/File) */}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingFile}
-                  className="p-2 text-slate-500 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
-                  title="ភ្ជាប់រូបភាព ឬឯកសារ (Attach File/Photo/Audio)"
-                >
-                  <MdAttachFile className="text-xl transform rotate-45" />
-                </button>
+                {activeAccount?.type !== "user" && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingFile}
+                    className="p-2 text-slate-500 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                    title="ភ្ជាប់រូបភាព ឬឯកសារ (Attach File/Photo/Audio)"
+                  >
+                    <MdAttachFile className="text-xl transform rotate-45" />
+                  </button>
+                )}
 
                 <input
                   type="text"
@@ -1969,6 +2229,156 @@ const TelegramPage = () => {
               alt="Preview"
               className="max-h-[85vh] max-w-full rounded-2xl shadow-2xl object-contain border border-white/20"
             />
+          </div>
+        </div>
+      )}
+
+      {isUserLoginModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 animate-scaleUp">
+            <div className="px-5 py-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+                  <FaUser className="text-xs" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-slate-900">Login Telegram Account ពិត</h3>
+                  <p className="text-[10px] text-slate-500">គណនីនេះភ្ជាប់ផ្តាច់ដោយឡែកតាម user របស់ប្រព័ន្ធ</p>
+                </div>
+              </div>
+              <button onClick={closeUserLoginModal} className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-white cursor-pointer">
+                <FaTimes className="text-xs" />
+              </button>
+            </div>
+
+            {userLoginStep === "details" ? (
+              <form onSubmit={handleRequestUserCode} className="p-5 space-y-3.5 max-h-[75vh] overflow-y-auto">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900">Environment</span>
+                  <div className="inline-flex p-1 bg-slate-100 rounded-lg" role="group" aria-label="Telegram environment">
+                    {["production", "test"].map((environment) => (
+                      <button
+                        key={environment}
+                        type="button"
+                        onClick={() => setUserEnvironment(environment)}
+                        className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-colors ${userEnvironment === environment ? "bg-white text-emerald-800 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+                      >
+                        {environment === "production" ? "Production" : "Test"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs font-bold text-slate-800">
+                    App api_id
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={selectedUserAppConfig.apiId}
+                      onChange={(event) => updateUserAppConfig("apiId", event.target.value)}
+                      required
+                      className="mt-1 w-full px-3 py-2 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </label>
+                  <label className="text-xs font-bold text-slate-800">
+                    App api_hash
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      value={selectedUserAppConfig.apiHash}
+                      onChange={(event) => updateUserAppConfig("apiHash", event.target.value)}
+                      required
+                      className="mt-1 w-full px-3 py-2 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </label>
+                  <label className="text-xs font-bold text-slate-800">
+                    App title
+                    <input
+                      type="text"
+                      value={selectedUserAppConfig.appTitle}
+                      onChange={(event) => updateUserAppConfig("appTitle", event.target.value)}
+                      required
+                      className="mt-1 w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </label>
+                  <label className="text-xs font-bold text-slate-800">
+                    Short name
+                    <input
+                      type="text"
+                      value={selectedUserAppConfig.appShortName}
+                      onChange={(event) => updateUserAppConfig("appShortName", event.target.value)}
+                      required
+                      className="mt-1 w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </label>
+                </div>
+
+                <label className="block text-xs font-bold text-slate-800">
+                  Telegram phone number
+                  <input
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="+855..."
+                    value={userPhoneNumber}
+                    onChange={(event) => setUserPhoneNumber(event.target.value)}
+                    required
+                    className="mt-1 w-full px-3 py-2 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </label>
+
+                <p className="text-[10px] text-slate-500 leading-relaxed">
+                  api_id និង api_hash យកពី <strong>my.telegram.org</strong>។ Test environment ត្រូវប្រើលេខទូរស័ព្ទ និង login code សាកល្បងដែល Telegram ផ្តល់ឱ្យ។
+                </p>
+
+                {userLoginError && <p className="p-2.5 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded-lg">{userLoginError}</p>}
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                  <button type="button" onClick={closeUserLoginModal} className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">បោះបង់</button>
+                  <button type="submit" disabled={userLoginBusy} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg disabled:opacity-50 cursor-pointer">
+                    {userLoginBusy ? "កំពុងភ្ជាប់..." : "ផ្ញើ login code"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyUserCode} className="p-5 space-y-3.5">
+                <div className="p-3 text-xs text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  Telegram បានផ្ញើ code ទៅ {userCodeViaApp ? "កម្មវិធី Telegram នៅលើឧបករណ៍ផ្សេង" : "លេខទូរស័ព្ទរបស់អ្នក"}។
+                </div>
+                <label className="block text-xs font-bold text-slate-800">
+                  Login code
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={userLoginCode}
+                    onChange={(event) => setUserLoginCode(event.target.value)}
+                    required
+                    className="mt-1 w-full px-3 py-2 text-sm tracking-[0.2em] font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </label>
+                {userNeedsPassword && (
+                  <label className="block text-xs font-bold text-slate-800">
+                    Telegram Two-Step Verification password
+                    <input
+                      type="password"
+                      autoComplete="current-password"
+                      value={userLoginPassword}
+                      onChange={(event) => setUserLoginPassword(event.target.value)}
+                      required
+                      className="mt-1 w-full px-3 py-2 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </label>
+                )}
+                {userLoginError && <p className="p-2.5 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded-lg">{userLoginError}</p>}
+                <div className="flex justify-between gap-2 pt-2 border-t border-slate-100">
+                  <button type="button" onClick={() => { setUserLoginStep("details"); setUserLoginError(""); }} className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">ត្រឡប់</button>
+                  <button type="submit" disabled={userLoginBusy} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg disabled:opacity-50 cursor-pointer">
+                    {userLoginBusy ? "កំពុងផ្ទៀងផ្ទាត់..." : "ផ្ទៀងផ្ទាត់ និង Login"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

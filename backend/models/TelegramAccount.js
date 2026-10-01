@@ -38,12 +38,23 @@ const telegramAccountSchema = new mongoose.Schema({
     // Client-side account ID (for stable UI references)
     clientId: { type: String, required: true },
 
+    accountType: { type: String, enum: ['bot', 'user'], default: 'bot', index: true },
+
     // Bot configuration
     name: { type: String, default: 'Telegram Bot' },
-    botToken: { type: String, required: true },
+    botToken: { type: String, default: '' },
     username: { type: String, default: '' },
     color: { type: String, default: '#0284c7' },
     botInfo: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+    // Encrypted Telegram MTProto credentials and authorized session
+    phoneNumber: { type: String, default: '' },
+    apiId: { type: String, default: '' },
+    apiHash: { type: String, default: '' },
+    sessionString: { type: String, default: '' },
+    appTitle: { type: String, default: '' },
+    appShortName: { type: String, default: '' },
+    environment: { type: String, enum: ['production', 'test'], default: 'production' },
 
     // Polling state
     lastUpdateId: { type: Number, default: 0 },
