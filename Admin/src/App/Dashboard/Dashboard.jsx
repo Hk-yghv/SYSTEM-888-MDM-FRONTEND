@@ -1,35 +1,46 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import {
-    MdDashboard,
-    MdOutlineSync,
-    MdTrendingUp,
-    MdAccountBalanceWallet,
-    MdLock
-} from 'react-icons/md';
-import {
-    FaCoins,
-    FaBuilding,
+    FaLayerGroup,
+    FaExpand,
+    FaCompress,
+    FaMoon,
+    FaSun,
+    FaChartLine,
+    FaCalendarCheck,
+    FaPrint,
+    FaRotateRight,
+    FaCreditCard,
+    FaArrowTrendUp,
+    FaReceipt,
     FaLock,
-    FaUnlock
-} from 'react-icons/fa';
-import LineChart from '../../components/LineChart';
+    FaLockOpen,
+    FaChartArea,
+    FaFileContract,
+    FaUsers,
+    FaClock,
+    FaTriangleExclamation,
+    FaTableCellsLarge,
+    FaImage,
+    FaXmark,
+    FaCalendarDays
+} from 'react-icons/fa6';
+import './Dashboard.css';
 import { getAutomaticPenalty, getRowWithDueDate } from '../../utils/repaymentUtils';
 
 const Dashboard = () => {
     const { t } = useLanguage();
     const { API_BASE, API_BASE1, user } = useAuth();
 
-    // ── Number & Currency Formatting (Strict 2 Decimals Everywhere) ──
+    // ── Number & Currency Formatting ──
     const formatMoney = (val) => {
         const num = Number(val) || 0;
-        return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
-    const formatPercent = (val) => {
-        const num = Number(val) || 0;
-        return num.toFixed(2);
+    const formatNumber = (val) => {
+        return Number(val || 0).toLocaleString('en-US');
     };
 
     // ── Master Admin Check ──
@@ -37,7 +48,47 @@ const Dashboard = () => {
         return user?.username === '@hakyonghouv' || user?.username === 'hakyonghouv' || user?.role === 'Administrator' || user?.isImmutable;
     }, [user]);
 
-    // ── Core Stats State ──
+    // ── Theme State ──
+    const [theme, setTheme] = useState(() => localStorage.getItem('dashboard_theme') || 'light');
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        if (theme === 'dark') {
+            root.classList.add('dark');
+            root.setAttribute('data-theme', 'dark');
+        } else {
+            root.classList.remove('dark');
+            root.setAttribute('data-theme', 'light');
+        }
+    }, [theme]);
+
+    const handleToggleTheme = () => {
+        setTheme(prev => {
+            const next = prev === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('dashboard_theme', next);
+            return next;
+        });
+    };
+
+    // ── Fullscreen Toggle ──
+    const handleToggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen?.().catch(() => {});
+            setIsFullscreen(true);
+        } else {
+            document.exitFullscreen?.().catch(() => {});
+            setIsFullscreen(false);
+        }
+    };
+
+    useEffect(() => {
+        const handler = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', handler);
+        return () => document.removeEventListener('fullscreenchange', handler);
+    }, []);
+
+    // ── Core States ──
     const [stats, setStats] = useState({
         totalContracts: 0,
         activatedContracts: 0,
@@ -45,20 +96,12 @@ const Dashboard = () => {
         checkContracts: 0,
         redeemContracts: 0,
         blacklistContracts: 0,
-        commentsContracts: 0,
         lockedPhones: 0,
         unlockedPhones: 0,
-        lockedWallpapers: 0,
-        unlockedWallpapers: 0,
         totalRevenue: 0,
-        paymentCount: 0,
         totalLoanAmount: 0,
         totalCustomerReceived: 0,
-        totalBorrowers: 0,
-        outstandingBalance: 0,
-        totalRepaymentExpected: 0,
-        totalScheduledRepayment: 0,
-        totalPenaltyRepayment: 0
+        totalBorrowers: 0
     });
 
     const [brandFilter, setBrandFilter] = useState('');
@@ -68,12 +111,60 @@ const Dashboard = () => {
     const [rawContracts, setRawContracts] = useState([]);
     const [rawPayments, setRawPayments] = useState([]);
     const [penaltyRulesByBrand, setPenaltyRulesByBrand] = useState({});
+    const [lastSyncTime, setLastSyncTime] = useState('មុននេះបន្តិច');
+
+    // Timeframe filter state
+    const [selectedTimeframe, setSelectedTimeframe] = useState('monthly'); // 'today' | '7d' | '30d' | 'monthly' | 'all' | 'custom'
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
+    const [isCustomPopoverOpen, setIsCustomPopoverOpen] = useState(false);
+    const [customDateError, setCustomDateError] = useState(null);
+
+    // Overdue Filter State in Late section
+    const [lateSectionFilter, setLateSectionFilter] = useState('all'); // 'all' | 'filtered'
+
+    // Receipt image modal preview
+    const [previewImage, setPreviewImage] = useState(null);
+
+    const popoverRef = useRef(null);
+
+    // Close popover on outside click or escape
+    useEffect(() => {
+        if (!isCustomPopoverOpen) return;
+        const handleClick = (e) => {
+            if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+                setIsCustomPopoverOpen(false);
+            }
+        };
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') setIsCustomPopoverOpen(false);
+        };
+        document.addEventListener('mousedown', handleClick);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleClick);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isCustomPopoverOpen]);
 
     // Active Brand Filter Scope
     const activeUserBrand = useMemo(() => {
         if (!isMasterAdmin && user?.brand) return user.brand;
         return brandFilter;
     }, [isMasterAdmin, user, brandFilter]);
+
+    // Live Clock Update
+    useEffect(() => {
+        const updateClock = () => {
+            if (!reloading) {
+                const now = new Date();
+                setLastSyncTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }));
+            }
+        };
+        updateClock();
+        const interval = setInterval(updateClock, 1000);
+        return () => clearInterval(interval);
+    }, [reloading]);
 
     // ── API Fetchers ──
     const fetchBrands = async () => {
@@ -87,7 +178,7 @@ const Dashboard = () => {
         } catch { }
     };
 
-    const fetchDashboardStats = async () => {
+    const fetchDashboardStats = useCallback(async () => {
         setReloading(true);
         try {
             const params = new URLSearchParams();
@@ -105,11 +196,11 @@ const Dashboard = () => {
             console.error('Failed to fetch dashboard stats:', err);
         } finally {
             setLoading(false);
-            setTimeout(() => setReloading(false), 300);
+            setTimeout(() => setReloading(false), 400);
         }
-    };
+    }, [API_BASE, activeUserBrand, user]);
 
-    const fetchRawData = async () => {
+    const fetchRawData = useCallback(async () => {
         try {
             const params = new URLSearchParams();
             if (activeUserBrand) params.set('userBrand', activeUserBrand);
@@ -149,7 +240,7 @@ const Dashboard = () => {
         } catch (err) {
             console.error('Failed to fetch raw data:', err);
         }
-    };
+    }, [API_BASE1, activeUserBrand, user]);
 
     useEffect(() => {
         fetchBrands();
@@ -158,565 +249,1205 @@ const Dashboard = () => {
     useEffect(() => {
         fetchDashboardStats();
         fetchRawData();
-    }, [activeUserBrand]);
+    }, [fetchDashboardStats, fetchRawData]);
 
-    // ── Key Computed Metrics ──
-    const totalCount = stats.totalContracts || 1;
-    const activatedPct = ((stats.activatedContracts / totalCount) * 100).toFixed(2);
-    const applicationPct = ((stats.applicationContracts / totalCount) * 100).toFixed(2);
-    const checkPct = ((stats.checkContracts / totalCount) * 100).toFixed(2);
-    const redeemPct = ((stats.redeemContracts / totalCount) * 100).toFixed(2);
-    const blacklistPct = ((stats.blacklistContracts / totalCount) * 100).toFixed(2);
-    const phoneLockPct = ((stats.lockedPhones / totalCount) * 100).toFixed(2);
-    const wallpaperLockPct = ((stats.lockedWallpapers / totalCount) * 100).toFixed(2);
+    const handleManualReload = () => {
+        fetchDashboardStats();
+        fetchRawData();
+    };
 
-    const loanOutAmt = stats.totalLoanAmount || 0;
-    const weCollectedAmt = stats.totalRevenue || 0;
-    const customerReceivedAmt = stats.totalCustomerReceived || 0;
-    const collectionPct = customerReceivedAmt > 0 ? ((weCollectedAmt / customerReceivedAmt) * 100).toFixed(2) : '0.00';
+    // ── Contract & Repayment Data Processing ──
+    const now = new Date();
+    const currentMonthKhmer = useMemo(() => {
+        const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+        return `${khmerMonths[now.getMonth()]} ${now.getFullYear()}`;
+    }, []);
 
-    // ── Total Customer Paid: sum of paidAmount from all repaymentSchedule rows ──
-    const totalCustomerPaid = useMemo(() => {
-        let total = 0;
-        rawContracts.forEach(c => {
-            if (Array.isArray(c.repaymentSchedule)) {
-                c.repaymentSchedule.forEach(row => {
-                    total += Number(row.paidAmount || 0);
+    const timeframeLabel = useMemo(() => {
+        switch (selectedTimeframe) {
+            case 'today': return `ថ្ងៃនេះ (${now.toISOString().split('T')[0]})`;
+            case '7d': return '៧ ថ្ងៃចុងក្រោយ';
+            case '30d': return '៣០ ថ្ងៃចុងក្រោយ';
+            case 'all': return 'ទិន្នន័យទាំងអស់ (All Time)';
+            case 'custom':
+                if (customStartDate && customEndDate) {
+                    return `${customStartDate} ដល់ ${customEndDate}`;
+                }
+                return 'កំណត់តាមកាលបរិច្ឆេទ';
+            case 'monthly':
+            default:
+                return `ប្រចាំខែ (${currentMonthKhmer})`;
+        }
+    }, [selectedTimeframe, customStartDate, customEndDate, currentMonthKhmer]);
+
+    // Filtered Contracts by Timeframe
+    const filteredContracts = useMemo(() => {
+        if (!rawContracts || rawContracts.length === 0) return [];
+        if (selectedTimeframe === 'all') return rawContracts;
+
+        const todayStr = now.toISOString().split('T')[0];
+
+        return rawContracts.filter(c => {
+            const dateStr = String(c.date || c.createdAt || c.startDate || '').split('T')[0];
+            if (!dateStr) return true;
+
+            if (selectedTimeframe === 'today') {
+                return dateStr === todayStr;
+            }
+            if (selectedTimeframe === '7d') {
+                const diff = (now - new Date(dateStr)) / (1000 * 60 * 60 * 24);
+                return diff >= 0 && diff <= 7;
+            }
+            if (selectedTimeframe === '30d') {
+                const diff = (now - new Date(dateStr)) / (1000 * 60 * 60 * 24);
+                return diff >= 0 && diff <= 30;
+            }
+            if (selectedTimeframe === 'monthly') {
+                const cDate = new Date(dateStr);
+                return cDate.getMonth() === now.getMonth() && cDate.getFullYear() === now.getFullYear();
+            }
+            if (selectedTimeframe === 'custom') {
+                if (customStartDate && customEndDate) {
+                    return dateStr >= customStartDate && dateStr <= customEndDate;
+                }
+            }
+            return true;
+        });
+    }, [rawContracts, selectedTimeframe, customStartDate, customEndDate]);
+
+    // ── Core Computed Metrics ──
+    const totalCount = stats.totalContracts || filteredContracts.length || 1;
+    const activatedCount = stats.activatedContracts || filteredContracts.filter(c => c.status === 'Activated' || c.status === 'ដំណើរការ').length || 0;
+    const applicationCount = stats.applicationContracts || filteredContracts.filter(c => c.status === 'Application' || c.status === 'ពាក្យស្នើសុំ').length || 0;
+    const checkCount = stats.checkContracts || filteredContracts.filter(c => c.status === 'Check' || c.status === 'កំពុងត្រួតពិនិត្យ').length || 0;
+    const redeemCount = stats.redeemContracts || filteredContracts.filter(c => c.status === 'Redeem' || c.status === 'បញ្ចាំ/ដោះដូរ').length || 0;
+    const blacklistCount = stats.blacklistContracts || filteredContracts.filter(c => c.status === 'BlackList' || c.status === 'បញ្ជីខ្មៅ').length || 0;
+
+    const activatedPct = ((activatedCount / totalCount) * 100).toFixed(2);
+    const applicationPct = ((applicationCount / totalCount) * 100).toFixed(2);
+    const checkPct = ((checkCount / totalCount) * 100).toFixed(2);
+    const redeemPct = ((redeemCount / totalCount) * 100).toFixed(2);
+    const blacklistPct = ((blacklistCount / totalCount) * 100).toFixed(2);
+
+    const lockedPhones = stats.lockedPhones || 0;
+    const unlockedPhones = Math.max(0, totalCount - lockedPhones);
+    const lockedRatio = totalCount > 0 ? ((lockedPhones / totalCount) * 100).toFixed(2) : '0.00';
+    const unlockedRatio = (100 - Number(lockedRatio)).toFixed(2);
+
+    // ── Repayments & Customers Computation ──
+    const repaymentRows = useMemo(() => {
+        const rows = [];
+        rawContracts.forEach(contract => {
+            const rules = penaltyRulesByBrand[String(contract.brand || '').trim()] || [];
+            if (Array.isArray(contract.repaymentSchedule) && contract.repaymentSchedule.length > 0) {
+                contract.repaymentSchedule.forEach((row, idx) => {
+                    const rowData = getRowWithDueDate(row, idx, contract);
+                    const penaltyInfo = getAutomaticPenalty(rowData, contract, rules);
+                    const penalty = Number(penaltyInfo.penalty || rowData.penalty || 0);
+                    const scheduledAmt = Number(rowData.scheduledAmount || rowData.amount || rowData.due || 0);
+                    const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
+                    const unpaidAmt = Math.max(0, scheduledAmt - paidAmt);
+                    const isPaid = rowData.isPaid || (unpaidAmt <= 0 && scheduledAmt > 0);
+
+                    rows.push({
+                        id: `${contract._id || contract.id || 'c'}-${idx}`,
+                        contractId: contract._id || contract.id,
+                        contractIid: contract.contractId || contract.contractIid || contract.code || `CT-${idx + 1}`,
+                        customerName: contract.customerName || contract.name || 'Unknown',
+                        phone: contract.phone || contract.phoneNumber || contract.tel || '-',
+                        dueDate: rowData.dueDate ? String(rowData.dueDate).split('T')[0] : (rowData.date ? String(rowData.date).split('T')[0] : ''),
+                        scheduledAmount: scheduledAmt,
+                        paidAmount: paidAmt,
+                        outstandingAmount: unpaidAmt,
+                        penaltyAmount: penalty,
+                        isPaid,
+                        daysUntilDue: rowData.daysUntilDue,
+                        status: isPaid ? 'PAID' : (penalty > 0 ? 'PENALTY' : (rowData.daysUntilDue < 0 ? 'OVERDUE' : 'DUE')),
+                        brand: contract.brand || 'MDM'
+                    });
                 });
             }
         });
-        return total;
-    }, [rawContracts]);
+        return rows;
+    }, [rawContracts, penaltyRulesByBrand]);
 
-    // Lock Device & Other fees = totalRevenue - customerPaid
-    const lockDeviceAmt = Math.max(weCollectedAmt - totalCustomerPaid, 0);
+    // Active customer payment details for the tables
+    const dueCustomerRows = useMemo(() => {
+        return repaymentRows.filter(r => !r.isPaid && r.scheduledAmount > 0);
+    }, [repaymentRows]);
 
-    // ── Contract Total Interest Helper ──
-    const calculateContractTotalInterest = (c) => {
-        if (c.totalInterest && !isNaN(Number(c.totalInterest)) && Number(c.totalInterest) > 0) {
-            return Number(c.totalInterest);
-        }
-        const durationStr = String(c.duration || '').toLowerCase();
-        const matched = durationStr.match(/\d+/);
-        const count = matched ? parseInt(matched[0], 10) : 1;
-        const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ');
-        const months = isDays ? Math.max(1, Math.ceil(count / 30)) : Math.max(1, count);
+    const overdueCustomerRows = useMemo(() => {
+        return repaymentRows.filter(r => !r.isPaid && (r.penaltyAmount > 0 || r.daysUntilDue < 0));
+    }, [repaymentRows]);
 
-        if (c.monthlyInterest && !isNaN(Number(c.monthlyInterest)) && Number(c.monthlyInterest) > 0) {
-            return Number(c.monthlyInterest) * months;
-        }
-
-        const interestStr = String(c.interest || c.interestType || '').trim();
-        const principal = Number(c.amount || c.loanAmount || 0);
-
-        if (interestStr.includes('%')) {
-            const rate = parseFloat(interestStr.replace(/[^0-9.]/g, '')) || 0;
-            const monthlyInterestUSD = principal * (rate / 100);
-            return monthlyInterestUSD * months;
-        }
-
-        const numericInterest = parseFloat(interestStr.replace(/[^0-9.]/g, ''));
-        if (!isNaN(numericInterest) && numericInterest > 0) {
-            return numericInterest * months;
-        }
-
-        if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
-            const sumSchedInterest = c.repaymentSchedule.reduce((s, row) => s + (Number(row.interest || row.interestAmount || 0)), 0);
-            if (sumSchedInterest > 0) return sumSchedInterest;
-        }
-
-        const monthly = Number(c.monthlyPayment) || 0;
-        if (monthly > 0 && principal > 0) {
-            const totalPay = isDays ? monthly : (monthly * months);
-            if (totalPay > principal) {
-                return totalPay - principal;
+    const penaltyPaymentRows = useMemo(() => {
+        // Collect penalty payments or raw payments with penalty category
+        const pRows = [];
+        rawPayments.forEach((p, idx) => {
+            const isPenalty = p.type === 'penalty' || p.category === 'Penalty' || String(p.description || '').toLowerCase().includes('penalty') || String(p.description || '').toLowerCase().includes('ពិន័យ');
+            if (isPenalty || Number(p.penaltyAmount || 0) > 0) {
+                pRows.push({
+                    id: p._id || p.id || `p-${idx}`,
+                    dueDate: p.date ? String(p.date).split('T')[0] : new Date().toISOString().split('T')[0],
+                    paymentMethod: p.paymentMethod || p.method || 'Cash',
+                    category: p.customerName || p.customer || p.category || 'ពិន័យយឺត',
+                    penaltyAmount: Number(p.amount || p.penaltyAmount || 0),
+                    description: p.description || p.notes || 'ការទូទាត់ប្រាក់ពិន័យ',
+                    photoUrl: p.photoUrl || p.image || p.receiptUrl || null
+                });
             }
-        }
+        });
+        return pRows;
+    }, [rawPayments]);
 
-        return 0;
-    };
+    // Aggregate totals for KPI Cards
+    const totalDisbursedAmount = stats.totalLoanAmount || filteredContracts.reduce((s, c) => s + Number(c.amount || c.loanAmount || 0), 0);
+    const totalCollectedRevenue = stats.totalRevenue || rawPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
+    const totalScheduledAmount = useMemo(() => repaymentRows.reduce((s, r) => s + r.scheduledAmount, 0), [repaymentRows]);
+    const totalPenaltyAmount = useMemo(() => repaymentRows.reduce((s, r) => s + r.penaltyAmount, 0), [repaymentRows]);
+    const totalObligation = totalScheduledAmount + totalPenaltyAmount;
+    const totalOutstandingAmount = useMemo(() => repaymentRows.filter(r => !r.isPaid).reduce((s, r) => s + r.outstandingAmount + r.penaltyAmount, 0), [repaymentRows]);
 
-    // ── Repayment Calculations ──
-    const repaymentMetrics = useMemo(() => {
-        let totalExpected = 0;
-        let totalScheduled = 0;
-        let totalPenalty = 0;
-        let totalInterest = 0;
+    // Summary counts for sections
+    const dueTotalPaid = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.paidAmount, 0), [dueCustomerRows]);
+    const dueTotalRemaining = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.outstandingAmount + r.penaltyAmount, 0), [dueCustomerRows]);
+    const lateTotalPenalty = useMemo(() => overdueCustomerRows.reduce((s, r) => s + r.penaltyAmount, 0), [overdueCustomerRows]);
+    const penaltyTotalAmount = useMemo(() => penaltyPaymentRows.reduce((s, r) => s + r.penaltyAmount, 0), [penaltyPaymentRows]);
 
-        if (rawContracts.length > 0) {
-            rawContracts.forEach(c => {
-                totalInterest += calculateContractTotalInterest(c);
+    // Overdue alert count
+    const totalOverdueAlertCount = overdueCustomerRows.length;
 
-                if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
-                    c.repaymentSchedule.forEach(row => {
-                        const scheduled = Number(row.scheduledAmount) || Number(row.amount) || Number(c.monthlyPayment) || 0;
-                        const brand = String(c.brand || '').trim();
-                        const rules = penaltyRulesByBrand[brand] || penaltyRulesByBrand[''] || [];
-                        const penaltyRow = getRowWithDueDate(row, c);
-                        const penalty = getAutomaticPenalty(penaltyRow, c, rules);
-                        totalScheduled += scheduled;
-                        totalPenalty += penalty;
-                        totalExpected += (scheduled + penalty);
-                    });
-                } else {
-                    const durationStr = String(c.duration || '').toLowerCase();
-                    const matched = durationStr.match(/\d+/);
-                    const count = matched ? parseInt(matched[0], 10) : 1;
-                    const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ');
-                    const monthly = Number(c.monthlyPayment) || 0;
-                    const scheduled = isDays
-                        ? (monthly || Number(c.amount) || 0)
-                        : (monthly > 0 ? (monthly * count) : (Number(c.amount) || 0));
-                    totalScheduled += scheduled;
-                    totalExpected += scheduled;
+    // ── Chart Points (Dynamic Daily/Monthly Timeline) ──
+    const chartPoints = useMemo(() => {
+        const pointsMap = {};
+        const today = new Date();
+
+        if (selectedTimeframe === 'today') {
+            const hours = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
+            hours.forEach(h => {
+                pointsMap[h] = { label: h, collected: 0, disbursed: 0, customers: 0 };
+            });
+            // Distribute today's data
+            const todayStr = today.toISOString().split('T')[0];
+            filteredContracts.forEach(c => {
+                if (String(c.date || '').startsWith(todayStr)) {
+                    pointsMap['12:00'].disbursed += Number(c.amount || c.loanAmount || 0);
+                    pointsMap['12:00'].customers += 1;
+                }
+            });
+            rawPayments.forEach(p => {
+                if (String(p.date || '').startsWith(todayStr)) {
+                    pointsMap['12:00'].collected += Number(p.amount || 0);
+                }
+            });
+        } else if (selectedTimeframe === '7d' || selectedTimeframe === '30d' || selectedTimeframe === 'monthly' || selectedTimeframe === 'custom') {
+            const numDays = selectedTimeframe === '7d' ? 7 : (selectedTimeframe === '30d' ? 30 : (selectedTimeframe === 'monthly' ? 30 : 14));
+            for (let i = numDays - 1; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                const dStr = d.toISOString().split('T')[0];
+                const label = `${d.getDate()}/${d.getMonth() + 1}`;
+                pointsMap[dStr] = { label, collected: 0, disbursed: 0, customers: 0 };
+            }
+
+            filteredContracts.forEach(c => {
+                const cDate = String(c.date || c.createdAt || '').split('T')[0];
+                if (pointsMap[cDate]) {
+                    pointsMap[cDate].disbursed += Number(c.amount || c.loanAmount || 0);
+                    pointsMap[cDate].customers += 1;
+                }
+            });
+
+            rawPayments.forEach(p => {
+                const pDate = String(p.date || p.createdAt || '').split('T')[0];
+                if (pointsMap[pDate]) {
+                    pointsMap[pDate].collected += Number(p.amount || 0);
                 }
             });
         } else {
-            totalExpected = stats.totalRepaymentExpected || 0;
-            totalScheduled = stats.totalScheduledRepayment || 0;
-            totalPenalty = stats.totalPenaltyRepayment || 0;
-            totalInterest = stats.totalInterest || 0;
+            // 'all' -> Group by month
+            const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+            months.forEach(m => {
+                const mKey = `2026-${m}`;
+                pointsMap[mKey] = { label: mKey, collected: 0, disbursed: 0, customers: 0 };
+            });
+            filteredContracts.forEach(c => {
+                const cMonth = String(c.date || c.createdAt || '').slice(0, 7);
+                if (pointsMap[cMonth]) {
+                    pointsMap[cMonth].disbursed += Number(c.amount || c.loanAmount || 0);
+                    pointsMap[cMonth].customers += 1;
+                }
+            });
+            rawPayments.forEach(p => {
+                const pMonth = String(p.date || p.createdAt || '').slice(0, 7);
+                if (pointsMap[pMonth]) {
+                    pointsMap[pMonth].collected += Number(p.amount || 0);
+                }
+            });
         }
 
-        return {
-            totalExpected: totalExpected || stats.totalRepaymentExpected || 0,
-            totalScheduled: totalScheduled || stats.totalScheduledRepayment || 0,
-            totalPenalty: totalPenalty || stats.totalPenaltyRepayment || 0,
-            totalInterest: totalInterest || stats.totalInterest || 0
-        };
-    }, [rawContracts, stats, penaltyRulesByBrand]);
+        return Object.values(pointsMap);
+    }, [selectedTimeframe, filteredContracts, rawPayments]);
 
-    // ── Chart Trend Data (Identical format to /report/all-customers LineChart) ──
-    const chartTrendData = useMemo(() => {
-        const map = {};
-        rawContracts.forEach(c => {
-            const dateStr = (c.inputDate || c.createdAt || c.date || '').slice(0, 10);
-            if (!dateStr) return;
-            if (!map[dateStr]) map[dateStr] = { label: dateStr, revenue: 0, loan: 0, customerCount: 0 };
-            if (c.status === 'Activated') {
-                map[dateStr].customerCount += 1;
-                map[dateStr].loan += Number(c.amount || c.totalAmount || 0);
-            }
-        });
-        rawPayments.forEach(p => {
-            const dateStr = (p.paidDate || p.paymentDate || p.createdAt || p.date || '').slice(0, 10);
-            if (!dateStr) return;
-            if (!map[dateStr]) map[dateStr] = { label: dateStr, revenue: 0, loan: 0, customerCount: 0 };
-            map[dateStr].revenue += Number(p.amount || 0);
-        });
-        return Object.values(map).sort((a, b) => a.label.localeCompare(b.label));
-    }, [rawContracts, rawPayments]);
+    // Handle Custom Popover Shortcut
+    const handleApplyDatePreset = (days) => {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - days);
+        setCustomStartDate(start.toISOString().split('T')[0]);
+        setCustomEndDate(end.toISOString().split('T')[0]);
+        setCustomDateError(null);
+    };
 
-    // ── All Comprehensive Data Aggregated Per Brand ──
-    const summaryTableData = useMemo(() => {
-        const brandMap = {};
+    const handleApplyCustomDateRange = () => {
+        if (!customStartDate || !customEndDate) {
+            setCustomDateError('សូមជ្រើសរើសថ្ងៃចាប់ផ្តើម និងថ្ងៃបញ្ចប់');
+            return;
+        }
+        if (new Date(customStartDate) > new Date(customEndDate)) {
+            setCustomDateError('ថ្ងៃចាប់ផ្តើមត្រូវតែតូចជាង ឬស្មើថ្ងៃបញ្ចប់');
+            return;
+        }
+        setCustomDateError(null);
+        setIsCustomPopoverOpen(false);
+        setSelectedTimeframe('custom');
+    };
 
-        rawContracts.forEach(c => {
-            const b = c.brand || 'General / MDM';
-            if (!brandMap[b]) {
-                brandMap[b] = {
-                    brand: b,
-                    totalContracts: 0,
-                    applicationCount: 0,
-                    checkCount: 0,
-                    activatedCount: 0,
-                    redeemCount: 0,
-                    blacklistCount: 0,
-                    commentsCount: 0,
-                    loanDisbursed: 0,
-                    monthlyCollectionEst: 0,
-                    revenueCollected: 0,
-                    phoneLocked: 0,
-                    phoneUnlocked: 0,
-                    wallpaperLocked: 0,
-                    wallpaperUnlocked: 0
-                };
-            }
-            brandMap[b].totalContracts += 1;
-
-            if (c.status === 'Application') brandMap[b].applicationCount += 1;
-            else if (c.status === 'Check') brandMap[b].checkCount += 1;
-            else if (c.status === 'Activated') {
-                brandMap[b].activatedCount += 1;
-                brandMap[b].loanDisbursed += (Number(c.amount) || 0);
-                brandMap[b].monthlyCollectionEst += (Number(c.monthlyPayment) || 0);
-            }
-            else if (c.status === 'Redeem') brandMap[b].redeemCount += 1;
-            else if (c.status === 'Blacklist') brandMap[b].blacklistCount += 1;
-            else if (c.status === 'Comments') brandMap[b].commentsCount += 1;
-
-            if (c.lockPhoneStatus === 'Locked') brandMap[b].phoneLocked += 1;
-            else brandMap[b].phoneUnlocked += 1;
-
-            if (c.lockWallpaperStatus === 'Locked') brandMap[b].wallpaperLocked += 1;
-            else brandMap[b].wallpaperUnlocked += 1;
-        });
-
-        const cBrandLookup = {};
-        rawContracts.forEach(c => { if (c.contractId) cBrandLookup[c.contractId] = c.brand || 'General / MDM'; });
-
-        rawPayments.forEach(p => {
-            const b = p.brand || cBrandLookup[p.contractId] || 'General / MDM';
-            if (brandMap[b]) {
-                brandMap[b].revenueCollected += (Number(p.amount) || 0);
-            }
-        });
-
-        return Object.values(brandMap);
-    }, [rawContracts, rawPayments]);
+    // Print Action
+    const handlePrint = () => {
+        window.print();
+    };
 
     return (
-        <div className="w-full min-h-screen p-2 sm:p-2 lg:p-2 space-y-6 font-sans text-slate-900 antialiased select-none bg-slate-100/60">
-
-            {/* ═══════════════════════════════════════════════════════════
-                1. REFINED FINANCIAL CONTROL BAR (HIGH CONTRAST HEADER)
-            ═══════════════════════════════════════════════════════════ */}
-            <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-
-                {/* Left: Brand Identity & Title */}
-                <div>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-                                {t('dashboard')}
-                            </h1>
+        <main className="dashboard-root select-none">
+            {/* ── Executive Header ── */}
+            <header className="executive-header">
+                {/* Top Ticker Row */}
+                <div className="top-ticker-row">
+                    <div className="top-ticker-bar-top">
+                        <div className="brand-title">
+                            <div className="brand-badge-icon">
+                                <FaLayerGroup />
+                            </div>
+                            <h1>{activeUserBrand ? `SYSTEM ${activeUserBrand.toUpperCase()}` : 'SYSTEM 888MDM'}</h1>
                         </div>
-                    </div>
-                </div>
 
-                {/* Right: Controls & High-Visibility Filters */}
-                <div className="flex flex-wrap items-center gap-3">
-                    {/* Brand Scope Selector */}
-                    <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 border-2 border-slate-300 rounded-[5px] text-xs font-black text-slate-900">
-                        <FaBuilding className="text-slate-700 text-sm" />
-                        {isMasterAdmin && brandsList.length > 0 ? (
-                            <select
-                                value={brandFilter}
-                                onChange={e => setBrandFilter(e.target.value)}
-                                className="bg-transparent text-slate-950 font-black outline-none cursor-pointer pr-1"
+                        <div className="top-user-actions">
+                            {/* Brand Filter for Master Admin */}
+                            {isMasterAdmin && brandsList.length > 0 && (
+                                <select
+                                    value={brandFilter}
+                                    onChange={(e) => setBrandFilter(e.target.value)}
+                                    className="brand-filter-select desktop-only"
+                                >
+                                    <option value="">{t('allBrands') || 'គ្រប់ Brand ទាំងអស់'}</option>
+                                    {brandsList.map((b, i) => (
+                                        <option key={i} value={typeof b === 'string' ? b : b.name || ''}>
+                                            {typeof b === 'string' ? b : b.name || ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+
+                            {/* Overdue Alert Chip */}
+                            {totalOverdueAlertCount > 0 && (
+                                <div className="system-alert-chip" title={`មាន ${totalOverdueAlertCount} កុងត្រាហួសថ្ងៃកំណត់បង់ប្រាក់`}>
+                                    <FaTriangleExclamation />
+                                    <span>ហួសកំណត់: <strong>{totalOverdueAlertCount}</strong></span>
+                                </div>
+                            )}
+
+                            {/* Live System Status Chip */}
+                            <div className="system-status-chip">
+                                <div className="status-live-indicator">
+                                    <span className="live-status-dot"></span>
+                                    <span className="status-text desktop-only">ប្រព័ន្ធដំណើរការល្អ</span>
+                                    <span className="status-text mobile-only">Online</span>
+                                </div>
+                                <span className="status-divider desktop-only">·</span>
+                                <div className="sync-time-box desktop-only">
+                                    <FaClock />
+                                    <span>បច្ចុប្បន្នភាព: {lastSyncTime}</span>
+                                </div>
+                            </div>
+
+                            {/* Fullscreen Button */}
+                            <button
+                                type="button"
+                                className="icon-btn desktop-only"
+                                title={isFullscreen ? 'ចាកចេញពីអេក្រង់ពេញ' : 'ពង្រីកពេញអេក្រង់'}
+                                onClick={handleToggleFullscreen}
+                                aria-label="ពង្រីកពេញអេក្រង់"
                             >
-                                <option value="">{t('allBrands')}</option>
-                                {brandsList.map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
-                        ) : (
-                            <span className="text-slate-950 font-black font-mono">
-                                {user?.brand || 'Default Brand'}
+                                {isFullscreen ? <FaCompress /> : <FaExpand />}
+                            </button>
+
+                            {/* Theme Toggle Button */}
+                            <button
+                                type="button"
+                                className="icon-btn"
+                                title="ប្តូរពន្លឺ (Theme)"
+                                onClick={handleToggleTheme}
+                                aria-label="ប្តូរពន្លឺ"
+                            >
+                                {theme === 'dark' ? <FaSun /> : <FaMoon />}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Header Bar */}
+                <div className="header-main-bar">
+                    <div className="header-info-col">
+                        <div className="title-with-badge">
+                            <div className="header-icon-box">
+                                <FaChartLine />
+                            </div>
+                            <div className="title-text-group">
+                                <h2>Dashboard</h2>
+                                <span className="live-badge">
+                                    <span className="pulse-dot"></span> LIVE MDM ANALYTICS
+                                </span>
+                            </div>
+                        </div>
+                        <div className="header-desc-row">
+                            <p className="header-desc">ផ្ទាំងគ្រប់គ្រងសង្ខេបប្រតិបត្តិ ឥណទាន និងទូរស័ព្ទ MDM</p>
+                            <span className="desc-timeframe-tag">
+                                <FaCalendarCheck /> {timeframeLabel}
                             </span>
-                        )}
+                        </div>
                     </div>
 
+                    <div className="header-actions">
+                        <button
+                            type="button"
+                            className="btn-action btn-print desktop-only"
+                            title="បោះពុម្ព ឬទាញយកជារបាយការណ៍ PDF"
+                            onClick={handlePrint}
+                        >
+                            <FaPrint />
+                            <span>Print Report</span>
+                        </button>
+                        <button
+                            type="button"
+                            className={`btn-action btn-reload ${reloading ? 'reloading' : ''}`}
+                            onClick={handleManualReload}
+                            title="ទាញទិន្នន័យថ្មីឡើងវិញ"
+                        >
+                            <FaRotateRight />
+                            <span>Reload</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            {/* ── Executive KPI Grid ── */}
+            <div className="executive-kpi-grid">
+                {/* Card 1: Disbursed */}
+                <div className="exec-card card-disbursed">
+                    <div className="exec-card-header">
+                        <span className="card-label">ឥណទានបញ្ចេញសរុប</span>
+                        <div className="exec-card-icon icon-blue">
+                            <FaCreditCard />
+                        </div>
+                    </div>
+                    <div className="card-value">{formatMoney(totalDisbursedAmount)}</div>
+                    <div className="exec-card-footer">
+                        <div className="stacked-stat">
+                            <span>អតិថិជន: <strong>{formatNumber(activatedCount)} នាក់</strong></span>
+                            <span>អតិថិជនសរុប: <strong>{formatNumber(totalCount)} នាក់</strong></span>
+                            <span>ឥណទានសរុប: <strong>{formatMoney(totalDisbursedAmount)}</strong></span>
+                        </div>
+                        <span className="badge-pill badge-disbursed">DISBURSED</span>
+                    </div>
+                </div>
+
+                {/* Card 2: Collected */}
+                <div className="exec-card card-collected">
+                    <div className="exec-card-header">
+                        <span className="card-label">ប្រាក់ប្រមូលបានសរុប</span>
+                        <div className="exec-card-icon icon-green">
+                            <FaArrowTrendUp />
+                        </div>
+                    </div>
+                    <div className="card-value color-green">{formatMoney(totalCollectedRevenue)}</div>
+                    <div className="exec-card-footer">
+                        <div className="stacked-stat">
+                            <span>បានបង់: <strong>{formatNumber(rawPayments.length)} ប្រតិបត្តិការ</strong></span>
+                            <span>ប្រមូលបាន: <strong>{totalDisbursedAmount > 0 ? ((totalCollectedRevenue / totalDisbursedAmount) * 100).toFixed(2) : '0.00'}%</strong></span>
+                        </div>
+                        <span className="badge-pill" style={{ background: '#d1fae5', color: '#059669' }}>COLLECTED</span>
+                    </div>
+                </div>
+
+                {/* Card 3: Scheduled */}
+                <div className="exec-card card-scheduled">
+                    <div className="exec-card-header">
+                        <span className="card-label">ប្រាក់ត្រូវប្រមូលសរុប</span>
+                        <div className="exec-card-icon icon-purple">
+                            <FaReceipt />
+                        </div>
+                    </div>
+                    <div className="card-value color-purple">{formatMoney(totalScheduledAmount)}</div>
+                    <div className="exec-card-footer split-footer">
+                        <div className="stacked-stat">
+                            <span>ពិន័យ: <strong>{formatMoney(totalPenaltyAmount)}</strong></span>
+                            <span>កាតព្វកិច្ចសរុប: <strong>{formatMoney(totalObligation)}</strong></span>
+                        </div>
+                        <span className="badge-pill badge-scheduled">SCHEDULED</span>
+                    </div>
+                </div>
+
+                {/* Card 4: Outstanding */}
+                <div className="exec-card card-outstanding">
+                    <div className="exec-card-header">
+                        <span className="card-label">ប្រាក់នៅសល់មិនទាន់ប្រមូល</span>
+                        <div className="exec-card-icon icon-orange">
+                            <FaLock />
+                        </div>
+                    </div>
+                    <div className="card-value color-orange">{formatMoney(totalOutstandingAmount)}</div>
+                    <div className="exec-card-footer">
+                        <div className="stacked-stat">
+                            <span>អត្រាមិនទាន់ប្រមូល: <strong>{totalObligation > 0 ? ((totalOutstandingAmount / totalObligation) * 100).toFixed(2) : '0.00'}%</strong></span>
+                        </div>
+                        <span className="badge-pill badge-outstanding">OUTSTANDING</span>
+                    </div>
                 </div>
             </div>
 
-            {/* ═══════════════════════════════════════════════════════════
-                2. FOUR RAZOR-SHARP KPI METRIC CARDS (2 DECIMALS STRICT)
-            ═══════════════════════════════════════════════════════════ */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* ── Middle Dashboard Row ── */}
+            <div className="middle-dashboard-row">
+                {/* Left: Chart Card */}
+                <div className="chart-card flow-trend-card">
+                    <div className="c-head-row">
+                        <div className="c-title-box">
+                            <div className="title-icon-line">
+                                <div className="mini-icon green-icon">
+                                    <FaChartArea />
+                                </div>
+                                <h3>ក្រាហ្វិកប្រាក់ប្រមូល & អតិថិជន</h3>
+                            </div>
+                            <span className="c-subtitle">បង្ហាញពីលំហូរទឹកប្រាក់ប្រមូលបាន ឥណទានបញ្ចេញ និងចំនួនអតិថិជន Activated</span>
+                        </div>
 
-                {/* Metric 1: Total Loan Disbursed */}
-                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-blue-500 transition-all">
-                    <div className="flex items-center justify-between text-slate-700">
-                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">{t('totalLoanDisbursed')}</span>
-                        <div className="w-9 h-9 rounded-[5px] bg-blue-100 text-blue-800 border-2 border-blue-300 flex items-center justify-center text-lg font-black">
-                            <MdAccountBalanceWallet />
+                        <div className="chart-controls">
+                            <div className="custom-legend">
+                                <span className="legend-badge">
+                                    <span className="legend-dot dot-green"></span>
+                                    <span className="legend-text-full desktop-only">ប្រាក់ប្រមូលបាន</span>
+                                    <span className="legend-text-short mobile-only">ប្រមូល</span>
+                                </span>
+                                <span className="legend-badge">
+                                    <span className="legend-dot dot-blue"></span>
+                                    <span className="legend-text-full desktop-only">ឥណទានបញ្ចេញ</span>
+                                    <span className="legend-text-short mobile-only">ឥណទាន</span>
+                                </span>
+                                <span className="legend-badge">
+                                    <span className="legend-dot dot-purple"></span>
+                                    <span className="legend-text-full desktop-only">ចំនួនអតិថិជន</span>
+                                    <span className="legend-text-short mobile-only">អតិថិជន</span>
+                                </span>
+                            </div>
+
+                            <div className="timeframe-container" ref={popoverRef}>
+                                <div className="timeframe-switch">
+                                    {[
+                                        { key: 'today', label: 'ថ្ងៃនេះ' },
+                                        { key: '7d', label: '៧ ថ្ងៃ' },
+                                        { key: '30d', label: '៣០ ថ្ងៃ' },
+                                        { key: 'monthly', label: 'ខែនេះ' },
+                                        { key: 'all', label: 'ទាំងអស់' },
+                                        { key: 'custom', label: '📅 កំណត់ថ្ងៃ' }
+                                    ].map(item => {
+                                        const isCustom = item.key === 'custom';
+                                        const isActive = selectedTimeframe === item.key;
+                                        return (
+                                            <button
+                                                key={item.key}
+                                                type="button"
+                                                className={`btn-timeframe ${isActive ? 'active' : ''} ${isCustom ? 'btn-custom-trigger' : ''}`}
+                                                onClick={() => {
+                                                    if (isCustom) {
+                                                        setIsCustomPopoverOpen(prev => !prev);
+                                                    } else {
+                                                        setIsCustomPopoverOpen(false);
+                                                        setSelectedTimeframe(item.key);
+                                                    }
+                                                }}
+                                            >
+                                                {isCustom ? (
+                                                    selectedTimeframe === 'custom' && customStartDate && customEndDate ? (
+                                                        `📅 ${customStartDate.slice(5)} - ${customEndDate.slice(5)}`
+                                                    ) : '📅 កំណត់ថ្ងៃ'
+                                                ) : item.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Custom Date Popover */}
+                                {isCustomPopoverOpen && (
+                                    <div className="custom-date-popover">
+                                        <div className="popover-header">
+                                            <div className="popover-title">
+                                                <FaCalendarDays />
+                                                <span>កំណត់ចន្លោះកាលបរិច្ឆេទ</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="btn-close-popover"
+                                                onClick={() => setIsCustomPopoverOpen(false)}
+                                                aria-label="បិទ"
+                                            >
+                                                <FaXmark />
+                                            </button>
+                                        </div>
+
+                                        <div className="popover-shortcuts">
+                                            <button type="button" onClick={() => handleApplyDatePreset(7)}>៧ ថ្ងៃកន្លងទៅ</button>
+                                            <button type="button" onClick={() => handleApplyDatePreset(14)}>១៤ ថ្ងៃកន្លងទៅ</button>
+                                            <button type="button" onClick={() => handleApplyDatePreset(30)}>៣០ ថ្ងៃកន្លងទៅ</button>
+                                        </div>
+
+                                        <div className="popover-inputs">
+                                            <label className="date-input-group">
+                                                <span className="input-label">ចាប់ពី</span>
+                                                <input
+                                                    type="date"
+                                                    value={customStartDate}
+                                                    onChange={(e) => {
+                                                        setCustomStartDate(e.target.value);
+                                                        setCustomDateError(null);
+                                                    }}
+                                                />
+                                            </label>
+                                            <label className="date-input-group">
+                                                <span className="input-label">ដល់</span>
+                                                <input
+                                                    type="date"
+                                                    value={customEndDate}
+                                                    onChange={(e) => {
+                                                        setCustomEndDate(e.target.value);
+                                                        setCustomDateError(null);
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+
+                                        {customDateError && (
+                                            <div className="date-popover-error">{customDateError}</div>
+                                        )}
+
+                                        <div className="popover-actions">
+                                            <button
+                                                type="button"
+                                                className="btn-popover-cancel"
+                                                onClick={() => setIsCustomPopoverOpen(false)}
+                                            >
+                                                បោះបង់
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-popover-apply"
+                                                onClick={handleApplyCustomDateRange}
+                                            >
+                                                ត្រងទិន្នន័យ
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div className="mt-2">
-                        <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-slate-950">
-                            ${formatMoney(loanOutAmt)}
-                        </div>
-                        <div className="flex items-center justify-between text-xs mt-2.5 pt-2.5 border-t-2 border-slate-200 text-slate-800 font-bold">
-                            <span>អតិថិជន: <strong className="text-slate-950 font-mono font-black">{stats.totalBorrowers || stats.totalContracts}</strong> នាក់</span>
-                            <span className="font-mono text-blue-900 font-black text-[11px] bg-blue-100 px-2 py-0.5 rounded-md border border-blue-300">DISBURSED</span>
-                        </div>
+
+                    {/* SVG Interactive Trend Chart */}
+                    <div className="line-canvas-box">
+                        <LineChartCanvas points={chartPoints} theme={theme} />
                     </div>
                 </div>
 
-                {/* Metric 2: Revenue Collected */}
-                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-emerald-500 transition-all">
-                    <div className="flex items-center justify-between text-slate-700">
-                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">{t('totalRevenueCollected')}</span>
-                        <div className="w-9 h-9 rounded-[5px] bg-emerald-100 text-emerald-800 border-2 border-emerald-300 flex items-center justify-center text-lg font-black">
-                            <MdTrendingUp />
+                {/* Right: Contract Pipeline & Lock Ratio Card */}
+                <div className="chart-card contract-status-card">
+                    <div className="c-head-row">
+                        <div className="c-title-box">
+                            <div className="title-icon-line">
+                                <div className="mini-icon purple-icon">
+                                    <FaFileContract />
+                                </div>
+                                <h3>ស្ថានភាពកិច្ចសន្យា & MDM</h3>
+                            </div>
+                            <span className="c-subtitle">សរុបកិច្ចសន្យា: <strong>{formatNumber(totalCount)} ករណី</strong></span>
                         </div>
                     </div>
-                    <div className="mt-2">
-                        <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-emerald-700">
-                            ${formatMoney(weCollectedAmt)}
+
+                    <div className="pipeline-list">
+                        <PipelineItem
+                            label="Activated"
+                            khmerLabel="ដំណើរការ"
+                            count={activatedCount}
+                            percent={Number(activatedPct)}
+                            colorClass="fill-green"
+                            trackColor="rgba(16, 185, 129, 0.12)"
+                        />
+                        <PipelineItem
+                            label="Application"
+                            khmerLabel="ពាក្យស្នើសុំ"
+                            count={applicationCount}
+                            percent={Number(applicationPct)}
+                            colorClass="fill-blue"
+                            trackColor="rgba(59, 130, 246, 0.12)"
+                        />
+                        <PipelineItem
+                            label="Check"
+                            khmerLabel="កំពុងត្រួតពិនិត្យ"
+                            count={checkCount}
+                            percent={Number(checkPct)}
+                            colorClass="fill-cyan"
+                            trackColor="rgba(6, 182, 212, 0.12)"
+                        />
+                        <PipelineItem
+                            label="Redeem"
+                            khmerLabel="បញ្ចាំ/ដោះដូរ"
+                            count={redeemCount}
+                            percent={Number(redeemPct)}
+                            colorClass="fill-purple"
+                            trackColor="rgba(139, 92, 246, 0.12)"
+                        />
+                        <PipelineItem
+                            label="Blacklist"
+                            khmerLabel="បញ្ជីខ្មៅ"
+                            count={blacklistCount}
+                            percent={Number(blacklistPct)}
+                            colorClass="fill-red"
+                            trackColor="rgba(239, 68, 68, 0.12)"
+                        />
+                    </div>
+
+                    {/* Phone Remote Lock Ratio Panel */}
+                    <div className="remote-lock-panel">
+                        <div className="lock-header">
+                            <span>Phone Remote Lock Ratio</span>
+                            <span className="lock-stat-badge">{formatNumber(lockedPhones)} Locked</span>
                         </div>
-                        <div className="flex items-center justify-between text-xs mt-2.5 pt-2.5 border-t-2 border-slate-200 text-slate-800 font-bold">
-                            <span>ប្រតិបត្តិការ: <strong className="text-slate-950 font-mono font-black">{stats.paymentCount}</strong></span>
-                            <span className="font-mono text-emerald-950 font-black text-[11px] bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300">+{collectionPct}%</span>
+                        <div className="lock-ratio-bar">
+                            <div className="ratio-locked" style={{ width: `${lockedRatio}%` }}></div>
+                            <div className="ratio-unlocked" style={{ width: `${unlockedRatio}%` }}></div>
+                        </div>
+                        <div className="lock-footer">
+                            <span className="lock-text locked">
+                                <FaLock /> {lockedRatio}% Locked
+                            </span>
+                            <span className="lock-text unlocked">
+                                <FaLockOpen /> {unlockedRatio}% Unlocked
+                            </span>
                         </div>
                     </div>
                 </div>
-
-                {/* Metric 3: Total Repayment Expected */}
-                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-purple-500 transition-all">
-                    <div className="flex items-center justify-between text-slate-700">
-                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">{t('totalRepaymentDue')}</span>
-                        <div className="w-9 h-9 rounded-[5px] bg-purple-100 text-purple-800 border-2 border-purple-300 flex items-center justify-center text-lg font-black">
-                            <FaCoins />
-                        </div>
-                    </div>
-                    <div className="mt-2">
-                        <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-purple-900">
-                            ${formatMoney(repaymentMetrics.totalExpected)}
-                        </div>
-                        <div className="mt-2.5 pt-2.5 border-t-2 border-slate-200 space-y-1">
-                            <div className="flex items-center justify-between text-xs text-slate-800 font-bold">
-                                <span>ពិន័យ: <strong className="text-rose-700 font-mono font-black">${formatMoney(repaymentMetrics.totalPenalty)}</strong></span>
-                                <span className="font-mono text-purple-950 font-black text-[11px] bg-purple-100 px-2 py-0.5 rounded-md border border-purple-300">SCHEDULED</span>
-                            </div>
-                            <div className="flex items-center justify-between text-xs text-slate-800 font-bold pt-1 border-t border-slate-100">
-                                <span>ការប្រាក់សរុប:</span>
-                                <span className="font-mono text-emerald-700 font-black">${formatMoney(repaymentMetrics.totalInterest)}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Metric 4: Outstanding Balance */}
-                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-amber-500 transition-all">
-                    <div className="flex items-center justify-between text-slate-700">
-                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">{t('outstandingReceivables')}</span>
-                        <div className="w-9 h-9 rounded-[5px] bg-amber-100 text-amber-800 border-2 border-amber-300 flex items-center justify-center text-lg font-black">
-                            <MdLock />
-                        </div>
-                    </div>
-                    <div className="mt-2">
-                        <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-amber-800">
-                            ${formatMoney(Math.max(repaymentMetrics.totalExpected - totalCustomerPaid, 0))}
-                        </div>
-                        <div className="mt-2.5 pt-2.5 border-t-2 border-slate-200 space-y-1">
-                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
-                                <span>ភ្ញៀវបានបង់:</span>
-                                <span className="font-mono text-emerald-700 font-black">${formatMoney(totalCustomerPaid)}</span>
-                            </div>
-                            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
-                                <span>Lock Device & Other:</span>
-                                <span className="font-mono text-rose-600 font-black">${formatMoney(lockDeviceAmt)}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
-            {/* ═══════════════════════════════════════════════════════════
-                3. ALL CUSTOMERS STYLE LINE CHART & STATUS OVERVIEW
-            ═══════════════════════════════════════════════════════════ */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* ── Customer Payment Detail Section ── */}
+            <div className="chart-card customer-payment-card">
+                <div className="c-head-row">
+                    <div className="c-title-box">
+                        <div className="title-icon-line">
+                            <div className="mini-icon orange-icon">
+                                <FaUsers />
+                            </div>
+                            <h3>
+                                លម្អិតភ្ញៀវត្រូវបង់ និងពិន័យ
+                                <span className="brand-en-badge">CUSTOMER PAYMENT DETAIL</span>
+                            </h3>
+                        </div>
+                        <span className="c-subtitle">បញ្ជីភ្ញៀវក្នុង {timeframeLabel} និងស្ថានភាពការបង់ប្រាក់</span>
+                    </div>
+                </div>
 
-                {/* Left 2 Cols: Exact Reusable LineChart (from /report/all-customers) */}
-                <div className="lg:col-span-2">
-                    <LineChart
-                        title="ក្រាបខ្សែនិន្នាការហិរញ្ញវត្ថុ & អតិថិជន"
-                        subtitle="បង្ហាញពីកំណើនទឹកប្រាក់ប្រមូលបាន ឥណទានបញ្ចេញ និងចំនួនអតិថិជន Activated ប្រចាំថ្ងៃ/ខែ"
-                        data={chartTrendData}
-                        series={[
-                            { key: 'revenue', label: 'ប្រាក់ប្រមូលបាន', color: '#10b981', isCurrency: true },
-                            { key: 'loan', label: 'ឥណទានបញ្ចេញ', color: '#3b82f6', isCurrency: true },
-                            { key: 'customerCount', label: 'ចំនួនអតិថិជន', color: '#8b5cf6', isCurrency: false }
-                        ]}
-                        timeFilterOptions={['7d', '30d', 'monthly', 'all']}
-                        defaultFilter="monthly"
-                        height={320}
+                <div className="mobile-table-hint mobile-only">
+                    <FaTableCellsLarge />
+                    <span>បង្ហាញជាកាតសម្រាប់មើលងាយលើទូរស័ព្ទ</span>
+                </div>
+
+                {/* Sub-section 1: ភ្ញៀវត្រូវបង់ (Due) */}
+                <div className="payment-section payment-section-due">
+                    <div className="payment-section-heading">
+                        <h4>
+                            <FaReceipt /> ភ្ញៀវត្រូវបង់
+                        </h4>
+                        <div className="payment-section-summary">
+                            <span className="payment-total">
+                                បានបង់ <strong>{formatMoney(dueTotalPaid)}</strong>
+                            </span>
+                            <span className="payment-total">
+                                នៅសល់ <strong>{formatMoney(dueTotalRemaining)}</strong>
+                            </span>
+                            <span className="payment-count">{dueCustomerRows.length} នាក់</span>
+                        </div>
+                    </div>
+                    <CustomerTable rows={dueCustomerRows} formatMoney={formatMoney} formatNumber={formatNumber} />
+                </div>
+
+                {/* Sub-section 2: ភ្ញៀវយឺត (Late / Overdue) */}
+                <div className="payment-section payment-section-late">
+                    <div className="payment-section-heading">
+                        <h4>
+                            <FaClock /> ភ្ញៀវយឺត
+                        </h4>
+                        <div className="payment-section-summary">
+                            <span className="payment-total">
+                                ពិន័យសរុប <strong>{formatMoney(lateTotalPenalty)}</strong>
+                            </span>
+                            <span className="payment-count">{overdueCustomerRows.length} នាក់</span>
+                            <select
+                                className="payment-filter-select"
+                                aria-label="តម្រងបញ្ជីភ្ញៀវយឺត"
+                                value={lateSectionFilter}
+                                onChange={(e) => setLateSectionFilter(e.target.value)}
+                            >
+                                <option value="all">ទាំងអស់</option>
+                                <option value="filtered">តាម Filter</option>
+                            </select>
+                        </div>
+                    </div>
+                    <CustomerTable
+                        rows={lateSectionFilter === 'all' ? overdueCustomerRows : overdueCustomerRows.slice(0, 10)}
+                        formatMoney={formatMoney}
+                        formatNumber={formatNumber}
                     />
                 </div>
 
-                {/* Right 1 Col: Contract & Security Overview */}
-                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 sm:p-2 shadow-sm flex flex-col justify-between space-y-4">
-                    <div>
-                        <div className="flex items-center justify-between pb-3 border-b-2 border-slate-200">
-                            <h3 className="text-sm font-black text-slate-950 uppercase tracking-wide">
-                                ស្ថានភាពកិច្ចសន្យា & MDM
-                            </h3>
-                            <span className="text-xs font-mono font-black px-2.5 py-1 bg-slate-900 text-white rounded-md">
-                                {stats.totalContracts} សរុប
+                {/* Sub-section 3: ភ្ញៀវត្រូវពិន័យ (Penalty / Receipts) */}
+                <div className="payment-section payment-section-penalty">
+                    <div className="payment-section-heading">
+                        <h4>
+                            <FaTriangleExclamation /> ភ្ញៀវត្រូវពិន័យ
+                        </h4>
+                        <div className="payment-section-summary">
+                            <span className="payment-total">
+                                សរុប <strong>{formatMoney(penaltyTotalAmount)}</strong>
                             </span>
-                        </div>
-
-                        {/* Status Breakdown List */}
-                        <div className="space-y-2 mt-3 text-xs">
-                            {[
-                                { label: t('activated'), count: stats.activatedContracts, pct: activatedPct, color: 'text-emerald-950 bg-emerald-100 border-2 border-emerald-400' },
-                                { label: t('application'), count: stats.applicationContracts, pct: applicationPct, color: 'text-amber-950 bg-amber-100 border-2 border-amber-400' },
-                                { label: t('check'), count: stats.checkContracts, pct: checkPct, color: 'text-sky-950 bg-sky-100 border-2 border-sky-400' },
-                                { label: t('redeem'), count: stats.redeemContracts, pct: redeemPct, color: 'text-purple-950 bg-purple-100 border-2 border-purple-400' },
-                                { label: t('blacklist'), count: stats.blacklistContracts, pct: blacklistPct, color: 'text-rose-950 bg-rose-100 border-2 border-rose-400' },
-                            ].map(item => (
-                                <div key={item.label} className={`px-3.5 py-2 rounded-[5px] ${item.color} flex items-center justify-between font-black`}>
-                                    <span>{item.label}</span>
-                                    <span className="font-mono text-slate-950 text-sm">
-                                        {item.count} <span className="text-xs text-slate-700 font-bold">({item.pct}%)</span>
-                                    </span>
-                                </div>
-                            ))}
+                            <span className="payment-count">{penaltyPaymentRows.length} នាក់</span>
                         </div>
                     </div>
 
-                    {/* Remote Lock Security Status */}
-                    <div className="pt-3 border-t-2 border-slate-200 space-y-2.5">
-                        <div className="flex items-center justify-between text-xs font-black text-slate-900">
-                            <span>Phone Remote Lock Ratio</span>
-                            <span className="font-mono text-rose-700 font-black">{stats.lockedPhones} Locked</span>
+                    {penaltyPaymentRows.length === 0 ? (
+                        <div className="table-responsive">
+                            <table className="analytics-table customer-payment-table">
+                                <tbody>
+                                    <tr>
+                                        <td colSpan={9} className="empty-table-cell">មិនមានទិន្នន័យ</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <div className="w-full h-3.5 bg-slate-200 rounded-md overflow-hidden flex border-2 border-slate-300">
-                            <div className="h-full bg-rose-600 transition-all duration-300" style={{ width: `${phoneLockPct}%` }} />
-                            <div className="h-full bg-emerald-600 transition-all duration-300" style={{ width: `${100 - parseFloat(phoneLockPct)}%` }} />
-                        </div>
-                        <div className="flex items-center justify-between text-xs font-mono font-black">
-                            <span className="text-rose-700 flex items-center gap-1"><FaLock className="text-[10px]" /> {phoneLockPct}% Locked</span>
-                            <span className="text-emerald-700 flex items-center gap-1"><FaUnlock className="text-[10px]" /> {formatPercent(100 - parseFloat(phoneLockPct))}% Unlocked</span>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            {/* ═══════════════════════════════════════════════════════════
-                4. FULL COMPREHENSIVE BRAND PERFORMANCE BREAKDOWN TABLE
-            ═══════════════════════════════════════════════════════════ */}
-            <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 sm:p-2 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-slate-200">
-                    <div>
-                        <h2 className="text-sm sm:text-base font-black text-slate-950 uppercase tracking-wide flex items-center gap-2">
-                            <FaBuilding className="text-slate-800" />
-                            <span>{t('brandSummaryTitle')}</span>
-                        </h2>
-                        <p className="text-xs text-slate-700 font-bold mt-0.5">
-                            បង្ហាញព័ត៌មានកិច្ចសន្យា ស្ថានភាព Report ទឹកប្រាក់ប្រមូល និងស្ថានភាព Lock គ្រប់សាខា
-                        </p>
-                    </div>
-                    <span className="px-3.5 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-mono font-black self-start sm:self-auto">
-                        {summaryTableData.length} Brands
-                    </span>
-                </div>
-
-                <div className="overflow-x-auto rounded-[5px] border-2 border-slate-300">
-                    <table className="w-full text-left text-xs border-collapse">
-                        <thead className="bg-slate-950 text-white uppercase tracking-wider text-[11px] font-black">
-                            <tr>
-                                <th className="px-3 py-1 text-center w-10">#</th>
-                                <th className="px-3 py-1">{t('brand')}</th>
-                                <th className="px-3 py-1 text-center">សរុប</th>
-                                <th className="px-3 py-1 text-center">App</th>
-                                <th className="px-3 py-1 text-center">Check</th>
-                                <th className="px-3 py-1 text-center">Activated</th>
-                                <th className="px-3 py-1 text-center">Redeem</th>
-                                <th className="px-3 py-1 text-center">Blacklist</th>
-                                <th className="px-3 py-1 text-right">ឥណទាន ($)</th>
-                                <th className="px-3 py-1 text-right">ប្រចាំខែ ($)</th>
-                                <th className="px-3 py-1 text-right">ប្រមូលបាន ($)</th>
-                                <th className="px-3 py-1 text-right">នៅសល់ ($)</th>
-                                <th className="px-3 py-1 text-center">Lock Phone</th>
-                                <th className="px-3 py-1 text-center">Lock WP</th>
-                                <th className="px-3 py-1 text-center">ស្ថានភាព</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y-2 divide-slate-200 font-black text-slate-900">
-                            {summaryTableData.length === 0 ? (
-                                <tr>
-                                    <td colSpan={15} className="text-center py-8 text-slate-700 italic font-bold text-sm">
-                                        មិនមានទិន្នន័យសាខានៅឡើយទេ
-                                    </td>
-                                </tr>
-                            ) : (
-                                summaryTableData.map((row, idx) => {
-                                    const netBal = Math.max(row.monthlyCollectionEst - row.revenueCollected, 0);
-                                    const isHealthy = row.revenueCollected >= row.monthlyCollectionEst && row.revenueCollected > 0;
-                                    return (
-                                        <tr key={row.brand} className="hover:bg-slate-100/90 transition-colors">
-                                            <td className="px-3 py-1 text-center font-mono text-slate-600 font-bold">{idx + 1}</td>
-                                            <td className="px-3 py-1 font-black text-slate-950 flex items-center gap-1.5 whitespace-nowrap">
-                                                <span className="w-2.5 h-2.5 rounded-xs bg-emerald-600 shadow-2xs shrink-0" />
-                                                <span>{row.brand}</span>
-                                            </td>
-                                            <td className="px-3 py-1 text-center font-mono font-black text-slate-950">{row.totalContracts}</td>
-                                            <td className="px-3 py-1 text-center font-mono text-amber-800">{row.applicationCount}</td>
-                                            <td className="px-3 py-1 text-center font-mono text-sky-800">{row.checkCount}</td>
-                                            <td className="px-3 py-1 text-center font-mono font-black text-emerald-800 bg-emerald-50/50">{row.activatedCount}</td>
-                                            <td className="px-3 py-1 text-center font-mono text-purple-800">{row.redeemCount}</td>
-                                            <td className="px-3 py-1 text-center font-mono text-rose-800">{row.blacklistCount}</td>
-                                            <td className="px-3 py-1 text-right font-mono font-black text-blue-900">${formatMoney(row.loanDisbursed)}</td>
-                                            <td className="px-3 py-1 text-right font-mono font-bold text-slate-800">${formatMoney(row.monthlyCollectionEst)}</td>
-                                            <td className="px-3 py-1 text-right font-mono font-black text-emerald-800 bg-emerald-50/50">${formatMoney(row.revenueCollected)}</td>
-                                            <td className="px-3 py-1 text-right font-mono font-black text-rose-700">${formatMoney(netBal)}</td>
-                                            <td className="px-3 py-1 text-center font-mono font-black text-rose-700">
-                                                {row.phoneLocked > 0 ? (
-                                                    <span className="px-1.5 py-0.5 rounded bg-rose-100 border border-rose-300">{row.phoneLocked} L</span>
-                                                ) : '0'}
-                                            </td>
-                                            <td className="px-3 py-1 text-center font-mono font-black text-purple-700">
-                                                {row.wallpaperLocked > 0 ? (
-                                                    <span className="px-1.5 py-0.5 rounded bg-purple-100 border border-purple-300">{row.wallpaperLocked} WP</span>
-                                                ) : '0'}
-                                            </td>
-                                            <td className="px-3 py-1 text-center whitespace-nowrap">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border-2 ${isHealthy ? 'bg-emerald-100 text-emerald-950 border-emerald-400' : 'bg-amber-100 text-amber-950 border-amber-400'}`}>
-                                                    {isHealthy ? 'Healthy' : 'Active'}
-                                                </span>
+                    ) : (
+                        <div className="table-responsive">
+                            <table className="analytics-table customer-payment-table">
+                                <thead>
+                                    <tr>
+                                        <th>NO</th>
+                                        <th>DATE</th>
+                                        <th>PAYMENT TYPE</th>
+                                        <th>CUSTOMER NAME</th>
+                                        <th className="num">AMOUNT</th>
+                                        <th>DESCRIPTION</th>
+                                        <th>RECEIPT IMAGE</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {penaltyPaymentRows.map((p, idx) => (
+                                        <tr key={p.id}>
+                                            <td data-label="NO">{idx + 1}</td>
+                                            <td data-label="DATE">{p.dueDate}</td>
+                                            <td data-label="PAYMENT TYPE">{p.paymentMethod || '-'}</td>
+                                            <td data-label="CUSTOMER NAME">{p.category || '-'}</td>
+                                            <td data-label="AMOUNT" className="num color-red">{formatMoney(p.penaltyAmount)}</td>
+                                            <td data-label="DESCRIPTION">{p.description || '-'}</td>
+                                            <td data-label="RECEIPT IMAGE">
+                                                {p.photoUrl ? (
+                                                    <button
+                                                        type="button"
+                                                        className="receipt-preview-button"
+                                                        onClick={() => setPreviewImage(p.photoUrl)}
+                                                    >
+                                                        <FaImage /> View
+                                                    </button>
+                                                ) : 'No image'}
                                             </td>
                                         </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                        {/* Grand Total Footer */}
-                        {summaryTableData.length > 0 && (
-                            <tfoot className="bg-slate-950 text-white font-black font-mono text-xs border-t-2 border-slate-800">
-                                <tr>
-                                    <td colSpan={2} className="px-3 py-3.5 uppercase tracking-wider text-emerald-400 font-black font-sans text-xs">
-                                        {t('grandTotal')}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-center font-mono font-black text-amber-300">
-                                        {summaryTableData.reduce((s, r) => s + r.totalContracts, 0)}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-center font-mono text-amber-200">
-                                        {summaryTableData.reduce((s, r) => s + r.applicationCount, 0)}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-center font-mono text-sky-200">
-                                        {summaryTableData.reduce((s, r) => s + r.checkCount, 0)}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-center font-mono font-black text-emerald-400">
-                                        {summaryTableData.reduce((s, r) => s + r.activatedCount, 0)}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-center font-mono text-purple-300">
-                                        {summaryTableData.reduce((s, r) => s + r.redeemCount, 0)}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-center font-mono text-rose-300">
-                                        {summaryTableData.reduce((s, r) => s + r.blacklistCount, 0)}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-right font-mono font-black text-blue-300">
-                                        ${formatMoney(summaryTableData.reduce((s, r) => s + r.loanDisbursed, 0))}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-right font-mono text-slate-300">
-                                        ${formatMoney(summaryTableData.reduce((s, r) => s + r.monthlyCollectionEst, 0))}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-right font-mono font-black text-emerald-300">
-                                        ${formatMoney(summaryTableData.reduce((s, r) => s + r.revenueCollected, 0))}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-right font-mono font-black text-rose-300">
-                                        ${formatMoney(Math.max(summaryTableData.reduce((s, r) => s + r.monthlyCollectionEst - r.revenueCollected, 0), 0))}
-                                    </td>
-                                    <td className="px-3 py-3.5 text-center font-mono font-black text-rose-400">
-                                        {summaryTableData.reduce((s, r) => s + r.phoneLocked, 0)} L
-                                    </td>
-                                    <td className="px-3 py-3.5 text-center font-mono font-black text-purple-300">
-                                        {summaryTableData.reduce((s, r) => s + r.wallpaperLocked, 0)} WP
-                                    </td>
-                                    <td className="px-3 py-3.5 text-center font-mono font-black text-emerald-400 font-sans">
-                                        ✓ SYSTEM
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        )}
-                    </table>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             </div>
 
+            {/* ── Receipt Image Modal ── */}
+            {previewImage && (
+                <div
+                    className="receipt-preview-backdrop"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Receipt image preview"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    <div className="receipt-preview-modal" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            className="receipt-preview-close"
+                            aria-label="Close image preview"
+                            onClick={() => setPreviewImage(null)}
+                        >
+                            <FaXmark />
+                        </button>
+                        <img src={previewImage} alt="Receipt" className="receipt-preview-image" />
+                    </div>
+                </div>
+            )}
+
+            {/* ── Footer ── */}
+            <footer className="foot">
+                SYSTEM 888MDM — ផ្ទាំងគ្រប់គ្រងសង្ខេបប្រតិបត្តិ (Executive Mini Dashboard Summary)
+                <span style={{ marginLeft: 8, opacity: 0.7 }}>· 🟢 Live API Connected</span>
+            </footer>
+        </main>
+    );
+};
+
+// ── Sub-Components ──
+
+const PipelineItem = ({ label, khmerLabel, count, percent, colorClass, trackColor }) => (
+    <div className="pipeline-item">
+        <div className="pipeline-labels">
+            <span className="pipeline-title">
+                <strong>{label}</strong> <span className="kh-sub">({khmerLabel})</span>
+            </span>
+            <span className="pipeline-count">
+                <strong>{count}</strong> ({percent.toFixed(2)}%)
+            </span>
         </div>
+        <div className="progress-track" style={{ backgroundColor: trackColor }}>
+            <div className={`progress-fill ${colorClass}`} style={{ width: `${Math.max(percent, count > 0 ? 4 : 0)}%` }}></div>
+        </div>
+    </div>
+);
+
+const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
+    if (rows.length === 0) {
+        return (
+            <div className="table-responsive">
+                <table className="analytics-table customer-payment-table">
+                    <tbody>
+                        <tr>
+                            <td colSpan={9} className="empty-table-cell">មិនមានទិន្នន័យ</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        );
+    }
+
+    return (
+        <div className="table-responsive">
+            <table className="analytics-table customer-payment-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>ឈ្មោះភ្ញៀវ</th>
+                        <th>លេខកិច្ចសន្យា</th>
+                        <th>ថ្ងៃត្រូវបង់</th>
+                        <th className="num">ត្រូវបង់ ($)</th>
+                        <th className="num">បានបង់ ($)</th>
+                        <th className="num">នៅសល់ ($)</th>
+                        <th className="num">ពិន័យ ($)</th>
+                        <th>ស្ថានភាព</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((row, idx) => {
+                        const totalDue = row.scheduledAmount + row.penaltyAmount;
+                        const totalRemaining = row.outstandingAmount + row.penaltyAmount;
+
+                        let statusLabel = 'ត្រូវបង់';
+                        let statusClass = 'due';
+
+                        if (row.isPaid || totalRemaining <= 0) {
+                            statusLabel = 'បានបង់';
+                            statusClass = 'paid';
+                        } else if (row.penaltyAmount > 0) {
+                            statusLabel = 'មានពិន័យ';
+                            statusClass = 'penalty';
+                        } else if (row.daysUntilDue < 0) {
+                            statusLabel = `ហួសកំណត់ ${formatNumber(Math.abs(row.daysUntilDue))} ថ្ងៃ`;
+                            statusClass = 'overdue';
+                        } else if (row.daysUntilDue === 0) {
+                            statusLabel = 'ត្រូវបង់ថ្ងៃនេះ';
+                            statusClass = 'due';
+                        } else if (row.daysUntilDue > 0) {
+                            statusLabel = `នៅសល់ ${formatNumber(row.daysUntilDue)} ថ្ងៃត្រូវបង់`;
+                            statusClass = 'due';
+                        }
+
+                        return (
+                            <tr key={row.id}>
+                                <td data-label="#">{idx + 1}</td>
+                                <td data-label="ឈ្មោះភ្ញៀវ" className="customer-name-cell">
+                                    <strong>{row.customerName}</strong>
+                                    <small>{row.phone}</small>
+                                </td>
+                                <td data-label="កិច្ចសន្យា">{row.contractIid}</td>
+                                <td data-label="ថ្ងៃត្រូវបង់">{row.dueDate || '-'}</td>
+                                <td data-label="ត្រូវបង់" className="num">{formatMoney(totalDue)}</td>
+                                <td data-label="បានបង់" className="num color-green">{formatMoney(row.paidAmount)}</td>
+                                <td data-label="នៅសល់" className="num color-orange">{formatMoney(totalRemaining)}</td>
+                                <td data-label="ពិន័យ" className="num color-red">{formatMoney(row.penaltyAmount)}</td>
+                                <td data-label="ស្ថានភាព">
+                                    <span className={`payment-status payment-status-${statusClass}`}>
+                                        {statusLabel}
+                                    </span>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+// ── SVG Interactive Line & Area Chart ──
+const LineChartCanvas = ({ points = [], theme = 'light' }) => {
+    const isDark = theme === 'dark';
+    const width = 800;
+    const height = 250;
+    const padX = 50;
+    const padY = 30;
+    const chartW = width - padX * 2;
+    const chartH = height - padY * 2;
+
+    const [hoverIdx, setHoverIdx] = useState(null);
+
+    const maxVal = useMemo(() => {
+        let m = 0;
+        points.forEach(p => {
+            if (p.disbursed > m) m = p.disbursed;
+            if (p.collected > m) m = p.collected;
+        });
+        return m === 0 ? 100 : Math.ceil(m * 1.2);
+    }, [points]);
+
+    const maxCust = useMemo(() => {
+        let m = 0;
+        points.forEach(p => {
+            if (p.customers > m) m = p.customers;
+        });
+        return m === 0 ? 10 : Math.ceil(m * 1.2);
+    }, [points]);
+
+    const coords = useMemo(() => {
+        const n = points.length;
+        if (n === 0) return [];
+        return points.map((p, i) => {
+            const x = n === 1 ? padX + chartW / 2 : padX + (i / (n - 1)) * chartW;
+            const yDisbursed = padY + chartH - (p.disbursed / maxVal) * chartH;
+            const yCollected = padY + chartH - (p.collected / maxVal) * chartH;
+            const yCust = padY + chartH - (p.customers / maxCust) * chartH;
+            return { ...p, x, yDisbursed, yCollected, yCust };
+        });
+    }, [points, maxVal, maxCust, chartW, chartH]);
+
+    const disbursedPath = useMemo(() => {
+        if (coords.length === 0) return '';
+        return coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.yDisbursed.toFixed(1)}`).join(' ');
+    }, [coords]);
+
+    const disbursedArea = useMemo(() => {
+        if (coords.length === 0) return '';
+        const first = coords[0];
+        const last = coords[coords.length - 1];
+        const baseY = padY + chartH;
+        return `${disbursedPath} L ${last.x.toFixed(1)} ${baseY} L ${first.x.toFixed(1)} ${baseY} Z`;
+    }, [coords, disbursedPath, chartH]);
+
+    const collectedPath = useMemo(() => {
+        if (coords.length === 0) return '';
+        return coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.yCollected.toFixed(1)}`).join(' ');
+    }, [coords]);
+
+    const custPath = useMemo(() => {
+        if (coords.length === 0) return '';
+        return coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.yCust.toFixed(1)}`).join(' ');
+    }, [coords]);
+
+    return (
+        <svg
+            viewBox={`0 0 ${width} ${height}`}
+            className="w-full h-full select-none"
+            style={{ overflow: 'visible' }}
+            onMouseLeave={() => setHoverIdx(null)}
+        >
+            <defs>
+                <linearGradient id="disbursedGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.28" />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.01" />
+                </linearGradient>
+            </defs>
+
+            {/* Horizontal Grid lines */}
+            {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+                const y = padY + chartH * (1 - ratio);
+                const val = Math.round(maxVal * ratio);
+                return (
+                    <g key={idx}>
+                        <line
+                            x1={padX}
+                            y1={y}
+                            x2={width - padX}
+                            y2={y}
+                            stroke={isDark ? '#232d45' : '#f1f5f9'}
+                            strokeWidth="1"
+                        />
+                        <text
+                            x={padX - 8}
+                            y={y + 3}
+                            textAnchor="end"
+                            fontSize="10"
+                            fill={isDark ? '#94a3b8' : '#94a3b8'}
+                            fontWeight="500"
+                        >
+                            ${val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}
+                        </text>
+                    </g>
+                );
+            })}
+
+            {/* Disbursed Area fill */}
+            {disbursedArea && <path d={disbursedArea} fill="url(#disbursedGrad)" />}
+
+            {/* Disbursed Line */}
+            {disbursedPath && (
+                <path
+                    d={disbursedPath}
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            )}
+
+            {/* Collected Line */}
+            {collectedPath && (
+                <path
+                    d={collectedPath}
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            )}
+
+            {/* Customers Line (Dashed) */}
+            {custPath && (
+                <path
+                    d={custPath}
+                    fill="none"
+                    stroke="#8b5cf6"
+                    strokeWidth="1.8"
+                    strokeDasharray="4 4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            )}
+
+            {/* Data Points and Hover Vertical Line */}
+            {coords.map((c, i) => (
+                <g key={i} onMouseEnter={() => setHoverIdx(i)} style={{ cursor: 'pointer' }}>
+                    {/* Disbursed Dot */}
+                    <circle
+                        cx={c.x}
+                        cy={c.yDisbursed}
+                        r={hoverIdx === i ? 5 : 3.5}
+                        fill="#fff"
+                        stroke="#3b82f6"
+                        strokeWidth="2"
+                    />
+
+                    {/* Collected Dot */}
+                    <circle
+                        cx={c.x}
+                        cy={c.yCollected}
+                        r={hoverIdx === i ? 4.5 : 3}
+                        fill="#fff"
+                        stroke="#10b981"
+                        strokeWidth="2"
+                    />
+
+                    {/* Customer Dot */}
+                    <circle
+                        cx={c.x}
+                        cy={c.yCust}
+                        r={hoverIdx === i ? 4 : 2.5}
+                        fill="#fff"
+                        stroke="#8b5cf6"
+                        strokeWidth="1.5"
+                    />
+
+                    {/* X-axis Label */}
+                    {(coords.length <= 15 || i % Math.ceil(coords.length / 10) === 0) && (
+                        <text
+                            x={c.x}
+                            y={height - 10}
+                            textAnchor="middle"
+                            fontSize="10"
+                            fill={isDark ? '#94a3b8' : '#64748b'}
+                            fontWeight="500"
+                        >
+                            {c.label}
+                        </text>
+                    )}
+                </g>
+            ))}
+
+            {/* Active Hover Tooltip */}
+            {hoverIdx !== null && coords[hoverIdx] && (
+                <g transform={`translate(${coords[hoverIdx].x}, 0)`}>
+                    <line
+                        x1="0"
+                        y1={padY}
+                        x2="0"
+                        y2={padY + chartH}
+                        stroke={isDark ? '#3b82f6' : '#93c5fd'}
+                        strokeWidth="1"
+                        strokeDasharray="3 3"
+                    />
+                    <g transform={`translate(${coords[hoverIdx].x > width - 150 ? -140 : 10}, 20)`}>
+                        <rect
+                            width="130"
+                            height="72"
+                            rx="8"
+                            fill={isDark ? '#151c2e' : '#ffffff'}
+                            stroke={isDark ? '#232d45' : '#e2e8f0'}
+                            filter="drop-shadow(0 4px 12px rgba(0,0,0,0.15))"
+                        />
+                        <text x="10" y="16" fontSize="11" fontWeight="700" fill={isDark ? '#f1f5f9' : '#0f172a'}>
+                            {coords[hoverIdx].label}
+                        </text>
+                        <text x="10" y="32" fontSize="10" fill="#3b82f6" fontWeight="600">
+                            ● ឥណទាន: ${Number(coords[hoverIdx].disbursed).toLocaleString()}
+                        </text>
+                        <text x="10" y="47" fontSize="10" fill="#10b981" fontWeight="600">
+                            ● ប្រមូល: ${Number(coords[hoverIdx].collected).toLocaleString()}
+                        </text>
+                        <text x="10" y="62" fontSize="10" fill="#8b5cf6" fontWeight="600">
+                            ● អតិថិជន: {coords[hoverIdx].customers} នាក់
+                        </text>
+                    </g>
+                </g>
+            )}
+        </svg>
     );
 };
 
