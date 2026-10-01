@@ -553,6 +553,65 @@ const TelegramPage = () => {
     [activeChatId, activeAccountId, resolveTelegramFileUrl]
   );
 
+  // On mount/account switch: re-resolve any messages with mediaFileId but missing/stale blob mediaUrl
+  useEffect(() => {
+    if (!activeAccount?.botToken || !activeAccount?.chats?.length) return;
+
+    const resolveStaleMedia = async () => {
+      const botToken = activeAccount.botToken;
+      const accountId = activeAccount.id;
+
+      // Gather all messages with a file_id but no valid (non-blob) URL
+      const toResolve = [];
+      for (const chat of activeAccount.chats) {
+        for (const msg of chat.messages || []) {
+          if (
+            msg.mediaFileId &&
+            (!msg.mediaUrl || msg.mediaUrl.startsWith("blob:"))
+          ) {
+            toResolve.push({ chatId: chat.id, msgId: msg.id, fileId: msg.mediaFileId });
+          }
+        }
+      }
+
+      if (toResolve.length === 0) return;
+
+      // Resolve each stale file_id in parallel (up to 8 at once)
+      const chunks = [];
+      for (let i = 0; i < toResolve.length; i += 8) chunks.push(toResolve.slice(i, i + 8));
+
+      const resolved = {};
+      for (const chunk of chunks) {
+        await Promise.all(
+          chunk.map(async ({ chatId, msgId, fileId }) => {
+            const url = await resolveTelegramFileUrl(botToken, fileId);
+            if (url) resolved[msgId] = url;
+          })
+        );
+      }
+
+      if (Object.keys(resolved).length === 0) return;
+
+      setAccounts((prev) =>
+        prev.map((acc) => {
+          if (acc.id !== accountId) return acc;
+          return {
+            ...acc,
+            chats: acc.chats.map((chat) => ({
+              ...chat,
+              messages: (chat.messages || []).map((msg) =>
+                resolved[msg.id] ? { ...msg, mediaUrl: resolved[msg.id] } : msg
+              )
+            }))
+          };
+        })
+      );
+    };
+
+    resolveStaleMedia();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAccount?.id, activeAccount?.botToken]);
+
   // Real-Time Polling Effect for active account (Every 4 seconds, safe non-overlapping)
   useEffect(() => {
     if (!activeAccount?.botToken) {
@@ -901,6 +960,26 @@ const TelegramPage = () => {
       const data = await res.json();
 
       if (data.ok && data.result) {
+        // Extract the file_id from the Telegram API response so we can resolve a persistent URL
+        const result = data.result;
+        let sentFileId = null;
+        if (isImage && result.photo?.length > 0) {
+          sentFileId = result.photo[result.photo.length - 1].file_id;
+        } else if (isAudio && result.audio) {
+          sentFileId = result.audio.file_id;
+        } else if (isVideo && result.video) {
+          sentFileId = result.video.file_id;
+        } else if (result.document) {
+          sentFileId = result.document.file_id;
+        }
+
+        // Resolve the persistent Telegram CDN URL (replaces the transient blob URL)
+        let persistentUrl = localBlobUrl;
+        if (sentFileId && activeAccount?.botToken) {
+          const resolved = await resolveTelegramFileUrl(activeAccount.botToken, sentFileId);
+          if (resolved) persistentUrl = resolved;
+        }
+
         setAccounts((prev) =>
           prev.map((acc) => {
             if (acc.id === activeAccountId) {
@@ -914,6 +993,8 @@ const TelegramPage = () => {
                             ...m,
                             id: `tg_${data.result.message_id}`,
                             messageId: data.result.message_id,
+                            mediaFileId: sentFileId || m.mediaFileId,
+                            mediaUrl: persistentUrl,
                             status: "delivered"
                           }
                         : m
