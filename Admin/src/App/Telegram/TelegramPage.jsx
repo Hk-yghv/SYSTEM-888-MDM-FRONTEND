@@ -30,9 +30,26 @@ import {
   FaRegSmile,
   FaChevronDown,
   FaChevronUp,
-  FaEllipsisV
+  FaEllipsisV,
+  FaPlay,
+  FaPause,
+  FaMicrophone,
+  FaImage,
+  FaPaperclip,
+  FaDownload,
+  FaFileAlt,
+  FaVideo,
+  FaMusic
 } from "react-icons/fa";
-import { MdOutlineSend, MdChatBubbleOutline, MdOutlineSmartToy } from "react-icons/md";
+import {
+  MdOutlineSend,
+  MdChatBubbleOutline,
+  MdOutlineSmartToy,
+  MdAttachFile,
+  MdAudiotrack,
+  MdInsertDriveFile,
+  MdDownload
+} from "react-icons/md";
 
 const COLOR_PALETTE = [
   "#0284c7", // Sky Blue
@@ -51,12 +68,138 @@ const POPULAR_EMOJIS = [
   "🤝", "💬", "📞", "📦", "💵", "🕒", "📍", "⚠️"
 ];
 
+// Format bytes into human-readable size
+const formatFileSize = (bytes) => {
+  if (!bytes || isNaN(bytes)) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+// Format seconds into MM:SS
+const formatDuration = (secs) => {
+  if (!secs || isNaN(secs)) return "0:00";
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${m}:${s < 10 ? "0" : ""}${s}`;
+};
+
+// Inline Voice Note Player Component
+const VoiceNotePlayer = ({ audioUrl, duration, isMe }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(duration || 0);
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleLoaded = () => {
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+        setTotalDuration(Math.round(audio.duration));
+      }
+    };
+    const handleTimeUpdate = () => {
+      setCurrentTime(Math.round(audio.currentTime));
+    };
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    audio.addEventListener("loadedmetadata", handleLoaded);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.removeEventListener("loadedmetadata", handleLoaded);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, []);
+
+  const togglePlay = () => {
+    if (!audioRef.current || !audioUrl) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.error("Audio play error:", err);
+          setIsPlaying(false);
+        });
+    }
+  };
+
+  const progress = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
+
+  return (
+    <div className="flex items-center gap-2.5 py-1 min-w-[200px] max-w-[280px]">
+      <audio ref={audioRef} src={audioUrl} preload="metadata" />
+
+      {/* Play/Pause Button */}
+      <button
+        type="button"
+        onClick={togglePlay}
+        className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-xs transition-transform active:scale-95 cursor-pointer ${
+          isMe
+            ? "bg-white text-sky-600 hover:bg-sky-50"
+            : "bg-sky-600 text-white hover:bg-sky-700"
+        }`}
+      >
+        {isPlaying ? <FaPause className="text-xs" /> : <FaPlay className="text-xs ml-0.5" />}
+      </button>
+
+      {/* Waveform / Progress Bar */}
+      <div className="flex-1 flex flex-col justify-center gap-1">
+        <div
+          onClick={(e) => {
+            if (!audioRef.current || !totalDuration) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            audioRef.current.currentTime = pos * totalDuration;
+          }}
+          className={`h-2 rounded-full overflow-hidden cursor-pointer ${
+            isMe ? "bg-white/30" : "bg-slate-200"
+          }`}
+        >
+          <div
+            className={`h-full rounded-full transition-all ${
+              isMe ? "bg-white" : "bg-sky-600"
+            }`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        <div
+          className={`flex items-center justify-between text-[10px] font-mono leading-none ${
+            isMe ? "text-sky-100" : "text-slate-500"
+          }`}
+        >
+          <span className="flex items-center gap-1">
+            <FaMicrophone className="text-[9px]" />
+            <span>{formatDuration(isPlaying ? currentTime : totalDuration)}</span>
+          </span>
+          <span>Voice</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TelegramPage = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
   const pollingRef = useRef(null);
+  const isSyncingRef = useRef(false);
   const accountDropdownRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const mediaCacheRef = useRef({});
 
   // Storage key is scoped to the logged-in system user
   const storageKey = `telegram_real_accounts_${user?.username || "default"}`;
@@ -93,6 +236,10 @@ const TelegramPage = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(null);
   const [copiedId, setCopiedId] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+
+  // Lightbox Preview Modal State
+  const [previewImage, setPreviewImage] = useState(null);
 
   // Account Modal States
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -160,129 +307,253 @@ const TelegramPage = () => {
 
   const activeChat = activeAccount?.chats?.find((c) => c.id === activeChatId) || null;
 
-  // Real Telegram API: Fetch updates
-  const syncTelegramUpdates = useCallback(async (account) => {
-    if (!account || !account.botToken) return;
-
+  // Resolve Telegram File ID to direct playable/downloadable URL
+  const resolveTelegramFileUrl = useCallback(async (botToken, fileId) => {
+    if (!botToken || !fileId) return null;
+    if (mediaCacheRef.current[fileId]) {
+      return mediaCacheRef.current[fileId];
+    }
     try {
-      const offset = account.lastUpdateId ? account.lastUpdateId + 1 : 0;
-      const res = await fetch(
-        `https://api.telegram.org/bot${account.botToken}/getUpdates?offset=${offset}&timeout=10`
-      );
+      const res = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
       const data = await res.json();
-
-      if (!data.ok) {
-        setSyncError(data.description || "បរាជ័យក្នុងការទាញយកសារ Telegram");
-        return;
+      if (data.ok && data.result?.file_path) {
+        const fullUrl = `https://api.telegram.org/file/bot${botToken}/${data.result.file_path}`;
+        mediaCacheRef.current[fileId] = fullUrl;
+        return fullUrl;
       }
+    } catch (err) {
+      console.error("Failed to resolve telegram file URL:", err);
+    }
+    return null;
+  }, []);
 
-      setSyncError(null);
-      const updates = data.result || [];
-      if (updates.length === 0) return;
+  // Real Telegram API: Fetch updates with 409 Conflict handling & media URL resolution
+  const syncTelegramUpdates = useCallback(
+    async (account) => {
+      if (!account || !account.botToken) return;
+      if (isSyncingRef.current) return; // Prevent concurrent overlapping requests
 
-      let maxUpdateId = account.lastUpdateId || 0;
+      isSyncingRef.current = true;
 
-      setAccounts((prevAccounts) =>
-        prevAccounts.map((acc) => {
-          if (acc.id !== account.id) return acc;
+      try {
+        const offset = account.lastUpdateId ? account.lastUpdateId + 1 : 0;
+        // Use timeout=0 to prevent server lockup and eliminate 409 conflict
+        const res = await fetch(
+          `https://api.telegram.org/bot${account.botToken}/getUpdates?offset=${offset}&timeout=0`
+        );
 
-          let updatedChats = [...(acc.chats || [])];
+        // Handle 409 Conflict (e.g. Webhook is active or concurrent request)
+        if (res.status === 409) {
+          try {
+            // Delete active webhook if it was set previously
+            await fetch(
+              `https://api.telegram.org/bot${account.botToken}/deleteWebhook?drop_pending_updates=false`
+            );
+          } catch (e) {}
+          return;
+        }
 
-          updates.forEach((update) => {
-            if (update.update_id > maxUpdateId) {
-              maxUpdateId = update.update_id;
-            }
+        if (!res.ok) {
+          return;
+        }
 
-            const msg = update.message || update.channel_post || update.edited_message;
-            if (!msg || !msg.chat) return;
+        const data = await res.json();
+        if (!data.ok) {
+          return;
+        }
 
-            const chatId = String(msg.chat.id);
-            const chatTitle =
-              msg.chat.title ||
-              [msg.chat.first_name, msg.chat.last_name].filter(Boolean).join(" ") ||
-              msg.chat.username ||
-              `Chat ${chatId}`;
+        setSyncError(null);
+        const updates = data.result || [];
+        if (updates.length === 0) return;
 
-            let chatType = "personal";
-            if (msg.chat.type === "group" || msg.chat.type === "supergroup") {
-              chatType = "group";
-            } else if (msg.chat.type === "channel") {
-              chatType = "channel";
-            } else if (msg.from?.is_bot) {
-              chatType = "bot";
-            }
+        let maxUpdateId = account.lastUpdateId || 0;
 
-            const msgText =
-              msg.text ||
-              msg.caption ||
-              (msg.photo ? "📷 [រូបភាព/Photo]" : msg.document ? "📄 [ឯកសារ/Document]" : "សារ Telegram");
-            const msgTime = new Date((msg.date || Date.now() / 1000) * 1000).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit"
-            });
+        // Process all updates and resolve media URLs
+        const processedUpdates = [];
 
-            const newMsgObj = {
-              id: `tg_${msg.message_id || Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-              messageId: msg.message_id,
-              sender: msg.from?.id === acc.botInfo?.id ? "me" : "them",
-              senderName:
-                [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ") ||
-                msg.from?.username ||
-                "Telegram User",
-              text: msgText,
-              time: msgTime,
-              status: "read",
-              rawDate: msg.date
-            };
+        for (const update of updates) {
+          if (update.update_id > maxUpdateId) {
+            maxUpdateId = update.update_id;
+          }
 
-            const existingChatIndex = updatedChats.findIndex((c) => String(c.id) === chatId);
+          const msg = update.message || update.channel_post || update.edited_message;
+          if (!msg || !msg.chat) continue;
 
-            if (existingChatIndex >= 0) {
-              const existingChat = updatedChats[existingChatIndex];
-              const msgExists = existingChat.messages?.some(
-                (m) => m.messageId && m.messageId === msg.message_id
-              );
+          const chatId = String(msg.chat.id);
+          const chatTitle =
+            msg.chat.title ||
+            [msg.chat.first_name, msg.chat.last_name].filter(Boolean).join(" ") ||
+            msg.chat.username ||
+            `Chat ${chatId}`;
 
-              if (!msgExists) {
-                const newMessages = [...(existingChat.messages || []), newMsgObj];
-                const isCurrentlyActive = activeChatId === chatId && activeAccountId === acc.id;
-                updatedChats[existingChatIndex] = {
-                  ...existingChat,
-                  name: chatTitle,
-                  username: msg.chat.username ? `@${msg.chat.username}` : existingChat.username,
-                  unreadCount: isCurrentlyActive
-                    ? 0
-                    : (existingChat.unreadCount || 0) + (newMsgObj.sender === "them" ? 1 : 0),
-                  messages: newMessages
-                };
-              }
-            } else {
-              // Create new chat
-              updatedChats.unshift({
-                id: chatId,
-                name: chatTitle,
-                type: chatType,
-                username: msg.chat.username ? `@${msg.chat.username}` : "",
-                unreadCount: newMsgObj.sender === "them" ? 1 : 0,
-                color: COLOR_PALETTE[updatedChats.length % COLOR_PALETTE.length],
-                messages: [newMsgObj]
-              });
-            }
+          let chatType = "personal";
+          if (msg.chat.type === "group" || msg.chat.type === "supergroup") {
+            chatType = "group";
+          } else if (msg.chat.type === "channel") {
+            chatType = "channel";
+          } else if (msg.from?.is_bot) {
+            chatType = "bot";
+          }
+
+          // Extract Media Information
+          let mediaType = null;
+          let mediaFileId = null;
+          let mediaFileName = null;
+          let mediaFileSize = null;
+          let mediaDuration = null;
+          let mediaMimeType = null;
+
+          if (msg.photo && Array.isArray(msg.photo) && msg.photo.length > 0) {
+            mediaType = "photo";
+            // Get highest resolution photo
+            const highestPhoto = msg.photo[msg.photo.length - 1];
+            mediaFileId = highestPhoto.file_id;
+            mediaFileSize = highestPhoto.file_size;
+          } else if (msg.voice) {
+            mediaType = "voice";
+            mediaFileId = msg.voice.file_id;
+            mediaDuration = msg.voice.duration;
+            mediaFileSize = msg.voice.file_size;
+            mediaMimeType = msg.voice.mime_type || "audio/ogg";
+          } else if (msg.audio) {
+            mediaType = "audio";
+            mediaFileId = msg.audio.file_id;
+            mediaFileName =
+              [msg.audio.performer, msg.audio.title].filter(Boolean).join(" - ") ||
+              msg.audio.file_name ||
+              "Audio.mp3";
+            mediaDuration = msg.audio.duration;
+            mediaFileSize = msg.audio.file_size;
+            mediaMimeType = msg.audio.mime_type || "audio/mpeg";
+          } else if (msg.video) {
+            mediaType = "video";
+            mediaFileId = msg.video.file_id;
+            mediaDuration = msg.video.duration;
+            mediaFileSize = msg.video.file_size;
+            mediaMimeType = msg.video.mime_type || "video/mp4";
+          } else if (msg.document) {
+            mediaType = "document";
+            mediaFileId = msg.document.file_id;
+            mediaFileName = msg.document.file_name || "Document";
+            mediaFileSize = msg.document.file_size;
+            mediaMimeType = msg.document.mime_type;
+          } else if (msg.sticker) {
+            mediaType = "sticker";
+            mediaFileId = msg.sticker.thumb?.file_id || msg.sticker.file_id;
+          }
+
+          // Resolve direct media URL from Telegram API
+          let mediaUrl = null;
+          if (mediaFileId) {
+            mediaUrl = await resolveTelegramFileUrl(account.botToken, mediaFileId);
+          }
+
+          let defaultText = msg.text || msg.caption || "";
+          if (!defaultText) {
+            if (mediaType === "photo") defaultText = "📷 [រូបភាព]";
+            else if (mediaType === "voice") defaultText = "🎤 [សារជាសម្លេង / Voice Note]";
+            else if (mediaType === "audio") defaultText = `🎵 [តន្ត្រី] ${mediaFileName || ""}`;
+            else if (mediaType === "video") defaultText = "🎥 [វីដេអូ]";
+            else if (mediaType === "document") defaultText = `📄 [ឯកសារ] ${mediaFileName || ""}`;
+            else if (mediaType === "sticker") defaultText = "🏷️ [Sticker]";
+            else defaultText = "សារ Telegram";
+          }
+
+          const msgTime = new Date((msg.date || Date.now() / 1000) * 1000).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
           });
 
-          return {
-            ...acc,
-            lastUpdateId: maxUpdateId,
-            chats: updatedChats
+          const newMsgObj = {
+            id: `tg_${msg.message_id || Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            messageId: msg.message_id,
+            sender: msg.from?.id === account.botInfo?.id ? "me" : "them",
+            senderName:
+              [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ") ||
+              msg.from?.username ||
+              "Telegram User",
+            text: defaultText,
+            mediaType,
+            mediaFileId,
+            mediaUrl,
+            mediaFileName,
+            mediaFileSize,
+            mediaDuration,
+            mediaMimeType,
+            time: msgTime,
+            status: "read",
+            rawDate: msg.date
           };
-        })
-      );
-    } catch (err) {
-      console.error("Error polling Telegram updates:", err);
-    }
-  }, [activeChatId, activeAccountId]);
 
-  // Real-Time Polling Effect for active account
+          processedUpdates.push({
+            chatId,
+            chatTitle,
+            chatType,
+            chatUsername: msg.chat.username ? `@${msg.chat.username}` : "",
+            msgObj: newMsgObj
+          });
+        }
+
+        // Apply new messages to accounts state
+        setAccounts((prevAccounts) =>
+          prevAccounts.map((acc) => {
+            if (acc.id !== account.id) return acc;
+
+            let updatedChats = [...(acc.chats || [])];
+
+            processedUpdates.forEach(({ chatId, chatTitle, chatType, chatUsername, msgObj }) => {
+              const existingChatIndex = updatedChats.findIndex((c) => String(c.id) === chatId);
+
+              if (existingChatIndex >= 0) {
+                const existingChat = updatedChats[existingChatIndex];
+                const msgExists = existingChat.messages?.some(
+                  (m) => m.messageId && m.messageId === msgObj.messageId
+                );
+
+                if (!msgExists) {
+                  const newMessages = [...(existingChat.messages || []), msgObj];
+                  const isCurrentlyActive = activeChatId === chatId && activeAccountId === acc.id;
+                  updatedChats[existingChatIndex] = {
+                    ...existingChat,
+                    name: chatTitle,
+                    username: chatUsername || existingChat.username,
+                    unreadCount: isCurrentlyActive
+                      ? 0
+                      : (existingChat.unreadCount || 0) + (msgObj.sender === "them" ? 1 : 0),
+                    messages: newMessages
+                  };
+                }
+              } else {
+                // Create new chat
+                updatedChats.unshift({
+                  id: chatId,
+                  name: chatTitle,
+                  type: chatType,
+                  username: chatUsername,
+                  unreadCount: msgObj.sender === "them" ? 1 : 0,
+                  color: COLOR_PALETTE[updatedChats.length % COLOR_PALETTE.length],
+                  messages: [msgObj]
+                });
+              }
+            });
+
+            return {
+              ...acc,
+              lastUpdateId: maxUpdateId,
+              chats: updatedChats
+            };
+          })
+        );
+      } catch (err) {
+        // Silently catch polling errors
+      } finally {
+        isSyncingRef.current = false;
+      }
+    },
+    [activeChatId, activeAccountId, resolveTelegramFileUrl]
+  );
+
+  // Real-Time Polling Effect for active account (Every 4 seconds, safe non-overlapping)
   useEffect(() => {
     if (!activeAccount?.botToken) {
       if (pollingRef.current) clearInterval(pollingRef.current);
@@ -292,10 +563,9 @@ const TelegramPage = () => {
     // Initial sync
     syncTelegramUpdates(activeAccount);
 
-    // Poll every 3 seconds for real-time live chat
     pollingRef.current = setInterval(() => {
       syncTelegramUpdates(activeAccount);
-    }, 3000);
+    }, 4000);
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
@@ -468,7 +738,7 @@ const TelegramPage = () => {
     setShowTokenPassword(false);
   };
 
-  // Real Telegram API: Send Message
+  // Real Telegram API: Send Text Message
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     const text = messageInput.trim();
@@ -547,6 +817,90 @@ const TelegramPage = () => {
         );
       } else {
         alert(`ផ្ញើសារមិនជោគជ័យ៖ ${data.description || "Telegram API Error"}`);
+      }
+    } catch (err) {
+      console.error("Failed to send telegram message:", err);
+      alert("ផ្ញើសារមិនជោគជ័យ៖ មិនអាចភ្ជាប់ទៅកាន់ Telegram Server");
+    }
+  };
+
+  // Real Telegram API: Send Photo / Audio / Document File Attachment
+  const handleSendFileAttachment = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeChat || !activeAccount?.botToken) return;
+
+    // Reset input value so user can pick same file again if desired
+    e.target.value = "";
+
+    const isImage = file.type.startsWith("image/");
+    const isAudio = file.type.startsWith("audio/");
+    const isVideo = file.type.startsWith("video/");
+    const mediaType = isImage ? "photo" : isAudio ? "audio" : isVideo ? "video" : "document";
+
+    const localBlobUrl = URL.createObjectURL(file);
+    const tempMsgId = `temp_file_${Date.now()}`;
+
+    const newMsgObj = {
+      id: tempMsgId,
+      sender: "me",
+      senderName: activeAccount.name,
+      text: file.name,
+      mediaType: mediaType,
+      mediaUrl: localBlobUrl,
+      mediaFileName: file.name,
+      mediaFileSize: file.size,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      status: "sending"
+    };
+
+    // Optimistically add
+    setAccounts((prev) =>
+      prev.map((acc) => {
+        if (acc.id === activeAccountId) {
+          const updatedChats = acc.chats.map((c) => {
+            if (c.id === activeChat.id) {
+              return {
+                ...c,
+                messages: [...(c.messages || []), newMsgObj]
+              };
+            }
+            return c;
+          });
+          return { ...acc, chats: updatedChats };
+        }
+        return acc;
+      })
+    );
+
+    setIsUploadingFile(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("chat_id", activeChat.id);
+
+      let apiMethod = "sendDocument";
+      if (isImage) {
+        apiMethod = "sendPhoto";
+        formData.append("photo", file);
+      } else if (isAudio) {
+        apiMethod = "sendAudio";
+        formData.append("audio", file);
+      } else if (isVideo) {
+        apiMethod = "sendVideo";
+        formData.append("video", file);
+      } else {
+        apiMethod = "sendDocument";
+        formData.append("document", file);
+      }
+
+      const res = await fetch(`https://api.telegram.org/bot${activeAccount.botToken}/${apiMethod}`, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (data.ok && data.result) {
         setAccounts((prev) =>
           prev.map((acc) => {
             if (acc.id === activeAccountId) {
@@ -555,7 +909,14 @@ const TelegramPage = () => {
                   return {
                     ...c,
                     messages: c.messages.map((m) =>
-                      m.id === tempMsgId ? { ...m, status: "error" } : m
+                      m.id === tempMsgId
+                        ? {
+                            ...m,
+                            id: `tg_${data.result.message_id}`,
+                            messageId: data.result.message_id,
+                            status: "delivered"
+                          }
+                        : m
                     )
                   };
                 }
@@ -566,10 +927,14 @@ const TelegramPage = () => {
             return acc;
           })
         );
+      } else {
+        alert(`ផ្ញើ File មិនជោគជ័យ៖ ${data.description || "Telegram API Error"}`);
       }
     } catch (err) {
-      console.error("Failed to send telegram message:", err);
-      alert("ផ្ញើសារមិនជោគជ័យ៖ មិនអាចភ្ជាប់ទៅកាន់ Telegram Server");
+      console.error("Failed to upload attachment to telegram:", err);
+      alert("ផ្ញើ File មិនជោគជ័យ៖ មិនអាចភ្ជាប់ទៅកាន់ Telegram Server");
+    } finally {
+      setIsUploadingFile(false);
     }
   };
 
@@ -887,7 +1252,7 @@ const TelegramPage = () => {
           {/* ── LEFT COLUMN: Chat List & Search (បញ្ជីឆាតនៅខាងឆ្វេង) ── */}
           <div className="w-80 md:w-84 lg:w-92 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col h-full shadow-2xs z-10 min-h-0">
             
-            {/* 1. Category Filter Tabs AT THE TOP (ដាក់ប៊ូតុងទាំងអស់ ឯកជន ក្រុម នៅខាងលើបង្អស់) */}
+            {/* 1. Category Filter Tabs AT THE TOP */}
             <div className="flex items-center justify-between p-1.5 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-700 gap-1 flex-shrink-0">
               {[
                 { id: "all", label: "ទាំងអស់" },
@@ -947,7 +1312,7 @@ const TelegramPage = () => {
               </div>
             )}
 
-            {/* Chats List Feed (Starts from the top immediately) */}
+            {/* Chats List Feed */}
             <div className="flex-1 overflow-y-auto divide-y divide-slate-100 flex flex-col justify-start min-h-0">
               {filteredChats.length === 0 ? (
                 <div className="p-6 text-center text-slate-500">
@@ -1056,7 +1421,7 @@ const TelegramPage = () => {
             </div>
           </div>
 
-          {/* ── RIGHT COLUMN: Large Live Chat Window (ផ្ទាំងឆាតនៅខាងស្តាំឱ្យធំទូលាយ) ── */}
+          {/* ── RIGHT COLUMN: Large Live Chat Window (ផ្ទាំងឆាតនៅខាងស្តាំ) ── */}
           {activeChat ? (
             <div className="flex-1 flex flex-col h-full bg-[#f1f5f9] relative min-w-0 min-h-0 overflow-hidden">
               
@@ -1102,7 +1467,7 @@ const TelegramPage = () => {
                 </div>
               </div>
 
-              {/* Messages Feed (Starts from the top immediately and scrolls down) */}
+              {/* Messages Feed (Supports Voice Notes, Photos, Audios, Documents, Videos) */}
               <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-2.5 bg-[#e5ebee]/40 min-h-0 flex flex-col justify-start">
                 {activeChat.messages?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center text-slate-400">
@@ -1130,16 +1495,118 @@ const TelegramPage = () => {
                         )}
 
                         <div
-                          className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-3.5 py-2 text-xs shadow-xs leading-relaxed relative ${
+                          className={`max-w-[85%] md:max-w-[70%] rounded-2xl p-2.5 text-xs shadow-xs leading-relaxed relative ${
                             isMe
                               ? "bg-gradient-to-r from-sky-600 to-blue-600 text-white rounded-tr-xs"
                               : "bg-white text-slate-900 rounded-tl-xs border border-slate-200/80"
                           }`}
                         >
-                          <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                          {/* 1. PHOTO MESSAGE */}
+                          {msg.mediaType === "photo" && (
+                            <div className="mb-1.5 rounded-xl overflow-hidden max-w-sm">
+                              {msg.mediaUrl ? (
+                                <img
+                                  src={msg.mediaUrl}
+                                  alt="Telegram Photo"
+                                  onClick={() => setPreviewImage(msg.mediaUrl)}
+                                  className="w-full max-h-72 object-cover rounded-xl cursor-pointer hover:opacity-95 transition-opacity bg-slate-900/10"
+                                />
+                              ) : (
+                                <div className="p-4 bg-slate-100 text-slate-600 text-center rounded-xl flex items-center justify-center gap-2">
+                                  <FaImage className="text-base" />
+                                  <span>កំពុងទាញយករូបភាព...</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
+                          {/* 2. VOICE NOTE MESSAGE */}
+                          {msg.mediaType === "voice" && (
+                            <div className="mb-1">
+                              {msg.mediaUrl ? (
+                                <VoiceNotePlayer
+                                  audioUrl={msg.mediaUrl}
+                                  duration={msg.mediaDuration}
+                                  isMe={isMe}
+                                />
+                              ) : (
+                                <div className="p-2 text-center text-xs opacity-75">
+                                  🎤 សារសម្លេង (Voice Note)
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* 3. AUDIO TRACK MESSAGE */}
+                          {msg.mediaType === "audio" && (
+                            <div className="mb-1.5 p-2 rounded-xl bg-black/5 flex flex-col gap-1.5 max-w-xs">
+                              <div className="flex items-center gap-2">
+                                <FaMusic className="text-sky-500 text-sm flex-shrink-0" />
+                                <span className="text-xs font-bold truncate">
+                                  {msg.mediaFileName || "Audio Track"}
+                                </span>
+                              </div>
+                              {msg.mediaUrl && (
+                                <audio controls src={msg.mediaUrl} className="w-full h-8" />
+                              )}
+                            </div>
+                          )}
+
+                          {/* 4. VIDEO MESSAGE */}
+                          {msg.mediaType === "video" && (
+                            <div className="mb-1.5 rounded-xl overflow-hidden max-w-sm">
+                              {msg.mediaUrl ? (
+                                <video
+                                  controls
+                                  src={msg.mediaUrl}
+                                  className="w-full max-h-72 rounded-xl bg-black"
+                                />
+                              ) : (
+                                <div className="p-4 bg-slate-100 text-slate-600 text-center rounded-xl flex items-center justify-center gap-2">
+                                  <FaVideo className="text-base" />
+                                  <span>កំពុងទាញយកវីដេអូ...</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* 5. DOCUMENT / FILE MESSAGE */}
+                          {msg.mediaType === "document" && (
+                            <div className={`p-2.5 rounded-xl mb-1.5 flex items-center justify-between gap-3 ${isMe ? "bg-white/15" : "bg-slate-50 border border-slate-200"}`}>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isMe ? "bg-white text-sky-600" : "bg-sky-100 text-sky-700"}`}>
+                                  <FaFileAlt className="text-sm" />
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-xs font-bold truncate">{msg.mediaFileName || "File"}</div>
+                                  <div className={`text-[10px] ${isMe ? "text-sky-100" : "text-slate-500"}`}>
+                                    {formatFileSize(msg.mediaFileSize)}
+                                  </div>
+                                </div>
+                              </div>
+                              {msg.mediaUrl && (
+                                <a
+                                  href={msg.mediaUrl}
+                                  download={msg.mediaFileName || "file"}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`p-2 rounded-lg transition-colors cursor-pointer ${isMe ? "bg-white text-sky-600 hover:bg-sky-50" : "bg-sky-600 text-white hover:bg-sky-700"}`}
+                                  title="ទាញយកឯកសារ"
+                                >
+                                  <FaDownload className="text-xs" />
+                                </a>
+                              )}
+                            </div>
+                          )}
+
+                          {/* TEXT CONTENT */}
+                          {msg.text && (
+                            <p className="whitespace-pre-wrap break-words px-1">{msg.text}</p>
+                          )}
+
+                          {/* TIMESTAMP & STATUS */}
                           <div
-                            className={`flex items-center justify-end gap-1.5 mt-1 text-[9px] font-medium ${
+                            className={`flex items-center justify-end gap-1.5 mt-1 px-1 text-[9px] font-medium ${
                               isMe ? "text-sky-100" : "text-slate-400"
                             }`}
                           >
@@ -1183,11 +1650,21 @@ const TelegramPage = () => {
                 </div>
               )}
 
+              {/* Hidden File Input for Attachments */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleSendFileAttachment}
+                className="hidden"
+                accept="image/*,audio/*,video/*,application/*,text/*"
+              />
+
               {/* Bottom Message Input Box */}
               <form
                 onSubmit={handleSendMessage}
-                className="bg-white border-t border-slate-200 p-2.5 flex items-center gap-2 shadow-xs flex-shrink-0"
+                className="bg-white border-t border-slate-200 p-2.5 flex items-center gap-1.5 shadow-xs flex-shrink-0"
               >
+                {/* Emoji Button */}
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -1195,6 +1672,17 @@ const TelegramPage = () => {
                   title="Emoji"
                 >
                   <FaSmile className="text-lg" />
+                </button>
+
+                {/* Attachment Button (Send Photo/Audio/File) */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingFile}
+                  className="p-2 text-slate-500 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                  title="ភ្ជាប់រូបភាព ឬឯកសារ (Attach File/Photo/Audio)"
+                >
+                  <MdAttachFile className="text-xl transform rotate-45" />
                 </button>
 
                 <input
@@ -1207,7 +1695,7 @@ const TelegramPage = () => {
 
                 <button
                   type="submit"
-                  disabled={!messageInput.trim()}
+                  disabled={!messageInput.trim() || isUploadingFile}
                   className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs md:text-sm font-bold rounded-lg transition-all shadow-md shadow-sky-600/20 cursor-pointer flex-shrink-0"
                 >
                   <MdOutlineSend className="text-base" />
@@ -1306,7 +1794,44 @@ const TelegramPage = () => {
         </div>
       )}
 
-      {/* ── MODAL: Connect / Edit Telegram Bot (Token + Username + Custom Bot Name) ── */}
+      {/* ── FULLSCREEN IMAGE LIGHTBOX / PREVIEW MODAL ── */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-4xl max-h-[90vh] flex flex-col items-center"
+          >
+            <div className="absolute -top-10 right-0 flex items-center gap-3">
+              <a
+                href={previewImage}
+                target="_blank"
+                rel="noopener noreferrer"
+                download="telegram_photo.jpg"
+                className="text-white hover:text-sky-300 p-2 text-base transition-colors flex items-center gap-1.5 bg-white/10 rounded-lg backdrop-blur-md"
+              >
+                <FaDownload className="text-xs" />
+                <span className="text-xs font-bold">ទាញយក</span>
+              </a>
+              <button
+                onClick={() => setPreviewImage(null)}
+                className="text-white hover:text-rose-400 p-2 text-lg transition-colors bg-white/10 rounded-lg backdrop-blur-md cursor-pointer"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <img
+              src={previewImage}
+              alt="Preview"
+              className="max-h-[85vh] max-w-full rounded-2xl shadow-2xl object-contain border border-white/20"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Connect / Edit Telegram Bot ── */}
       {isAccountModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 animate-scaleUp">
