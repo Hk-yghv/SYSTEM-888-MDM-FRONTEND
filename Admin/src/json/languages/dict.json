@@ -221,7 +221,10 @@
     "totalFailed": "Total Failed",
     "totalSuccess": "Total Success",
     "hideHeader": "Hide Header",
-    "showHeader": "Show Header"
+    "showHeader": "Show Header",
+    "telegram": "Telegram Web",
+    "telegramMultiAccount": "Telegram Web (Multi-Account)",
+    "addAccount": "Add Account"
   },
   "km": {
     "systemTitle": "ប្រព័ន្ធ SYSTEM MDM",
@@ -565,7 +568,10 @@
     "dueToday": "ชำระภายในวันนี้",
     "dueIn3Days": "ชำระภายใน 3 วัน",
     "hideHeader": "ซ่อนส่วนหัว",
-    "showHeader": "แสดงส่วนหัว"
+    "showHeader": "แสดงส่วนหัว",
+    "telegram": "Telegram Web",
+    "telegramMultiAccount": "Telegram Web (หลายบัญชี)",
+    "addAccount": "เพิ่มบัญชี"
   },
   "vi": {
     "systemTitle": "SYSTEM MDM",
@@ -691,7 +697,10 @@
     "dueToday": "今日到期",
     "dueIn3Days": "3天内到期",
     "hideHeader": "隐藏页眉",
-    "showHeader": "显示页眉"
+    "showHeader": "显示页眉",
+    "telegram": "Telegram Web",
+    "telegramMultiAccount": "Telegram 网页版 (多账号)",
+    "addAccount": "添加账号"
   },
   "ko": {
     "systemTitle": "SYSTEM MDM",

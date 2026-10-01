@@ -2,6 +2,7 @@
 export const ORDERED_SYSTEM_ROUTES = [
     '/dashboard',
     '/calendar',
+    '/telegram',
     '/customer',
     '/device',
     '/contract/application',

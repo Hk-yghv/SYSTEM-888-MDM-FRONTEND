@@ -3,6 +3,7 @@
     "signin": "/signin",
     "dashboard": "/dashboard",
     "calendar": "/calendar",
+    "telegram": "/telegram",
     "customer": "/customer",
     "device": "/device",
     "report": {

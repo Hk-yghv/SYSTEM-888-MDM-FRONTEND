@@ -10,6 +10,7 @@ import { getFirstAllowedRoute } from "../utils/permissionUtils";
 // Dashboard & Calendar
 import Dashboard from "../App/Dashboard/Dashboard";
 import KhmerCalendarPage from "../App/Calendar/KhmerCalendarPage";
+import TelegramPage from "../App/Telegram/TelegramPage";
 
 // Customer & Device
 import Customer from "../App/Customer/pages/Customer";
@@ -109,6 +110,7 @@ const AppRoutes = () => {
       <Route path={json.start} element={<RootRedirect />} />
       <Route path={json.dashboard} element={renderProtected(json.dashboard, Dashboard)} />
       <Route path={json.calendar || "/calendar"} element={renderProtected(json.calendar || "/calendar", KhmerCalendarPage)} />
+      <Route path={json.telegram || "/telegram"} element={renderProtected(json.telegram || "/telegram", TelegramPage)} />
 
       {/* Customer & Device */}
       <Route path={json.customer} element={renderProtected(json.customer, Customer)} />
