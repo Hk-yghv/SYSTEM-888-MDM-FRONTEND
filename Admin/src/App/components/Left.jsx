@@ -516,25 +516,29 @@ const Left = ({ isOpen = false, onClose }) => {
                             <span className="text-[10px] text-slate-400 font-mono">F11</span>
                         </button>
 
-                        {/* Language Selector Submenu Toggle */}
+                        {/* Language Selector Submenu Toggle (Opens to the RIGHT) */}
                         <div className="relative">
                             <button
                                 type="button"
                                 onClick={() => setLangSubmenuOpen(!langSubmenuOpen)}
-                                className="w-full h-[36px] flex items-center justify-between px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[6px] transition-all cursor-pointer text-xs font-medium"
+                                className={`w-full h-[36px] flex items-center justify-between px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[6px] transition-all cursor-pointer text-xs font-medium ${langSubmenuOpen ? 'bg-emerald-50 text-emerald-700 font-bold' : ''}`}
                             >
                                 <div className="flex items-center gap-2.5">
                                     <FaGlobe className="text-sm text-emerald-600" />
                                     <span>{t('selectLanguage') || 'ភាសា / Language'}</span>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5">
                                     <span className="text-sm">{currentLangObj.flag}</span>
-                                    <IoMdArrowDropdown className={`text-slate-400 transition-transform duration-200 ${langSubmenuOpen ? 'rotate-180' : ''}`} />
+                                    <IoMdArrowDropdown className={`text-slate-400 transition-transform duration-200 ${langSubmenuOpen ? 'rotate-90 text-emerald-600' : '-rotate-90'}`} />
                                 </div>
                             </button>
 
+                            {/* Language Flyout Submenu to the RIGHT side */}
                             {langSubmenuOpen && (
-                                <div className="mt-1 mb-1 p-1 bg-slate-50 border border-slate-200 rounded-[8px] max-h-[160px] overflow-y-auto space-y-0.5 custom-scrollbar">
+                                <div className="absolute left-[calc(100%+8px)] bottom-0 w-[210px] bg-white border border-slate-200 rounded-[12px] p-2 shadow-2xl z-[100000] animate-in fade-in slide-in-from-left-2 duration-200 max-h-[280px] overflow-y-auto space-y-1 custom-scrollbar backdrop-blur-md">
+                                    <p className="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider border-b border-slate-100 mb-1">
+                                        {t('selectLanguage') || 'ជ្រើសរើសភាសា'}
+                                    </p>
                                     {LANGUAGES.map((l) => (
                                         <button
                                             key={l.code}
@@ -543,15 +547,15 @@ const Left = ({ isOpen = false, onClose }) => {
                                                 changeLanguage(l.code);
                                                 setLangSubmenuOpen(false);
                                             }}
-                                            className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-[5px] transition-all cursor-pointer ${
-                                                lang === l.code ? 'bg-emerald-600 text-white font-bold' : 'hover:bg-slate-200/60 text-slate-700'
+                                            className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-[6px] transition-all cursor-pointer ${
+                                                lang === l.code ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'hover:bg-slate-100 text-slate-700'
                                             }`}
                                         >
-                                            <span className="flex items-center gap-2">
-                                                <span className="text-sm">{l.flag}</span>
+                                            <span className="flex items-center gap-2.5">
+                                                <span className="text-base">{l.flag}</span>
                                                 <span>{l.label}</span>
                                             </span>
-                                            {lang === l.code && <span className="text-[10px]">✓</span>}
+                                            {lang === l.code && <span className="text-[11px] font-black">✓</span>}
                                         </button>
                                     ))}
                                 </div>
