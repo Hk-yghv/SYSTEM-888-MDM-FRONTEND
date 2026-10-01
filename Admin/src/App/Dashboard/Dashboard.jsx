@@ -763,7 +763,192 @@ const Dashboard = () => {
     };
 
     const handlePrint = () => {
-        window.print();
+        const printEl = document.getElementById('dashboard-print-area');
+        if (!printEl) {
+            window.print();
+            return;
+        }
+
+        const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+            .map(el => el.outerHTML)
+            .join('\n');
+
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute('title', 'Dashboard Print Frame');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        iframe.style.opacity = '0';
+        iframe.style.pointerEvents = 'none';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Dashboard Report</title>
+                ${styles}
+                <style>
+                    @page {
+                        size: landscape;
+                        margin: 8mm 6mm;
+                    }
+                    * {
+                        box-sizing: border-box;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: #ffffff !important;
+                        color: #0f172a !important;
+                        font-family: 'KhmerAuto', sans-serif !important;
+                        width: 100% !important;
+                        height: auto !important;
+                    }
+                    #dashboard-print-area {
+                        display: block !important;
+                        width: 100% !important;
+                        margin: 0 !important;
+                        padding: 4px 0 !important;
+                        background: #ffffff !important;
+                    }
+                    .executive-kpi-grid {
+                        display: grid !important;
+                        grid-template-columns: repeat(4, 1fr) !important;
+                        gap: 8px !important;
+                        margin-bottom: 12px !important;
+                        page-break-inside: avoid;
+                        break-inside: avoid;
+                    }
+                    .exec-card {
+                        box-shadow: none !important;
+                        border: 1px solid #cbd5e1 !important;
+                        background: #ffffff !important;
+                        padding: 10px 12px !important;
+                        page-break-inside: avoid;
+                        break-inside: avoid;
+                    }
+                    .middle-dashboard-row {
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        gap: 12px !important;
+                        margin-bottom: 12px !important;
+                        page-break-inside: auto;
+                        break-inside: auto;
+                    }
+                    .chart-card {
+                        box-shadow: none !important;
+                        border: 1px solid #cbd5e1 !important;
+                        background: #ffffff !important;
+                        page-break-inside: avoid;
+                        break-inside: avoid;
+                        margin-bottom: 10px !important;
+                    }
+                    .customer-payment-card,
+                    .payment-section {
+                        box-shadow: none !important;
+                        border: 1px solid #cbd5e1 !important;
+                        background: #ffffff !important;
+                        margin-bottom: 14px !important;
+                        page-break-inside: auto;
+                        break-inside: auto;
+                        overflow: visible !important;
+                    }
+                    .payment-section-header {
+                        background: #f1f5f9 !important;
+                        border-bottom: 1px solid #cbd5e1 !important;
+                        page-break-after: avoid;
+                        break-after: avoid;
+                    }
+                    .payment-filter-select,
+                    .btn-action,
+                    .mobile-table-hint,
+                    .receipt-preview-button {
+                        display: none !important;
+                    }
+                    .table-container,
+                    .table-responsive {
+                        overflow: visible !important;
+                        max-height: none !important;
+                        height: auto !important;
+                        border: none !important;
+                    }
+                    .analytics-table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                        page-break-inside: auto;
+                        break-inside: auto;
+                    }
+                    .analytics-table thead {
+                        display: table-header-group !important;
+                    }
+                    .analytics-table th {
+                        background: #e2e8f0 !important;
+                        color: #0f172a !important;
+                        border: 1px solid #cbd5e1 !important;
+                        font-weight: 700 !important;
+                        padding: 6px 8px !important;
+                    }
+                    .analytics-table td {
+                        border: 1px solid #e2e8f0 !important;
+                        padding: 5px 8px !important;
+                        color: #1e293b !important;
+                    }
+                    .analytics-table tr {
+                        page-break-inside: avoid;
+                        break-inside: avoid;
+                    }
+                    .brand-summary-section {
+                        box-shadow: none !important;
+                        border: 1px solid #cbd5e1 !important;
+                        background: #ffffff !important;
+                        page-break-inside: avoid;
+                        break-inside: avoid;
+                        margin-top: 12px !important;
+                    }
+                    .brand-card-grid {
+                        display: grid !important;
+                        grid-template-columns: repeat(4, 1fr) !important;
+                        gap: 8px !important;
+                        overflow: visible !important;
+                    }
+                    .brand-item-card {
+                        box-shadow: none !important;
+                        border: 1px solid #cbd5e1 !important;
+                        page-break-inside: avoid;
+                        break-inside: avoid;
+                    }
+                </style>
+            </head>
+            <body>
+                <div id="dashboard-print-area">
+                    ${printEl.innerHTML}
+                </div>
+            </body>
+            </html>
+        `);
+        doc.close();
+
+        setTimeout(() => {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } catch (err) {
+                console.error('Print failed', err);
+            }
+            setTimeout(() => {
+                if (iframe.parentNode) {
+                    iframe.parentNode.removeChild(iframe);
+                }
+            }, 3000);
+        }, 400);
     };
 
     return (
