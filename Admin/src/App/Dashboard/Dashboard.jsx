@@ -288,21 +288,57 @@ const Dashboard = () => {
         });
     }, [rawContracts, selectedTimeframe, customStartDate, customEndDate]);
 
-    // ── Contract Statuses Pipeline Metrics ──
-    const totalCount = stats.totalContracts || rawContracts.length || 1;
-    const activatedCount = stats.activatedContracts || rawContracts.filter(c => c.status === 'Activated' || c.status === 'ដំណើរការ').length || 0;
-    const applicationCount = stats.applicationContracts || rawContracts.filter(c => c.status === 'Application' || c.status === 'ពាក្យស្នើសុំ').length || 0;
-    const checkCount = stats.checkContracts || rawContracts.filter(c => c.status === 'Check' || c.status === 'កំពុងត្រួតពិនិត្យ').length || 0;
-    const redeemCount = stats.redeemContracts || rawContracts.filter(c => c.status === 'Redeem' || c.status === 'បញ្ចាំ/ដោះដូរ').length || 0;
-    const blacklistCount = stats.blacklistContracts || rawContracts.filter(c => c.status === 'Blacklist' || c.status === 'BlackList' || c.status === 'បញ្ជីខ្មៅ').length || 0;
+    // ── Filter Payments by Timeframe ──
+    const filteredPayments = useMemo(() => {
+        if (!rawPayments || rawPayments.length === 0) return [];
+        if (selectedTimeframe === 'all') return rawPayments;
 
-    const activatedPct = ((activatedCount / totalCount) * 100).toFixed(2);
-    const applicationPct = ((applicationCount / totalCount) * 100).toFixed(2);
-    const checkPct = ((checkCount / totalCount) * 100).toFixed(2);
-    const redeemPct = ((redeemCount / totalCount) * 100).toFixed(2);
-    const blacklistPct = ((blacklistCount / totalCount) * 100).toFixed(2);
+        const todayStr = now.toISOString().split('T')[0];
 
-    const lockedPhones = stats.lockedPhones || rawContracts.filter(c => c.lockPhoneStatus === 'Locked').length || 0;
+        return rawPayments.filter(p => {
+            const dateStr = String(p.paidDate || p.date || p.createdAt || '').split('T')[0];
+            if (!dateStr) return true;
+
+            if (selectedTimeframe === 'today') {
+                return dateStr === todayStr;
+            }
+            if (selectedTimeframe === '7d') {
+                const diff = (now - new Date(dateStr)) / (1000 * 60 * 60 * 24);
+                return diff >= 0 && diff <= 7;
+            }
+            if (selectedTimeframe === '30d') {
+                const diff = (now - new Date(dateStr)) / (1000 * 60 * 60 * 24);
+                return diff >= 0 && diff <= 30;
+            }
+            if (selectedTimeframe === 'monthly') {
+                const pDate = new Date(dateStr);
+                return pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
+            }
+            if (selectedTimeframe === 'custom') {
+                if (customStartDate && customEndDate) {
+                    return dateStr >= customStartDate && dateStr <= customEndDate;
+                }
+            }
+            return true;
+        });
+    }, [rawPayments, selectedTimeframe, customStartDate, customEndDate, now]);
+
+    // ── Contract Statuses Pipeline Metrics (Filtered) ──
+    const totalCount = filteredContracts.length || 0;
+    const activatedCount = filteredContracts.filter(c => c.status === 'Activated' || c.status === 'ដំណើរការ').length;
+    const applicationCount = filteredContracts.filter(c => c.status === 'Application' || c.status === 'ពាក្យស្នើសុំ').length;
+    const checkCount = filteredContracts.filter(c => c.status === 'Check' || c.status === 'កំពុងត្រួតពិនិត្យ').length;
+    const redeemCount = filteredContracts.filter(c => c.status === 'Redeem' || c.status === 'បញ្ចាំ/ដោះដូរ').length;
+    const blacklistCount = filteredContracts.filter(c => c.status === 'Blacklist' || c.status === 'BlackList' || c.status === 'បញ្ជីខ្មៅ').length;
+
+    const safeTotalCount = totalCount > 0 ? totalCount : 1;
+    const activatedPct = ((activatedCount / safeTotalCount) * 100).toFixed(2);
+    const applicationPct = ((applicationCount / safeTotalCount) * 100).toFixed(2);
+    const checkPct = ((checkCount / safeTotalCount) * 100).toFixed(2);
+    const redeemPct = ((redeemCount / safeTotalCount) * 100).toFixed(2);
+    const blacklistPct = ((blacklistCount / safeTotalCount) * 100).toFixed(2);
+
+    const lockedPhones = filteredContracts.filter(c => c.lockPhoneStatus === 'Locked').length;
     const unlockedPhones = Math.max(0, totalCount - lockedPhones);
     const lockedRatio = totalCount > 0 ? ((lockedPhones / totalCount) * 100).toFixed(2) : '0.00';
     const unlockedRatio = (100 - Number(lockedRatio)).toFixed(2);
@@ -321,32 +357,65 @@ const Dashboard = () => {
         return idx === -1 ? schedule[schedule.length - 1] : schedule[idx];
     };
 
-    // ── Repayments & Active Customers Computation ──
-    const allRepaymentScheduleStats = useMemo(() => {
-        let schedTotal = 0;
-        let penaltyTotal = 0;
-        rawContracts.forEach(contract => {
+    // ── Installment Financial Calculations (Strictly Filter-based) ──
+    const installmentStats = useMemo(() => {
+        let totalPrincipal = 0;
+        let totalCollectedFromInstallment = 0;
+        let totalScheduledFromInstallment = 0;
+        let totalPenaltyFromInstallment = 0;
+        let totalPaidInstallmentsCount = 0;
+
+        filteredContracts.forEach(contract => {
+            const principal = Number(contract.amount || contract.loanAmount || contract.totalAmount || 0);
+            totalPrincipal += principal;
+
             const rules = penaltyRulesByBrand[String(contract.brand || '').trim()] || [];
-            if (Array.isArray(contract.repaymentSchedule) && contract.repaymentSchedule.length > 0) {
-                contract.repaymentSchedule.forEach(row => {
+            const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
+
+            if (schedule.length > 0) {
+                schedule.forEach(row => {
                     const rowData = getRowWithDueDate(row, contract);
                     const penalty = getAutomaticPenalty(rowData, contract, rules);
-                    schedTotal += Number(rowData.scheduledAmount || rowData.amount || 0);
-                    penaltyTotal += Number(penalty || 0);
+                    const schedAmt = Number(rowData.scheduledAmount || rowData.amount || 0);
+                    const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
+
+                    totalScheduledFromInstallment += schedAmt;
+                    totalPenaltyFromInstallment += Number(penalty || 0);
+                    totalCollectedFromInstallment += paidAmt;
+                    if (paidAmt > 0) {
+                        totalPaidInstallmentsCount += 1;
+                    }
                 });
+            } else {
+                const monthlyPayment = Number(contract.monthlyPayment || 0);
+                const durationMatch = String(contract.duration || '').match(/\d+/);
+                const months = durationMatch ? Math.max(1, Number(durationMatch[0])) : 1;
+                totalScheduledFromInstallment += monthlyPayment > 0 ? (monthlyPayment * months) : principal;
             }
         });
-        return { schedTotal, penaltyTotal };
-    }, [rawContracts, penaltyRulesByBrand]);
 
-    // Active Installment Rows extracted directly from each contract's installment schedule
+        const totalPayableScheduled = totalScheduledFromInstallment + totalPenaltyFromInstallment;
+        const totalOutstanding = Math.max(0, totalPayableScheduled - totalCollectedFromInstallment);
+
+        return {
+            totalPrincipal,
+            totalCollectedFromInstallment,
+            totalScheduledFromInstallment,
+            totalPenaltyFromInstallment,
+            totalPayableScheduled,
+            totalOutstanding,
+            totalPaidInstallmentsCount
+        };
+    }, [filteredContracts, penaltyRulesByBrand]);
+
+    // Active Installment Rows extracted directly from each contract's installment schedule (Filtered)
     const installmentCustomerRows = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayStr = today.toISOString().split('T')[0];
 
         const rows = [];
-        rawContracts.forEach((contract) => {
+        filteredContracts.forEach((contract) => {
             const rules = penaltyRulesByBrand[String(contract.brand || '').trim()] || [];
             const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
             if (schedule.length === 0) return;
@@ -400,7 +469,7 @@ const Dashboard = () => {
         });
 
         return rows;
-    }, [rawContracts, penaltyRulesByBrand]);
+    }, [filteredContracts, penaltyRulesByBrand]);
 
     // Active customer payment details for the tables
     const dueCustomerRows = useMemo(() => {
@@ -423,10 +492,10 @@ const Dashboard = () => {
             });
     }, [installmentCustomerRows]);
 
-    // Penalty payment records from /payments
+    // Penalty payment records from filtered payments
     const penaltyPaymentRows = useMemo(() => {
         const pRows = [];
-        rawPayments.forEach((p, idx) => {
+        filteredPayments.forEach((p, idx) => {
             const isPenalty = p.type === 'penalty' || p.category === 'Penalty' || String(p.description || '').toLowerCase().includes('penalty') || String(p.description || '').toLowerCase().includes('ពិន័យ');
             if (isPenalty || Number(p.penaltyAmount || 0) > 0) {
                 const singleImg = p.photo || p.image || p.receiptImage || (Array.isArray(p.paymentImages) && p.paymentImages[0]) || null;
@@ -442,15 +511,16 @@ const Dashboard = () => {
             }
         });
         return pRows;
-    }, [rawPayments]);
+    }, [filteredPayments]);
 
-    // ── Live KPI Financial Totals ──
-    const totalDisbursedAmount = stats.totalLoanAmount || rawContracts.filter(c => c.status === 'Activated').reduce((s, c) => s + Number(c.amount || c.loanAmount || 0), 0);
-    const totalCollectedRevenue = stats.totalRevenue || rawPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
-    const totalScheduledAmount = stats.totalScheduledRepayment || allRepaymentScheduleStats.schedTotal;
-    const totalPenaltyAmount = stats.totalPenaltyRepayment || allRepaymentScheduleStats.penaltyTotal;
-    const totalObligation = totalScheduledAmount + totalPenaltyAmount;
-    const totalOutstandingAmount = stats.outstandingBalance || Math.max(totalObligation - totalCollectedRevenue, 0);
+    // ── Live KPI Financial Totals (Filter-based) ──
+    const totalDisbursedAmount = installmentStats.totalPrincipal;
+    const totalCollectedRevenue = installmentStats.totalCollectedFromInstallment;
+    const totalScheduledAmount = installmentStats.totalPayableScheduled;
+    const totalPenaltyAmount = installmentStats.totalPenaltyFromInstallment;
+    const totalObligation = totalScheduledAmount;
+    const totalOutstandingAmount = installmentStats.totalOutstanding;
+    const totalPaidInstallmentsCount = installmentStats.totalPaidInstallmentsCount;
 
     // Section Summary Totals
     const dueTotalPaid = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.paidAmount, 0), [dueCustomerRows]);
@@ -695,7 +765,7 @@ const Dashboard = () => {
                     <div className="card-value color-green">{formatMoney(totalCollectedRevenue)}</div>
                     <div className="exec-card-footer">
                         <div className="stacked-stat">
-                            <span>បានបង់: <strong>{formatNumber(rawPayments.length)} ប្រតិបត្តិការ</strong></span>
+                            <span>បានបង់: <strong>{formatNumber(totalPaidInstallmentsCount)} លើក</strong></span>
                             <span>ប្រមូលបាន: <strong>{totalDisbursedAmount > 0 ? ((totalCollectedRevenue / totalDisbursedAmount) * 100).toFixed(2) : '0.00'}%</strong></span>
                         </div>
                         <span className="badge-pill" style={{ background: '#d1fae5', color: '#059669' }}>COLLECTED</span>
@@ -1127,12 +1197,6 @@ const Dashboard = () => {
                     </div>
                 </div>
             )}
-
-            {/* ── Footer ── */}
-            <footer className="foot">
-                SYSTEM 888MDM — ផ្ទាំងគ្រប់គ្រងសង្ខេបប្រតិបត្តិ (Executive Mini Dashboard Summary)
-                <span style={{ marginLeft: 8, opacity: 0.7 }}>· 🟢 Live API Connected</span>
-            </footer>
         </main>
     );
 };
