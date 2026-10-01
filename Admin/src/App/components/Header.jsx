@@ -3,15 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaUserCircle, FaGlobe, FaSignOutAlt, FaUserCog, FaBell, FaExpand, FaCompress, FaBars, FaTimes } from 'react-icons/fa';
+import { FaGlobe, FaBell, FaExpand, FaCompress, FaBars, FaTimes } from 'react-icons/fa';
 import { getFirstAllowedRoute, hasAnyAlertPermission } from '../../utils/permissionUtils';
 
 const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleSidebar }) => {
-    const [accountOpen, setAccountOpen] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
 
     const { t, lang, changeLanguage, LANGUAGES } = useLanguage();
-    const { user, logout, API_BASE, API_BASE1, hasPermission } = useAuth();
+    const { user, API_BASE, API_BASE1, hasPermission } = useAuth();
     const navigate = useNavigate();
 
     // Financial summary state
@@ -83,12 +82,6 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
             return () => clearInterval(interval);
         }
     }, [API_BASE, user, hasPermission]);
-
-    const handleLogout = () => {
-        logout();
-        setAccountOpen(false);
-        navigate('/signin');
-    };
 
     const currentLangObj = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0];
 
@@ -242,55 +235,6 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                                     </button>
                                 ))}
                             </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Account User Badge */}
-                <div className='relative'>
-                    <div
-                        onClick={() => { setAccountOpen(!accountOpen); setLangOpen(false); }}
-                        className='flex items-center gap-2.5 pl-1.5 md:pl-2 pr-1.5 md:pr-3 py-1 rounded-[10px] bg-slate-100 border border-slate-200 hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs hover:bg-slate-200/60'
-                    >
-                        <div className='w-8 h-8 rounded-full bg-emerald-600 p-0.5 shadow-xs'>
-                            <div className='w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden'>
-                                <FaUserCircle className='w-full h-full text-emerald-600 p-0.5' />
-                            </div>
-                        </div>
-                        <div className='text-left hidden md:block'>
-                            <p className='text-xs font-bold text-slate-800 leading-tight'>{user ? user.name : 'BOY BOY'}</p>
-                            <p className='text-[10px] text-emerald-600 font-medium leading-none'>{user ? user.username : '@hakyonghouv'}</p>
-                        </div>
-                    </div>
-
-                    {/* Account Menu */}
-                    {accountOpen && (
-                        <div className='absolute top-[5vh] right-0 bg-white border border-slate-200 w-[220px] p-2 rounded-[5px] shadow-xl z-999999 animate-in fade-in duration-200'>
-                            <div className='p-2 border-b border-slate-100 mb-1 bg-slate-50 rounded-[5px]'>
-                                <p className='text-xs font-bold text-slate-800'>{user?.name || 'BOY BOY'}</p>
-                                <p className='text-[11px] text-emerald-600 font-mono mt-0.5'>{user?.email || 'yonghouvh@gmail.com'}</p>
-                                <span className='inline-block text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 mt-1.5 border border-emerald-200'>
-                                    {user?.role || 'Administrator'}
-                                </span>
-                            </div>
-
-                            <Link
-                                to="/profile"
-                                onClick={() => setAccountOpen(false)}
-                                className='w-full h-[40px] flex items-center gap-3 px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[5px] transition-all cursor-pointer text-xs font-medium'
-                            >
-                                <FaUserCog className='text-base text-emerald-600' />
-                                <p>{t('profile')}</p>
-                            </Link>
-
-
-                            <button
-                                onClick={handleLogout}
-                                className='w-full h-[40px] flex items-center gap-3 px-3 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-[5px] transition-all cursor-pointer text-xs font-semibold mt-1 border-t border-slate-100 pt-2'
-                            >
-                                <FaSignOutAlt className='text-base text-red-500' />
-                                <p>{t('logout')}</p>
-                            </button>
                         </div>
                     )}
                 </div>

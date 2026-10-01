@@ -1,19 +1,32 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import json from "../../routes/Routes.json";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp } from "react-icons/fa";
 
 
 const Left = ({ isOpen = false, onClose }) => {
     const [openMenu, setOpenMenu] = useState("");
+    const [accountOpen, setAccountOpen] = useState(false);
     const { t } = useLanguage();
-    const { hasPermission } = useAuth();
+    const { user, logout, hasPermission } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            setAccountOpen(false);
+            navigate('/signin', { replace: true });
+        } catch (error) {
+            console.error('Logout error:', error);
+            navigate('/signin', { replace: true });
+        }
+    };
 
     const toggleMenu = (menu) => {
         setOpenMenu(openMenu === menu ? "" : menu);
@@ -45,7 +58,7 @@ const Left = ({ isOpen = false, onClose }) => {
                     }
                 }
             }}
-            className={`h-full min-h-0 flex-shrink-0 border-r flex flex-col gap-2 select-none overflow-y-auto backdrop-blur-md transition-all duration-300 ease-in-out mobile-sidebar ${
+            className={`h-full min-h-0 flex-shrink-0 border-r flex flex-col justify-between select-none backdrop-blur-md transition-all duration-300 ease-in-out mobile-sidebar ${
                 isOpen
                     ? 'w-[260px] opacity-100 p-2 mobile-sidebar-open'
                     : 'w-0 !p-0 !border-r-0 opacity-0 overflow-hidden pointer-events-none'
@@ -55,9 +68,10 @@ const Left = ({ isOpen = false, onClose }) => {
                 borderColor: 'var(--app-border, rgba(226, 232, 240, 0.8))'
             }}
         >
-
-            {/* Dashboard */}
-            {hasPermission('/dashboard', 'read') && (
+            {/* Top Scrollable Navigation Section */}
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5 custom-scrollbar flex flex-col">
+                {/* Dashboard */}
+                {hasPermission('/dashboard', 'read') && (
                 <Link to={json.dashboard} className={navItemClass(json.dashboard)}>
                     <MdDashboard size={20} className={isActive(json.dashboard) ? "text-white" : "text-emerald-600"} />
                     {t('dashboard')}
@@ -425,7 +439,63 @@ const Left = ({ isOpen = false, onClose }) => {
                         </div>
                     </div>
                 )}
+            </div>
 
+            {/* Bottom Account User Badge Section */}
+            <div className="mt-auto pt-2 border-t border-[var(--app-border,rgba(226,232,240,0.8))] relative flex-shrink-0">
+                {/* Account Menu Popover (Opens Upward) */}
+                {accountOpen && (
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-[10px] p-2 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div className="p-2 border-b border-slate-100 mb-1 bg-slate-50 rounded-[8px]">
+                            <p className="text-xs font-bold text-slate-800 truncate">{user?.name || 'HAK YONGHOUV'}</p>
+                            <p className="text-[11px] text-emerald-600 font-mono mt-0.5 truncate">{user?.email || 'yonghouvh@gmail.com'}</p>
+                            <span className="inline-block text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 mt-1.5 border border-emerald-200">
+                                {user?.role || 'Administrator'}
+                            </span>
+                        </div>
+
+                        <Link
+                            to="/profile"
+                            onClick={() => setAccountOpen(false)}
+                            className="w-full h-[38px] flex items-center gap-2.5 px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[6px] transition-all cursor-pointer text-xs font-medium"
+                        >
+                            <FaUserCog className="text-sm text-emerald-600" />
+                            <span>{t('profile')}</span>
+                        </Link>
+
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="w-full h-[38px] flex items-center gap-2.5 px-3 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-[6px] transition-all cursor-pointer text-xs font-semibold mt-1 border-t border-slate-100 pt-1.5"
+                        >
+                            <FaSignOutAlt className="text-sm text-red-500" />
+                            <span>{t('logout')}</span>
+                        </button>
+                    </div>
+                )}
+
+                {/* Account Badge Pill */}
+                <div
+                    onClick={() => setAccountOpen(!accountOpen)}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-[12px] bg-[var(--app-card,rgba(255,255,255,0.7))] border border-[var(--app-border,rgba(226,232,240,0.8))] hover:border-emerald-500/60 transition-all cursor-pointer shadow-2xs hover:shadow-md backdrop-blur-md group"
+                    title={user?.name || 'User Account'}
+                >
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 p-0.5 shadow-xs flex-shrink-0">
+                        <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                            <FaUserCircle className="w-full h-full text-emerald-600" />
+                        </div>
+                    </div>
+                    <div className="text-left flex-1 min-w-0">
+                        <p className="text-xs font-extrabold text-slate-800 leading-tight truncate">
+                            {user?.name || 'HAK YONGHOUV'}{user?.brand ? ` ( ${user.brand.toUpperCase()} )` : ' ( 888MDM )'}
+                        </p>
+                        <p className="text-[11px] text-emerald-600 font-semibold leading-none mt-0.5 truncate">
+                            {user?.username ? (user.username.startsWith('@') ? user.username : `@${user.username}`) : '@houv'}
+                        </p>
+                    </div>
+                    <FaChevronUp className={`text-[10px] text-slate-400 group-hover:text-emerald-600 transition-transform duration-200 flex-shrink-0 ${accountOpen ? 'rotate-180' : ''}`} />
+                </div>
+            </div>
         </aside>
     );
 };
