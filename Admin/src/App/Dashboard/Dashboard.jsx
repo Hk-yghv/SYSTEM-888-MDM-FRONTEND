@@ -446,12 +446,18 @@ const Dashboard = () => {
 
             const isOverdue = !isPaid && (lateDays > 0 || penalty > 0 || (dueDateStr && dueDateStr < todayStr));
 
+            const nameEn = contract.customerNameEn || contract.customerName || contract.name || contract.clientName || '';
+            const nameKh = contract.customerNameKh || contract.nameKh || '';
+            const phone = contract.phone || contract.phoneNumber || contract.tel || contract.clientPhone || contract.contactNumber || '-';
+
             rows.push({
                 id: `${contract._id || contract.id || 'c'}-${rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : 1)}`,
                 contractId: contract._id || contract.id,
                 contractIid: contract.contractId || contract.contractIid || contract.code || `CT-${rows.length + 1}`,
-                customerName: contract.customerName || contract.name || 'Unknown',
-                phone: contract.phone || contract.phoneNumber || contract.tel || '-',
+                customerNameEn: nameEn,
+                customerNameKh: nameKh,
+                customerName: nameEn || nameKh || 'Unknown',
+                phone: phone,
                 dueDate: dueDateStr,
                 scheduledAmount: scheduledAmt,
                 paidAmount: paidAmt,
@@ -1289,8 +1295,15 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
                             <tr key={row.id}>
                                 <td data-label="#">{idx + 1}</td>
                                 <td data-label="ឈ្មោះភ្ញៀវ" className="customer-name-cell">
-                                    <strong>{row.customerName}</strong>
-                                    <small>{row.phone}</small>
+                                    <strong style={{ display: 'block', color: '#0f172a' }}>
+                                        {row.customerNameEn || row.customerName || 'Unknown'}
+                                    </strong>
+                                    {row.customerNameKh && (
+                                        <span style={{ fontSize: '11px', color: '#059669', fontWeight: '600', display: 'block' }}>
+                                            {row.customerNameKh}
+                                        </span>
+                                    )}
+                                    <small style={{ color: '#64748b' }}>{row.phone}</small>
                                 </td>
                                 <td data-label="កិច្ចសន្យា">
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
