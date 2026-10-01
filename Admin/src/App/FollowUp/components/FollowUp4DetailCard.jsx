@@ -87,7 +87,7 @@ const FollowUp4DetailCard = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">NO REPLY (មិនតប)</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('noReply')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -99,7 +99,7 @@ const FollowUp4DetailCard = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">INQUIRE (សួរនាំ)</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('inquire')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -123,7 +123,7 @@ const FollowUp4DetailCard = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">MORE (ផ្សេងៗ)</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('more')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -226,7 +226,7 @@ const FollowUp4DetailCard = ({
                         className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-1 rounded-[5px] transition-all shadow-lg shadow-sky-600/20 cursor-pointer disabled:opacity-50"
                     >
                         {saving ? <MdOutlineSync className="animate-spin text-base" /> : <FaSave size={14} />}
-                        <span>{saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក DETAIL METRICS'}</span>
+                        <span>{saving ? [t('saving')]: t('save')}</span>
                     </button>
                 </div>
 
@@ -234,7 +234,7 @@ const FollowUp4DetailCard = ({
                 <div className="lg:col-span-6 bg-slate-800/90 border border-slate-700/80 p-6 rounded-[5px] shadow-xl flex flex-col justify-between">
                     <div>
                         <div className="flex items-center gap-2 text-emerald-400 font-bold text-base pb-3 border-b border-slate-700 mb-4">
-                            <FaChartBar /> <span>ការគណនាស្វ័យប្រវត្តិ (AUTOMATED FORMULAS)</span>
+                            <FaChartBar /> <span>{t('automatedFormulas')}</span>
                         </div>
 
                         <div className="space-y-3">
@@ -296,7 +296,7 @@ const FollowUp4DetailCard = ({
             <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl p-5">
                 <div className="flex items-center gap-2 text-slate-200 font-bold text-sm mb-4">
                     <FaHistory className="text-sky-400" />
-                    <span>ប្រវត្តិកំណត់ត្រា DETAIL កន្លងមក ({brand || '888MDM'})</span>
+                    <span>{t('history')} ({brand || '888MDM'})</span>
                 </div>
 
                 <div className="overflow-x-auto">

@@ -153,22 +153,22 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     <div className='hidden lg:flex items-center gap-2 pl-4 border-l border-slate-200'>
                         {/* ឥណទានបញ្ចេញសរុប */}
                         <div className='flex flex-col items-center px-2.5 py-1 rounded-[5px] bg-slate-50 border border-slate-200/80'>
-                            <span className='text-[9px] font-bold text-slate-500 uppercase tracking-wider'>ឥណទានបញ្ចេញសរុប</span>
+                            <span className='text-[9px] font-bold text-slate-500 uppercase tracking-wider'>{t('totalLoanDisbursed')}</span>
                             <span className='text-xs font-black text-slate-700 font-mono leading-tight'>${formatMoney(balance.totalLoanAmount)}</span>
                         </div>
                         {/* ប្រាក់ប្រមូលបានសរុប */}
                         <div className='flex flex-col items-center px-2.5 py-1 rounded-[5px] bg-emerald-50 border border-emerald-200/80'>
-                            <span className='text-[9px] font-bold text-emerald-600 uppercase tracking-wider'>ប្រាក់ប្រមូលបានសរុប</span>
+                            <span className='text-[9px] font-bold text-emerald-600 uppercase tracking-wider'>{t('totalRevenueCollected')}</span>
                             <span className='text-xs font-black text-emerald-700 font-mono leading-tight'>${formatMoney(balance.totalRevenue)}</span>
                         </div>
                         {/* ប្រាក់ត្រូវប្រមូលមកវិញ */}
                         <div className='flex flex-col items-center px-2.5 py-1 rounded-[5px] bg-purple-50 border border-purple-200/80'>
-                            <span className='text-[9px] font-bold text-purple-600 uppercase tracking-wider'>ប្រាក់ត្រូវប្រមូលមកវិញ</span>
+                            <span className='text-[9px] font-bold text-purple-600 uppercase tracking-wider'>{t('totalRepaymentDue')}</span>
                             <span className='text-xs font-black text-purple-700 font-mono leading-tight'>${formatMoney(balance.totalRepaymentExpected)}</span>
                         </div>
                         {/* ប្រាក់នៅសល់មិនទាន់ប្រមូល */}
                         <div className='flex flex-col items-center px-2.5 py-1 rounded-[5px] bg-amber-50 border border-amber-200/80'>
-                            <span className='text-[9px] font-bold text-amber-600 uppercase tracking-wider'>ប្រាក់នៅសល់មិនទាន់ប្រមូល</span>
+                            <span className='text-[9px] font-bold text-amber-600 uppercase tracking-wider'>{t('outstandingReceivables')}</span>
                             <span className='text-xs font-black text-amber-700 font-mono leading-tight'>${formatMoney(balance.outstandingBalance)}</span>
                         </div>
                     </div>
@@ -181,7 +181,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     <button
                         onClick={onOpenAlerts}
                         className='relative flex items-center justify-center gap-2 w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-3 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-slate-950 text-xs font-black shadow-md shadow-gray-200 transition-all cursor-pointer border border-gray-300'
-                        title='ការជូនដំណឹងបង់ប្រាក់ (Payment Due Alerts)'
+                        title={t('paymentDueAlerts')}
                     >
                         <FaBell className='text-sm animate-pulse text-slate-950' />
                         {alertCount > 0 && (
@@ -193,11 +193,10 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 )}
 
                 {/* Fullscreen Button */}
-                {/* Fullscreen Button */}
                 <button
                     onClick={toggleFullscreen}
                     className='hidden md:flex items-center justify-center w-10 h-10 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
-                    title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                    title={isFullscreen ? [t('exitFullscreen')]: t('fullscreen')}
                 >
                     {isFullscreen ? (
                         <FaCompress className='text-sm' />
@@ -220,7 +219,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     {langOpen && (
                         <div className='absolute top-[5vh] right-0 bg-white border border-slate-200 rounded-[5px] p-2 w-[220px] shadow-xl z-50 animate-in fade-in duration-200'>
                             <p className='text-[11px] font-bold text-slate-400 px-3 py-1 uppercase tracking-wider border-b border-slate-100 mb-1'>
-                                Select Language / ជ្រើសរើសភាសា
+                                {t('selectLanguage')}
                             </p>
                             <div className='max-h-[300px] overflow-y-auto space-y-1 pr-1'>
                                 {LANGUAGES.map((l) => (

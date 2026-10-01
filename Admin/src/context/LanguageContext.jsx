@@ -4,15 +4,15 @@ import dict from '../json/languages';
 const LanguageContext = createContext();
 
 export const LANGUAGES = [
-    { code: 'km', label: 'ខ្មែរ (Khmer)', flag: '🇰🇭' },
+    { code: 'km', label: 'ខ្មែរ', flag: '🇰🇭' },
     { code: 'en', label: 'English', flag: '🇺🇸' },
-    { code: 'ja', label: '日本語 (Japanese)', flag: '🇯🇵' },
-    { code: 'th', label: 'ไทย (Thai)', flag: '🇹🇭' },
-    { code: 'vi', label: 'Tiếng Việt (Vietnamese)', flag: '🇻🇳' },
-    { code: 'zh', label: '中文 (Chinese)', flag: '🇨🇳' },
-    { code: 'ko', label: '한국어 (Korean)', flag: '🇰🇷' },
-    { code: 'ru', label: 'Русский (Russian)', flag: '🇷🇺' },
-    { code: 'la', label: 'ພາສາລາວ (Lao)', flag: '🇱🇦' }
+    { code: 'ja', label: '日本語', flag: '🇯🇵' },
+    { code: 'th', label: 'ไทย', flag: '🇹🇭' },
+    { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
+    { code: 'zh', label: '中文', flag: '🇨🇳' },
+    { code: 'ko', label: '한국어', flag: '🇰🇷' },
+    { code: 'ru', label: 'Русский', flag: '🇷🇺' },
+    { code: 'la', label: 'ພາສາລາວ', flag: '🇱🇦' }
 ];
 
 export const LanguageProvider = ({ children }) => {
@@ -23,14 +23,18 @@ export const LanguageProvider = ({ children }) => {
         localStorage.setItem('mdm_lang', code);
     };
 
-    const t = (key) => {
-        if (dict[lang] && dict[lang][key]) {
+    const t = (key, fallback) => {
+        if (!key) return '';
+        if (dict[lang] && dict[lang][key] !== undefined && dict[lang][key] !== '') {
             return dict[lang][key];
         }
-        if (dict['en'] && dict['en'][key]) {
+        if (dict['en'] && dict['en'][key] !== undefined && dict['en'][key] !== '') {
             return dict['en'][key];
         }
-        return key;
+        if (dict['km'] && dict['km'][key] !== undefined && dict['km'][key] !== '') {
+            return dict['km'][key];
+        }
+        return fallback !== undefined ? fallback : key;
     };
 
     return (
@@ -41,3 +45,4 @@ export const LanguageProvider = ({ children }) => {
 };
 
 export const useLanguage = () => useContext(LanguageContext);
+

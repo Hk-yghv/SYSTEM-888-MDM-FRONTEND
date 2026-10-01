@@ -167,7 +167,7 @@ const Redeem = () => {
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
                             <th className='px-4 py-1 text-center'>No</th>
-                            <th className='px-4 py-1'>Redeem Date (កាលបរិច្ឆេទ Redeem)</th>
+                            <th className='px-4 py-1'>{t('redeem')} {t('date')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
                             <th className='px-4 py-1 text-center'>Contract</th>

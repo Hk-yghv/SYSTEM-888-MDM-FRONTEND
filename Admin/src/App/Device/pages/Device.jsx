@@ -824,7 +824,7 @@ const Device = () => {
                         whitespace-pre-wrap
                     ">
                                     <CopyCell
-                                        text={selectedDevice.deviceProblem || selectedDevice.device_problem || '— គ្មានបញ្ហាឧបករណ៍ (No recorded device problem)'}
+                                        text={selectedDevice.deviceProblem || selectedDevice.device_problem || '—'}
                                         className="text-gray-700 font-medium"
                                     />
                                 </p>

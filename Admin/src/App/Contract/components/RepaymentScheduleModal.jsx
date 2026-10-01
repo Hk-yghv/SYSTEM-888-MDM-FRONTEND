@@ -197,7 +197,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             }, 300);
         } catch (err) {
             console.error('Direct PDF export error:', err);
-            alert('បរាជ័យក្នុងការទាញយក PDF (Download Failed): ' + err.message);
+            alert('Download Failed: ' + err.message);
         } finally {
             setDownloadingPdf(false);
         }
@@ -741,10 +741,10 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 type="button"
                                 onClick={applyCalculateSchedule2}
                                 className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
-                                title="គណនាដោយស្វ័យប្រវត្តិតាមរូបមន្ត Calculate Schedule 2"
+                                title={t('automatedFormulas')}
                             >
                                 <FaCalculator size={12} />
-                                <span>គណនាតាម Calculate Schedule 2</span>
+                                <span>{t('calculateSchedule2')}</span>
                             </button>
                         )}
                         <button
@@ -778,7 +778,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             <div className="flex items-center gap-2">
                                 <FaCalendarAlt className="text-indigo-600 text-lg flex-shrink-0" />
                                 <span>
-                                    សូមកំណត់កាលបរិច្ឆេទថ្ងៃខែត្រូវបង់ និងទឹកប្រាក់សម្រាប់ខែនីមួយៗ ឬចុចប៊ូតុង <strong>"គណនាតាម Calculate Schedule 2"</strong> ដើម្បីបំពេញអូតូ រួចចុច <strong>"រក្សាទុក & Activate Contract"</strong>!
+                                    សូមកំណត់កាលបរិច្ឆេទថ្ងៃខែត្រូវបង់ និងទឹកប្រាក់សម្រាប់ខែនីមួយៗ ឬចុចប៊ូតុង <strong>t('calculateSchedule2')</strong> ដើម្បីបំពេញអូតូ រួចចុច <strong>"រក្សាទុក & Activate Contract"</strong>!
                                 </span>
                             </div>
                             <button
@@ -787,7 +787,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-md flex-shrink-0"
                             >
                                 <FaCalculator size={13} />
-                                <span>គណនាតាម Calculate Schedule 2</span>
+                                <span>{t('calculateSchedule2')}</span>
                             </button>
                         </div>
                     )}
@@ -1074,7 +1074,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         onClick={() => setOpen(false)}
                         className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-[5px] text-xs font-bold cursor-pointer transition-all"
                     >
-                        បិទ (Close)
+                        {t('close')}
                     </button>
 
                     {/* Redeem button ONLY visible if payoff exists and NOT in setup_activate */}
@@ -1104,7 +1104,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                     ? 'កំពុងរក្សាទុក...'
                                     : isSetupActivate
                                         ? 'រក្សាទុក & Activate Contract'
-                                        : 'រក្សាទុកការប្រែប្រួល (Save Schedule)'}
+                                        : t('saveSchedule')}
                             </span>
                         </button>
                     )}
@@ -1200,7 +1200,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             </div>
                             <div>
                                 <h4 className="text-sm font-bold text-white">
-                                    {payConfirm.mode === 'PayOff' ? 'ទូទាត់ (Pay Off)' : 'ចុះបង់ (Mark as Paid)'}
+                                    {payConfirm.mode === 'PayOff' ? [t('payOff')]: t('markAsPaid')}
                                 </h4>
                                 <p className="text-[11px] text-white/70">{rows[payConfirm.idx]?.labelName || `ខែទី ${payConfirm.idx + 1}`}</p>
                             </div>
@@ -1218,7 +1218,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
                         {/* Amount */}
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">ភ្ញៀវបានបង់ (Amount Paid) $</label>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">{t('amountPaid')} ($)</label>
                             <input
                                 type="number"
                                 step="any"
@@ -1230,7 +1230,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
                         {/* Paid By — Payment Method Dropdown */}
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">បង់ដោយ (Paid By / Payment Method)</label>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">{t('paidByMethod')}</label>
                             <select
                                 value={payConfirm.paidBy || ''}
                                 onChange={e => setPayConfirm(prev => ({ ...prev, paidBy: e.target.value }))}
@@ -1245,7 +1245,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
                         {/* Description */}
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">កំណត់ចំណាំ (Description / Note)</label>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">{t('description')}</label>
                             <input
                                 type="text"
                                 value={payConfirm.description}
@@ -1258,7 +1258,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         {/* Multi-Image Upload */}
                         <div>
                             <div className="flex items-center justify-between mb-1.5">
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">រូបភាពបង្កាន់ដៃ (Receipt Images)</label>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">{t('receiptImages')}</label>
                                 <span className="text-[10px] text-slate-400">{payConfirm.imageItems?.length || 0} files</span>
                             </div>
 
@@ -1267,7 +1267,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 <div className="w-5 h-5 rounded-lg bg-slate-200 group-hover:bg-indigo-100 flex items-center justify-center transition-colors">
                                     <FaDollarSign size={10} className="text-slate-500 group-hover:text-indigo-600" />
                                 </div>
-                                <span className="text-xs text-slate-400 group-hover:text-indigo-600 transition-colors">+ ជ្រើសរើសរូបភាព (Multiple allowed)</span>
+                                <span className="text-xs text-slate-400 group-hover:text-indigo-600 transition-colors">+ {t('multipleImagesAllowed')}</span>
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -1319,7 +1319,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             disabled={payConfirmSubmitting}
                             className="flex-1 h-10 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-[5px] text-xs font-bold cursor-pointer transition-all disabled:opacity-50"
                         >
-                            ខ្វែង (Cancel)
+                            {t('cancel')}
                         </button>
                         <button
                             type="button"

@@ -15,23 +15,23 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Contract Management', path: '/contract/redeem', label: 'Contract Redeem', actions: ['read', 'export', 'edit', 'delete'] },
     { category: 'Contract Management', path: '/contract/comments', label: 'Contract Comments', actions: ['read', 'export', 'create', 'edit', 'delete', 'information'] },
     { category: 'Contract Management', path: '/contract/blacklist', label: 'Contract Blacklist', actions: ['read', 'export', 'create', 'edit', 'delete'] },
-    { category: 'Calculation & Tools', path: '/calculate/schedule-1', label: 'Calculate Schedule 1 (គណនាការប្រាក់ & កាលវិភាគ)', actions: ['read', 'export'] },
-    { category: 'Calculation & Tools', path: '/calculate/schedule-2', label: 'Calculate Schedule 2 (គណនាការប្រាក់ Schedule 2)', actions: ['read', 'export', 'create', 'edit', 'delete'] },
-    { category: 'Calculation & Tools', path: '/calendar', label: 'Khmer Calendar (ប្រតិទិនខ្មែរ)', actions: ['read', 'create', 'edit', 'delete'] },
+    { category: 'Calculation & Tools', path: '/calculate/schedule-1', label: 'Calculate Schedule 1', actions: ['read', 'export'] },
+    { category: 'Calculation & Tools', path: '/calculate/schedule-2', label: 'Calculate Schedule 2', actions: ['read', 'export', 'create', 'edit', 'delete'] },
+    { category: 'Calculation & Tools', path: '/calendar', label: 'Khmer Calendar', actions: ['read', 'create', 'edit', 'delete'] },
 
-    { category: 'Installment & Payment', path: '/installment/schedule', label: 'Installment Schedule (តារាងបង់ប្រាក់)', actions: ['read', 'edit', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/schedule', label: 'Installment Schedule', actions: ['read', 'edit', 'export'] },
     { category: 'Installment & Payment', path: '/installment/pad', label: 'Installment Pad', actions: ['read', 'edit', 'export'] },
     { category: 'Installment & Payment', path: '/installment/history', label: 'Installment History', actions: ['read', 'export'] },
     { category: 'Installment & Payment', path: '/installment/paymentHistory', label: 'Payment History', actions: ['read', 'create', 'delete', 'export'] },
-    { category: 'Installment & Payment', path: '/installment/cash-out', label: 'Cash Out (ប្រាក់ចេញ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
-    { category: 'Installment & Payment', path: '/installment/cash-in', label: 'Cash In (ប្រាក់ចូល)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
-    { category: 'Installment & Payment', path: '/installment/penalty', label: 'Penalty (ពិន័យ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
-    { category: 'Installment & Payment', path: '/installment/overdue', label: 'Overdue Customers (ភ្ញៀវយឺត)', actions: ['read', 'export'] },
-    { category: 'Installment & Payment', path: '/installment/due-today', label: 'Due Today (ភ្ញៀវត្រូវបង់ថ្ងៃនេះ)', actions: ['read', 'export'] },
-    { category: 'Installment & Payment', path: '/installment/due-in-3-days', label: 'Due In 3 Days (ភ្ញៀវនៅសល់ ៣ ថ្ងៃ)', actions: ['read', 'export'] },
-    { category: 'Installment & Payment', path: '/installment/overdue-3-days', label: 'Overdue 3 Days (ភ្ញៀវយឺត ៣ ថ្ងៃ)', actions: ['read', 'export'] },
-    { category: 'Installment & Payment', path: '/installment/unpaid-yesterday', label: 'Unpaid Yesterday (ភ្ញៀវមិនបានបង់ប្រាក់ម្សិលម៉ិញ)', actions: ['read', 'export'] },
-    { category: 'Installment & Payment', path: '/installment/overdue-7-days', label: 'Overdue 7 Days (ភ្ញៀវខកខានបង់ប្រាក់ ៧ ថ្ងៃ)', actions: ['read', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/cash-out', label: 'Cash Out', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/cash-in', label: 'Cash In', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/penalty', label: t('penalty'), actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/overdue', label: t('overdue'), actions: ['read', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/due-today', label: t('dueToday'), actions: ['read', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/due-in-3-days', label: t('dueIn3Days'), actions: ['read', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/overdue-3-days', label: t('overdue3Days'), actions: ['read', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/unpaid-yesterday', label: t('unpaidYesterday'), actions: ['read', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/overdue-7-days', label: t('overdue7Days'), actions: ['read', 'export'] },
 
     { category: 'Lost Phone Control', path: '/lostphone/actions', label: 'Lost Phone Actions', actions: ['read', 'lockDevice', 'unlockPhone'] },
     { category: 'Lost Phone Control', path: '/lostphone/lockphone', label: 'Lock Phone Log', actions: ['read', 'export'] },
@@ -48,14 +48,14 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Reports & Analytics', path: '/report/lock-phone', label: 'Lock Phone Report', actions: ['read', 'export'] },
     { category: 'Reports & Analytics', path: '/report/set-wallpaper', label: 'Set Wallpaper Report', actions: ['read', 'export'] },
     { category: 'Reports & Analytics', path: '/report/installment', label: 'Installment Payment Report', actions: ['read', 'export'] },
-    { category: 'Reports & Analytics', path: '/report/follow-up', label: 'Follow Up Report (របាយការណ៍ Follow Up)', actions: ['read', 'export'] },
+    { category: 'Reports & Analytics', path: '/report/follow-up', label: 'Follow Up Report', actions: ['read', 'export'] },
 
     { category: 'Audit & History Logs', path: '/history/login-history', label: 'Login History Log', actions: ['read', 'export'] },
     { category: 'Audit & History Logs', path: '/history/device-history', label: 'Device Action Log', actions: ['read', 'export'] },
 
-    { category: 'Follow Up System', path: '/follow-up/follow-up-1', label: 'Follow up 1 (ការតាមដាន Message)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Follow Up System', path: '/follow-up/follow-up-1', label: 'Follow Up 1', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-2', label: 'Follow up 2 (បញ្ចាំ & ឆ្លើយតបឆាត)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
-    { category: 'Follow Up System', path: '/follow-up/follow-up-3', label: 'Follow up 3 (ការតាមដាន Leads & Follow Up 3)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Follow Up System', path: '/follow-up/follow-up-3', label: 'Follow Up 3', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-4', label: 'Follow up 4 (Follow Up 4 System)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 
     { category: 'Salary System', path: '/salary', label: 'Salary Management (គ្រប់គ្រងប្រាក់ខែ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
@@ -649,7 +649,7 @@ const AllAccount = () => {
                                                         <span className="text-slate-200">{new Date(sess.loginTime).toLocaleString('en-GB')}</span>
                                                     </div>
                                                     <div>
-                                                        <span className="text-slate-500 block">Last Active / Logout (ម៉ោងចេញ):</span>
+                                                        <span className="text-slate-500 block">{t('lastActive')}:</span>
                                                         <span className="text-slate-200">
                                                             {sess.logoutTime ? new Date(sess.logoutTime).toLocaleString('en-GB') : (sess.lastSeen ? new Date(sess.lastSeen).toLocaleString('en-GB') : 'Active')}
                                                         </span>
@@ -825,7 +825,7 @@ const AllAccount = () => {
                                         }`}
                                     >
                                         {formData.role?.toLowerCase() === 'salary' ? (
-                                            <option value="">No Brand (គ្មាន Brand / មិនកំណត់ម៉ាក)</option>
+                                            <option value="">{t('allBrands')}</option>
                                         ) : (
                                             <>
                                                 <option value="">All Brands (គ្រប់ម៉ាកទាំងអស់)</option>
@@ -849,12 +849,12 @@ const AllAccount = () => {
                                     <div>
                                         <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
                                             {formData.role?.toLowerCase() === 'salary'
-                                                ? 'Salary Permissions (សិទ្ធិប្រើប្រាស់សម្រាប់ Salary)'
+                                                ? t('salaryPermissions')
                                                 : 'Page & Action Permissions Matrix (Check to Grant Access)'}
                                         </h4>
                                         <p className="text-[11px] text-gray-400">
                                             {formData.role?.toLowerCase() === 'salary'
-                                                ? 'តួនាទី Salary ត្រូវបានកំណត់សិទ្ធិតែលើការគ្រប់គ្រងប្រាក់ខែ (Salary Management) ប៉ុណ្ណោះ'
+                                                ? t('salaryPermissions')
                                                 : 'If a page is un-ticked, the user will be blocked from accessing it by URL and the sidebar link will be hidden!'}
                                         </p>
                                     </div>

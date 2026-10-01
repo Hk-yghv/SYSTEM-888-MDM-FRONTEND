@@ -23,7 +23,7 @@ const ControlSystem = () => {
         { category: 'Follow Up 4 Sources', items: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'] },
         { category: 'Follow Up 4 Contact Types', items: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'] },
         { category: 'Follow Up 4 Statuses', items: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'] },
-        { category: 'Follow Up 4 Asset Types', items: ['ទូរស័ព្ទ (Smart Phone)', 'ម៉ូតូ (Motorcycle)', 'រថយន្ត (Car)', 'ប្លង់ដី/ផ្ទះ (Real Estate)', 'មាស/គ្រឿងអលង្ការ (Jewelry)', 'កុំព្យូទ័រ (Laptop/PC)', 'ផ្សេងៗ (Other)'] },
+        { category: 'Follow Up 4 Asset Types', items: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'] },
         { category: 'Reject Submit Reasons', items: ['ឯកសារមិនគ្រប់', 'ព័ត៌មានមិនច្បាស់', 'អតិថិជនប្តូរចិត្ត', 'ទាក់ទងមិនបាន', 'ផ្សេងៗ'] },
         { category: 'Reject CS Reasons', items: ['តម្លៃមិនព្រម', 'គ្មានសមត្ថភាពបង់', 'លក្ខខណ្ឌមិនត្រូវ', 'មិនឆ្លើយតប', 'ផ្សេងៗ'] }
     ]);
@@ -95,7 +95,7 @@ const ControlSystem = () => {
 
     const handleRestoreFromFirebase = async () => {
         const isConfirmed = window.confirm(
-            '⚠️ ការព្រមានសំខាន់ (IMPORTANT RESTORE NOTICE):\n\n' +
+            t('restoreNotice') + ':\n\n' +
             'តើអ្នកពិតជាចង់ផ្ទេរទិន្នន័យពី Firebase មក MongoDB វិញមែនទេ?\n' +
             'សកម្មភាពនេះនឹងសម្អាតទិន្នន័យ MongoDB ដែលខូច ហើយទាញយកច្បាប់ចម្លងទិន្នន័យចុងក្រោយទាំងអស់ពី Firebase មកវិញ។\n' +
             'ទិន្នន័យនៅក្នុង Firebase នឹងមិនបាត់បង់ឡើយ!'
@@ -160,7 +160,7 @@ const ControlSystem = () => {
                 { category: 'Follow Up 4 Sources', items: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'] },
                 { category: 'Follow Up 4 Contact Types', items: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'] },
                 { category: 'Follow Up 4 Statuses', items: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'] },
-                { category: 'Follow Up 4 Asset Types', items: ['ទូរស័ព្ទ (Smart Phone)', 'ម៉ូតូ (Motorcycle)', 'រថយន្ត (Car)', 'ប្លង់ដី/ផ្ទះ (Real Estate)', 'មាស/គ្រឿងអលង្ការ (Jewelry)', 'កុំព្យូទ័រ (Laptop/PC)', 'ផ្សេងៗ (Other)'] },
+                { category: 'Follow Up 4 Asset Types', items: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'] },
                 { category: 'Reject Submit Reasons', items: ['ឯកសារមិនគ្រប់', 'ព័ត៌មានមិនច្បាស់', 'អតិថិជនប្តូរចិត្ត', 'ទាក់ទងមិនបាន', 'ផ្សេងៗ'] },
                 { category: 'Reject CS Reasons', items: ['តម្លៃមិនព្រម', 'គ្មានសមត្ថភាពបង់', 'លក្ខខណ្ឌមិនត្រូវ', 'មិនឆ្លើយតប', 'ផ្សេងៗ'] }
             ];
@@ -263,7 +263,7 @@ const ControlSystem = () => {
                     setFieldOrigins(prev => ({ ...prev, [key]: 'private' }));
                 }
             } else {
-                alert(`រក្សាទុកបរាជ័យ (Failed to save configuration): ${data.error || res.statusText || 'Server Error'}`);
+                alert(`Failed to save configuration: ${data.error || res.statusText || 'Server Error'}`);
             }
         } catch (err) {
             setSaving(false);
@@ -381,7 +381,7 @@ const ControlSystem = () => {
             });
 
             setSaving(false);
-            setMessage(`Brand '${name}' ត្រូវបានបង្កើត និងចម្លងរាល់ការកំណត់ពី Global ដោយស្វ័យប្រវត្តិកុំឱ្យទទេ! (Created & Auto-populated from Global)`);
+            setMessage(`Brand '${name}' ត្រូវបានបង្កើត និងចម្លងរាល់ការកំណត់ពី Global ដោយស្វ័យប្រវត្តិកុំឱ្យទទេ! `);
             setTimeout(() => setMessage(''), 4500);
         } catch (err) {
             setSaving(false);
@@ -576,7 +576,7 @@ const ControlSystem = () => {
                                 title="Copy all current Global configurations into this brand"
                             >
                                 <MdOutlineSettingsBackupRestore className="text-sm" />
-                                <span>ចម្លងពី Global (Sync from Global)</span>
+                                <span>{t('syncFromGlobal')}</span>
                             </button>
                         )}
                     </div>
@@ -744,7 +744,7 @@ const ControlSystem = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-gray-400 font-semibold mb-1">Penalty / Day ($)</label>
+                                <label className="block text-gray-400 font-semibold mb-1">{t('penalty')} / Day ($)</label>
                                 <input
                                     type="number"
                                     min="0"
@@ -903,7 +903,7 @@ const ControlSystem = () => {
                         <div className="p-4 rounded-[5px] bg-slate-900/90 border border-rose-600/30 space-y-3">
                             <div className="flex items-center justify-between border-b border-rose-900/40 pb-2">
                                 <h4 className="text-xs font-bold text-rose-400 uppercase flex items-center gap-1.5">
-                                    <span>🛑</span> មូលហេតុ REJECT SUBMIT (Reject Submit Reasons)
+                                    <span>🛑</span> Reject Submit Reasons
                                 </h4>
                                 <span className="text-[10px] bg-rose-950/80 text-rose-300 px-2 py-0.5 rounded-full border border-rose-800/40 font-mono">
                                     {(droplists.find(d => d.category === 'Reject Submit Reasons')?.items || []).length} ជម្រើស
@@ -959,7 +959,7 @@ const ControlSystem = () => {
                         <div className="p-4 rounded-[5px] bg-slate-900/90 border border-amber-600/30 space-y-3">
                             <div className="flex items-center justify-between border-b border-amber-900/40 pb-2">
                                 <h4 className="text-xs font-bold text-amber-400 uppercase flex items-center gap-1.5">
-                                    <span>⚠️</span> មូលហេតុ REJECT CS (Reject CS Reasons)
+                                    <span>⚠️</span> Reject CS Reasons
                                 </h4>
                                 <span className="text-[10px] bg-amber-950/80 text-amber-300 px-2 py-0.5 rounded-full border border-amber-800/40 font-mono">
                                     {(droplists.find(d => d.category === 'Reject CS Reasons')?.items || []).length} ជម្រើស
@@ -1082,7 +1082,7 @@ const ControlSystem = () => {
             {activeExplorerFile.id === 'brands' && user?.role === 'Administrator' && selectedBrand === '' && (
                 <div className="p-6 rounded-3xl glass-card border border-amber-500/30 space-y-4 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-amber-300 text-xs font-bold uppercase">
-                        <FaLayerGroup /> Brand Tenant Management (Global Config — Add / Remove Brands)
+                        <FaLayerGroup /> {t('brandTenant')}
                     </div>
 
                     <p className="text-[11px] text-gray-400">
@@ -1143,7 +1143,7 @@ const ControlSystem = () => {
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-sm font-bold text-red-400 flex items-center gap-2">
                                 <MdDelete size={18} />
-                                សួរបញ្ជាក់ពីការលុប Brand (Delete Brand Confirmation)
+                                {t('deleteBrandConfirm')}
                             </h3>
                             <button onClick={() => setDeleteBrandModal({ open: false, brandName: '' })} className="text-gray-400 hover:text-gray-200 text-xs font-bold cursor-pointer">✕</button>
                         </div>
@@ -1153,14 +1153,14 @@ const ControlSystem = () => {
                                 តើអ្នកពិតជាចង់លុប Brand <span className="text-amber-400 font-mono">"{deleteBrandModal.brandName}"</span> នេះមែនទេ?
                             </p>
                             <div className="p-3 bg-red-950/50 border border-red-800/80 rounded-[5px] space-y-1.5 text-red-200">
-                                <p className="font-bold uppercase text-[10px] text-red-400 tracking-wider">⚠️ ការប្រុងប្រយ័ត្នខ្ពស់ (High Alert Warning):</p>
+                                <p className="font-bold uppercase text-[10px] text-red-400 tracking-wider">{t('deleteBrandWarning')}:</p>
                                 <p className="text-[11px] leading-relaxed">
                                     នៅពេលលុប Brand នេះ ព័ត៌មាន និងទិន្នន័យទាំងអស់ដែលពាក់ព័ន្ធនឹង Brand <span className="font-mono font-bold text-amber-300">"{deleteBrandModal.brandName}"</span> រួមមាន៖
                                 </p>
                                 <ul className="list-disc list-inside text-[11px] space-y-0.5 text-red-300 font-medium">
-                                    <li>កិច្ចសន្យាទាំងអស់ (Contracts) របស់ Brand នេះ</li>
-                                    <li>Account System Users ដែលត្រូវបានកំណត់ក្នុង Brand នេះ</li>
-                                    <li>ប្រវត្តិចាក់សោ (Phone/Wallpaper Logs) និង Device Action Logs</li>
+                                    <li>{t('contract')} (Contracts)</li>
+                                    <li>System Users</li>
+                                    <li>Device Action Logs</li>
                                 </ul>
                                 <p className="text-[11px] font-bold text-red-400 pt-1">
                                     ទិន្នន័យទាំងនេះនឹងត្រូវបានលុបចេញពីប្រព័ន្ធ MongoDB ទាំងស្រុង ដោយមិនអាចទាញយកមកវិញបានឡើយ!
@@ -1174,7 +1174,7 @@ const ControlSystem = () => {
                                 onClick={() => setDeleteBrandModal({ open: false, brandName: '' })}
                                 className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md text-xs font-bold hover:bg-slate-200 cursor-pointer"
                             >
-                                បោះបង់ (Cancel)
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"

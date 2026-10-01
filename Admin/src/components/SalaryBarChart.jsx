@@ -7,7 +7,7 @@ import { FaChartBar, FaCalendarAlt, FaMoneyBillWave } from 'react-icons/fa';
 const SalaryBarChart = ({
     data = [], // [{ month: '2026-01', totalAmount: 1200, count: 4 }, ...]
     grandTotal = 0,
-    title = 'ក្រាបសសរប្រាក់ខែតាមខែ (Monthly Salary Bar Chart)',
+    title = '',
     subtitle = 'ទិន្នន័យប្រាក់ខែសរុបប្រចាំខែនីមួយៗ'
 }) => {
     const [hoveredBar, setHoveredBar] = useState(null);
@@ -126,8 +126,8 @@ const SalaryBarChart = ({
             {filteredData.length === 0 ? (
                 <div className="h-56 flex flex-col items-center justify-center text-slate-400 gap-2">
                     <FaMoneyBillWave className="text-3xl opacity-40" />
-                    <p className="text-xs font-semibold">មិនទាន់មានទិន្នន័យប្រាក់ខែដើម្បីបង្ហាញក្រាបសសរនៅឡើយទេ</p>
-                    <p className="text-[11px] opacity-75">សូមបញ្ចូលកំណត់ត្រាប្រាក់ខែតាមរយៈប៊ូតុង "Create / បញ្ចូលប្រាក់ខែ"</p>
+                    <p className="text-xs font-semibold">{t('noSalaryDataChart')}</p>
+                    <p className="text-[11px] opacity-75">{t('pleaseAddSalaryPrompt')}</p>
                 </div>
             ) : (
                 <div className="relative w-full overflow-hidden">
@@ -277,11 +277,11 @@ const SalaryBarChart = ({
                                 <span>{formatMonthLabel(filteredData[hoveredBar].month)} ({filteredData[hoveredBar].month})</span>
                             </div>
                             <div className="flex items-center justify-between gap-4 text-slate-300 font-mono">
-                                <span>សរុបប្រាក់ខែ (Total):</span>
+                                <span>{t('totalSalary')}:</span>
                                 <strong className="text-white text-sm font-bold">${Number(filteredData[hoveredBar].totalAmount).toLocaleString()}</strong>
                             </div>
                             <div className="flex items-center justify-between gap-4 text-slate-400 text-[11px]">
-                                <span>ចំនួនកំណត់ត្រា (Entries):</span>
+                                <span>{t ? [t('totalRecords')]: 'Entries'}:</span>
                                 <span className="font-mono text-amber-300 font-bold">{filteredData[hoveredBar].count} Records</span>
                             </div>
                         </div>

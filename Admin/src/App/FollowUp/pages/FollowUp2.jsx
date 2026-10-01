@@ -23,7 +23,7 @@ import { getProxyImageUrl } from '../../../utils/mediaUtils';
 const LIMIT = 15;
 
 const SOURCE_OPTIONS = ['Facebook', 'Telegram', 'TikTok', 'Phone Call', 'Walk-in', 'Instagram', 'Other'];
-const COLLATERAL_OPTIONS = ['ទូរស័ព្ទ (Smart Phone)', 'ម៉ូតូ (Motorcycle)', 'រថយន្ត (Car)', 'ប្លង់ដី/ផ្ទះ (Real Estate)', 'មាស/គ្រឿងអលង្ការ (Jewelry)', 'កុំព្យូទ័រ (Laptop/PC)', 'ផ្សេងៗ (Other)'];
+const COLLATERAL_OPTIONS = ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'];
 
 const FollowUp2 = () => {
     const { t } = useLanguage();
@@ -69,7 +69,7 @@ const FollowUp2 = () => {
         source: 'Facebook',
         phone: '',
         requestedAmount: '',
-        collateralType: 'ទូរស័ព្ទ (Smart Phone)',
+        collateralType: 'Smart Phone',
         model: '',
         responder: user?.name || user?.username || '',
         date: new Date().toISOString().split('T')[0],
@@ -326,7 +326,7 @@ const FollowUp2 = () => {
             source: item.source || 'Facebook',
             phone: item.phone || '',
             requestedAmount: item.requestedAmount !== undefined ? item.requestedAmount : '',
-            collateralType: item.collateralType || 'ទូរស័ព្ទ (Smart Phone)',
+            collateralType: item.collateralType || 'Smart Phone',
             model: item.model || '',
             responder: item.responder || user?.name || user?.username || '',
             date: item.date ? item.date.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -474,7 +474,7 @@ const FollowUp2 = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (!formData.customerName.trim()) {
-            alert('Please enter Customer Name (សូមបញ្ចូល ឈ្មោះអតិថិជន)');
+            alert(t('customerName'));
             return;
         }
 
@@ -629,7 +629,7 @@ const FollowUp2 = () => {
         const todayStr = now.toISOString().split('T')[0];
 
         if (scope === 'today') {
-            return { start: todayStr, end: todayStr, label: 'Today (ថ្ងៃនេះ)' };
+            return { start: todayStr, end: todayStr, label: t('today') };
         } else if (scope === 'week') {
             const d = new Date(now);
             const day = d.getDay();
@@ -640,7 +640,7 @@ const FollowUp2 = () => {
             return {
                 start: monday.toISOString().split('T')[0],
                 end: sunday.toISOString().split('T')[0],
-                label: 'This Week (សប្តាហ៍នេះ)'
+                label: t('thisWeek')
             };
         } else if (scope === 'month') {
             const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -648,7 +648,7 @@ const FollowUp2 = () => {
             return {
                 start: firstDay.toISOString().split('T')[0],
                 end: lastDay.toISOString().split('T')[0],
-                label: 'This Month (ខែនេះ)'
+                label: t('thisMonth')
             };
         } else if (scope === 'custom') {
             return {
@@ -657,7 +657,7 @@ const FollowUp2 = () => {
                 label: `Custom: ${exportStartDate || todayStr} to ${exportEndDate || todayStr}`
             };
         }
-        return { start: '', end: '', label: 'All Time (ទាំងអស់)' };
+        return { start: '', end: '', label: t('allTime') };
     };
 
     // Execute Export from Modal
@@ -699,9 +699,9 @@ const FollowUp2 = () => {
             // Define Export Table Columns
             const exportColumns = [
                 { header: '#', accessor: (row, idx) => (row.isGrandTotal ? '★' : row.isDailyTotal ? '—' : String(idx + 1)) },
-                { header: 'Customer Name (ឈ្មោះអតិថិជន)', accessor: (row) => row.customerName || '' },
-                { header: 'Source (តាមរយៈ)', accessor: (row) => row.source || '' },
-                { header: 'Tel (លេខទូរស័ព្ទ)', accessor: (row) => row.phone || '' },
+                { header: t('customerName'), accessor: (row) => row.customerName || '' },
+                { header: t('source'), accessor: (row) => row.source || '' },
+                { header: t('phone'), accessor: (row) => row.phone || '' },
                 {
                     header: 'ចំនួនស្នើបញ្ចាំ ($)',
                     accessor: (row) => row.requestedAmount !== undefined && row.requestedAmount !== ''
@@ -709,13 +709,13 @@ const FollowUp2 = () => {
                         : ''
                 },
                 { header: 'ប្រភេទទ្រព្យបញ្ចាំ', accessor: (row) => row.collateralType || '' },
-                { header: 'Model (ម៉ូឌែល)', accessor: (row) => row.model || '' },
+                { header: t('model'), accessor: (row) => row.model || '' },
                 { header: 'អ្នកឆ្លើយតបឆាត', accessor: (row) => row.responder || '' },
                 { header: 'កាលបរិច្ឆេទឆ្នាំ', accessor: (row) => row.date ? row.date.split('T')[0] : '' },
                 { header: 'វាយតម្លៃបានចន្លោះណាដល់ណា', accessor: (row) => row.valuationRange || '' },
-                { header: 'រូបភាព (Photos)', accessor: (row) => (row.isTotalRow ? '' : `${(row.images || []).length} រូប`) },
-                { header: 'ស្ថានភាព (Status)', accessor: (row) => row.status || '' },
-                { header: 'មូលហេតុ (Reason)', accessor: (row) => row.reason || '' },
+                { header: t('evidencePhotos'), accessor: (row) => (row.isTotalRow ? '' : `${(row.images || []).length} រូប`) },
+                { header: t('status'), accessor: (row) => row.status || '' },
+                { header: t('note'), accessor: (row) => row.reason || '' },
                 { header: 'Brand', accessor: (row) => row.brand || '' }
             ];
 
@@ -761,7 +761,7 @@ const FollowUp2 = () => {
             exportDataWithTotals.push({
                 isTotalRow: true,
                 isGrandTotal: true,
-                customerName: 'សរុបទាំងអស់ (GRAND TOTAL)',
+                customerName: t('grandTotal'),
                 source: `សរុប: ${items.length} នាក់`,
                 phone: '',
                 requestedAmount: totalAmount,
@@ -928,7 +928,7 @@ const FollowUp2 = () => {
                     >
                         <option value="">ស្ថានភាពទាំងអស់</option>
                         <option value="ជោគជ័យ">ជោគជ័យ</option>
-                        <option value="Review">Review (ពិនិត្យ / រង់ចាំពិនិត្យ)</option>
+                        <option value="Review">{t('inReview')}</option>
                         <option value="បរាជ័យ">បរាជ័យ</option>
                     </select>
                 </div>
@@ -1015,7 +1015,7 @@ const FollowUp2 = () => {
                                     <td colSpan="14" className="py-12 text-center text-slate-400">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <MdOutlineSync size={24} className="animate-spin text-indigo-600" />
-                                            <span>កំពុងទាញយកទិន្នន័យ Follow up 2...</span>
+                                            <span>{t('fetchingData')}</span>
                                         </div>
                                     </td>
                                 </tr>
@@ -1195,7 +1195,7 @@ const FollowUp2 = () => {
                                         className="py-3.5 px-4 text-left font-bold text-indigo-800 dark:text-indigo-300"
                                     >
                                         <span className="uppercase tracking-wider">
-                                            សរុបទាំងអស់ (Overall Totals):
+                                            {t('overallTotal')}:
                                         </span>
                                     </td>
 
@@ -1266,7 +1266,7 @@ const FollowUp2 = () => {
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
                             <h2 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
                                 <FaUserTie className="text-indigo-600" size={20} />
-                                <span>{editingItem ? 'កែប្រែទិន្នន័យ Follow up 2' : 'បញ្ចូលទិន្នន័យ Follow up 2 ថ្មី'}</span>
+                                <span>{editingItem ? [t('editFollowUp2')]: 'បញ្ចូលទិន្នន័យ Follow up 2 ថ្មី'}</span>
                             </h2>
                             <button
                                 onClick={() => setIsFormOpen(false)}
@@ -1325,7 +1325,7 @@ const FollowUp2 = () => {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                        តាមរយៈ (Source / Channel)
+                                        {t('source')}
                                     </label>
                                     <input
                                         type="text"
@@ -1347,7 +1347,7 @@ const FollowUp2 = () => {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                        Tel (លេខទូរស័ព្ទ)
+                                        {t('phone')}
                                     </label>
                                     <input
                                         type="text"
@@ -1394,7 +1394,7 @@ const FollowUp2 = () => {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5 flex items-center justify-between">
-                                        <span>Model (ម៉ូឌែលឧបករណ៍)</span>
+                                        <span>{t('model')}</span>
                                         <span className="text-[10px] font-normal text-indigo-600 dark:text-indigo-400">Control System</span>
                                     </label>
                                     <input
@@ -1417,7 +1417,7 @@ const FollowUp2 = () => {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                        អ្នកឆ្លើយតបឆាត (Responder)
+                                        {t('responder')}
                                     </label>
                                     <input
                                         type="text"
@@ -1444,7 +1444,7 @@ const FollowUp2 = () => {
                             {/* Row 5: កាលបរិច្ឆេទឆ្នាំ */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                    កាលបរិច្ឆេទឆ្នាំ (Date) <span className="text-rose-500">*</span>
+                                    {t('date')} <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="date"
@@ -1528,7 +1528,7 @@ const FollowUp2 = () => {
                                             }`}
                                     >
                                         <FaCheckCircle size={15} />
-                                        <span>ជោគជ័យ (Success)</span>
+                                        <span>{t('success')}</span>
                                     </button>
                                     <button
                                         type="button"
@@ -1555,7 +1555,7 @@ const FollowUp2 = () => {
                                             }`}
                                     >
                                         <FaTimesCircle size={15} />
-                                        <span>បរាជ័យ (Failed)</span>
+                                        <span>{t('failed')}</span>
                                     </button>
                                 </div>
                             </div>
@@ -1563,7 +1563,7 @@ const FollowUp2 = () => {
                             {/* Reason */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                    មូលហេតុ (Reason / Note)
+                                    {t('note')}
                                 </label>
                                 <textarea
                                     rows="2"
@@ -1608,7 +1608,7 @@ const FollowUp2 = () => {
                                 >
                                     {(submitting || uploadingImages) && <MdOutlineSync className="animate-spin" size={14} />}
                                     <span>
-                                        {uploadingImages ? 'កំពុង Upload រូបភាព...' : (submitting ? 'កំពុងរក្សាទុក...' : (t('submit') || 'Save'))}
+                                        {uploadingImages ? [t('uploadingImage')]: (submitting ? 'កំពុងរក្សាទុក...' : (t('submit') || 'Save'))}
                                     </span>
                                 </button>
                             </div>
@@ -1680,7 +1680,7 @@ const FollowUp2 = () => {
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
                             <h2 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
                                 <FaFileDownload className="text-indigo-600" size={18} />
-                                <span>{t('exportScope') || 'ជ្រើសរើសចន្លោះកាលបរិច្ឆេទ Export'}</span>
+                                <span>{t('timeRangeScope')}</span>
                             </h2>
                             <button
                                 onClick={() => setIsExportModalOpen(false)}
@@ -1695,7 +1695,7 @@ const FollowUp2 = () => {
                             {/* Format Selector */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-2">
-                                    ទម្រង់ File (Export Format)
+                                    {t('exportFormat')}
                                 </label>
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
@@ -1727,7 +1727,7 @@ const FollowUp2 = () => {
                             {/* Scope Radio / Buttons */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-2">
-                                    ចន្លោះពេលចង់ Export (Time Range Scope)
+                                    {t('timeRangeScope')}
                                 </label>
                                 <div className="grid grid-cols-2 gap-2.5">
                                     <button
@@ -1784,7 +1784,7 @@ const FollowUp2 = () => {
                                     </div>
                                     <div className="grid grid-cols-2 gap-2.5">
                                         <div>
-                                            <span className="block text-[11px] font-semibold text-slate-500 mb-1">ពីថ្ងៃ (From):</span>
+                                            <span className="block text-[11px] font-semibold text-slate-500 mb-1">{t('from')}:</span>
                                             <input
                                                 type="date"
                                                 value={exportStartDate}
@@ -1793,7 +1793,7 @@ const FollowUp2 = () => {
                                             />
                                         </div>
                                         <div>
-                                            <span className="block text-[11px] font-semibold text-slate-500 mb-1">ដល់ថ្ងៃ (To):</span>
+                                            <span className="block text-[11px] font-semibold text-slate-500 mb-1">{t('to')}:</span>
                                             <input
                                                 type="date"
                                                 value={exportEndDate}
@@ -1809,7 +1809,7 @@ const FollowUp2 = () => {
                             <div className="p-3 bg-slate-100 dark:bg-slate-800/80 rounded-[5px] text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                 <p className="font-semibold flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 mb-1">
                                     <FaCheckCircle size={13} />
-                                    <span>របាយការណ៍រួមបញ្ចូលសរុប (Total Row Included)</span>
+                                    <span>{t('summaryTable')}</span>
                                 </p>
                                 <p className="text-[11px] leading-relaxed">
                                     នៅពេល Export ប្រព័ន្ធនឹងគណនាសរុប (ចំនួនស្នើបញ្ចាំសរុប, ចំនួនជោគជ័យ, ចំនួនបរាជ័យ, Success Rate) នៅពីខាងក្រោមតារាងដោយស្វ័យប្រវត្តិ។
@@ -1836,7 +1836,7 @@ const FollowUp2 = () => {
                                 {isExporting ? (
                                     <>
                                         <MdOutlineSync className="animate-spin" size={15} />
-                                        <span>កំពុង Export...</span>
+                                        <span>{t('exporting')}</span>
                                     </>
                                 ) : (
                                     <>

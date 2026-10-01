@@ -73,7 +73,7 @@ const Customer = () => {
             }, 300);
         } catch (err) {
             console.error('Direct customer PDF export error:', err);
-            alert('បរាជ័យក្នុងការទាញយក PDF (Download Failed): ' + err.message);
+            alert('Download Failed: ' + err.message);
         } finally {
             setExportingCustomerPdfId(null);
         }
@@ -366,7 +366,7 @@ const Customer = () => {
                                                                     className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-semibold cursor-pointer transition-colors"
                                                                 >
                                                                     <FaFileImage className="text-emerald-600" />
-                                                                    <span>See Photo (មើលរូប)</span>
+                                                                    <span>{t('seePhoto')}</span>
                                                                 </button>
                                                             )}
 
@@ -381,7 +381,7 @@ const Customer = () => {
                                                                     className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
                                                                 >
                                                                     <MdInfo className="text-slate-500" />
-                                                                    <span>Details (ព័ត៌មានលម្អិត)</span>
+                                                                    <span>{t('details')}</span>
                                                                 </button>
                                                             )}
 
@@ -396,7 +396,7 @@ const Customer = () => {
                                                                     className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
                                                                 >
                                                                     <FaQrcode className="text-indigo-600" />
-                                                                    <span>QR Code (ស្កេន QR)</span>
+                                                                    <span>QR Code</span>
                                                                 </button>
                                                             )}
 
@@ -827,7 +827,7 @@ const Customer = () => {
                                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
 
                                     {[
-                                        ['Loan Date (កាលបរិច្ឆេទ)', selectedCustomer.inputDate || '-'],
+                                        [t('inputDate'), selectedCustomer.inputDate || '-'],
                                         ['Total Loan Amount', `$${totalLoan.toLocaleString()}`, totalLoan],
                                         ['Monthly Installment', `$${selectedCustomer.monthlyPayment}/mo`, selectedCustomer.monthlyPayment],
                                         ['Interest Rate', selectedCustomer.interest || '-'],
@@ -1494,7 +1494,7 @@ const Customer = () => {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                                        <span className='text-black'>រូបភាពភស្តុតាង (Evidence Photos)</span>
+                                        <span className='text-black'>{t('evidencePhotos')}</span>
                                         <span className="text-xs text-emerald-400 font-mono font-bold">
                                             {photoGalleryCustomer.customerNameEn} {photoGalleryCustomer.customerNameKh ? `(${photoGalleryCustomer.customerNameKh})` : ''}
                                         </span>

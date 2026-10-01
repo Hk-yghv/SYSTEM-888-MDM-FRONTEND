@@ -65,8 +65,8 @@ const Actions = () => {
     });
 
     const handleToggleWallpaper = async (contract, newStatus) => {
-        const actionLabel = newStatus === 'Locked' || newStatus === 'LockWallpaper' ? 'ចាក់សោ Wallpaper (Lock Wallpaper)' : 'ដោះសោ Wallpaper (Unlock Wallpaper)';
-        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់ធ្វើសកម្មភាព [ ${actionLabel} ] លើទូរស័ព្ទរបស់ "${contract.customerNameEn || contract.customerNameKh}" មែនទេ?`)) return;
+        const actionLabel = newStatus === 'Locked' || newStatus === 'LockWallpaper' ? [t('lockWallpaper')]: t('unlockWallpaper');
+        if (!window.confirm(t('confirmAction') + ` (${actionLabel})`)) return;
 
         setTogglingId(contract._id);
         try {

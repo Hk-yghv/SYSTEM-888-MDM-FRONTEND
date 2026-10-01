@@ -58,7 +58,7 @@ const ContractFullDetailsModal = ({
             }, 300);
         } catch (err) {
             console.error('Direct PDF export error:', err);
-            alert('បរាជ័យក្នុងការទាញយក PDF (Download Failed): ' + err.message);
+            alert('Download Failed: ' + err.message);
         } finally {
             setDownloadingPdf(false);
         }
@@ -381,7 +381,7 @@ const ContractFullDetailsModal = ({
                             onClick={() => setOpen(false)}
                             className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-[5px] text-xs cursor-pointer transition-all flex items-center gap-1.5"
                         >
-                            <MdClose /> បិទ (Close)
+                            <MdClose /> {t('close')}
                         </button>
                     </div>
                 </div>
@@ -841,7 +841,7 @@ const ContractFullDetailsModal = ({
                             onClick={() => setOpen(false)}
                             className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold rounded-[5px] text-xs cursor-pointer transition-all"
                         >
-                            បិទ (Close)
+                            {t('close')}
                         </button>
                     </div>
                 </div>

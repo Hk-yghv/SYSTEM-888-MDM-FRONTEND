@@ -43,7 +43,7 @@ const CashInPage = () => {
         date: new Date().toISOString().split('T')[0],
         amount: '',
         currency: 'USD',
-        category: 'ចំណូលទូទៅ (General Income)',
+        category: 'General Income',
         description: '',
         photoUrl: ''
     });
@@ -134,7 +134,7 @@ const CashInPage = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (!formData.amount || Number(formData.amount) <= 0) {
-            alert('សូមបញ្ចូលចំនួនទឹកប្រាក់ដែលត្រឹមត្រូវ! (Please enter a valid amount)');
+            alert(t('enterValidAmount'));
             return;
         }
 
@@ -170,7 +170,7 @@ const CashInPage = () => {
                     date: new Date().toISOString().split('T')[0],
                     amount: '',
                     currency: 'USD',
-                    category: 'ចំណូលទូទៅ (General Income)',
+                    category: 'General Income',
                     description: '',
                     photoUrl: ''
                 });
@@ -192,7 +192,7 @@ const CashInPage = () => {
             date: item.date || new Date().toISOString().split('T')[0],
             amount: item.amount || '',
             currency: item.currency || 'USD',
-            category: item.category || 'ចំណូលទូទៅ (General Income)',
+            category: item.category || 'General Income',
             description: item.description || '',
             photoUrl: item.photoUrl || ''
         });
@@ -200,7 +200,7 @@ const CashInPage = () => {
     };
 
     const handleDelete = async (item) => {
-        if (!window.confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យប្រាក់ចូលនេះមែនទេ? (Are you sure you want to delete this record?)')) {
+        if (!window.confirm(t('confirmDelete'))) {
             return;
         }
         try {
@@ -254,7 +254,7 @@ const CashInPage = () => {
             { header: 'Description', accessor: 'description' },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
-        exportToExcel('Cash In Report (ប្រាក់ចូល)', columns, allData, user?.brand || '');
+        exportToExcel(t('cashIn') + ' Report', columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async () => {
@@ -267,7 +267,7 @@ const CashInPage = () => {
             { header: 'Description', accessor: 'description' },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
-        exportToPDF('Cash In Report (ប្រាក់ចូល)', columns, allData, user?.brand || '', pdfOrientation);
+        exportToPDF(t('cashIn') + ' Report', columns, allData, user?.brand || '', pdfOrientation);
     };
 
     // Trend data for chart (group by date)
@@ -298,19 +298,19 @@ const CashInPage = () => {
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
-                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', category: 'ចំណូលទូទៅ (General Income)', description: '', photoUrl: '' }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/20'>
-                        <FaPlus className="text-xs" /><span>{t('create')} (បង្កើតប្រាក់ចូល)</span>
+                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', category: 'General Income', description: '', photoUrl: '' }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/20'>
+                        <FaPlus className="text-xs" /><span>{t('createCashIn')}</span>
                     </button>
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                     {/* PDF Orientation Toggle */}
                     <div className="flex items-center rounded-[5px] border border-slate-300 overflow-hidden shadow-xs">
-                        <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
+                        <button onClick={() => setPdfOrientation('portrait')} title={t('portrait')}
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>📄</span><span className="hidden sm:inline">Portrait</span>
+                            <span>📄</span><span className="hidden sm:inline">{t('portrait')}</span>
                         </button>
-                        <button onClick={() => setPdfOrientation('landscape')} title="Landscape (ផ្តេក)"
+                        <button onClick={() => setPdfOrientation('landscape')} title={t('landscape')}
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer border-l border-slate-300 ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>🖼</span><span className="hidden sm:inline">Landscape</span>
+                            <span>🖼</span><span className="hidden sm:inline">{t('landscape')}</span>
                         </button>
                     </div>
                     
@@ -323,7 +323,7 @@ const CashInPage = () => {
                     <MdPieChart size={16} /><span>1. {t('dashboardAnalytics')}</span>
                 </button>
                 <button onClick={() => setActiveTab('detail')} className={`px-4 py-2.5 text-xs font-bold border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'detail' ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-[5px]' : 'border-transparent text-slate-500'}`}>
-                    <MdTableChart size={16} /><span>2. {t('detailedInfo')} &amp; Create</span>
+                    <MdTableChart size={16} /><span>2. {t('detailedInfo')}</span>
                 </button>
             </div>
 
@@ -375,8 +375,8 @@ const CashInPage = () => {
 
                     {/* Line Chart - Cash In Trend */}
                     <LineChart
-                        title="ក្រាបខ្សែនិន្នាប្រាកចូល (Cash In Trend Line Chart)"
-                        subtitle="បង្ហាញពីការកើនឡើងចំនួនចូលច្រង និងតម្លៃចំនួនប្រចាំថ្ងៃ/ខែ"
+                        title={t('cashInTrend')}
+                        subtitle={t('cashInTrendSub')}
                         data={chartTrendData}
                         series={[
                             { key: 'count', label: 'ចំនួនផ័កចូលច្រង', color: '#10b981', isCurrency: false },
@@ -396,7 +396,7 @@ const CashInPage = () => {
                                 <FaSearch className="absolute left-3 top-3 text-slate-400 text-xs" />
                                 <input
                                     type="text"
-                                    placeholder="ស្វែងរក category/ description..."
+                                    placeholder={t('searchPlaceholder')}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold focus:outline-none focus:border-emerald-500 w-52 sm:w-64"
@@ -410,7 +410,7 @@ const CashInPage = () => {
                         </div>
 
                         <button onClick={() => setIsFormOpen(true)} className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[5px] text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
-                            <FaPlus /> <span>បន្ថែមប្រាក់ចូល</span>
+                            <FaPlus /> <span>{t('createCashIn')}</span>
                         </button>
                     </div>
 
@@ -419,21 +419,21 @@ const CashInPage = () => {
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-bold'>
                                 <tr>
-                                    <th className='px-4 py-1 text-center'>No</th>
-                                    <th className='px-4 py-1'>Date</th>
-                                    <th className='px-4 py-1'>Category</th>
-                                    <th className='px-4 py-1 text-right'>Amount</th>
-                                    <th className='px-4 py-1'>Description</th>
-                                    <th className='px-4 py-1 text-center'>Receipt Image</th>
-                                    <th className='px-4 py-1'>Performed By</th>
-                                    <th className='px-4 py-1 text-center'>Actions</th>
+                                    <th className='px-4 py-1 text-center'>{t('no')}</th>
+                                    <th className='px-4 py-1'>{t('date')}</th>
+                                    <th className='px-4 py-1'>{t('category')}</th>
+                                    <th className='px-4 py-1 text-right'>{t('amount')}</th>
+                                    <th className='px-4 py-1'>{t('description')}</th>
+                                    <th className='px-4 py-1 text-center'>{t('receiptPhoto')}</th>
+                                    <th className='px-4 py-1'>{t('performedBy')}</th>
+                                    <th className='px-4 py-1 text-center'>{t('actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                                 {loading ? (
                                     <tr><td colSpan={8} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
                                 ) : dataList.length === 0 ? (
-                                    <tr><td colSpan={8} className="text-center py-8 text-slate-500 italic">មិនមានទិន្នន័យប្រាក់ចូលទេ។ (No cash in records found.)</td></tr>
+                                    <tr><td colSpan={8} className="text-center py-8 text-slate-500 italic">{t('noData')}</td></tr>
                                 ) : (
                                     dataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-emerald-50/40 transition-colors'>
@@ -483,13 +483,13 @@ const CashInPage = () => {
                     <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
                         <div className="p-4 bg-emerald-600 text-white flex items-center justify-between">
                             <h3 className="font-bold text-sm flex items-center gap-2">
-                                <FaPlusCircle /> <span>{editingItem ? 'កែប្រែទិន្នន័យប្រាក់ចូល' : 'បញ្ចូលទិន្នន័យប្រាក់ចូល (Create Cash In)'}</span>
+                                <FaPlusCircle /> <span>{editingItem ? [t('edit')]: t('createCashIn')}</span>
                             </h3>
                             <button onClick={() => { setIsFormOpen(false); setEditingItem(null); }} className="text-white hover:text-slate-200 font-bold text-lg cursor-pointer">&times;</button>
                         </div>
                         <form onSubmit={handleFormSubmit} className="p-5 space-y-3.5 text-xs font-semibold text-slate-700">
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">កាលបរិច្ឆេទ (Date)</label>
+                                <label className="block text-slate-700 font-bold mb-1">{t('date')}</label>
                                 <input
                                     type="date"
                                     required
@@ -501,7 +501,7 @@ const CashInPage = () => {
 
                             <div className="grid grid-cols-3 gap-2">
                                 <div className="col-span-2">
-                                    <label className="block text-slate-700 font-bold mb-1">ចំនួនទឹកប្រាក់ (Amount)</label>
+                                    <label className="block text-slate-700 font-bold mb-1">{t('amount')}</label>
                                     <input
                                         type="number"
                                         step="any"
@@ -513,7 +513,7 @@ const CashInPage = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-slate-700 font-bold mb-1">រូបិយប័ណ្ណ</label>
+                                    <label className="block text-slate-700 font-bold mb-1">{t('currency')}</label>
                                     <select
                                         value={formData.currency}
                                         onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
@@ -526,7 +526,7 @@ const CashInPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">ប្រភេទចំណូល (Category)</label>
+                                <label className="block text-slate-700 font-bold mb-1">{t('category')}</label>
                                 <input
                                     type="text"
                                     placeholder="ឧទាហរណ៍៖ ចំណូលសេវាកម្ម, ប្រាក់បង់រំលស់បន្ថែម, ចំណូលផ្សេងៗ..."
@@ -537,7 +537,7 @@ const CashInPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">បរិយាយ (Description)</label>
+                                <label className="block text-slate-700 font-bold mb-1">{t('description')}</label>
                                 <textarea
                                     rows="2"
                                     placeholder="ពិពណ៌នាបន្ថែមពីចំណូលនេះ..."
@@ -548,7 +548,7 @@ const CashInPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">រូបភាព/វិក្កយបត្រ (Choose Image File &amp; Upload Cloudinary)</label>
+                                <label className="block text-slate-700 font-bold mb-1">{t('receiptPhoto')}</label>
                                 <div className="space-y-2">
                                     <input
                                         type="file"
@@ -591,7 +591,7 @@ const CashInPage = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-4" onClick={() => setSelectedImage(null)}>
                     <div className="relative bg-white rounded-[5px] p-2 max-w-xl max-h-[85vh] overflow-hidden border border-slate-200 shadow-2xl" onClick={e => e.stopPropagation()}>
                         <img src={selectedImage} alt="Receipt" className="max-w-full max-h-[75vh] object-contain rounded-[5px]" />
-                        <button onClick={() => setSelectedImage(null)} className="mt-2 w-full py-1.5 bg-emerald-600 text-white font-bold rounded-[5px] text-xs">Close</button>
+                        <button onClick={() => setSelectedImage(null)} className="mt-2 w-full py-1.5 bg-emerald-600 text-white font-bold rounded-[5px] text-xs">{t('close')}</button>
                     </div>
                 </div>
             )}

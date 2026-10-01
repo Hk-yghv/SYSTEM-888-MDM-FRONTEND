@@ -173,12 +173,12 @@ const RedeemReport = () => {
         const rows = Object.values(brandMap);
 
         const grandTotal = rows.reduce((acc, r) => ({
-            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            brand: 'SUMMARY TOTAL',
             isTotalRow: true,
             totalRedeem: acc.totalRedeem + r.totalRedeem,
             totalLoanValue: acc.totalLoanValue + r.totalLoanValue
         }), {
-            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            brand: 'SUMMARY TOTAL',
             isTotalRow: true,
             totalRedeem: 0,
             totalLoanValue: 0
@@ -225,13 +225,13 @@ const RedeemReport = () => {
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                     {/* PDF Orientation Toggle */}
                     <div className="flex items-center rounded-[5px] border border-slate-300 overflow-hidden shadow-xs">
-                        <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
+                        <button onClick={() => setPdfOrientation('portrait')} title={t('portrait')}
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>📄</span><span className="hidden sm:inline">Portrait</span>
+                            <span>📄</span><span className="hidden sm:inline">{t('portrait')}</span>
                         </button>
-                        <button onClick={() => setPdfOrientation('landscape')} title="Landscape (ផ្តេក)"
+                        <button onClick={() => setPdfOrientation('landscape')} title={t('landscape')}
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer border-l border-slate-300 ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>🖼</span><span className="hidden sm:inline">Landscape</span>
+                            <span>🖼</span><span className="hidden sm:inline">{t('landscape')}</span>
                         </button>
                     </div>
                     
@@ -277,11 +277,11 @@ const RedeemReport = () => {
 
                     {/* Line Chart Component */}
                     <LineChart
-                        title="ក្រាបខ្សែនិន្នាការ Redeem (Redeem Trend Line Chart)"
+                        title={t('redeemTrendChart')}
                         subtitle="បង្ហាញពីការកើនឡើងចំនួន Redeem និងតម្លៃឥណទានប្រចាំថ្ងៃ/ខែ"
                         data={chartTrendData}
                         series={[
-                            { key: 'redeemCount', label: 'Redeem (ចំនួន)', color: '#f59e0b', isCurrency: false },
+                            { key: 'redeemCount', label: 'Redeem', color: '#f59e0b', isCurrency: false },
                             { key: 'loanValue', label: 'តម្លៃឥណទាន ($)', color: '#3b82f6', isCurrency: true }
                         ]}
                     />
@@ -289,7 +289,7 @@ const RedeemReport = () => {
                     <div className="p-5 bg-white rounded-[5px] border border-slate-200 shadow-xs space-y-4">
                         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                             <MdPieChart className="text-amber-600 text-lg" />
-                            <span>Redeemed Devices Breakdown by Brand (ក្រាបឧបករណ៍លោះយកតាម Brand)</span>
+                            <span>{t('redeemedByBrand')}</span>
                         </h3>
                         <div className="h-56 w-full bg-slate-50 rounded-[5px] p-4 border border-slate-200 flex items-end justify-around gap-4">
                             {summaryBreakdown.rows.map((r) => {
@@ -349,7 +349,7 @@ const RedeemReport = () => {
                     <div className="border-b border-slate-200 pb-2">
                         <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                             <MdTableChart className="text-amber-600 text-xl" />
-                            <span>តារាងសរុបកិច្ចសន្យាដោះបង់រំលស់តាម Brand (Redeem Contracts Master Summary Table)</span>
+                            <span>{t('summaryTable')}</span>
                         </h3>
                     </div>
                     <div className='w-full overflow-x-auto rounded-[5px] border border-slate-200 table-container'>

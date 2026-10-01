@@ -178,12 +178,12 @@ const LockPhoneReport = () => {
         }));
 
         const grandTotal = rows.reduce((acc, r) => ({
-            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            brand: 'SUMMARY TOTAL',
             isTotalRow: true,
             totalLockActions: acc.totalLockActions + r.totalLockActions,
             uniqueCustomersCount: acc.uniqueCustomersCount + r.uniqueCustomersCount
         }), {
-            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            brand: 'SUMMARY TOTAL',
             isTotalRow: true,
             totalLockActions: 0,
             uniqueCustomersCount: 0
@@ -229,13 +229,13 @@ const LockPhoneReport = () => {
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                     {/* PDF Orientation Toggle */}
                     <div className="flex items-center rounded-[5px] border border-slate-300 overflow-hidden shadow-xs">
-                        <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
+                        <button onClick={() => setPdfOrientation('portrait')} title={t('portrait')}
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>📄</span><span className="hidden sm:inline">Portrait</span>
+                            <span>📄</span><span className="hidden sm:inline">{t('portrait')}</span>
                         </button>
-                        <button onClick={() => setPdfOrientation('landscape')} title="Landscape (ផ្តេក)"
+                        <button onClick={() => setPdfOrientation('landscape')} title={t('landscape')}
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer border-l border-slate-300 ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>🖼</span><span className="hidden sm:inline">Landscape</span>
+                            <span>🖼</span><span className="hidden sm:inline">{t('landscape')}</span>
                         </button>
                     </div>
                     
@@ -281,18 +281,18 @@ const LockPhoneReport = () => {
 
                     {/* Line Chart Component */}
                     <LineChart
-                        title="ក្រាបខ្សែនិន្នាការចាកសោរថ្ឞទូរសក (Lock Phone Trend Line Chart)"
+                        title={t('lockPhoneTrendChart')}
                         subtitle="បង្ហាញពីការកើនឡើងចំនួនប្រតិបត្តិការចាកសោរថ្ឞទូរសកប្រចាំថ្ងៃ/ខែ"
                         data={chartTrendData}
                         series={[
-                            { key: 'lockCount', label: 'Lock Phone (ចំនួន)', color: '#f43f5e', isCurrency: false }
+                            { key: 'lockCount', label: 'Lock Phone', color: '#f43f5e', isCurrency: false }
                         ]}
                     />
 
                     <div className="p-5 bg-white rounded-[5px] border border-slate-200 shadow-xs space-y-4">
                         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                             <MdPieChart className="text-rose-600 text-lg" />
-                            <span>Lock Phone Actions Breakdown by Brand (ក្រាបប្រតិបត្តិការចាកសោរតាម Brand)</span>
+                            <span>{t('lockPhoneByBrand')}</span>
                         </h3>
                         <div className="h-56 w-full bg-slate-50 rounded-[5px] p-4 border border-slate-200 flex items-end justify-around gap-4">
                             {summaryBreakdown.rows.map((r) => {
@@ -352,7 +352,7 @@ const LockPhoneReport = () => {
                     <div className="border-b border-slate-200 pb-2">
                         <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                             <MdTableChart className="text-rose-600 text-xl" />
-                            <span>តារាងសរុបប្រវត្តិចាក់សោរទូរស័ព្ទតាម Brand (Lock Phone Master Summary Table)</span>
+                            <span>{t('summaryTable')}</span>
                         </h3>
                     </div>
                     <div className='w-full overflow-x-auto rounded-[5px] border border-slate-200 table-container'>

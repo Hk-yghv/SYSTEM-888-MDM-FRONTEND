@@ -21,7 +21,7 @@ const CopyCell = ({ text, value, children, copyValue, className = '' }) => {
         <span
             onClick={handleCopy}
             className={`inline-flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity ${className}`}
-            title="ចុចដើម្បីចម្លង (Click to copy)"
+            title={t ? [t('clickToCopy')]: 'Click to copy'}
         >
             <span>{rawContent}</span>
             {copied ? (

@@ -571,7 +571,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                     <option value="female">Female</option>
                                 </select>
                             </Field>
-                            <Field label="Brand (ម៉ាក)">
+                            <Field label={t('brand')}>
                                 <select id="brand" value={form.brand || ''} onChange={handleChange} disabled={user?.role !== 'Administrator'} className={`${sel} font-semibold disabled:opacity-60`}>
                                     <option value="">Select Brand</option>
                                     {brandsList.map((b, idx) => <option key={idx} value={b}>{b}</option>)}
@@ -588,7 +588,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                         <div className="grid grid-cols-3 gap-3">
                             <Field label="URL Facebook"><input className={inp} type="text" id="urlFb" value={form.urlFb || ''} onChange={handleChange} placeholder="URL Facebook" /></Field>
                             <Field label="URL Mosyle"><input className={`${inp} font-mono`} type="text" id="mosyleUrl" value={form.mosyleUrl || ''} onChange={handleChange} placeholder="https://" /></Field>
-                            <Field label="រូបភាពភស្តុតាង (Evidence / Proof Photos - អាចដាក់បានច្រើន)" accent>
+                            <Field label={t('evidencePhotos')} accent>
                                 <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-1.5">
                                         <input

@@ -18,7 +18,7 @@ const FollowUp4SubmitModal = ({
         sources: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'],
         contactTypes: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'],
         statuses: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
-        assetTypes: ['ទូរស័ព្ទ (Smart Phone)', 'ម៉ូតូ (Motorcycle)', 'រថយន្ត (Car)', 'ប្លង់ដី/ផ្ទះ (Real Estate)', 'មាស/គ្រឿងអលង្ការ (Jewelry)', 'កុំព្យូទ័រ (Laptop/PC)', 'ផ្សេងៗ (Other)']
+        assetTypes: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other']
     },
     isMasterAdmin = false,
     brandsList = ['888MDM', 'ECloud']
@@ -39,7 +39,7 @@ const FollowUp4SubmitModal = ({
 
     const assetTypes = droplists.assetTypes && droplists.assetTypes.length > 0
         ? droplists.assetTypes
-        : ['ទូរស័ព្ទ (Smart Phone)', 'ម៉ូតូ (Motorcycle)', 'រថយន្ត (Car)', 'ប្លង់ដី/ផ្ទះ (Real Estate)', 'មាស/គ្រឿងអលង្ការ (Jewelry)', 'កុំព្យូទ័រ (Laptop/PC)', 'ផ្សេងៗ (Other)'];
+        : ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'];
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
@@ -48,7 +48,7 @@ const FollowUp4SubmitModal = ({
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/60 sticky top-0 z-10">
                     <div className="flex items-center gap-2 text-emerald-400 font-bold text-base">
                         {editingItem ? <FaEdit className="text-emerald-400" /> : <FaPlusCircle className="text-emerald-400" />}
-                        <span>{editingItem ? 'កែប្រែ FOLLOW UP SUBMIT' : 'បង្កើត FOLLOW UP SUBMIT ថ្មី'}</span>
+                        <span>{editingItem ? [t('editFollowUpSubmit')]: 'បង្កើត FOLLOW UP SUBMIT ថ្មី'}</span>
                     </div>
                     <button
                         onClick={onClose}
@@ -135,7 +135,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">មកពី (Droplist ពី Control System)</label>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">PG/TL From</label>
                             <select
                                 value={formData.fromSource}
                                 onChange={(e) => setFormData({ ...formData, fromSource: e.target.value })}
@@ -151,7 +151,7 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">NAME PG OR TL មកពី</label>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">Name PG/TL From</label>
                             <input
                                 type="text"
                                 placeholder="NAME PG/TL មកពី"
@@ -162,7 +162,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">ទាក់ទង (Droplist ពី Control System)</label>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">PG/TL Contact</label>
                             <select
                                 value={formData.contactType}
                                 onChange={(e) => setFormData({ ...formData, contactType: e.target.value })}
@@ -176,7 +176,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">NAME PG OR TL ទាក់ទង</label>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">Name PG/TL Contact</label>
                             <input
                                 type="text"
                                 placeholder="NAME PG/TL ទាក់ទង"
@@ -211,7 +211,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">ប្រភេទទ្រព្យ (Droplist / Input)</label>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">{t('collateral')}</label>
                             <div className="flex gap-1.5">
                                 <select
                                     value={formData.assetType}
@@ -240,7 +240,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">STATUS (Droplist ពី Control System)</label>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">{t('status')}</label>
                             <select
                                 value={formData.status}
                                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -254,7 +254,7 @@ const FollowUp4SubmitModal = ({
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-slate-300 mb-1">បរិយាយ (Description)</label>
+                        <label className="block text-xs font-semibold text-slate-300 mb-1">{t('description')}</label>
                         <textarea
                             rows="3"
                             placeholder="ការបរិយាយបន្ថែម..."

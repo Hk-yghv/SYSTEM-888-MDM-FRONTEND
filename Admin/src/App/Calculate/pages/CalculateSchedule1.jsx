@@ -185,9 +185,9 @@ const CalculateSchedule1 = () => {
         const { principal, ratePercent, monthsCount, totalInterest, totalRepayment, schedule } = calculationResult;
 
         const exportData = schedule.map(row => ({
-            'ល.រ (No.)': row.monthIndex,
-            'ដំណាក់កាល (Period)': row.label,
-            'កាលបរិច្ឆេទត្រូវបង់ (Due Date)': row.dueDate,
+            [t('no')]: row.monthIndex,
+            [t('period')]: row.label,
+            [t('dueDate')]: row.dueDate,
             'ប្រាក់ដើមត្រូវបង់ ($)': Number(row.principalDue.toFixed(2)),
             'ការប្រាក់ត្រូវបង់ ($)': Number(row.interestDue.toFixed(2)),
             'សរុបត្រូវបង់ក្នុងខែ ($)': Number(row.totalDueMonth.toFixed(2)),
@@ -196,9 +196,9 @@ const CalculateSchedule1 = () => {
 
         // Add summary row at the end
         exportData.push({
-            'ល.រ (No.)': 'សរុបរួម',
-            'ដំណាក់កាល (Period)': `សរុប ${monthsCount} ខែ`,
-            'កាលបរិច្ឆេទត្រូវបង់ (Due Date)': '—',
+            [t('no')]: 'សរុបរួម',
+            [t('period')]: `សរុប ${monthsCount} ខែ`,
+            [t('dueDate')]: '—',
             'ប្រាក់ដើមត្រូវបង់ ($)': Number(principal.toFixed(2)),
             'ការប្រាក់ត្រូវបង់ ($)': Number(totalInterest.toFixed(2)),
             'សរុបត្រូវបង់ក្នុងខែ ($)': Number(totalRepayment.toFixed(2)),
@@ -251,21 +251,21 @@ const CalculateSchedule1 = () => {
                                 }`}
                         >
                             {copiedText ? <FaCheckCircle className="text-white" /> : <FaCopy className="text-slate-500" />}
-                            {copiedText ? 'បានចម្លងរួចរាល់!' : 'ចម្លងព័ត៌មាន (Copy)'}
+                            {copiedText ? 'បានចម្លងរួចរាល់!' : t('copyInfo')}
                         </button>
                         <ExportDropdown
                             onExportExcel={handleExportExcel}
                             onExportPDF={handleExportPDF}
                             triggerLabel="Export"
-                            excelLabel="ទាញយក Excel"
-                            pdfLabel="ទាញយក PDF"
+                            excelLabel={t('downloadExcel')}
+                            pdfLabel={t('downloadPdf')}
                         />
                         <button
                             type="button"
                             onClick={handlePrint}
                             className="px-3.5 py-2 rounded-[5px] bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                         >
-                            <FaPrint /> បោះពុម្ព (Print)
+                            <FaPrint /> {t('print')}
                         </button>
                     </div>
                 )}
@@ -277,7 +277,7 @@ const CalculateSchedule1 = () => {
                     <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
                         <FaCalculator className="text-emerald-600" />
                         <h2 className="text-base font-bold text-slate-800">
-                            បញ្ចូលព័ត៌មានគណនា (Calculation Inputs)
+                            {t('calculationInputs')}
                         </h2>
                     </div>
 
@@ -285,7 +285,7 @@ const CalculateSchedule1 = () => {
                         {/* Principal Amount */}
                         <div className="space-y-1.5">
                             <label className="block text-xs font-bold text-slate-700">
-                                ប្រាក់ដើមកម្ចី (Principal Amount) <span className="text-rose-500">*</span>
+                                {t('principalAmount')} <span className="text-rose-500">*</span>
                             </label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 font-bold text-sm">
@@ -323,7 +323,7 @@ const CalculateSchedule1 = () => {
                         {/* Interest Rate with Datalist Droplist */}
                         <div className="space-y-1.5">
                             <label className="block text-xs font-bold text-slate-700">
-                                អត្រាការប្រាក់ (Interest Rate) <span className="text-rose-500">*</span>
+                                {t('interestRate')} <span className="text-rose-500">*</span>
                             </label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 font-bold text-sm">
@@ -366,7 +366,7 @@ const CalculateSchedule1 = () => {
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
                                 <label className="block text-xs font-bold text-slate-700">
-                                    រយៈពេលកម្ចី (Duration) <span className="text-rose-500">*</span>
+                                    {t('duration')} <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
                                     <button
@@ -377,7 +377,7 @@ const CalculateSchedule1 = () => {
                                             : 'text-slate-500 hover:text-slate-800'
                                             }`}
                                     >
-                                        ខែ (Months)
+                                        {t('months')}
                                     </button>
                                     <button
                                         type="button"
@@ -387,7 +387,7 @@ const CalculateSchedule1 = () => {
                                             : 'text-slate-500 hover:text-slate-800'
                                             }`}
                                     >
-                                        ថ្ងៃ (Days)
+                                        {t('days')}
                                     </button>
                                 </div>
                             </div>
@@ -426,7 +426,7 @@ const CalculateSchedule1 = () => {
                         {/* Loan Start Date */}
                         <div className="space-y-1.5">
                             <label className="block text-xs font-bold text-slate-700">
-                                កាលបរិច្ឆេទចាប់ផ្ដើម (Start Date)
+                                {t('startDate')}
                             </label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
@@ -452,7 +452,7 @@ const CalculateSchedule1 = () => {
                             className="px-6 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-sm flex items-center gap-2 shadow-md shadow-emerald-600/25 transition-all transform active:scale-95 cursor-pointer"
                         >
                             <MdCalculate className="text-lg" />
-                            គណនា (Calculate)
+                            {t('calculate')}
                         </button>
                         <button
                             type="button"
@@ -460,7 +460,7 @@ const CalculateSchedule1 = () => {
                             className="px-4 py-2.5 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
                             <FaUndo className="text-xs text-slate-500" />
-                            កំណត់ឡើងវិញ (Reset)
+                            {t('reset')}
                         </button>
                     </div>
                 </form>
@@ -575,7 +575,7 @@ const CalculateSchedule1 = () => {
                                 <MdOutlineSchedule className="text-emerald-600 text-xl" />
                                 <div>
                                     <h3 className="text-base font-black text-slate-900">
-                                        តារាងកាលវិភាគបង់ប្រាក់លម្អិត (Installment Repayment Schedule)
+                                        {t('repaymentSchedule')}
                                     </h3>
                                     <p className="text-xs text-slate-500 font-medium">
                                         បង្ហាញពីកាលវិភាគបង់រំលស់ប្រចាំខែនីមួយៗ ចំនួន {calculationResult.monthsCount} ដំណាក់កាល

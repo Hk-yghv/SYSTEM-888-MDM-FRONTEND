@@ -345,7 +345,7 @@ const FollowUpReport = () => {
         setIsExporting(true);
         try {
             if (dailyReportData.length === 0) {
-                alert('គ្មានទិន្នន័យសម្រាប់ Export ទេ (No data found to export)');
+                alert(t('noDataExport'));
                 setIsExporting(false);
                 return;
             }
@@ -353,7 +353,7 @@ const FollowUpReport = () => {
             // Construct table columns definition
             const columns = [
                 { header: '#', accessor: (r, idx) => (r.isGrandTotal ? '★' : String(idx + 1)) },
-                { header: 'កាលបរិច្ឆេទ (Date)', accessor: (r) => r.date },
+                { header: t('date'), accessor: (r) => r.date },
                 // Follow Up 2 Section
                 { header: 'FU2 សរុប', accessor: (r) => Number(r.fu2?.total || 0).toLocaleString() },
                 { header: 'FU2 ជោគជ័យ', accessor: (r) => Number(r.fu2?.success || 0).toLocaleString() },
@@ -365,7 +365,7 @@ const FollowUpReport = () => {
                     header: `FU3: ${desc}`,
                     accessor: (r) => Number(r.fu3?.descCounts?.[desc] || (r.isGrandTotal ? r.fu3DescTotals?.[desc] || 0 : 0)).toLocaleString()
                 })),
-                { header: 'FU3 សរុប Leads', accessor: (r) => Number(r.fu3?.total || 0).toLocaleString() },
+                { header: t('totalLeads'), accessor: (r) => Number(r.fu3?.total || 0).toLocaleString() },
                 { header: 'FU3 ស្នើបញ្ចាំ ($)', accessor: (r) => `$${Number(r.fu3?.amount || 0).toLocaleString()}` },
                 // Combined Totals
                 { header: 'សរុប Leads រួម', accessor: (r) => Number((r.fu2?.total || 0) + (r.fu3?.total || 0)).toLocaleString() },
@@ -375,7 +375,7 @@ const FollowUpReport = () => {
             // Grand Total row
             const grandTotalRow = {
                 isGrandTotal: true,
-                date: 'សរុបរួម (GRAND TOTAL)',
+                date: t('grandTotal'),
                 fu2: {
                     total: grandSummary.fu2TotalCount,
                     success: grandSummary.fu2SuccessCount,
@@ -442,7 +442,7 @@ const FollowUpReport = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                សរុប Leads ទាំង ២ (Combined Leads)
+                                {t('totalLeads')}
                             </p>
                             <h3 className="text-2xl sm:text-3xl font-black text-slate-800 mt-1">
                                 {Number(grandSummary.combinedLeads).toLocaleString()}
@@ -530,11 +530,11 @@ const FollowUpReport = () => {
                         ចន្លោះពេល៖
                     </span>
                     {[
-                        { key: 'today', label: 'ថ្ងៃនេះ (Today)' },
-                        { key: 'yesterday', label: 'ម្សិលមិញ (Yesterday)' },
-                        { key: 'thisWeek', label: 'សប្តាហ៍នេះ (This Week)' },
-                        { key: 'thisMonth', label: 'ខែនេះ (This Month)' },
-                        { key: 'all', label: 'ទាំងអស់ (All Time)' }
+                        { key: 'today', label: t('today') },
+                        { key: 'yesterday', label: t('yesterday') },
+                        { key: 'thisWeek', label: t('thisWeek') },
+                        { key: 'thisMonth', label: t('thisMonth') },
+                        { key: 'all', label: t('allTime') }
                     ].map(p => (
                         <button
                             key={p.key}
@@ -581,7 +581,7 @@ const FollowUpReport = () => {
                             onChange={(e) => setSelectedBrand(e.target.value)}
                             className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                         >
-                            <option value="">គ្រប់ Brand ទាំងអស់</option>
+                            <option value="">{t('allBrandsShort')} ទាំងអស់</option>
                             {brandsList.map(b => (
                                 <option key={b} value={b}>{b}</option>
                             ))}
@@ -639,7 +639,7 @@ const FollowUpReport = () => {
                             <tr className="bg-slate-100/90 text-xs font-black text-slate-700 border-b border-slate-200">
                                 <th rowSpan={2} className="py-1 px-3 text-center border-r border-slate-200 w-12">#</th>
                                 <th rowSpan={2} className="py-1 px-4 border-r border-slate-200 min-w-[130px]">
-                                    កាលបរិច្ឆេទ (Date)
+                                    {t('date')}
                                 </th>
                                 {/* FU2 Main Group */}
                                 <th colSpan={5} className="py-2.5 px-4 text-center bg-indigo-50/80 text-indigo-900 border-r border-indigo-200 font-black">
@@ -786,7 +786,7 @@ const FollowUpReport = () => {
                                 <tr className="bg-slate-900 text-white font-black text-xs border-t-2 border-slate-700">
                                     <td className="py-3.5 px-3 text-center text-amber-400">★</td>
                                     <td className="py-3.5 px-4 font-black tracking-wider text-amber-400 whitespace-nowrap">
-                                        សរុបរួម (GRAND TOTAL)
+                                        {t('grandTotal')}
                                     </td>
 
                                     {/* FU2 Grand Totals */}
@@ -859,7 +859,7 @@ const FollowUpReport = () => {
 
                         {/* Format Selection */}
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-600">ទម្រង់ឯកសារ (Export Format)</label>
+                            <label className="text-xs font-bold text-slate-600">{t('exportFormat')}</label>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     type="button"
@@ -893,7 +893,7 @@ const FollowUpReport = () => {
                                 onClick={() => setIsExportModalOpen(false)}
                                 className="flex-1 py-2.5 rounded-[5px] border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
                             >
-                                បោះបង់ (Cancel)
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"
@@ -904,12 +904,12 @@ const FollowUpReport = () => {
                                 {isExporting ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                        <span>កំពុង Export...</span>
+                                        <span>{t('exporting')}</span>
                                     </>
                                 ) : (
                                     <>
                                         <FaFileDownload />
-                                        <span>ទាញយក (Download)</span>
+                                        <span>{t('download')}</span>
                                     </>
                                 )}
                             </button>

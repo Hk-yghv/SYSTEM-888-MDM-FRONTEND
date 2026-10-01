@@ -36,7 +36,7 @@ const FollowUp4 = () => {
         sources: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'CALL', 'Other'],
         contactTypes: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'],
         statuses: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
-        assetTypes: ['ទូរស័ព្ទ (Smart Phone)', 'ម៉ូតូ (Motorcycle)', 'រថយន្ត (Car)', 'ប្លង់ដី/ផ្ទះ (Real Estate)', 'មាស/គ្រឿងអលង្ការ (Jewelry)', 'កុំព្យូទ័រ (Laptop/PC)', 'ផ្សេងៗ (Other)'],
+        assetTypes: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'],
         rejectSubmitReasons: [],
         rejectCsReasons: []
     });
@@ -910,9 +910,9 @@ const FollowUp4 = () => {
                 'PHONE NUMBER': item.phone,
                 'NAME TELEGRAM': item.nameTelegram,
                 'មកពី': item.fromSource,
-                'NAME PG/TL មកពី': item.namePgTlFrom,
+                'PG/TL From': item.namePgTlFrom,
                 'ទាក់ទង': item.contactType,
-                'NAME PG/TL ទាក់ទង': item.namePgTlContact,
+                'PG/TL Contact': item.namePgTlContact,
                 'វាយតម្លៃ': item.appraisal,
                 'បានស្នើ': item.requested,
                 'ប្រភេទទ្រព្យ': item.assetType,
@@ -924,7 +924,7 @@ const FollowUp4 = () => {
             downloadReport(exportData, `FollowUp4_Submit_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'rejectSubmit') {
             const exportData = groupedRejectSubmit.map((item, idx) => {
-                const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, 'សរុប (TOTAL)': item.total };
+                const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, [t('total')]: item.total };
                 droplists.rejectSubmitReasons.forEach(r => {
                     row[r] = item.reasons[r] || 0;
                 });
@@ -935,7 +935,7 @@ const FollowUp4 = () => {
                     '#': 'សរុប',
                     'កាលបរិច្ឆេទ': `GRAND TOTAL (${groupedRejectSubmit.length} ថ្ងៃ)`,
                     'BRAND': selectedBrand || user?.brand || '888MDM',
-                    'សរុប (TOTAL)': grandRejectSubmitTotals.grandTotal
+                    [t('total')]: grandRejectSubmitTotals.grandTotal
                 };
                 droplists.rejectSubmitReasons.forEach(r => {
                     totalRow[r] = grandRejectSubmitTotals.reasonTotals[r] || 0;
@@ -945,7 +945,7 @@ const FollowUp4 = () => {
             downloadReport(exportData, `FollowUp4_Reject_Submit_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'rejectCs') {
             const exportData = groupedRejectCs.map((item, idx) => {
-                const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, 'សរុប (TOTAL)': item.total };
+                const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, [t('total')]: item.total };
                 droplists.rejectCsReasons.forEach(r => {
                     row[r] = item.reasons[r] || 0;
                 });
@@ -956,7 +956,7 @@ const FollowUp4 = () => {
                     '#': 'សរុប',
                     'កាលបរិច្ឆេទ': `GRAND TOTAL (${groupedRejectCs.length} ថ្ងៃ)`,
                     'BRAND': selectedBrand || user?.brand || '888MDM',
-                    'សរុប (TOTAL)': grandRejectCsTotals.grandTotal
+                    [t('total')]: grandRejectCsTotals.grandTotal
                 };
                 droplists.rejectCsReasons.forEach(r => {
                     totalRow[r] = grandRejectCsTotals.reasonTotals[r] || 0;
@@ -1115,7 +1115,7 @@ const FollowUp4 = () => {
                                 className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-md cursor-pointer"
                             >
                                 <FaPlusCircle size={15} />
-                                <span>+ បន្ថែម FOLLOW UP SUBMIT</span>
+                                <span>{t('addFollowUpSubmit')}</span>
                             </button>
                         )}
                     </div>
@@ -1133,9 +1133,9 @@ const FollowUp4 = () => {
                                         <th className="py-1 px-3">PHONE NUMBER</th>
                                         <th className="py-1 px-3">NAME TELEGRAM</th>
                                         <th className="py-1 px-3">មកពី</th>
-                                        <th className="py-1 px-3">PG/TL មកពី</th>
+                                        <th className="py-1 px-3">PG/TL From</th>
                                         <th className="py-1 px-3">ទាក់ទង</th>
-                                        <th className="py-1 px-3">PG/TL ទាក់ទង</th>
+                                        <th className="py-1 px-3">PG/TL Contact</th>
                                         <th className="py-1 px-3">វាយតម្លៃ</th>
                                         <th className="py-1 px-3">បានស្នើ</th>
                                         <th className="py-1 px-3">ប្រភេទទ្រព្យ</th>
@@ -1257,7 +1257,7 @@ const FollowUp4 = () => {
                                         <tr className="bg-slate-950 font-bold text-slate-100 border-t border-emerald-500/40">
                                             <td colSpan="10" className="py-3.5 px-3 font-bold text-emerald-400 uppercase tracking-wider">
                                                 <div className="flex items-center gap-2">
-                                                    <span>សរុបរួមទាំងអស់ (GRAND TOTAL):</span>
+                                                    <span>{t('grandTotal')}:</span>
                                                     <span className="bg-emerald-950 text-emerald-300 text-[11px] px-2.5 py-0.5 rounded border border-emerald-500/40 font-bold">
                                                         {submitTotals.count} កំណត់ត្រា {groupedSubmitByDate.length > 1 ? `(${groupedSubmitByDate.length} ថ្ងៃ)` : ''}
                                                     </span>
@@ -1339,7 +1339,7 @@ const FollowUp4 = () => {
                                     className="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-lg shadow-rose-600/20 cursor-pointer"
                                 >
                                     <FaPlusCircle size={15} />
-                                    <span>+ បញ្ចូល REJECT SUBMIT</span>
+                                    <span>{t('addRejectSubmit')}</span>
                                 </button>
                             )}
                         </div>
@@ -1358,7 +1358,7 @@ const FollowUp4 = () => {
                                     <tr className='text-white'>
                                         <th className="py-1 px-3 text-center w-10">#</th>
                                         <th className="py-1 px-3">កាលបរិច្ឆេទ</th>
-                                        <th className="py-1 px-3 text-center font-bold text-rose-400">សរុប (TOTAL)</th>
+                                        <th className="py-1 px-3 text-center font-bold text-rose-400">{t('total')}</th>
                                         {droplists.rejectSubmitReasons.map((reason, rIdx) => (
                                             <th key={rIdx} className="py-1 px-3 text-center">{reason}</th>
                                         ))}
@@ -1376,7 +1376,7 @@ const FollowUp4 = () => {
                                     ) : groupedRejectSubmit.length === 0 ? (
                                         <tr>
                                             <td colSpan={4 + droplists.rejectSubmitReasons.length} className="text-center py-8 text-slate-500 font-medium">
-                                                មិនទាន់មានកំណត់ត្រា Reject Submit នៅឡើយទេ សូមចុច &quot;+ បញ្ចូល REJECT SUBMIT&quot; ដើម្បីបញ្ចូល
+                                                មិនទាន់មានកំណត់ត្រា Reject Submit នៅឡើយទេ សូមចុច &quot;{t('addRejectSubmit')}&quot; ដើម្បីបញ្ចូល
                                             </td>
                                         </tr>
                                     ) : (
@@ -1410,7 +1410,7 @@ const FollowUp4 = () => {
                                             <td className="py-3.5 px-3 text-center text-slate-400 font-mono">-</td>
                                             <td className="py-3.5 px-3 font-bold text-rose-400 uppercase tracking-wider">
                                                 <div className="flex items-center gap-2">
-                                                    <span>សរុបរួម (GRAND TOTAL):</span>
+                                                    <span>{t('grandTotal')}:</span>
                                                     <span className="bg-rose-950 text-rose-300 text-[11px] px-2.5 py-0.5 rounded border border-rose-500/40 font-bold">
                                                         {groupedRejectSubmit.length} ថ្ងៃ
                                                     </span>
@@ -1485,7 +1485,7 @@ const FollowUp4 = () => {
                                     className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-lg shadow-amber-600/20 cursor-pointer"
                                 >
                                     <FaPlusCircle size={15} />
-                                    <span>+ បញ្ចូល REJECT CS</span>
+                                    <span>{t('addRejectCs')}</span>
                                 </button>
                             )}
                         </div>
@@ -1504,7 +1504,7 @@ const FollowUp4 = () => {
                                     <tr>
                                         <th className="py-1 px-3 text-center w-10">#</th>
                                         <th className="py-1 px-3">កាលបរិច្ឆេទ</th>
-                                        <th className="py-1 px-3 text-center font-bold text-amber-400">សរុប (TOTAL)</th>
+                                        <th className="py-1 px-3 text-center font-bold text-amber-400">{t('total')}</th>
                                         {droplists.rejectCsReasons.map((reason, rIdx) => (
                                             <th key={rIdx} className="py-1 px-3 text-center">{reason}</th>
                                         ))}
@@ -1522,7 +1522,7 @@ const FollowUp4 = () => {
                                     ) : groupedRejectCs.length === 0 ? (
                                         <tr>
                                             <td colSpan={4 + droplists.rejectCsReasons.length} className="text-center py-8 text-slate-500 font-medium">
-                                                មិនទាន់មានកំណត់ត្រា Reject CS នៅឡើយទេ សូមចុច &quot;+ បញ្ចូល REJECT CS&quot; ដើម្បីបញ្ចូល
+                                                មិនទាន់មានកំណត់ត្រា Reject CS នៅឡើយទេ សូមចុច &quot;{t('addRejectCs')}&quot; ដើម្បីបញ្ចូល
                                             </td>
                                         </tr>
                                     ) : (
@@ -1556,7 +1556,7 @@ const FollowUp4 = () => {
                                             <td className="py-3.5 px-3 text-center text-slate-400 font-mono">-</td>
                                             <td className="py-3.5 px-3 font-bold text-amber-400 uppercase tracking-wider">
                                                 <div className="flex items-center gap-2">
-                                                    <span>សរុបរួម (GRAND TOTAL):</span>
+                                                    <span>{t('grandTotal')}:</span>
                                                     <span className="bg-amber-950 text-amber-300 text-[11px] px-2.5 py-0.5 rounded border border-amber-500/40 font-bold">
                                                         {groupedRejectCs.length} ថ្ងៃ
                                                     </span>
@@ -1631,7 +1631,7 @@ const FollowUp4 = () => {
                                     className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-lg shadow-sky-600/20 cursor-pointer"
                                 >
                                     <FaPlusCircle size={15} />
-                                    <span>+ បញ្ចូល DETAIL METRICS</span>
+                                    <span>{t('addDetailMetrics')}</span>
                                 </button>
                             )}
                         </div>
@@ -1679,7 +1679,7 @@ const FollowUp4 = () => {
                                     ) : detailHistoryList.length === 0 ? (
                                         <tr>
                                             <td colSpan="18" className="text-center py-8 text-slate-500 font-medium">
-                                                មិនទាន់មានទិន្នន័យ Detail Metrics នៅឡើយទេ សូមចុច &quot;+ បញ្ចូល DETAIL METRICS&quot; ដើម្បីបញ្ចូល
+                                                មិនទាន់មានទិន្នន័យ Detail Metrics នៅឡើយទេ សូមចុច &quot;{t('addDetailMetrics')}&quot; ដើម្បីបញ្ចូល
                                             </td>
                                         </tr>
                                     ) : (
@@ -1723,7 +1723,7 @@ const FollowUp4 = () => {
                                 {detailHistoryList.length > 0 && (
                                     <tfoot className="bg-gray-300 font-bold border-t-2 border-slate-600 text-[11px]">
                                         <tr className="divide-y divide-slate-700">
-                                            <td className="py-1 px-3 font-bold text-amber-400 uppercase tracking-wider">សរុប (TOTAL)</td>
+                                            <td className="py-1 px-3 font-bold text-amber-400 uppercase tracking-wider">{t('total')}</td>
                                             <td className="py-1 px-2 text-center font-mono text-indigo-300 bg-indigo-950/30">{grandDetailTotals.message}</td>
                                             <td className="py-1 px-2 text-center font-mono text-slate-200">{grandDetailTotals.page}</td>
                                             <td className="py-1 px-2 text-center font-mono text-slate-200">{grandDetailTotals.telegram}</td>

@@ -340,7 +340,7 @@ const KhmerCalendarPage = () => {
                     <footer className="flex flex-wrap gap-x-4 gap-y-2 px-3 py-2.5 text-[10px] text-slate-600">
                         <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 bg-sky-600" />ថ្ងៃត្រូវបង់</span>
                         <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 bg-rose-500" />បុណ្យ / ថ្ងៃសីល</span>
-                        <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 bg-amber-500" />កម្មវិធី / Note</span>
+                        <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 bg-amber-500" />Event / Note</span>
                         {loading && <span className="ml-auto text-emerald-700">កំពុងទាញទិន្នន័យ…</span>}
                     </footer>
                 </section>

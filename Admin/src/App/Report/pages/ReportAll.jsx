@@ -162,7 +162,7 @@ const ReportAll = () => {
 
         // Grand Total Row
         const grandTotal = rows.reduce((acc, r) => ({
-            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            brand: 'SUMMARY TOTAL',
             isTotalRow: true,
             totalCustomers: acc.totalCustomers + r.totalCustomers,
             totalLoan: acc.totalLoan + r.totalLoan,
@@ -177,7 +177,7 @@ const ReportAll = () => {
             lockedPhoneCount: acc.lockedPhoneCount + r.lockedPhoneCount,
             lockedWallpaperCount: acc.lockedWallpaperCount + r.lockedWallpaperCount
         }), {
-            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            brand: 'SUMMARY TOTAL',
             isTotalRow: true,
             totalCustomers: 0,
             totalLoan: 0,
@@ -301,7 +301,7 @@ const ReportAll = () => {
                             onChange={(e) => setSelectedBrand(e.target.value)}
                             className="bg-white border border-indigo-300 text-indigo-900 text-xs rounded-lg font-bold px-2 py-1 outline-none cursor-pointer hover:border-indigo-500"
                         >
-                            <option value="ALL">ALL Brands (គ្រប់ Brand)</option>
+                            <option value="ALL">{t('allBrands')}</option>
                             {brandsList.map(b => (
                                 <option key={b} value={b}>{b}</option>
                             ))}
@@ -313,16 +313,16 @@ const ReportAll = () => {
                         <button
                             onClick={() => setPdfOrientation('portrait')}
                             className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
-                            title="A4 Portrait Page Layout (សន្លឹកបញ្ឈរ)"
+                            title={t('portrait')}
                         >
-                            📄 បញ្ឈរ (Portrait)
+                            📄 {t('portrait')}
                         </button>
                         <button
                             onClick={() => setPdfOrientation('landscape')}
                             className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
-                            title="A4 Landscape Page Layout (សន្លឹកផ្តេក)"
+                            title={t('landscape')}
                         >
-                            🖼️ ផ្តេក (Landscape)
+                            🖼️ {t('landscape')}
                         </button>
                     </div>
 
@@ -396,11 +396,11 @@ const ReportAll = () => {
 
             {/* Line Chart Component */}
             <LineChart
-                title="ក្រាបខ្សែនិន្នាការកិច្ចសន្យា & ទឹកប្រាក់សរុប (Contract & Financial Line Chart)"
+                title={t('contractFinancialChart')}
                 subtitle="បង្ហាញពីការកើនឡើងចំនួនកិច្ចសន្យា ទឹកប្រាក់ឥណទាន និងទឹកប្រាក់ទទួលបានប្រចាំថ្ងៃ/ខែ"
                 data={chartTrendData}
                 series={[
-                    { key: 'contractsCount', label: 'ចំនួនកិច្ចសន្យា (Contracts)', color: '#6366f1', isCurrency: false },
+                    { key: 'contractsCount', label: t('contract'), color: '#6366f1', isCurrency: false },
                     { key: 'loanAmount', label: 'ទឹកប្រាក់ឥណទាន ($)', color: '#3b82f6', isCurrency: true },
                     { key: 'paidAmount', label: 'ទឹកប្រាក់ទទួលបាន ($)', color: '#10b981', isCurrency: true }
                 ]}
@@ -412,7 +412,7 @@ const ReportAll = () => {
                     <div>
                         <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
                             <MdTableChart className="text-indigo-600 text-xl" />
-                            <span>តារាងសរុបព័ត៌មានតាម Brand (Master Brand Summary Breakdown)</span>
+                            <span>{t('summaryTable')}</span>
                         </h2>
                         <p className="text-xs text-slate-500 font-medium">
                             ព័ត៌មានសរុបទឹកប្រាក់ ទឹកប្រាក់បានបង់ ទឹកប្រាក់នៅសល់ និងចំនួនឧបករណ៍ចាក់សោរគ្រប់ Brand

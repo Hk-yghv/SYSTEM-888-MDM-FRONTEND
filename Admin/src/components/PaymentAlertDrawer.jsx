@@ -295,8 +295,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
     const rawAlertCategories = [
         {
             key: 'overdue',
-            label: '🔴 ហួសកាលកំណត់ (Overdue Customers)',
-            shortLabel: 'Overdue (ហួសកំណត់)',
+            label: `🔴 ${t('overdueCustomers')}`,
+            shortLabel: t('overdueCustomers'),
             count: summary.overdueCount,
             unread: unreadCountOverdue,
             color: 'rose',
@@ -305,8 +305,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         },
         {
             key: 'dueToday',
-            label: '🟡 ដល់ថ្ងៃបង់ថ្ងៃនេះ (Due Today)',
-            shortLabel: 'Due Today (ថ្ងៃនេះ)',
+            label: `🟡 ${t('dueToday')}`,
+            shortLabel: t('dueToday'),
             count: summary.dueTodayCount,
             unread: unreadCountDue,
             color: 'amber',
@@ -315,8 +315,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         },
         {
             key: 'dueIn1Day',
-            label: '🟠 សល់ ១ ថ្ងៃត្រូវបង់ (Due in 1 Day)',
-            shortLabel: 'Due in 1 Day (សល់ ១ ថ្ងៃ)',
+            label: `🟠 ${t('dueIn1Day')}`,
+            shortLabel: t('dueIn1Day'),
             count: summary.dueIn1DayCount || dueIn1DayList.length,
             unread: unreadCountDueIn1Day,
             color: 'orange',
@@ -326,8 +326,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         },
         {
             key: 'dueIn3Days',
-            label: '🔵 ដល់ថ្ងៃក្នុង 3 ថ្ងៃ (Due in 3 Days)',
-            shortLabel: 'Due in 3 Days',
+            label: `🔵 ${t('dueIn3Days')}`,
+            shortLabel: t('dueIn3Days'),
             count: summary.dueIn3DaysCount,
             unread: unreadCountDueIn3Days,
             color: 'sky',
@@ -336,8 +336,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         },
         {
             key: 'overdue3Days',
-            label: '🟠 ហួស 3 ថ្ងៃ (Overdue 3 Days)',
-            shortLabel: 'Overdue 3 Days',
+            label: `🟠 ${t('overdue3Days')}`,
+            shortLabel: t('overdue3Days'),
             count: summary.overdue3DaysCount,
             unread: unreadCountOverdue3Days,
             color: 'orange',
@@ -346,8 +346,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         },
         {
             key: 'overdue7Days',
-            label: '🟣 ហួស 7 ថ្ងៃ (Overdue 7 Days)',
-            shortLabel: 'Overdue 7 Days',
+            label: `🟣 ${t('overdue7Days')}`,
+            shortLabel: t('overdue7Days'),
             count: summary.overdue7DaysCount,
             unread: unreadCountOverdue7Days,
             color: 'violet',
@@ -356,8 +356,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         },
         {
             key: 'followUp2Review',
-            label: '🟣 Follow-up 2 Review (ម្សិលមិញ)',
-            shortLabel: 'Follow-up 2 Review',
+            label: `🟣 ${t('followUp2')} Review`,
+            shortLabel: `${t('followUp2')} Review`,
             count: followUp2ReviewList.length,
             unread: unreadCountFollowUp2Review,
             color: 'indigo',
@@ -366,8 +366,8 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
         },
         {
             key: 'others',
-            label: '📋 ផ្សេងៗ (ការបដិសេធ / Rejections)',
-            shortLabel: 'ផ្សេងៗ (Rejections)',
+            label: `📋 ${t('otherRejections')}`,
+            shortLabel: t('otherRejections'),
             count: othersRejectedList.length,
             unread: unreadCountOthers,
             color: 'rose',
@@ -419,7 +419,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
 
     if (!isOpen) return null;
 
-    const userBrandName = user?.brand || 'ទូទាំងប្រព័ន្ធ (All Brands)';
+    const userBrandName = user?.brand || t('allBrands');
 
     return (
         <div className="fixed inset-0 z-[999] flex justify-end bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200 select-none">
@@ -438,13 +438,13 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         </div>
                         <div>
                             <h2 className="text-sm font-bold tracking-wide text-slate-100 flex items-center gap-2 font-khmer">
-                                <span className='text-black'>{t('paymentDueAlerts') || 'ការជូនដំណឹងការបង់ប្រាក់ & Follow Up'}</span>
+                                <span className='text-black'>{t('paymentDueAlerts')}</span>
                                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 border border-slate-700">
-                                    {totalAlertCount} Total
+                                    {totalAlertCount} {t('total')}
                                 </span>
                             </h2>
                             <p className="text-[11px] text-slate-400">
-                                Brand: <strong className="text-amber-300">{userBrandName}</strong>
+                                {t('brand')}: <strong className="text-amber-300">{userBrandName}</strong>
                             </p>
                         </div>
                     </div>
@@ -453,10 +453,10 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                         <button
                             onClick={handleMarkAllAsRead}
                             className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer text-xs flex items-center gap-1.5 font-bold shadow-xs active:scale-95"
-                            title={t('markAllRead') || 'សម្គាល់ថាបានអានទាំងអស់'}
+                            title={t('markAllRead')}
                         >
                             <FaCheckDouble className="text-xs" />
-                            <span className="hidden sm:inline">{t('markAllRead') || 'អានទាំងអស់'}</span>
+                            <span className="hidden sm:inline">{t('markAllRead')}</span>
                         </button>
                         <button
                             onClick={onClose}
@@ -475,7 +475,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     <div className="flex items-center gap-2.5 flex-1 min-w-[280px]">
                         <span className="text-xs font-bold text-slate-600 flex items-center gap-1 flex-shrink-0">
                             <FaListAlt className="text-emerald-600" />
-                            <span>ប្រភេទ Alert:</span>
+                            <span>{t('category')}:</span>
                         </span>
 
                         {/* THE DROPLIST SELECT MENU */}
@@ -487,7 +487,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             >
                                 {alertCategories.map((cat) => (
                                     <option key={cat.key} value={cat.key}>
-                                        {cat.label} ({cat.count}) {cat.unread > 0 ? `• [${cat.unread} NEW]` : ''}
+                                        {cat.label} ({cat.count}) {cat.unread > 0 ? `• [${cat.unread} ${t('newBadge')}]` : ''}
                                     </option>
                                 ))}
                             </select>
@@ -496,13 +496,13 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
 
                         {/* Active Category Counter Pill */}
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] bg-white border border-slate-200 shadow-2xs">
-                            <span className="text-[11px] font-bold text-slate-700">ចំនួន:</span>
+                            <span className="text-[11px] font-bold text-slate-700">{t('total')}:</span>
                             <span className="font-mono text-xs font-black text-emerald-600">
                                 {activeList.length}
                             </span>
                             {currentCategory.unread > 0 && (
                                 <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-mono text-[9px] font-bold animate-pulse">
-                                    {currentCategory.unread} NEW
+                                    {currentCategory.unread} {t('newBadge')}
                                 </span>
                             )}
                         </div>
@@ -514,7 +514,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                             <input
                                 type="text"
-                                placeholder="ស្វែងរកឈ្មោះ, ទូរស័ព្ទ, Serial..."
+                                placeholder={t('searchPlaceholder')}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-2xs font-medium"
@@ -529,10 +529,9 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                 navigate(currentCategory.route);
                             }}
                             className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-[5px] text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-all shadow-2xs"
-                            title="ចូលទៅកាន់ទំព័រពេញលេញ"
                         >
                             <FaExternalLinkAlt className="text-[10px]" />
-                            <span className="hidden md:inline">ចូលទំព័រពេញ</span>
+                            <span className="hidden md:inline">{t('viewFile') || 'View'}</span>
                         </button>
                     </div>
                 </div>
@@ -542,13 +541,13 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-3">
                             <FaSync className="animate-spin text-3xl text-emerald-600" />
-                            <p className="text-xs font-bold">កំពុងទាញយកទិន្នន័យ Alert...</p>
+                            <p className="text-xs font-bold">{t('loading')}</p>
                         </div>
                     ) : alertCategories.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-3">
                             <FaExclamationTriangle className="text-3xl text-amber-500" />
-                            <p className="text-sm font-bold text-slate-700">គ្មានសិទ្ធិចូលមើលការជូនដំណឹង (No Permission for Alerts)</p>
-                            <p className="text-xs text-slate-400">គណនីរបស់អ្នកមិនមានសិទ្ធិចូលមើលទំព័រទាក់ទងនឹងការជូនដំណឹងឡើយ។</p>
+                            <p className="text-sm font-bold text-slate-700">{t('accessDenied')}</p>
+                            <p className="text-xs text-slate-400">{t('accessDeniedMsg')}</p>
                         </div>
                     ) : activeTab === 'followUp2Review' ? (
                         /* ── FollowUp2 Review Table ── */
@@ -556,15 +555,15 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <table className="w-full text-left text-xs border-collapse">
                                 <thead className="bg-indigo-50 text-indigo-900 border-b border-indigo-200 font-bold uppercase tracking-wider text-[10px]">
                                     <tr>
-                                        <th className="px-3.5 py-1 text-center">ល.រ</th>
-                                        <th className="px-3.5 py-1 text-center">ស្ថានភាព</th>
-                                        <th className="px-3.5 py-1">ឈ្មោះអតិថិជន</th>
-                                        <th className="px-3.5 py-1">ទូរស័ព្ទ</th>
-                                        <th className="px-3.5 py-1">Source</th>
-                                        <th className="px-3.5 py-1">Model / ប្រភេទ</th>
-                                        <th className="px-3.5 py-1 text-center">កាលបរិច្ឆេទ</th>
-                                        <th className="px-3.5 py-1">Brand</th>
-                                        <th className="px-3.5 py-1 text-center">ចូលទំព័រ</th>
+                                        <th className="px-3.5 py-1 text-center">{t('no')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('status')}</th>
+                                        <th className="px-3.5 py-1">{t('customerName')}</th>
+                                        <th className="px-3.5 py-1">{t('phone')}</th>
+                                        <th className="px-3.5 py-1">{t('source')}</th>
+                                        <th className="px-3.5 py-1">{t('model')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('date')}</th>
+                                        <th className="px-3.5 py-1">{t('brand')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -572,7 +571,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                         <tr>
                                             <td colSpan={9} className="py-16 text-center text-slate-400 italic font-semibold">
                                                 <FaComments className="text-3xl text-indigo-300 mx-auto mb-2 opacity-50" />
-                                                <span>មិនមានទិន្នន័យ Follow-up 2 ដែលត្រូវ Review នៅឡើយទេ</span>
+                                                <span>{t('noData')}</span>
                                             </td>
                                         </tr>
                                     ) : (
@@ -588,11 +587,11 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                     <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                         {isUnread ? (
                                                             <span className="px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[9px] font-black animate-pulse shadow-2xs">
-                                                                NEW
+                                                                {t('newBadge')}
                                                             </span>
                                                         ) : (
                                                             <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[9px] font-bold">
-                                                                Seen
+                                                                {t('seenBadge')}
                                                             </span>
                                                         )}
                                                     </td>
@@ -626,7 +625,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                             onClick={(e) => { e.stopPropagation(); handleFollowUp2Navigation(item); }}
                                                             className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] flex items-center gap-1 mx-auto cursor-pointer shadow-2xs"
                                                         >
-                                                            <FaExternalLinkAlt /> ចូល
+                                                            <FaExternalLinkAlt /> {t('viewFile') || 'View'}
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -642,16 +641,16 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <table className="w-full text-left text-xs border-collapse">
                                 <thead className="bg-rose-50 text-rose-900 border-b border-rose-200 font-bold uppercase tracking-wider text-[10px]">
                                     <tr>
-                                        <th className="px-3.5 py-1 text-center">ល.រ</th>
-                                        <th className="px-3.5 py-1 text-center">ស្ថានភាព</th>
-                                        <th className="px-3.5 py-1">ឈ្មោះអតិថិជន</th>
-                                        <th className="px-3.5 py-1 text-center">ប្រភេទ Action</th>
-                                        <th className="px-3.5 py-1">ម៉ូឌែល / Serial</th>
-                                        <th className="px-3.5 py-1">មូលហេតុបដិសេធ</th>
-                                        <th className="px-3.5 py-1 text-center">កាលបរិច្ឆេទ</th>
-                                        <th className="px-3.5 py-1">រៀបចំដោយ</th>
-                                        <th className="px-3.5 py-1 text-center">អាយុកាល Alert (៧ថ្ងៃ)</th>
-                                        <th className="px-3.5 py-1 text-center">ចូលទំព័រ</th>
+                                        <th className="px-3.5 py-1 text-center">{t('no')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('status')}</th>
+                                        <th className="px-3.5 py-1">{t('customerName')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('actions')}</th>
+                                        <th className="px-3.5 py-1">{t('model')} / {t('serialNumber')}</th>
+                                        <th className="px-3.5 py-1">{t('reason')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('date')}</th>
+                                        <th className="px-3.5 py-1">{t('performedBy')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('history')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -659,7 +658,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                         <tr>
                                             <td colSpan={10} className="py-16 text-center text-slate-400 italic font-semibold">
                                                 <FaExclamationTriangle className="text-3xl text-rose-300 mx-auto mb-2 opacity-50" />
-                                                <span>មិនមានទិន្នន័យបដិសេធនៅក្នុង «ផ្សេងៗ» ឡើយ (ស្អាត)</span>
+                                                <span>{t('noData')}</span>
                                             </td>
                                         </tr>
                                     ) : (
@@ -678,7 +677,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                     <td className="px-3.5 py-2.5 text-center font-bold text-slate-500">{idx + 1}</td>
                                                     <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                         <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[9px] font-black shadow-2xs">
-                                                            ✕ បដិសេធ
+                                                            {t('failed')}
                                                         </span>
                                                     </td>
                                                     <td className="px-3.5 py-2.5 font-bold text-slate-900 whitespace-nowrap">
@@ -700,7 +699,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                         <span className="block text-[10px] text-slate-500 font-mono">{item.serialNumber}</span>
                                                     </td>
                                                     <td className="px-3.5 py-2.5 text-rose-800 max-w-xs truncate" title={item.reason || ''}>
-                                                        <span className="font-semibold text-[11px]">{item.reason || 'បដិសេធដោយ Administrator'}</span>
+                                                        <span className="font-semibold text-[11px]">{item.reason || 'Rejected'}</span>
                                                     </td>
                                                     <td className="px-3.5 py-2.5 text-center font-mono text-slate-600 whitespace-nowrap text-[11px]">
                                                         <div>{item.date || '—'}</div>
@@ -711,7 +710,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                     </td>
                                                     <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                         <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
-                                                            លុបអូតូក្នុង {daysRemaining} ថ្ងៃ
+                                                            {daysRemaining} d
                                                         </span>
                                                     </td>
                                                     <td className="px-3.5 py-2.5 text-center">
@@ -719,7 +718,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                             onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
                                                             className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] flex items-center gap-1 mx-auto cursor-pointer shadow-2xs"
                                                         >
-                                                            <FaExternalLinkAlt /> ចូល
+                                                            <FaExternalLinkAlt /> {t('viewFile') || 'View'}
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -735,16 +734,16 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                             <table className="w-full text-left text-xs border-collapse">
                                 <thead className="bg-slate-100 text-slate-800 border-b border-slate-300 font-bold uppercase tracking-wider text-[10px]">
                                     <tr>
-                                        <th className="px-3.5 py-1 text-center">ល.រ</th>
-                                        <th className="px-3.5 py-1 text-center">Alert Status</th>
-                                        <th className="px-3.5 py-1">ឈ្មោះអតិថិជន</th>
-                                        <th className="px-3.5 py-1">លេខទូរស័ព្ទ</th>
-                                        <th className="px-3.5 py-1">ម៉ាក (Brand)</th>
-                                        <th className="px-3.5 py-1">ម៉ូឌែល / Serial</th>
-                                        <th className="px-3.5 py-1 text-center">ថ្ងៃត្រូវបង់</th>
-                                        <th className="px-3.5 py-1 text-center">ស្ថានភាពលើស/ដល់ថ្ងៃ</th>
-                                        <th className="px-3.5 py-1 text-center">Lock Status</th>
-                                        <th className="px-3.5 py-1 text-center">Action</th>
+                                        <th className="px-3.5 py-1 text-center">{t('no')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('status')}</th>
+                                        <th className="px-3.5 py-1">{t('customerName')}</th>
+                                        <th className="px-3.5 py-1">{t('phone')}</th>
+                                        <th className="px-3.5 py-1">{t('brand')}</th>
+                                        <th className="px-3.5 py-1">{t('model')} / {t('serialNumber')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('dueDateLabel')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('status')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('lockPhone')}</th>
+                                        <th className="px-3.5 py-1 text-center">{t('actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -752,7 +751,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                         <tr>
                                             <td colSpan={10} className="py-16 text-center text-slate-400 italic font-semibold">
                                                 <FaCalendarCheck className="text-3xl text-slate-300 mx-auto mb-2 opacity-50" />
-                                                <span>មិនមានទិន្នន័យ Alert សម្រាប់ផ្នែកនេះឡើយ</span>
+                                                <span>{t('noDataAlert')}</span>
                                             </td>
                                         </tr>
                                     ) : (
@@ -806,30 +805,30 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                     <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                         {activeTab === 'overdue' || activeTab === 'overdue3Days' || activeTab === 'overdue7Days' ? (
                                                             <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black">
-                                                                {item.overdueText || `លើស ${item.overdueDays} ថ្ងៃ`}
+                                                                {item.overdueDays ? `${item.overdueDays} d` : t('overdueCustomers')}
                                                             </span>
                                                         ) : activeTab === 'dueToday' ? (
                                                             <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-black">
-                                                                ដល់ថ្ងៃថ្ងៃនេះ
+                                                                {t('dueToday')}
                                                             </span>
                                                         ) : activeTab === 'dueIn1Day' ? (
                                                             <span className="px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-800 border border-orange-200 text-[10px] font-black">
-                                                                សល់ ១ ថ្ងៃត្រូវបង់
+                                                                {t('dueIn1Day')}
                                                             </span>
                                                         ) : (
                                                             <span className="px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-200 text-[10px] font-black">
-                                                                {item.daysLeft ? `នៅសល់ ${item.daysLeft} ថ្ងៃ` : 'ជិតដល់ថ្ងៃ'}
+                                                                {item.daysLeft ? `${item.daysLeft} d` : t('dueIn3Days')}
                                                             </span>
                                                         )}
                                                     </td>
                                                     <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                         {item.lockPhoneStatus === 'Locked' ? (
                                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">
-                                                                <FaLock size={10} /> Locked
+                                                                <FaLock size={10} /> {t('locked')}
                                                             </span>
                                                         ) : (
                                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                                                                <FaUnlock size={10} /> Normal
+                                                                <FaUnlock size={10} /> {t('unlocked')}
                                                             </span>
                                                         )}
                                                     </td>
@@ -840,7 +839,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                                     href={`tel:${item.phone}`}
                                                                     onClick={(e) => e.stopPropagation()}
                                                                     className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs transition-colors"
-                                                                    title="Call Customer"
+                                                                    title={t('callNow')}
                                                                 >
                                                                     <FaPhone size={10} />
                                                                 </a>
@@ -849,7 +848,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                                 onClick={(e) => { e.stopPropagation(); handleCustomerNavigation(item); }}
                                                                 className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
                                                             >
-                                                                <FaExternalLinkAlt size={9} /> មើល
+                                                                <FaExternalLinkAlt size={9} /> {t('viewFile') || 'View'}
                                                             </button>
                                                         </div>
                                                     </td>
@@ -866,15 +865,15 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                 {/* ── FOOTER ── */}
                 <div className="px-5 py-1 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 font-bold shadow-xs">
                     <div className="flex items-center gap-2">
-                        <span>សរុប Alert: <strong className="text-slate-900">{summary.totalAlerts + followUp2ReviewList.length + othersRejectedList.length}</strong></span>
+                        <span>{t('total')}: <strong className="text-slate-900">{summary.totalAlerts + followUp2ReviewList.length + othersRejectedList.length}</strong></span>
                         <span>•</span>
-                        <span className="text-rose-600">មិនទាន់អាន: <strong>{totalUnreadCount}</strong></span>
+                        <span className="text-rose-600">{t('newBadge')}: <strong>{totalUnreadCount}</strong></span>
                     </div>
                     <button
                         onClick={onClose}
                         className="px-4 py-1.5 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold cursor-pointer transition-colors border border-slate-300"
                     >
-                        {t('close') || 'បិទ'}
+                        {t('close')}
                     </button>
                 </div>
 

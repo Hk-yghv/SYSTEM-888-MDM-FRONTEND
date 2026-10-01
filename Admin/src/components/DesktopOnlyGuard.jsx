@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { FaDesktop, FaMobileAlt, FaExclamationTriangle } from 'react-icons/fa';
 import { MdOutlineDashboard } from 'react-icons/md';
+import { useLanguage } from '../context/LanguageContext';
 
 const DesktopOnlyGuard = ({ children }) => {
+    const { t } = useLanguage();
     const [isDesktop, setIsDesktop] = useState(true);
 
     useEffect(() => {
         const checkDevice = () => {
-
             const width = window.innerWidth;
             const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -37,28 +38,28 @@ const DesktopOnlyGuard = ({ children }) => {
                     <div className="space-y-2">
                         <div className="flex items-center justify-center gap-2 text-red-400 font-bold text-xs uppercase tracking-wider">
                             <FaExclamationTriangle />
-                            <span>Desktop Computer Screen Required</span>
+                            <span>{t('desktopOnlyTitle')}</span>
                         </div>
                         <h1 className="text-xl font-white text-white font-khmer">
-                            អនុញ្ញាតតែលើកុំព្យូទ័រ / Computer Only
+                            {t('desktopOnlyTitle')}
                         </h1>
                         <p className="text-xs text-white leading-relaxed font-khmer pt-2">
-                            ប្រព័ន្ធ SYSTEM MDM ត្រូវបានទាមទារឱ្យប្រើប្រាស់នៅលើអេក្រង់កុំព្យូទ័រ (Desktop / Laptop) ធំជាង 1024px ប៉ុណ្ណោះ។ ឧបករណ៍ Tablet ឬ ទូរស័ព្ទដៃមិនត្រូវបានអនុញ្ញាតឱ្យបើកចូលប្រើប្រាស់ឡើយ។
+                            {t('desktopOnlyMessage')}
                         </p>
                     </div>
 
                     <div className="p-4 rounded-[5px] bg-white/80 border border-white text-left text-xs space-y-2">
                         <div className="flex items-center gap-3 text-red-400 font-semibold">
                             <FaMobileAlt className="text-lg" />
-                            <span>Mobile & Tablet Access Restricted</span>
+                            <span>{t('desktopOnlyTitle')}</span>
                         </div>
                         <p className="text-[11px] text-white-400">
-                            Please open this website on a desktop computer browser to continue.
+                            {t('desktopOnlyMessage')}
                         </p>
                     </div>
 
                     <div className="pt-2 text-[10px] text-gray-500 font-mono uppercase tracking-widest">
-                        SYSTEM MDM Security Guard Protocol
+                        {t('systemTitle')}
                     </div>
                 </div>
             </div>

@@ -331,11 +331,11 @@ const FollowUp1 = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (!formData.date) {
-            alert('Please select a date (សូមជ្រើសរើសកាលបរិច្ឆេទ)');
+            alert(t('selectDateAlert') || 'Please select a date');
             return;
         }
         if (formData.message === '' || formData.message === null || formData.message === undefined || isNaN(Number(formData.message))) {
-            alert('Please enter the number of messages sent (សូមបញ្ចូលចំនួន Message សាកសួរ)');
+            alert(t('enterMsgSent'));
             return;
         }
 
@@ -413,7 +413,7 @@ const FollowUp1 = () => {
         const todayStr = now.toISOString().split('T')[0];
 
         if (scope === 'today') {
-            return { start: todayStr, end: todayStr, label: 'Today (ថ្ងៃនេះ)' };
+            return { start: todayStr, end: todayStr, label: t('today') };
         } else if (scope === 'week') {
             const d = new Date(now);
             const day = d.getDay();
@@ -424,7 +424,7 @@ const FollowUp1 = () => {
             return {
                 start: monday.toISOString().split('T')[0],
                 end: sunday.toISOString().split('T')[0],
-                label: 'This Week (សប្តាហ៍នេះ)'
+                label: t('thisWeek')
             };
         } else if (scope === 'month') {
             const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -432,7 +432,7 @@ const FollowUp1 = () => {
             return {
                 start: firstDay.toISOString().split('T')[0],
                 end: lastDay.toISOString().split('T')[0],
-                label: 'This Month (ខែនេះ)'
+                label: t('thisMonth')
             };
         } else if (scope === 'custom') {
             return {
@@ -441,7 +441,7 @@ const FollowUp1 = () => {
                 label: `Custom: ${exportStartDate || todayStr} to ${exportEndDate || todayStr}`
             };
         }
-        return { start: '', end: '', label: 'All Time (ទាំងអស់)' };
+        return { start: '', end: '', label: t('allTime') };
     };
 
     // Execute Export from Modal
@@ -495,16 +495,16 @@ const FollowUp1 = () => {
             // Define Export Table Columns
             const exportColumns = [
                 { header: '#', accessor: (row, idx) => row.isTotalRow ? '' : String(idx + 1) },
-                { header: 'Date (កាលបរិច្ឆេទ)', accessor: (row) => row.isTotalRow ? 'TOTAL / សរុប' : (row.date ? row.date.split('T')[0] : '') },
-                { header: 'Message (សាកសួរ)', accessor: (row) => row.isTotalRow ? `Total Records: ${items.length}` : (row.message || '') },
-                { header: 'Message សរុប', accessor: (row) => String(row.totalMessages !== undefined ? row.totalMessages : 0) },
+                { header: t('date'), accessor: (row) => row.isTotalRow ? 'TOTAL / សរុប' : (row.date ? row.date.split('T')[0] : '') },
+                { header: t('inquiredMessages'), accessor: (row) => row.isTotalRow ? `Total Records: ${items.length}` : (row.message || '') },
+                { header: t('totalMessages'), accessor: (row) => String(row.totalMessages !== undefined ? row.totalMessages : 0) },
                 { header: 'មិនឆ្លើយតប', accessor: (row) => String(row.noResponse !== undefined ? row.noResponse : 0) },
-                { header: 'Requested (បានស្នើរ)', accessor: (row) => String(row.requested !== undefined ? row.requested : 0) },
-                { header: 'Review (ពិនិត្យ)', accessor: (row) => String(row.review !== undefined ? row.review : 0) },
-                { header: 'Failed (បរាជ័យ)', accessor: (row) => String(row.failed !== undefined ? row.failed : 0) },
-                { header: 'Success (ជោគជ័យ)', accessor: (row) => String(row.success !== undefined ? row.success : 0) },
+                { header: t('requested'), accessor: (row) => String(row.requested !== undefined ? row.requested : 0) },
+                { header: t('inReview'), accessor: (row) => String(row.review !== undefined ? row.review : 0) },
+                { header: t('failed'), accessor: (row) => String(row.failed !== undefined ? row.failed : 0) },
+                { header: t('success'), accessor: (row) => String(row.success !== undefined ? row.success : 0) },
                 { header: 'Success Rate (%)', accessor: (row) => `${row.successRate || 0}%` },
-                { header: 'Reason (មូលហេតុ)', accessor: (row) => row.reason || '' },
+                { header: t('note'), accessor: (row) => row.reason || '' },
                 { header: 'Brand', accessor: (row) => row.brand || '' },
                 { header: 'Created By', accessor: (row) => row.createdBy || '' }
             ];
@@ -512,20 +512,20 @@ const FollowUp1 = () => {
             // Summary Sheet Columns & Rows for Sheet 2
             const summarySheetColumns = [
                 { header: '#', accessor: 'no' },
-                { header: 'សូចនាករ (KPI Metric)', accessor: 'metric' },
-                { header: 'ចំនួនសរុប (Total Count)', accessor: 'count' },
+                { header: t('description'), accessor: 'metric' },
+                { header: t('totalRecords'), accessor: 'count' },
                 { header: 'ភាគរយ / អត្រា (%)', accessor: 'rate' },
-                { header: 'ការពិពណ៌នា (Description)', accessor: 'desc' }
+                { header: t('description'), accessor: 'desc' }
             ];
 
             const summarySheetRows = [
-                { no: '1', metric: 'កំណត់ត្រាសរុប (Total Entries)', count: String(items.length), rate: '100%', desc: 'ចំនួនជួរទិន្នន័យដែលបាន Export ទាំងអស់' },
-                { no: '2', metric: 'Message សាកសួរ សរុប (Total Messages)', count: String(totalMsg), rate: '100%', desc: 'ចំនួនសារឆាតសាកសួរទៅកាន់អតិថិជនសរុប' },
-                { no: '3', metric: 'មិនឆ្លើយតប (No Response)', count: String(totalNoResp), rate: `${totalMsg > 0 ? ((totalNoResp / totalMsg) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនមិនបានឆ្លើយតបសារ' },
-                { no: '4', metric: 'បានស្នើរ (Requested Loans)', count: String(totalReq), rate: `${totalMsg > 0 ? ((totalReq / totalMsg) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនបានឆ្លើយតប និងស្នើសុំបញ្ចាំ' },
-                { no: '5', metric: 'កំពុងពិនិត្យ (In Review)', count: String(totalRev), rate: `${totalReq > 0 ? ((totalRev / totalReq) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនស្ថិតក្នុងដំណាក់កាលពិនិត្យឯកសារ/វាយតម្លៃ' },
-                { no: '6', metric: 'បរាជ័យ (Failed)', count: String(totalFail), rate: `${totalReq > 0 ? ((totalFail / totalReq) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនមិនត្រូវតាមលក្ខខណ្ឌ ឬបដិសេធ' },
-                { no: '7', metric: 'ជោគជ័យ (Success)', count: String(totalSucc), rate: `${overallRate}%`, desc: 'អតិថិជនជោគជ័យក្នុងការស្នើបញ្ចាំ (Success Rate)', isTotalRow: true }
+                { no: '1', metric: t('totalRecords'), count: String(items.length), rate: '100%', desc: 'ចំនួនជួរទិន្នន័យដែលបាន Export ទាំងអស់' },
+                { no: '2', metric: t('inquiredMessages'), count: String(totalMsg), rate: '100%', desc: 'ចំនួនសារឆាតសាកសួរទៅកាន់អតិថិជនសរុប' },
+                { no: '3', metric: t('noResponse'), count: String(totalNoResp), rate: `${totalMsg > 0 ? ((totalNoResp / totalMsg) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនមិនបានឆ្លើយតបសារ' },
+                { no: '4', metric: t('requested'), count: String(totalReq), rate: `${totalMsg > 0 ? ((totalReq / totalMsg) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនបានឆ្លើយតប និងស្នើសុំបញ្ចាំ' },
+                { no: '5', metric: t('inReview'), count: String(totalRev), rate: `${totalReq > 0 ? ((totalRev / totalReq) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនស្ថិតក្នុងដំណាក់កាលពិនិត្យឯកសារ/វាយតម្លៃ' },
+                { no: '6', metric: t('failed'), count: String(totalFail), rate: `${totalReq > 0 ? ((totalFail / totalReq) * 100).toFixed(1) : 0}%`, desc: 'អតិថិជនមិនត្រូវតាមលក្ខខណ្ឌ ឬបដិសេធ' },
+                { no: '7', metric: t('success'), count: String(totalSucc), rate: `${overallRate}%`, desc: 'អតិថិជនជោគជ័យក្នុងការស្នើបញ្ចាំ (Success Rate)', isTotalRow: true }
             ];
 
             // Append Total Summary Row at the bottom of Sheet 1
@@ -534,7 +534,7 @@ const FollowUp1 = () => {
                 {
                     isTotalRow: true,
                     isGrandTotal: true,
-                    date: 'TOTAL / សរុប',
+                    date: t('grandTotal'),
                     message: `Total Count: ${items.length}`,
                     totalMessages: totalMsg,
                     noResponse: totalNoResp,
@@ -633,7 +633,7 @@ const FollowUp1 = () => {
                 {/* Total Messages */}
                 <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
-                        <span>{t('totalMessages') || 'Message សរុប'}</span>
+                        <span>{t('totalMessages')}</span>
                         <FaComments className="text-blue-500" size={13} />
                     </div>
                     <div className="mt-2 text-xl font-bold text-blue-600 dark:text-blue-400">
@@ -791,8 +791,8 @@ const FollowUp1 = () => {
                             <tr className="bg-[var(--app-bg,#f8fafc)] border-b border-[var(--app-border,#e2e8f0)] text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted,#64748b)]">
                                 <th className="py-1 px-3 w-10 text-center">#</th>
                                 <th className="py-1 px-3 min-w-[95px]">កាលបរិច្ឆេទ</th>
-                                <th className="py-1 px-2.5 text-center min-w-[75px]">Message សរុប</th>
-                                <th className="py-1 px-4 min-w-[120px]">Message សាកសួរ</th>
+                                <th className="py-1 px-2.5 text-center min-w-[75px]">{t('totalMessages')}</th>
+                                <th className="py-1 px-4 min-w-[120px]">{t('inquiredMessages')}</th>
                                 <th className="py-1 px-2.5 text-center min-w-[65px]">Brand</th>
                                 <th className="py-1 px-2.5 text-center min-w-[75px]">មិនឆ្លើយតប</th>
                                 <th className="py-1 px-2.5 text-center min-w-[75px]">បានស្នើរ</th>
@@ -810,7 +810,7 @@ const FollowUp1 = () => {
                                     <td colSpan="14" className="py-12 text-center text-slate-400">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <MdOutlineSync size={24} className="animate-spin text-emerald-600" />
-                                            <span>កំពុងទាញយកទិន្នន័យ Follow up...</span>
+                                            <span>{t('fetchingData')}</span>
                                         </div>
                                     </td>
                                 </tr>
@@ -977,7 +977,7 @@ const FollowUp1 = () => {
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
                             <h2 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
                                 <MdOutlineAssignment className="text-emerald-600" size={20} />
-                                <span>{editingItem ? 'កែប្រែទិន្នន័យ Follow up 1' : 'បញ្ចូលទិន្នន័យ Follow up 1 ថ្មី'}</span>
+                                <span>{editingItem ? [t('editFollowUp1')]: 'បញ្ចូលទិន្នន័យ Follow up 1 ថ្មី'}</span>
                             </h2>
                             <button
                                 onClick={() => setIsFormOpen(false)}
@@ -995,8 +995,7 @@ const FollowUp1 = () => {
                                     <MdOutlineSync className={`text-emerald-600 text-base shrink-0 ${fetchingFu2 ? 'animate-spin' : ''}`} />
                                     <span>
                                         {fetchingFu2
-                                            ? 'កំពុងទាញទិន្នន័យពី Follow up 2...'
-                                            : fu2StatsFound?.hasData
+                                            ? [t('fetchingData')]: fu2StatsFound?.hasData
                                                 ? `ទិន្នន័យ Follow up 2 សម្រាប់ ${formData.date}៖ ស្នើ (${fu2StatsFound.total}), ជោគជ័យ (${fu2StatsFound.success}), បរាជ័យ (${fu2StatsFound.failed}), Review (${fu2StatsFound.review})`
                                                 : `ទិន្នន័យ Follow up 2 សម្រាប់ថ្ងៃ ${formData.date}៖ 0 Record`}
                                     </span>
@@ -1015,7 +1014,7 @@ const FollowUp1 = () => {
                             {/* Date Field */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                    កាលបរិច្ឆេទ (Date) <span className="text-rose-500">*</span>
+                                    {t('date')} <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="date"
@@ -1033,7 +1032,7 @@ const FollowUp1 = () => {
                             {/* Inquiry Message (Number of messages sent) */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                    Message សាកសួរ (ចំនួនដែលបានស្នើ) <span className="text-rose-500">*</span>
+                                    {t('inquiredMessages')} <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="number"
@@ -1046,15 +1045,15 @@ const FollowUp1 = () => {
                                 />
                             </div>
 
-                            {/* Message សរុប - directly below Message សាកសួរ */}
+                            {/* {t('totalMessages')} - directly below Message សាកសួរ */}
                             <div>
                                 <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 mb-1">
-                                    Message សរុប
+                                    {t('totalMessages')}
                                 </label>
                                 <input
                                     type="number"
                                     min="0"
-                                    placeholder="បញ្ចូលចំនួន Message សរុប..."
+                                    placeholder="បញ្ចូលចំនួន {t('totalMessages')}..."
                                     value={formData.totalMessages}
                                     onChange={(e) => handleNumericChange('totalMessages', e.target.value)}
                                     className="w-full px-3 py-2 bg-blue-500/5 border border-blue-500/30 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-mono"
@@ -1090,11 +1089,11 @@ const FollowUp1 = () => {
                                 </div>
                             </div>
 
-                            {/* Row 2: កំពុងពិនិត្យ (Review) */}
+                            {/* Row 2: {t('inReview')} */}
                             <div className="grid grid-cols-1 gap-3">
                                 <div>
                                     <label className="block text-xs font-bold text-cyan-700 dark:text-cyan-400 mb-1 flex items-center justify-between">
-                                        <span>កំពុងពិនិត្យ (Review)</span>
+                                        <span>{t('inReview')}</span>
                                         <span className="text-[10px] font-medium text-cyan-600 dark:text-cyan-300 bg-cyan-500/10 px-1.5 py-0.2 rounded">Follow up 2</span>
                                     </label>
                                     <input
@@ -1140,7 +1139,7 @@ const FollowUp1 = () => {
                             {/* Reason */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                    មូលហេតុ (Reason / Feedback)
+                                    {t('note')}
                                 </label>
                                 <textarea
                                     rows="4"
@@ -1204,7 +1203,7 @@ const FollowUp1 = () => {
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
                             <h2 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
                                 <FaFileDownload className="text-emerald-600" size={18} />
-                                <span>{t('exportScope') || 'ជ្រើសរើសចន្លោះកាលបរិច្ឆេទ Export'}</span>
+                                <span>{t('timeRangeScope')}</span>
                             </h2>
                             <button
                                 onClick={() => setIsExportModalOpen(false)}
@@ -1219,7 +1218,7 @@ const FollowUp1 = () => {
                             {/* Format Selector */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-2">
-                                    ទម្រង់ File (Export Format)
+                                    {t('exportFormat')}
                                 </label>
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
@@ -1251,7 +1250,7 @@ const FollowUp1 = () => {
                             {/* Scope Radio / Buttons */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-2">
-                                    ចន្លោះពេលចង់ Export (Time Range Scope)
+                                    {t('timeRangeScope')}
                                 </label>
                                 <div className="grid grid-cols-2 gap-2.5">
                                     <button
@@ -1308,7 +1307,7 @@ const FollowUp1 = () => {
                                     </div>
                                     <div className="grid grid-cols-2 gap-2.5">
                                         <div>
-                                            <span className="block text-[11px] font-semibold text-slate-500 mb-1">ពីថ្ងៃ (From):</span>
+                                            <span className="block text-[11px] font-semibold text-slate-500 mb-1">{t('from')}:</span>
                                             <input
                                                 type="date"
                                                 value={exportStartDate}
@@ -1317,7 +1316,7 @@ const FollowUp1 = () => {
                                             />
                                         </div>
                                         <div>
-                                            <span className="block text-[11px] font-semibold text-slate-500 mb-1">ដល់ថ្ងៃ (To):</span>
+                                            <span className="block text-[11px] font-semibold text-slate-500 mb-1">{t('to')}:</span>
                                             <input
                                                 type="date"
                                                 value={exportEndDate}
@@ -1333,7 +1332,7 @@ const FollowUp1 = () => {
                             <div className="p-3 bg-slate-100 dark:bg-slate-800/80 rounded-[5px] text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                 <p className="font-semibold flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 mb-1">
                                     <FaCheckCircle size={13} />
-                                    <span>របាយការណ៍រួមបញ្ចូលសរុប (Total Row Included)</span>
+                                    <span>{t('summaryTable')}</span>
                                 </p>
                                 <p className="text-[11px] leading-relaxed">
                                     នៅពេល Export ប្រព័ន្ធនឹងគណនាសរុប (Total Messages, No Response, Requested, Failed, Success, Success Rate) នៅពីខាងក្រោមតារាងដោយស្វ័យប្រវត្តិ។
@@ -1360,7 +1359,7 @@ const FollowUp1 = () => {
                                 {isExporting ? (
                                     <>
                                         <MdOutlineSync className="animate-spin" size={15} />
-                                        <span>កំពុង Export...</span>
+                                        <span>{t('exporting')}</span>
                                     </>
                                 ) : (
                                     <>

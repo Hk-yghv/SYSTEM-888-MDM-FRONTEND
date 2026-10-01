@@ -686,12 +686,12 @@ const InstallmentPage = () => {
                             }}
                             className="px-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs font-bold text-slate-800 outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
                         >
-                            <option value="all">ទាំងអស់ (All Status)</option>
-                            <option value="overdue">🔴 លើសកំណត់ (Overdue)</option>
-                            <option value="dueToday">🟡 ដល់ថ្ងៃបង់ (Due Today)</option>
-                            <option value="dueIn1Day">🟠 សល់ពេល ១ ថ្ងៃ (Due 1 Day)</option>
-                            <option value="dueIn3Days">🔵 សល់ពេល ៣ ថ្ងៃ (Due 3 Days)</option>
-                            <option value="done">🟢 បង់រួចរាល់ (Paid Off)</option>
+                            <option value="all">{t('allStatus')}</option>
+                            <option value="overdue">🔴 {t('overdueTag')}</option>
+                            <option value="dueToday">🟡 {t('dueTodayTag')}</option>
+                            <option value="dueIn1Day">🟠 {t('due1Day')}</option>
+                            <option value="dueIn3Days">🔵 {t('due3Days')}</option>
+                            <option value="done">🟢 {t('paidOff')}</option>
                         </select>
                     </div>
 

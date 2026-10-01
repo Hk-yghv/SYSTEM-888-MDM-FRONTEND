@@ -342,7 +342,7 @@ const FollowUp3 = () => {
     const handleSubmitForm = async (e) => {
         e.preventDefault();
         if (!formData.customerName.trim()) {
-            alert('សូមបញ្ចូលឈ្មោះអតិថិជន (Customer Name)');
+            alert(t('customerName'));
             return;
         }
 
@@ -479,28 +479,28 @@ const FollowUp3 = () => {
 
             const exportColumns = [
                 { header: '#', accessor: (row, idx) => (row.isGrandTotal ? '★' : String(idx + 1)) },
-                { header: 'កាលបរិច្ឆេទ (Date)', accessor: (row) => row.date ? row.date.split('T')[0] : '' },
-                { header: 'ឈ្មោះអតិថិជន (Customer Name)', accessor: (row) => row.customerName || '' },
-                { header: 'លេខទូរស័ព្ទ (Phone)', accessor: (row) => row.phone || '' },
-                { header: 'ទីតាំង (Location)', accessor: (row) => row.location || '' },
-                { header: 'តាមរយៈ (Source)', accessor: (row) => row.source || '' },
+                { header: t('date'), accessor: (row) => row.date ? row.date.split('T')[0] : '' },
+                { header: t('customerName'), accessor: (row) => row.customerName || '' },
+                { header: t('phone'), accessor: (row) => row.phone || '' },
+                { header: t('location'), accessor: (row) => row.location || '' },
+                { header: t('source'), accessor: (row) => row.source || '' },
                 {
                     header: 'ចំនួនស្នើបញ្ចាំ ($)',
                     accessor: (row) => row.requestedAmount !== undefined && row.requestedAmount !== ''
                         ? `$${Number(row.requestedAmount || 0).toLocaleString()}`
                         : ''
                 },
-                { header: 'ប្រភេទទ្រព្យ (Collateral)', accessor: (row) => row.collateralType || '' },
-                { header: 'បរិយាយ (Description)', accessor: (row) => row.description || '' },
+                { header: t('collateral'), accessor: (row) => row.collateralType || '' },
+                { header: t('description'), accessor: (row) => row.description || '' },
                 { header: 'Link', accessor: (row) => row.link || '' },
-                { header: 'អ្នកឆ្លើយតប (Responder)', accessor: (row) => row.responder || '' },
+                { header: t('responder'), accessor: (row) => row.responder || '' },
                 { header: 'Username (Staff)', accessor: (row) => row.username || '' },
                 { header: 'Brand', accessor: (row) => row.brand || '' }
             ];
 
             const summaryRow = {
                 isGrandTotal: true,
-                date: 'សរុបរួម (GRAND TOTAL)',
+                date: t('grandTotal'),
                 customerName: `សរុប ${items.length} នាក់`,
                 phone: '',
                 location: '',
@@ -613,7 +613,7 @@ const FollowUp3 = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                {t('totalRecords') || 'ចំនួនទិន្នន័យសរុប (Total Leads)'}
+                                {t('totalRecords')}
                             </p>
                             <h3 className="text-2xl sm:text-3xl font-black text-slate-800 mt-1">
                                 {Number(summary.totalRecords || 0).toLocaleString()}
@@ -679,7 +679,7 @@ const FollowUp3 = () => {
                             onChange={(e) => setSelectedBrand(e.target.value)}
                             className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                         >
-                            <option value="">គ្រប់ Brand ទាំងអស់</option>
+                            <option value="">{t('allBrandsShort')} ទាំងអស់</option>
                             {brandsList.map(b => (
                                 <option key={b} value={b}>{b}</option>
                             ))}
@@ -943,7 +943,7 @@ const FollowUp3 = () => {
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-black text-slate-800">
-                                        {editingItem ? 'កែប្រែទិន្នន័យ Follow Up 3' : 'បង្កើត Follow Up 3 ថ្មី'}
+                                        {editingItem ? [t('editFollowUp3')]: 'បង្កើត Follow Up 3 ថ្មី'}
                                     </h3>
                                     <p className="text-xs text-slate-400 font-medium">
                                         អាចវាយបញ្ចូលដោយសេរី ឬជ្រើសរើសពី Droplist
@@ -981,7 +981,7 @@ const FollowUp3 = () => {
                                         className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-[5px] bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
                                     >
                                         <FaCheckCircle className="text-xs" />
-                                        <span>បំពេញស្វ័យប្រវត្តិ (Auto-fill)</span>
+                                        <span>{t('autoFill')}</span>
                                     </button>
                                     <button
                                         type="button"
@@ -1065,7 +1065,7 @@ const FollowUp3 = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                         <FaGlobe className="text-slate-400" />
-                                        <span>តាមរយៈ (Source)</span>
+                                        <span>{t('source')}</span>
                                     </label>
                                     <input
                                         type="text"
@@ -1130,7 +1130,7 @@ const FollowUp3 = () => {
                                 <div className="sm:col-span-2">
                                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                         <FaUserTie className="text-slate-400" />
-                                        <span>Username (អ្នកបញ្ចូល/Staff)</span>
+                                        <span>{t('username')}</span>
                                     </label>
                                     <input
                                         type="text"
@@ -1162,7 +1162,7 @@ const FollowUp3 = () => {
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                     <FaCommentDots className="text-slate-400" />
-                                    <span>បរិយាយ (Description / Remarks)</span>
+                                    <span>{t('description')}</span>
                                 </label>
                                 <textarea
                                     rows="3"
@@ -1250,7 +1250,7 @@ const FollowUp3 = () => {
                         {/* Format Selection */}
                         <div className="space-y-2">
                             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
-                                ទម្រង់ឯកសារ (Format)
+                                {t('exportFormat')}
                             </label>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
@@ -1283,18 +1283,18 @@ const FollowUp3 = () => {
                         {/* Scope Selection */}
                         <div className="space-y-2">
                             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
-                                ចន្លោះកាលបរិច្ឆេទ (Scope)
+                                {t('timeRangeScope')}
                             </label>
                             <select
                                 value={exportScope}
                                 onChange={(e) => setExportScope(e.target.value)}
                                 className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             >
-                                <option value="month">ខែនេះ (This Month)</option>
-                                <option value="week">សប្តាហ៍នេះ (This Week)</option>
-                                <option value="today">ថ្ងៃនេះ (Today)</option>
-                                <option value="all">ទាំងអស់ (All Records)</option>
-                                <option value="custom">កំណត់តាមចិត្ត (Custom Range)</option>
+                                <option value="month">{t('thisMonth')}</option>
+                                <option value="week">{t('thisWeek')}</option>
+                                <option value="today">{t('today')}</option>
+                                <option value="all">{t('allTime')}</option>
+                                <option value="custom">{t('customRange')}</option>
                             </select>
                         </div>
 
@@ -1338,7 +1338,7 @@ const FollowUp3 = () => {
                                 className="px-5 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs transition shadow-md shadow-emerald-600/25 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                             >
                                 <FaFileDownload className="text-xs" />
-                                <span>{isExporting ? 'កំពុងទាញយក...' : 'Export ឥឡូវនេះ'}</span>
+                                <span>{isExporting ? [t('exporting')]: t('exportNow')}</span>
                             </button>
                         </div>
                     </div>

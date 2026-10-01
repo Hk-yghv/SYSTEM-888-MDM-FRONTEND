@@ -395,7 +395,7 @@ const Dashboard = () => {
                                 onChange={e => setBrandFilter(e.target.value)}
                                 className="bg-transparent text-slate-950 font-black outline-none cursor-pointer pr-1"
                             >
-                                <option value="">All Brands (គ្រប់សាខា)</option>
+                                <option value="">{t('allBrands')}</option>
                                 {brandsList.map(b => <option key={b} value={b}>{b}</option>)}
                             </select>
                         ) : (
@@ -416,7 +416,7 @@ const Dashboard = () => {
                 {/* Metric 1: Total Loan Disbursed */}
                 <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-blue-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
-                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">ឥណទានបញ្ចេញសរុប</span>
+                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">{t('totalLoanDisbursed')}</span>
                         <div className="w-9 h-9 rounded-[5px] bg-blue-100 text-blue-800 border-2 border-blue-300 flex items-center justify-center text-lg font-black">
                             <MdAccountBalanceWallet />
                         </div>
@@ -435,7 +435,7 @@ const Dashboard = () => {
                 {/* Metric 2: Revenue Collected */}
                 <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-emerald-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
-                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">ប្រាក់ប្រមូលបានសរុប</span>
+                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">{t('totalRevenueCollected')}</span>
                         <div className="w-9 h-9 rounded-[5px] bg-emerald-100 text-emerald-800 border-2 border-emerald-300 flex items-center justify-center text-lg font-black">
                             <MdTrendingUp />
                         </div>
@@ -454,7 +454,7 @@ const Dashboard = () => {
                 {/* Metric 3: Total Repayment Expected */}
                 <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-purple-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
-                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">ប្រាក់ត្រូវប្រមូលមកវិញ</span>
+                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">{t('totalRepaymentDue')}</span>
                         <div className="w-9 h-9 rounded-[5px] bg-purple-100 text-purple-800 border-2 border-purple-300 flex items-center justify-center text-lg font-black">
                             <FaCoins />
                         </div>
@@ -479,7 +479,7 @@ const Dashboard = () => {
                 {/* Metric 4: Outstanding Balance */}
                 <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 shadow-xs hover:border-amber-500 transition-all">
                     <div className="flex items-center justify-between text-slate-700">
-                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">ប្រាក់នៅសល់មិនទាន់ប្រមូល</span>
+                        <span className="text-xs font-black tracking-wide uppercase text-slate-800">{t('outstandingReceivables')}</span>
                         <div className="w-9 h-9 rounded-[5px] bg-amber-100 text-amber-800 border-2 border-amber-300 flex items-center justify-center text-lg font-black">
                             <MdLock />
                         </div>
@@ -540,11 +540,11 @@ const Dashboard = () => {
                         {/* Status Breakdown List */}
                         <div className="space-y-2 mt-3 text-xs">
                             {[
-                                { label: 'Activated (ដំណើរការ)', count: stats.activatedContracts, pct: activatedPct, color: 'text-emerald-950 bg-emerald-100 border-2 border-emerald-400' },
-                                { label: 'Application (ពាក្យស្នើសុំ)', count: stats.applicationContracts, pct: applicationPct, color: 'text-amber-950 bg-amber-100 border-2 border-amber-400' },
-                                { label: 'Check (កំពុងត្រួតពិនិត្យ)', count: stats.checkContracts, pct: checkPct, color: 'text-sky-950 bg-sky-100 border-2 border-sky-400' },
-                                { label: 'Redeem (បញ្ចប់កិច្ចសន្យា)', count: stats.redeemContracts, pct: redeemPct, color: 'text-purple-950 bg-purple-100 border-2 border-purple-400' },
-                                { label: 'Blacklist (បញ្ជីខ្មៅ)', count: stats.blacklistContracts, pct: blacklistPct, color: 'text-rose-950 bg-rose-100 border-2 border-rose-400' },
+                                { label: t('activated'), count: stats.activatedContracts, pct: activatedPct, color: 'text-emerald-950 bg-emerald-100 border-2 border-emerald-400' },
+                                { label: t('application'), count: stats.applicationContracts, pct: applicationPct, color: 'text-amber-950 bg-amber-100 border-2 border-amber-400' },
+                                { label: t('check'), count: stats.checkContracts, pct: checkPct, color: 'text-sky-950 bg-sky-100 border-2 border-sky-400' },
+                                { label: t('redeem'), count: stats.redeemContracts, pct: redeemPct, color: 'text-purple-950 bg-purple-100 border-2 border-purple-400' },
+                                { label: t('blacklist'), count: stats.blacklistContracts, pct: blacklistPct, color: 'text-rose-950 bg-rose-100 border-2 border-rose-400' },
                             ].map(item => (
                                 <div key={item.label} className={`px-3.5 py-2 rounded-[5px] ${item.color} flex items-center justify-between font-black`}>
                                     <span>{item.label}</span>
@@ -583,7 +583,7 @@ const Dashboard = () => {
                     <div>
                         <h2 className="text-sm sm:text-base font-black text-slate-950 uppercase tracking-wide flex items-center gap-2">
                             <FaBuilding className="text-slate-800" />
-                            <span>តារាងព័ត៌មានលម្អិតគ្រប់ទិន្នន័យតាមសាខា (Comprehensive Brand Analytics)</span>
+                            <span>{t('brandSummaryTitle')}</span>
                         </h2>
                         <p className="text-xs text-slate-700 font-bold mt-0.5">
                             បង្ហាញព័ត៌មានកិច្ចសន្យា ស្ថានភាព Report ទឹកប្រាក់ប្រមូល និងស្ថានភាព Lock គ្រប់សាខា
@@ -599,7 +599,7 @@ const Dashboard = () => {
                         <thead className="bg-slate-950 text-white uppercase tracking-wider text-[11px] font-black">
                             <tr>
                                 <th className="px-3 py-1 text-center w-10">#</th>
-                                <th className="px-3 py-1">សាខា (Brand)</th>
+                                <th className="px-3 py-1">{t('brand')}</th>
                                 <th className="px-3 py-1 text-center">សរុប</th>
                                 <th className="px-3 py-1 text-center">App</th>
                                 <th className="px-3 py-1 text-center">Check</th>
@@ -668,7 +668,7 @@ const Dashboard = () => {
                             <tfoot className="bg-slate-950 text-white font-black font-mono text-xs border-t-2 border-slate-800">
                                 <tr>
                                     <td colSpan={2} className="px-3 py-3.5 uppercase tracking-wider text-emerald-400 font-black font-sans text-xs">
-                                        សរុបរួម (Grand Total)
+                                        {t('grandTotal')}
                                     </td>
                                     <td className="px-3 py-3.5 text-center font-mono font-black text-amber-300">
                                         {summaryTableData.reduce((s, r) => s + r.totalContracts, 0)}

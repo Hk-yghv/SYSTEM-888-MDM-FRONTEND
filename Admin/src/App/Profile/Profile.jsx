@@ -266,7 +266,7 @@ const Profile = () => {
                                 {/* Password តង់ទី២ Input Field */}
                                 <div className="space-y-1 pt-2 border-t border-indigo-900/40">
                                     <label className="block text-[11px] font-semibold text-gray-300">
-                                        Password តង់ទី២ (2FA Second Password)
+                                        {t('telegram2FA')}
                                     </label>
                                     <input
                                         type="password"

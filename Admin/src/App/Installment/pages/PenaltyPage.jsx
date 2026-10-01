@@ -44,7 +44,7 @@ const PenaltyPage = () => {
         amount: '',
         currency: 'USD',
         paymentMethod: 'Cash',
-        category: 'ពិន័យទូទៅ (General Penalty)',
+        category: 'General Penalty',
         description: '',
         photoUrl: ''
     });
@@ -173,7 +173,7 @@ const PenaltyPage = () => {
                     amount: '',
                     currency: 'USD',
                     paymentMethod: 'Cash',
-                    category: 'ពិន័យទូទៅ (General Penalty)',
+                    category: 'General Penalty',
                     description: '',
                     photoUrl: ''
                 });
@@ -196,7 +196,7 @@ const PenaltyPage = () => {
             amount: item.amount || '',
             currency: item.currency || 'USD',
             paymentMethod: item.paymentMethod || 'Cash',
-            category: item.category || 'ពិន័យទូទៅ (General Penalty)',
+            category: item.category || 'General Penalty',
             description: item.description || '',
             photoUrl: item.photoUrl || ''
         });
@@ -259,7 +259,7 @@ const PenaltyPage = () => {
             { header: 'Description', accessor: 'description' },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
-        exportToExcel('Penalty Report (ពិន័យ)', columns, allData, user?.brand || '');
+        exportToExcel('Penalty Report', columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async () => {
@@ -273,7 +273,7 @@ const PenaltyPage = () => {
             { header: 'Description', accessor: 'description' },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
-        exportToPDF('Penalty Report (ពិន័យ)', columns, allData, user?.brand || '', pdfOrientation);
+        exportToPDF('Penalty Report', columns, allData, user?.brand || '', pdfOrientation);
     };
 
     // Trend data for chart (group by date)
@@ -304,19 +304,19 @@ const PenaltyPage = () => {
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
-                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', paymentMethod: 'Cash', category: 'ពិន័យទូទៅ (General Penalty)', description: '', photoUrl: '' }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-amber-600/20'>
+                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', paymentMethod: 'Cash', category: 'General Penalty', description: '', photoUrl: '' }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-amber-600/20'>
                         <FaPlus className="text-xs" /><span>{t('create')} (បង្កើតពិន័យ)</span>
                     </button>
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                     {/* PDF Orientation Toggle */}
                     <div className="flex items-center rounded-[5px] border border-slate-300 overflow-hidden shadow-xs">
-                        <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
+                        <button onClick={() => setPdfOrientation('portrait')} title={t('portrait')}
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>📄</span><span className="hidden sm:inline">Portrait</span>
+                            <span>📄</span><span className="hidden sm:inline">{t('portrait')}</span>
                         </button>
-                        <button onClick={() => setPdfOrientation('landscape')} title="Landscape (ផ្តេក)"
+                        <button onClick={() => setPdfOrientation('landscape')} title={t('landscape')}
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer border-l border-slate-300 ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>🖼</span><span className="hidden sm:inline">Landscape</span>
+                            <span>🖼</span><span className="hidden sm:inline">{t('landscape')}</span>
                         </button>
                     </div>
                     
@@ -381,7 +381,7 @@ const PenaltyPage = () => {
 
                     {/* Line Chart - Penalty Trend */}
                     <LineChart
-                        title="ក្រាបខ្សែនិន្នាប្រាកចូល (Penalty Trend Line Chart)"
+                        title={t('penaltyTrendChart')}
                         subtitle="បង្ហាញពីការកើនឡើងចំនួនចូលច្រង និងតម្លៃចំនួនប្រចាំថ្ងៃ/ខែ"
                         data={chartTrendData}
                         series={[
@@ -495,13 +495,13 @@ const PenaltyPage = () => {
                     <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
                         <div className="p-4 bg-amber-600 text-black flex items-center justify-between">
                             <h3 className="font-bold text-sm flex items-center gap-2">
-                                <FaPlusCircle /> <span>{editingItem ? 'កែប្រែទិន្នន័យពិន័យ' : 'បញ្ចូលទិន្នន័យពិន័យ (Create Penalty)'}</span>
+                                <FaPlusCircle /> <span>{editingItem ? [t('edit')]: t('create')}</span>
                             </h3>
                             <button onClick={() => { setIsFormOpen(false); setEditingItem(null); }} className="text-white hover:text-slate-200 font-bold text-lg cursor-pointer">&times;</button>
                         </div>
                         <form onSubmit={handleFormSubmit} className="p-5 space-y-3.5 text-xs font-semibold text-slate-700">
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">កាលបរិច្ឆេទ (Date)</label>
+                                <label className="block text-slate-700 font-bold mb-1">{t('date')}</label>
                                 <input
                                     type="date"
                                     required
@@ -513,7 +513,7 @@ const PenaltyPage = () => {
 
                             <div className="grid grid-cols-3 gap-2">
                                 <div className="col-span-2">
-                                    <label className="block text-slate-700 font-bold mb-1">ចំនួនទឹកប្រាក់ (Amount)</label>
+                                    <label className="block text-slate-700 font-bold mb-1">{t('amount')}</label>
                                     <input
                                         type="number"
                                         step="any"
@@ -538,19 +538,19 @@ const PenaltyPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">ប្រភេទបង់ប្រាក់ (Payment Type)</label>
+                                <label className="block text-slate-700 font-bold mb-1">{t('paymentType')}</label>
                                 <select
                                     value={formData.paymentMethod}
                                     onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-bold text-slate-800 focus:outline-none focus:border-amber-500"
                                 >
-                                    <option value="Cash">Cash (សាច់ប្រាក់)</option>
-                                    <option value="Bank">Bank (ធនាគារ)</option>
+                                    <option value="Cash">{t('cash')}</option>
+                                    <option value="Bank">{t('bank')}</option>
                                 </select>
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">ប្រភេទចំណូល (Category)</label>
+                                <label className="block text-slate-700 font-bold mb-1">{t('category')}</label>
                                 <input
                                     type="text"
                                     placeholder="ឧទាហរណ៍៖ ចំណូលសេវាកម្ម, ប្រាក់បង់រំលស់បន្ថែម, ចំណូលផ្សេងៗ..."
@@ -561,7 +561,7 @@ const PenaltyPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">បរិយាយ (Description)</label>
+                                <label className="block text-slate-700 font-bold mb-1">{t('description')}</label>
                                 <textarea
                                     rows="2"
                                     placeholder="ពិពណ៌នាបន្ថែមពីចំណូលនេះ..."

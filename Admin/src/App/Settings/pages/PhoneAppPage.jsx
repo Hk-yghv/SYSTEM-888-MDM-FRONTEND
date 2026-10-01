@@ -53,7 +53,7 @@ const PhoneAppPage = () => {
 
     // Manual Disconnect
     const handleDisconnect = async () => {
-        if (!window.confirm('តើអ្នកប្រាកដថាចង់ផ្តាច់ Device ចេញពីប្រព័ន្ធ?')) return;
+        if (!window.confirm('Are you sure you want to disconnect this device?')) return;
         setActionLoading(true);
         setActionMsg('');
         try {
@@ -75,7 +75,7 @@ const PhoneAppPage = () => {
         try {
             const res = await fetch(`${API_BASE}/phone-app/disconnect`, { method: 'POST' });
             const data = await res.json();
-            setActionMsg('បានបដិសេធការភ្ជាប់ Device!');
+            setActionMsg('Device connection rejected!');
             fetchStatus();
         } catch {
             setActionMsg('បដិសេធបរាជ័យ');
@@ -308,7 +308,7 @@ const PhoneAppPage = () => {
                             className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 rounded-[5px] text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg shadow-emerald-600/30 animate-pulse font-khmer"
                         >
                             <FaPlug />
-                            <span>{actionLoading ? 'កំពុងភ្ជាប់...' : '✅ Connect Device (អនុម័ត)'}</span>
+                            <span>{actionLoading ? 'កំពុងភ្ជាប់...' : '✅ {t('connectDevice')}'}</span>
                         </button>
                     )}
 
@@ -320,7 +320,7 @@ const PhoneAppPage = () => {
                             className="px-3.5 py-2 bg-red-900 hover:bg-red-800 text-red-200 border border-red-700 rounded-[5px] text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg font-khmer"
                         >
                             <FaUnlink />
-                            <span>{actionLoading ? 'កំពុងផ្តាច់...' : '⛔ Disconnect (ផ្តាច់)'}</span>
+                            <span>{actionLoading ? 'កំពុងផ្តាច់...' : '⛔ {t('disconnectDevice')}'}</span>
                         </button>
                     )}
 
@@ -395,13 +395,13 @@ const PhoneAppPage = () => {
                                         Recommended Method
                                     </span>
                                     <h3 className="text-base font-bold text-slate-100 font-khmer">
-                                        ភ្ជាប់តាមរយៈការ Scan QR Code
+                                        {t('scanQrConnect')}
                                     </h3>
                                     <ol className="text-xs text-slate-300 space-y-2 list-decimal list-inside font-khmer">
-                                        <li>បើកកម្មវិធី Phone App លើទូរស័ព្ទដៃ Android របស់អ្នក</li>
-                                        <li>ជ្រើសរើស Brand រួចធ្វើការ Login</li>
-                                        <li>ចុចលើប៊ូតុង <strong className="text-indigo-400">Scan QR Connect</strong> លើ App</li>
-                                        <li>តម្រង់កាំមេរ៉ាទូរស័ព្ទមកកាន់ QR Code ខាងឆ្វេងនេះជាការស្រេច</li>
+                                        <li>Open Phone App on your Android device</li>
+                                        <li>Select Brand and Login</li>
+                                        <li>Tap <strong className="text-indigo-400">Scan QR Connect</strong> on App</li>
+                                        <li>Point camera at the QR Code on the left</li>
                                     </ol>
                                 </div>
                             </div>
@@ -410,10 +410,10 @@ const PhoneAppPage = () => {
                         {activeTab === 'wifi' && (
                             <div className="space-y-3 text-left">
                                 <h3 className="text-base font-bold text-slate-100 font-khmer flex items-center gap-2">
-                                    <FaWifi className="text-emerald-400" /> ភ្ជាប់តាមរយៈបណ្តាញ Local Wi-Fi Network
+                                    <FaWifi className="text-emerald-400" /> {t('localWifiConnect')}
                                 </h3>
                                 <p className="text-xs text-slate-300 font-khmer">
-                                    ប្រាកដថា Computer និង Phone របស់អ្នកស្ថិតក្នុងបណ្តាញ Wi-Fi តែមួយ៖
+                                    Ensure Computer and Phone are on the same Wi-Fi network:
                                 </p>
                                 <div className="p-3 bg-slate-900 border border-slate-800 rounded-[5px] space-y-2 font-mono text-xs">
                                     <div className="flex justify-between"><span className="text-slate-400">Server Host IP:</span><span className="text-indigo-400 font-bold">192.168.1.100</span></div>
@@ -426,10 +426,10 @@ const PhoneAppPage = () => {
                         {activeTab === 'hotspot' && (
                             <div className="space-y-3 text-left">
                                 <h3 className="text-base font-bold text-slate-100 font-khmer flex items-center gap-2">
-                                    <FaBroadcastTower className="text-amber-400" /> ភ្ជាប់តាមរយៈ Mobile Hotspot
+                                    <FaBroadcastTower className="text-amber-400" /> {t('mobileHotspotConnect')}
                                 </h3>
                                 <p className="text-xs text-slate-300 font-khmer">
-                                    បើក Mobile Hotspot លើទូរស័ព្ទដៃ រួចភ្ជាប់ Computer ទៅកាន់ Hotspot នោះ៖
+                                    Turn on Mobile Hotspot on phone and connect computer to it:
                                 </p>
                                 <div className="p-3 bg-slate-900 border border-slate-800 rounded-[5px] space-y-2 font-mono text-xs">
                                     <div className="flex justify-between"><span className="text-slate-400">Hotspot AP Name:</span><span className="text-amber-400 font-bold">SYSTEM_MDM_AP</span></div>
@@ -459,10 +459,10 @@ const PhoneAppPage = () => {
                             <div className="p-4 bg-amber-950/70 border border-amber-700/80 rounded-[5px] flex items-start gap-3 animate-pulse">
                                 <FaExclamationTriangle className="text-amber-400 text-xl flex-shrink-0 mt-0.5" />
                                 <div>
-                                    <p className="text-xs font-bold text-amber-300 font-khmer">⏳ Device ស្នើសុំភ្ជាប់ — រង់ចាំការអនុម័តពីអ្នក!</p>
+                                    <p className="text-xs font-bold text-amber-300 font-khmer">⏳ {t('deviceAwaitingApproval')}</p>
                                     <p className="text-[11px] text-amber-400/90 font-khmer mt-0.5">
                                         <strong>{deviceData?.model || 'Unknown Device'}</strong> (ID: {deviceData?.id}) កំពុងស្នើសុំភ្ជាប់។
-                                        សូមចុចប៊ូតុង <strong className="text-white">"✅ Connect Device (អនុម័ត)"</strong> ខាងលើ ដើម្បីអនុញ្ញាតឱ្យភ្ជាប់!
+                                        សូមចុចប៊ូតុង <strong className="text-white">"✅ {t('connectDevice')}"</strong> ខាងលើ ដើម្បីអនុញ្ញាតឱ្យភ្ជាប់!
                                     </p>
                                 </div>
                             </div>
@@ -542,7 +542,7 @@ const PhoneAppPage = () => {
                                 <span>3D Interactive Device Model</span>
                             </h3>
                             <p className="text-[10px] text-slate-400 font-khmer">
-                                ចាប់ទាញម៉ៅ (Mouse Drag) ដើម្បីបង្វិលរូប 3D ទូរស័ព្ទ 360°
+                                {t('drag3dPhone')}
                             </p>
                         </div>
                         <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-700 text-emerald-400 text-[9px] font-bold rounded-full">

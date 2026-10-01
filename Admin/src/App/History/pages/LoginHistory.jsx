@@ -225,7 +225,7 @@ const LoginHistory = () => {
                 <div className='flex items-center gap-3.5'>
                     <div>
                         <div className='flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wider'>
-                            <span>{t('nextAutoSend') || 'ថ្ងៃដែលនៅសល់ត្រូវផ្ញើទៅ Telegram Bot ម្តងទៀត៖'}</span>
+                            <span>{t('nextAutoSend')}</span>
                         </div>
                     </div>
                 </div>
@@ -268,7 +268,7 @@ const LoginHistory = () => {
                         ) : (
                             <>
                                 <FaTelegramPlane size={14} />
-                                <span>{t('sendToBot') || 'ផ្ញើទៅ Telegram Bot'}</span>
+                                <span>{t('sendToBot')}</span>
                             </>
                         )}
                     </button>

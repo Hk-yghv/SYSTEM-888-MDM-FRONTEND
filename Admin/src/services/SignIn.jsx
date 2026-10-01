@@ -218,7 +218,7 @@ const SignIn = () => {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-gray-300 mb-2">Password តង់ទី២ (2FA Second Password)</label>
+                            <label className="block text-xs font-semibold text-gray-300 mb-2">{t('secondPassword2FA')}</label>
                             <div className="relative flex items-center">
                                 <FaLock className="absolute left-4 text-indigo-400 text-sm" />
                                 <input

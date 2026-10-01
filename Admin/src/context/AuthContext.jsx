@@ -284,7 +284,7 @@ export const AuthProvider = ({ children }) => {
                         </div>
 
                         <p className="text-[11px] text-gray-600 animate-pulse">
-                            កំពុងបិទ session... Signing out automatically...
+                            Signing out automatically...
                         </p>
                     </div>
                 </div>

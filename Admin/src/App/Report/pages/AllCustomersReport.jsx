@@ -229,7 +229,7 @@ const AllCustomersReport = () => {
         }));
 
         const grandTotal = rows.reduce((acc, r) => ({
-            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            brand: 'SUMMARY TOTAL',
             isTotalRow: true,
             totalCustomers: acc.totalCustomers + r.totalCustomers,
             totalLoan: acc.totalLoan + r.totalLoan,
@@ -243,7 +243,7 @@ const AllCustomersReport = () => {
             lockedPhoneCount: acc.lockedPhoneCount + r.lockedPhoneCount,
             lockedWallpaperCount: acc.lockedWallpaperCount + r.lockedWallpaperCount
         }), {
-            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            brand: 'SUMMARY TOTAL',
             isTotalRow: true,
             totalCustomers: 0,
             totalLoan: 0,
@@ -329,13 +329,13 @@ const AllCustomersReport = () => {
                             <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                             {/* PDF Orientation Toggle */}
                             <div className="flex items-center rounded-[5px] border border-slate-300 overflow-hidden shadow-xs">
-                                <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
+                                <button onClick={() => setPdfOrientation('portrait')} title={t('portrait')}
                                     className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                                    <span>📄</span><span className="hidden sm:inline">Portrait</span>
+                                    <span>📄</span><span className="hidden sm:inline">{t('portrait')}</span>
                                 </button>
-                                <button onClick={() => setPdfOrientation('landscape')} title="Landscape (ផ្តេក)"
+                                <button onClick={() => setPdfOrientation('landscape')} title={t('landscape')}
                                     className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer border-l border-slate-300 ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                                    <span>🖼</span><span className="hidden sm:inline">Landscape</span>
+                                    <span>🖼</span><span className="hidden sm:inline">{t('landscape')}</span>
                                 </button>
                             </div>
 
@@ -425,11 +425,11 @@ const AllCustomersReport = () => {
 
                     {/* Line Chart Component */}
                     <LineChart
-                        title="ក្រាបខ្សែនិន្នាការអតិថិជន & ទឹកប្រាក់សរុប (Customer & Financial Line Chart)"
+                        title={t('customerFinancialChart')}
                         subtitle="បង្ហាញពីកំណើនចំនួនអតិថិជន ទឹកប្រាក់ឥណទាន និងទឹកប្រាក់ទទួលបានប្រចាំថ្ងៃ/ខែ"
                         data={chartTrendData}
                         series={[
-                            { key: 'customerCount', label: 'ចំនួនអតិថិជន (Customers)', color: '#6366f1', isCurrency: false },
+                            { key: 'customerCount', label: 'Customers', color: '#6366f1', isCurrency: false },
                             { key: 'loanAmount', label: 'ទឹកប្រាក់ឥណទាន ($)', color: '#3b82f6', isCurrency: true },
                             { key: 'paidAmount', label: 'ទឹកប្រាក់ទទួលបាន ($)', color: '#10b981', isCurrency: true }
                         ]}
@@ -440,7 +440,7 @@ const AllCustomersReport = () => {
                         <div className="p-5 bg-white rounded-[5px] border border-slate-200 shadow-xs space-y-4">
                             <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                                 <MdPieChart className="text-indigo-600 text-lg" />
-                                <span>Brand Distribution Overview (ក្រាបបែងចែកតាម Brand)</span>
+                                <span>{t('brandDistChart')}</span>
                             </h3>
                             <div className="h-56 w-full bg-slate-50 rounded-[5px] p-4 border border-slate-200 flex items-end justify-around gap-4">
                                 {summaryBreakdown.rows.map((r, idx) => {
@@ -617,7 +617,7 @@ const AllCustomersReport = () => {
                     <div className="border-b border-slate-200 pb-2">
                         <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                             <MdTableChart className="text-indigo-600 text-xl" />
-                            <span>តារាងសរុបអតិថិជន និងទឹកប្រាក់តាម Brand (All Customers Master Summary Table)</span>
+                            <span>{t('summaryTable')}</span>
                         </h3>
                         <p className="text-xs text-slate-500 font-medium">
                             ព័ត៌មានសរុបអតិថិជន ទឹកប្រាក់កម្ចី ទឹកប្រាក់បានបង់ ទឹកប្រាក់នៅសល់ និងចំនួនឧបករណ៍ចាក់សោរ

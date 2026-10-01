@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { FaCalendarAlt, FaChevronDown } from 'react-icons/fa';
+import { useLanguage } from '../context/LanguageContext';
 
 const DateRangeDropdown = ({
     from = '',
     to = '',
     onApplyRange,
     onClear,
-    label = 'កាលបរិច្ឆេទ',
+    label,
 }) => {
+    const { t } = useLanguage();
+    const defaultLabel = label || t('date');
     const [open, setOpen] = useState(false);
     const [draftFrom, setDraftFrom] = useState(from);
     const [draftTo, setDraftTo] = useState(to);
@@ -38,7 +41,7 @@ const DateRangeDropdown = ({
 
     const hasRange = Boolean(from || to);
     const invalidRange = Boolean(draftFrom && draftTo && draftFrom > draftTo);
-    const buttonLabel = from && to ? `${from} - ${to}` : from ? `ពី ${from}` : to ? `ដល់ ${to}` : label;
+    const buttonLabel = from && to ? `${from} - ${to}` : from ? `${t('fromDate')} ${from}` : to ? `${t('toDate')} ${to}` : defaultLabel;
 
     const clearRange = () => {
         onApplyRange('', '');
@@ -63,12 +66,12 @@ const DateRangeDropdown = ({
             {open && (
                 <div
                     role="dialog"
-                    aria-label={label}
+                    aria-label={defaultLabel}
                     className="absolute right-0 top-full z-50 mt-2 w-72 rounded-[5px] border border-slate-200 bg-white p-3 shadow-xl"
                 >
                     <div className="grid grid-cols-2 gap-2">
                         <label className="flex min-w-0 flex-col gap-1 text-[11px] font-semibold text-slate-600">
-                            ចាប់ពី
+                            {t('fromDate')}
                             <input
                                 type="date"
                                 value={draftFrom}
@@ -77,7 +80,7 @@ const DateRangeDropdown = ({
                             />
                         </label>
                         <label className="flex min-w-0 flex-col gap-1 text-[11px] font-semibold text-slate-600">
-                            ដល់
+                            {t('toDate')}
                             <input
                                 type="date"
                                 value={draftTo}
@@ -86,14 +89,14 @@ const DateRangeDropdown = ({
                             />
                         </label>
                     </div>
-                    {invalidRange && <p className="mt-2 text-[11px] text-rose-600">ថ្ងៃចាប់ផ្តើមត្រូវមុន ឬស្មើថ្ងៃបញ្ចប់។</p>}
+                    {invalidRange && <p className="mt-2 text-[11px] text-rose-600">{t('fromDate')} &le; {t('toDate')}</p>}
                     <div className="mt-3 flex items-center justify-between gap-2">
                         <button
                             type="button"
                             onClick={clearRange}
                             className="rounded-[5px] px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
                         >
-                            សម្អាត
+                            {t('clear')}
                         </button>
                         <button
                             type="button"
@@ -104,7 +107,7 @@ const DateRangeDropdown = ({
                             }}
                             className="rounded-[5px] bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            អនុវត្ត
+                            {t('apply')}
                         </button>
                     </div>
                 </div>
@@ -113,4 +116,4 @@ const DateRangeDropdown = ({
     );
 };
 
-export default DateRangeDropdown;
+export default DateRangeDropdown;

@@ -17,22 +17,22 @@ const IDCard3DViewer = ({ customer }) => {
             <div className="w-full space-y-2 text-xs font-khmer">
                     <div className="grid grid-cols-2 gap-2">
                         <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800">
-                            <span className="text-[9px] text-slate-400 block">ឈ្មោះ អង់គ្លេស</span>
+                            <span className="text-[9px] text-slate-400 block">{t('englishName')}</span>
                             <span className="font-bold text-black text-xs">{customer.customerNameEn || '—'}</span>
                         </div>
                         <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800">
-                            <span className="text-[9px] text-slate-400 block">ឈ្មោះ ខ្មែរ</span>
+                            <span className="text-[9px] text-slate-400 block">{t('khmerName')}</span>
                             <span className="font-bold text-indigo-300 text-xs">{customer.customerNameKh || '—'}</span>
                         </div>
                     </div>
 
                     <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800 flex items-center justify-between">
                         <div>
-                            <span className="text-[9px] text-slate-400 block">លេខអត្តសញ្ញាណប័ណ្ណ (ID Card No)</span>
+                            <span className="text-[9px] text-slate-400 block">{t('idCardNo')}</span>
                             <span className="font-mono font-bold text-emerald-400 text-xs">{customer.idCardNumber || '—'}</span>
                         </div>
                         <div className="text-right">
-                            <span className="text-[9px] text-slate-400 block">ថ្ងៃខែឆ្នាំកំណើត (DOB)</span>
+                            <span className="text-[9px] text-slate-400 block">{t('dob')}</span>
                             <span className="font-bold text-black text-xs">{customer.dob || '—'}</span>
                         </div>
                     </div>

@@ -14,8 +14,8 @@ import { FaChartLine } from 'react-icons/fa';
  * - height: Height in pixels (default 260)
  */
 const LineChart = ({
-    title = 'ក្រាបខ្សែនិន្នាការ (Trend Line Chart)',
-    subtitle = 'បង្ហាញពីការប្រែប្រួលតាមពេលវេលា',
+    title = '',
+    subtitle = '',
     data = [],
     series = [{ key: 'count', label: 'ចំនួនសរុប', color: '#6366f1', isCurrency: false }],
     timeFilterOptions = ['7d', '30d', 'monthly', 'all'],
@@ -179,7 +179,7 @@ const LineChart = ({
                                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                                         }`}
                                 >
-                                    {opt === '7d' ? '7 ថ្ងៃ' : opt === '30d' ? '30 ថ្ងៃ' : opt === 'monthly' ? 'ប្រចាំខែ' : 'ទាំងអស់'}
+                                    {opt === '7d' ? (t('sevenDays') || '7d') : opt === '30d' ? (t('thirtyDays') || '30d') : opt === 'monthly' ? (t('monthly') || 'Monthly') : (t('allRange') || 'All')}
                                 </button>
                             ))}
                         </div>
@@ -190,7 +190,7 @@ const LineChart = ({
             {/* SVG Chart Container */}
             {pointsData.length === 0 ? (
                 <div className="w-full h-48 flex items-center justify-center bg-slate-50/50 rounded-[5px] border border-dashed border-slate-200 text-slate-400 text-xs font-bold">
-                    ពុំមានទិន្នន័យសម្រាប់បង្ហាញ (No chart data available)
+                    {t('noChartData')}
                 </div>
             ) : (
                 <div className="relative w-full overflow-visible bg-slate-50/40 rounded-[5px] border border-slate-100 p-2">

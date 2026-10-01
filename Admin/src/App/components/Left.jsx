@@ -115,7 +115,7 @@ const Left = ({ isOpen = false, onClose }) => {
             {hasPermission(json.calendar || '/calendar', 'read') && (
                 <Link to={json.calendar || '/calendar'} className={navItemClass(json.calendar || '/calendar')}>
                     <FaCalendarAlt size={18} className={isActive(json.calendar || '/calendar') ? "text-white" : "text-emerald-600"} />
-                    ប្រតិទិនខ្មែរ
+                    {t('khmerCalendar')}
                 </Link>
             )}
 
@@ -134,12 +134,12 @@ const Left = ({ isOpen = false, onClose }) => {
                         <div className={`overflow-hidden transition-all duration-300 ${openMenu === "calculate" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.calculate?.calculateSchedule1 || '/calculate/schedule-1', 'read') && (
                                 <Link to={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'} className={subItemClass(json.calculate?.calculateSchedule1 || '/calculate/schedule-1')}>
-                                    {t('calculateSchedule1') || 'Schedule 1 — គណនាការប្រាក់'}
+                                    {t('calculateSchedule1')}
                                 </Link>
                             )}
                             {hasPermission(json.calculate?.calculateSchedule2 || '/calculate/schedule-2', 'read') && (
                                 <Link to={json.calculate?.calculateSchedule2 || '/calculate/schedule-2'} className={subItemClass(json.calculate?.calculateSchedule2 || '/calculate/schedule-2')}>
-                                    {t('Calculate Schedule 2') || 'Schedule 2 — កាលវិភាគបញ្ចាំ'}
+                                    {t('calculateSchedule2')}
                                 </Link>
                             )}
                         </div>
@@ -175,10 +175,10 @@ const Left = ({ isOpen = false, onClose }) => {
                                 <Link to={json.installment.installmentPage} className={subItemClass(json.installment.installmentPage)}>{t('installment')}</Link>
                             )}
                             {hasPermission(json.installment.installmentPad, 'read') && (
-                                <Link to={json.installment.installmentPad} className={subItemClass(json.installment.installmentPad)}>Installment Pad</Link>
+                                <Link to={json.installment.installmentPad} className={subItemClass(json.installment.installmentPad)}>{t('installmentPad')}</Link>
                             )}
                             {hasPermission(json.installment.installmentHistory, 'read') && (
-                                <Link to={json.installment.installmentHistory} className={subItemClass(json.installment.installmentHistory)}>Installment History</Link>
+                                <Link to={json.installment.installmentHistory} className={subItemClass(json.installment.installmentHistory)}>{t('installmentHistory')}</Link>
                             )}
                             {hasPermission(json.installment.overdue, 'read') && (
                                 <Link to={json.installment.overdue} className={subItemClass(json.installment.overdue)}>{t('overdueCustomers')}</Link>

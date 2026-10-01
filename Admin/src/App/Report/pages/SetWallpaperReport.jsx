@@ -178,12 +178,12 @@ const SetWallpaperReport = () => {
         }));
 
         const grandTotal = rows.reduce((acc, r) => ({
-            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            brand: 'SUMMARY TOTAL',
             isTotalRow: true,
             totalWallpaperActions: acc.totalWallpaperActions + r.totalWallpaperActions,
             uniqueCustomersCount: acc.uniqueCustomersCount + r.uniqueCustomersCount
         }), {
-            brand: 'SUMMARY TOTAL (គ្រប់ Brand)',
+            brand: 'SUMMARY TOTAL',
             isTotalRow: true,
             totalWallpaperActions: 0,
             uniqueCustomersCount: 0
@@ -229,13 +229,13 @@ const SetWallpaperReport = () => {
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                     {/* PDF Orientation Toggle */}
                     <div className="flex items-center rounded-[5px] border border-slate-300 overflow-hidden shadow-xs">
-                        <button onClick={() => setPdfOrientation('portrait')} title="Portrait (បញ្ឈរ)"
+                        <button onClick={() => setPdfOrientation('portrait')} title={t('portrait')}
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${pdfOrientation === 'portrait' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>📄</span><span className="hidden sm:inline">Portrait</span>
+                            <span>📄</span><span className="hidden sm:inline">{t('portrait')}</span>
                         </button>
-                        <button onClick={() => setPdfOrientation('landscape')} title="Landscape (ផ្តេក)"
+                        <button onClick={() => setPdfOrientation('landscape')} title={t('landscape')}
                             className={`px-2.5 py-2 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer border-l border-slate-300 ${pdfOrientation === 'landscape' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>
-                            <span>🖼</span><span className="hidden sm:inline">Landscape</span>
+                            <span>🖼</span><span className="hidden sm:inline">{t('landscape')}</span>
                         </button>
                     </div>
                     
@@ -281,18 +281,18 @@ const SetWallpaperReport = () => {
 
                     {/* Line Chart Component */}
                     <LineChart
-                        title="ក្រាបខ្សែនិន្នាការត័រសឺត Wallpaper (Set Wallpaper Trend Line Chart)"
+                        title={t('setWallpaperTrendChart')}
                         subtitle="បង្ហាញពីការកើនឡើងចំនួនប្រតិបត្តិការត័រ Wallpaper ប្រចាំថ្ងៃ/ខែ"
                         data={chartTrendData}
                         series={[
-                            { key: 'wallpaperCount', label: 'Set Wallpaper (ចំនួន)', color: '#a855f7', isCurrency: false }
+                            { key: 'wallpaperCount', label: 'Set Wallpaper', color: '#a855f7', isCurrency: false }
                         ]}
                     />
 
                     <div className="p-5 bg-white rounded-[5px] border border-slate-200 shadow-xs space-y-4">
                         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                             <MdPieChart className="text-purple-600 text-lg" />
-                            <span>Set Wallpaper Actions Breakdown by Brand (ក្រាបប្រតិបត្តិការដូរ Wallpaper តាម Brand)</span>
+                            <span>{t('setWallpaperByBrand')}</span>
                         </h3>
                         <div className="h-56 w-full bg-slate-50 rounded-[5px] p-4 border border-slate-200 flex items-end justify-around gap-4">
                             {summaryBreakdown.rows.map((r) => {
@@ -352,7 +352,7 @@ const SetWallpaperReport = () => {
                     <div className="border-b border-slate-200 pb-2">
                         <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                             <MdTableChart className="text-purple-600 text-xl" />
-                            <span>តារាងសរុបប្រវត្តិដូរ Wallpaper តាម Brand (Set Wallpaper Master Summary Table)</span>
+                            <span>{t('summaryTable')}</span>
                         </h3>
                     </div>
                     <div className='w-full overflow-x-auto rounded-[5px] border border-slate-200 table-container'>

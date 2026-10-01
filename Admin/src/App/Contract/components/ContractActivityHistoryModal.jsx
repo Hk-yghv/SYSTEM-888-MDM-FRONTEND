@@ -40,7 +40,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
             date: new Date(contract.inputDate || contract.createdAt),
             type: 'create',
             icon: <FaFileAlt className="text-emerald-500" />,
-            title: 'Application Created (បង្កើតកិច្ចសន្យា)',
+            title: t('appCreated'),
             description: `Contract ID: ${contract.contractId} created for ${contract.customerNameEn || contract.customerNameKh}`,
             badge: 'Application',
             badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-300'
@@ -53,7 +53,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
             date: new Date(contract.activatedAt || contract.inputDate || contract.createdAt),
             type: 'activate',
             icon: <FaCheckCircle className="text-purple-500" />,
-            title: 'Contract Activated (ធ្វើឱ្យកិច្ចសន្យាសកម្ម)',
+            title: t('contractActivated'),
             description: `Device model: ${contract.model || '—'} (${contract.serialNumber || '—'}) enrolled in active installment`,
             badge: 'Activated',
             badgeColor: 'bg-purple-50 text-purple-700 border-purple-300'
@@ -105,7 +105,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
             date: new Date(contract.updatedAt || contract.createdAt || Date.now()),
             type: 'comment',
             icon: <FaCommentDots className="text-cyan-500" />,
-            title: 'Internal Staff Comment (កំណត់ចំណាំ)',
+            title: t('staffComment'),
             description: contract.notes || contract.comments,
             badge: 'Note',
             badgeColor: 'bg-cyan-50 text-cyan-700 border-cyan-300'
@@ -143,7 +143,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
                         </div>
                         <div>
                             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                                Activity History (ប្រវត្តិសកម្មភាពអតិថិជន)
+                                {t('activityHistory')}
                             </h3>
                             <p className="text-xs text-slate-500 font-mono">
                                 Contract: <span className="font-bold text-indigo-600">{contract.contractId || '—'}</span> &bull; {contract.customerNameEn} ({contract.customerNameKh || '—'})

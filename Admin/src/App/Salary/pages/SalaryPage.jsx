@@ -37,8 +37,8 @@ import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 const KHMER_DAYS = ['ថ្ងៃអាទិត្យ', 'ថ្ងៃចន្ទ', 'ថ្ងៃអង្គារ', 'ថ្ងៃពុធ', 'ថ្ងៃព្រហស្បតិ៍', 'ថ្ងៃសុក្រ', 'ថ្ងៃសៅរ៍'];
 const KHMER_MONTH_NAMES = [
-    'មករា (Jan)', 'កុម្ភៈ (Feb)', 'មីនា (Mar)', 'មេសា (Apr)', 'ឧសភា (May)', 'មិថុនា (Jun)',
-    'កក្កដា (Jul)', 'សីហា (Aug)', 'កញ្ញា (Sep)', 'តុលា (Oct)', 'វិច្ឆិកា (Nov)', 'ធ្នូ (Dec)'
+    t('jan'), t('feb'), t('mar'), t('apr'), t('may'), t('jun'),
+    t('jul'), t('aug'), t('sep'), t('oct'), t('nov'), t('dec')
 ];
 
 const getKhmerDateDetails = (dateStr) => {
@@ -611,15 +611,15 @@ const SalaryPage = () => {
         const allData = await fetchAllForExport();
         const data = allData.map((item, idx) => ({
             'No': idx + 1,
-            'Date (កាលបរិច្ឆេទ)': item.date || '',
-            'Staff Name Kh (ឈ្មោះខ្មែរ)': item.staffNameKh || '',
-            'Staff Name En (ឈ្មោះអង់គ្លេស)': item.staffNameEn || item.staffName || '',
-            'Join Date (ថ្ងៃខែឆ្នាំចូលបម្រើការងារ)': item.joinDate || '',
+            [t('date')]: item.date || '',
+            [t('staffNameKh')]: item.staffNameKh || '',
+            [t('staffNameEn')]: item.staffNameEn || item.staffName || '',
+            [t('joinDate')]: item.joinDate || '',
             'Amount ($) (ចំនួនទឹកប្រាក់)': item.amount || 0,
-            'Category (ប្រភេទ)': item.category || 'Basic Salary',
-            'Payment Method (វិធីសាស្ត្រទូទាត់)': item.paymentMethod || 'ABA Bank',
-            'Notes (កំណត់ចំណាំ)': item.note || '',
-            'Created By (បញ្ចូលដោយ)': item.createdBy || ''
+            [t('category')]: item.category || 'Basic Salary',
+            [t('paymentMethod')]: item.paymentMethod || 'ABA Bank',
+            [t('note')]: item.note || '',
+            [t('createdBy')]: item.createdBy || ''
         }));
         exportToExcel(data, `Salary_Report_${selectedStaff ? selectedStaff.staffName : 'All'}`);
     };
@@ -671,7 +671,7 @@ const SalaryPage = () => {
                     <div>
                         <div>
                             <h1 className="text-base sm:text-lg font-black text-[var(--app-text,#0f172a)] flex items-center gap-2">
-                                <span>ផ្ទាំងជ្រើសរើសបុគ្គលិកដើម្បីពិនិត្យប្រាក់ខែ (Staff Salary Directory)</span>
+                                <span>{t('staffSalaryDirectory')}</span>
                             </h1>
                         </div>
                     </div>
@@ -683,7 +683,7 @@ const SalaryPage = () => {
                                 className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/30 transition-all active:scale-95"
                             >
                                 <FaPlus />
-                                <span>បញ្ចូលប្រាក់ខែថ្មី (Create Entry)</span>
+                                <span>{t('createEntry')}</span>
                             </button>
                         )}
                     </div>
@@ -693,7 +693,7 @@ const SalaryPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                     <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                         <div>
-                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">បុគ្គលិកសរុប (Total Staff)</p>
+                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('totalStaff')}</p>
                             <h3 className="text-2xl font-black text-slate-800 dark:text-white font-khmer mt-1">
                                 {salaryOnlyStaff.length} នាក់
                             </h3>
@@ -706,7 +706,7 @@ const SalaryPage = () => {
 
                     <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                         <div>
-                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ទឹកប្រាក់បើកសរុប (Total Disbursed)</p>
+                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('totalDisbursed')}</p>
                             <h3 className="text-2xl font-black text-emerald-600 font-mono mt-1">
                                 ${totalDisbursedAll.toLocaleString()}
                             </h3>
@@ -719,7 +719,7 @@ const SalaryPage = () => {
 
                     <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                         <div>
-                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">កំណត់ត្រាប្រាក់ខែសរុប (Total Records)</p>
+                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('totalRecords')}</p>
                             <h3 className="text-2xl font-black text-cyan-600 font-mono mt-1">
                                 {totalRecordsAll} លើក
                             </h3>
@@ -739,7 +739,7 @@ const SalaryPage = () => {
                             type="text"
                             value={staffSearchTerm}
                             onChange={(e) => setStaffSearchTerm(e.target.value)}
-                            placeholder="ស្វែងរកឈ្មោះបុគ្គលិក (ខ្មែរ / English), username, role, ឬសាខា..."
+                            placeholder={t('searchPlaceholder')}
                             className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[5px] outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)] font-medium"
                         />
                     </div>
@@ -904,7 +904,7 @@ const SalaryPage = () => {
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-[5px] text-xs font-bold cursor-pointer transition border border-white/20 active:scale-95"
                         >
                             <FaArrowLeft />
-                            <span>បញ្ជីបុគ្គលិកទាំងអស់ (All Staff)</span>
+                            <span>{t('allStaff')}</span>
                         </button>
                         <div className="h-6 w-px bg-white/20 hidden sm:block"></div>
                         <div>
@@ -942,7 +942,7 @@ const SalaryPage = () => {
                 <div>
                     <div>
                         <h1 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
-                            <span>គ្រប់គ្រងប្រាក់ខែ (Salary Management)</span>
+                            <span>{t('salaryManagement')}</span>
                         </h1>
                     </div>
                 </div>
@@ -954,14 +954,14 @@ const SalaryPage = () => {
                             type="button"
                             onClick={() => setPreviewImage({
                                 url: savedQrCodePhoto,
-                                title: `រូបភាព QR Code របស់យើង (Our QR Code) - ${savedStaffNameKh || savedStaffNameEn || 'Staff'}`,
+                                title: `QR Code - ${savedStaffNameKh || savedStaffNameEn || 'Staff'}`,
                                 filename: `Salary_QRCode_${(savedStaffNameKh || savedStaffNameEn || 'Staff').replace(/\s+/g, '_')}.png`
                             })}
                             className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs active:scale-95"
-                            title="ចុចដើម្បីបើកមើល QR Code របស់យើង និងទាញយក"
+                            title={t('viewQrCode')}
                         >
                             <FaQrcode className="text-white text-sm" />
-                            <span>មើល QR Code របស់យើង</span>
+                            <span>{t('viewQrCode')}</span>
                         </button>
                     )}
                     {hasPermission('/salary', 'export') && (
@@ -995,7 +995,7 @@ const SalaryPage = () => {
                                 )}
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-900/60 dark:text-emerald-200">
                                     <FaCheckCircle className="text-emerald-600 dark:text-emerald-400" />
-                                    <span>បានរក្សាទុក (Saved)</span>
+                                    <span>{t('saved')}</span>
                                 </span>
                             </div>
                             <h2 className="text-sm font-black text-slate-900 dark:text-white mt-0.5 flex items-center gap-2 flex-wrap font-mono">
@@ -1014,24 +1014,24 @@ const SalaryPage = () => {
                                 type="button"
                                 onClick={() => setPreviewImage({
                                     url: savedQrCodePhoto,
-                                    title: `រូបភាព QR Code របស់យើង (Our QR Code) - ${savedStaffNameKh || savedStaffNameEn || 'Staff'}`,
+                                    title: `QR Code - ${savedStaffNameKh || savedStaffNameEn || 'Staff'}`,
                                     filename: `Salary_QRCode_${(savedStaffNameKh || savedStaffNameEn || 'Staff').replace(/\s+/g, '_')}.png`
                                 })}
                                 className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/30 active:scale-95"
-                                title="ចុចដើម្បីបើកមើល QR Code របស់យើង និងទាញយក (View & Download QR Code)"
+                                title={t('viewQrCode')}
                             >
                                 <FaQrcode className="text-sm" />
-                                <span>មើល QR Code របស់យើង</span>
+                                <span>{t('viewQrCode')}</span>
                             </button>
                         ) : (
                             <button
                                 type="button"
                                 onClick={handleEditDate}
                                 className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-700 dark:text-emerald-200 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
-                                title="បញ្ចូលរូបភាព QR Code ទទួលប្រាក់"
+                                title={t('qrCode')}
                             >
                                 <FaQrcode className="text-emerald-600" />
-                                <span>+ បញ្ចូល QR Code</span>
+                                <span>+ QR Code</span>
                             </button>
                         )}
 
@@ -1051,7 +1051,7 @@ const SalaryPage = () => {
                                 className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-[5px] text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all active:scale-95 animate-in fade-in"
                             >
                                 <FaPlus />
-                                <span>បញ្ចូលប្រាក់ខែ (Create Salary)</span>
+                                <span>{t('salary')}</span>
                             </button>
                         )}
                     </div>
@@ -1096,7 +1096,7 @@ const SalaryPage = () => {
                                 type="text"
                                 value={tempNameEn}
                                 onChange={(e) => setTempNameEn(e.target.value)}
-                                placeholder="ឈ្មោះជាភាសាអង់គ្លេស (English Name)..."
+                                placeholder={t('staffNameEn')}
                                 className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 outline-none w-full"
                             />
                         </div>
@@ -1220,7 +1220,7 @@ const SalaryPage = () => {
                                     type="button"
                                     onClick={() => setTempQrCodePhoto('')}
                                     className="text-rose-500 hover:text-rose-700 text-xs p-1"
-                                    title="លុបរូប QR"
+                                    title={t('delete')}
                                 >
                                     <FaTimes />
                                 </button>
@@ -1236,7 +1236,7 @@ const SalaryPage = () => {
                             className="flex items-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/30 transition-all active:scale-95"
                         >
                             <FaSave />
-                            <span>រក្សាទុក (Save Info & QR)</span>
+                            <span>{t('saveInfoAndQr')}</span>
                         </button>
 
                         {savedJoinDate && (
@@ -1257,7 +1257,7 @@ const SalaryPage = () => {
                 {/* Grand Total */}
                 <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                     <div>
-                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">សរុបប្រាក់ខែ (Total Salary)</p>
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('total')}</p>
                         <h3 className="text-xl font-black text-emerald-600 font-mono mt-1">
                             ${Number(stats.grandTotal || totalAmount || 0).toLocaleString()}
                         </h3>
@@ -1271,7 +1271,7 @@ const SalaryPage = () => {
                 {/* This Month */}
                 <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                     <div>
-                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ប្រាក់ខែខែនេះ (This Month)</p>
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ប្រាក់ខែ{t('thisMonth')}</p>
                         <h3 className="text-xl font-black text-cyan-600 font-mono mt-1">
                             ${Number(stats.currentMonthTotal || 0).toLocaleString()}
                         </h3>
@@ -1285,7 +1285,7 @@ const SalaryPage = () => {
                 {/* Total Transactions */}
                 <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                     <div>
-                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ចំនួនកំណត់ត្រាសរុប (Total Records)</p>
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('totalRecords')}</p>
                         <h3 className="text-xl font-black text-indigo-600 font-mono mt-1">
                             {stats.totalRecords || total}
                         </h3>
@@ -1299,7 +1299,7 @@ const SalaryPage = () => {
                 {/* Monthly Average */}
                 <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
                     <div>
-                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">មធ្យមភាគប្រចាំខែ (Avg / Month)</p>
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('monthlyEstCol')}</p>
                         <h3 className="text-xl font-black text-amber-600 font-mono mt-1">
                             ${(() => {
                                 const mCount = (stats.monthlyStats && stats.monthlyStats.length) || 1;
@@ -1319,7 +1319,7 @@ const SalaryPage = () => {
             <SalaryBarChart
                 data={stats.monthlyStats || []}
                 grandTotal={stats.grandTotal || 0}
-                title="ក្រាបសសរបង្ហាញប្រាក់ខែតាមខែនីមួយៗ (Monthly Salary Bar Chart)"
+                title={t('monthlySalaryBarChart')}
                 subtitle="ក្រាបស្ថិតិសរុបប្រាក់ខែប្រចាំខែដើម្បីពិនិត្យនិន្នាការនៃការចំណាយ"
             />
 
@@ -1367,7 +1367,7 @@ const SalaryPage = () => {
                             onChange={(e) => { setSelectedPaymentMethod(e.target.value); setCurrentPage(1); }}
                             className="px-2 py-1 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-[var(--app-text,#0f172a)]"
                         >
-                            <option value="">ទាំងអស់ (All Methods)</option>
+                            <option value="">{t('allMethods')}</option>
                             <option value="ABA Bank">ABA Bank</option>
                             <option value="Wing">Wing</option>
                             <option value="ACLEDA">ACLEDA</option>
@@ -1393,14 +1393,14 @@ const SalaryPage = () => {
                     <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-[var(--app-border,#e2e8f0)]">
                         <tr>
                             <th className="px-4 py-1 text-center">No</th>
-                            <th className="px-4 py-1">កាលបរិច្ឆេទ (Date)</th>
-                            <th className="px-4 py-1">ឈ្មោះបុគ្គលិក (Staff Name)</th>
+                            <th className="px-4 py-1">{t('date')}</th>
+                            <th className="px-4 py-1">{t('staff')}</th>
                             <th className="px-4 py-1">ថ្ងៃចូលបម្រើ</th>
-                            <th className="px-4 py-1 text-right">ចំនួនទឹកប្រាក់ (Amount)</th>
+                            <th className="px-4 py-1 text-right">{t('amount')}</th>
                             <th className="px-4 py-1 text-center">វិធីសាស្ត្រទូទាត់</th>
-                            <th className="px-4 py-1">ប្រភេទ (Category)</th>
+                            <th className="px-4 py-1">{t('category')}</th>
                             <th className="px-4 py-1 text-center">រូបភាពភស្តុតាង</th>
-                            <th className="px-4 py-1">កំណត់ចំណាំ (Note)</th>
+                            <th className="px-4 py-1">{t('note')}</th>
                             <th className="px-4 py-1">បញ្ចូលដោយ</th>
                             <th className="px-4 py-1 text-center">Actions</th>
                         </tr>
@@ -1462,11 +1462,11 @@ const SalaryPage = () => {
                                                 type="button"
                                                 onClick={() => setPreviewImage({
                                                     url: item.proofPhoto,
-                                                    title: `រូបភាពភស្តុតាងវិក្កយបត្រ (Salary Evidence Photo) - ${item.staffNameKh || item.staffNameEn || 'Staff'}`,
+                                                    title: `Evidence Photo - ${item.staffNameKh || item.staffNameEn || 'Staff'}`,
                                                     filename: `Salary_Receipt_${(item.staffNameKh || item.staffNameEn || 'Staff').replace(/\s+/g, '_')}_${item.date || 'date'}.png`
                                                 })}
                                                 className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-[5px] text-[10px] font-bold cursor-pointer transition-all shadow-2xs active:scale-95"
-                                                title="មើលរូបភាពភស្តុតាង និងទាញយក (View & Download Receipt)"
+                                                title={t('receiptEvidence')}
                                             >
                                                 <FaEye />
                                                 <span>មើលរូប</span>
@@ -1487,7 +1487,7 @@ const SalaryPage = () => {
                                                 <button
                                                     onClick={() => handleOpenEdit(item)}
                                                     className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-md transition-colors cursor-pointer"
-                                                    title="កែប្រែ (Edit)"
+                                                    title={t('edit')}
                                                 >
                                                     <FaEdit size={13} />
                                                 </button>
@@ -1496,7 +1496,7 @@ const SalaryPage = () => {
                                                 <button
                                                     onClick={() => handleDelete(item._id || item.id)}
                                                     className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-                                                    title="លុប (Delete)"
+                                                    title={t('delete')}
                                                 >
                                                     <FaTrash size={12} />
                                                 </button>
@@ -1617,7 +1617,7 @@ const CreateEditSalaryModal = ({
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--app-border,#e2e8f0)] bg-emerald-600 text-white shrink-0">
                     <h3 className="text-sm font-bold flex items-center gap-2">
                         <FaMoneyBillWave />
-                        <span>{editingItem ? 'កែប្រែកំណត់ត្រាប្រាក់ខែ (Edit Salary)' : 'បញ្ចូលប្រាក់ខែថ្មី (Create Salary Entry)'}</span>
+                        <span>{editingItem ? [t('editSalary')]: 'បញ្ចូលប្រាក់ខែថ្មី (Create Salary Entry)'}</span>
                     </h3>
                     <button
                         onClick={() => setOpenModal(false)}
@@ -1745,13 +1745,13 @@ const CreateEditSalaryModal = ({
 
                         <div>
                             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                Brand / សាខា
+                                {t('brand')}
                             </label>
                             <input
                                 type="text"
                                 value={formData.brand}
                                 onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                                placeholder="e.g. MDM / ECloud"
+                                placeholder={t('brand')}
                                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
                             />
                         </div>

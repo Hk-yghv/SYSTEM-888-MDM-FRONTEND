@@ -250,7 +250,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                     <div>
                                         <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-xs font-bold text-emerald-400">
                                             <FaMobileAlt className="text-base" />
-                                            <span>Payment Entry Form / បញ្ចូលព័ត៌មានបង់ប្រាក់</span>
+                                            <span>{t('paymentEntry')}</span>
                                         </div>
                                         <form id="paymentForm" onSubmit={handleMobilePaymentSubmit} className="space-y-3 text-xs mt-3">
                                             <div>
@@ -323,7 +323,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                     <div className="flex items-center justify-between pb-2 border-b border-gray-800">
                                         <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
                                             <FaImage className="text-sm" />
-                                            <span>រូបភាពភស្តុតាងបង់ប្រាក់ (Payment Proof)</span>
+                                            <span>{t('receiptEvidence')}</span>
                                         </div>
                                         {receiptPreview && (
                                             <button
@@ -421,7 +421,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                             {/* Payment History Section */}
                             <div className="p-5 rounded-[5px] bg-gray-900/80 border border-sky-500/30 space-y-3">
                                 <div className="flex items-center justify-between border-b border-gray-800 pb-2">
-                                    <h4 className="text-xs font-bold text-sky-300 uppercase tracking-wider">Payment History / ប្រវត្តិបង់ប្រាក់</h4>
+                                    <h4 className="text-xs font-bold text-sky-300 uppercase tracking-wider">{t('paymentHistory')}</h4>
                                     <span className="text-[10px] text-gray-400">{qrPayments.length} Transactions</span>
                                 </div>
                                 <div className="max-h-44 overflow-y-auto divide-y divide-gray-800">

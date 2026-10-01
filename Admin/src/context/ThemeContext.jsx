@@ -5,7 +5,7 @@ const ThemeContext = createContext();
 
 export const PRESET_THEMES = {
     default: {
-        name: 'Default MDM (ដើម)',
+        name: 'Default MDM',
         mode: 'default',
         bgType: 'color',
         showDashboardBg: true,
@@ -24,7 +24,7 @@ export const PRESET_THEMES = {
         bgVideo: ''
     },
     dark: {
-        name: 'Dark Mode (ងងឹត)',
+        name: 'Dark Mode',
         mode: 'dark',
         bgType: 'color',
         showDashboardBg: true,
@@ -43,7 +43,7 @@ export const PRESET_THEMES = {
         bgVideo: ''
     },
     ocean: {
-        name: 'Ocean Deep (សមុទ្រ)',
+        name: 'Ocean Deep',
         mode: 'ocean',
         bgType: 'color',
         showDashboardBg: true,
@@ -62,7 +62,7 @@ export const PRESET_THEMES = {
         bgVideo: ''
     },
     sunset: {
-        name: 'Sunset Rose (ថ្ងៃលិច)',
+        name: 'Sunset Rose',
         mode: 'sunset',
         bgType: 'color',
         showDashboardBg: true,
@@ -81,7 +81,7 @@ export const PRESET_THEMES = {
         bgVideo: ''
     },
     emerald: {
-        name: 'Emerald Mint (បៃតង)',
+        name: 'Emerald Mint',
         mode: 'emerald',
         bgType: 'color',
         showDashboardBg: true,
@@ -100,7 +100,7 @@ export const PRESET_THEMES = {
         bgVideo: ''
     },
     cyberpunk: {
-        name: 'Cyberpunk Neon (ស៊ីប័រ)',
+        name: 'Cyberpunk Neon',
         mode: 'cyberpunk',
         bgType: 'color',
         showDashboardBg: true,

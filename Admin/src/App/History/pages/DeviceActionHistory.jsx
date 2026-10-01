@@ -210,9 +210,9 @@ const DeviceActionHistory = () => {
                             className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer'
                         >
                             <option value=''>All Status</option>
-                            <option value='Pending'>Pending (រង់ចាំ)</option>
-                            <option value='Success'>Success (ជោគជ័យ / រួចរាល់)</option>
-                            <option value='Rejected'>Rejected (បដិសេធ)</option>
+                            <option value='Pending'>{t('pending')}</option>
+                            <option value='Success'>{t('success')}</option>
+                            <option value='Rejected'>{t('rejected')}</option>
                         </select>
                     </div>
 
@@ -248,7 +248,7 @@ const DeviceActionHistory = () => {
                             <th className='px-4 py-1 text-center'>Action Type</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
                             <th className='px-4 py-1'>Performed By</th>
-                            <th className='px-4 py-1 text-center'>Actions (អនុម័ត / បដិសេធ)</th>
+                            <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -332,7 +332,7 @@ const DeviceActionHistory = () => {
                                                             onClick={() => handleMarkDone(item)}
                                                             disabled={isItemLoading}
                                                             className='px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[5px] font-bold text-xs shadow-xs inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95'
-                                                            title="អនុម័ត / ចាក់សោរួចរាល់ (Mark Done)"
+                                                            title={t('done')}
                                                         >
                                                             <FaCheckCircle size={11} />
                                                             <span>{t('done')} (រួចរាល់)</span>
@@ -346,7 +346,7 @@ const DeviceActionHistory = () => {
                                                             }}
                                                             disabled={isItemLoading}
                                                             className='px-2.5 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-[5px] font-bold text-xs shadow-xs inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95'
-                                                            title="បដិសេធសំណើនេះ (Reject)"
+                                                            title={t('reject')}
                                                         >
                                                             <FaTimesCircle size={11} />
                                                             <span>បដិសេធ</span>
@@ -357,11 +357,11 @@ const DeviceActionHistory = () => {
                                                 )
                                             ) : isRejected ? (
                                                 <span className='text-xs text-red-600 font-bold inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-red-50 rounded-full border border-red-200' title={item.reason || ''}>
-                                                    <FaTimesCircle /> បដិសេធ (Rejected)
+                                                    <FaTimesCircle /> {t('rejected')}
                                                 </span>
                                             ) : (
                                                 <span className='text-xs text-emerald-700 font-bold inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-emerald-50 rounded-full border border-emerald-200'>
-                                                    <FaCheckCircle /> Completed (រួចរាល់)
+                                                    <FaCheckCircle /> {t('completed')}
                                                 </span>
                                             )}
                                         </td>
@@ -380,7 +380,7 @@ const DeviceActionHistory = () => {
                         <div className='p-4 bg-gradient-to-r from-red-600 to-red-700 text-white flex items-center justify-between'>
                             <h2 className='text-base font-bold flex items-center gap-2'>
                                 <FaBan />
-                                បដិសេធសំណើ Device Action (Reject)
+                                {t('reject')}
                             </h2>
                             <button
                                 onClick={() => setRejectingItem(null)}
@@ -404,7 +404,7 @@ const DeviceActionHistory = () => {
                             </div>
 
                             <div>
-                                <label className='block font-bold text-slate-700 mb-1'>មូលហេតុបដិសេធ (Reason for Rejection)</label>
+                                <label className='block font-bold text-slate-700 mb-1'>{t('rejectionReason')}</label>
                                 <textarea
                                     value={rejectReason}
                                     onChange={(e) => setRejectReason(e.target.value)}
@@ -427,7 +427,7 @@ const DeviceActionHistory = () => {
                                     disabled={submittingReject}
                                     className='px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-[5px] font-bold shadow-lg shadow-red-600/20 transition-all cursor-pointer'
                                 >
-                                    {submittingReject ? 'កំពុងបដិសេធ...' : 'បញ្ជាក់បដិសេធ (Reject)'}
+                                    {submittingReject ? [t('loading')]: t('reject')}
                                 </button>
                             </div>
                         </form>

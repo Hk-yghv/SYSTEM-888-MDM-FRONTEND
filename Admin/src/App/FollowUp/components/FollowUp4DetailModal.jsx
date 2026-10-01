@@ -127,7 +127,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">NO REPLY (មិនតប)</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('noReply')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -139,7 +139,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">INQUIRE (សួរនាំ)</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('inquire')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -163,7 +163,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-3 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">MORE (ផ្សេងៗ)</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('more')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -276,7 +276,7 @@ const FollowUp4DetailModal = ({
                         className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-5 py-2.5 rounded-[5px] transition-all shadow-lg shadow-sky-600/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
                         {saving ? <MdOutlineSync className="animate-spin text-sm" /> : <FaSave />}
-                        <span>{saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកទិន្នន័យ DETAIL'}</span>
+                        <span>{saving ? [t('saving')]: t('save')}</span>
                     </button>
                 </div>
             </div>

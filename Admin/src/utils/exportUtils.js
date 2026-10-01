@@ -278,7 +278,7 @@ export const exportToPDF = (title, columns, data, brandName = '', orientation = 
                 <div class="header-brand">
                     <div class="header-left">
                         <h1>${systemTitle} — ${title}</h1>
-                        <p>Generated: ${new Date().toLocaleString()} &bull; Layout: A4 ${isLandscape ? 'Landscape (ផ្តេក)' : 'Portrait (បញ្ឈរ)'}</p>
+                        <p>Generated: ${new Date().toLocaleString()} &bull; Layout: A4 ${isLandscape ? 'Landscape' : 'Portrait'}</p>
                     </div>
                     <div class="header-right">
                         Total Records: ${data.length}
@@ -724,67 +724,67 @@ export const exportFollowUp1PDF = (title, columns, data, summary, dateRangeLabel
                         <p>Aggregated KPI Totals &bull; Date Range: ${dateRangeLabel || 'All'}</p>
                     </div>
                     <div class="header-right">
-                        Summary Page (ទំព័រសរុប)
+                        Summary Page
                     </div>
                 </div>
 
-                <div class="summary-page-title">របាយការណ៍សង្ខេប និងតារាងសរុប Follow up 1</div>
+                <div class="summary-page-title">Follow up 1 Summary & KPI Report</div>
                 <div class="summary-page-subtitle">Range: ${dateRangeLabel || 'All'} | Generated: ${new Date().toLocaleString()}</div>
 
                 <div class="kpi-grid">
                     <div class="kpi-box">
-                        <div class="kpi-title">កំណត់ត្រាសរុប (Total Entries)</div>
+                        <div class="kpi-title">Total Entries</div>
                         <div class="kpi-val">${totalRecords.toLocaleString()}</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-title">Message សរុប (Total Messages)</div>
+                        <div class="kpi-title">Total Messages</div>
                         <div class="kpi-val" style="color: #2563eb;">${totalMessages.toLocaleString()}</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-title">មិនឆ្លើយតប (No Response)</div>
+                        <div class="kpi-title">No Response</div>
                         <div class="kpi-val" style="color: #475569;">${totalNoResponse.toLocaleString()}</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-title">បានស្នើរ (Requested)</div>
+                        <div class="kpi-title">Requested</div>
                         <div class="kpi-val" style="color: #d97706;">${totalRequested.toLocaleString()}</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-title">កំពុងពិនិត្យ (In Review)</div>
+                        <div class="kpi-title">In Review</div>
                         <div class="kpi-val" style="color: #4f46e5;">${totalReview.toLocaleString()}</div>
                     </div>
                     <div class="kpi-box">
-                        <div class="kpi-title">បរាជ័យ (Failed)</div>
+                        <div class="kpi-title">Failed</div>
                         <div class="kpi-val" style="color: #dc2626;">${totalFailed.toLocaleString()}</div>
                     </div>
                     <div class="kpi-box primary">
-                        <div class="kpi-title">ជោគជ័យ (Success)</div>
+                        <div class="kpi-title">Success</div>
                         <div class="kpi-val" style="color: #059669;">${totalSuccess.toLocaleString()}</div>
                     </div>
                 </div>
 
                 <div style="margin-top: 15px;">
-                    <div style="font-weight: 700; font-size: 11px; margin-bottom: 6px; color: #065f46;">📊 តារាងសង្ខេបសូចនាករប្រតិបត្តិការ (KPI Performance Breakdown):</div>
+                    <div style="font-weight: 700; font-size: 11px; margin-bottom: 6px; color: #065f46;">📊 KPI Performance Breakdown:</div>
                     <table>
                         <thead>
                             <tr>
-                                <th>សូចនាករ (Metric)</th>
-                                <th style="text-align: center;">ចំនួនសរុប (Total Count)</th>
-                                <th style="text-align: center;">ភាគរយ / អត្រា (Percentage / Rate)</th>
-                                <th>ការពិពណ៌នា (Description)</th>
+                                <th>សូចនាករ / Metric</th>
+                                <th style="text-align: center;">ចំនួនសរុប / Total Count</th>
+                                <th style="text-align: center;">ភាគរយ / Percentage</th>
+                                <th>ការពិពណ៌នា / Description</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><strong>1. Message សាកសួរ សរុប</strong></td>
+                                <td><strong>1. Total Inquired Messages</strong></td>
                                 <td style="text-align: center; font-weight: bold; color: #2563eb;">${totalMessages.toLocaleString()}</td>
                                 <td style="text-align: center;">100%</td>
-                                <td>ចំនួន Message ផ្ញើទៅកាន់អតិថិជនសរុប</td>
+                                <td>Total messages sent to customers</td>
                             </tr>
                             <tr>
                                 <td><strong>2. អតិថិជនមិនឆ្លើយតប</strong></td>
                                 <td style="text-align: center; font-weight: bold; color: #475569;">${totalNoResponse.toLocaleString()}</td>
                                 <td style="text-align: center;">${totalMessages > 0 ? ((totalNoResponse / totalMessages) * 100).toFixed(1) : 0}%</td>
-                                <td>អតិថិជនមិនបាន Reply Message</td>
+                                <td>Customers who did not reply</td>
                             </tr>
                             <tr>
                                 <td><strong>3. អតិថិជនបានស្នើ</strong></td>
@@ -793,25 +793,25 @@ export const exportFollowUp1PDF = (title, columns, data, summary, dateRangeLabel
                                 <td>អតិថិជនឆ្លើយតប និងស្នើសុំព័ត៌មានកុងត្រា</td>
                             </tr>
                             <tr>
-                                <td><strong>4. កំពុងពិនិត្យ / Review</strong></td>
+                                <td><strong>4. In Review</strong></td>
                                 <td style="text-align: center; font-weight: bold; color: #4f46e5;">${totalReview.toLocaleString()}</td>
                                 <td style="text-align: center;">${totalRequested > 0 ? ((totalReview / totalRequested) * 100).toFixed(1) : 0}%</td>
                                 <td>អតិថិជនស្ថិតក្នុងដំណាក់កាលពិនិត្យឯកសារ</td>
                             </tr>
                             <tr>
-                                <td><strong>5. បរាជ័យ / Failed</strong></td>
+                                <td><strong>5. Failed</strong></td>
                                 <td style="text-align: center; font-weight: bold; color: #dc2626;">${totalFailed.toLocaleString()}</td>
                                 <td style="text-align: center;">${totalRequested > 0 ? ((totalFailed / totalRequested) * 100).toFixed(1) : 0}%</td>
                                 <td>អតិថិជនមិនត្រូវតាមលក្ខខណ្ឌ ឬបដិសេធ</td>
                             </tr>
                             <tr class="summary-row">
-                                <td><strong>6. ជោគជ័យ / Success (Success Rate)</strong></td>
+                                <td><strong>6. Success (Success Rate)</strong></td>
                                 <td style="text-align: center; font-weight: bold; color: #059669;">${totalSuccess.toLocaleString()}</td>
                                 <td style="text-align: center; font-weight: bold; color: #059669;">${successRate}%</td>
                                 <td>អតិថិជនជោគជ័យក្នុងការស្នើបញ្ចាំ</td>
                             </tr>
                             <tr>
-                                <td><strong>7. បានបង្កើតកុងត្រា (Created)</strong></td>
+                                <td><strong>7. Contracts Created</strong></td>
                                 <td style="text-align: center; font-weight: bold; color: #7c3aed;">${totalCreated.toLocaleString()}</td>
                                 <td style="text-align: center;">${totalSuccess > 0 ? ((totalCreated / totalSuccess) * 100).toFixed(1) : 0}%</td>
                                 <td>កុងត្រាត្រូវបានបង្កើតចូលប្រព័ន្ធរួចរាល់</td>
@@ -822,13 +822,13 @@ export const exportFollowUp1PDF = (title, columns, data, summary, dateRangeLabel
 
                 <div class="signature-section">
                     <div>
-                        <div class="sig-box">អ្នករៀបចំ (Prepared By)</div>
+                        <div class="sig-box">Prepared By</div>
                     </div>
                     <div>
-                        <div class="sig-box">អ្នកត្រួតពិនិត្យ (Verified By)</div>
+                        <div class="sig-box">Verified By</div>
                     </div>
                     <div>
-                        <div class="sig-box">ប្រធានសាខា (Approved By)</div>
+                        <div class="sig-box">Approved By</div>
                     </div>
                 </div>
 

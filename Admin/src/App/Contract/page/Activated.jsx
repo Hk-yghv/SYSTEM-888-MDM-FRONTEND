@@ -151,7 +151,7 @@ const Activated = () => {
 
                 setUiModal({
                     open: true,
-                    title: '⚠️ មិនអាចធ្វើការ Redeem បានទេ (Redeem Blocked)',
+                    title: t('warning'),
                     message: `${lockReason}! សូមធ្វើការដោះសោរ (Unlock) ឧបករណ៍នេះជាមុនសិន ទើបប្រព័ន្ធអនុញ្ញាតឱ្យផ្លាស់ប្តូរទៅកាន់ Redeem បាន។`,
                     type: 'warning'
                 });
@@ -346,7 +346,7 @@ const Activated = () => {
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                                 <MdSwapHoriz className="text-purple-600 text-lg" />
-                                ជ្រើសរើសកាលបរិច្ឆេទ Redeem
+                                ជ្រើសរើស{t('redeem')} {t('date')}
                             </h3>
                             <button onClick={() => setRedeemItem(null)} className="text-slate-400 hover:text-slate-600 font-bold text-sm cursor-pointer">✕</button>
                         </div>
@@ -359,7 +359,7 @@ const Activated = () => {
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                                    កាលបរិច្ឆេទ Redeem
+                                    {t('redeem')} {t('date')}
                                 </label>
                                 <input
                                     type="date"
@@ -569,7 +569,7 @@ const Activated = () => {
                                                                     className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                 >
                                                                     <FaHistory className="text-indigo-600 text-sm" />
-                                                                    <span>History (ប្រវត្តិសកម្មភាព)</span>
+                                                                    <span>{t('history')}</span>
                                                                 </button>
                                                             )}
 
