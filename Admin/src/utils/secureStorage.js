@@ -1,11 +1,12 @@
 /**
  * In-Memory & Window Vault Secure Storage
- * Stores sensitive authentication data strictly in memory & encrypted window vault.
- * Keeps Session Storage & Local Storage 100% clean so nothing is exposed in browser DevTools.
+ * Stores sensitive authentication data in memory plus encrypted session-scoped persistence.
+ * Keeps plain localStorage clean while preserving auth across reloads.
  */
 
 const SECRET_SALT = 0x5C;
 const VAULT_PREFIX = '__sys_sec_v:';
+const SESSION_VAULT_KEY = '__sys_session_v:';
 
 // In-memory runtime storage
 let _memoryVault = {};
@@ -38,12 +39,32 @@ const decodeVault = (raw) => {
     }
 };
 
-// Auto-purge all storage to keep DevTools clean
-const purgeStorageTraces = () => {
+const readSessionVault = () => {
+    try {
+        if (typeof sessionStorage === 'undefined') return {};
+        const raw = sessionStorage.getItem(SESSION_VAULT_KEY);
+        return raw ? decodeVault(raw) : {};
+    } catch {
+        return {};
+    }
+};
+
+const writeSessionVault = (vault) => {
     try {
         if (typeof sessionStorage !== 'undefined') {
-            sessionStorage.clear();
+            const encoded = encodeVault(vault);
+            if (encoded) {
+                sessionStorage.setItem(SESSION_VAULT_KEY, encoded);
+            } else {
+                sessionStorage.removeItem(SESSION_VAULT_KEY);
+            }
         }
+    } catch {}
+};
+
+// Auto-purge legacy traces only from localStorage to avoid clobbering the active session
+const purgeStorageTraces = () => {
+    try {
         if (typeof localStorage !== 'undefined') {
             const sensitiveKeys = [
                 'mdm_token', 'mdm_user', 'recent_login_device', 'show_login_toast',
@@ -54,12 +75,18 @@ const purgeStorageTraces = () => {
     } catch {}
 };
 
-// Initialize vault from window.name on load/refresh
+// Initialize vault from window.name or sessionStorage on load/refresh
 const initVault = () => {
     try {
+        const restored = {};
         if (typeof window !== 'undefined' && window.name) {
-            _memoryVault = decodeVault(window.name);
+            Object.assign(restored, decodeVault(window.name));
         }
+        const sessionVault = readSessionVault();
+        if (Object.keys(sessionVault).length > 0) {
+            Object.assign(restored, sessionVault);
+        }
+        _memoryVault = restored;
     } catch {}
     purgeStorageTraces();
 };
@@ -71,6 +98,7 @@ const syncVault = () => {
         if (typeof window !== 'undefined') {
             window.name = encodeVault(_memoryVault);
         }
+        writeSessionVault(_memoryVault);
     } catch {}
     purgeStorageTraces();
 };
@@ -105,6 +133,9 @@ export const clearSecureAuth = () => {
     _memoryVault = {};
     if (typeof window !== 'undefined') {
         window.name = '';
+    }
+    if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(SESSION_VAULT_KEY);
     }
     purgeStorageTraces();
 };
