@@ -592,7 +592,7 @@ const InstallmentPage = () => {
         exportToExcel(data, 'Installment_Schedule');
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = (orientation = 'portrait') => {
         const columns = [
             { header: 'No', cell: (_, i) => i + 1 },
             { header: 'Customer', accessor: 'customerNameEn' },
@@ -608,7 +608,7 @@ const InstallmentPage = () => {
             { header: 'Total Paid', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalPaid).toLocaleString()}` },
             { header: '% Paid', accessor: (c) => getContractRepaymentCalculations(c, latePenaltyRules).percentPaidStr },
         ];
-        exportToPDF('Installment Schedule', columns, visibleRows.map(({ item, displayRow }) => ({
+        exportToPDF('Installment Schedule', columns, visibleRows.map(({ item, displayRow }, orientation) => ({
             ...item,
             inputDate: item.inputDate || '',
             dueDate: displayRow?.dueDate || '',
@@ -623,7 +623,7 @@ const InstallmentPage = () => {
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
 
             {/* ── RepaymentScheduleModal ─────────────────────────────────── */}
             <RepaymentScheduleModal
@@ -656,7 +656,7 @@ const InstallmentPage = () => {
             )}
 
             {/* ── Header ────────────────────────────────────────────────── */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2 flex-wrap'>
                         <span>Installment</span>
@@ -933,7 +933,7 @@ const InstallmentPage = () => {
             </div>
 
             {/* ── Pagination with page-size selector ────────────────────── */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-[5px] text-xs shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-1 bg-white border border-slate-200 rounded-[5px] text-xs shadow-xs">
                 {/* Left: showing info + items-per-page */}
                 <div className="flex items-center gap-3 text-slate-500">
                     <span>

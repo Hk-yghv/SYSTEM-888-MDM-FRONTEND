@@ -313,7 +313,7 @@ const Activated = () => {
         exportToExcel(data, 'Activated_Contracts');
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -324,11 +324,11 @@ const Activated = () => {
             { header: 'Serial No.', accessor: 'serialNumber' },
             { header: 'Monthly ($)', cell: (r) => `$${r.monthlyPayment}` },
         ];
-        exportToPDF('Activated Contracts Directory', columns, allData);
+        exportToPDF('Activated Contracts Directory', columns, allData, user?.brand || '', orientation);
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
 
             {/* UI Custom Modal Popup */}
             <CustomModal
@@ -341,7 +341,7 @@ const Activated = () => {
 
             {/* Redeem Date Selection Modal */}
             {redeemItem && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-[999999] p-4">
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-[999999] p-2">
                     <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
@@ -352,7 +352,7 @@ const Activated = () => {
                         </div>
 
                         <form onSubmit={handleConfirmRedeem} className="space-y-4">
-                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-[5px] text-xs space-y-1">
+                            <div className="p-1 bg-purple-50 border border-purple-200 rounded-[5px] text-xs space-y-1">
                                 <p className="font-bold text-purple-900">អតិថិជន៖ {redeemItem.customerNameEn} ({redeemItem.customerNameKh})</p>
                                 <p className="text-purple-700 font-mono">ម៉ូឌែល/Serial: {redeemItem.model} • {redeemItem.serialNumber}</p>
                             </div>
@@ -394,7 +394,7 @@ const Activated = () => {
             )}
 
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('activated')}</span>
@@ -648,7 +648,7 @@ const Activated = () => {
 
             {/* Comment Input Modal */}
             {selectedCommentItem && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2">
                     <form onSubmit={handleSaveComment} className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-base font-bold text-cyan-300 flex items-center gap-2">
@@ -657,7 +657,7 @@ const Activated = () => {
                             <button type="button" onClick={() => setSelectedCommentItem(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold">✕</button>
                         </div>
 
-                        <div className="p-3 bg-gray-900/60 rounded-[5px] border border-gray-800 text-xs">
+                        <div className="p-1 bg-gray-900/60 rounded-[5px] border border-gray-800 text-xs">
                             <p className="text-gray-400">Customer: <span className="text-gray-100 font-bold">{selectedCommentItem.customerNameEn}</span></p>
                             <p className="text-gray-400">Model: <span className="text-gray-200 font-semibold">{selectedCommentItem.model}</span></p>
                         </div>
@@ -670,7 +670,7 @@ const Activated = () => {
                                 value={commentInput}
                                 onChange={(e) => setCommentInput(e.target.value)}
                                 placeholder="Type comment or notes about this contract..."
-                                className="w-full p-3 bg-gray-900 border border-gray-700 rounded-[5px] text-xs text-gray-100 outline-none focus:border-cyan-500 font-sans"
+                                className="w-full p-1 bg-gray-900 border border-gray-700 rounded-[5px] text-xs text-gray-100 outline-none focus:border-cyan-500 font-sans"
                             ></textarea>
                         </div>
 
@@ -695,7 +695,7 @@ const Activated = () => {
 
             {/* Information Modal */}
             {selectedInfo && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2">
                     <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-2xl shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2">
@@ -705,7 +705,7 @@ const Activated = () => {
                             <button onClick={() => setSelectedInfo(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold cursor-pointer">✕</button>
                         </div>
 
-                        <div className="flex items-center gap-4 p-4 rounded-[5px] bg-gray-900/60 border border-gray-800">
+                        <div className="flex items-center gap-4 p-2 rounded-[5px] bg-gray-900/60 border border-gray-800">
                             <div className='flex gap-3 justify-center items-center'>
                                 <h4 className="text-base font-bold text-gray-100">{selectedInfo.customerNameEn}</h4>
                                 <p className="text-sm text-indigo-400 font-khmer">{selectedInfo.customerNameKh}</p>

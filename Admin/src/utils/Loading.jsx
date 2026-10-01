@@ -3,7 +3,7 @@ import { MdOutlineDashboard } from 'react-icons/md';
 
 const Loading = () => {
     return (
-        <div className="w-full h-screen bg-[#070913] flex flex-col items-center justify-center relative overflow-hidden select-none p-4 z-50">
+        <div className="w-full h-screen bg-[#070913] flex flex-col items-center justify-center relative overflow-hidden select-none p-2 z-50">
 
             <div className="absolute top-1/3 left-1/3 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
             <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>

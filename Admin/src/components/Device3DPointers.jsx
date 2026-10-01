@@ -99,7 +99,7 @@ const Device3DPointers = ({ device }) => {
 
                 {/* IMEI 1 */}
                 <div className="
-            p-3
+            p-1
             bg-gray-50
             rounded-[5px]
             border border-gray-200
@@ -131,7 +131,7 @@ const Device3DPointers = ({ device }) => {
 
                 {/* IMEI 2 */}
                 <div className="
-            p-3
+            p-1
             bg-gray-50
             rounded-[5px]
             border border-gray-200
@@ -163,7 +163,7 @@ const Device3DPointers = ({ device }) => {
 
                 {/* Storage */}
                 <div className="
-            p-3
+            p-1
             bg-gray-50
             rounded-[5px]
             border border-gray-200
@@ -193,7 +193,7 @@ const Device3DPointers = ({ device }) => {
 
                 {/* RAM */}
                 <div className="
-            p-3
+            p-1
             bg-gray-50
             rounded-[5px]
             border border-gray-200
@@ -223,7 +223,7 @@ const Device3DPointers = ({ device }) => {
 
                 {/* Battery */}
                 <div className="
-            p-3
+            p-1
             bg-gray-50
             rounded-[5px]
             border border-gray-200
@@ -255,7 +255,7 @@ const Device3DPointers = ({ device }) => {
 
                 {/* MDM Guard */}
                 <div className="
-            p-3
+            p-1
             bg-gray-50
             rounded-[5px]
             border border-gray-200

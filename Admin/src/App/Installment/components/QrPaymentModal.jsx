@@ -208,7 +208,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-4 overflow-y-auto">
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-2 overflow-y-auto">
                 <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-4xl shadow-2xl space-y-6 animate-in zoom-in-95 duration-150">
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-gray-800 pb-3">
@@ -393,7 +393,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                     handleFileChange(e.dataTransfer.files[0]);
                                                 }
                                             }}
-                                            className="h-52 rounded-[5px] bg-gray-950/60 border-2 border-dashed border-gray-700 hover:border-emerald-500/60 transition-all flex flex-col items-center justify-center p-4 cursor-pointer group space-y-2"
+                                            className="h-52 rounded-[5px] bg-gray-950/60 border-2 border-dashed border-gray-700 hover:border-emerald-500/60 transition-all flex flex-col items-center justify-center p-2 cursor-pointer group space-y-2"
                                         >
                                             <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-2xl text-emerald-400 group-hover:scale-110 transition-transform">
                                                 <FaCloudUploadAlt />
@@ -467,7 +467,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
             {/* Lightbox / Full-size photo preview for uploaded receipt */}
             {previewLightbox && receiptPreview && (
                 <div
-                    className="fixed inset-0 bg-black/90 backdrop-blur-md z-[1000000] flex items-center justify-center p-4"
+                    className="fixed inset-0 bg-black/90 backdrop-blur-md z-[1000000] flex items-center justify-center p-2"
                     onClick={() => setPreviewLightbox(false)}
                 >
                     <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onClick={e => e.stopPropagation()}>
@@ -490,7 +490,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
             {/* Lightbox for Payment History receipt image */}
             {viewHistoryImage && (
                 <div
-                    className="fixed inset-0 bg-black/90 backdrop-blur-md z-[1000000] flex items-center justify-center p-4"
+                    className="fixed inset-0 bg-black/90 backdrop-blur-md z-[1000000] flex items-center justify-center p-2"
                     onClick={() => setViewHistoryImage(null)}
                 >
                     <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onClick={e => e.stopPropagation()}>

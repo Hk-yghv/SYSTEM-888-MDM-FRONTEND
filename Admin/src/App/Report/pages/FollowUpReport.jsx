@@ -33,6 +33,7 @@ const FollowUpReport = () => {
     // Export Modal State
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [exportFormat, setExportFormat] = useState('excel'); // 'excel' | 'pdf'
+    const [exportOrientation, setExportOrientation] = useState('landscape'); // 'portrait' | 'landscape'
     const [exportScope, setExportScope] = useState('month'); // 'today' | 'week' | 'month' | 'all' | 'custom'
     const [exportStartDate, setExportStartDate] = useState('');
     const [exportEndDate, setExportEndDate] = useState('');
@@ -397,7 +398,7 @@ const FollowUpReport = () => {
             if (exportFormat === 'excel') {
                 exportToExcel(title, columns, dataWithSummary, selectedBrand || user?.brand || 'SYSTEM');
             } else {
-                exportToPDF(title, columns, dataWithSummary, selectedBrand || user?.brand || 'SYSTEM', 'landscape');
+                exportToPDF(title, columns, dataWithSummary, selectedBrand || user?.brand || 'SYSTEM', exportOrientation);
             }
 
             setIsExportModalOpen(false);
@@ -410,7 +411,7 @@ const FollowUpReport = () => {
     };
 
     return (
-        <div className="p-3 sm:p-6 space-y-6 max-w-[1700px] mx-auto min-h-screen">
+        <div className="p-1 sm:p-2 space-y-6 max-w-[1700px] mx-auto min-h-screen">
             {/* Header Title & Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm">
                 <div>
@@ -522,7 +523,7 @@ const FollowUpReport = () => {
             </div>
 
             {/* Filter and Date Presets Bar */}
-            <div className="bg-white p-4 sm:p-5 rounded-[5px] border border-slate-100 shadow-sm space-y-4">
+            <div className="bg-white p-2 sm:p-2 rounded-[5px] border border-slate-100 shadow-sm space-y-4">
                 {/* Date Presets Button Group */}
                 <div className="flex items-center flex-wrap gap-2">
                     <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
@@ -617,7 +618,7 @@ const FollowUpReport = () => {
 
             {/* Main Report Table Card */}
             <div className="bg-white rounded-[5px] border border-slate-100 shadow-sm overflow-hidden">
-                <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+                <div className="p-2 sm:p-2 border-b border-slate-100 flex items-center justify-between">
                     <div>
                         <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
                             <MdTableChart className="text-emerald-600" />
@@ -837,7 +838,7 @@ const FollowUpReport = () => {
 
             {/* Export Modal */}
             {isExportModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-slate-900/60 backdrop-blur-xs">
                     <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                             <div className="flex items-center gap-3">
@@ -864,7 +865,7 @@ const FollowUpReport = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('excel')}
-                                    className={`p-3.5 rounded-[5px] border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'excel'
+                                    className={`p-1.5 rounded-[5px] border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'excel'
                                         ? 'border-emerald-500 bg-emerald-50/60 text-emerald-700 shadow-sm'
                                         : 'border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100'
                                         }`}
@@ -875,7 +876,7 @@ const FollowUpReport = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('pdf')}
-                                    className={`p-3.5 rounded-[5px] border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'pdf'
+                                    className={`p-1.5 rounded-[5px] border flex items-center justify-center gap-2 font-bold text-xs transition cursor-pointer ${exportFormat === 'pdf'
                                         ? 'border-rose-500 bg-rose-50/60 text-rose-700 shadow-sm'
                                         : 'border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100'
                                         }`}
@@ -884,6 +885,24 @@ const FollowUpReport = () => {
                                     <span>PDF Document</span>
                                 </button>
                             </div>
+                            {exportFormat === 'pdf' && (
+                                <div className="grid grid-cols-2 gap-2 mt-2 pt-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setExportOrientation('portrait')}
+                                        className={`p-2 rounded border text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${exportOrientation === 'portrait' ? 'border-rose-500 bg-rose-50 text-rose-700 font-black' : 'border-slate-200 text-slate-600 bg-slate-50/50'}`}
+                                    >
+                                        <span>📄 {t('pdfPortrait') || 'PDF បញ្ឈរ (Portrait)'}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setExportOrientation('landscape')}
+                                        className={`p-2 rounded border text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${exportOrientation === 'landscape' ? 'border-rose-500 bg-rose-50 text-rose-700 font-black' : 'border-slate-200 text-slate-600 bg-slate-50/50'}`}
+                                    >
+                                        <span>🖼️ {t('pdfLandscape') || 'PDF ផ្តេក (Landscape)'}</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Actions */}

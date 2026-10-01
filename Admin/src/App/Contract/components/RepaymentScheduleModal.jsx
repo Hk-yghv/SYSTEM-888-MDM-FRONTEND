@@ -710,7 +710,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     return (
         <>
 
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 select-none">
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[99999] p-2 select-none">
             <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-xs text-slate-800">
 
                 {/* Header */}
@@ -773,10 +773,10 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 </div>
 
                 {/* Schedule Table Container */}
-                <div className="flex-1 overflow-x-auto overflow-y-auto p-4 pb-32 min-h-[350px] space-y-3">
+                <div className="flex-1 overflow-x-auto overflow-y-auto p-2 pb-32 min-h-[350px] space-y-3">
                     {/* Top Prominent Action & Info Banner (Only when in setup & activate mode) */}
                     {isSetupActivate && (
-                        <div className="p-3 rounded-[5px] bg-indigo-50 border border-indigo-200 text-slate-800 text-xs font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                        <div className="p-1 rounded-[5px] bg-indigo-50 border border-indigo-200 text-slate-800 text-xs font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                             <div className="flex items-center gap-2">
                                 <FaCalendarAlt className="text-indigo-600 text-lg flex-shrink-0" />
                                 <span>
@@ -1118,7 +1118,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         {/* ── Image Lightbox (payment proof viewer in schedule table) ────── */}
         {lightboxImages.length > 0 && (
             <div
-                className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-[99999999] p-4"
+                className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-[99999999] p-2"
                 onClick={() => setLightboxImages([])}
             >
                 <div
@@ -1142,7 +1142,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             <FaTimes size={14} />
                         </button>
                     </div>
-                    <div className="relative p-4 flex items-center justify-center bg-slate-100 min-h-[300px]">
+                    <div className="relative p-2 flex items-center justify-center bg-slate-100 min-h-[300px]">
                         {lightboxImages.length > 1 && lightboxIdx > 0 && (
                             <button
                                 onClick={() => setLightboxIdx(i => i - 1)}
@@ -1187,7 +1187,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
         {/* ── Payment Confirmation Modal ──────────────────────────────────── */}
         {payConfirm && (
-            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999999] p-4">
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999999] p-2">
                 <div className="bg-white border border-slate-200 rounded-[5px] shadow-2xl w-full max-w-md flex flex-col max-h-[92vh] overflow-hidden">
 
                     {/* Header */}

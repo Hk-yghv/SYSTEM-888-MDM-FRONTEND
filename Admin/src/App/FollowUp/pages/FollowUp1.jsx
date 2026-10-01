@@ -69,6 +69,7 @@ const FollowUp1 = () => {
     // Export Modal State
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [exportFormat, setExportFormat] = useState('excel'); // 'excel' | 'pdf'
+    const [exportOrientation, setExportOrientation] = useState('landscape'); // 'portrait' | 'landscape'
     const [exportScope, setExportScope] = useState('month'); // 'today' | 'week' | 'month' | 'custom' | 'all'
     const [exportStartDate, setExportStartDate] = useState('');
     const [exportEndDate, setExportEndDate] = useState('');
@@ -399,8 +400,9 @@ const FollowUp1 = () => {
     };
 
     // Open Export Props Modal
-    const handleOpenExportModal = (format = 'excel') => {
+    const handleOpenExportModal = (format = 'excel', orientation = 'landscape') => {
         setExportFormat(format);
+        setExportOrientation(orientation);
         const todayStr = new Date().toISOString().split('T')[0];
         setExportStartDate(todayStr);
         setExportEndDate(todayStr);
@@ -569,7 +571,7 @@ const FollowUp1 = () => {
                 ], user?.brand || 'SYSTEM');
             } else {
                 // Multi-Page Print-Ready PDF: Page 1 = Details, Page 2 = Executive Summary
-                exportFollowUp1PDF(title, exportColumns, dataWithSummaryRow, exportSummaryObj, range.label, user?.brand || 'SYSTEM');
+                exportFollowUp1PDF(title, exportColumns, dataWithSummaryRow, exportSummaryObj, range.label, user?.brand || 'SYSTEM', exportOrientation);
             }
 
             setIsExportModalOpen(false);
@@ -582,7 +584,7 @@ const FollowUp1 = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-6 max-w-full overflow-x-hidden">
+        <div className="p-2 md:p-2 space-y-6 max-w-full overflow-x-hidden">
             {/* Header / Title Area */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[var(--app-card,#ffffff)] p-5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs">
                 <div>
@@ -598,7 +600,7 @@ const FollowUp1 = () => {
                     {hasPermission('/follow-up/follow-up-1', 'export') && (
                         <ExportDropdown
                             onExportExcel={() => handleOpenExportModal('excel')}
-                            onExportPDF={() => handleOpenExportModal('pdf')}
+                            onExportPDF={(orientation) => handleOpenExportModal('pdf', orientation)}
                             excelLabel={t('exportExcel') || 'Export Excel'}
                             pdfLabel={t('exportPDF') || 'Export PDF'}
                         />
@@ -619,7 +621,7 @@ const FollowUp1 = () => {
             {/* KPI Summary Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                 {/* Total Records */}
-                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>កំណត់ត្រាសរុប</span>
                         <FaListUl className="text-slate-500" size={13} />
@@ -631,7 +633,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Total Messages */}
-                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalMessages')}</span>
                         <FaComments className="text-blue-500" size={13} />
@@ -643,7 +645,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* No Response */}
-                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('noResponse') || 'មិនឆ្លើយតប'}</span>
                         <FaCommentSlash className="text-slate-500" size={13} />
@@ -655,7 +657,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Total Requested */}
-                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalRequested') || 'សរុបបានស្នើរ'}</span>
                         <FaQuestionCircle className="text-amber-500" size={13} />
@@ -667,7 +669,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Review */}
-                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>កំពុងពិនិត្យ</span>
                         <MdOutlineRateReview className="text-indigo-500" size={15} />
@@ -679,7 +681,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Total Failed */}
-                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalFailed') || 'សរុបបរាជ័យ'}</span>
                         <FaTimesCircle className="text-rose-500" size={13} />
@@ -691,7 +693,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Total Success & Rate */}
-                <div className="bg-[var(--app-card,#ffffff)] p-3.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-1.5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalSuccess') || 'សរុបជោគជ័យ'}</span>
                         <FaCheckCircle className="text-emerald-500" size={13} />
@@ -705,7 +707,7 @@ const FollowUp1 = () => {
             </div>
 
             {/* Filter Controls */}
-            <form onSubmit={handleSearchSubmit} className="bg-[var(--app-card,#ffffff)] p-4 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center gap-3">
+            <form onSubmit={handleSearchSubmit} className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center gap-3">
                 {/* Search Bar */}
                 <div className="relative flex-1 min-w-[200px]">
                     <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
@@ -779,7 +781,7 @@ const FollowUp1 = () => {
                     <div className="flex items-center gap-2">
                         <ExportDropdown
                             onExportExcel={() => handleOpenExportModal('excel')}
-                            onExportPDF={() => handleOpenExportModal('pdf')}
+                            onExportPDF={(orientation) => handleOpenExportModal('pdf', orientation)}
                             excelLabel="Export Excel"
                             pdfLabel="Export PDF"
                         />
@@ -956,7 +958,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Pagination */}
-                <div className="p-4 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
+                <div className="p-2 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
                     <span className="text-xs text-[var(--app-text-muted,#64748b)]">
                         បង្ហាញទំព័រ {page} នៃ {Math.ceil(total / LIMIT) || 1} (សរុប {total} កំណត់ត្រា)
                     </span>
@@ -971,7 +973,7 @@ const FollowUp1 = () => {
 
             {/* Create / Edit Form Modal */}
             {isFormOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 overflow-y-auto">
                     <div className="bg-[var(--app-card,#ffffff)] w-full max-w-lg rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
@@ -990,7 +992,7 @@ const FollowUp1 = () => {
                         {/* Modal Body */}
                         <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
                             {/* Follow Up 2 Sync Banner */}
-                            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-[5px] flex items-center justify-between gap-2">
+                            <div className="p-1 bg-emerald-500/10 border border-emerald-500/30 rounded-[5px] flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
                                     <MdOutlineSync className={`text-emerald-600 text-base shrink-0 ${fetchingFu2 ? 'animate-spin' : ''}`} />
                                     <span>
@@ -1197,7 +1199,7 @@ const FollowUp1 = () => {
 
             {/* Export Range Props Modal */}
             {isExportModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 overflow-y-auto">
                     <div className="bg-[var(--app-card,#ffffff)] w-full max-w-md rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
@@ -1224,7 +1226,7 @@ const FollowUp1 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setExportFormat('excel')}
-                                        className={`p-3 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'excel'
+                                        className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'excel'
                                             ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-emerald-500/10'
                                             }`}
@@ -1236,7 +1238,7 @@ const FollowUp1 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setExportFormat('pdf')}
-                                        className={`p-3 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'pdf'
+                                        className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'pdf'
                                             ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-500/20'
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-rose-500/10'
                                             }`}
@@ -1301,7 +1303,7 @@ const FollowUp1 = () => {
 
                             {/* Custom Date Range Picker */}
                             {exportScope === 'custom' && (
-                                <div className="p-3.5 bg-emerald-500/5 border border-emerald-500/20 rounded-[5px] space-y-3 animate-in fade-in duration-200">
+                                <div className="p-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-[5px] space-y-3 animate-in fade-in duration-200">
                                     <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
                                         ជ្រើសរើសពីថ្ងៃណា ដល់ថ្ងៃណា:
                                     </div>
@@ -1329,7 +1331,7 @@ const FollowUp1 = () => {
                             )}
 
                             {/* Info Box */}
-                            <div className="p-3 bg-slate-100 dark:bg-slate-800/80 rounded-[5px] text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            <div className="p-1 bg-slate-100 dark:bg-slate-800/80 rounded-[5px] text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                 <p className="font-semibold flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 mb-1">
                                     <FaCheckCircle size={13} />
                                     <span>{t('summaryTable')}</span>

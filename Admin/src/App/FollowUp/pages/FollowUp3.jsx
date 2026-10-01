@@ -520,7 +520,7 @@ const FollowUp3 = () => {
             if (exportFormat === 'excel') {
                 exportToExcel(title, exportColumns, dataWithSummary);
             } else {
-                exportToPDF(title, exportColumns, dataWithSummary);
+                exportToPDF(title, exportColumns, dataWithSummary, user?.brand || '', orientation);
             }
 
             setIsExportModalOpen(false);
@@ -533,7 +533,7 @@ const FollowUp3 = () => {
     };
 
     return (
-        <div className="p-3 sm:p-6 space-y-6 max-w-[1600px] mx-auto min-h-screen">
+        <div className="p-1 sm:p-2 space-y-6 max-w-[1600px] mx-auto min-h-screen">
             {/* HTML Datalists for Dynamic Droplists */}
             <datalist id="fu3-location-list">
                 {dynamicSuggestions.locations.map((item, i) => (
@@ -646,7 +646,7 @@ const FollowUp3 = () => {
             </div>
 
             {/* Filter and Search Bar */}
-            <div className="bg-white p-4 sm:p-5 rounded-[5px] border border-slate-100 shadow-sm space-y-3">
+            <div className="bg-white p-2 sm:p-2 rounded-[5px] border border-slate-100 shadow-sm space-y-3">
                 <div className="flex flex-col lg:flex-row items-center gap-3">
                     {/* Search Input */}
                     <div className="relative flex-1 w-full">
@@ -918,7 +918,7 @@ const FollowUp3 = () => {
 
                 {/* Pagination */}
                 {!loading && total > 0 && (
-                    <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+                    <div className="p-2 border-t border-slate-100 flex items-center justify-between">
                         <p className="text-xs text-slate-500 font-medium">
                             បង្ហាញ <span className="font-bold text-slate-800">{Math.min((page - 1) * LIMIT + 1, total)}</span> - <span className="font-bold text-slate-800">{Math.min(page * LIMIT, total)}</span> នៃ <span className="font-bold text-slate-800">{total}</span>
                         </p>
@@ -933,8 +933,8 @@ const FollowUp3 = () => {
 
             {/* Create & Edit Modal (With flexible droplists / datalists & Auto-Fill Detection) */}
             {isFormOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
-                    <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-2xl w-full p-6 sm:p-8 space-y-5 my-8 animate-in fade-in zoom-in duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-1 sm:p-2 overflow-y-auto">
+                    <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-2xl w-full p-6 sm:p-2 space-y-5 my-8 animate-in fade-in zoom-in duration-200">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div className="flex items-center gap-3">
@@ -960,7 +960,7 @@ const FollowUp3 = () => {
 
                         {/* ⚡ Auto-Fill Notification Banner when previous match detected */}
                         {detectedMatch && (
-                            <div className="p-3.5 rounded-[5px] bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="p-1.5 rounded-[5px] bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="flex items-start gap-2.5">
                                     <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs flex-shrink-0 mt-0.5">
                                         <FaBolt />
@@ -1197,7 +1197,7 @@ const FollowUp3 = () => {
 
             {/* Delete Confirmation Modal */}
             {deleteModalItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2">
                     <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in duration-200">
                         <div className="w-12 h-12 rounded-[5px] bg-rose-50 text-rose-600 flex items-center justify-center text-xl mx-auto">
                             <FaTrashAlt />
@@ -1232,7 +1232,7 @@ const FollowUp3 = () => {
 
             {/* Export Modal */}
             {isExportModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2">
                     <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in duration-200">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
@@ -1256,7 +1256,7 @@ const FollowUp3 = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('excel')}
-                                    className={`p-3 rounded-[5px] border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
+                                    className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
                                         exportFormat === 'excel'
                                             ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
                                             : 'border-slate-200 hover:bg-slate-50 text-slate-600'
@@ -1268,7 +1268,7 @@ const FollowUp3 = () => {
                                 <button
                                     type="button"
                                     onClick={() => setExportFormat('pdf')}
-                                    className={`p-3 rounded-[5px] border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
+                                    className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 font-black text-xs transition cursor-pointer ${
                                         exportFormat === 'pdf'
                                             ? 'border-rose-500 bg-rose-50 text-rose-700 shadow-sm'
                                             : 'border-slate-200 hover:bg-slate-50 text-slate-600'

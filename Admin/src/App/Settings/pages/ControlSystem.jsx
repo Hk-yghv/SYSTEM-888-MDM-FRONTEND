@@ -513,8 +513,8 @@ const ControlSystem = () => {
     };
 
     return (
-        <div id="control-system-explorer" className='w-full bg-transparent p-3 md:p-5 select-none space-y-4'>
-            <header className='p-3 w-full border border-slate-300 bg-white rounded-md flex flex-col xl:flex-row xl:items-center justify-between gap-3 shadow-sm'>
+        <div id="control-system-explorer" className='w-full bg-transparent p-1 md:p-2 select-none space-y-4'>
+            <header className='p-1 w-full border border-slate-300 bg-white rounded-md flex flex-col xl:flex-row xl:items-center justify-between gap-3 shadow-sm'>
                 <div>
                     <div>
                         <h1 className='text-lg font-bold text-slate-800 flex items-center gap-2'>
@@ -548,7 +548,7 @@ const ControlSystem = () => {
             </header>
 
             {user?.role === 'Administrator' ? (
-                <div className="p-3 bg-white border border-slate-300 rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
+                <div className="p-1 bg-white border border-slate-300 rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
                     <div className="flex items-center gap-2">
                         <FaGlobeAmericas className="text-indigo-400 text-sm" />
                         <span className="font-bold text-slate-700">
@@ -582,14 +582,14 @@ const ControlSystem = () => {
                     </div>
                 </div>
             ) : (
-                <div className="p-3 bg-white border border-slate-300 rounded-md flex items-center justify-between text-xs text-sky-700 font-semibold">
+                <div className="p-1 bg-white border border-slate-300 rounded-md flex items-center justify-between text-xs text-sky-700 font-semibold">
                     <span>Configuring tenant settings for brand: <span className="font-bold text-slate-900">{selectedBrand || 'Global'}</span></span>
                 </div>
             )}
 
 
             {message && (
-                <div className="p-3 rounded-md bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold animate-fade-in">
+                <div className="p-1 rounded-md bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold animate-fade-in">
                     {message}
                 </div>
             )}
@@ -612,7 +612,7 @@ const ControlSystem = () => {
                 </div>
 
                 <div className="grid min-h-[620px] grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
-                    <aside className="border-b border-slate-300 bg-white p-3 md:border-b-0 md:border-r">
+                    <aside className="border-b border-slate-300 bg-white p-1 md:border-b-0 md:border-r">
                         <div className="mb-3 flex items-center gap-2 px-2 text-xs font-semibold text-slate-600">
                             <FaShieldAlt className="text-sky-700" /> Registry tree
                         </div>
@@ -657,7 +657,7 @@ const ControlSystem = () => {
                             <span>Configuration file</span>
                             <span className="truncate">{selectedBrand || 'Global'} settings</span>
                         </div>
-                        <div className="p-3 sm:p-5">
+                        <div className="p-1 sm:p-2">
 
             <div className="grid grid-cols-1 gap-4">
 
@@ -775,7 +775,7 @@ const ControlSystem = () => {
 
                         <div className="space-y-2">
                             {latePenaltyRules.length === 0 ? (
-                                <div className="p-3 rounded-[5px] bg-gray-950/70 border border-gray-800 text-gray-400 text-[11px] italic">
+                                <div className="p-1 rounded-[5px] bg-gray-950/70 border border-gray-800 text-gray-400 text-[11px] italic">
                                     No penalty rule configured yet.
                                 </div>
                             ) : (
@@ -900,7 +900,7 @@ const ControlSystem = () => {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                         {/* Box A: Reject Submit Reasons */}
-                        <div className="p-4 rounded-[5px] bg-slate-900/90 border border-rose-600/30 space-y-3">
+                        <div className="p-2 rounded-[5px] bg-slate-900/90 border border-rose-600/30 space-y-3">
                             <div className="flex items-center justify-between border-b border-rose-900/40 pb-2">
                                 <h4 className="text-xs font-bold text-rose-400 uppercase flex items-center gap-1.5">
                                     <span>🛑</span> Reject Submit Reasons
@@ -956,7 +956,7 @@ const ControlSystem = () => {
                         </div>
 
                         {/* Box B: Reject CS Reasons */}
-                        <div className="p-4 rounded-[5px] bg-slate-900/90 border border-amber-600/30 space-y-3">
+                        <div className="p-2 rounded-[5px] bg-slate-900/90 border border-amber-600/30 space-y-3">
                             <div className="flex items-center justify-between border-b border-amber-900/40 pb-2">
                                 <h4 className="text-xs font-bold text-amber-400 uppercase flex items-center gap-1.5">
                                     <span>⚠️</span> Reject CS Reasons
@@ -1054,7 +1054,7 @@ const ControlSystem = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                             {droplists.map((cat, catIdx) => (
-                                <div key={catIdx} className="p-4 rounded-[5px] bg-gray-950/60 border border-gray-800 space-y-2">
+                                <div key={catIdx} className="p-2 rounded-[5px] bg-gray-950/60 border border-gray-800 space-y-2">
                                     <h4 className="font-bold text-gray-200 border-b border-gray-800 pb-1.5">{cat.category}</h4>
                                     <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
                                         {cat.items.map((item, itemIdx) => (
@@ -1138,7 +1138,7 @@ const ControlSystem = () => {
 
             {/* Custom Brand Delete Confirmation Modal */}
             {deleteBrandModal.open && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[999999] p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[999999] p-2">
                     <div className="bg-white border border-red-300 rounded-md p-6 w-full max-w-md shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-sm font-bold text-red-400 flex items-center gap-2">
@@ -1152,7 +1152,7 @@ const ControlSystem = () => {
                             <p className="font-bold text-sm text-white">
                                 តើអ្នកពិតជាចង់លុប Brand <span className="text-amber-400 font-mono">"{deleteBrandModal.brandName}"</span> នេះមែនទេ?
                             </p>
-                            <div className="p-3 bg-red-950/50 border border-red-800/80 rounded-[5px] space-y-1.5 text-red-200">
+                            <div className="p-1 bg-red-950/50 border border-red-800/80 rounded-[5px] space-y-1.5 text-red-200">
                                 <p className="font-bold uppercase text-[10px] text-red-400 tracking-wider">{t('deleteBrandWarning')}:</p>
                                 <p className="text-[11px] leading-relaxed">
                                     នៅពេលលុប Brand នេះ ព័ត៌មាន និងទិន្នន័យទាំងអស់ដែលពាក់ព័ន្ធនឹង Brand <span className="font-mono font-bold text-amber-300">"{deleteBrandModal.brandName}"</span> រួមមាន៖

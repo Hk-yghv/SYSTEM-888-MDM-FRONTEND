@@ -87,7 +87,7 @@ const UnlockPhone = () => {
         exportToExcel(data, 'Phone_Unlock_Audit_Logs');
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -97,12 +97,12 @@ const UnlockPhone = () => {
             { header: 'User Name', accessor: 'userName' },
             { header: 'Reason', accessor: 'reason' },
         ];
-        exportToPDF('Phone Unlock Audit History Report', columns, allData);
+        exportToPDF('Phone Unlock Audit History Report', columns, allData, user?.brand || '', orientation);
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
+            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900'>{t('unlockPhone')}</h1>

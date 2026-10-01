@@ -44,7 +44,7 @@ const FollowUp4SubmitModal = ({
         : ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
             <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/60 sticky top-0 z-10">
@@ -64,7 +64,7 @@ const FollowUp4SubmitModal = ({
                 <form onSubmit={onSubmit} className="p-6 space-y-4">
                     {/* Brand selection for master admin */}
                     {isMasterAdmin && (
-                        <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/80 mb-2">
+                        <div className="bg-slate-900/50 p-1 rounded-lg border border-slate-700/80 mb-2">
                             <label className="block text-xs font-semibold text-emerald-400 mb-1">BRAND (Master Admin)</label>
                             <select
                                 value={formData.brand}
@@ -262,7 +262,7 @@ const FollowUp4SubmitModal = ({
                             placeholder="ការបរិយាយបន្ថែម..."
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full bg-slate-900 text-slate-100 text-xs p-3 rounded border border-slate-700 outline-none focus:border-emerald-500"
+                            className="w-full bg-slate-900 text-slate-100 text-xs p-1 rounded border border-slate-700 outline-none focus:border-emerald-500"
                         />
                     </div>
 

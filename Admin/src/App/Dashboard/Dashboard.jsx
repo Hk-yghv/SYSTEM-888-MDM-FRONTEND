@@ -366,7 +366,7 @@ const Dashboard = () => {
     }, [rawContracts, rawPayments]);
 
     return (
-        <div className="w-full min-h-screen p-4 sm:p-6 lg:p-8 space-y-6 font-sans text-slate-900 antialiased select-none bg-slate-100/60">
+        <div className="w-full min-h-screen p-2 sm:p-2 lg:p-2 space-y-6 font-sans text-slate-900 antialiased select-none bg-slate-100/60">
 
             {/* ═══════════════════════════════════════════════════════════
                 1. REFINED FINANCIAL CONTROL BAR (HIGH CONTRAST HEADER)
@@ -526,7 +526,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Right 1 Col: Contract & Security Overview */}
-                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
+                <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 sm:p-2 shadow-sm flex flex-col justify-between space-y-4">
                     <div>
                         <div className="flex items-center justify-between pb-3 border-b-2 border-slate-200">
                             <h3 className="text-sm font-black text-slate-950 uppercase tracking-wide">
@@ -578,7 +578,7 @@ const Dashboard = () => {
             {/* ═══════════════════════════════════════════════════════════
                 4. FULL COMPREHENSIVE BRAND PERFORMANCE BREAKDOWN TABLE
             ═══════════════════════════════════════════════════════════ */}
-            <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 sm:p-6 shadow-sm space-y-4">
+            <div className="bg-white border-2 border-slate-300 rounded-[5px] p-5 sm:p-2 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-slate-200">
                     <div>
                         <h2 className="text-sm sm:text-base font-black text-slate-950 uppercase tracking-wide flex items-center gap-2">

@@ -216,11 +216,11 @@ const CalculateSchedule1 = () => {
         if (result) exportToExcel(result.exportData, result.fileName);
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = (orientation = 'portrait') => {
         const result = getExportData();
         if (!result) return;
         const columns = Object.keys(result.exportData[0] || {}).map(key => ({ header: key, accessor: key }));
-        exportToPDF(result.fileName, columns, result.exportData);
+        exportToPDF(result.fileName, columns, result.exportData, user?.brand || '', orientation);
     };
 
     // Print / PDF handler
@@ -229,7 +229,7 @@ const CalculateSchedule1 = () => {
     };
 
     return (
-        <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+        <div className="p-2 sm:p-2 space-y-6 max-w-7xl mx-auto">
             {/* Top Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--app-card,rgba(255,255,255,0.7))] border border-[var(--app-border,rgba(226,232,240,0.8))] p-5 rounded-[5px] shadow-xs backdrop-blur-md">
                 <div>
@@ -272,7 +272,7 @@ const CalculateSchedule1 = () => {
             </div>
 
             {/* Input Form & Quick Calculator Controls */}
-            <div className="bg-[var(--app-card,rgba(255,255,255,0.75))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-5 sm:p-6 shadow-sm backdrop-blur-md">
+            <div className="bg-[var(--app-card,rgba(255,255,255,0.75))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-5 sm:p-2 shadow-sm backdrop-blur-md">
                 <form onSubmit={handleCalculate} className="space-y-5">
                     <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
                         <FaCalculator className="text-emerald-600" />
@@ -472,7 +472,7 @@ const CalculateSchedule1 = () => {
                     {/* KPI Result Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
                         {/* 1. Principal Amount */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
                                 <span>ប្រាក់ដើមកម្ចី</span>
                                 <FaDollarSign className="text-emerald-500" />
@@ -488,7 +488,7 @@ const CalculateSchedule1 = () => {
                         </div>
 
                         {/* 2. Interest Rate */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
                                 <span>អត្រាការប្រាក់</span>
                                 <FaPercentage className="text-indigo-500" />
@@ -504,7 +504,7 @@ const CalculateSchedule1 = () => {
                         </div>
 
                         {/* 3. Monthly Interest USD */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
                                 <span>ការប្រាក់ក្នុង ១ ខែ</span>
                                 <FaMoneyBillWave className="text-amber-500" />
@@ -520,7 +520,7 @@ const CalculateSchedule1 = () => {
                         </div>
 
                         {/* 4. Monthly Payment */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-emerald-300 rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between bg-emerald-50/40">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-emerald-300 rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between bg-emerald-50/40">
                             <div className="flex items-center justify-between text-emerald-800 text-xs font-bold mb-1">
                                 <span>ត្រូវបង់ក្នុង ១ ខែ</span>
                                 <MdOutlinePayments className="text-emerald-600 text-lg" />
@@ -536,7 +536,7 @@ const CalculateSchedule1 = () => {
                         </div>
 
                         {/* 5. Total Interest */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
                                 <span>សរុបការប្រាក់ទាំងអស់</span>
                                 <FaChartPie className="text-rose-500" />
@@ -552,7 +552,7 @@ const CalculateSchedule1 = () => {
                         </div>
 
                         {/* 6. Total Repayment Return */}
-                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-indigo-300 rounded-[5px] p-4 shadow-xs backdrop-blur-md flex flex-col justify-between bg-indigo-50/40">
+                        <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-indigo-300 rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between bg-indigo-50/40">
                             <div className="flex items-center justify-between text-indigo-900 text-xs font-bold mb-1">
                                 <span>សរុបត្រូវបង់មកវិញ</span>
                                 <FaDollarSign className="text-indigo-600" />
@@ -570,7 +570,7 @@ const CalculateSchedule1 = () => {
 
                     {/* Schedule Table Card */}
                     <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] shadow-sm overflow-hidden backdrop-blur-md">
-                        <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="p-2 sm:p-2 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div className="flex items-center gap-2.5">
                                 <MdOutlineSchedule className="text-emerald-600 text-xl" />
                                 <div>

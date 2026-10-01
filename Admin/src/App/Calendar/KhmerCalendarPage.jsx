@@ -272,7 +272,7 @@ const KhmerCalendarPage = () => {
     const monthTitle = `${MONTH_NAMES[visibleMonth.getMonth()]} ${visibleMonth.getFullYear()}`;
 
     return (
-        <main className="min-h-full bg-[var(--app-bg,#f4f6f8)] p-3 sm:p-5 space-y-4">
+        <main className="min-h-full bg-[var(--app-bg,#f4f6f8)] p-1 sm:p-2 space-y-4">
             <header className="flex flex-col gap-4 border-b border-[var(--app-border,#dbe3e8)] pb-4 xl:flex-row xl:items-end xl:justify-between">
                 <div>
                     <h1 className="mt-1 text-2xl font-bold text-[var(--app-text,#102a2a)]">{monthTitle}</h1>
@@ -345,7 +345,7 @@ const KhmerCalendarPage = () => {
                     </footer>
                 </section>
 
-                <aside className="min-w-0 border-t-2 border-emerald-800 bg-[var(--app-card,#fff)] p-4 xl:border-t-0 xl:border-l-2">
+                <aside className="min-w-0 border-t-2 border-emerald-800 bg-[var(--app-card,#fff)] p-2 xl:border-t-0 xl:border-l-2">
                     <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-3">
                         <div>
                             <p className="text-xs font-bold uppercase text-emerald-700">ថ្ងៃដែលបានជ្រើស</p>

@@ -111,7 +111,7 @@ const Profile = () => {
             </div>
 
             {message && (
-                <div className="p-3 rounded-[5px] bg-indigo-950/80 border border-indigo-700 text-indigo-200 text-xs font-semibold animate-fade-in">
+                <div className="p-1 rounded-[5px] bg-indigo-950/80 border border-indigo-700 text-indigo-200 text-xs font-semibold animate-fade-in">
                     {message}
                 </div>
             )}
@@ -250,7 +250,7 @@ const Profile = () => {
 
                         {/* Automatic reveal of 2-Step Verification when Telegram ID is present */}
                         {telegramId && (
-                            <div className="p-4 rounded-[5px] bg-indigo-950/40 border border-indigo-800/60 space-y-4 animate-in fade-in duration-300">
+                            <div className="p-2 rounded-[5px] bg-indigo-950/40 border border-indigo-800/60 space-y-4 animate-in fade-in duration-300">
                                 <div className="flex items-center justify-between">
                                     <span className="font-bold text-indigo-200 text-xs flex items-center gap-2">
                                         <FaShieldAlt className="text-indigo-400" /> Enable 2-Step Verification OTP
@@ -277,7 +277,7 @@ const Profile = () => {
                                     />
                                 </div>
 
-                                <div className="p-3 rounded-[5px] bg-gray-900/80 border border-gray-800 text-[11px] text-gray-300 space-y-2 leading-relaxed">
+                                <div className="p-1 rounded-[5px] bg-gray-900/80 border border-gray-800 text-[11px] text-gray-300 space-y-2 leading-relaxed">
                                     <p className="font-bold text-amber-400 flex items-center gap-1">
                                         📌 Telegram Bot Setup Guide / ការណែនាំភ្ជាប់ Telegram Bot:
                                     </p>

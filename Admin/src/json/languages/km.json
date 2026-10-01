@@ -514,5 +514,7 @@
   "due1Day": "សល់ពេល ១ ថ្ងៃ",
   "due3Days": "សល់ពេល ៣ ថ្ងៃ",
   "overdueTag": "លើសកំណត់",
-  "dueTodayTag": "ដល់ថ្ងៃបង់"
+  "dueTodayTag": "ដល់ថ្ងៃបង់",
+  "pdfPortrait": "PDF (បញ្ឈរ)",
+  "pdfLandscape": "PDF (ផ្តេក)"
 }

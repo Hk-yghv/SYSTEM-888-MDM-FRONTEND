@@ -514,5 +514,7 @@
   "due1Day": "Due 1 Day",
   "due3Days": "Due 3 Days",
   "overdueTag": "Overdue",
-  "dueTodayTag": "Due Today"
+  "dueTodayTag": "Due Today",
+  "pdfPortrait": "PDF (ແນວຕັ້ງ)",
+  "pdfLandscape": "PDF (ແນວນອນ)"
 }

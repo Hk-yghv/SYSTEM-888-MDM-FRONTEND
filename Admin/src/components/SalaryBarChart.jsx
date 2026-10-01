@@ -80,7 +80,7 @@ const SalaryBarChart = ({
     }, [filteredData]);
 
     return (
-        <div className="w-full bg-[var(--app-card,white)] rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-sm p-4 space-y-3 transition-colors">
+        <div className="w-full bg-[var(--app-card,white)] rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-sm p-2 space-y-3 transition-colors">
             {/* Header with Title & Year Toggle */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--app-border,#f1f5f9)]">
                 <div className="flex items-center gap-2.5">

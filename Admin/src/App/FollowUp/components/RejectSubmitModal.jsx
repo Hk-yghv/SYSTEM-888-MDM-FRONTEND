@@ -47,7 +47,7 @@ const RejectSubmitModal = ({
     const totalCount = Object.values(counts).reduce((acc, curr) => acc + (Number(curr) || 0), 0);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
             <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/80">
@@ -70,7 +70,7 @@ const RejectSubmitModal = ({
                 {/* Modal Body */}
                 <div className="p-6 overflow-y-auto space-y-4 flex-1">
                     {/* Date Selector & Total summary */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-3.5 rounded-[5px] border border-slate-700">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-1.5 rounded-[5px] border border-slate-700">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <FaRegCalendarAlt className="text-rose-400 text-sm" />
                             <span className="text-xs font-semibold text-slate-300">កាលបរិច្ឆេទ៖</span>
@@ -92,7 +92,7 @@ const RejectSubmitModal = ({
 
                     {/* Dynamic Reason List */}
                     {reasons.length === 0 ? (
-                        <div className="text-center py-8 text-slate-400 bg-slate-900/40 rounded-[5px] border border-dashed border-slate-700 p-4">
+                        <div className="text-center py-8 text-slate-400 bg-slate-900/40 rounded-[5px] border border-dashed border-slate-700 p-2">
                             <FaExclamationTriangle className="text-amber-400 text-2xl mx-auto mb-2" />
                             <p className="text-xs font-semibold">មិនទាន់មានបញ្ជីមូលហេតុ REJECT SUBMIT នៅក្នុង Control System នៅឡើយទេ</p>
                             <p className="text-[11px] text-slate-500 mt-1">សូមចូលទៅកាន់ Settings &gt; Control System &gt; &quot;Reject Submit Reasons&quot; ដើម្បីបន្ថែម</p>
@@ -105,7 +105,7 @@ const RejectSubmitModal = ({
                             {reasons.map((reason, idx) => (
                                 <div
                                     key={idx}
-                                    className="flex items-center justify-between bg-slate-900/80 hover:bg-slate-900 p-3 rounded-[5px] border border-slate-700/70 hover:border-slate-600 transition-all shadow-xs"
+                                    className="flex items-center justify-between bg-slate-900/80 hover:bg-slate-900 p-1 rounded-[5px] border border-slate-700/70 hover:border-slate-600 transition-all shadow-xs"
                                 >
                                     <span className="text-xs font-semibold text-slate-200 flex items-center gap-2">
                                         <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-[10px] font-mono">
@@ -145,7 +145,7 @@ const RejectSubmitModal = ({
                 </div>
 
                 {/* Modal Footer */}
-                <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700 bg-slate-900/60">
+                <div className="flex items-center justify-end gap-3 p-2 border-t border-slate-700 bg-slate-900/60">
                     <button
                         type="button"
                         onClick={onClose}

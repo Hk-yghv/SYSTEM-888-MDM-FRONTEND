@@ -513,7 +513,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-4 select-none animate-in fade-in duration-150">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-2 select-none animate-in fade-in duration-150">
             <div className="bg-gray-900 border border-gray-700 rounded-[5px] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-xs">
                 <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
 
@@ -556,7 +556,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 </div>
 
                 {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900/50">
+                <div className="flex-1 overflow-y-auto p-2 space-y-4 bg-gray-900/50">
 
                     {/* TAB 1: Customer Info */}
                     {activeTab === 'customer' && (<>
@@ -700,7 +700,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             </Field>
                         </div>
                         {(form.model || form.serialNumber || form.imei1) && (
-                            <div className="p-3.5 bg-purple-900/20 border border-purple-700/40 rounded-[5px] flex items-center gap-4">
+                            <div className="p-1.5 bg-purple-900/20 border border-purple-700/40 rounded-[5px] flex items-center gap-4">
                                 <FaMobileAlt className="text-purple-400 text-3xl flex-shrink-0" />
                                 <div className="grid grid-cols-4 gap-x-4 gap-y-2 w-full text-xs">
                                     <div><span className="text-gray-500 block text-[10px]">Model</span><span className="text-purple-300 font-bold">{form.model || '—'}</span></div>
@@ -756,30 +756,30 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             <Field label="Interest Rate"><input className={`${inp} font-mono`} type="text" id="interest" value={form.interest || ''} onChange={handleChange} placeholder="e.g. 14%" /></Field>
                             <Field label="Duration"><input className={inp} type="text" id="duration" value={form.duration || ''} onChange={handleChange} placeholder="e.g. 12 Months" /></Field>
                         </div>
-                        <div className="p-4 bg-emerald-900/20 border border-emerald-700/40 rounded-[5px]">
+                        <div className="p-2 bg-emerald-900/20 border border-emerald-700/40 rounded-[5px]">
                             <p className="text-[10px] text-emerald-400 font-bold uppercase mb-3">Loan Summary Preview</p>
                             <div className="grid grid-cols-5 gap-3 text-xs mb-3">
-                                <div className="p-3 bg-gray-900/60 rounded-[5px] border border-gray-800">
+                                <div className="p-1 bg-gray-900/60 rounded-[5px] border border-gray-800">
                                     <span className="text-gray-500 block text-[10px] mb-1">Contract IID (Manual)</span>
                                     <span className="text-indigo-400 font-mono font-bold text-sm">
                                         {(form.brand || user?.brand || 'M8').trim()}-{currentYear}-{String(form.contractSuffix || '1').replace(/[^0-9]/g, '').padStart(9, '0')}
                                     </span>
                                 </div>
-                                <div className="p-3 bg-gray-900/60 rounded-[5px] border border-gray-800">
+                                <div className="p-1 bg-gray-900/60 rounded-[5px] border border-gray-800">
                                     <span className="text-gray-500 block text-[10px] mb-1">Contract ID (Auto)</span>
                                     <span className="text-amber-300 font-mono font-bold text-sm">
                                         {form.contractId || `CT-${currentYear}-...`}
                                     </span>
                                 </div>
-                                <div className="p-3 bg-gray-900/60 rounded-[5px] border border-gray-800">
+                                <div className="p-1 bg-gray-900/60 rounded-[5px] border border-gray-800">
                                     <span className="text-gray-500 block text-[10px] mb-1">Total Loan Amount</span>
                                     <span className="text-emerald-400 font-mono font-bold text-base">${Number(form.amount || 0).toLocaleString()}</span>
                                 </div>
-                                <div className="p-3 bg-gray-900/60 rounded-[5px] border border-gray-800">
+                                <div className="p-1 bg-gray-900/60 rounded-[5px] border border-gray-800">
                                     <span className="text-gray-500 block text-[10px] mb-1">Customer Received</span>
                                     <span className="text-emerald-400 font-mono font-bold text-base">${Number(form.monthlyPayment || 0).toLocaleString()}</span>
                                 </div>
-                                <div className="p-3 bg-gray-900/60 rounded-[5px] border border-gray-800">
+                                <div className="p-1 bg-gray-900/60 rounded-[5px] border border-gray-800">
                                     <span className="text-gray-500 block text-[10px] mb-1">Interest · Duration</span>
                                     <span className="text-gray-200 font-bold">{form.interest || '14%'} · {form.duration || '12 Mo'}</span>
                                 </div>

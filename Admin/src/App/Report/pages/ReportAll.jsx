@@ -259,7 +259,7 @@ const ReportAll = () => {
     };
 
     // Export to PDF
-    const handleExportPDF = () => {
+    const handleExportPDF = (orientation = 'portrait') => {
         const columns = [
             { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
             { header: 'Brand Name', accessor: 'brand' },
@@ -279,9 +279,9 @@ const ReportAll = () => {
     };
 
     return (
-        <div className='w-full p-4 select-none space-y-4'>
+        <div className='w-full p-2 select-none space-y-4'>
             {/* Top Header */}
-            <header className='p-4 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-xl font-black text-slate-900 flex items-center gap-2 tracking-wide'>
@@ -333,7 +333,7 @@ const ReportAll = () => {
 
             {/* KPI Executive Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center text-lg font-bold">
                         <FaUsers />
                     </div>
@@ -343,7 +343,7 @@ const ReportAll = () => {
                     </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-lg font-bold">
                         <FaDollarSign />
                     </div>
@@ -353,7 +353,7 @@ const ReportAll = () => {
                     </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg font-bold">
                         <FaMoneyBillWave />
                     </div>
@@ -363,7 +363,7 @@ const ReportAll = () => {
                     </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg font-bold">
                         <FaExchangeAlt />
                     </div>
@@ -373,7 +373,7 @@ const ReportAll = () => {
                     </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-center text-lg font-bold">
                         <FaLock />
                     </div>
@@ -383,7 +383,7 @@ const ReportAll = () => {
                     </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                     <div className="w-10 h-10 rounded-[5px] bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center text-lg font-bold">
                         <FaImage />
                     </div>
@@ -407,7 +407,7 @@ const ReportAll = () => {
             />
 
             {/* Main Master Summary Table */}
-            <div className="w-full bg-white rounded-[5px] border border-slate-200 shadow-md p-4 space-y-3">
+            <div className="w-full bg-white rounded-[5px] border border-slate-200 shadow-md p-2 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
                     <div>
                         <h2 className="text-base font-black text-slate-900 flex items-center gap-2">

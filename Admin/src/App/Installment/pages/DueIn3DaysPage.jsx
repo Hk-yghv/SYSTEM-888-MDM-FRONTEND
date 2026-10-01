@@ -229,19 +229,19 @@ const DueIn3DaysPage = () => {
         exportToExcel(data, 'Due_In_3Days_Customers');
     };
 
-    const handleExportPDF = () => exportToPDF('Due In 3 Days Customers', [{ header: 'No', cell: (_, i) => i + 1 }, { header: 'Customer', accessor: 'customerNameEn' }, { header: 'Model', accessor: 'model' }, { header: 'Brand', accessor: 'brand' }, { header: 'Loan Date', accessor: 'inputDate' }], dueIn3DaysContracts);
+    const handleExportPDF = (orientation = 'portrait') => exportToPDF('Due In 3 Days Customers', [{ header: 'No', cell: (_, i, orientation) => i + 1 }, { header: 'Customer', accessor: 'customerNameEn' }, { header: 'Model', accessor: 'model' }, { header: 'Brand', accessor: 'brand' }, { header: 'Loan Date', accessor: 'inputDate' }], dueIn3DaysContracts);
 
     const openMenuContract = openMenu.id ? contracts.find(c => (c._id || c.contractId) === openMenu.id) || null : null;
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
             <RepaymentScheduleModal open={scheduleModalOpen} setOpen={setScheduleModalOpen} contract={scheduleModalContract} mode="view_edit" defaultMonthIdx={scheduleModalMonthIdx} onSaved={() => fetchContracts(searchTerm)} />
             <QrPaymentModal open={Boolean(selectedQrContract)} contract={selectedQrContract} onClose={() => setSelectedQrContract(null)} onSaved={() => fetchContracts(searchTerm)} />
             {openMenu.id && openMenuContract && (
                 <ActionDropdownPortal item={openMenuContract} pos={openMenu.pos} onClose={() => setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } })} onOpenSchedule={openScheduleForMonth} onSelectMonth={selectMonthForOuterRow} onOpenQrModal={(c) => setSelectedQrContract(c)} />
             )}
 
-            <header className='p-3 w-full border border-sky-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-1 w-full border border-sky-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-sky-600 flex items-center gap-2 flex-wrap'>
                         <span>Due In 3 Days</span>

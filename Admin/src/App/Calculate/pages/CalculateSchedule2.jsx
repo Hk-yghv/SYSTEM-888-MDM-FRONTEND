@@ -587,7 +587,7 @@ const CalculateSchedule2 = () => {
                 }
             `}</style>
 
-            <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 bg-[#fff]">
+            <div className="p-2 sm:p-2 max-w-7xl mx-auto space-y-6 bg-[#fff]">
 
                 {/* ── Header ────────────────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#fff] p-5 rounded-[5px] border border-slate-200 shadow-xs">
@@ -658,7 +658,7 @@ const CalculateSchedule2 = () => {
 
                 {/* Save Success Alert */}
                 {saveSuccessMsg && (
-                    <div className="p-4 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3 animate-fadeIn">
+                    <div className="p-2 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center gap-3 animate-fadeIn">
                         <FaCheckCircle className="text-emerald-600 text-lg" />
                         <span>{saveSuccessMsg} ព័ត៌មានត្រូវបានរក្សាទុក ដោយជោគជ័យ។</span>
                     </div>
@@ -669,7 +669,7 @@ const CalculateSchedule2 = () => {
 
                     {/* ── Left Column (2 cols): Input Form ──────────── */}
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-[#fff] border border-slate-200 rounded-[5px] p-5 sm:p-6 shadow-xs">
+                        <div className="bg-[#fff] border border-slate-200 rounded-[5px] p-5 sm:p-2 shadow-xs">
                             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
                                 <FaCalculator className="text-violet-600 text-base" />
                                 <h2 className="text-base text-slate-800">
@@ -927,7 +927,7 @@ const CalculateSchedule2 = () => {
                                     <span>កំពុងទាញយកទិន្នន័យ...</span>
                                 </div>
                             ) : filteredHistory.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-xs text-center p-4">
+                                <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-xs text-center p-2">
                                     <FaFileInvoiceDollar className="text-3xl text-slate-300 mb-2" />
                                     <span>មិនទាន់មានទិន្នន័យបានរក្សាទុកទេ</span>
                                     <span className="text-[11px] text-slate-400 mt-1">ចុចប៊ូតុង "រក្សាទុក (Save)" ដើម្បីរក្សាទុកកាលវិភាគ</span>
@@ -942,7 +942,7 @@ const CalculateSchedule2 = () => {
                                             <div
                                                 key={item._id}
                                                 onClick={() => handleLoadRecord(item)}
-                                                className={`p-3 rounded-[5px] border text-xs cursor-pointer transition-all ${followsFormula
+                                                className={`p-1 rounded-[5px] border text-xs cursor-pointer transition-all ${followsFormula
                                                     ? 'bg-red-50 border-red-500 shadow-xs ring-1 ring-red-400'
                                                     : isNewlyAdded
                                                     ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-400 animate-pulse'
@@ -1136,9 +1136,9 @@ const CalculateSchedule2 = () => {
 
                 {/* ── Full History Modal (if user wants bigger view) ──── */}
                 {showHistoryModal && (
-                    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2">
                         <div className="bg-[#fff] rounded-[5px] max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-scaleUp">
-                            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+                            <div className="p-2 sm:p-2 border-b border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <FaHistory className="text-violet-600 text-lg" />
                                     <h3 className="font-black text-base text-slate-800">
@@ -1153,7 +1153,7 @@ const CalculateSchedule2 = () => {
                                 </button>
                             </div>
 
-                            <div className="p-4 border-b border-slate-100">
+                            <div className="p-2 border-b border-slate-100">
                                 <div className="relative">
                                     <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><FaSearch /></span>
                                     <input
@@ -1166,7 +1166,7 @@ const CalculateSchedule2 = () => {
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2">
                                 {filteredHistory.length === 0 ? (
                                     <div className="text-center py-12 text-slate-400 text-sm">
                                         មិនមានទិន្នន័យត្រូវបង្ហាញទេ
@@ -1175,7 +1175,7 @@ const CalculateSchedule2 = () => {
                                     filteredHistory.map((item) => (
                                         <div
                                             key={item._id}
-                                            className={`p-3.5 rounded-[5px] border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${followsInstallmentFormula(item) ? 'border-red-500 bg-red-50/30' : 'border-slate-200 hover:border-violet-300 hover:bg-violet-50/20'}`}>
+                                            className={`p-1.5 rounded-[5px] border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${followsInstallmentFormula(item) ? 'border-red-500 bg-red-50/30' : 'border-slate-200 hover:border-violet-300 hover:bg-violet-50/20'}`}>
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-black text-slate-800 text-sm">

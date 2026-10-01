@@ -141,7 +141,7 @@ const Application = () => {
         exportToExcel(data, 'Application_Contracts');
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -152,13 +152,13 @@ const Application = () => {
             { header: 'Serial No.', accessor: 'serialNumber' },
             { header: 'Monthly ($)', cell: (r) => `$${r.monthlyPayment}` },
         ];
-        exportToPDF('Application Contracts Directory', columns, allData);
+        exportToPDF('Application Contracts Directory', columns, allData, user?.brand || '', orientation);
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
+            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('application')}</span>
@@ -327,7 +327,7 @@ const Application = () => {
 
             {/* Information Detail Modal */}
             {infoData && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[99999] p-2">
                     <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-2xl shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2">
@@ -370,7 +370,7 @@ const Application = () => {
                         {infoData.deviceProblem && (
                             <div className="space-y-1 pt-2 border-t border-gray-800">
                                 <h4 className="text-xs font-bold text-amber-400 uppercase flex items-center gap-1.5">🔧 {t('deviceProblem')}</h4>
-                                <div className="p-3 bg-amber-900/15 border border-amber-700/40 rounded-[5px] text-xs text-amber-300 font-medium leading-relaxed whitespace-pre-wrap">
+                                <div className="p-1 bg-amber-900/15 border border-amber-700/40 rounded-[5px] text-xs text-amber-300 font-medium leading-relaxed whitespace-pre-wrap">
                                     {infoData.deviceProblem}
                                 </div>
                             </div>

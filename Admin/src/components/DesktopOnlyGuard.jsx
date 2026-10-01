@@ -48,7 +48,7 @@ const DesktopOnlyGuard = ({ children }) => {
                         </p>
                     </div>
 
-                    <div className="p-4 rounded-[5px] bg-white/80 border border-white text-left text-xs space-y-2">
+                    <div className="p-2 rounded-[5px] bg-white/80 border border-white text-left text-xs space-y-2">
                         <div className="flex items-center gap-3 text-red-400 font-semibold">
                             <FaMobileAlt className="text-lg" />
                             <span>{t('desktopOnlyTitle')}</span>

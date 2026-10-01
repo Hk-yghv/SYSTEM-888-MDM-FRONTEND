@@ -140,7 +140,7 @@ const PaymentHistory = () => {
         exportToExcel(data, 'Payment_History_Report');
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -151,11 +151,11 @@ const PaymentHistory = () => {
             { header: 'Paid By', accessor: 'paidBy' },
             { header: 'Amount ($)', cell: (r) => `$${r.amount}` }
         ];
-        exportToPDF('Payment History Audit Report', columns, allData);
+        exportToPDF('Payment History Audit Report', columns, allData, user?.brand || '', orientation);
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
             {/* Image Viewer Modal — Gallery Support */}
             {viewImages.length > 0 && (
                 <div
@@ -183,7 +183,7 @@ const PaymentHistory = () => {
                                 <FaTimes />
                             </button>
                         </div>
-                        <div className='relative p-4 flex items-center justify-center bg-slate-100 min-h-[300px]'>
+                        <div className='relative p-2 flex items-center justify-center bg-slate-100 min-h-[300px]'>
                             {/* Prev button */}
                             {viewImages.length > 1 && viewImageIdx > 0 && (
                                 <button
@@ -231,7 +231,7 @@ const PaymentHistory = () => {
                 </div>
             )}
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col gap-3 shadow-xs'>
+            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col gap-3 shadow-xs'>
                 <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
                     <div className='flex items-center gap-3'>
                         <div>

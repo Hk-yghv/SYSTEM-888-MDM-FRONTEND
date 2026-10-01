@@ -100,7 +100,7 @@ const Check = () => {
         exportToExcel(data, 'Check_Contracts');
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -111,12 +111,12 @@ const Check = () => {
             { header: 'Serial No.', accessor: 'serialNumber' },
             { header: 'Monthly ($)', cell: (r) => `$${r.monthlyPayment}` },
         ];
-        exportToPDF('Check Contracts Directory', columns, allData);
+        exportToPDF('Check Contracts Directory', columns, allData, user?.brand || '', orientation);
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
+            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-base font-bold text-slate-900 flex items-center gap-2'>
                         <span>{t('check')}</span>

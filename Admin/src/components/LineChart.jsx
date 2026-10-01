@@ -337,7 +337,7 @@ const LineChart = ({
 
                         return (
                             <div
-                                className={`absolute pointer-events-none z-50 bg-slate-950/95 text-white text-xs p-3 rounded-[5px] shadow-2xl border-2 border-emerald-400 space-y-1.5 transform ${transformX} ${transformY} transition-all duration-150 animate-in fade-in zoom-in-95 backdrop-blur-md min-w-[200px] whitespace-nowrap`}
+                                className={`absolute pointer-events-none z-50 bg-slate-950/95 text-white text-xs p-1 rounded-[5px] shadow-2xl border-2 border-emerald-400 space-y-1.5 transform ${transformX} ${transformY} transition-all duration-150 animate-in fade-in zoom-in-95 backdrop-blur-md min-w-[200px] whitespace-nowrap`}
                                 style={{
                                     left: `${(pointsData[hoveredIndex].x / viewBoxWidth) * 100}%`,
                                     top: topPosition

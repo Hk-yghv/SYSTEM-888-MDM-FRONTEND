@@ -81,7 +81,7 @@ const Comments = () => {
         exportToExcel(data, 'Comments_Contracts');
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -91,12 +91,12 @@ const Comments = () => {
             { header: 'Model', accessor: 'model' },
             { header: 'Comment Note', accessor: 'notes' },
         ];
-        exportToPDF('Comments Directory', columns, allData);
+        exportToPDF('Comments Directory', columns, allData, user?.brand || '', orientation);
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
+            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-base font-bold text-slate-900 flex items-center gap-2'>
                         <span>{t('comments')}</span>
@@ -190,7 +190,7 @@ const Comments = () => {
 
             {/* Information Detail Modal */}
             {selectedInfo && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-2">
                     <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-lg shadow-2xl space-y-4">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-base font-bold text-cyan-300 flex items-center gap-2">
@@ -198,13 +198,13 @@ const Comments = () => {
                             </h3>
                             <button onClick={() => setSelectedInfo(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold">✕</button>
                         </div>
-                        <div className="p-4 bg-gray-900/80 rounded-[5px] border border-cyan-500/30 space-y-2 text-xs">
+                        <div className="p-2 bg-gray-900/80 rounded-[5px] border border-cyan-500/30 space-y-2 text-xs">
                             <p className="text-gray-400">Customer: <span className="text-gray-100 font-bold">{selectedInfo.customerNameEn}</span></p>
                             <p className="text-gray-400">Device Model: <span className="text-gray-200 font-semibold">{selectedInfo.model}</span></p>
                             <p className="text-gray-400">Serial Number: <span className="text-indigo-300 font-mono">{selectedInfo.serialNumber}</span></p>
                             <div className="pt-2 border-t border-gray-800">
                                 <span className="text-cyan-400 font-bold block mb-1">Comment Note:</span>
-                                <p className="text-white bg-gray-950 p-3 rounded-[5px] border border-gray-800 font-sans leading-relaxed">{selectedInfo.notes || 'No notes'}</p>
+                                <p className="text-white bg-gray-950 p-1 rounded-[5px] border border-gray-800 font-sans leading-relaxed">{selectedInfo.notes || 'No notes'}</p>
                             </div>
                         </div>
                         <div className="text-right">

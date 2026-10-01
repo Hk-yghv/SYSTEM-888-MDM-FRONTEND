@@ -8,19 +8,19 @@ const ExportDropdown = ({
     onExportPDF,
     triggerLabel,
     excelLabel,
-    pdfLabel,
     className = ''
 }) => {
     const { t } = useLanguage();
     const dropdownRef = useRef(null);
 
     const resolvedTrigger = triggerLabel || t('export');
-    const resolvedExcel = excelLabel || t('exportExcel');
-    const resolvedPdf = pdfLabel || t('exportPDF');
+    const resolvedExcel = excelLabel || t('exportExcel') || 'Excel';
+    const resolvedPdfPortrait = t('pdfPortrait') || 'PDF (Portrait)';
+    const resolvedPdfLandscape = t('pdfLandscape') || 'PDF (Landscape)';
 
-    const runExport = (handler) => {
+    const runExport = (handler, arg) => {
         if (dropdownRef.current) dropdownRef.current.open = false;
-        handler?.();
+        handler?.(arg);
     };
 
     return (
@@ -30,27 +30,36 @@ const ExportDropdown = ({
                 <span>{resolvedTrigger}</span>
                 <MdKeyboardArrowDown className="text-base" />
             </summary>
-            <div className="absolute right-0 z-50 mt-1 min-w-36 overflow-hidden rounded-[5px] border border-slate-200 bg-white p-1 shadow-lg">
+            <div className="absolute right-0 z-50 mt-1 min-w-44 overflow-hidden rounded-[5px] border border-slate-200 bg-white p-1 shadow-lg divide-y divide-slate-100">
                 <button
                     type="button"
                     onClick={() => runExport(onExportExcel)}
                     className="flex w-full items-center gap-2 rounded-[5px] px-3 py-2 text-left text-xs font-semibold text-slate-700 transition-colors hover:bg-emerald-50 hover:text-emerald-800 cursor-pointer"
                 >
-                    <FaFileExcel className="text-emerald-600" />
+                    <FaFileExcel className="text-emerald-600 text-sm" />
                     <span>{resolvedExcel}</span>
                 </button>
-                <button
-                    type="button"
-                    onClick={() => runExport(onExportPDF)}
-                    className="flex w-full items-center gap-2 rounded-[5px] px-3 py-2 text-left text-xs font-semibold text-slate-700 transition-colors hover:bg-red-50 hover:text-red-800 cursor-pointer"
-                >
-                    <MdPictureAsPdf className="text-red-600" />
-                    <span>{resolvedPdf}</span>
-                </button>
+                <div className="pt-1">
+                    <button
+                        type="button"
+                        onClick={() => runExport(onExportPDF, 'portrait')}
+                        className="flex w-full items-center gap-2 rounded-[5px] px-3 py-2 text-left text-xs font-semibold text-slate-700 transition-colors hover:bg-rose-50 hover:text-rose-800 cursor-pointer"
+                    >
+                        <MdPictureAsPdf className="text-rose-600 text-sm" />
+                        <span>{resolvedPdfPortrait}</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => runExport(onExportPDF, 'landscape')}
+                        className="flex w-full items-center gap-2 rounded-[5px] px-3 py-2 text-left text-xs font-semibold text-slate-700 transition-colors hover:bg-indigo-50 hover:text-indigo-800 cursor-pointer"
+                    >
+                        <MdPictureAsPdf className="text-indigo-600 text-sm" />
+                        <span>{resolvedPdfLandscape}</span>
+                    </button>
+                </div>
             </div>
         </details>
     );
 };
 
 export default ExportDropdown;
-

@@ -12,7 +12,7 @@ const CustomModal = ({ open, title, message, type = 'info', onConfirm, onCancel,
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-2 animate-in fade-in duration-200">
             <div className="bg-[#0f1426] border border-gray-700/80 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 text-center">
                 <div className="w-14 h-14 rounded-[5px] bg-gray-900/90 border border-gray-700 flex items-center justify-center mx-auto shadow-inner">
                     {icons[type] || icons.info}

@@ -263,7 +263,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     {/* Account Menu */}
                     {accountOpen && (
                         <div className='absolute top-[5vh] right-0 bg-white border border-slate-200 w-[220px] p-2 rounded-[5px] shadow-xl z-999999 animate-in fade-in duration-200'>
-                            <div className='p-3 border-b border-slate-100 mb-1 bg-slate-50 rounded-[5px]'>
+                            <div className='p-1 border-b border-slate-100 mb-1 bg-slate-50 rounded-[5px]'>
                                 <p className='text-xs font-bold text-slate-800'>{user?.name || 'BOY BOY'}</p>
                                 <p className='text-[11px] text-emerald-600 font-mono mt-0.5'>{user?.email || 'yonghouvh@gmail.com'}</p>
                                 <span className='inline-block text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 mt-1.5 border border-emerald-200'>

@@ -140,7 +140,7 @@ const Device = () => {
         exportToExcel(data, 'Device_Inventory_Report');
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -152,12 +152,12 @@ const Device = () => {
             { header: 'Phone Lock', accessor: 'lockPhoneStatus' },
             { header: 'Wallpaper Lock', accessor: 'lockWallpaperStatus' }
         ];
-        exportToPDF('Device Inventory Report', columns, allData);
+        exportToPDF('Device Inventory Report', columns, allData, user?.brand || '', orientation);
     };
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
+            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
@@ -268,7 +268,7 @@ const Device = () => {
 
             <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
             {selectedDevice && (
-                <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
+                <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[99999] p-2">
 
                     <div className="
             bg-white
@@ -390,7 +390,7 @@ const Device = () => {
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
 
                                     {/* Model */}
-                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Model Name
                                         </span>
@@ -400,7 +400,7 @@ const Device = () => {
 
 
                                     {/* Version */}
-                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Version / OS
                                         </span>
@@ -410,7 +410,7 @@ const Device = () => {
 
 
                                     {/* Serial */}
-                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Serial Number
                                         </span>
@@ -420,7 +420,7 @@ const Device = () => {
 
 
                                     {/* IMEI 1 */}
-                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             IMEI 1
                                         </span>
@@ -430,7 +430,7 @@ const Device = () => {
 
 
                                     {/* IMEI 2 */}
-                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             IMEI 2
                                         </span>
@@ -440,7 +440,7 @@ const Device = () => {
 
 
                                     {/* MEID */}
-                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             MEID
                                         </span>
@@ -450,7 +450,7 @@ const Device = () => {
 
 
                                     {/* Color */}
-                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Color
                                         </span>
@@ -460,7 +460,7 @@ const Device = () => {
 
 
                                     {/* Brand */}
-                                    <div className="p-3 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
+                                    <div className="p-1 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
                                             Brand
                                         </span>
@@ -478,7 +478,7 @@ const Device = () => {
 
                                 {/* Customer */}
                                 <div className="
-                        p-4
+                        p-2
                         bg-white
                         rounded-[5px]
                         border border-gray-200
@@ -534,7 +534,7 @@ const Device = () => {
 
                                 {/* Security */}
                                 <div className="
-                        p-4
+                        p-2
                         bg-white
                         rounded-[5px]
                         border border-gray-200
@@ -649,7 +649,7 @@ const Device = () => {
 
                             {/* ================= LOCK / WALLPAPER ACTIONS ================= */}
                             {hasPermission('/device', 'deviceAction') && (
-                                <div className="p-4 bg-white border border-indigo-200 rounded-[5px]">
+                                <div className="p-2 bg-white border border-indigo-200 rounded-[5px]">
                                     <div className="flex items-center gap-2 mb-3">
                                         <span className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs">🔧</span>
                                         <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Device Actions (Lock / Wallpaper)</h4>
@@ -784,7 +784,7 @@ const Device = () => {
 
                             {/* ================= DEVICE PROBLEM ================= */}
                             <div className="
-                    p-4
+                    p-2
                     bg-white
                     border border-amber-200
                     rounded-[5px]
@@ -835,7 +835,7 @@ const Device = () => {
                             {/* ================= 3D DEVICE ================= */}
                             <div className="
                     bg-white
-                    p-4
+                    p-2
                     rounded-[5px]
                     border border-gray-200
                 ">

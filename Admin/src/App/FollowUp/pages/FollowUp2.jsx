@@ -102,6 +102,7 @@ const FollowUp2 = () => {
     // Export Modal State
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [exportFormat, setExportFormat] = useState('excel'); // 'excel' | 'pdf'
+    const [exportOrientation, setExportOrientation] = useState('landscape'); // 'portrait' | 'landscape'
     const [exportScope, setExportScope] = useState('month'); // 'today' | 'week' | 'month' | 'custom' | 'all'
     const [exportStartDate, setExportStartDate] = useState('');
     const [exportEndDate, setExportEndDate] = useState('');
@@ -615,8 +616,9 @@ const FollowUp2 = () => {
     }, [dataList]);
 
     // Open Export Props Modal
-    const handleOpenExportModal = (format = 'excel') => {
+    const handleOpenExportModal = (format = 'excel', orientation = 'landscape') => {
         setExportFormat(format);
+        setExportOrientation(orientation);
         const todayStr = new Date().toISOString().split('T')[0];
         setExportStartDate(todayStr);
         setExportEndDate(todayStr);
@@ -780,7 +782,7 @@ const FollowUp2 = () => {
             if (exportFormat === 'excel') {
                 exportToExcel(title, exportColumns, exportDataWithTotals, user?.brand || 'SYSTEM');
             } else {
-                exportToPDF(title, exportColumns, exportDataWithTotals, user?.brand || 'SYSTEM', 'landscape');
+                exportToPDF(title, exportColumns, exportDataWithTotals, user?.brand || 'SYSTEM', exportOrientation);
             }
 
             setIsExportModalOpen(false);
@@ -794,7 +796,7 @@ const FollowUp2 = () => {
 
 
     return (
-        <div className="p-4 md:p-6 space-y-6 max-w-full overflow-x-hidden">
+        <div className="p-2 md:p-2 space-y-6 max-w-full overflow-x-hidden">
             {/* Header / Title Area */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[var(--app-card,#ffffff)] p-5 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs">
                 <div>
@@ -810,7 +812,7 @@ const FollowUp2 = () => {
                     {hasPermission('/follow-up/follow-up-2', 'export') && (
                         <ExportDropdown
                             onExportExcel={() => handleOpenExportModal('excel')}
-                            onExportPDF={() => handleOpenExportModal('pdf')}
+                            onExportPDF={(orientation) => handleOpenExportModal('pdf', orientation)}
                             excelLabel={t('exportExcel') || 'Export Excel'}
                             pdfLabel={t('exportPDF') || 'Export PDF'}
                         />
@@ -831,7 +833,7 @@ const FollowUp2 = () => {
             {/* KPI Summary Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
                 {/* Total Records */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>កំណត់ត្រាសរុប</span>
                         <FaListUl className="text-indigo-500" size={14} />
@@ -843,7 +845,7 @@ const FollowUp2 = () => {
                 </div>
 
                 {/* Total Loan / Pawn Requested */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('requestedAmount') || 'សរុបស្នើបញ្ចាំ'}</span>
                         <FaDollarSign className="text-amber-500" size={14} />
@@ -855,7 +857,7 @@ const FollowUp2 = () => {
                 </div>
 
                 {/* Total Success */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalSuccess') || 'សរុបជោគជ័យ'}</span>
                         <FaCheckCircle className="text-emerald-500" size={14} />
@@ -867,7 +869,7 @@ const FollowUp2 = () => {
                 </div>
 
                 {/* Total Failed */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('totalFailed') || 'សរុបបរាជ័យ'}</span>
                         <FaTimesCircle className="text-rose-500" size={14} />
@@ -879,7 +881,7 @@ const FollowUp2 = () => {
                 </div>
 
                 {/* Success Rate */}
-                <div className="bg-[var(--app-card,#ffffff)] p-4 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
+                <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
                         <span>{t('successRate') || 'អត្រាជោគជ័យ'}</span>
                         <FaChartPie className="text-sky-500" size={14} />
@@ -892,7 +894,7 @@ const FollowUp2 = () => {
             </div>
 
             {/* Filter Controls */}
-            <form onSubmit={handleSearchSubmit} className="bg-[var(--app-card,#ffffff)] p-4 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center gap-3">
+            <form onSubmit={handleSearchSubmit} className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center gap-3">
                 {/* Search Bar */}
                 <div className="relative flex-1 min-w-[200px]">
                     <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
@@ -983,7 +985,7 @@ const FollowUp2 = () => {
                     <div className="flex items-center gap-2">
                         <ExportDropdown
                             onExportExcel={() => handleOpenExportModal('excel')}
-                            onExportPDF={() => handleOpenExportModal('pdf')}
+                            onExportPDF={(orientation) => handleOpenExportModal('pdf', orientation)}
                             excelLabel="Export Excel"
                             pdfLabel="Export PDF"
                         />
@@ -1245,7 +1247,7 @@ const FollowUp2 = () => {
                 </div>
 
                 {/* Pagination */}
-                <div className="p-4 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
+                <div className="p-2 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
                     <span className="text-xs text-[var(--app-text-muted,#64748b)]">
                         បង្ហាញទំព័រ {page} នៃ {Math.ceil(total / LIMIT) || 1} (សរុប {total} កំណត់ត្រា)
                     </span>
@@ -1260,7 +1262,7 @@ const FollowUp2 = () => {
 
             {/* Create / Edit Form Modal */}
             {isFormOpen && (
-                <div className="fixed inset-0 z-500000 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+                <div className="fixed inset-0 z-500000 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 overflow-y-auto">
                     <div className="bg-[var(--app-card,#ffffff)] w-full max-w-xl rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
@@ -1280,7 +1282,7 @@ const FollowUp2 = () => {
                         <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
                             {/* ⚡ Auto-Fill Notification Banner when previous match detected */}
                             {detectedMatch && (
-                                <div className="p-3 rounded-[5px] bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex items-center justify-between gap-3 animate-in fade-in">
+                                <div className="p-1 rounded-[5px] bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex items-center justify-between gap-3 animate-in fade-in">
                                     <div>
                                         <p className="text-xs font-bold text-emerald-900">
                                             ⚡ រកឃើញទិន្នន័យអតិថិជនធ្លាប់បញ្ចូលពីមុន៖ {detectedMatch.customerName} {detectedMatch.phone ? `(${detectedMatch.phone})` : ''}
@@ -1456,7 +1458,7 @@ const FollowUp2 = () => {
                             </div>
 
                             {/* Multiple Images Upload Box */}
-                            <div className="p-3.5 bg-slate-500/5 rounded-[5px] border border-dashed border-indigo-300 dark:border-indigo-700/60 space-y-3">
+                            <div className="p-1.5 bg-slate-500/5 rounded-[5px] border border-dashed border-indigo-300 dark:border-indigo-700/60 space-y-3">
                                 <div className="flex items-center justify-between">
                                     <label className="text-xs font-bold text-[var(--app-text,#334155)] flex items-center gap-1.5">
                                         <FaCamera className="text-indigo-600" size={14} />
@@ -1469,7 +1471,7 @@ const FollowUp2 = () => {
 
                                 {/* Custom Upload Button */}
                                 <div>
-                                    <label className="flex items-center justify-center gap-2 p-3 bg-[var(--app-card,#ffffff)] hover:bg-indigo-500/10 border border-indigo-300 dark:border-indigo-700 rounded-[5px] cursor-pointer transition-all text-xs font-semibold text-indigo-600 dark:text-indigo-400 shadow-2xs">
+                                    <label className="flex items-center justify-center gap-2 p-1 bg-[var(--app-card,#ffffff)] hover:bg-indigo-500/10 border border-indigo-300 dark:border-indigo-700 rounded-[5px] cursor-pointer transition-all text-xs font-semibold text-indigo-600 dark:text-indigo-400 shadow-2xs">
                                         <MdCloudUpload size={18} />
                                         <span>ចុចទីនេះដើម្បីជ្រើសរើសរូបភាព (អាចជ្រើសរើសបានច្រើនសន្លឹក)</span>
                                         <input
@@ -1619,7 +1621,7 @@ const FollowUp2 = () => {
 
             {/* Photo Lightbox / Preview Modal */}
             {isPreviewOpen && previewImages.length > 0 && (
-                <div className="fixed inset-0 z-5000 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200" >
+                <div className="fixed inset-0 z-5000 flex items-center justify-center bg-black/85 backdrop-blur-sm p-2 animate-in fade-in duration-200" >
                     <button
                         onClick={() => setIsPreviewOpen(false)}
                         className="absolute top-4 right-4 p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer z-50"
@@ -1640,14 +1642,14 @@ const FollowUp2 = () => {
                             <>
                                 <button
                                     onClick={() => setPreviewIndex(prev => (prev > 0 ? prev - 1 : previewImages.length - 1))}
-                                    className="absolute left-2 sm:-left-12 top-1/2 -translate-y-1/2 p-3 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
+                                    className="absolute left-2 sm:-left-12 top-1/2 -translate-y-1/2 p-1 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
                                     title="Previous"
                                 >
                                     <FaChevronLeft size={18} />
                                 </button>
                                 <button
                                     onClick={() => setPreviewIndex(prev => (prev < previewImages.length - 1 ? prev + 1 : 0))}
-                                    className="absolute right-2 sm:-right-12 top-1/2 -translate-y-1/2 p-3 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
+                                    className="absolute right-2 sm:-right-12 top-1/2 -translate-y-1/2 p-1 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
                                     title="Next"
                                 >
                                     <FaChevronRight size={18} />
@@ -1674,7 +1676,7 @@ const FollowUp2 = () => {
 
             {/* Export Range Props Modal */}
             {isExportModalOpen && (
-                <div className="fixed inset-0 z-5000 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+                <div className="fixed inset-0 z-5000 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 overflow-y-auto">
                     <div className="bg-[var(--app-card,#ffffff)] w-full max-w-md rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
@@ -1701,7 +1703,7 @@ const FollowUp2 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setExportFormat('excel')}
-                                        className={`p-3 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'excel'
+                                        className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'excel'
                                             ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-emerald-500/10'
                                             }`}
@@ -1713,7 +1715,7 @@ const FollowUp2 = () => {
                                     <button
                                         type="button"
                                         onClick={() => setExportFormat('pdf')}
-                                        className={`p-3 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'pdf'
+                                        className={`p-1 rounded-[5px] border flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${exportFormat === 'pdf'
                                             ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-500/20'
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-rose-500/10'
                                             }`}
@@ -1778,7 +1780,7 @@ const FollowUp2 = () => {
 
                             {/* Custom Date Range Picker */}
                             {exportScope === 'custom' && (
-                                <div className="p-3.5 bg-indigo-500/5 border border-indigo-500/20 rounded-[5px] space-y-3 animate-in fade-in duration-200">
+                                <div className="p-1.5 bg-indigo-500/5 border border-indigo-500/20 rounded-[5px] space-y-3 animate-in fade-in duration-200">
                                     <div className="text-xs font-bold text-indigo-800 dark:text-indigo-300">
                                         ជ្រើសរើសពីថ្ងៃណា ដល់ថ្ងៃណា:
                                     </div>
@@ -1806,7 +1808,7 @@ const FollowUp2 = () => {
                             )}
 
                             {/* Info Box */}
-                            <div className="p-3 bg-slate-100 dark:bg-slate-800/80 rounded-[5px] text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            <div className="p-1 bg-slate-100 dark:bg-slate-800/80 rounded-[5px] text-xs text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                 <p className="font-semibold flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 mb-1">
                                     <FaCheckCircle size={13} />
                                     <span>{t('summaryTable')}</span>
@@ -1852,7 +1854,7 @@ const FollowUp2 = () => {
 
             {/* Duplicate Detection Modal */}
             {isDuplicateModalOpen && duplicateData && (
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-2">
                     <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[5px] border border-amber-400/50 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="flex items-center gap-3 px-5 py-4 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-700">

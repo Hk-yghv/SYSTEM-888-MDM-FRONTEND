@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
+import { AiOutlineMenu } from 'react-icons/ai';
 import { MdOutlineSync, MdSearch, MdPictureAsPdf, MdQrCode2 } from 'react-icons/md';
 import { FaFileExcel, FaDollarSign, FaExclamationTriangle } from 'react-icons/fa';
 import RepaymentScheduleModal from '../../Contract/components/RepaymentScheduleModal';
@@ -217,7 +218,7 @@ const Overdue3DaysPage = () => {
         }
         const rect = e.currentTarget.getBoundingClientRect();
         setOpenMenu({ id: itemId, pos: { left: rect.right - 240, bottom: rect.bottom } });
-    }; 
+    };
 
     const openScheduleForMonth = (contract, monthIdx) => { setScheduleModalContract(contract); setScheduleModalMonthIdx(monthIdx); setScheduleModalOpen(true); };
     const selectMonthForOuterRow = (contract, monthIdx) => { const id = contract._id || contract.contractId; setSelectedMonthByContract(prev => ({ ...prev, [id]: monthIdx })); };
@@ -231,19 +232,19 @@ const Overdue3DaysPage = () => {
         exportToExcel(data, 'Overdue_3_Days_Customers');
     };
 
-    const handleExportPDF = () => exportToPDF('Overdue 3 Days Customers', [{ header: 'No', cell: (_, i) => i + 1 }, { header: 'Customer', accessor: 'customerNameEn' }, { header: 'Model', accessor: 'model' }, { header: 'Brand', accessor: 'brand' }, { header: 'Loan Date', accessor: 'inputDate' }], overdue3DaysContracts);
+    const handleExportPDF = (orientation = 'portrait') => exportToPDF('Overdue 3 Days Customers', [{ header: 'No', cell: (_, i, orientation) => i + 1 }, { header: 'Customer', accessor: 'customerNameEn' }, { header: 'Model', accessor: 'model' }, { header: 'Brand', accessor: 'brand' }, { header: 'Loan Date', accessor: 'inputDate' }], overdue3DaysContracts);
 
     const openMenuContract = openMenu.id ? contracts.find(c => (c._id || c.contractId) === openMenu.id) || null : null;
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4 relative'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
             <RepaymentScheduleModal open={scheduleModalOpen} setOpen={setScheduleModalOpen} contract={scheduleModalContract} mode="view_edit" defaultMonthIdx={scheduleModalMonthIdx} onSaved={() => fetchContracts(searchTerm)} />
             <QrPaymentModal open={Boolean(selectedQrContract)} contract={selectedQrContract} onClose={() => setSelectedQrContract(null)} onSaved={() => fetchContracts(searchTerm)} />
             {openMenu.id && openMenuContract && (
                 <ActionDropdownPortal item={openMenuContract} pos={openMenu.pos} onClose={() => setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } })} onOpenSchedule={openScheduleForMonth} onSelectMonth={selectMonthForOuterRow} onOpenQrModal={(c) => setSelectedQrContract(c)} />
             )}
 
-            <header className='p-3 w-full border border-orange-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-1 w-full border border-orange-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-orange-500 flex items-center gap-2 flex-wrap'>
                         <span>{t('overdue3Days')}</span>

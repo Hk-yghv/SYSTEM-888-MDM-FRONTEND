@@ -220,7 +220,7 @@ const Customer = () => {
         exportToExcel(excelData, 'MDM_Customer_List');
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -233,7 +233,7 @@ const Customer = () => {
             { header: 'Total ($)', accessor: 'amount' },
             { header: 'Status', accessor: 'status' },
         ];
-        exportToPDF('Customer Master Report', columns, allData);
+        exportToPDF('Customer Master Report', columns, allData, user?.brand || '', orientation);
     };
 
     // Derived payment totals for selected customer
@@ -243,10 +243,10 @@ const Customer = () => {
     const repaymentPct = totalLoan > 0 ? Math.min(100, Math.round((totalPaidSum / totalLoan) * 100)) : 0;
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
 
             {/* Header */}
-            <header className='p-3 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
+            <header className='p-1 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900'>{t('customer')}</h1>
@@ -440,7 +440,7 @@ const Customer = () => {
 
             {/* Full Customer Detail Modal */}
             {selectedCustomer && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[99999] p-4">
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[99999] p-2">
                     <div className="bg-white border border-gray-200 rounded-[26px] w-full max-w-4xl shadow-[0_18px_45px_rgba(0,0,0,0.20)] max-h-[92vh] overflow-y-auto">
 
                         {/* Modal Header */}
@@ -633,7 +633,7 @@ const Customer = () => {
                             </div>
 
                             {/* ================= CUSTOMER INFORMATION ================= */}
-                            <div className="rounded-[20px] bg-white border border-gray-200 p-4 shadow-sm">
+                            <div className="rounded-[20px] bg-white border border-gray-200 p-2 shadow-sm">
 
                                 <h4 className="
                         text-[11px]
@@ -703,7 +703,7 @@ const Customer = () => {
                             </div>
 
                             {/* ================= DEVICE DETAILS ================= */}
-                            <div className="rounded-[20px] bg-white border border-gray-200 p-4 shadow-sm">
+                            <div className="rounded-[20px] bg-white border border-gray-200 p-2 shadow-sm">
 
                                 <h4 className="
                         text-[11px]
@@ -779,7 +779,7 @@ const Customer = () => {
                         rounded-[20px]
                         border border-amber-200
                         bg-amber-50
-                        p-4
+                        p-2
                         shadow-sm
                     ">
 
@@ -795,7 +795,7 @@ const Customer = () => {
                                     </h4>
 
                                     <div className="
-                            p-3
+                            p-1
                             bg-white
                             border border-amber-200
                             rounded-[5px]
@@ -811,7 +811,7 @@ const Customer = () => {
                             )}
 
                             {/* ================= LOAN TERMS ================= */}
-                            <div className="rounded-[20px] bg-white border border-gray-200 p-4 shadow-sm">
+                            <div className="rounded-[20px] bg-white border border-gray-200 p-2 shadow-sm">
 
                                 <h4 className="
                         text-[11px]
@@ -867,7 +867,7 @@ const Customer = () => {
                             </div>
 
                             {/* ================= PAYMENT HISTORY ================= */}
-                            <div className="rounded-[20px] bg-white border border-gray-200 p-4 shadow-sm">
+                            <div className="rounded-[20px] bg-white border border-gray-200 p-2 shadow-sm">
 
                                 <div className="flex items-center justify-between mb-3">
                                     <h4 className="
@@ -883,7 +883,7 @@ const Customer = () => {
 
                                 {/* Financial Summary */}
                                 <div className="
-                        p-3
+                        p-1
                         bg-gray-50
                         border border-gray-200
                         rounded-[5px]
@@ -1076,7 +1076,7 @@ const Customer = () => {
                     rounded-[5px]
                     bg-white
                     border border-gray-200
-                    p-4
+                    p-2
                     shadow-sm
                 ">
 
@@ -1105,7 +1105,7 @@ const Customer = () => {
                                     {/* Phone Lock */}
                                     <div className="
                             group
-                            p-3
+                            p-1
                             rounded-[5px]
                             bg-gray-50
                             border border-gray-200
@@ -1181,7 +1181,7 @@ const Customer = () => {
                                     {/* Wallpaper Lock */}
                                     <div className="
                             group
-                            p-3
+                            p-1
                             rounded-[5px]
                             bg-gray-50
                             border border-gray-200
@@ -1263,7 +1263,7 @@ const Customer = () => {
 
             {/* Customer Profile QR Code Modal */}
             {qrCustomer && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[999999] p-4">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[999999] p-2">
 
                     <div className="
             bg-white
@@ -1322,7 +1322,7 @@ const Customer = () => {
                         {/* Customer Summary */}
                         <div className="
                 bg-gray-50
-                p-3
+                p-1
                 rounded-[5px]
                 border border-gray-200
                 text-left
@@ -1361,7 +1361,7 @@ const Customer = () => {
                         {/* QR Code */}
                         <div className="
                 bg-white
-                p-4
+                p-2
                 rounded-[5px]
                 border-4
                 border-emerald-100
@@ -1383,7 +1383,7 @@ const Customer = () => {
                         text-xs
                         font-semibold
                         text-center
-                        p-4
+                        p-2
                     ">
                                     {qrError}
                                 </div>
@@ -1479,7 +1479,7 @@ const Customer = () => {
             {/* Photo Gallery Modal for "See Photo" */}
             {photoGalleryCustomer && (
                 <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4 animate-in fade-in duration-150"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2 animate-in fade-in duration-150"
                     onClick={() => setPhotoGalleryCustomer(null)}
                 >
                     <div
@@ -1487,7 +1487,7 @@ const Customer = () => {
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-4 border-b border-slate-800 text-white bg-slate-950">
+                        <div className="flex items-center justify-between p-2 border-b border-slate-800 text-white bg-slate-950">
                             <div className="flex items-center gap-2.5">
                                 <div className="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-base">
                                     <FaFileImage />

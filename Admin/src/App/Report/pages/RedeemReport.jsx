@@ -128,7 +128,7 @@ const RedeemReport = () => {
         exportToExcel('Redeem Contracts Report', columns, allData, user?.brand || '');
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         if (activeTab === 'summary') {
             const summaryColumns = [
                 { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
@@ -211,8 +211,8 @@ const RedeemReport = () => {
     }, [allContracts, dataList]);
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
-            <header className='p-4 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-xl font-black text-slate-900 flex items-center gap-2 tracking-wide'>
@@ -254,7 +254,7 @@ const RedeemReport = () => {
             {activeTab === 'dashboard' && (
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-4 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-4">
+                        <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-4">
                             <div className="w-12 h-12 rounded-[5px] bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-xl font-bold">
                                 <FaUndoAlt />
                             </div>
@@ -264,7 +264,7 @@ const RedeemReport = () => {
                             </div>
                         </div>
 
-                        <div className="p-4 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-4">
+                        <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-4">
                             <div className="w-12 h-12 rounded-[5px] bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-xl font-bold">
                                 <FaDollarSign />
                             </div>
@@ -291,7 +291,7 @@ const RedeemReport = () => {
                             <MdPieChart className="text-amber-600 text-lg" />
                             <span>{t('redeemedByBrand')}</span>
                         </h3>
-                        <div className="h-56 w-full bg-slate-50 rounded-[5px] p-4 border border-slate-200 flex items-end justify-around gap-4">
+                        <div className="h-56 w-full bg-slate-50 rounded-[5px] p-2 border border-slate-200 flex items-end justify-around gap-4">
                             {summaryBreakdown.rows.map((r) => {
                                 const maxVal = Math.max(...summaryBreakdown.rows.map(x => x.totalRedeem), 1);
                                 const pct = Math.min(100, Math.max(15, (r.totalRedeem / maxVal) * 100));
@@ -345,7 +345,7 @@ const RedeemReport = () => {
 
             {/* Tab 3: Summary Table */}
             {activeTab === 'summary' && (
-                <div className='w-full overflow-x-auto rounded-[5px] border border-slate-200 bg-white shadow-md p-4 space-y-4'>
+                <div className='w-full overflow-x-auto rounded-[5px] border border-slate-200 bg-white shadow-md p-2 space-y-4'>
                     <div className="border-b border-slate-200 pb-2">
                         <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                             <MdTableChart className="text-amber-600 text-xl" />

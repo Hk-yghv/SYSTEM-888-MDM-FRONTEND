@@ -107,7 +107,7 @@ const SignIn = () => {
     const isBlocked = cooldownSec > 0;
 
     return (
-        <div className="w-full h-screen bg-[#070913] flex items-center justify-center relative overflow-hidden select-none p-4">
+        <div className="w-full h-screen bg-[#070913] flex items-center justify-center relative overflow-hidden select-none p-2">
             {/* Ambient Background Glows */}
             <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
             <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -125,7 +125,7 @@ const SignIn = () => {
 
                 {/* Error Message */}
                 {error && (
-                    <div className={`mb-5 p-3 rounded-[5px] border text-xs font-semibold text-center flex items-start gap-2 ${isBlocked ? 'bg-amber-950/60 border-amber-700/80 text-amber-300' : 'bg-red-950/60 border-red-800/80 text-red-300'}`}>
+                    <div className={`mb-5 p-1 rounded-[5px] border text-xs font-semibold text-center flex items-start gap-2 ${isBlocked ? 'bg-amber-950/60 border-amber-700/80 text-amber-300' : 'bg-red-950/60 border-red-800/80 text-red-300'}`}>
                         {isBlocked ? <FaClock className="text-amber-400 text-sm flex-shrink-0 mt-0.5" /> : <FaExclamationTriangle className="text-red-400 text-sm flex-shrink-0 mt-0.5" />}
                         <span>{error}</span>
                     </div>
@@ -133,7 +133,7 @@ const SignIn = () => {
 
                 {/* Cooldown Timer Banner */}
                 {isBlocked && (
-                    <div className="mb-5 p-4 rounded-[5px] bg-amber-950/50 border border-amber-700/60 text-center">
+                    <div className="mb-5 p-2 rounded-[5px] bg-amber-950/50 border border-amber-700/60 text-center">
                         <p className="text-amber-400 font-bold text-sm mb-1 flex items-center justify-center gap-2">
                             <FaClock className="animate-pulse" />
                             Login Locked — IP Cooldown Active
@@ -209,7 +209,7 @@ const SignIn = () => {
                 ) : (
                     /* 2FA OTP Form */
                     <form onSubmit={handleVerifyOtp} className="space-y-5 animate-in fade-in duration-300">
-                        <div className="p-4 rounded-[5px] bg-indigo-950/40 border border-indigo-800/60 text-center">
+                        <div className="p-2 rounded-[5px] bg-indigo-950/40 border border-indigo-800/60 text-center">
                             <FaTelegramPlane className="text-3xl text-indigo-400 mx-auto mb-2 animate-bounce" />
                             <h3 className="text-sm font-bold text-gray-100">{t('telegram2FA')}</h3>
                             <p className="text-xs text-gray-300 mt-1">

@@ -257,7 +257,7 @@ const CashInPage = () => {
         exportToExcel(t('cashIn') + ' Report', columns, allData, user?.brand || '');
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -286,9 +286,9 @@ const CashInPage = () => {
     }, [allDataForChart, dataList]);
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-4 select-none space-y-4'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
             {/* Header */}
-            <header className='p-4 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
+            <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs'>
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-xl font-black text-slate-900 flex items-center gap-2 tracking-wide'>
@@ -332,7 +332,7 @@ const CashInPage = () => {
                 <div className="space-y-4">
                     {/* KPI Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg">
                                 <FaDollarSign />
                             </div>
@@ -342,7 +342,7 @@ const CashInPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg font-bold">
                                 ៛
                             </div>
@@ -352,7 +352,7 @@ const CashInPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center text-lg">
                                 <FaMoneyBillWave />
                             </div>
@@ -362,7 +362,7 @@ const CashInPage = () => {
                             </div>
                         </div>
 
-                        <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
+                        <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center text-lg">
                                 <FaListUl />
                             </div>
@@ -390,7 +390,7 @@ const CashInPage = () => {
             {activeTab === 'detail' && (
                 <div className="space-y-4">
                     {/* Filter Bar */}
-                    <div className="p-3.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                    <div className="p-1.5 bg-white rounded-[5px] border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2 flex-wrap">
                             <div className="relative">
                                 <FaSearch className="absolute left-3 top-3 text-slate-400 text-xs" />
@@ -479,9 +479,9 @@ const CashInPage = () => {
 
             {/* Create & Edit Modal Form */}
             {isFormOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2">
                     <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="p-4 bg-emerald-600 text-white flex items-center justify-between">
+                        <div className="p-2 bg-emerald-600 text-white flex items-center justify-between">
                             <h3 className="font-bold text-sm flex items-center gap-2">
                                 <FaPlusCircle /> <span>{editingItem ? [t('edit')]: t('createCashIn')}</span>
                             </h3>
@@ -588,7 +588,7 @@ const CashInPage = () => {
 
             {/* Image Preview Modal */}
             {selectedImage && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-4" onClick={() => setSelectedImage(null)}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-2" onClick={() => setSelectedImage(null)}>
                     <div className="relative bg-white rounded-[5px] p-2 max-w-xl max-h-[85vh] overflow-hidden border border-slate-200 shadow-2xl" onClick={e => e.stopPropagation()}>
                         <img src={selectedImage} alt="Receipt" className="max-w-full max-h-[75vh] object-contain rounded-[5px]" />
                         <button onClick={() => setSelectedImage(null)} className="mt-2 w-full py-1.5 bg-emerald-600 text-white font-bold rounded-[5px] text-xs">{t('close')}</button>

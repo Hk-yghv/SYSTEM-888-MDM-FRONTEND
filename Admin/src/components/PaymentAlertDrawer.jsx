@@ -469,7 +469,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                 </div>
 
                 {/* ── SPACE-SAVING DROPLIST CATEGORY & FILTER TOOLBAR ── */}
-                <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <div className="p-1 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
 
                     {/* Left: Category Droplist + Active Stat Badge */}
                     <div className="flex items-center gap-2.5 flex-1 min-w-[280px]">
@@ -537,7 +537,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                 </div>
 
                 {/* ── MAIN CONTENT AREA (DATA TABLE) ── */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-100/60">
+                <div className="flex-1 overflow-y-auto p-2 space-y-4 bg-slate-100/60">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-3">
                             <FaSync className="animate-spin text-3xl text-emerald-600" />

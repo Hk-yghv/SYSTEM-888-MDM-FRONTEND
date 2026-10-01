@@ -279,9 +279,9 @@ const PhoneAppPage = () => {
     }, [deviceData]);
 
     return (
-        <div className="w-full bg-transparent p-4 text-slate-800 select-none space-y-4 overflow-y-auto">
+        <div className="w-full bg-transparent p-2 text-slate-800 select-none space-y-4 overflow-y-auto">
             {/* Header */}
-            <header className="p-4 border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+            <header className="p-2 border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
                 <div>
                     <h1 className="text-xl font-extrabold text-indigo-400 flex items-center gap-2">
                         <span>Phone App Connection Settings</span>
@@ -377,7 +377,7 @@ const PhoneAppPage = () => {
                         {activeTab === 'qrcode' && (
                             <div className="flex flex-col md:flex-row items-center gap-6">
                                 {/* Real Static Scannable QRCodeSVG Box */}
-                                <div className="p-4 bg-white rounded-[5px] border-4 border-indigo-500 shadow-2xl flex flex-col items-center justify-center relative">
+                                <div className="p-2 bg-white rounded-[5px] border-4 border-indigo-500 shadow-2xl flex flex-col items-center justify-center relative">
                                     <QRCodeSVG
                                         value={JSON.stringify({
                                             apiUrl: API_BASE,
@@ -417,7 +417,7 @@ const PhoneAppPage = () => {
                                 <p className="text-xs text-slate-300 font-khmer">
                                     Ensure Computer and Phone are on the same Wi-Fi network:
                                 </p>
-                                <div className="p-3 bg-slate-900 border border-slate-800 rounded-[5px] space-y-2 font-mono text-xs">
+                                <div className="p-1 bg-slate-900 border border-slate-800 rounded-[5px] space-y-2 font-mono text-xs">
                                     <div className="flex justify-between"><span className="text-slate-400">Server Host IP:</span><span className="text-indigo-400 font-bold">192.168.1.100</span></div>
                                     <div className="flex justify-between"><span className="text-slate-400">Pairing Port:</span><span className="text-emerald-400 font-bold">5000</span></div>
                                     <div className="flex justify-between"><span className="text-slate-400">Pairing PIN Code:</span><span className="text-amber-400 font-bold">882910</span></div>
@@ -433,7 +433,7 @@ const PhoneAppPage = () => {
                                 <p className="text-xs text-slate-300 font-khmer">
                                     Turn on Mobile Hotspot on phone and connect computer to it:
                                 </p>
-                                <div className="p-3 bg-slate-900 border border-slate-800 rounded-[5px] space-y-2 font-mono text-xs">
+                                <div className="p-1 bg-slate-900 border border-slate-800 rounded-[5px] space-y-2 font-mono text-xs">
                                     <div className="flex justify-between"><span className="text-slate-400">Hotspot AP Name:</span><span className="text-amber-400 font-bold">SYSTEM_MDM_AP</span></div>
                                     <div className="flex justify-between"><span className="text-slate-400">Gateway IP:</span><span className="text-indigo-400 font-bold">192.168.43.1</span></div>
                                 </div>
@@ -446,7 +446,7 @@ const PhoneAppPage = () => {
 
                         {/* Action Message Feedback */}
                         {actionMsg && (
-                            <div className={`p-3 rounded-[5px] text-xs font-bold font-khmer flex items-center gap-2 border ${
+                            <div className={`p-1 rounded-[5px] text-xs font-bold font-khmer flex items-center gap-2 border ${
                                 actionMsg.includes('ជោគជ័យ') || actionMsg.includes('Approved')
                                     ? 'bg-emerald-950 border-emerald-700 text-emerald-300'
                                     : 'bg-amber-950 border-amber-700 text-amber-300'
@@ -458,7 +458,7 @@ const PhoneAppPage = () => {
 
                         {/* Pending Request Banner */}
                         {deviceData?.isPending && !deviceData?.isConnected && (
-                            <div className="p-4 bg-amber-950/70 border border-amber-700/80 rounded-[5px] flex items-start gap-3 animate-pulse">
+                            <div className="p-2 bg-amber-950/70 border border-amber-700/80 rounded-[5px] flex items-start gap-3 animate-pulse">
                                 <FaExclamationTriangle className="text-amber-400 text-xl flex-shrink-0 mt-0.5" />
                                 <div>
                                     <p className="text-xs font-bold text-amber-300 font-khmer">⏳ {t('deviceAwaitingApproval')}</p>
@@ -488,29 +488,29 @@ const PhoneAppPage = () => {
                         </div>
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-1 bg-slate-900/80 rounded-[5px] border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">Device Model</span>
                                 <span className="font-bold text-white">{deviceData?.model || '—'}</span>
                             </div>
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-1 bg-slate-900/80 rounded-[5px] border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">IMEI 1</span>
                                 <span className="font-mono text-indigo-300">{deviceData?.imei1 || '—'}</span>
                             </div>
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-1 bg-slate-900/80 rounded-[5px] border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">IMEI 2</span>
                                 <span className="font-mono text-indigo-300">{deviceData?.imei2 || '—'}</span>
                             </div>
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-1 bg-slate-900/80 rounded-[5px] border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">Battery & Charging</span>
                                 <span className="font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
                                     <FaBatteryThreeQuarters /> {deviceData?.batteryLevel}% {deviceData?.isCharging ? '(Charging)' : ''}
                                 </span>
                             </div>
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-1 bg-slate-900/80 rounded-[5px] border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">RAM & Storage</span>
                                 <span className="text-slate-200">{deviceData?.ram} • {deviceData?.storage}</span>
                             </div>
-                            <div className="p-3 bg-slate-900/80 rounded-[5px] border border-slate-800">
+                            <div className="p-1 bg-slate-900/80 rounded-[5px] border border-slate-800">
                                 <span className="text-slate-400 block text-[10px] font-semibold">IP Address & Network</span>
                                 <span className="font-mono text-sky-400">{deviceData?.ip} ({deviceData?.carrier})</span>
                             </div>
@@ -556,7 +556,7 @@ const PhoneAppPage = () => {
                     <div ref={canvasRef} className="w-full h-[380px] flex items-center justify-center cursor-grab active:cursor-grabbing relative">
                     </div>
 
-                    <div className="w-full p-3 bg-slate-900/90 rounded-[5px] border border-slate-800 text-center">
+                    <div className="w-full p-1 bg-slate-900/90 rounded-[5px] border border-slate-800 text-center">
                         <p className="text-xs text-indigo-300 font-bold">
                             {deviceData?.model || 'Samsung Galaxy S24 Ultra'}
                         </p>

@@ -68,7 +68,7 @@ const RejectCsCard = ({
             </div>
 
             {/* Total summary badge */}
-            <div className="flex items-center justify-between bg-amber-950/40 border border-amber-800/40 p-3 rounded-[5px] mb-4 text-xs">
+            <div className="flex items-center justify-between bg-amber-950/40 border border-amber-800/40 p-1 rounded-[5px] mb-4 text-xs">
                 <span className="text-amber-300 font-semibold">សរុប REJECT CS ប្រចាំថ្ងៃ ({date})៖</span>
                 <span className="text-amber-400 font-mono font-bold text-base bg-amber-900/60 px-3 py-0.5 rounded-lg">
                     {totalCount} ករណី
@@ -82,7 +82,7 @@ const RejectCsCard = ({
                     <p className="text-xs font-semibold">កំពុងទាញយកទិន្នន័យ...</p>
                 </div>
             ) : reasons.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 bg-slate-900/40 rounded-[5px] border border-dashed border-slate-700 p-4">
+                <div className="text-center py-8 text-slate-400 bg-slate-900/40 rounded-[5px] border border-dashed border-slate-700 p-2">
                     <FaExclamationTriangle className="text-amber-400 text-2xl mx-auto mb-2" />
                     <p className="text-xs font-semibold">មិនទាន់មានបញ្ជីមូលហេតុ REJECT CS នៅក្នុង Control System នៅឡើយទេ</p>
                     <p className="text-[11px] text-slate-500 mt-1">សូមចូលទៅកាន់ Settings &gt; Control System &gt; Droplists &gt; &quot;Reject CS Reasons&quot; ដើម្បីបន្ថែម</p>
@@ -92,7 +92,7 @@ const RejectCsCard = ({
                     {reasons.map((reason, idx) => (
                         <div
                             key={idx}
-                            className="flex items-center justify-between bg-slate-900/80 hover:bg-slate-900 p-3.5 rounded-[5px] border border-slate-700/60 hover:border-slate-600 transition-all shadow-xs"
+                            className="flex items-center justify-between bg-slate-900/80 hover:bg-slate-900 p-1.5 rounded-[5px] border border-slate-700/60 hover:border-slate-600 transition-all shadow-xs"
                         >
                             <span className="text-xs font-semibold text-slate-200 flex items-center gap-2">
                                 <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-[10px] font-mono">

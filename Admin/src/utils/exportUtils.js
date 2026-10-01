@@ -527,7 +527,7 @@ export const exportMultiSheetExcel = (filename, sheets, brandName = '') => {
  * Page 1: Detailed follow-up entries
  * Page 2: Dedicated Executive Summary Page with KPI cards and Performance breakdown
  */
-export const exportFollowUp1PDF = (title, columns, data, summary, dateRangeLabel = '', brandName = '') => {
+export const exportFollowUp1PDF = (title, columns, data, summary, dateRangeLabel = '', brandName = '', orientation = 'landscape') => {
     if (!data || !data.length) {
         alert('No data available to export');
         return;
@@ -535,6 +535,7 @@ export const exportFollowUp1PDF = (title, columns, data, summary, dateRangeLabel
 
     const bName = (brandName || '').trim();
     const systemTitle = bName ? (bName.toUpperCase().startsWith('SYSTEM') ? bName.toUpperCase() : `SYSTEM ${bName.toUpperCase()}`) : 'MDM SYSTEM';
+    const isLandscape = orientation === 'landscape';
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -560,8 +561,8 @@ export const exportFollowUp1PDF = (title, columns, data, summary, dateRangeLabel
             <title>${title} - ${systemTitle}</title>
             <style>
                 @page {
-                    size: A4 landscape;
-                    margin: 8mm 10mm;
+                    size: A4 ${isLandscape ? 'landscape' : 'portrait'};
+                    margin: ${isLandscape ? '8mm 10mm' : '10mm 10mm'};
                 }
                 * { box-sizing: border-box; }
                 body {

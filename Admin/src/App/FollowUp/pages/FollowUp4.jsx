@@ -898,7 +898,7 @@ const FollowUp4 = () => {
                 return;
             }
             const columns = Object.keys(data[0] || {}).map(key => ({ header: key, accessor: key }));
-            exportToPDF(fileName, columns, data, user?.brand || '');
+            exportToPDF(fileName, columns, data, user?.brand || '', orientation);
         };
 
         if (activeTab === 'submit') {
@@ -997,9 +997,9 @@ const FollowUp4 = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 bg-slate-900 text-slate-100 min-h-screen">
+        <div className="p-2 md:p-2 bg-slate-900 text-slate-100 min-h-screen">
             {/* Header & Brand Switcher */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-slate-800/80 p-4 rounded-[5px] border border-slate-700/60 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-slate-800/80 p-2 rounded-[5px] border border-slate-700/60 shadow-xl">
                 <div>
                     <h1 className="text-2xl font-bold text-emerald-400 flex items-center gap-2">
                         Follow Up 4 System
@@ -1087,7 +1087,7 @@ const FollowUp4 = () => {
             {activeTab === 'submit' && (
                 <div className="space-y-4">
                     {/* Filters & Actions Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/60 p-4 rounded-[5px] border border-slate-700/50">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/60 p-2 rounded-[5px] border border-slate-700/50">
                         <div className="flex flex-wrap items-center gap-3 flex-1">
                             {/* Search */}
                             <div className="relative flex-1 min-w-[200px]">
@@ -1294,7 +1294,7 @@ const FollowUp4 = () => {
             {activeTab === 'rejectSubmit' && (
                 <div className="space-y-4">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-[5px] border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-rose-400 flex items-center gap-2">
                                 <FaBan /> <span>REJECT SUBMIT SUMMARY</span>
@@ -1347,7 +1347,7 @@ const FollowUp4 = () => {
 
                     {/* History Table */}
                     <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl">
-                        <div className="p-4 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
+                        <div className="p-2 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-200">ប្រវត្តិទិន្នន័យ REJECT SUBMIT តាមកាលបរិច្ឆេទ</span>
                             <span className="text-xs text-rose-400 font-mono font-semibold">{groupedRejectSubmit.length} ថ្ងៃបានកត់ត្រា</span>
                         </div>
@@ -1440,7 +1440,7 @@ const FollowUp4 = () => {
             {activeTab === 'rejectCs' && (
                 <div className="space-y-4">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-[5px] border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-amber-400 flex items-center gap-2">
                                 <FaBan /> <span>REJECT CS SUMMARY</span>
@@ -1493,7 +1493,7 @@ const FollowUp4 = () => {
 
                     {/* History Table */}
                     <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl">
-                        <div className="p-4 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
+                        <div className="p-2 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-200">ប្រវត្តិទិន្នន័យ REJECT CS តាមកាលបរិច្ឆេទ</span>
                             <span className="text-xs text-amber-400 font-mono font-semibold">{groupedRejectCs.length} ថ្ងៃបានកត់ត្រា</span>
                         </div>
@@ -1586,7 +1586,7 @@ const FollowUp4 = () => {
             {activeTab === 'detail' && (
                 <div className="space-y-6">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-4 rounded-[5px] border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-sky-400 flex items-center gap-2">
                                 <FaCalculator /> <span>DETAIL METRICS & AUTOMATED FORMULAS</span>
@@ -1639,7 +1639,7 @@ const FollowUp4 = () => {
 
                     {/* History Table */}
                     <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl">
-                        <div className="p-4 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
+                        <div className="p-2 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
                             <span className="text-xs font-bold text-slate-200">ប្រវត្តិ DETAIL METRICS តាមកាលបរិច្ឆេទ</span>
                             <span className="text-xs text-sky-400 font-mono font-semibold">{detailHistoryList.length} ថ្ងៃបានកត់ត្រា</span>
                         </div>
@@ -1815,7 +1815,7 @@ const FollowUp4 = () => {
 
             {/* 5. Delete Confirmation Modal */}
             {deleteModalItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs">
                     <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl p-6 max-w-sm w-full text-center">
                         <FaTrashAlt className="text-rose-500 text-3xl mx-auto mb-3" />
                         <h4 className="text-base font-bold text-slate-100 mb-1">តើអ្នកប្រាកដជាចង់លុប?</h4>

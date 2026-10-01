@@ -623,7 +623,7 @@ const SalaryPage = () => {
         exportToExcel(data, `Salary_Report_${selectedStaff ? selectedStaff.staffName : 'All'}`);
     };
 
-    const handleExportPDF = async () => {
+    const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
@@ -636,7 +636,7 @@ const SalaryPage = () => {
             { header: 'Category', accessor: 'category' },
             { header: 'Note', accessor: 'note' }
         ];
-        exportToPDF(`Salary Management Report - ${selectedStaff ? selectedStaff.staffName : 'All'}`, columns, allData);
+        exportToPDF(`Salary Management Report - ${selectedStaff ? selectedStaff.staffName : 'All'}`, columns, allData, user?.brand || '', orientation);
     };
 
     // Filtered Staff Directory for Admin View (strictly only accounts with role salary)
@@ -664,9 +664,9 @@ const SalaryPage = () => {
         const totalRecordsAll = salaryOnlyStaff.reduce((sum, s) => sum + (Number(s.recordsCount) || 0), 0);
 
         return (
-            <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-4 select-none space-y-5 relative min-h-screen">
+            <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-5 relative min-h-screen">
                 {/* Header Bar */}
-                <header className="p-4 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+                <header className="p-2 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
                     <div>
                         <div>
                             <h1 className="text-base sm:text-lg font-black text-[var(--app-text,#0f172a)] flex items-center gap-2">
@@ -690,7 +690,7 @@ const SalaryPage = () => {
 
                 {/* Directory Stats KPI Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
+                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-2 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('totalStaff')}</p>
                             <h3 className="text-2xl font-black text-slate-800 dark:text-white font-khmer mt-1">
@@ -703,7 +703,7 @@ const SalaryPage = () => {
                         </div>
                     </div>
 
-                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
+                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-2 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('totalDisbursed')}</p>
                             <h3 className="text-2xl font-black text-emerald-600 font-mono mt-1">
@@ -716,7 +716,7 @@ const SalaryPage = () => {
                         </div>
                     </div>
 
-                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
+                    <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-2 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('totalRecords')}</p>
                             <h3 className="text-2xl font-black text-cyan-600 font-mono mt-1">
@@ -731,7 +731,7 @@ const SalaryPage = () => {
                 </div>
 
                 {/* Search Staff Bar */}
-                <div className="bg-[var(--app-card,white)] p-3 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex items-center justify-between gap-3">
+                <div className="bg-[var(--app-card,white)] p-1 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex items-center justify-between gap-3">
                     <div className="relative flex-1">
                         <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                         <input
@@ -774,7 +774,7 @@ const SalaryPage = () => {
                             return (
                                 <div
                                     key={staff.key || idx}
-                                    className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] hover:border-emerald-500/70 rounded-[5px] p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative overflow-hidden"
+                                    className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] hover:border-emerald-500/70 rounded-[5px] p-2 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative overflow-hidden"
                                 >
                                     {/* Top decorative accent */}
                                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 opacity-80 group-hover:h-1.5 transition-all"></div>
@@ -892,10 +892,10 @@ const SalaryPage = () => {
     // VIEW 2: INDIVIDUAL STAFF SALARY DETAIL & MANAGEMENT VIEW
     // ─────────────────────────────────────────────────────────────────────────────
     return (
-        <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-4 select-none space-y-4 relative min-h-screen">
+        <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-4 relative min-h-screen">
             {/* Admin Switcher Top Banner */}
             {isAdmin && selectedStaff && (
-                <div className="p-3 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[5px] shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-700">
+                <div className="p-1 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[5px] shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-700">
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
@@ -937,7 +937,7 @@ const SalaryPage = () => {
             )}
 
             {/* Header Bar */}
-            <header className="p-3 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+            <header className="p-1 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
                 <div>
                     <div>
                         <h1 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
@@ -974,7 +974,7 @@ const SalaryPage = () => {
             {/* Top Employment Card: Names + Join Date + QR Code */}
             {savedJoinDate && !isEditingDate ? (
                 /* Saved State Card */
-                <div className="p-4 w-full border border-emerald-300/80 dark:border-emerald-700/60 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-cyan-950/30 rounded-[5px] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="p-2 w-full border border-emerald-300/80 dark:border-emerald-700/60 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-cyan-950/30 rounded-[5px] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-[5px] bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex flex-col items-center justify-center shadow-lg shadow-emerald-600/30 shrink-0">
                             <span className="text-[10px] uppercase font-bold tracking-wider opacity-90">
@@ -1057,7 +1057,7 @@ const SalaryPage = () => {
                 </div>
             ) : (
                 /* Edit & Setup State Card */
-                <div className="p-4 w-full border border-amber-300/80 dark:border-amber-700/60 bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-amber-50/90 dark:from-amber-950/30 dark:via-slate-900/60 dark:to-orange-950/20 rounded-[5px] shadow-sm flex flex-col gap-4">
+                <div className="p-2 w-full border border-amber-300/80 dark:border-amber-700/60 bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-amber-50/90 dark:from-amber-950/30 dark:via-slate-900/60 dark:to-orange-950/20 rounded-[5px] shadow-sm flex flex-col gap-4">
                     <div className="flex items-start sm:items-center gap-3.5">
                         <div className="w-12 h-12 rounded-[5px] bg-amber-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-amber-500/30 shrink-0">
                             <FaCalendarAlt />
@@ -1254,7 +1254,7 @@ const SalaryPage = () => {
             {/* Summary Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                 {/* Grand Total */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-2 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('total')}</p>
                         <h3 className="text-xl font-black text-emerald-600 font-mono mt-1">
@@ -1268,7 +1268,7 @@ const SalaryPage = () => {
                 </div>
 
                 {/* This Month */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-2 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ប្រាក់ខែ{t('thisMonth')}</p>
                         <h3 className="text-xl font-black text-cyan-600 font-mono mt-1">
@@ -1282,7 +1282,7 @@ const SalaryPage = () => {
                 </div>
 
                 {/* Total Transactions */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-2 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('totalRecords')}</p>
                         <h3 className="text-xl font-black text-indigo-600 font-mono mt-1">
@@ -1296,7 +1296,7 @@ const SalaryPage = () => {
                 </div>
 
                 {/* Monthly Average */}
-                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-2 shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('monthlyEstCol')}</p>
                         <h3 className="text-xl font-black text-amber-600 font-mono mt-1">
@@ -1323,7 +1323,7 @@ const SalaryPage = () => {
             />
 
             {/* Filter & Search Bar */}
-            <div className="bg-[var(--app-card,white)] p-3 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-[var(--app-card,white)] p-1 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[260px]">
                     <div className="relative flex-1">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
@@ -1510,7 +1510,7 @@ const SalaryPage = () => {
 
                 {/* Pagination */}
                 {total > itemsPerPage && (
-                    <div className="p-3 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
+                    <div className="p-1 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
                         <Pagination
                             currentPage={currentPage}
                             totalItems={total}
@@ -1542,7 +1542,7 @@ const SalaryPage = () => {
             {/* Image Preview Lightbox Modal with Download */}
             {previewImage && (
                 <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4 animate-in fade-in duration-150"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2 animate-in fade-in duration-150"
                     onClick={() => setPreviewImage(null)}
                 >
                     <div
@@ -1610,7 +1610,7 @@ const CreateEditSalaryModal = ({
     handlePhotoUpload
 }) => {
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-2 animate-in fade-in duration-150">
             <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] w-full max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--app-border,#e2e8f0)] bg-emerald-600 text-white shrink-0">
