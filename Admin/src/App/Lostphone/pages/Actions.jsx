@@ -65,7 +65,7 @@ const Actions = () => {
     });
 
     const handleToggleLock = async (contract, newStatus) => {
-        const actionLabel = newStatus === 'LockPhone' || newStatus === 'Locked' ? 'ចាក់សោ (Lock Phone)' : 'ដោះសោ (Unlock Phone)';
+        const actionLabel = newStatus === 'LockPhone' || newStatus === 'Locked' ? t('lockPhone') : t('unlockPhone');
         if (!window.confirm(t('confirmAction') + ` (${actionLabel})`)) return;
 
         setTogglingId(contract._id);

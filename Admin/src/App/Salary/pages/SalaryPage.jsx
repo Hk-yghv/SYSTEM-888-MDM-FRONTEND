@@ -35,10 +35,9 @@ import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
-const KHMER_DAYS = ['ថ្ងៃអាទិត្យ', 'ថ្ងៃចន្ទ', 'ថ្ងៃអង្គារ', 'ថ្ងៃពុធ', 'ថ្ងៃព្រហស្បតិ៍', 'ថ្ងៃសុក្រ', 'ថ្ងៃសៅរ៍'];
 const KHMER_MONTH_NAMES = [
-    t('jan'), t('feb'), t('mar'), t('apr'), t('may'), t('jun'),
-    t('jul'), t('aug'), t('sep'), t('oct'), t('nov'), t('dec')
+    'មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា',
+    'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'
 ];
 
 const getKhmerDateDetails = (dateStr) => {

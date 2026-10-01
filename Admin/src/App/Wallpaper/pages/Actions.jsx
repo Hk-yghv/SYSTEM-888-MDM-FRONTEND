@@ -65,7 +65,7 @@ const Actions = () => {
     });
 
     const handleToggleWallpaper = async (contract, newStatus) => {
-        const actionLabel = newStatus === 'Locked' || newStatus === 'LockWallpaper' ? [t('lockWallpaper')]: t('unlockWallpaper');
+        const actionLabel = newStatus === 'Locked' || newStatus === 'LockWallpaper' ? t('lockWallpaper') : t('unlockWallpaper');
         if (!window.confirm(t('confirmAction') + ` (${actionLabel})`)) return;
 
         setTogglingId(contract._id);
