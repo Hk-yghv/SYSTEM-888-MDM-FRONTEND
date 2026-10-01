@@ -252,6 +252,11 @@ const TelegramPage = () => {
   // Accounts state — starts empty, loaded from DB on mount
   const [accounts, setAccounts] = useState([]);
   const [accountsLoaded, setAccountsLoaded] = useState(false);
+  const accountsRef = useRef(accounts);
+
+  useEffect(() => {
+    accountsRef.current = accounts;
+  }, [accounts]);
 
   const [activeAccountId, setActiveAccountId] = useState(null);
 
@@ -442,16 +447,17 @@ const TelegramPage = () => {
   // Real Telegram API: Fetch updates with 409 Conflict handling & media URL resolution
   const syncTelegramUpdates = useCallback(
     async (account) => {
-      if (!account || !account.botToken) return;
+      const currentAccount = accountsRef.current.find((item) => item.id === account?.id) || account;
+      if (!currentAccount || !currentAccount.botToken) return;
       if (isSyncingRef.current) return; // Prevent concurrent overlapping requests
 
       isSyncingRef.current = true;
 
       try {
-        const offset = account.lastUpdateId ? account.lastUpdateId + 1 : 0;
+        const offset = currentAccount.lastUpdateId ? currentAccount.lastUpdateId + 1 : 0;
         // Use timeout=0 to prevent server lockup and eliminate 409 conflict
         const res = await fetch(
-          `https://api.telegram.org/bot${account.botToken}/getUpdates?offset=${offset}&timeout=0`
+          `https://api.telegram.org/bot${currentAccount.botToken}/getUpdates?offset=${offset}&timeout=0`
         );
 
         // Handle 409 Conflict (e.g. Webhook is active or concurrent request)
@@ -459,7 +465,7 @@ const TelegramPage = () => {
           try {
             // Delete active webhook if it was set previously
             await fetch(
-              `https://api.telegram.org/bot${account.botToken}/deleteWebhook?drop_pending_updates=false`
+              `https://api.telegram.org/bot${currentAccount.botToken}/deleteWebhook?drop_pending_updates=false`
             );
           } catch (e) {}
           return;
@@ -478,7 +484,7 @@ const TelegramPage = () => {
         const updates = data.result || [];
         if (updates.length === 0) return;
 
-        let maxUpdateId = account.lastUpdateId || 0;
+        let maxUpdateId = currentAccount.lastUpdateId || 0;
 
         // Process all updates and resolve media URLs
         const processedUpdates = [];
@@ -557,7 +563,7 @@ const TelegramPage = () => {
           // Resolve direct media URL from Telegram API
           let mediaUrl = null;
           if (mediaFileId) {
-            mediaUrl = await resolveTelegramFileUrl(account.botToken, mediaFileId);
+            mediaUrl = await resolveTelegramFileUrl(currentAccount.botToken, mediaFileId);
           }
 
           let defaultText = msg.text || msg.caption || "";
@@ -579,7 +585,7 @@ const TelegramPage = () => {
           const newMsgObj = {
             id: `tg_${msg.message_id || Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
             messageId: msg.message_id,
-            sender: msg.from?.id === account.botInfo?.id ? "me" : "them",
+            sender: msg.from?.id === currentAccount.botInfo?.id ? "me" : "them",
             senderName:
               [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ") ||
               msg.from?.username ||
@@ -614,7 +620,7 @@ const TelegramPage = () => {
         // Apply new messages to accounts state
         setAccounts((prevAccounts) =>
           prevAccounts.map((acc) => {
-            if (acc.id !== account.id) return acc;
+            if (acc.id !== currentAccount.id) return acc;
 
             let updatedChats = [...(acc.chats || [])];
 
@@ -630,7 +636,7 @@ const TelegramPage = () => {
 
                 if (!msgExists) {
                   const newMessages = [...(existingChat.messages || []), msgObj];
-                  const isCurrentlyActive = activeChatId === chatId && activeAccountId === acc.id;
+                  const isCurrentlyActive = activeChatId === chatStorageId && activeAccountId === acc.id;
                   updatedChats[existingChatIndex] = {
                     ...existingChat,
                     name: messageThreadId
@@ -2201,6 +2207,11 @@ const TelegramPage = () => {
 
               {/* Messages Feed (Supports Voice Notes, Photos, Audios, Documents, Videos) */}
               <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-2.5 bg-[#e5ebee]/40 min-h-0 flex flex-col justify-start">
+                {activeAccount?.type !== "user" && activeChat.type === "group" && (
+                  <div className="max-w-2xl mx-auto p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900">
+                    ដើម្បីឱ្យ Bot មើលឃើញសារធម្មតាទាំងអស់ក្នុង Group សូមបិទ Group Privacy តាម @BotFather (`/setprivacy` → Disable) រួចដក Bot ចេញ ហើយ Add វាចូលវិញ ឬដាក់ Bot ជា Admin។ ប្រព័ន្ធអាចបង្ហាញតែសារថ្មីៗដែល Telegram ផ្ញើមកប៉ុណ្ណោះ។
+                  </div>
+                )}
                 {activeChat.messages?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center text-slate-400">
                     <div className="w-12 h-12 rounded-2xl bg-white text-sky-500 flex items-center justify-center shadow-sm mb-2.5 text-xl">
