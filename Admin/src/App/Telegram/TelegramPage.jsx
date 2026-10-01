@@ -322,6 +322,7 @@ const TelegramPage = () => {
   const [showTokenPassword, setShowTokenPassword] = useState(false);
   const [verifyingToken, setVerifyingToken] = useState(false);
   const [verifiedBotInfo, setVerifiedBotInfo] = useState(null);
+  const [copiedVerifiedBotUsername, setCopiedVerifiedBotUsername] = useState(false);
   const [verifyError, setVerifyError] = useState("");
 
   const [isUserLoginModalOpen, setIsUserLoginModalOpen] = useState(false);
@@ -923,6 +924,19 @@ const TelegramPage = () => {
       return null;
     } finally {
       setVerifyingToken(false);
+    }
+  };
+
+  const handleCopyVerifiedBotUsername = async () => {
+    const username = verifiedBotInfo?.username ? `@${verifiedBotInfo.username}` : "";
+    if (!username) return;
+
+    try {
+      await navigator.clipboard.writeText(username);
+      setCopiedVerifiedBotUsername(true);
+      window.setTimeout(() => setCopiedVerifiedBotUsername(false), 1600);
+    } catch {
+      setVerifyError("មិនអាច Copy Username បានទេ សូមអនុញ្ញាត Clipboard ក្នុង Browser");
     }
   };
 
@@ -2890,7 +2904,16 @@ const TelegramPage = () => {
                   <div>
                     <div className="font-black text-emerald-900">បានផ្ទៀងផ្ទាត់ដោយជោគជ័យ!</div>
                     <div className="text-[11px] text-emerald-800">
-                      Bot: <strong>{verifiedBotInfo.first_name}</strong> • Username: @{verifiedBotInfo.username}
+                      Bot: <strong>{verifiedBotInfo.first_name}</strong> • Username:{" "}
+                      <button
+                        type="button"
+                        onClick={handleCopyVerifiedBotUsername}
+                        className="font-bold underline decoration-dotted underline-offset-2 cursor-pointer"
+                        title="ចុចដើម្បី Copy Username"
+                        aria-label={`Copy @${verifiedBotInfo.username}`}
+                      >
+                        {copiedVerifiedBotUsername ? "បាន Copy!" : `@${verifiedBotInfo.username}`}
+                      </button>
                     </div>
                   </div>
                 </div>
