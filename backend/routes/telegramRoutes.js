@@ -1,10 +1,14 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import TelegramAccount from '../models/TelegramAccount.js';
 import { isMongoConnected } from '../config/db.js';
-import jwt from 'jsonwebtoken';
+import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
+
+// In-memory fallback
+const MEM_TELEGRAM_ACCOUNTS = [];
 
 // Helper: get ownerUsername from JWT user (set by verifySecurityAuth middleware) or token/headers
 const getOwner = (req) => {
@@ -36,17 +40,23 @@ router.get('/accounts', async (req, res) => {
         const owner = getOwner(req);
         if (!owner) return res.status(401).json({ error: 'Unauthorized' });
 
-        if (!isMongoConnected) {
-            return res.json({ accounts: [] });
+        let accounts = [];
+        if (isMongoConnected) {
+            try {
+                accounts = await queryAllDBs(TelegramAccount, (M) => M.find({ ownerUsername: owner }).lean());
+            } catch (dbErr) {
+                console.warn('[Telegram] MultiDB query failed, fallback to in-memory:', dbErr.message);
+                accounts = MEM_TELEGRAM_ACCOUNTS.filter(acc => acc.ownerUsername === owner);
+            }
+        } else {
+            accounts = MEM_TELEGRAM_ACCOUNTS.filter(acc => acc.ownerUsername === owner);
         }
 
-        const accounts = await TelegramAccount.find({ ownerUsername: owner }).lean();
-
         // Rename botToken -> token so the global masking middleware doesn't strip it
-        const sanitized = accounts.map(acc => ({
-            id: acc.clientId,
+        const sanitized = (accounts || []).map(acc => ({
+            id: acc.clientId || acc.id,
             name: acc.name,
-            token: acc.botToken,       // <-- renamed field
+            token: acc.botToken || acc.token,
             username: acc.username,
             color: acc.color,
             botInfo: acc.botInfo || {},
@@ -71,31 +81,53 @@ router.post('/accounts', async (req, res) => {
         const { id, name, token, username, color, botInfo, lastUpdateId, chats } = req.body;
         if (!id || !token) return res.status(400).json({ error: 'id and token are required' });
 
-        // Enforce max 5 accounts per user
-        const existingCount = await TelegramAccount.countDocuments({ ownerUsername: owner, clientId: { $ne: id } });
-        if (existingCount >= 5) {
-            return res.status(400).json({ error: 'Maximum 5 Telegram accounts allowed per user' });
+        const accountDoc = {
+            ownerUsername: owner,
+            clientId: id,
+            name: name || 'Telegram Bot',
+            botToken: token,
+            username: username || '',
+            color: color || '#0284c7',
+            botInfo: botInfo || {},
+            lastUpdateId: lastUpdateId || 0,
+            chats: chats || []
+        };
+
+        if (isMongoConnected) {
+            try {
+                const WriteModel = getWriteModel(TelegramAccount) || TelegramAccount;
+
+                // Enforce max 5 accounts per user
+                const existingCount = await WriteModel.countDocuments({ ownerUsername: owner, clientId: { $ne: id } });
+                if (existingCount >= 5) {
+                    return res.status(400).json({ error: 'Maximum 5 Telegram accounts allowed per user' });
+                }
+
+                const updated = await WriteModel.findOneAndUpdate(
+                    { ownerUsername: owner, clientId: id },
+                    { $set: accountDoc },
+                    { upsert: true, new: true, runValidators: false }
+                );
+
+                return res.json({ success: true, id: updated?.clientId || id });
+            } catch (dbErr) {
+                console.warn('[Telegram] MultiDB write failed, writing to memory fallback:', dbErr.message);
+            }
         }
 
-        const updated = await TelegramAccount.findOneAndUpdate(
-            { ownerUsername: owner, clientId: id },
-            {
-                $set: {
-                    ownerUsername: owner,
-                    clientId: id,
-                    name: name || 'Telegram Bot',
-                    botToken: token,
-                    username: username || '',
-                    color: color || '#0284c7',
-                    botInfo: botInfo || {},
-                    lastUpdateId: lastUpdateId || 0,
-                    chats: chats || []
-                }
-            },
-            { upsert: true, new: true, runValidators: false }
-        );
+        // In-memory fallback
+        const existingIdx = MEM_TELEGRAM_ACCOUNTS.findIndex(a => a.ownerUsername === owner && a.clientId === id);
+        if (existingIdx >= 0) {
+            MEM_TELEGRAM_ACCOUNTS[existingIdx] = { ...MEM_TELEGRAM_ACCOUNTS[existingIdx], ...accountDoc };
+        } else {
+            const userCount = MEM_TELEGRAM_ACCOUNTS.filter(a => a.ownerUsername === owner).length;
+            if (userCount >= 5) {
+                return res.status(400).json({ error: 'Maximum 5 Telegram accounts allowed per user' });
+            }
+            MEM_TELEGRAM_ACCOUNTS.push(accountDoc);
+        }
 
-        return res.json({ success: true, id: updated.clientId });
+        return res.json({ success: true, id });
     } catch (err) {
         console.error('[Telegram] POST accounts error:', err.message);
         return res.status(500).json({ error: 'Internal server error' });
@@ -117,13 +149,23 @@ router.patch('/accounts/:id/chats', async (req, res) => {
         const update = { chats };
         if (lastUpdateId !== undefined) update.lastUpdateId = lastUpdateId;
 
-        const result = await TelegramAccount.updateOne(
-            { ownerUsername: owner, clientId: id },
-            { $set: update }
-        );
+        if (isMongoConnected) {
+            try {
+                const WriteModel = getWriteModel(TelegramAccount) || TelegramAccount;
+                await WriteModel.updateOne(
+                    { ownerUsername: owner, clientId: id },
+                    { $set: update }
+                );
+                return res.json({ success: true });
+            } catch (dbErr) {
+                console.warn('[Telegram] MultiDB PATCH failed:', dbErr.message);
+            }
+        }
 
-        if (result.matchedCount === 0) {
-            return res.status(404).json({ error: 'Account not found' });
+        const existing = MEM_TELEGRAM_ACCOUNTS.find(a => a.ownerUsername === owner && a.clientId === id);
+        if (existing) {
+            existing.chats = chats;
+            if (lastUpdateId !== undefined) existing.lastUpdateId = lastUpdateId;
         }
 
         return res.json({ success: true });
@@ -141,10 +183,20 @@ router.delete('/accounts/:id', async (req, res) => {
         if (!owner) return res.status(401).json({ error: 'Unauthorized' });
 
         const { id } = req.params;
-        const result = await TelegramAccount.deleteOne({ ownerUsername: owner, clientId: id });
 
-        if (result.deletedCount === 0) {
-            return res.status(404).json({ error: 'Account not found' });
+        if (isMongoConnected) {
+            try {
+                const WriteModel = getWriteModel(TelegramAccount) || TelegramAccount;
+                await WriteModel.deleteOne({ ownerUsername: owner, clientId: id });
+                return res.json({ success: true });
+            } catch (dbErr) {
+                console.warn('[Telegram] MultiDB DELETE failed:', dbErr.message);
+            }
+        }
+
+        const idx = MEM_TELEGRAM_ACCOUNTS.findIndex(a => a.ownerUsername === owner && a.clientId === id);
+        if (idx >= 0) {
+            MEM_TELEGRAM_ACCOUNTS.splice(idx, 1);
         }
 
         return res.json({ success: true });
