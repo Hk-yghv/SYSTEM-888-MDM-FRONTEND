@@ -1095,10 +1095,13 @@
         print-color-adjust: exact !important;
     }
 
-    /* Hide outer layout elements (Left sidebar, top navbar, mobile bottom nav, backdrop, footer, reload/action buttons) */
+    /* Hide outer layout and header elements (Left sidebar, top navbar, mobile bottom nav, backdrop, footer, executive header, reload/action buttons) */
     aside,
     nav,
-    header:not(.executive-header),
+    header,
+    .executive-header,
+    .top-ticker-row,
+    .header-main-bar,
     .mobile-sidebar,
     .mobile-sidebar-backdrop,
     .mobile-bottom-nav,
@@ -1139,22 +1142,6 @@
     .dashboard-root {
         padding: 4px 0 !important;
         background: #ffffff !important;
-    }
-
-    /* Header styling for printed report */
-    .executive-header {
-        margin-bottom: 12px !important;
-        page-break-after: avoid;
-        break-after: avoid;
-    }
-
-    .top-ticker-row,
-    .header-main-bar {
-        box-shadow: none !important;
-        border: 1px solid #cbd5e1 !important;
-        background: #f8fafc !important;
-        page-break-inside: avoid;
-        break-inside: avoid;
     }
 
     /* Executive KPI Grid & Middle Dashboard Grid */
