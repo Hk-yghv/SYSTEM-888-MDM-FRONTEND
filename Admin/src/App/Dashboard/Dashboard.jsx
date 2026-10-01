@@ -3,10 +3,6 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import {
     FaLayerGroup,
-    FaExpand,
-    FaCompress,
-    FaMoon,
-    FaSun,
     FaChartLine,
     FaCalendarCheck,
     FaPrint,
@@ -47,46 +43,6 @@ const Dashboard = () => {
     const isMasterAdmin = useMemo(() => {
         return user?.username === '@hakyonghouv' || user?.username === 'hakyonghouv' || user?.role === 'Administrator' || user?.isImmutable;
     }, [user]);
-
-    // ── Theme State ──
-    const [theme, setTheme] = useState(() => localStorage.getItem('dashboard_theme') || 'light');
-    const [isFullscreen, setIsFullscreen] = useState(false);
-
-    useEffect(() => {
-        const root = document.documentElement;
-        if (theme === 'dark') {
-            root.classList.add('dark');
-            root.setAttribute('data-theme', 'dark');
-        } else {
-            root.classList.remove('dark');
-            root.setAttribute('data-theme', 'light');
-        }
-    }, [theme]);
-
-    const handleToggleTheme = () => {
-        setTheme(prev => {
-            const next = prev === 'dark' ? 'light' : 'dark';
-            localStorage.setItem('dashboard_theme', next);
-            return next;
-        });
-    };
-
-    // ── Fullscreen Toggle ──
-    const handleToggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen?.().catch(() => {});
-            setIsFullscreen(true);
-        } else {
-            document.exitFullscreen?.().catch(() => {});
-            setIsFullscreen(false);
-        }
-    };
-
-    useEffect(() => {
-        const handler = () => setIsFullscreen(!!document.fullscreenElement);
-        document.addEventListener('fullscreenchange', handler);
-        return () => document.removeEventListener('fullscreenchange', handler);
-    }, []);
 
     // ── Core API States ──
     const [stats, setStats] = useState({
@@ -351,51 +307,121 @@ const Dashboard = () => {
     const lockedRatio = totalCount > 0 ? ((lockedPhones / totalCount) * 100).toFixed(2) : '0.00';
     const unlockedRatio = (100 - Number(lockedRatio)).toFixed(2);
 
+    // ── Installment Helpers ──
+    const getActiveRowIdx = (schedule = []) => {
+        const payOffIdx = schedule.findIndex(r => r.status === 'PayOff');
+        if (payOffIdx !== -1) return -1;
+        return schedule.findIndex(r => r.status === 'Pending' || r.status === 'Saved' || r.status === 'Due' || !r.status);
+    };
+
+    const getDisplayRow = (schedule = [], selectedIdx = null) => {
+        if (!schedule.length) return null;
+        if (selectedIdx !== null && schedule[selectedIdx]) return schedule[selectedIdx];
+        const idx = getActiveRowIdx(schedule);
+        return idx === -1 ? schedule[schedule.length - 1] : schedule[idx];
+    };
+
     // ── Repayments & Active Customers Computation ──
-    const repaymentRows = useMemo(() => {
-        const rows = [];
+    const allRepaymentScheduleStats = useMemo(() => {
+        let schedTotal = 0;
+        let penaltyTotal = 0;
         rawContracts.forEach(contract => {
             const rules = penaltyRulesByBrand[String(contract.brand || '').trim()] || [];
             if (Array.isArray(contract.repaymentSchedule) && contract.repaymentSchedule.length > 0) {
-                contract.repaymentSchedule.forEach((row, idx) => {
-                    const rowData = getRowWithDueDate(row, idx, contract);
-                    const penaltyInfo = getAutomaticPenalty(rowData, contract, rules);
-                    const penalty = Number(penaltyInfo.penalty || rowData.penalty || 0);
-                    const scheduledAmt = Number(rowData.scheduledAmount || rowData.amount || rowData.due || 0);
-                    const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
-                    const unpaidAmt = Math.max(0, scheduledAmt - paidAmt);
-                    const isPaid = rowData.isPaid || rowData.status === 'Paid' || rowData.status === 'PayOff' || (unpaidAmt <= 0 && scheduledAmt > 0);
-
-                    rows.push({
-                        id: `${contract._id || contract.id || 'c'}-${idx}`,
-                        contractId: contract._id || contract.id,
-                        contractIid: contract.contractId || contract.contractIid || contract.code || `CT-${idx + 1}`,
-                        customerName: contract.customerName || contract.name || 'Unknown',
-                        phone: contract.phone || contract.phoneNumber || contract.tel || '-',
-                        dueDate: rowData.dueDate ? String(rowData.dueDate).split('T')[0] : (rowData.date ? String(rowData.date).split('T')[0] : ''),
-                        scheduledAmount: scheduledAmt,
-                        paidAmount: paidAmt,
-                        outstandingAmount: unpaidAmt,
-                        penaltyAmount: penalty,
-                        isPaid,
-                        daysUntilDue: rowData.daysUntilDue,
-                        status: isPaid ? 'PAID' : (penalty > 0 ? 'PENALTY' : (rowData.daysUntilDue < 0 ? 'OVERDUE' : 'DUE')),
-                        brand: contract.brand || 'MDM'
-                    });
+                contract.repaymentSchedule.forEach(row => {
+                    const rowData = getRowWithDueDate(row, contract);
+                    const penalty = getAutomaticPenalty(rowData, contract, rules);
+                    schedTotal += Number(rowData.scheduledAmount || rowData.amount || 0);
+                    penaltyTotal += Number(penalty || 0);
                 });
             }
         });
+        return { schedTotal, penaltyTotal };
+    }, [rawContracts, penaltyRulesByBrand]);
+
+    // Active Installment Rows extracted directly from each contract's installment schedule
+    const installmentCustomerRows = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+
+        const rows = [];
+        rawContracts.forEach((contract) => {
+            const rules = penaltyRulesByBrand[String(contract.brand || '').trim()] || [];
+            const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
+            if (schedule.length === 0) return;
+
+            const activeIdx = getActiveRowIdx(schedule);
+            const displayRow = getDisplayRow(schedule, activeIdx === -1 ? null : activeIdx);
+            if (!displayRow) return;
+
+            const rowData = getRowWithDueDate(displayRow, contract);
+            const penalty = getAutomaticPenalty(rowData, contract, rules);
+            const scheduledAmt = Number(rowData.scheduledAmount || rowData.amount || rowData.due || 0);
+            const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
+            const unpaidAmt = Math.max(0, scheduledAmt - paidAmt);
+            const isPaid = ['Paid', 'PayOff', 'Settled'].includes(rowData.status) || (unpaidAmt <= 0 && scheduledAmt > 0);
+
+            let diffDays = null;
+            let lateDays = 0;
+            const dueDateStr = rowData.dueDate ? String(rowData.dueDate).split('T')[0] : '';
+            if (dueDateStr) {
+                const dueDateObj = new Date(`${dueDateStr}T00:00:00`);
+                if (!isNaN(dueDateObj.getTime())) {
+                    diffDays = Math.round((dueDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    if (diffDays < 0) {
+                        lateDays = Math.abs(diffDays);
+                    }
+                }
+            }
+
+            const isOverdue = !isPaid && (lateDays > 0 || penalty > 0 || (dueDateStr && dueDateStr < todayStr));
+
+            rows.push({
+                id: `${contract._id || contract.id || 'c'}-${rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : 1)}`,
+                contractId: contract._id || contract.id,
+                contractIid: contract.contractId || contract.contractIid || contract.code || `CT-${rows.length + 1}`,
+                customerName: contract.customerName || contract.name || 'Unknown',
+                phone: contract.phone || contract.phoneNumber || contract.tel || '-',
+                dueDate: dueDateStr,
+                scheduledAmount: scheduledAmt,
+                paidAmount: paidAmt,
+                outstandingAmount: unpaidAmt,
+                penaltyAmount: penalty,
+                isPaid,
+                daysUntilDue: diffDays,
+                lateDays,
+                isOverdue,
+                monthIndex: rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : schedule.length),
+                monthLabel: rowData.labelName || `Month ${rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : schedule.length)}`,
+                status: isPaid ? 'PAID' : (isOverdue ? 'OVERDUE' : (diffDays === 0 ? 'DUE_TODAY' : 'DUE')),
+                brand: contract.brand || 'MDM'
+            });
+        });
+
         return rows;
     }, [rawContracts, penaltyRulesByBrand]);
 
     // Active customer payment details for the tables
     const dueCustomerRows = useMemo(() => {
-        return repaymentRows.filter(r => !r.isPaid && r.scheduledAmount > 0);
-    }, [repaymentRows]);
+        return installmentCustomerRows
+            .filter(r => !r.isPaid && r.scheduledAmount > 0)
+            .sort((a, b) => {
+                if (!a.dueDate) return 1;
+                if (!b.dueDate) return -1;
+                return a.dueDate.localeCompare(b.dueDate);
+            });
+    }, [installmentCustomerRows]);
 
     const overdueCustomerRows = useMemo(() => {
-        return repaymentRows.filter(r => !r.isPaid && (r.penaltyAmount > 0 || r.daysUntilDue < 0));
-    }, [repaymentRows]);
+        return installmentCustomerRows
+            .filter(r => r.isOverdue)
+            .sort((a, b) => {
+                if (b.lateDays !== a.lateDays) return b.lateDays - a.lateDays;
+                if (b.penaltyAmount !== a.penaltyAmount) return b.penaltyAmount - a.penaltyAmount;
+                return (a.dueDate || '').localeCompare(b.dueDate || '');
+            });
+    }, [installmentCustomerRows]);
 
     // Penalty payment records from /payments
     const penaltyPaymentRows = useMemo(() => {
@@ -421,8 +447,8 @@ const Dashboard = () => {
     // ── Live KPI Financial Totals ──
     const totalDisbursedAmount = stats.totalLoanAmount || rawContracts.filter(c => c.status === 'Activated').reduce((s, c) => s + Number(c.amount || c.loanAmount || 0), 0);
     const totalCollectedRevenue = stats.totalRevenue || rawPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
-    const totalScheduledAmount = stats.totalScheduledRepayment || repaymentRows.reduce((s, r) => s + r.scheduledAmount, 0);
-    const totalPenaltyAmount = stats.totalPenaltyRepayment || repaymentRows.reduce((s, r) => s + r.penaltyAmount, 0);
+    const totalScheduledAmount = stats.totalScheduledRepayment || allRepaymentScheduleStats.schedTotal;
+    const totalPenaltyAmount = stats.totalPenaltyRepayment || allRepaymentScheduleStats.penaltyTotal;
     const totalObligation = totalScheduledAmount + totalPenaltyAmount;
     const totalOutstandingAmount = stats.outstandingBalance || Math.max(totalObligation - totalCollectedRevenue, 0);
 
@@ -588,28 +614,6 @@ const Dashboard = () => {
                                     <span>បច្ចុប្បន្នភាព: {lastSyncTime}</span>
                                 </div>
                             </div>
-
-                            {/* Fullscreen Button */}
-                            <button
-                                type="button"
-                                className="icon-btn desktop-only"
-                                title={isFullscreen ? 'ចាកចេញពីអេក្រង់ពេញ' : 'ពង្រីកពេញអេក្រង់'}
-                                onClick={handleToggleFullscreen}
-                                aria-label="ពង្រីកពេញអេក្រង់"
-                            >
-                                {isFullscreen ? <FaCompress /> : <FaExpand />}
-                            </button>
-
-                            {/* Theme Toggle Button */}
-                            <button
-                                type="button"
-                                className="icon-btn"
-                                title="ប្តូរពន្លឺ (Theme)"
-                                onClick={handleToggleTheme}
-                                aria-label="ប្តូរពន្លឺ"
-                            >
-                                {theme === 'dark' ? <FaSun /> : <FaMoon />}
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -881,7 +885,7 @@ const Dashboard = () => {
 
                     {/* SVG Interactive Trend Chart */}
                     <div className="line-canvas-box">
-                        <LineChartCanvas points={chartPoints} theme={theme} />
+                        <LineChartCanvas points={chartPoints} />
                     </div>
                 </div>
 
@@ -1193,17 +1197,27 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
                         if (row.isPaid || totalRemaining <= 0) {
                             statusLabel = 'បានបង់';
                             statusClass = 'paid';
+                        } else if (row.lateDays > 0 || (row.daysUntilDue !== null && row.daysUntilDue < 0)) {
+                            const lateCount = row.lateDays || Math.abs(row.daysUntilDue);
+                            if (lateCount >= 30) {
+                                const m = Math.floor(lateCount / 30);
+                                const d = lateCount % 30;
+                                statusLabel = d > 0 ? `លើស ${m} ខែ ${d} ថ្ងៃ` : `លើស ${m} ខែ`;
+                            } else {
+                                statusLabel = `លើស ${lateCount} ថ្ងៃ`;
+                            }
+                            statusClass = 'overdue';
                         } else if (row.penaltyAmount > 0) {
                             statusLabel = 'មានពិន័យ';
                             statusClass = 'penalty';
-                        } else if (row.daysUntilDue < 0) {
-                            statusLabel = `ហួសកំណត់ ${formatNumber(Math.abs(row.daysUntilDue))} ថ្ងៃ`;
-                            statusClass = 'overdue';
                         } else if (row.daysUntilDue === 0) {
                             statusLabel = 'ត្រូវបង់ថ្ងៃនេះ';
                             statusClass = 'due';
-                        } else if (row.daysUntilDue > 0) {
-                            statusLabel = `នៅសល់ ${formatNumber(row.daysUntilDue)} ថ្ងៃត្រូវបង់`;
+                        } else if (row.daysUntilDue === 1) {
+                            statusLabel = 'សល់ ១ ថ្ងៃត្រូវបង់';
+                            statusClass = 'due';
+                        } else if (row.daysUntilDue !== null && row.daysUntilDue > 1) {
+                            statusLabel = `នៅសល់ ${formatNumber(row.daysUntilDue)} ថ្ងៃ`;
                             statusClass = 'due';
                         }
 
@@ -1214,7 +1228,12 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
                                     <strong>{row.customerName}</strong>
                                     <small>{row.phone}</small>
                                 </td>
-                                <td data-label="កិច្ចសន្យា">{row.contractIid}</td>
+                                <td data-label="កិច្ចសន្យា">
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <strong>{row.contractIid}</strong>
+                                        {row.monthLabel && <small style={{ fontSize: '11px', color: '#64748b' }}>{row.monthLabel}</small>}
+                                    </div>
+                                </td>
                                 <td data-label="ថ្ងៃត្រូវបង់">{row.dueDate || '-'}</td>
                                 <td data-label="ត្រូវបង់" className="num">{formatMoney(totalDue)}</td>
                                 <td data-label="បានបង់" className="num color-green">{formatMoney(row.paidAmount)}</td>
@@ -1235,8 +1254,7 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
 };
 
 // ── SVG Interactive Line & Area Chart ──
-const LineChartCanvas = ({ points = [], theme = 'light' }) => {
-    const isDark = theme === 'dark';
+const LineChartCanvas = ({ points = [] }) => {
     const width = 800;
     const height = 250;
     const padX = 50;
@@ -1323,7 +1341,7 @@ const LineChartCanvas = ({ points = [], theme = 'light' }) => {
                             y1={y}
                             x2={width - padX}
                             y2={y}
-                            stroke={isDark ? '#232d45' : '#f1f5f9'}
+                            stroke="#f1f5f9"
                             strokeWidth="1"
                         />
                         <text
@@ -1331,7 +1349,7 @@ const LineChartCanvas = ({ points = [], theme = 'light' }) => {
                             y={y + 3}
                             textAnchor="end"
                             fontSize="10"
-                            fill={isDark ? '#94a3b8' : '#94a3b8'}
+                            fill="#94a3b8"
                             fontWeight="500"
                         >
                             ${val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}
@@ -1420,7 +1438,7 @@ const LineChartCanvas = ({ points = [], theme = 'light' }) => {
                             y={height - 10}
                             textAnchor="middle"
                             fontSize="10"
-                            fill={isDark ? '#94a3b8' : '#64748b'}
+                            fill="#64748b"
                             fontWeight="500"
                         >
                             {c.label}
@@ -1437,7 +1455,7 @@ const LineChartCanvas = ({ points = [], theme = 'light' }) => {
                         y1={padY}
                         x2="0"
                         y2={padY + chartH}
-                        stroke={isDark ? '#3b82f6' : '#93c5fd'}
+                        stroke="#93c5fd"
                         strokeWidth="1"
                         strokeDasharray="3 3"
                     />
@@ -1446,11 +1464,11 @@ const LineChartCanvas = ({ points = [], theme = 'light' }) => {
                             width="130"
                             height="72"
                             rx="8"
-                            fill={isDark ? '#151c2e' : '#ffffff'}
-                            stroke={isDark ? '#232d45' : '#e2e8f0'}
+                            fill="#ffffff"
+                            stroke="#e2e8f0"
                             filter="drop-shadow(0 4px 12px rgba(0,0,0,0.15))"
                         />
-                        <text x="10" y="16" fontSize="11" fontWeight="700" fill={isDark ? '#f1f5f9' : '#0f172a'}>
+                        <text x="10" y="16" fontSize="11" fontWeight="700" fill="#0f172a">
                             {coords[hoverIdx].label}
                         </text>
                         <text x="10" y="32" fontSize="10" fill="#3b82f6" fontWeight="600">
