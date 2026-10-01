@@ -439,74 +439,139 @@ const Dashboard = () => {
         };
     }, [filteredContracts, penaltyRulesByBrand, dateRange]);
 
-    // Active Installment Rows extracted directly from each contract's installment schedule (Filtered)
+    // Active Installment Rows extracted directly from each contract's installment schedule (Filtered by dateRange)
     const installmentCustomerRows = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayStr = today.toISOString().split('T')[0];
 
         const rows = [];
-        filteredContracts.forEach((contract) => {
-            const rules = penaltyRulesByBrand[String(contract.brand || '').trim()] || [];
-            const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
-            if (schedule.length === 0) return;
-
-            const activeIdx = getActiveRowIdx(schedule);
-            const displayRow = getDisplayRow(schedule, activeIdx === -1 ? null : activeIdx);
-            if (!displayRow) return;
-
-            const rowData = getRowWithDueDate(displayRow, contract);
-            const penalty = getAutomaticPenalty(rowData, contract, rules);
-            const scheduledAmt = Number(rowData.scheduledAmount || rowData.amount || rowData.due || 0);
-            const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
-            const unpaidAmt = Math.max(0, scheduledAmt - paidAmt);
-            const isPaid = ['Paid', 'PayOff', 'Settled'].includes(rowData.status) || (unpaidAmt <= 0 && scheduledAmt > 0);
-
-            let diffDays = null;
-            let lateDays = 0;
-            const dueDateStr = rowData.dueDate ? String(rowData.dueDate).split('T')[0] : '';
-            if (dueDateStr) {
-                const dueDateObj = new Date(`${dueDateStr}T00:00:00`);
-                if (!isNaN(dueDateObj.getTime())) {
-                    diffDays = Math.round((dueDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                    if (diffDays < 0) {
-                        lateDays = Math.abs(diffDays);
-                    }
-                }
+        rawContracts.forEach((contract) => {
+            const contractBrand = String(contract.brand || '').trim();
+            if (activeUserBrand && contractBrand.toLowerCase() !== activeUserBrand.toLowerCase()) {
+                return;
             }
 
-            const isOverdue = !isPaid && (lateDays > 0 || penalty > 0 || (dueDateStr && dueDateStr < todayStr));
+            const rules = penaltyRulesByBrand[contractBrand] || [];
+            const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
+            if (schedule.length === 0) return;
 
             const nameEn = contract.customerNameEn || contract.customerName || contract.name || contract.clientName || '';
             const nameKh = contract.customerNameKh || contract.nameKh || '';
             const phone = contract.phone || contract.phoneNumber || contract.tel || contract.clientPhone || contract.contactNumber || '-';
 
-            rows.push({
-                id: `${contract._id || contract.id || 'c'}-${rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : 1)}`,
-                contractId: contract._id || contract.id,
-                contractIid: contract.contractId || contract.contractIid || contract.code || `CT-${rows.length + 1}`,
-                customerNameEn: nameEn,
-                customerNameKh: nameKh,
-                customerName: nameEn || nameKh || 'Unknown',
-                phone: phone,
-                dueDate: dueDateStr,
-                scheduledAmount: scheduledAmt,
-                paidAmount: paidAmt,
-                outstandingAmount: unpaidAmt,
-                penaltyAmount: penalty,
-                isPaid,
-                daysUntilDue: diffDays,
-                lateDays,
-                isOverdue,
-                monthIndex: rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : schedule.length),
-                monthLabel: rowData.labelName || `Month ${rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : schedule.length)}`,
-                status: isPaid ? 'PAID' : (isOverdue ? 'OVERDUE' : (diffDays === 0 ? 'DUE_TODAY' : 'DUE')),
-                brand: contract.brand || 'MDM'
-            });
+            if (dateRange.isAll) {
+                // If All Time: extract the currently active pending/due/saved row
+                const activeIdx = getActiveRowIdx(schedule);
+                const displayRow = getDisplayRow(schedule, activeIdx === -1 ? null : activeIdx);
+                if (!displayRow) return;
+
+                const rowData = getRowWithDueDate(displayRow, contract);
+                const penalty = getAutomaticPenalty(rowData, contract, rules);
+                const scheduledAmt = Number(rowData.scheduledAmount || rowData.amount || rowData.due || 0);
+                const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
+                const unpaidAmt = Math.max(0, scheduledAmt - paidAmt);
+                const isPaid = ['Paid', 'PayOff', 'Settled'].includes(rowData.status) || (unpaidAmt <= 0 && scheduledAmt > 0);
+
+                let diffDays = null;
+                let lateDays = 0;
+                const dueDateStr = rowData.dueDate ? String(rowData.dueDate).split('T')[0] : '';
+                if (dueDateStr) {
+                    const dueDateObj = new Date(`${dueDateStr}T00:00:00`);
+                    if (!isNaN(dueDateObj.getTime())) {
+                        diffDays = Math.round((dueDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diffDays < 0) {
+                            lateDays = Math.abs(diffDays);
+                        }
+                    }
+                }
+
+                const isOverdue = !isPaid && (lateDays > 0 || penalty > 0 || (dueDateStr && dueDateStr < todayStr));
+
+                rows.push({
+                    id: `${contract._id || contract.id || 'c'}-${rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : 1)}`,
+                    contractId: contract._id || contract.id,
+                    contractIid: contract.contractId || contract.contractIid || contract.code || `CT-${rows.length + 1}`,
+                    customerNameEn: nameEn,
+                    customerNameKh: nameKh,
+                    customerName: nameEn || nameKh || 'Unknown',
+                    phone: phone,
+                    dueDate: dueDateStr,
+                    scheduledAmount: scheduledAmt,
+                    paidAmount: paidAmt,
+                    outstandingAmount: unpaidAmt,
+                    penaltyAmount: penalty,
+                    isPaid,
+                    daysUntilDue: diffDays,
+                    lateDays,
+                    isOverdue,
+                    monthIndex: rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : schedule.length),
+                    monthLabel: rowData.labelName || `Month ${rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : schedule.length)}`,
+                    status: isPaid ? 'PAID' : (isOverdue ? 'OVERDUE' : (diffDays === 0 ? 'DUE_TODAY' : 'DUE')),
+                    brand: contract.brand || 'MDM'
+                });
+            } else {
+                // If a specific timeframe/range is selected (today, 7d, monthly, month_select, custom):
+                // Find all schedule rows whose dueDate falls within the selected dateRange
+                schedule.forEach((row, rIdx) => {
+                    const rowData = getRowWithDueDate(row, contract);
+                    const dueDateStr = rowData.dueDate ? String(rowData.dueDate).split('T')[0] : '';
+                    const paidDateStr = rowData.paidDate ? String(rowData.paidDate).split('T')[0] : '';
+
+                    const isDueDateInRange = isDateInRange(dueDateStr, dateRange);
+                    const isPaidDateInRange = paidDateStr ? isDateInRange(paidDateStr, dateRange) : false;
+
+                    // Match if either dueDate or paidDate is within the selected range
+                    if (!isDueDateInRange && !isPaidDateInRange) return;
+
+                    const penalty = getAutomaticPenalty(rowData, contract, rules);
+                    const scheduledAmt = Number(rowData.scheduledAmount || rowData.amount || rowData.due || 0);
+                    const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
+                    const unpaidAmt = Math.max(0, scheduledAmt - paidAmt);
+                    const isPaid = ['Paid', 'PayOff', 'Settled'].includes(rowData.status) || (unpaidAmt <= 0 && scheduledAmt > 0);
+
+                    let diffDays = null;
+                    let lateDays = 0;
+                    if (dueDateStr) {
+                        const dueDateObj = new Date(`${dueDateStr}T00:00:00`);
+                        if (!isNaN(dueDateObj.getTime())) {
+                            diffDays = Math.round((dueDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                            if (diffDays < 0) {
+                                lateDays = Math.abs(diffDays);
+                            }
+                        }
+                    }
+
+                    const isOverdue = !isPaid && (lateDays > 0 || penalty > 0 || (dueDateStr && dueDateStr < todayStr));
+
+                    rows.push({
+                        id: `${contract._id || contract.id || 'c'}-${rowData.monthIndex || rIdx + 1}`,
+                        contractId: contract._id || contract.id,
+                        contractIid: contract.contractId || contract.contractIid || contract.code || `CT-${rows.length + 1}`,
+                        customerNameEn: nameEn,
+                        customerNameKh: nameKh,
+                        customerName: nameEn || nameKh || 'Unknown',
+                        phone: phone,
+                        dueDate: dueDateStr,
+                        scheduledAmount: scheduledAmt,
+                        paidAmount: paidAmt,
+                        outstandingAmount: unpaidAmt,
+                        penaltyAmount: penalty,
+                        isPaid,
+                        daysUntilDue: diffDays,
+                        lateDays,
+                        isOverdue,
+                        monthIndex: rowData.monthIndex || rIdx + 1,
+                        monthLabel: rowData.labelName || `Month ${rowData.monthIndex || rIdx + 1}`,
+                        status: isPaid ? 'PAID' : (isOverdue ? 'OVERDUE' : (diffDays === 0 ? 'DUE_TODAY' : 'DUE')),
+                        brand: contract.brand || 'MDM'
+                    });
+                });
+            }
         });
 
         return rows;
-    }, [filteredContracts, penaltyRulesByBrand]);
+    }, [rawContracts, activeUserBrand, penaltyRulesByBrand, dateRange]);
 
     // Active customer payment details for the tables
     const dueCustomerRows = useMemo(() => {
