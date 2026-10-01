@@ -537,6 +537,7 @@ const Dashboard = () => {
     const totalOverdueAlertCount = overdueCustomerRows.length;
 
     // ── Dynamic Chart Data Points ──
+    // ── Dynamic Chart Data Points (From Real Database Records) ──
     const chartPoints = useMemo(() => {
         const pointsMap = {};
         const today = new Date();
@@ -547,17 +548,35 @@ const Dashboard = () => {
                 pointsMap[h] = { label: h, collected: 0, disbursed: 0, customers: 0 };
             });
             const todayStr = today.toISOString().split('T')[0];
-            rawContracts.forEach(c => {
-                const cDate = String(c.date || c.createdAt || c.inputDate || '').split('T')[0];
-                if (cDate === todayStr) {
-                    pointsMap['12:00'].disbursed += Number(c.amount || c.loanAmount || 0);
-                    pointsMap['12:00'].customers += 1;
+
+            filteredContracts.forEach(c => {
+                const dateStr = String(c.date || c.createdAt || c.inputDate || '');
+                if (dateStr.startsWith(todayStr)) {
+                    const cDate = new Date(dateStr);
+                    const hour = isNaN(cDate.getTime()) ? 12 : cDate.getHours();
+                    const matchedHour = hours.reduce((closest, h) => {
+                        const hNum = parseInt(h.split(':')[0], 10);
+                        return Math.abs(hNum - hour) < Math.abs(parseInt(closest.split(':')[0], 10) - hour) ? h : closest;
+                    }, '12:00');
+                    if (pointsMap[matchedHour]) {
+                        pointsMap[matchedHour].disbursed += Number(c.amount || c.loanAmount || c.totalAmount || 0);
+                        pointsMap[matchedHour].customers += 1;
+                    }
                 }
             });
-            rawPayments.forEach(p => {
-                const pDate = String(p.paidDate || p.date || p.createdAt || '').split('T')[0];
-                if (pDate === todayStr) {
-                    pointsMap['12:00'].collected += Number(p.amount || 0);
+
+            filteredPayments.forEach(p => {
+                const dateStr = String(p.paidDate || p.date || p.createdAt || '');
+                if (dateStr.startsWith(todayStr)) {
+                    const pDate = new Date(dateStr);
+                    const hour = isNaN(pDate.getTime()) ? 12 : pDate.getHours();
+                    const matchedHour = hours.reduce((closest, h) => {
+                        const hNum = parseInt(h.split(':')[0], 10);
+                        return Math.abs(hNum - hour) < Math.abs(parseInt(closest.split(':')[0], 10) - hour) ? h : closest;
+                    }, '12:00');
+                    if (pointsMap[matchedHour]) {
+                        pointsMap[matchedHour].collected += Number(p.amount || 0);
+                    }
                 }
             });
         } else if (selectedTimeframe === '7d' || selectedTimeframe === '30d' || selectedTimeframe === 'monthly' || selectedTimeframe === 'custom') {
@@ -570,15 +589,15 @@ const Dashboard = () => {
                 pointsMap[dStr] = { label, collected: 0, disbursed: 0, customers: 0 };
             }
 
-            rawContracts.forEach(c => {
+            filteredContracts.forEach(c => {
                 const cDate = String(c.date || c.createdAt || c.inputDate || '').split('T')[0];
                 if (pointsMap[cDate]) {
-                    pointsMap[cDate].disbursed += Number(c.amount || c.loanAmount || 0);
+                    pointsMap[cDate].disbursed += Number(c.amount || c.loanAmount || c.totalAmount || 0);
                     pointsMap[cDate].customers += 1;
                 }
             });
 
-            rawPayments.forEach(p => {
+            filteredPayments.forEach(p => {
                 const pDate = String(p.paidDate || p.date || p.createdAt || '').split('T')[0];
                 if (pointsMap[pDate]) {
                     pointsMap[pDate].collected += Number(p.amount || 0);
@@ -592,14 +611,16 @@ const Dashboard = () => {
                 const mKey = `${curYear}-${m}`;
                 pointsMap[mKey] = { label: `${m}/${curYear.toString().slice(-2)}`, collected: 0, disbursed: 0, customers: 0 };
             });
-            rawContracts.forEach(c => {
+
+            filteredContracts.forEach(c => {
                 const cMonth = String(c.date || c.createdAt || c.inputDate || '').slice(0, 7);
                 if (pointsMap[cMonth]) {
-                    pointsMap[cMonth].disbursed += Number(c.amount || c.loanAmount || 0);
+                    pointsMap[cMonth].disbursed += Number(c.amount || c.loanAmount || c.totalAmount || 0);
                     pointsMap[cMonth].customers += 1;
                 }
             });
-            rawPayments.forEach(p => {
+
+            filteredPayments.forEach(p => {
                 const pMonth = String(p.paidDate || p.date || p.createdAt || '').slice(0, 7);
                 if (pointsMap[pMonth]) {
                     pointsMap[pMonth].collected += Number(p.amount || 0);
@@ -608,7 +629,7 @@ const Dashboard = () => {
         }
 
         return Object.values(pointsMap);
-    }, [selectedTimeframe, rawContracts, rawPayments]);
+    }, [selectedTimeframe, filteredContracts, filteredPayments]);
 
     // Handle Custom Popover Shortcut
     const handleApplyDatePreset = (days) => {
