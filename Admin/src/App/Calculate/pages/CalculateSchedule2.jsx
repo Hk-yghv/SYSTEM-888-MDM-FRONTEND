@@ -1104,20 +1104,20 @@ const CalculateSchedule2 = () => {
                             <p className='text-left mt-4 text-[12px] font-bold '>
                                 <span className='text-red-900'>ចំណាំ ៖</span> ករណីអតិថិជនបង់ការប្រាក់រួចហើយ អតិថិជនមិនអាចដកប្រាក់វិញបានទេ (ដោយគ្មានលក្ខខណ្ឌ) ។
                             </p>
-                            <br />
-                            {/* Signature Block */}
-                            <div className="px-8 pb-1 grid grid-cols-2 gap-12 text-xs text-slate-800">
-                                <div className="text-center">
-                                    <p className="font-bold text-[12px] text-sm font-normal" style={{ fontFamily: 'moul' }}>តំណាងក្រុមហ៊ុន</p>
-                                    <div className='flex items-center justify-center'>
-                                        <div className="mt-16 border-b border-dotted border-slate-400 mx-6 w-[150px]" />
-                                    </div>
+                        </div>
+
+                        {/* Signature Block */}
+                        <div className="w-4/5 mx-auto mt-4 px-8 pb-1 grid grid-cols-2 gap-12 text-xs text-slate-800">
+                            <div className="text-center">
+                                <p className="font-bold text-[12px] text-sm font-normal" style={{ fontFamily: 'moul' }}>តំណាងក្រុមហ៊ុន</p>
+                                <div className='flex items-center justify-center'>
+                                    <div className="mt-16 border-b border-dotted border-slate-400 mx-6 w-[150px]" />
                                 </div>
-                                <div className="text-center">
-                                    <p className="font-bold text-[12px] text-sm font-normal" style={{ fontFamily: 'moul' }}>ឈ្មោះអតិថិជន</p>
-                                    <div className='flex items-center justify-center'>
-                                        <div className="mt-16 border-b border-dotted border-slate-400 mx-6 w-[150px]" />
-                                    </div>
+                            </div>
+                            <div className="text-center">
+                                <p className="font-bold text-[12px] text-sm font-normal" style={{ fontFamily: 'moul' }}>ឈ្មោះអតិថិជន</p>
+                                <div className='flex items-center justify-center'>
+                                    <div className="mt-16 border-b border-dotted border-slate-400 mx-6 w-[150px]" />
                                 </div>
                             </div>
                         </div>
