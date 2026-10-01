@@ -177,19 +177,14 @@ export const antiReplayMiddleware = (req, res, next) => {
     next();
 };
 
-// ── LAYER 6: Adaptive Multi-Tier Rate Limiter & Anti-Brute Force Engine ──
+// ── LAYER 6: IP Tracking & Rate Monitoring (No IP Ban / Lockout) ──
 const ipRateMap = new Map();
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes window
-const MAX_AUTH_ATTEMPTS = 10;
-const MAX_API_ATTEMPTS = 600;
-const BAN_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes ban for extreme violators
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 
 setInterval(() => {
     const now = Date.now();
     for (const [ip, rec] of ipRateMap.entries()) {
-        if (rec.bannedUntil && now > rec.bannedUntil) {
-            ipRateMap.delete(ip);
-        } else if (now - rec.startTime > RATE_LIMIT_WINDOW_MS && !rec.bannedUntil) {
+        if (now - rec.startTime > RATE_LIMIT_WINDOW_MS) {
             ipRateMap.delete(ip);
         }
     }
@@ -197,43 +192,19 @@ setInterval(() => {
 
 export const rateLimiterMiddleware = (req, res, next) => {
     const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || '127.0.0.1';
+    req.clientIp = clientIp;
     const now = Date.now();
     let record = ipRateMap.get(clientIp);
 
     const isValidRecord = record && typeof record === 'object' && typeof record.startTime === 'number';
-    if (!isValidRecord || (now - record.startTime > RATE_LIMIT_WINDOW_MS && !record.bannedUntil)) {
-        record = { startTime: now, authCount: 0, apiCount: 0, violations: 0, bannedUntil: null };
-    }
-
-    if (record.bannedUntil && now < record.bannedUntil) {
-        const remainingMin = Math.ceil((record.bannedUntil - now) / 60000);
-        return res.status(429).json({
-            error: `Security Alert: Your IP address (${clientIp}) has been temporarily locked out due to suspicious security violations. Try again in ${remainingMin} minute(s).`
-        });
+    if (!isValidRecord || (now - record.startTime > RATE_LIMIT_WINDOW_MS)) {
+        record = { startTime: now, authCount: 0, apiCount: 0 };
     }
 
     if (req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/verify-otp')) {
         record.authCount = Number(record.authCount || 0) + 1;
-        if (record.authCount > MAX_AUTH_ATTEMPTS) {
-            record.violations = Number(record.violations || 0) + 1;
-            if (record.violations >= 2) {
-                record.bannedUntil = now + BAN_THRESHOLD_MS;
-                notifySecurityAlert(`🚨 <b>SECURITY BAN ALERT</b>\nIP: <code>${clientIp}</code> has been banned for 30 minutes due to repeated authentication brute-force attempts!`);
-            }
-            ipRateMap.set(clientIp, record);
-            return res.status(429).json({
-                error: 'Security Warning: Too many authentication attempts! Access restricted to prevent brute-force attacks. Please try again in 15 minutes.'
-            });
-        }
     } else if (req.path.startsWith('/api')) {
         record.apiCount = Number(record.apiCount || 0) + 1;
-        if (record.apiCount > MAX_API_ATTEMPTS) {
-            record.violations = Number(record.violations || 0) + 1;
-            ipRateMap.set(clientIp, record);
-            return res.status(429).json({
-                error: 'Security Protection: Rate limit exceeded. Automated scraping or DoS activity detected from your IP address.'
-            });
-        }
     }
 
     ipRateMap.set(clientIp, record);

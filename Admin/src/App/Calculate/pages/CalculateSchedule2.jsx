@@ -521,13 +521,13 @@ const CalculateSchedule2 = () => {
                 @media print {
                     html, body {
                         width: 100% !important;
-                        height: auto !important;
-                        min-height: 0 !important;
+                        height: 100% !important;
+                        max-height: 100% !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         background: #ffffff !important;
                         color: #000000 !important;
-                        overflow: visible !important;
+                        overflow: hidden !important;
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                     }
@@ -542,6 +542,12 @@ const CalculateSchedule2 = () => {
                         visibility: hidden !important;
                         overflow: hidden !important;
                     }
+                    #root, main, .max-w-7xl, .space-y-6 {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        height: auto !important;
+                        min-height: 0 !important;
+                    }
                     body * {
                         visibility: hidden;
                     }
@@ -549,7 +555,7 @@ const CalculateSchedule2 = () => {
                         visibility: visible !important;
                     }
                     #cs2-print-area {
-                        position: relative !important;
+                        position: absolute !important;
                         left: 0 !important;
                         right: 0 !important;
                         top: 0 !important;
@@ -562,8 +568,10 @@ const CalculateSchedule2 = () => {
                         background: #ffffff !important;
                         overflow: visible !important;
                         min-height: auto !important;
+                        page-break-before: avoid !important;
                         page-break-after: avoid !important;
                         page-break-inside: avoid !important;
+                        break-before: avoid !important;
                         break-after: avoid !important;
                         break-inside: avoid !important;
                     }

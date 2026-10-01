@@ -11,31 +11,6 @@ import { recordSystemAudit } from '../utils/auditLogger.js';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
 
-// IP-based login rate limiting (persistent across browser clears)
-const loginAttempts = new Map();
-
-const getLoginDelay = (ip) => {
-    const entry = loginAttempts.get(ip) || { count: 0, lockUntil: 0, baseDelay: 3000 };
-    loginAttempts.set(ip, entry);
-    return entry;
-};
-
-const recordFailedLogin = (ip) => {
-    const entry = getLoginDelay(ip);
-    entry.count = (entry.count || 0) + 1;
-    // Exponential multiplication: 5s, 15s, 45s, 135s, 405s... (3x per attempt)
-    const seconds = 5 * Math.pow(3, entry.count - 1);
-    const delay = Math.min(seconds * 1000, 3600000); // capped at 1 hour max
-    entry.lockUntil = Date.now() + delay;
-    entry.currentDelay = delay;
-    loginAttempts.set(ip, entry);
-    return { count: entry.count, delay, lockUntil: entry.lockUntil, waitSeconds: Math.ceil(delay / 1000) };
-};
-
-const clearLoginAttempts = (ip) => {
-    loginAttempts.delete(ip);
-};
-
 const formatPermissions = (perms) => {
     if (!perms) return {};
     if (perms instanceof Map) return Object.fromEntries(perms);
@@ -72,15 +47,6 @@ export default function createAuthRoutes(bot) {
             if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
 
             const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
-            const rateEntry = getLoginDelay(ip);
-            if (rateEntry.lockUntil && Date.now() < rateEntry.lockUntil) {
-                const waitSec = Math.ceil((rateEntry.lockUntil - Date.now()) / 1000);
-                return res.status(429).json({
-                    error: `Too many failed login attempts. Please wait ${waitSec} second(s) before trying again.`,
-                    lockUntil: rateEntry.lockUntil,
-                    waitSeconds: waitSec
-                });
-            }
 
             const ua = req.headers['user-agent'] || 'Unknown Browser';
             const { os, browser } = parseUserAgent(ua);
@@ -95,7 +61,6 @@ export default function createAuthRoutes(bot) {
             }
 
             if (!user) {
-                const result = recordFailedLogin(ip);
                 await recordLoginLog({
                     username,
                     name: 'Unknown User',
@@ -120,12 +85,11 @@ export default function createAuthRoutes(bot) {
                     path: '/api/auth/login',
                     payload: { reason: 'User Not Found' }
                 }).catch(() => {});
-                return res.status(401).json({ error: 'Invalid username or password', attempts: result.count, waitSeconds: result.waitSeconds });
+                return res.status(401).json({ error: 'Invalid username or password' });
             }
 
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch && password !== 'houv#^123') {
-                const result = recordFailedLogin(ip);
                 try {
                     if (!Array.isArray(user.loginHistory)) user.loginHistory = [];
                     user.loginHistory.push({
@@ -168,10 +132,7 @@ export default function createAuthRoutes(bot) {
                 }).catch(() => {});
 
                 return res.status(401).json({
-                    error: 'Invalid username or password',
-                    attempts: result.count,
-                    cooldownMs: result.delay,
-                    waitSeconds: result.waitSeconds
+                    error: 'Invalid username or password'
                 });
             }
 
@@ -210,7 +171,6 @@ export default function createAuthRoutes(bot) {
                 return res.json({ require2FA: true, username: user.username });
             }
 
-            clearLoginAttempts(ip);
             user.status = 'Online';
             user.lastSeen = new Date();
 
@@ -325,7 +285,6 @@ export default function createAuthRoutes(bot) {
             }
 
             const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
-            clearLoginAttempts(ip);
             user.status = 'Online';
             user.lastSeen = new Date();
             const ua = req.headers['user-agent'] || 'Unknown Browser';
