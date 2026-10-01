@@ -3,13 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaGlobe, FaBell, FaExpand, FaCompress, FaBars, FaTimes } from 'react-icons/fa';
+import { FaBell, FaBars, FaTimes } from 'react-icons/fa';
 import { getFirstAllowedRoute, hasAnyAlertPermission } from '../../utils/permissionUtils';
 
 const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleSidebar }) => {
-    const [langOpen, setLangOpen] = useState(false);
-
-    const { t, lang, changeLanguage, LANGUAGES } = useLanguage();
+    const { t } = useLanguage();
     const { user, API_BASE, API_BASE1, hasPermission } = useAuth();
     const navigate = useNavigate();
 
@@ -83,38 +81,6 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
         }
     }, [API_BASE, user, hasPermission]);
 
-    const currentLangObj = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0];
-
-
-    // set full screen
-    const [isFullscreen, setIsFullscreen] = useState(false);
-
-    const toggleFullscreen = async () => {
-        try {
-            if (!document.fullscreenElement) {
-                await document.documentElement.requestFullscreen();
-                setIsFullscreen(true);
-            } else {
-                await document.exitFullscreen();
-                setIsFullscreen(false);
-            }
-        } catch (error) {
-            console.error('Fullscreen error:', error);
-        }
-    };
-
-    useEffect(() => {
-        const handleFullscreenChange = () => {
-            setIsFullscreen(!!document.fullscreenElement);
-        };
-
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-
-        return () => {
-            document.removeEventListener('fullscreenchange', handleFullscreenChange);
-        };
-    }, []);
-
     return (
         <header
             className='w-full h-[7vh] flex items-center justify-between px-3 md:px-6 border-b z-40 select-none shadow-sm transition-colors backdrop-blur-md'
@@ -187,57 +153,6 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                         )}
                     </button>
                 )}
-
-                {/* Fullscreen Button */}
-                <button
-                    onClick={toggleFullscreen}
-                    className='hidden md:flex items-center justify-center w-10 h-10 rounded-[5px] bg-gray-100 hover:bg-gray-200 text-slate-950 border border-gray-300 shadow-md transition-all cursor-pointer'
-                    title={isFullscreen ? [t('exitFullscreen')]: t('fullscreen')}
-                >
-                    {isFullscreen ? (
-                        <FaCompress className='text-sm' />
-                    ) : (
-                        <FaExpand className='text-sm' />
-                    )}
-                </button>
-
-                {/* Multi-Language Selector */}
-                <div className='relative'>
-                    <button
-                        onClick={() => { setLangOpen(!langOpen); setAccountOpen(false); }}
-                        className='flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 rounded-[5px] bg-slate-100 border border-slate-200 hover:border-emerald-500/50 transition-all text-xs font-semibold cursor-pointer shadow-xs hover:bg-slate-200/60'
-                    >
-                        <span className='text-base'>{currentLangObj.flag}</span>
-                        <span className='hidden sm:inline text-slate-700'>{currentLangObj.label}</span>
-                        <FaGlobe className='text-emerald-600 text-xs ml-1' />
-                    </button>
-
-                    {langOpen && (
-                        <div className='absolute top-[5vh] right-0 bg-white border border-slate-200 rounded-[5px] p-2 w-[220px] shadow-xl z-50 animate-in fade-in duration-200'>
-                            <p className='text-[11px] font-bold text-slate-400 px-3 py-1 uppercase tracking-wider border-b border-slate-100 mb-1'>
-                                {t('selectLanguage')}
-                            </p>
-                            <div className='max-h-[300px] overflow-y-auto space-y-1 pr-1'>
-                                {LANGUAGES.map((l) => (
-                                    <button
-                                        key={l.code}
-                                        onClick={() => {
-                                            changeLanguage(l.code);
-                                            setLangOpen(false);
-                                        }}
-                                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-[5px] transition-all cursor-pointer ${lang === l.code ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-300' : 'hover:bg-slate-100 text-slate-700'}`}
-                                    >
-                                        <span className='flex items-center gap-2.5'>
-                                            <span className='text-base'>{l.flag}</span>
-                                            {l.label}
-                                        </span>
-                                        {lang === l.code && <span className='w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping'></span>}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
             </div>
         </header>
     );

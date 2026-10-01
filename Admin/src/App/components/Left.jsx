@@ -6,22 +6,50 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress } from "react-icons/fa";
 
 
 const Left = ({ isOpen = false, onClose }) => {
     const [openMenu, setOpenMenu] = useState("");
     const [accountOpen, setAccountOpen] = useState(false);
-    const { t } = useLanguage();
+    const [langSubmenuOpen, setLangSubmenuOpen] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const { t, lang, changeLanguage, LANGUAGES } = useLanguage();
     const { user, logout, hasPermission } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
+
+    const currentLangObj = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0];
+
+    const toggleFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+                setIsFullscreen(true);
+            } else {
+                await document.exitFullscreen();
+                setIsFullscreen(false);
+            }
+        } catch (error) {
+            console.error('Fullscreen error:', error);
+        }
+    };
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
 
     useEffect(() => {
         if (!accountOpen) return;
         const handleClickOutside = (e) => {
             if (!e.target.closest('#account-badge-container')) {
                 setAccountOpen(false);
+                setLangSubmenuOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -465,19 +493,76 @@ const Left = ({ isOpen = false, onClose }) => {
                             </span>
                         </div>
 
+                        {/* Profile Button */}
                         <Link
                             to="/profile"
                             onClick={() => setAccountOpen(false)}
-                            className="w-full h-[38px] flex items-center gap-2.5 px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[6px] transition-all cursor-pointer text-xs font-medium"
+                            className="w-full h-[36px] flex items-center gap-2.5 px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[6px] transition-all cursor-pointer text-xs font-medium"
                         >
                             <FaUserCog className="text-sm text-emerald-600" />
                             <span>{t('profile')}</span>
                         </Link>
 
+                        {/* Fullscreen / Zoom Toggle */}
+                        <button
+                            type="button"
+                            onClick={toggleFullscreen}
+                            className="w-full h-[36px] flex items-center justify-between px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[6px] transition-all cursor-pointer text-xs font-medium"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                {isFullscreen ? <FaCompress className="text-sm text-emerald-600" /> : <FaExpand className="text-sm text-emerald-600" />}
+                                <span>{isFullscreen ? (t('exitFullscreen') || 'Exit Fullscreen') : (t('fullscreen') || 'Fullscreen')}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono">F11</span>
+                        </button>
+
+                        {/* Language Selector Submenu Toggle */}
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setLangSubmenuOpen(!langSubmenuOpen)}
+                                className="w-full h-[36px] flex items-center justify-between px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[6px] transition-all cursor-pointer text-xs font-medium"
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <FaGlobe className="text-sm text-emerald-600" />
+                                    <span>{t('selectLanguage') || 'ភាសា / Language'}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <span className="text-sm">{currentLangObj.flag}</span>
+                                    <IoMdArrowDropdown className={`text-slate-400 transition-transform duration-200 ${langSubmenuOpen ? 'rotate-180' : ''}`} />
+                                </div>
+                            </button>
+
+                            {langSubmenuOpen && (
+                                <div className="mt-1 mb-1 p-1 bg-slate-50 border border-slate-200 rounded-[8px] max-h-[160px] overflow-y-auto space-y-0.5 custom-scrollbar">
+                                    {LANGUAGES.map((l) => (
+                                        <button
+                                            key={l.code}
+                                            type="button"
+                                            onClick={() => {
+                                                changeLanguage(l.code);
+                                                setLangSubmenuOpen(false);
+                                            }}
+                                            className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-[5px] transition-all cursor-pointer ${
+                                                lang === l.code ? 'bg-emerald-600 text-white font-bold' : 'hover:bg-slate-200/60 text-slate-700'
+                                            }`}
+                                        >
+                                            <span className="flex items-center gap-2">
+                                                <span className="text-sm">{l.flag}</span>
+                                                <span>{l.label}</span>
+                                            </span>
+                                            {lang === l.code && <span className="text-[10px]">✓</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Logout Button */}
                         <button
                             type="button"
                             onClick={handleLogout}
-                            className="w-full h-[38px] flex items-center gap-2.5 px-3 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-[6px] transition-all cursor-pointer text-xs font-semibold mt-1 border-t border-slate-100 pt-1.5"
+                            className="w-full h-[36px] flex items-center gap-2.5 px-3 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-[6px] transition-all cursor-pointer text-xs font-semibold mt-1 border-t border-slate-100 pt-1.5"
                         >
                             <FaSignOutAlt className="text-sm text-red-500" />
                             <span>{t('logout')}</span>
