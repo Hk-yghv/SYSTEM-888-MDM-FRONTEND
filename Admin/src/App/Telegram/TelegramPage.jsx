@@ -22,6 +22,7 @@ import {
   FaSyncAlt,
   FaExclamationTriangle,
   FaExternalLinkAlt,
+  FaSignOutAlt,
   FaPaperPlane,
   FaInfoCircle,
   FaCopy,
@@ -328,6 +329,7 @@ const TelegramPage = () => {
   const [isLoadingForumTopics, setIsLoadingForumTopics] = useState(false);
   const [activeChatForumTopics, setActiveChatForumTopics] = useState([]);
   const [isLoadingActiveChatTopics, setIsLoadingActiveChatTopics] = useState(false);
+  const [isLeavingGroup, setIsLeavingGroup] = useState(false);
   const [newChatInitialMessage, setNewChatInitialMessage] = useState("");
   const [isSendingNewChat, setIsSendingNewChat] = useState(false);
   const [newChatError, setNewChatError] = useState("");
@@ -1538,6 +1540,35 @@ const TelegramPage = () => {
     setActiveChatId(topicChatId);
   };
 
+  const handleLeaveGroup = async () => {
+    if (!activeAccount?.botToken || activeChat?.type !== "group") return;
+    const groupId = String(activeChat.telegramChatId || activeChat.id);
+    if (!window.confirm(`តើអ្នកប្រាកដថាចង់ឱ្យ Bot ចេញពី Group "${activeChat.parentGroupName || activeChat.name}" មែនទេ?`)) return;
+
+    setIsLeavingGroup(true);
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${activeAccount.botToken}/leaveChat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: groupId })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        throw new Error(data.description || "Telegram មិនអាចឱ្យ Bot ចេញពី Group បានទេ");
+      }
+
+      setAccounts((previous) => previous.map((account) => account.id !== activeAccountId ? account : ({
+        ...account,
+        chats: account.chats.filter((chat) => String(chat.telegramChatId || chat.id) !== groupId)
+      })));
+      setActiveChatForumTopics([]);
+    } catch (error) {
+      alert(`Bot ចេញពី Group មិនបានទេ៖ ${error.message}`);
+    } finally {
+      setIsLeavingGroup(false);
+    }
+  };
+
   // Real Telegram API: Create New Chat and Send First Message
   const handleCreateNewChat = async (e) => {
     e.preventDefault();
@@ -2194,6 +2225,18 @@ const TelegramPage = () => {
                         </select>
                       )}
                     </div>
+                  )}
+                  {activeAccount?.type !== "user" && activeChat.type === "group" && (
+                    <button
+                      type="button"
+                      onClick={handleLeaveGroup}
+                      disabled={isLeavingGroup}
+                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md disabled:opacity-50 cursor-pointer"
+                      title="ឱ្យ Bot ចេញពី Group"
+                      aria-label="ឱ្យ Bot ចេញពី Group"
+                    >
+                      <FaSignOutAlt className="text-sm" />
+                    </button>
                   )}
                   <button
                     onClick={() => setShowChatInfo(!showChatInfo)}
