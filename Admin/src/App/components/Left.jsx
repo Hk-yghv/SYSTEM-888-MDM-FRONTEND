@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import json from "../../routes/Routes.json";
 import { useLanguage } from "../../context/LanguageContext";
@@ -16,6 +16,17 @@ const Left = ({ isOpen = false, onClose }) => {
     const { user, logout, hasPermission } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!accountOpen) return;
+        const handleClickOutside = (e) => {
+            if (!e.target.closest('#account-badge-container')) {
+                setAccountOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [accountOpen]);
 
     const handleLogout = async () => {
         try {
@@ -442,11 +453,11 @@ const Left = ({ isOpen = false, onClose }) => {
             </div>
 
             {/* Bottom Account User Badge Section */}
-            <div className="mt-auto pt-2 border-t border-[var(--app-border,rgba(226,232,240,0.8))] relative flex-shrink-0">
-                {/* Account Menu Popover (Opens Upward) */}
+            <div id="account-badge-container" className="mt-auto pt-2 border-t border-[var(--app-border,rgba(226,232,240,0.8))] relative flex-shrink-0">
+                {/* Account Menu Popover (Opens to the RIGHT side so it does NOT cover menu items) */}
                 {accountOpen && (
-                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-[10px] p-2 shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                        <div className="p-2 border-b border-slate-100 mb-1 bg-slate-50 rounded-[8px]">
+                    <div className="absolute left-[calc(100%+8px)] bottom-0 w-[240px] bg-white border border-slate-200 rounded-[12px] p-2.5 shadow-2xl z-[99999] animate-in fade-in slide-in-from-left-2 duration-200 backdrop-blur-md">
+                        <div className="p-2.5 border-b border-slate-100 mb-1.5 bg-slate-50 rounded-[8px]">
                             <p className="text-xs font-bold text-slate-800 truncate">{user?.name || 'HAK YONGHOUV'}</p>
                             <p className="text-[11px] text-emerald-600 font-mono mt-0.5 truncate">{user?.email || 'yonghouvh@gmail.com'}</p>
                             <span className="inline-block text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 mt-1.5 border border-emerald-200">
@@ -493,7 +504,7 @@ const Left = ({ isOpen = false, onClose }) => {
                             {user?.username ? (user.username.startsWith('@') ? user.username : `@${user.username}`) : '@houv'}
                         </p>
                     </div>
-                    <FaChevronUp className={`text-[10px] text-slate-400 group-hover:text-emerald-600 transition-transform duration-200 flex-shrink-0 ${accountOpen ? 'rotate-180' : ''}`} />
+                    <FaChevronUp className={`text-[10px] text-slate-400 group-hover:text-emerald-600 transition-transform duration-200 flex-shrink-0 ${accountOpen ? 'rotate-90 text-emerald-600' : '-rotate-90'}`} />
                 </div>
             </div>
         </aside>
