@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -6,26 +6,25 @@ import {
   FaPlus,
   FaTrash,
   FaEdit,
-  FaExternalLinkAlt,
-  FaCheck,
+  FaSearch,
+  FaSmile,
   FaTimes,
   FaUser,
-  FaShieldAlt,
-  FaQrcode,
-  FaPhoneAlt,
-  FaRocket,
-  FaWindowRestore
+  FaUsers,
+  FaRobot,
+  FaBullhorn,
+  FaLock,
+  FaKey,
+  FaCog,
+  FaCheck,
+  FaCheckDouble,
+  FaSyncAlt,
+  FaExclamationTriangle,
+  FaExternalLinkAlt,
+  FaPaperPlane,
+  FaInfoCircle
 } from "react-icons/fa";
-import { MdOutlineSwapHoriz } from "react-icons/md";
-
-const DEFAULT_ACCOUNTS = [
-  {
-    id: "acc_1",
-    name: "Telegram 1 (Primary)",
-    version: "a", // 'a' = Web A (https://web.telegram.org/a/), 'k' = Web K (https://web.telegram.org/k/)
-    color: "#0284c7" // sky-600
-  }
-];
+import { MdOutlineSend, MdOutlineSwapHoriz } from "react-icons/md";
 
 const COLOR_PALETTE = [
   "#0284c7", // Sky Blue
@@ -37,13 +36,23 @@ const COLOR_PALETTE = [
   "#4f46e5"  // Indigo
 ];
 
+// Emojis for quick picker
+const POPULAR_EMOJIS = [
+  "👍", "❤️", "🔥", "🎉", "👏", "😊", "🙏", "✅",
+  "👌", "😍", "🤣", "🙌", "💯", "🚀", "💡", "⭐",
+  "🤝", "💬", "📞", "📦", "💵", "🕒", "📍", "⚠️"
+];
+
 const TelegramPage = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const messagesEndRef = useRef(null);
+  const pollingRef = useRef(null);
 
   // Storage key is scoped to the logged-in system user
-  const storageKey = `telegram_accounts_${user?.username || "default"}`;
+  const storageKey = `telegram_real_accounts_${user?.username || "default"}`;
 
+  // Accounts state (Max 5 real accounts)
   const [accounts, setAccounts] = useState(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -56,20 +65,44 @@ const TelegramPage = () => {
     } catch (e) {
       console.error("Failed to parse saved telegram accounts:", e);
     }
-    return DEFAULT_ACCOUNTS;
+    return [];
   });
 
   const [activeAccountId, setActiveAccountId] = useState(() => {
-    return accounts[0]?.id || "acc_1";
+    return accounts[0]?.id || null;
   });
 
-  const [isAddingAccount, setIsAddingAccount] = useState(false);
-  const [editingAccountId, setEditingAccountId] = useState(null);
-  const [accountNameInput, setAccountNameInput] = useState("");
-  const [accountColorInput, setAccountColorInput] = useState(COLOR_PALETTE[0]);
-  const [accountVersionInput, setAccountVersionInput] = useState("a");
+  const activeAccount = accounts.find((a) => a.id === activeAccountId) || accounts[0] || null;
 
-  // Save accounts to localStorage when changed
+  const [activeChatId, setActiveChatId] = useState(null);
+  const [filterCategory, setFilterCategory] = useState("all"); // all, personal, group, channel, bot
+  const [searchQuery, setSearchQuery] = useState("");
+  const [messageInput, setMessageInput] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showChatInfo, setShowChatInfo] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState(null);
+
+  // Account Modal States
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [editingAccountId, setEditingAccountId] = useState(null);
+  const [modalAccountName, setModalAccountName] = useState("");
+  const [modalBotToken, setModalBotToken] = useState("");
+  const [modalColor, setModalColor] = useState(COLOR_PALETTE[0]);
+  const [verifyingToken, setVerifyingToken] = useState(false);
+  const [verifiedBotInfo, setVerifiedBotInfo] = useState(null);
+  const [verifyError, setVerifyError] = useState("");
+
+  // New Chat Modal States
+  const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+  const [newChatTargetId, setNewChatTargetId] = useState("");
+  const [newChatName, setNewChatName] = useState("");
+  const [newChatType, setNewChatType] = useState("personal"); // personal, group, channel
+  const [newChatInitialMessage, setNewChatInitialMessage] = useState("");
+  const [isSendingNewChat, setIsSendingNewChat] = useState(false);
+  const [newChatError, setNewChatError] = useState("");
+
+  // Save accounts to localStorage whenever changed
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(accounts));
@@ -78,453 +111,1196 @@ const TelegramPage = () => {
     }
   }, [accounts, storageKey]);
 
-  // Ensure active account exists
+  // Set active account if none selected
   useEffect(() => {
-    if (!accounts.some((a) => a.id === activeAccountId) && accounts.length > 0) {
+    if (accounts.length > 0 && (!activeAccountId || !accounts.some((a) => a.id === activeAccountId))) {
       setActiveAccountId(accounts[0].id);
     }
   }, [accounts, activeAccountId]);
 
-  const activeAccount = accounts.find((a) => a.id === activeAccountId) || accounts[0];
+  // Set active chat when switching accounts
+  useEffect(() => {
+    if (activeAccount?.chats?.length > 0) {
+      if (!activeAccount.chats.some((c) => c.id === activeChatId)) {
+        setActiveChatId(activeAccount.chats[0].id);
+      }
+    } else {
+      setActiveChatId(null);
+    }
+  }, [activeAccountId, activeAccount, activeChatId]);
 
-  // Telegram URL for the account
-  const getTelegramUrl = (acc) => {
-    if (!acc) return "https://web.telegram.org/a/";
-    return acc.version === "k"
-      ? "https://web.telegram.org/k/"
-      : "https://web.telegram.org/a/";
-  };
+  // Auto scroll to bottom of messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [activeChatId, activeAccount?.chats]);
 
-  // Launch standalone app window for Telegram
-  const handleLaunchAppWindow = (acc) => {
-    const targetAcc = acc || activeAccount;
-    const url = getTelegramUrl(targetAcc);
-    const windowName = `Telegram_Session_${user?.username || "user"}_${targetAcc.id}`;
-    const windowFeatures = "width=1200,height=850,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes";
-    window.open(url, windowName, windowFeatures);
-  };
+  const activeChat = activeAccount?.chats?.find((c) => c.id === activeChatId) || null;
 
-  // Open in standard browser new tab
-  const handleOpenExternal = (acc) => {
-    const targetAcc = acc || activeAccount;
-    window.open(getTelegramUrl(targetAcc), "_blank", "noopener,noreferrer");
-  };
+  // Real Telegram API: Fetch updates
+  const syncTelegramUpdates = useCallback(async (account) => {
+    if (!account || !account.botToken) return;
 
-  const handleAddAccount = (e) => {
-    e.preventDefault();
-    if (accounts.length >= 5) return;
+    try {
+      const offset = account.lastUpdateId ? account.lastUpdateId + 1 : 0;
+      const res = await fetch(
+        `https://api.telegram.org/bot${account.botToken}/getUpdates?offset=${offset}&timeout=10`
+      );
+      const data = await res.json();
 
-    const trimmed = accountNameInput.trim() || `Telegram ${accounts.length + 1}`;
-    const newId = `acc_${Date.now()}`;
-    const newAcc = {
-      id: newId,
-      name: trimmed,
-      version: accountVersionInput || "a",
-      color: accountColorInput || COLOR_PALETTE[accounts.length % COLOR_PALETTE.length]
-    };
+      if (!data.ok) {
+        setSyncError(data.description || "បរាជ័យក្នុងការទាញយកសារ Telegram");
+        return;
+      }
 
-    const updated = [...accounts, newAcc].slice(0, 5);
-    setAccounts(updated);
-    setActiveAccountId(newId);
-    setAccountNameInput("");
-    setIsAddingAccount(false);
-  };
+      setSyncError(null);
+      const updates = data.result || [];
+      if (updates.length === 0) return;
 
-  const handleSaveEdit = (e) => {
-    e.preventDefault();
-    if (!editingAccountId) return;
-    const trimmed = accountNameInput.trim();
-    if (!trimmed) return;
+      let maxUpdateId = account.lastUpdateId || 0;
 
-    setAccounts((prev) =>
-      prev.map((a) =>
-        a.id === editingAccountId
-          ? { ...a, name: trimmed, color: accountColorInput, version: accountVersionInput }
-          : a
-      )
-    );
-    setEditingAccountId(null);
-    setAccountNameInput("");
-  };
+      setAccounts((prevAccounts) =>
+        prevAccounts.map((acc) => {
+          if (acc.id !== account.id) return acc;
 
-  const handleDeleteAccount = (accId, e) => {
-    e.stopPropagation();
-    if (accounts.length <= 1) {
-      alert("អ្នកត្រូវតែមានយ៉ាងហោចណាស់គណនី Telegram ចំនួន 1 (Must keep at least 1 account).");
+          let updatedChats = [...(acc.chats || [])];
+
+          updates.forEach((update) => {
+            if (update.update_id > maxUpdateId) {
+              maxUpdateId = update.update_id;
+            }
+
+            const msg = update.message || update.channel_post || update.edited_message;
+            if (!msg || !msg.chat) return;
+
+            const chatId = String(msg.chat.id);
+            const chatTitle =
+              msg.chat.title ||
+              [msg.chat.first_name, msg.chat.last_name].filter(Boolean).join(" ") ||
+              msg.chat.username ||
+              `Chat ${chatId}`;
+
+            let chatType = "personal";
+            if (msg.chat.type === "group" || msg.chat.type === "supergroup") {
+              chatType = "group";
+            } else if (msg.chat.type === "channel") {
+              chatType = "channel";
+            } else if (msg.from?.is_bot) {
+              chatType = "bot";
+            }
+
+            const msgText = msg.text || msg.caption || (msg.photo ? "📷 [រូបភាព/Photo]" : msg.document ? "📄 [ឯកសារ/Document]" : "សារ Telegram");
+            const msgTime = new Date((msg.date || Date.now() / 1000) * 1000).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            });
+
+            const newMsgObj = {
+              id: `tg_${msg.message_id || Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+              messageId: msg.message_id,
+              sender: msg.from?.id === acc.botInfo?.id ? "me" : "them",
+              senderName: [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ") || msg.from?.username || "Telegram User",
+              text: msgText,
+              time: msgTime,
+              status: "read",
+              rawDate: msg.date
+            };
+
+            const existingChatIndex = updatedChats.findIndex((c) => String(c.id) === chatId);
+
+            if (existingChatIndex >= 0) {
+              const existingChat = updatedChats[existingChatIndex];
+              const msgExists = existingChat.messages?.some(
+                (m) => m.messageId && m.messageId === msg.message_id
+              );
+
+              if (!msgExists) {
+                const newMessages = [...(existingChat.messages || []), newMsgObj];
+                const isCurrentlyActive = activeChatId === chatId && activeAccountId === acc.id;
+                updatedChats[existingChatIndex] = {
+                  ...existingChat,
+                  name: chatTitle,
+                  username: msg.chat.username ? `@${msg.chat.username}` : existingChat.username,
+                  unreadCount: isCurrentlyActive ? 0 : (existingChat.unreadCount || 0) + (newMsgObj.sender === "them" ? 1 : 0),
+                  messages: newMessages
+                };
+              }
+            } else {
+              // Create new chat
+              updatedChats.unshift({
+                id: chatId,
+                name: chatTitle,
+                type: chatType,
+                username: msg.chat.username ? `@${msg.chat.username}` : "",
+                unreadCount: newMsgObj.sender === "them" ? 1 : 0,
+                color: COLOR_PALETTE[updatedChats.length % COLOR_PALETTE.length],
+                messages: [newMsgObj]
+              });
+            }
+          });
+
+          return {
+            ...acc,
+            lastUpdateId: maxUpdateId,
+            chats: updatedChats
+          };
+        })
+      );
+    } catch (err) {
+      console.error("Error polling Telegram updates:", err);
+    }
+  }, [activeChatId, activeAccountId]);
+
+  // Real-Time Polling Effect for active account
+  useEffect(() => {
+    if (!activeAccount?.botToken) {
+      if (pollingRef.current) clearInterval(pollingRef.current);
       return;
     }
-    if (window.confirm("តើអ្នកប្រាកដជាចង់លុប Account Slot នេះមែនទេ? (Are you sure you want to remove this account tab?)")) {
-      const filtered = accounts.filter((a) => a.id !== accId);
-      setAccounts(filtered);
-      if (activeAccountId === accId && filtered.length > 0) {
-        setActiveAccountId(filtered[0].id);
+
+    // Initial sync
+    syncTelegramUpdates(activeAccount);
+
+    // Poll every 3 seconds for real-time live chat
+    pollingRef.current = setInterval(() => {
+      syncTelegramUpdates(activeAccount);
+    }, 3000);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [activeAccount?.id, activeAccount?.botToken, syncTelegramUpdates]);
+
+  // Manual Refresh Button
+  const handleManualSync = async () => {
+    if (!activeAccount?.botToken) return;
+    setIsSyncing(true);
+    await syncTelegramUpdates(activeAccount);
+    setIsSyncing(false);
+  };
+
+  // Real Telegram API: Verify Token
+  const handleVerifyToken = async (tokenToVerify) => {
+    const token = (tokenToVerify || modalBotToken).trim();
+    if (!token) {
+      setVerifyError("សូមបញ្ចូល Telegram Bot Token");
+      return null;
+    }
+
+    setVerifyingToken(true);
+    setVerifyError("");
+    setVerifiedBotInfo(null);
+
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const data = await res.json();
+
+      if (data.ok && data.result) {
+        setVerifiedBotInfo(data.result);
+        if (!modalAccountName) {
+          setModalAccountName(data.result.first_name || data.result.username || "Telegram Bot");
+        }
+        return data.result;
+      } else {
+        setVerifyError(data.description || "Token មិនត្រឹមត្រូវ សូមពិនិត្យម្តងទៀត");
+        return null;
+      }
+    } catch (err) {
+      setVerifyError("មិនអាចភ្ជាប់ទៅកាន់ Telegram Server បានទេ សូមពិនិត្យមើល Internet");
+      return null;
+    } finally {
+      setVerifyingToken(false);
+    }
+  };
+
+  // Save Account (Add or Edit)
+  const handleSaveAccount = async (e) => {
+    e.preventDefault();
+    const token = modalBotToken.trim();
+    if (!token) {
+      setVerifyError("សូមបញ្ចូល Telegram Bot Token");
+      return;
+    }
+
+    const botInfo = verifiedBotInfo || (await handleVerifyToken(token));
+    if (!botInfo) return;
+
+    const accountName = modalAccountName.trim() || botInfo.first_name || "Telegram Account";
+
+    if (editingAccountId) {
+      // Edit existing
+      setAccounts((prev) =>
+        prev.map((a) =>
+          a.id === editingAccountId
+            ? {
+                ...a,
+                name: accountName,
+                botToken: token,
+                color: modalColor,
+                botInfo: botInfo,
+                username: botInfo.username ? `@${botInfo.username}` : ""
+              }
+            : a
+        )
+      );
+    } else {
+      // Add new (Limit to 5)
+      if (accounts.length >= 5) {
+        alert("អ្នកអាចភ្ជាប់គណនី Telegram បានអតិបរមាត្រឹមតែ 5 Accounts ប៉ុណ្ណោះ។");
+        return;
+      }
+
+      const newId = `acc_${Date.now()}`;
+      const newAccount = {
+        id: newId,
+        name: accountName,
+        botToken: token,
+        color: modalColor,
+        botInfo: botInfo,
+        username: botInfo.username ? `@${botInfo.username}` : "",
+        lastUpdateId: 0,
+        chats: []
+      };
+
+      setAccounts((prev) => [...prev, newAccount]);
+      setActiveAccountId(newId);
+    }
+
+    closeAccountModal();
+  };
+
+  // Delete Account
+  const handleDeleteAccount = (accId, e) => {
+    e?.stopPropagation();
+    if (window.confirm("តើលោកអ្នកពិតជាចង់លុបគណនី Telegram នេះចេញពីប្រព័ន្ធមែនទេ?")) {
+      setAccounts((prev) => prev.filter((a) => a.id !== accId));
+      if (activeAccountId === accId) {
+        const remaining = accounts.filter((a) => a.id !== accId);
+        setActiveAccountId(remaining[0]?.id || null);
       }
     }
   };
 
-  const startEdit = (acc, e) => {
-    e.stopPropagation();
+  // Open Edit Modal
+  const openEditAccountModal = (acc, e) => {
+    e?.stopPropagation();
     setEditingAccountId(acc.id);
-    setAccountNameInput(acc.name);
-    setAccountColorInput(acc.color || COLOR_PALETTE[0]);
-    setAccountVersionInput(acc.version || "a");
+    setModalAccountName(acc.name);
+    setModalBotToken(acc.botToken);
+    setModalColor(acc.color || COLOR_PALETTE[0]);
+    setVerifiedBotInfo(acc.botInfo || null);
+    setVerifyError("");
+    setIsAccountModalOpen(true);
   };
 
-  const handleToggleVersion = (accId) => {
+  // Open Add Modal
+  const openAddAccountModal = () => {
+    if (accounts.length >= 5) {
+      alert("អ្នកអាចភ្ជាប់គណនី Telegram បានអតិបរមាត្រឹមតែ 5 Accounts ប៉ុណ្ណោះ។");
+      return;
+    }
+    setEditingAccountId(null);
+    setModalAccountName("");
+    setModalBotToken("");
+    setModalColor(COLOR_PALETTE[accounts.length % COLOR_PALETTE.length]);
+    setVerifiedBotInfo(null);
+    setVerifyError("");
+    setIsAccountModalOpen(true);
+  };
+
+  const closeAccountModal = () => {
+    setIsAccountModalOpen(false);
+    setEditingAccountId(null);
+    setModalAccountName("");
+    setModalBotToken("");
+    setVerifiedBotInfo(null);
+    setVerifyError("");
+  };
+
+  // Real Telegram API: Send Message
+  const handleSendMessage = async (e) => {
+    e?.preventDefault();
+    const text = messageInput.trim();
+    if (!text || !activeChat || !activeAccount?.botToken) return;
+
+    setMessageInput("");
+    setShowEmojiPicker(false);
+
+    const tempMsgId = `temp_${Date.now()}`;
+    const newMsgObj = {
+      id: tempMsgId,
+      sender: "me",
+      senderName: activeAccount.name,
+      text: text,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      status: "sending"
+    };
+
+    // Optimistically add message
     setAccounts((prev) =>
-      prev.map((a) => {
-        if (a.id === accId) {
-          const nextVer = a.version === "k" ? "a" : "k";
-          return { ...a, version: nextVer };
+      prev.map((acc) => {
+        if (acc.id === activeAccountId) {
+          const updatedChats = acc.chats.map((c) => {
+            if (c.id === activeChat.id) {
+              return {
+                ...c,
+                messages: [...(c.messages || []), newMsgObj]
+              };
+            }
+            return c;
+          });
+          return { ...acc, chats: updatedChats };
         }
-        return a;
+        return acc;
       })
     );
+
+    // Call Real Telegram sendMessage API
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${activeAccount.botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: activeChat.id,
+          text: text
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.ok && data.result) {
+        // Update message with real telegram message_id & status delivered
+        setAccounts((prev) =>
+          prev.map((acc) => {
+            if (acc.id === activeAccountId) {
+              const updatedChats = acc.chats.map((c) => {
+                if (c.id === activeChat.id) {
+                  return {
+                    ...c,
+                    messages: c.messages.map((m) =>
+                      m.id === tempMsgId
+                        ? {
+                            ...m,
+                            id: `tg_${data.result.message_id}`,
+                            messageId: data.result.message_id,
+                            status: "delivered"
+                          }
+                        : m
+                    )
+                  };
+                }
+                return c;
+              });
+              return { ...acc, chats: updatedChats };
+            }
+            return acc;
+          })
+        );
+      } else {
+        // Mark failed
+        alert(`ផ្ញើសារមិនជោគជ័យ៖ ${data.description || "Telegram API Error"}`);
+        setAccounts((prev) =>
+          prev.map((acc) => {
+            if (acc.id === activeAccountId) {
+              const updatedChats = acc.chats.map((c) => {
+                if (c.id === activeChat.id) {
+                  return {
+                    ...c,
+                    messages: c.messages.map((m) =>
+                      m.id === tempMsgId ? { ...m, status: "error" } : m
+                    )
+                  };
+                }
+                return c;
+              });
+              return { ...acc, chats: updatedChats };
+            }
+            return acc;
+          })
+        );
+      }
+    } catch (err) {
+      console.error("Failed to send telegram message:", err);
+      alert("ផ្ញើសារមិនជោគជ័យ៖ មិនអាចភ្ជាប់ទៅកាន់ Telegram Server");
+    }
   };
 
+  // Real Telegram API: Create New Chat and Send First Message
+  const handleCreateNewChat = async (e) => {
+    e.preventDefault();
+    const targetChatId = newChatTargetId.trim();
+    if (!targetChatId || !activeAccount?.botToken) {
+      setNewChatError("សូមបញ្ចូល Telegram Chat ID ឬ Username");
+      return;
+    }
+
+    setIsSendingNewChat(true);
+    setNewChatError("");
+
+    try {
+      const initialText =
+        newChatInitialMessage.trim() ||
+        `សួស្តី! ខ្ញុំកំពុងទាក់ទងមកពីប្រព័ន្ធ System MDM (${activeAccount.name})។`;
+
+      const res = await fetch(`https://api.telegram.org/bot${activeAccount.botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: targetChatId,
+          text: initialText
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.ok && data.result) {
+        const sentChat = data.result.chat;
+        const chatIdStr = String(sentChat.id);
+        const resolvedName =
+          newChatName.trim() ||
+          sentChat.title ||
+          [sentChat.first_name, sentChat.last_name].filter(Boolean).join(" ") ||
+          sentChat.username ||
+          `Chat ${chatIdStr}`;
+
+        const newMsgObj = {
+          id: `tg_${data.result.message_id}`,
+          messageId: data.result.message_id,
+          sender: "me",
+          senderName: activeAccount.name,
+          text: initialText,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          status: "delivered"
+        };
+
+        const newChatObj = {
+          id: chatIdStr,
+          name: resolvedName,
+          type: newChatType,
+          username: sentChat.username ? `@${sentChat.username}` : "",
+          unreadCount: 0,
+          color: COLOR_PALETTE[(activeAccount.chats?.length || 0) % COLOR_PALETTE.length],
+          messages: [newMsgObj]
+        };
+
+        setAccounts((prev) =>
+          prev.map((acc) => {
+            if (acc.id === activeAccountId) {
+              const existingIdx = acc.chats.findIndex((c) => String(c.id) === chatIdStr);
+              let newChats;
+              if (existingIdx >= 0) {
+                newChats = acc.chats.map((c, idx) =>
+                  idx === existingIdx
+                    ? { ...c, messages: [...(c.messages || []), newMsgObj] }
+                    : c
+                );
+              } else {
+                newChats = [newChatObj, ...(acc.chats || [])];
+              }
+              return { ...acc, chats: newChats };
+            }
+            return acc;
+          })
+        );
+
+        setActiveChatId(chatIdStr);
+        setIsNewChatModalOpen(false);
+        setNewChatTargetId("");
+        setNewChatName("");
+        setNewChatInitialMessage("");
+      } else {
+        setNewChatError(
+          data.description ||
+            "មិនអាចផ្ញើសារបានទេ។ ប្រសិនបើជា User សូមប្រាកដថា User ធ្លាប់បានចុច /start ក្នុង Bot របស់អ្នកជាមុនសិន។"
+        );
+      }
+    } catch (err) {
+      setNewChatError("បរាជ័យក្នុងការភ្ជាប់ទៅកាន់ Telegram Server");
+    } finally {
+      setIsSendingNewChat(false);
+    }
+  };
+
+  // Filter chats by category & search query
+  const filteredChats = (activeAccount?.chats || []).filter((chat) => {
+    if (filterCategory !== "all" && chat.type !== filterCategory) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchName = chat.name?.toLowerCase().includes(q);
+      const matchUser = chat.username?.toLowerCase().includes(q);
+      const matchMsg = chat.messages?.some((m) => m.text?.toLowerCase().includes(q));
+      return matchName || matchUser || matchMsg;
+    }
+    return true;
+  });
+
   return (
-    <div className="flex flex-col w-full h-full min-h-[700px] bg-slate-50 text-slate-800 select-none overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-6 custom-scrollbar">
-      {/* Top Header Card */}
-      <header className="bg-white border border-slate-200 rounded-[14px] p-4 md:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-[12px] bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-600 shadow-xs flex-shrink-0">
-            <FaTelegramPlane className="text-2xl animate-pulse" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">
-                Telegram Web (Multi-Account Workspace)
-              </h1>
-              <span className="px-2 py-0.5 rounded-full bg-sky-100 border border-sky-300 text-sky-700 text-[10px] font-black">
-                Max 5 Accounts
-              </span>
+    <div className="flex flex-col h-[calc(100vh-68px)] w-full bg-[#f8fafc] text-slate-900 overflow-hidden font-sans">
+      {/* Top Bar: Multi-Account Management (1 to 5 Telegram Accounts) */}
+      <div className="flex-shrink-0 bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-xs z-10">
+        <div className="flex items-center gap-3 overflow-x-auto py-1 scrollbar-none">
+          <div className="flex items-center gap-2 pr-3 border-r border-slate-200">
+            <div className="w-9 h-9 rounded-xl bg-sky-500 text-white flex items-center justify-center shadow-xs">
+              <FaTelegramPlane className="text-xl" />
             </div>
-            <p className="text-xs text-slate-600 mt-0.5">
-              គ្រប់គ្រង និងប្រើប្រាស់ Telegram រហូតដល់ <b>5 គណនី</b> ក្នុងពេលតែមួយសម្រាប់ Account System: <b className="text-emerald-700 font-mono">{user?.username || "Admin"}</b>
-            </p>
+            <div>
+              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Telegram Live</span>
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              </div>
+              <div className="text-[11px] text-slate-700 font-medium">
+                {accounts.length}/5 គណនីពិតប្រាកដ
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Global Action Launchers */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            type="button"
-            onClick={() => handleLaunchAppWindow(activeAccount)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-sky-600 hover:bg-sky-700 text-white text-xs font-black transition-all duration-200 cursor-pointer shadow-md shadow-sky-600/20 active:scale-95 group"
-          >
-            <FaRocket className="text-sm transition-transform group-hover:-translate-y-0.5" />
-            <span>បើកដំណើរការ {activeAccount?.name}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleOpenExternal(activeAccount)}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-[10px] bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-300 transition-all cursor-pointer shadow-2xs"
-          >
-            <FaExternalLinkAlt className="text-xs text-sky-600" />
-            <span>Open Tab</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Account Switcher Tabs Bar */}
-      <div className="bg-white border border-slate-200 rounded-[14px] p-3 shadow-xs">
-        <div className="flex items-center justify-between gap-3 mb-2.5 pb-2 border-b border-slate-100 flex-wrap">
+          {/* Account Tabs */}
           <div className="flex items-center gap-2">
-            <FaUser className="text-sky-600 text-xs" />
-            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-              បញ្ជីគណនី Telegram ({accounts.length}/5)
-            </span>
-          </div>
+            {accounts.map((acc) => {
+              const isActive = acc.id === activeAccountId;
+              return (
+                <div
+                  key={acc.id}
+                  onClick={() => setActiveAccountId(acc.id)}
+                  className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all border ${
+                    isActive
+                      ? "bg-sky-50 border-sky-300 text-sky-900 shadow-xs ring-1 ring-sky-400"
+                      : "bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100"
+                  }`}
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: acc.color || "#0284c7" }}
+                  ></span>
+                  <span className="max-w-[130px] truncate">{acc.name}</span>
 
-          {accounts.length < 5 ? (
+                  {acc.username && (
+                    <span className="text-[10px] text-slate-700 font-normal hidden md:inline">
+                      {acc.username}
+                    </span>
+                  )}
+
+                  {/* Actions on hover */}
+                  <div className="flex items-center gap-1 ml-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <button
+                      title="កែសម្រួលគណនី"
+                      onClick={(e) => openEditAccountModal(acc, e)}
+                      className="p-1 hover:text-sky-600 rounded text-slate-700 hover:bg-white"
+                    >
+                      <FaEdit className="text-[10px]" />
+                    </button>
+                    <button
+                      title="លុបគណនី"
+                      onClick={(e) => handleDeleteAccount(acc.id, e)}
+                      className="p-1 hover:text-rose-600 rounded text-slate-700 hover:bg-white"
+                    >
+                      <FaTrash className="text-[10px]" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Add Account Button */}
+            {accounts.length < 5 && (
+              <button
+                onClick={openAddAccountModal}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 border border-dashed border-sky-300 hover:bg-sky-100 hover:border-sky-400 transition-all cursor-pointer shadow-2xs"
+              >
+                <FaPlus className="text-[11px]" />
+                <span>+ ភ្ជាប់គណនី Telegram</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Right Sync & Settings status */}
+        <div className="flex items-center gap-2 pl-3">
+          {activeAccount?.botToken && (
             <button
-              type="button"
-              onClick={() => {
-                setIsAddingAccount(true);
-                setAccountNameInput(`Telegram ${accounts.length + 1}`);
-                setAccountColorInput(COLOR_PALETTE[accounts.length % COLOR_PALETTE.length]);
-                setAccountVersionInput("a");
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-sky-50 hover:bg-sky-100 text-sky-700 border border-dashed border-sky-400 text-xs font-black transition-all cursor-pointer"
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              title="ទាញយកសារថ្មីៗពី Telegram Server"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-800 bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200 cursor-pointer"
             >
-              <FaPlus className="text-[10px]" />
-              <span>+ បន្ថែមគណនីថ្មី (Slot {accounts.length + 1})</span>
+              <FaSyncAlt className={`text-xs ${isSyncing ? "animate-spin text-sky-600" : ""}`} />
+              <span className="hidden sm:inline">Refresh Sync</span>
             </button>
-          ) : (
-            <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-              គ្រប់ចំនួន 5 គណនីអតិបរមា
-            </span>
           )}
         </div>
+      </div>
 
-        {/* Tab Pills */}
-        <div className="flex items-center gap-2.5 overflow-x-auto custom-scrollbar pb-1">
-          {accounts.map((acc, index) => {
-            const isActive = acc.id === activeAccountId;
-            return (
-              <div
-                key={acc.id}
-                onClick={() => setActiveAccountId(acc.id)}
-                className={`group relative flex items-center gap-2.5 px-3.5 py-2 rounded-[10px] text-xs font-bold transition-all cursor-pointer flex-shrink-0 border ${
-                  isActive
-                    ? "bg-sky-50 text-slate-900 border-sky-500 shadow-sm ring-1 ring-sky-500"
-                    : "bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50 border-slate-200 shadow-2xs"
-                }`}
-                style={{
-                  borderLeftWidth: "4px",
-                  borderLeftColor: acc.color || COLOR_PALETTE[index % COLOR_PALETTE.length]
-                }}
-              >
-                <span
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-black flex-shrink-0"
-                  style={{ backgroundColor: acc.color || COLOR_PALETTE[index % COLOR_PALETTE.length] }}
-                >
-                  {index + 1}
-                </span>
+      {/* Main Messenger Area */}
+      {accounts.length === 0 ? (
+        /* Empty State: Prompt to connect first Telegram account */
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-slate-50">
+          <div className="w-20 h-20 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center text-4xl mb-4 shadow-sm">
+            <FaTelegramPlane />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">
+            ភ្ជាប់គណនី Telegram ពិតប្រាកដរបស់អ្នក (Real Telegram Connection)
+          </h2>
+          <p className="text-sm text-slate-800 max-w-lg mb-6 leading-relaxed">
+            ដើម្បីដំណើរការឆាត និងផ្ញើសារ Telegram ពិតប្រាកដនៅក្នុងប្រព័ន្ធ MDM សូមភ្ជាប់គណនី Telegram Bot Token របស់អ្នក។ លោកអ្នកអាចភ្ជាប់បានរហូតដល់ <strong>5 គណនី</strong> ផ្សេងគ្នា។
+          </p>
 
-                <span className="truncate max-w-[140px] font-black text-slate-900">{acc.name}</span>
+          <button
+            onClick={openAddAccountModal}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer transform hover:-translate-y-0.5"
+          >
+            <FaPlus />
+            <span>ភ្ជាប់គណនី Telegram ឥឡូវនេះ</span>
+          </button>
 
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono font-bold">
-                  {acc.version?.toUpperCase() === "K" ? "Web K" : "Web A"}
-                </span>
-
-                {/* Edit / Delete Icons */}
-                <div className="flex items-center gap-1 pl-1 border-l border-slate-200">
+          {/* Quick Guide Card */}
+          <div className="mt-8 p-4 bg-white rounded-xl border border-slate-200 text-left max-w-md shadow-xs">
+            <div className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+              <FaInfoCircle className="text-sky-600" />
+              <span>របៀបយក Telegram Bot Token ក្នុងរយៈពេល ៣០ វិនាទី៖</span>
+            </div>
+            <ol className="text-xs text-slate-800 space-y-1.5 list-decimal list-inside leading-relaxed">
+              <li>បើក Telegram App ហើយស្វែងរក <strong>@BotFather</strong></li>
+              <li>ផ្ញើសារពាក្យ <code>/newbot</code> ហើយដាក់ឈ្មោះ Bot របស់អ្នក</li>
+              <li>ចម្លង (Copy) <strong>API Token</strong> (ឧ. <code>7123456789:AAHKl...</code>)</li>
+              <li>យកមកបិទភ្ជាប់ (Paste) ក្នុងប្រព័ន្ធ MDM នេះជាការស្រេច!</li>
+            </ol>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 flex overflow-hidden">
+          {/* LEFT COLUMN: Chat List & Search */}
+          <div className="w-80 md:w-96 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col h-full">
+            {/* Search & New Chat Bar */}
+            <div className="p-3 border-b border-slate-100 flex items-center gap-2">
+              <div className="flex-1 relative">
+                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 text-xs" />
+                <input
+                  type="text"
+                  placeholder="ស្វែងរកសារ ឬ Chat..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:bg-white transition-all font-medium"
+                />
+                {searchQuery && (
                   <button
-                    type="button"
-                    onClick={(e) => startEdit(acc, e)}
-                    className="p-1 text-slate-400 hover:text-sky-600 rounded transition-colors"
-                    title="កែឈ្មោះ (Edit Name)"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-800"
                   >
-                    <FaEdit className="text-[11px]" />
+                    <FaTimes className="text-xs" />
                   </button>
-                  {accounts.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteAccount(acc.id, e)}
-                      className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
-                      title="លុប Slot នេះ"
-                    >
-                      <FaTrash className="text-[11px]" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main Active Account Workspace Card */}
-      <div className="bg-white border border-slate-200 rounded-[14px] p-5 md:p-6 shadow-sm">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white text-base font-black shadow-xs"
-              style={{ backgroundColor: activeAccount?.color || COLOR_PALETTE[0] }}
-            >
-              {accounts.findIndex((a) => a.id === activeAccount?.id) + 1}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-black text-slate-900">{activeAccount?.name}</h2>
-                <span className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black">
-                  Active Slot
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 font-mono mt-0.5">
-                Session Target: {getTelegramUrl(activeAccount)}
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Version Toggle & Direct Launch */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => handleToggleVersion(activeAccount.id)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-[8px] bg-slate-100 hover:bg-sky-50 text-slate-800 hover:text-sky-700 border border-slate-300 text-xs font-bold transition-all cursor-pointer"
-              title="ប្តូរ Version Telegram សម្រាប់ Account នេះ"
-            >
-              <MdOutlineSwapHoriz className="text-sm text-sky-600" />
-              <span>Version: {activeAccount?.version?.toUpperCase() === "K" ? "Web K (Fast)" : "Web A (Modern)"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleLaunchAppWindow(activeAccount)}
-              className="flex items-center gap-2 px-4 py-2 rounded-[8px] bg-sky-600 hover:bg-sky-700 text-white text-xs font-black transition-all cursor-pointer shadow-sm shadow-sky-600/20 active:scale-95"
-            >
-              <FaWindowRestore className="text-xs" />
-              <span>Launch Telegram Window</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 3 Step Quick Start Guide Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
-          {/* Step 1 */}
-          <div className="p-4 rounded-[12px] bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
-            <div>
-              <div className="w-8 h-8 rounded-[8px] bg-sky-100 text-sky-700 flex items-center justify-center font-black text-xs mb-2.5">
-                1
-              </div>
-              <h3 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                <FaRocket className="text-sky-600" /> ចុចបើកដំណើរការ (Launch)
-              </h3>
-              <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                ចុចប៊ូតុង <b>"Launch Telegram Window"</b> ដើម្បីបើកផ្ទាំងកម្មវិធី Telegram Web ដាច់ដោយឡែកសម្រាប់ Account នេះ។
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleLaunchAppWindow(activeAccount)}
-              className="w-full mt-3 py-2 px-3 rounded-[8px] bg-white hover:bg-sky-50 text-sky-700 border border-sky-300 text-xs font-bold transition-all cursor-pointer shadow-2xs"
-            >
-              បើកផ្ទាំងកម្មវិធី (Open Window)
-            </button>
-          </div>
-
-          {/* Step 2 */}
-          <div className="p-4 rounded-[12px] bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
-            <div>
-              <div className="w-8 h-8 rounded-[8px] bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-xs mb-2.5">
-                2
-              </div>
-              <h3 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                <FaQrcode className="text-emerald-600" /> ស្កេន QR Code ឬវាយលេខទូរស័ព្ទ
-              </h3>
-              <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                លើទូរស័ព្ទដៃបើក Telegram ➔ <b>Settings ➔ Devices ➔ Link Desktop Device</b> រួចស្កេន QR Code ដើម្បីចូលប្រើ។
-              </p>
-            </div>
-            <div className="w-full mt-3 py-1.5 px-3 rounded-[8px] bg-emerald-50 text-emerald-700 text-center text-[10px] font-bold border border-emerald-200">
-              រក្សាទុក Session ស្វ័យប្រវត្តិ
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className="p-4 rounded-[12px] bg-slate-50 border border-slate-200/80 flex flex-col justify-between">
-            <div>
-              <div className="w-8 h-8 rounded-[8px] bg-purple-100 text-purple-700 flex items-center justify-center font-black text-xs mb-2.5">
-                3
-              </div>
-              <h3 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                <FaShieldAlt className="text-purple-600" /> ប្រើប្រាស់រហូតដល់ 5 គណនី
-              </h3>
-              <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                អាចចុច Tab ខាងលើដើម្បីបើកគណនីផ្សេងទៀតបានរហូតដល់ <b>5 គណនី</b> ក្នុងពេលតែមួយដោយមិនចាំបាច់ Log out ឡើយ។
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleOpenExternal(activeAccount)}
-              className="w-full mt-3 py-2 px-3 rounded-[8px] bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center justify-center gap-1.5"
-            >
-              <FaExternalLinkAlt className="text-[10px] text-slate-500" />
-              <span>បើកក្នុង Browser Tab</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Add Account Modal */}
-      {isAddingAccount && (
-        <div className="fixed inset-0 z-[999999] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white border border-slate-200 rounded-[14px] p-5 shadow-2xl text-slate-800 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
-              <div className="flex items-center gap-2">
-                <FaTelegramPlane className="text-sky-600 text-lg" />
-                <h3 className="text-sm font-black text-slate-900">បន្ថែមគណនី Telegram (Slot {accounts.length + 1}/5)</h3>
+                )}
               </div>
               <button
-                type="button"
-                onClick={() => setIsAddingAccount(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                onClick={() => setIsNewChatModalOpen(true)}
+                title="ផ្ញើសារទៅកាន់ Telegram Chat ID ថ្មី"
+                className="p-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-colors shadow-2xs cursor-pointer"
+              >
+                <FaPlus className="text-xs" />
+              </button>
+            </div>
+
+            {/* Category Filter Tabs */}
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100 text-[11px] font-bold text-slate-800 overflow-x-auto scrollbar-none">
+              {[
+                { id: "all", label: "ទាំងអស់" },
+                { id: "personal", label: "ឯកជន" },
+                { id: "group", label: "ក្រុម" },
+                { id: "channel", label: "ប៉ុស្តិ៍" },
+                { id: "bot", label: "Bots" }
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setFilterCategory(cat.id)}
+                  className={`px-2.5 py-1 rounded-md transition-all whitespace-nowrap cursor-pointer ${
+                    filterCategory === cat.id
+                      ? "bg-white text-sky-700 shadow-2xs font-bold"
+                      : "hover:text-slate-950 text-slate-700"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Sync Alert Banner if error */}
+            {syncError && (
+              <div className="bg-amber-50 border-b border-amber-200 px-3 py-1.5 text-[11px] text-amber-900 flex items-center gap-1.5">
+                <FaExclamationTriangle className="text-amber-600 flex-shrink-0" />
+                <span className="truncate">{syncError}</span>
+              </div>
+            )}
+
+            {/* Chats List Stream */}
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+              {filteredChats.length === 0 ? (
+                <div className="p-8 text-center text-slate-700">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center mx-auto mb-2 text-xl">
+                    <FaTelegramPlane />
+                  </div>
+                  <div className="text-xs font-bold text-slate-900 mb-1">
+                    មិនទាន់មានការសន្ទនានៅឡើយទេ
+                  </div>
+                  <div className="text-[11px] text-slate-800 mb-3">
+                    ចុចប៊ូតុង <strong>+</strong> ខាងលើដើម្បីចាប់ផ្តើមឆាត ឬឱ្យ User ផ្ញើសារចូល Bot របស់អ្នក។
+                  </div>
+                  <button
+                    onClick={() => setIsNewChatModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 transition-colors"
+                  >
+                    <FaPlus className="text-[10px]" />
+                    <span>+ ចាប់ផ្តើមឆាតថ្មី</span>
+                  </button>
+                </div>
+              ) : (
+                filteredChats.map((chat) => {
+                  const isSelected = chat.id === activeChatId;
+                  const lastMsg = chat.messages?.[chat.messages.length - 1];
+
+                  return (
+                    <div
+                      key={chat.id}
+                      onClick={() => {
+                        setActiveChatId(chat.id);
+                        // Clear unread
+                        setAccounts((prev) =>
+                          prev.map((acc) => {
+                            if (acc.id === activeAccountId) {
+                              return {
+                                ...acc,
+                                chats: acc.chats.map((c) =>
+                                  c.id === chat.id ? { ...c, unreadCount: 0 } : c
+                                )
+                              };
+                            }
+                            return acc;
+                          })
+                        );
+                      }}
+                      className={`p-3 flex items-start gap-3 cursor-pointer transition-colors ${
+                        isSelected ? "bg-sky-50/80 border-l-4 border-sky-600" : "hover:bg-slate-50"
+                      }`}
+                    >
+                      {/* Avatar */}
+                      <div
+                        className="w-10 h-10 rounded-full text-white font-bold flex items-center justify-center text-sm flex-shrink-0 shadow-2xs"
+                        style={{ backgroundColor: chat.color || "#0284c7" }}
+                      >
+                        {chat.type === "group" ? (
+                          <FaUsers />
+                        ) : chat.type === "channel" ? (
+                          <FaBullhorn />
+                        ) : chat.type === "bot" ? (
+                          <FaRobot />
+                        ) : (
+                          chat.name?.charAt(0)?.toUpperCase() || <FaUser />
+                        )}
+                      </div>
+
+                      {/* Chat Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <h4 className="text-xs font-bold text-slate-900 truncate">
+                            {chat.name}
+                          </h4>
+                          {lastMsg && (
+                            <span className="text-[10px] text-slate-700 font-medium whitespace-nowrap">
+                              {lastMsg.time}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[11px] text-slate-800 truncate font-normal">
+                            {lastMsg ? (
+                              <>
+                                {lastMsg.sender === "me" && (
+                                  <span className="text-sky-700 font-semibold mr-1">អ្នក៖</span>
+                                )}
+                                {lastMsg.text}
+                              </>
+                            ) : (
+                              <span className="italic text-slate-600">គ្មានសារ</span>
+                            )}
+                          </p>
+
+                          {chat.unreadCount > 0 && (
+                            <span className="px-1.5 py-0.2 rounded-full bg-sky-600 text-white text-[10px] font-bold flex-shrink-0">
+                              {chat.unreadCount}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* CENTER COLUMN: Live Chat Message Stream */}
+          {activeChat ? (
+            <div className="flex-1 flex flex-col h-full bg-[#f1f5f9] relative">
+              {/* Active Chat Header */}
+              <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-xs z-10">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-9 h-9 rounded-full text-white font-bold flex items-center justify-center text-sm shadow-2xs"
+                    style={{ backgroundColor: activeChat.color || "#0284c7" }}
+                  >
+                    {activeChat.type === "group" ? (
+                      <FaUsers />
+                    ) : activeChat.type === "channel" ? (
+                      <FaBullhorn />
+                    ) : (
+                      activeChat.name?.charAt(0)?.toUpperCase() || <FaUser />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs font-bold text-slate-900">{activeChat.name}</h3>
+                      <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 text-[9px] font-semibold uppercase">
+                        {activeChat.type}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-700 font-medium">
+                      Chat ID: <code className="text-sky-700 font-bold">{activeChat.id}</code>
+                      {activeChat.username && ` • ${activeChat.username}`}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowChatInfo(!showChatInfo)}
+                    className="p-2 text-slate-700 hover:text-slate-950 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                    title="ព័ត៌មានលម្អិត"
+                  >
+                    <FaInfoCircle className="text-sm" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Messages Feed */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {activeChat.messages?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center text-slate-700">
+                    <div className="w-12 h-12 rounded-full bg-white text-sky-600 flex items-center justify-center shadow-xs mb-2">
+                      <FaTelegramPlane className="text-xl" />
+                    </div>
+                    <div className="text-xs font-bold text-slate-900">ចាប់ផ្តើមការសន្ទនាផ្ទាល់</div>
+                    <div className="text-[11px] text-slate-800 mt-1 max-w-xs">
+                      សារទាំងអស់ត្រូវបានផ្ញើ និងទទួលផ្ទាល់ពី Telegram App របស់ភាគីម្ខាងទៀត។
+                    </div>
+                  </div>
+                ) : (
+                  activeChat.messages?.map((msg) => {
+                    const isMe = msg.sender === "me";
+
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                      >
+                        {!isMe && (
+                          <span className="text-[10px] font-bold text-slate-800 mb-1 ml-2">
+                            {msg.senderName || activeChat.name}
+                          </span>
+                        )}
+
+                        <div
+                          className={`max-w-[75%] md:max-w-[65%] rounded-2xl px-3.5 py-2 text-xs shadow-xs leading-relaxed relative ${
+                            isMe
+                              ? "bg-sky-600 text-white rounded-tr-xs"
+                              : "bg-white text-slate-900 rounded-tl-xs border border-slate-200"
+                          }`}
+                        >
+                          <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+
+                          <div
+                            className={`flex items-center justify-end gap-1 mt-1 text-[9px] font-medium ${
+                              isMe ? "text-sky-100" : "text-slate-600"
+                            }`}
+                          >
+                            <span>{msg.time}</span>
+                            {isMe && (
+                              <span>
+                                {msg.status === "sending" ? (
+                                  "..."
+                                ) : msg.status === "error" ? (
+                                  "⚠️"
+                                ) : (
+                                  <FaCheckDouble className="inline text-[9px]" />
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Emoji Picker Popup */}
+              {showEmojiPicker && (
+                <div className="absolute bottom-16 left-4 bg-white border border-slate-200 rounded-xl p-3 shadow-lg z-20 w-64 grid grid-cols-6 gap-2">
+                  {POPULAR_EMOJIS.map((em, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setMessageInput((prev) => prev + em);
+                        setShowEmojiPicker(false);
+                      }}
+                      className="text-lg p-1 hover:bg-slate-100 rounded-md transition-colors text-center cursor-pointer"
+                    >
+                      {em}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Message Input Box */}
+              <form
+                onSubmit={handleSendMessage}
+                className="bg-white border-t border-slate-200 p-3 flex items-center gap-2 shadow-xs"
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="p-2 text-slate-700 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  title="Emoji"
+                >
+                  <FaSmile className="text-base" />
+                </button>
+
+                <input
+                  type="text"
+                  placeholder={`ផ្ញើសារ Telegram ទៅកាន់ ${activeChat.name}...`}
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  className="flex-1 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-medium"
+                />
+
+                <button
+                  type="submit"
+                  disabled={!messageInput.trim()}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+                >
+                  <MdOutlineSend className="text-sm" />
+                  <span className="hidden sm:inline">ផ្ញើ</span>
+                </button>
+              </form>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 text-slate-700 p-6">
+              <div className="w-16 h-16 rounded-2xl bg-white text-sky-600 flex items-center justify-center text-3xl shadow-sm mb-3">
+                <FaTelegramPlane />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900 mb-1">សូមជ្រើសរើសការសន្ទនា</h3>
+              <p className="text-xs text-slate-800">
+                ជ្រើសរើស Chat ពីបញ្ជីខាងឆ្វេង ឬបង្កើត Chat ថ្មីដើម្បីចាប់ផ្តើមឆាត។
+              </p>
+            </div>
+          )}
+
+          {/* RIGHT COLUMN: Chat & Account Information Drawer */}
+          {showChatInfo && activeChat && (
+            <div className="w-72 bg-white border-l border-slate-200 p-4 flex flex-col justify-between overflow-y-auto">
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                  <h4 className="text-xs font-bold text-slate-900">ព័ត៌មាន Chat</h4>
+                  <button
+                    onClick={() => setShowChatInfo(false)}
+                    className="text-slate-700 hover:text-slate-950 p-1"
+                  >
+                    <FaTimes className="text-xs" />
+                  </button>
+                </div>
+
+                <div className="text-center mb-4">
+                  <div
+                    className="w-16 h-16 rounded-full text-white font-bold flex items-center justify-center text-xl mx-auto shadow-xs mb-2"
+                    style={{ backgroundColor: activeChat.color || "#0284c7" }}
+                  >
+                    {activeChat.name?.charAt(0)?.toUpperCase()}
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-900">{activeChat.name}</h3>
+                  {activeChat.username && (
+                    <div className="text-[11px] text-sky-700 font-medium">
+                      {activeChat.username}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
+                  <div>
+                    <span className="text-[10px] text-slate-700 font-bold block">Telegram Chat ID:</span>
+                    <span className="font-mono text-slate-900 select-all font-semibold">
+                      {activeChat.id}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-700 font-bold block">ប្រភេទ Chat:</span>
+                    <span className="text-slate-900 font-semibold uppercase text-[11px]">
+                      {activeChat.type}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-700 font-bold block">ចំនួនសារសរុប:</span>
+                    <span className="text-slate-900 font-semibold">
+                      {activeChat.messages?.length || 0} សារ
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (window.confirm("តើលោកអ្នកចង់សម្អាតសារក្នុង Chat នេះមែនទេ?")) {
+                    setAccounts((prev) =>
+                      prev.map((acc) => {
+                        if (acc.id === activeAccountId) {
+                          return {
+                            ...acc,
+                            chats: acc.chats.map((c) =>
+                              c.id === activeChat.id ? { ...c, messages: [] } : c
+                            )
+                          };
+                        }
+                        return acc;
+                      })
+                    );
+                  }
+                }}
+                className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <FaTrash className="text-[11px]" />
+                <span>សម្អាតប្រវត្តិសារ</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MODAL: Connect / Edit Telegram Account */}
+      {isAccountModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
+            <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FaTelegramPlane className="text-sky-600 text-lg" />
+                <h3 className="text-sm font-bold text-slate-900">
+                  {editingAccountId ? "កែសម្រួលគណនី Telegram" : "ភ្ជាប់គណនី Telegram ថ្មី (Real Connection)"}
+                </h3>
+              </div>
+              <button
+                onClick={closeAccountModal}
+                className="text-slate-600 hover:text-slate-900 p-1 cursor-pointer"
               >
                 <FaTimes />
               </button>
             </div>
 
-            <form onSubmit={handleAddAccount} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveAccount} className="p-5 space-y-4">
+              {/* Bot Token Input */}
               <div>
-                <label className="block text-slate-800 font-black mb-1">
-                  ឈ្មោះគណនី / Account Label <span className="text-rose-500">*</span>
+                <label className="block text-xs font-bold text-slate-900 mb-1">
+                  Telegram Bot API Token <span className="text-rose-600">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    placeholder="ឧ. 7123456789:AAHKlQp..."
+                    value={modalBotToken}
+                    onChange={(e) => setModalBotToken(e.target.value)}
+                    required
+                    className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyToken()}
+                    disabled={verifyingToken || !modalBotToken.trim()}
+                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                  >
+                    {verifyingToken ? "កំពុងពិនិត្យ..." : "ពិនិត្យ Token"}
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-700 mt-1">
+                  យកពី <strong>@BotFather</strong> ក្នុង Telegram
+                </p>
+              </div>
+
+              {/* Verified Result Banner */}
+              {verifiedBotInfo && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-start gap-2">
+                  <FaCheck className="text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="font-bold">បានផ្ទៀងផ្ទាត់ដោយជោគជ័យ!</div>
+                    <div className="text-[11px] text-emerald-800">
+                      ឈ្មោះ៖ <strong>{verifiedBotInfo.first_name}</strong> • Username: @{verifiedBotInfo.username}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Verify Error Banner */}
+              {verifyError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-center gap-2">
+                  <FaExclamationTriangle className="text-rose-600 flex-shrink-0" />
+                  <span>{verifyError}</span>
+                </div>
+              )}
+
+              {/* Account Label */}
+              <div>
+                <label className="block text-xs font-bold text-slate-900 mb-1">
+                  ឈ្មោះគណនីក្នុង System (Account Name)
                 </label>
                 <input
                   type="text"
-                  required
-                  value={accountNameInput}
-                  onChange={(e) => setAccountNameInput(e.target.value)}
-                  placeholder="ឧ. Telegram Support, Sales, Personal..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[8px] text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white font-bold"
+                  placeholder="ឧ. Telegram Customer Care"
+                  value={modalAccountName}
+                  onChange={(e) => setModalAccountName(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
                 />
               </div>
 
+              {/* Color Badge Picker */}
               <div>
-                <label className="block text-slate-800 font-black mb-1">Telegram Web Version</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAccountVersionInput("a")}
-                    className={`p-2.5 rounded-[8px] border text-left cursor-pointer transition-all ${
-                      accountVersionInput === "a"
-                        ? "bg-sky-50 border-sky-500 text-slate-900 font-black shadow-xs"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="text-xs font-bold text-sky-600">Web A (Default)</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Feature-rich & Modern</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setAccountVersionInput("k")}
-                    className={`p-2.5 rounded-[8px] border text-left cursor-pointer transition-all ${
-                      accountVersionInput === "k"
-                        ? "bg-sky-50 border-sky-500 text-slate-900 font-black shadow-xs"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="text-xs font-bold text-sky-600">Web K (Lightweight)</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Fast & Compact</div>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-800 font-black mb-1.5">ពណ៌សម្គាល់ / Color Badge</label>
+                <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                  ពណ៌សម្គាល់ (Color Badge)
+                </label>
                 <div className="flex items-center gap-2">
-                  {COLOR_PALETTE.map((color) => (
+                  {COLOR_PALETTE.map((color, idx) => (
                     <button
-                      key={color}
+                      key={idx}
                       type="button"
-                      onClick={() => setAccountColorInput(color)}
-                      className={`w-7 h-7 rounded-full transition-transform cursor-pointer flex items-center justify-center ${
-                        accountColorInput === color ? "scale-125 ring-2 ring-slate-800 shadow-xs" : "hover:scale-110"
+                      onClick={() => setModalColor(color)}
+                      className={`w-7 h-7 rounded-full transition-transform cursor-pointer ${
+                        modalColor === color ? "scale-125 ring-2 ring-slate-900" : "hover:scale-110"
                       }`}
                       style={{ backgroundColor: color }}
-                    >
-                      {accountColorInput === color && <FaCheck className="text-white text-[10px]" />}
-                    </button>
+                    />
                   ))}
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
+              {/* Footer Actions */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsAddingAccount(false)}
-                  className="px-4 py-2 rounded-[8px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
+                  onClick={closeAccountModal}
+                  className="px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
-                  បោះបង់ (Cancel)
+                  បោះបង់
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-[8px] bg-sky-600 hover:bg-sky-700 text-white font-extrabold cursor-pointer shadow-md shadow-sky-600/20"
+                  disabled={verifyingToken}
+                  className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
                 >
-                  បង្កើតគណនី (Create Slot)
+                  រក្សាទុក & ភ្ជាប់
                 </button>
               </div>
             </form>
@@ -532,99 +1308,91 @@ const TelegramPage = () => {
         </div>
       )}
 
-      {/* Edit Account Modal */}
-      {editingAccountId && (
-        <div className="fixed inset-0 z-[999999] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white border border-slate-200 rounded-[14px] p-5 shadow-2xl text-slate-800 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+      {/* MODAL: Send Message to New Telegram Chat ID */}
+      {isNewChatModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
+            <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FaEdit className="text-sky-600 text-lg" />
-                <h3 className="text-sm font-black text-slate-900">កែប្រែគណនី Telegram</h3>
+                <FaPaperPlane className="text-sky-600 text-base" />
+                <h3 className="text-sm font-bold text-slate-900">
+                  ចាប់ផ្តើមឆាតទៅកាន់ Telegram ថ្មី
+                </h3>
               </div>
               <button
-                type="button"
-                onClick={() => setEditingAccountId(null)}
-                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                onClick={() => setIsNewChatModalOpen(false)}
+                className="text-slate-600 hover:text-slate-900 p-1 cursor-pointer"
               >
                 <FaTimes />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateNewChat} className="p-5 space-y-4">
               <div>
-                <label className="block text-slate-800 font-black mb-1">ឈ្មោះគណនី / Account Label</label>
+                <label className="block text-xs font-bold text-slate-900 mb-1">
+                  Telegram Chat ID ឬ Username <span className="text-rose-600">*</span>
+                </label>
                 <input
                   type="text"
+                  placeholder="ឧ. 123456789 ឬ -100123456789 ឬ @username"
+                  value={newChatTargetId}
+                  onChange={(e) => setNewChatTargetId(e.target.value)}
                   required
-                  value={accountNameInput}
-                  onChange={(e) => setAccountNameInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[8px] text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white font-bold"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                />
+                <p className="text-[10px] text-slate-700 mt-1">
+                  អាចជា User ID, Group ID ឬ Channel Username
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-900 mb-1">
+                  ឈ្មោះសម្គាល់ (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="ឧ. អតិថិជន សុខ ចាន់ណា"
+                  value={newChatName}
+                  onChange={(e) => setNewChatName(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-800 font-black mb-1">Telegram Web Version</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAccountVersionInput("a")}
-                    className={`p-2.5 rounded-[8px] border text-left cursor-pointer transition-all ${
-                      accountVersionInput === "a"
-                        ? "bg-sky-50 border-sky-500 text-slate-900 font-black shadow-xs"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="text-xs font-bold text-sky-600">Web A (Default)</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Feature-rich & Modern</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setAccountVersionInput("k")}
-                    className={`p-2.5 rounded-[8px] border text-left cursor-pointer transition-all ${
-                      accountVersionInput === "k"
-                        ? "bg-sky-50 border-sky-500 text-slate-900 font-black shadow-xs"
-                        : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="text-xs font-bold text-sky-600">Web K (Lightweight)</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Fast & Compact</div>
-                  </button>
-                </div>
+                <label className="block text-xs font-bold text-slate-900 mb-1">
+                  សារដំបូង (Initial Message)
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="សរសេរសារដើម្បីផ្ញើភ្លាមៗ..."
+                  value={newChatInitialMessage}
+                  onChange={(e) => setNewChatInitialMessage(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium resize-none"
+                />
               </div>
 
-              <div>
-                <label className="block text-slate-800 font-black mb-1.5">ពណ៌សម្គាល់ / Color Badge</label>
-                <div className="flex items-center gap-2">
-                  {COLOR_PALETTE.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setAccountColorInput(color)}
-                      className={`w-7 h-7 rounded-full transition-transform cursor-pointer flex items-center justify-center ${
-                        accountColorInput === color ? "scale-125 ring-2 ring-slate-800 shadow-xs" : "hover:scale-110"
-                      }`}
-                      style={{ backgroundColor: color }}
-                    >
-                      {accountColorInput === color && <FaCheck className="text-white text-[10px]" />}
-                    </button>
-                  ))}
+              {newChatError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-start gap-2">
+                  <FaExclamationTriangle className="text-rose-600 flex-shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">{newChatError}</span>
                 </div>
-              </div>
+              )}
 
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setEditingAccountId(null)}
-                  className="px-4 py-2 rounded-[8px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
+                  onClick={() => setIsNewChatModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
-                  បោះបង់ (Cancel)
+                  បោះបង់
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-[8px] bg-sky-600 hover:bg-sky-700 text-white font-extrabold cursor-pointer shadow-md shadow-sky-600/20"
+                  disabled={isSendingNewChat || !newChatTargetId.trim()}
+                  className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  រក្សាទុក (Save)
+                  <FaPaperPlane className="text-xs" />
+                  <span>{isSendingNewChat ? "កំពុងផ្ញើ..." : "ផ្ញើសារ & បង្កើត Chat"}</span>
                 </button>
               </div>
             </form>
