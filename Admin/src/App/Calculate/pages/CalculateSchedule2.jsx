@@ -516,7 +516,7 @@ const CalculateSchedule2 = () => {
             <style>{`
                 @page {
                     size: A4 ${printOrientation};
-                    margin: ${printOrientation === 'landscape' ? '12mm 50mm' : '15mm 20mm'};
+                    margin: ${printOrientation === 'landscape' ? '12mm' : '15mm 20mm'};
                 }
                 @media print {
                     html, body {
@@ -542,7 +542,7 @@ const CalculateSchedule2 = () => {
                         top: 0 !important;
                         margin: 0 auto !important;
                         width: 100% !important;
-                        max-width: ${printOrientation === 'landscape' ? '185mm' : '185mm'} !important;
+                        max-width: ${printOrientation === 'landscape' ? '273mm' : '170mm'} !important;
                         padding: 0 !important;
                         box-shadow: none !important;
                         border: none !important;
