@@ -34,6 +34,7 @@ import {
   FaEllipsisV,
   FaPlay,
   FaPause,
+  FaStop,
   FaMicrophone,
   FaImage,
   FaPaperclip,
@@ -201,6 +202,8 @@ const TelegramPage = () => {
   const accountDropdownRef = useRef(null);
   const fileInputRef = useRef(null);
   const mediaCacheRef = useRef({});
+  const mediaRecorderRef = useRef(null);
+  const voiceChunksRef = useRef([]);
   const savePendingRef = useRef(null); // debounce ref for DB sync
 
   // API base helper (mirrors AuthContext pattern)
@@ -216,6 +219,35 @@ const TelegramPage = () => {
       ...(user?.username ? { "x-username": user.username } : {})
     };
   };
+
+  const resolveUserMessageMedia = useCallback(async (accountId, chatId, messages) => {
+    const resolvedMessages = [];
+    for (let index = 0; index < messages.length; index += 3) {
+      const chunk = messages.slice(index, index + 3);
+      resolvedMessages.push(...await Promise.all(chunk.map(async (message) => {
+        if (!message.mediaType || !message.messageId) return message;
+        const cacheKey = `user:${accountId}:${chatId}:${message.messageId}`;
+        if (mediaCacheRef.current[cacheKey]) {
+          return { ...message, mediaUrl: mediaCacheRef.current[cacheKey] };
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/telegram/accounts/${accountId}/chats/${encodeURIComponent(chatId)}/messages/${message.messageId}/media`,
+            { headers: getAuthHeaders() }
+          );
+          if (!response.ok) return message;
+          const mediaUrl = URL.createObjectURL(await response.blob());
+          mediaCacheRef.current[cacheKey] = mediaUrl;
+          return { ...message, mediaUrl };
+        } catch (err) {
+          console.error("Could not load Telegram media:", err);
+          return message;
+        }
+      })));
+    }
+    return resolvedMessages;
+  }, [API_BASE, authToken, user?.username]);
 
   // Accounts state — starts empty, loaded from DB on mount
   const [accounts, setAccounts] = useState([]);
@@ -238,6 +270,7 @@ const TelegramPage = () => {
   const [syncError, setSyncError] = useState(null);
   const [copiedId, setCopiedId] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
   // Lightbox Preview Modal State
   const [previewImage, setPreviewImage] = useState(null);
@@ -688,12 +721,13 @@ const TelegramPage = () => {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Could not load Telegram conversations");
+      const chatsWithMedia = data.chats || [];
       setAccounts((previous) => previous.map((item) => {
         if (item.id !== account.id) return item;
         const oldChats = new Map((item.chats || []).map((chat) => [chat.id, chat]));
         return {
           ...item,
-          chats: (data.chats || []).map((chat) => ({
+          chats: chatsWithMedia.map((chat) => ({
             ...chat,
             messages: [
               ...(oldChats.get(chat.id)?.messages || []).filter((message) =>
@@ -710,9 +744,10 @@ const TelegramPage = () => {
         });
         const history = await historyResponse.json().catch(() => ({}));
         if (historyResponse.ok) {
+          const messages = await resolveUserMessageMedia(account.id, activeChatId, history.messages || []);
           setAccounts((previous) => previous.map((item) => item.id !== account.id ? item : ({
             ...item,
-            chats: item.chats.map((chat) => chat.id === activeChatId ? { ...chat, messages: history.messages || [] } : chat)
+            chats: item.chats.map((chat) => chat.id === activeChatId ? { ...chat, messages } : chat)
           })));
         }
       }
@@ -720,7 +755,7 @@ const TelegramPage = () => {
     } catch (err) {
       setSyncError(err.message || "Could not sync Telegram account");
     }
-  }, [API_BASE, activeAccountId, activeChatId, authToken, user?.username]);
+  }, [API_BASE, activeAccountId, activeChatId, authToken, resolveUserMessageMedia, user?.username]);
 
   // Real-Time Polling Effect for active account
   useEffect(() => {
@@ -760,9 +795,11 @@ const TelegramPage = () => {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || "Could not load Telegram messages");
         if (cancelled) return;
+        const messages = await resolveUserMessageMedia(activeAccount.id, activeChatId, data.messages || []);
+        if (cancelled) return;
         setAccounts((previous) => previous.map((item) => item.id !== activeAccount.id ? item : ({
           ...item,
-          chats: item.chats.map((chat) => chat.id === activeChatId ? { ...chat, messages: data.messages || [] } : chat)
+          chats: item.chats.map((chat) => chat.id === activeChatId ? { ...chat, messages } : chat)
         })));
       } catch (err) {
         if (!cancelled) setSyncError(err.message || "Could not load Telegram messages");
@@ -770,7 +807,7 @@ const TelegramPage = () => {
     };
     loadUserMessages();
     return () => { cancelled = true; };
-  }, [API_BASE, activeAccount?.id, activeAccount?.type, activeChatId, authToken, user?.username]);
+  }, [API_BASE, activeAccount?.id, activeAccount?.type, activeChatId, authToken, resolveUserMessageMedia, user?.username]);
 
   // Manual Refresh Button
   const handleManualSync = async () => {
@@ -1154,18 +1191,14 @@ const TelegramPage = () => {
     }
   };
 
-  // Real Telegram API: Send Photo / Audio / Document File Attachment
-  const handleSendFileAttachment = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !activeChat || !activeAccount?.botToken) return;
-
-    // Reset input value so user can pick same file again if desired
-    e.target.value = "";
+  // Send a file through the correct Telegram account type.
+  const uploadTelegramFile = async (file, requestedMediaType = null) => {
+    if (!file || !activeChat || (activeAccount?.type !== "user" && !activeAccount?.botToken)) return;
 
     const isImage = file.type.startsWith("image/");
     const isAudio = file.type.startsWith("audio/");
     const isVideo = file.type.startsWith("video/");
-    const mediaType = isImage ? "photo" : isAudio ? "audio" : isVideo ? "video" : "document";
+    const mediaType = requestedMediaType || (isImage ? "photo" : isAudio ? "audio" : isVideo ? "video" : "document");
 
     const localBlobUrl = URL.createObjectURL(file);
     const tempMsgId = `temp_file_${Date.now()}`;
@@ -1205,6 +1238,36 @@ const TelegramPage = () => {
     setIsUploadingFile(true);
 
     try {
+      if (activeAccount.type === "user") {
+        const response = await fetch(
+          `${API_BASE}/telegram/accounts/${activeAccount.id}/chats/${encodeURIComponent(activeChat.id)}/files`,
+          {
+            method: "POST",
+            headers: {
+              ...getAuthHeaders(),
+              "Content-Type": "application/octet-stream",
+              "X-Telegram-Media-Type": mediaType,
+              "X-File-Name": encodeURIComponent(file.name),
+              "X-File-Mime-Type": file.type || "application/octet-stream"
+            },
+            body: file
+          }
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Telegram file send failed");
+        const [message] = await resolveUserMessageMedia(activeAccount.id, activeChat.id, [data.message]);
+        setAccounts((previous) => previous.map((account) => account.id !== activeAccountId ? account : ({
+          ...account,
+          chats: account.chats.map((chat) => chat.id !== activeChat.id ? chat : ({
+            ...chat,
+            messages: chat.messages.map((item) => item.id === tempMsgId
+              ? { ...message, status: "delivered" }
+              : item)
+          }))
+        })));
+        return;
+      }
+
       const formData = new FormData();
       formData.append("chat_id", activeChat.id);
 
@@ -1284,10 +1347,63 @@ const TelegramPage = () => {
       }
     } catch (err) {
       console.error("Failed to upload attachment to telegram:", err);
-      alert("ផ្ញើ File មិនជោគជ័យ៖ មិនអាចភ្ជាប់ទៅកាន់ Telegram Server");
+      setAccounts((previous) => previous.map((account) => account.id !== activeAccountId ? account : ({
+        ...account,
+        chats: account.chats.map((chat) => chat.id !== activeChat.id ? chat : ({
+          ...chat,
+          messages: chat.messages.map((item) => item.id === tempMsgId ? { ...item, status: "error" } : item)
+        }))
+      })));
+      alert(`ផ្ញើ File មិនជោគជ័យ៖ ${err.message || "មិនអាចភ្ជាប់ទៅកាន់ Telegram Server"}`);
     } finally {
       setIsUploadingFile(false);
     }
+  };
+
+  const handleSendFileAttachment = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    await uploadTelegramFile(file);
+  };
+
+  const startVoiceRecording = async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+        throw new Error("This browser does not support voice recording");
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = ["audio/ogg;codecs=opus", "audio/webm;codecs=opus"]
+        .find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      voiceChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) voiceChunksRef.current.push(event.data);
+      };
+      recorder.onstop = async () => {
+        const voiceBlob = new Blob(voiceChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        stream.getTracks().forEach((track) => track.stop());
+        mediaRecorderRef.current = null;
+        if (voiceBlob.size > 0) {
+          const extension = voiceBlob.type.includes("ogg") ? "ogg" : "webm";
+          await uploadTelegramFile(
+            new File([voiceBlob], `voice-note.${extension}`, { type: voiceBlob.type }),
+            "voice"
+          );
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecordingVoice(true);
+    } catch (err) {
+      alert(`មិនអាចថតសម្លេងបាន៖ ${err.message || "សូមអនុញ្ញាតឲ្យប្រើមីក្រូហ្វូន"}`);
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecordingVoice(false);
   };
 
   // Real Telegram API: Create New Chat and Send First Message
@@ -2074,18 +2190,33 @@ const TelegramPage = () => {
                   <FaSmile className="text-lg" />
                 </button>
 
-                {/* Attachment Button (Send Photo/Audio/File) */}
-                {activeAccount?.type !== "user" && (
+                {activeAccount?.type === "user" && (
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={isRecordingVoice ? stopVoiceRecording : startVoiceRecording}
                     disabled={isUploadingFile}
-                    className="p-2 text-slate-500 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
-                    title="ភ្ជាប់រូបភាព ឬឯកសារ (Attach File/Photo/Audio)"
+                    className={`p-2 rounded-lg transition-colors cursor-pointer flex-shrink-0 disabled:opacity-40 ${
+                      isRecordingVoice
+                        ? "text-white bg-rose-600 hover:bg-rose-700"
+                        : "text-slate-500 hover:text-sky-600 hover:bg-slate-100"
+                    }`}
+                    title={isRecordingVoice ? "បញ្ឈប់ថតសម្លេង" : "ថតសារជាសម្លេង"}
+                    aria-label={isRecordingVoice ? "Stop voice recording" : "Record voice message"}
                   >
-                    <MdAttachFile className="text-xl transform rotate-45" />
+                    {isRecordingVoice ? <FaStop className="text-base" /> : <FaMicrophone className="text-base" />}
                   </button>
                 )}
+
+                {/* Attachment Button (Send Photo/Audio/File) */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingFile || isRecordingVoice}
+                  className="p-2 text-slate-500 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0 disabled:opacity-40"
+                  title="ភ្ជាប់រូបភាព ឬឯកសារ (Attach File/Photo/Audio)"
+                >
+                  <MdAttachFile className="text-xl transform rotate-45" />
+                </button>
 
                 <input
                   type="text"

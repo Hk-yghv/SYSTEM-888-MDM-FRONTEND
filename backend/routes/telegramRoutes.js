@@ -118,16 +118,53 @@ const openUserClient = async (account) => {
     return client;
 };
 
-const serializeMessage = (message) => ({
-    id: `tg_${message.id}`,
-    messageId: Number(message.id),
-    sender: message.out ? 'me' : 'them',
-    senderName: '',
-    text: message.message || '',
-    time: message.date ? new Date(Number(message.date) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-    status: 'read',
-    rawDate: Number(message.date) || null
-});
+const serializeMessage = (message) => {
+    const photo = message.photo;
+    const document = message.document;
+    const attributes = document?.attributes || [];
+    const audioAttribute = attributes.find(attribute => attribute.className === 'DocumentAttributeAudio');
+    const videoAttribute = attributes.find(attribute => attribute.className === 'DocumentAttributeVideo');
+    const stickerAttribute = attributes.find(attribute => attribute.className === 'DocumentAttributeSticker');
+    const filenameAttribute = attributes.find(attribute => attribute.className === 'DocumentAttributeFilename');
+    let mediaType = null;
+
+    if (photo) mediaType = 'photo';
+    else if (audioAttribute?.voice) mediaType = 'voice';
+    else if (audioAttribute || document?.mimeType?.startsWith('audio/')) mediaType = 'audio';
+    else if (videoAttribute || document?.mimeType?.startsWith('video/')) mediaType = 'video';
+    else if (stickerAttribute) mediaType = 'sticker';
+    else if (document) mediaType = 'document';
+
+    const mediaFileName = filenameAttribute?.fileName || audioAttribute?.title || null;
+    const rawDate = message.date instanceof Date
+        ? Math.floor(message.date.getTime() / 1000)
+        : Number(message.date) || null;
+    const fallbackText = {
+        photo: '[Photo]',
+        voice: '[Voice message]',
+        audio: `[Audio] ${mediaFileName || ''}`,
+        video: '[Video]',
+        sticker: '[Sticker]',
+        document: `[File] ${mediaFileName || ''}`
+    };
+
+    return {
+        id: `tg_${message.id}`,
+        messageId: Number(message.id),
+        sender: message.out ? 'me' : 'them',
+        senderName: '',
+        text: message.message || fallbackText[mediaType] || '',
+        mediaType,
+        mediaFileId: photo?.id?.toString() || document?.id?.toString() || null,
+        mediaFileName,
+        mediaFileSize: photo ? message.file?.size || null : document?.size || null,
+        mediaDuration: audioAttribute?.duration || videoAttribute?.duration || null,
+        mediaMimeType: message.file?.mimeType || null,
+        time: rawDate ? new Date(rawDate * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+        status: 'read',
+        rawDate
+    };
+};
 
 const resolveDialog = async (client, chatId) => {
     const dialogs = await client.getDialogs({ limit: 50 });
@@ -344,6 +381,102 @@ router.post('/accounts/:id/messages', async (req, res) => {
         if (client) await client.disconnect().catch(() => {});
     }
 });
+
+// ── GET /api/telegram/accounts/:id/chats/:chatId/messages/:messageId/media
+router.get('/accounts/:id/chats/:chatId/messages/:messageId/media', async (req, res) => {
+    const owner = getOwner(req);
+    if (!owner) return res.status(401).json({ error: 'Unauthorized' });
+
+    const account = await getOwnedAccount(owner, req.params.id);
+    if (!account || (account.accountType || 'bot') !== 'user') {
+        return res.status(404).json({ error: 'Telegram user account not found' });
+    }
+
+    let client;
+    try {
+        client = await openUserClient(account);
+        const dialog = await resolveDialog(client, req.params.chatId);
+        if (!dialog?.entity) return res.status(404).json({ error: 'Telegram conversation not found' });
+
+        const messageId = Number(req.params.messageId);
+        if (!Number.isSafeInteger(messageId) || messageId <= 0) {
+            return res.status(400).json({ error: 'Invalid Telegram message ID' });
+        }
+        const [message] = await client.getMessages(dialog.entity, { ids: messageId });
+        if (!message?.media) return res.status(404).json({ error: 'Telegram media not found' });
+
+        const media = await client.downloadMedia(message, {});
+        if (!media) return res.status(404).json({ error: 'Telegram media could not be downloaded' });
+
+        const buffer = Buffer.isBuffer(media) ? media : Buffer.from(media);
+        const fileName = (message.file?.name || 'telegram-media').replace(/[\\/\r\n\0]/g, '_');
+        res.setHeader('Content-Type', message.file?.mimeType || 'application/octet-stream');
+        res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+        res.setHeader('Cache-Control', 'private, max-age=3600');
+        return res.send(buffer);
+    } catch (err) {
+        console.error('[Telegram] User media download failed:', err.message);
+        return res.status(400).json({ error: err.message || 'Could not download Telegram media' });
+    } finally {
+        if (client) await client.disconnect().catch(() => {});
+    }
+});
+
+// ── POST /api/telegram/accounts/:id/chats/:chatId/files
+router.post(
+    '/accounts/:id/chats/:chatId/files',
+    express.raw({ type: 'application/octet-stream', limit: '50mb' }),
+    async (req, res) => {
+        const owner = getOwner(req);
+        if (!owner) return res.status(401).json({ error: 'Unauthorized' });
+
+        const account = await getOwnedAccount(owner, req.params.id);
+        if (!account || (account.accountType || 'bot') !== 'user') {
+            return res.status(404).json({ error: 'Telegram user account not found' });
+        }
+        if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+            return res.status(400).json({ error: 'A non-empty file is required' });
+        }
+
+        const mediaType = req.get('x-telegram-media-type');
+        if (!['photo', 'voice', 'audio', 'video', 'document'].includes(mediaType)) {
+            return res.status(400).json({ error: 'Unsupported Telegram media type' });
+        }
+
+        let client;
+        try {
+            client = await openUserClient(account);
+            const dialog = await resolveDialog(client, req.params.chatId);
+            if (!dialog?.entity) return res.status(404).json({ error: 'Telegram conversation not found' });
+
+            let fileName = 'telegram-file';
+            try {
+                fileName = decodeURIComponent(req.get('x-file-name') || fileName);
+            } catch {}
+            fileName = fileName.replace(/[\\/\r\n\0]/g, '_').slice(0, 180) || 'telegram-file';
+            const file = Buffer.from(req.body);
+            file.name = fileName;
+
+            const sent = await client.sendFile(dialog.entity, {
+                file,
+                forceDocument: mediaType === 'document',
+                voiceNote: mediaType === 'voice',
+                supportsStreaming: mediaType === 'video'
+            });
+            const message = serializeMessage(sent);
+            message.mediaType = mediaType;
+            message.mediaFileName = fileName;
+            message.mediaFileSize = file.length;
+            message.mediaMimeType = req.get('x-file-mime-type') || 'application/octet-stream';
+            return res.json({ success: true, message });
+        } catch (err) {
+            console.error('[Telegram] User file send failed:', err.message);
+            return res.status(400).json({ error: err.message || 'Could not send Telegram file' });
+        } finally {
+            if (client) await client.disconnect().catch(() => {});
+        }
+    }
+);
 
 // ── GET /api/telegram/accounts
 // Returns all bot accounts for the authenticated user
