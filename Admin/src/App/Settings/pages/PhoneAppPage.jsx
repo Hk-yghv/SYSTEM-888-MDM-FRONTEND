@@ -1,3 +1,4 @@
+import { useLanguage } from '../../../context/LanguageContext';
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { QRCodeSVG } from 'qrcode.react';
@@ -6,6 +7,7 @@ import { FaQrcode, FaWifi, FaBroadcastTower, FaMobileAlt, FaBatteryThreeQuarters
 import { MdPhoneAndroid, MdDeveloperMode, MdOutlineSignalCellular4Bar } from 'react-icons/md';
 
 const PhoneAppPage = () => {
+    const { t } = useLanguage();
     const { API_BASE } = useAuth();
     const [activeTab, setActiveTab] = useState('qrcode'); // 'qrcode' | 'wifi' | 'hotspot'
     const [deviceData, setDeviceData] = useState(null);

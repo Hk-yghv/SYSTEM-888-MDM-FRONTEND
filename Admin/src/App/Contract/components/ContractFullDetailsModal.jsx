@@ -1,3 +1,4 @@
+import { useLanguage } from '../../../context/LanguageContext';
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import {
@@ -16,6 +17,7 @@ const ContractFullDetailsModal = ({
     onSaved,
     onRedeem
 }) => {
+    const { t } = useLanguage();
     const { API_BASE1, user } = useAuth();
     const [activeTab, setActiveTab] = useState('info');
 

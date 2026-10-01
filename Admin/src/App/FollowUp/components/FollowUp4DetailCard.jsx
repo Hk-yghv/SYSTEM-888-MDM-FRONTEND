@@ -1,3 +1,4 @@
+import { useLanguage } from '../../../context/LanguageContext';
 import React from 'react';
 import { FaCalculator, FaRegCalendarAlt, FaSave, FaChartBar, FaHistory } from 'react-icons/fa';
 import { MdOutlineSync } from 'react-icons/md';
@@ -18,6 +19,7 @@ const FollowUp4DetailCard = ({
     historyList = [],
     loading = false
 }) => {
+    const { t } = useLanguage();
     const handleMetricChange = (field, value) => {
         const val = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
         setMetrics(prev => {

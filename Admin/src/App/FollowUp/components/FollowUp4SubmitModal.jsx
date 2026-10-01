@@ -1,3 +1,4 @@
+import { useLanguage } from '../../../context/LanguageContext';
 import React from 'react';
 import { FaPlusCircle, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
 
@@ -23,6 +24,7 @@ const FollowUp4SubmitModal = ({
     isMasterAdmin = false,
     brandsList = ['888MDM', 'ECloud']
 }) => {
+    const { t } = useLanguage();
     if (!isOpen) return null;
 
     const sources = droplists.sources && droplists.sources.length > 0

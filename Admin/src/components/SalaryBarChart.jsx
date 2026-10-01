@@ -1,3 +1,4 @@
+import { useLanguage } from '../context/LanguageContext';
 import React, { useState, useMemo } from 'react';
 import { FaChartBar, FaCalendarAlt, FaMoneyBillWave } from 'react-icons/fa';
 
@@ -10,6 +11,7 @@ const SalaryBarChart = ({
     title = '',
     subtitle = 'ទិន្នន័យប្រាក់ខែសរុបប្រចាំខែនីមួយៗ'
 }) => {
+    const { t } = useLanguage();
     const [hoveredBar, setHoveredBar] = useState(null);
     const [selectedYear, setSelectedYear] = useState('ALL');
 

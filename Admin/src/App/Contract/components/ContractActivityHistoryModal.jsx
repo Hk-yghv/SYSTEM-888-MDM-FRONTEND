@@ -1,9 +1,11 @@
+import { useLanguage } from '../../../context/LanguageContext';
 import React, { useState, useEffect } from 'react';
 import { FaHistory, FaCheckCircle, FaLock, FaUnlock, FaMoneyBillWave, FaCommentDots, FaMobileAlt, FaUserEdit, FaFileAlt } from 'react-icons/fa';
 import { MdOutlineSync, MdOutlineClose } from 'react-icons/md';
 import { useAuth } from '../../../context/AuthContext';
 
 const ContractActivityHistoryModal = ({ contract, onClose }) => {
+    const { t } = useLanguage();
     const { API_BASE } = useAuth();
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);

@@ -1,3 +1,4 @@
+import { useLanguage } from '../../../context/LanguageContext';
 import React, { useState, useEffect, useRef } from 'react';
 import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
@@ -12,6 +13,7 @@ const sel = "w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text
 
 /* ── Autocomplete field with suggestions dropdown ── */
 const AutoField = ({ id, label, value, onChange, placeholder, list = [], onSelect, font = '' }) => {
+    const { t } = useLanguage();
     const [open, setOpen] = useState(false);
     const [focused, setFocused] = useState(false);
     const ref = useRef(null);
@@ -77,6 +79,7 @@ const Field = ({ label, children, accent = false }) => (
    Main CreateApplication Component
 ══════════════════════════════════════════ */
 const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
+    const { t } = useLanguage();
     const { API_BASE, API_BASE1, user } = useAuth();
 
     const currentYear = new Date().getFullYear();

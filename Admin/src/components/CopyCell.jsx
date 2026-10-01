@@ -1,7 +1,9 @@
+import { useLanguage } from '../context/LanguageContext';
 import React, { useState } from 'react';
 import { FaCopy, FaCheck } from 'react-icons/fa';
 
 const CopyCell = ({ text, value, children, copyValue, className = '' }) => {
+    const { t } = useLanguage();
     const [copied, setCopied] = useState(false);
 
     const rawContent = text !== undefined && text !== null ? text : (value !== undefined && value !== null ? value : children);

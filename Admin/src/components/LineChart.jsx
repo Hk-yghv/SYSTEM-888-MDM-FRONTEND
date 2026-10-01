@@ -1,3 +1,4 @@
+import { useLanguage } from '../context/LanguageContext';
 import React, { useState, useMemo } from 'react';
 import { FaChartLine } from 'react-icons/fa';
 
@@ -22,6 +23,7 @@ const LineChart = ({
     defaultFilter = '30d',
     height = 260
 }) => {
+    const { t } = useLanguage();
     const [selectedFilter, setSelectedFilter] = useState(defaultFilter);
     const [hoveredIndex, setHoveredIndex] = useState(null);
 

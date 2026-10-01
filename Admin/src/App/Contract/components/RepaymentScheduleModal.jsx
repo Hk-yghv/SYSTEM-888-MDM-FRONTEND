@@ -1,3 +1,4 @@
+import { useLanguage } from '../../../context/LanguageContext';
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../../context/AuthContext';
@@ -14,6 +15,7 @@ const formatMoney = (val) => {
 };
 
 const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', defaultMonthIdx = null, onSaved, onRedeem }) => {
+    const { t } = useLanguage();
     const { API_BASE1, user } = useAuth();
 
     const isMasterAdmin = Boolean(

@@ -1,7 +1,9 @@
+import { useLanguage } from '../context/LanguageContext';
 import React from 'react';
 import { FaIdCard, FaUserCheck, FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
 
 const IDCard3DViewer = ({ customer }) => {
+    const { t } = useLanguage();
     if (!customer) return null;
 
     return (

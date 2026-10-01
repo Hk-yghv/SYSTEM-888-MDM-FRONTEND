@@ -1,3 +1,4 @@
+import { useLanguage } from '../../../context/LanguageContext';
 import React from 'react';
 import { FaCalculator, FaRegCalendarAlt, FaSave, FaTimes } from 'react-icons/fa';
 import { MdOutlineSync } from 'react-icons/md';
@@ -19,6 +20,7 @@ const FollowUp4DetailModal = ({
     saving = false,
     calculatedFormulas = {}
 }) => {
+    const { t } = useLanguage();
     if (!isOpen) return null;
 
     const handleMetricChange = (field, value) => {
