@@ -232,11 +232,7 @@ const MainLayout = ({ children }) => {
             >
               <FaChevronUp className={`text-xs transition-transform duration-300 ${isFloatingUplistOpen ? "rotate-180 text-white" : "rotate-0 text-emerald-200"}`} />
               <span className="text-xs font-extrabold tracking-wide select-none">
-                {!isHeaderOpen && !isSidebarOpen
-                  ? "Menu & Header"
-                  : !isHeaderOpen
-                  ? "Header"
-                  : "Menu"}
+                Display
               </span>
             </button>
           </div>
