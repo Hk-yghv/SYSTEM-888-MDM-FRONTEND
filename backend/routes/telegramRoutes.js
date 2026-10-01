@@ -1,11 +1,32 @@
 import express from 'express';
 import TelegramAccount from '../models/TelegramAccount.js';
 import { isMongoConnected } from '../config/db.js';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
 
-// Helper: get ownerUsername from JWT user (set by verifySecurityAuth middleware)
-const getOwner = (req) => req.user?.username || req.user?.userId || null;
+// Helper: get ownerUsername from JWT user (set by verifySecurityAuth middleware) or token/headers
+const getOwner = (req) => {
+    if (req.user?.username) return req.user.username;
+    if (req.user?.userId) return req.user.userId;
+
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            if (decoded?.username) return decoded.username;
+            if (decoded?.userId) return decoded.userId;
+        } catch { }
+    }
+
+    if (req.headers['x-username']) return req.headers['x-username'];
+    if (req.body?.ownerUsername) return req.body.ownerUsername;
+    if (req.query?.ownerUsername) return req.query.ownerUsername;
+
+    return null;
+};
 
 // ── GET /api/telegram/accounts
 // Returns all bot accounts for the authenticated user

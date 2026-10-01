@@ -194,7 +194,7 @@ const VoiceNotePlayer = ({ audioUrl, duration, isMe }) => {
 
 const TelegramPage = () => {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, token: authToken } = useAuth();
   const messagesEndRef = useRef(null);
   const pollingRef = useRef(null);
   const isSyncingRef = useRef(false);
@@ -209,10 +209,11 @@ const TelegramPage = () => {
     : "/api";
 
   const getAuthHeaders = () => {
-    const token = getSecureItem("mdm_token") || "";
+    const token = authToken || getSecureItem("mdm_token") || "";
     return {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(user?.username ? { "x-username": user.username } : {})
     };
   };
 
@@ -749,6 +750,7 @@ const TelegramPage = () => {
       color: modalColor,
       botInfo: botInfo || { first_name: accountName, username: finalUsername.replace("@", "") },
       username: finalUsername,
+      ownerUsername: user?.username || '',
       lastUpdateId: editingAccountId
         ? (accounts.find(a => a.id === editingAccountId)?.lastUpdateId || 0)
         : 0,
