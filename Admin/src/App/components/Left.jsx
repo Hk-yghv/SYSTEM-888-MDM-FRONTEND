@@ -6,9 +6,9 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye } from "react-icons/fa";
 
-const Left = ({ isOpen = false, onClose, onHideHeader }) => {
+const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onToggleHeader }) => {
     const [openMenu, setOpenMenu] = useState("");
     const [accountOpen, setAccountOpen] = useState(false);
     const [langSubmenuOpen, setLangSubmenuOpen] = useState(false);
@@ -567,17 +567,30 @@ const Left = ({ isOpen = false, onClose, onHideHeader }) => {
                             )}
                         </div>
 
-                        {/* Hide Header Button (Placed right below language selector) */}
+                        {/* Toggle Header Button (Placed right below language selector) */}
                         <button
                             type="button"
                             onClick={() => {
-                                onHideHeader?.();
+                                if (onToggleHeader) {
+                                    onToggleHeader();
+                                } else {
+                                    onHideHeader?.();
+                                }
                                 setAccountOpen(false);
                             }}
-                            className="w-full h-[36px] flex items-center gap-2.5 px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[6px] transition-all cursor-pointer text-xs font-medium"
+                            className="w-full h-[36px] flex items-center justify-between px-3 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[6px] transition-all cursor-pointer text-xs font-medium"
                         >
-                            <FaEyeSlash className="text-sm text-emerald-600" />
-                            <span>{t('hideHeader') || 'លាក់ Header'}</span>
+                            <div className="flex items-center gap-2.5">
+                                {isHeaderOpen ? (
+                                    <FaEyeSlash className="text-sm text-emerald-600" />
+                                ) : (
+                                    <FaEye className="text-sm text-emerald-600" />
+                                )}
+                                <span>{isHeaderOpen ? (t('hideHeader') || 'លាក់ Header') : (t('showHeader') || 'បង្ហាញ Header')}</span>
+                            </div>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isHeaderOpen ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                                {isHeaderOpen ? (t('hide') || 'លាក់') : (t('show') || 'បង្ហាញ')}
+                            </span>
                         </button>
 
                         {/* Logout Button */}

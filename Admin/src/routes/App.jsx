@@ -184,6 +184,8 @@ const MainLayout = ({ children }) => {
             isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
             onHideHeader={() => handleToggleHeader(false)}
+            isHeaderOpen={isHeaderOpen}
+            onToggleHeader={() => handleToggleHeader()}
           />
           <MobileResponsiveContent className="flex-1 min-w-0 overflow-auto mobile-content-area">
             {children}
@@ -197,17 +199,37 @@ const MainLayout = ({ children }) => {
           setAlertCount={setAlertCount}
         />
 
-        {/* Floating Button at Bottom-Right to Show Header when Hidden */}
-        {!isHeaderOpen && (
+        {/* Floating Button at Bottom-Right: shown when either Left Menu or Header is hidden */}
+        {(!isHeaderOpen || !isSidebarOpen) && (
           <button
             type="button"
-            onClick={() => handleToggleHeader(true)}
+            onClick={() => {
+              if (!isHeaderOpen || !isSidebarOpen) {
+                setIsHeaderOpen(true);
+                setIsSidebarOpen(true);
+                try {
+                  localStorage.setItem('isHeaderOpen', JSON.stringify(true));
+                } catch {}
+              } else {
+                setIsHeaderOpen(false);
+                setIsSidebarOpen(false);
+                try {
+                  localStorage.setItem('isHeaderOpen', JSON.stringify(false));
+                } catch {}
+              }
+            }}
             className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[99999] flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xl border border-white/40 transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer select-none group animate-in fade-in slide-in-from-bottom-3"
-            title="បង្ហាញ Header ឡើងវិញ (Show Header)"
-            aria-label="Show Header"
+            title="បង្ហាញ Menu & Header ទាំងពីរឡើងវិញ (Show Menu & Header)"
+            aria-label="Show Menu and Header"
           >
             <FaChevronDown className="text-xs transition-transform duration-200 group-hover:translate-y-0.5" />
-            <span className="text-xs font-bold tracking-wide select-none">Header</span>
+            <span className="text-xs font-bold tracking-wide select-none">
+              {!isHeaderOpen && !isSidebarOpen
+                ? 'Menu & Header'
+                : !isHeaderOpen
+                ? 'Header'
+                : 'Menu'}
+            </span>
           </button>
         )}
       </div>
