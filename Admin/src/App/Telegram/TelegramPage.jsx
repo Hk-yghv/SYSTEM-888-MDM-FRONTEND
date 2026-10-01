@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import EmojiPicker from "emoji-picker-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { getSecureItem } from "../../utils/secureStorage";
@@ -62,13 +63,6 @@ const COLOR_PALETTE = [
   "#e11d48", // Rose
   "#0891b2", // Cyan
   "#4f46e5"  // Indigo
-];
-
-// Popular emojis for quick picker
-const POPULAR_EMOJIS = [
-  "👍", "❤️", "🔥", "🎉", "👏", "😊", "🙏", "✅",
-  "👌", "😍", "🤣", "🙌", "💯", "🚀", "💡", "⭐",
-  "🤝", "💬", "📞", "📦", "💵", "🕒", "📍", "⚠️"
 ];
 
 // Format bytes into human-readable size
@@ -2464,20 +2458,16 @@ const TelegramPage = () => {
 
               {/* Emoji Picker Popup */}
               {showEmojiPicker && (
-                <div className="absolute bottom-16 left-4 bg-white border border-slate-200 rounded-2xl p-3 shadow-2xl z-30 w-72 grid grid-cols-6 gap-2">
-                  {POPULAR_EMOJIS.map((em, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setMessageInput((prev) => prev + em);
-                        setShowEmojiPicker(false);
-                      }}
-                      className="text-xl p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-center cursor-pointer"
-                    >
-                      {em}
-                    </button>
-                  ))}
+                <div className="absolute bottom-16 left-2 z-30 w-[min(320px,calc(100vw-1rem))] shadow-2xl">
+                  <EmojiPicker
+                    width="100%"
+                    height={380}
+                    lazyLoadEmojis
+                    onEmojiClick={(emojiData) => {
+                      setMessageInput((previous) => previous + emojiData.emoji);
+                      setShowEmojiPicker(false);
+                    }}
+                  />
                 </div>
               )}
 
