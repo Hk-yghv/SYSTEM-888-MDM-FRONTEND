@@ -321,6 +321,8 @@ const TelegramPage = () => {
   const [forumTopics, setForumTopics] = useState([]);
   const [selectedForumTopicId, setSelectedForumTopicId] = useState("");
   const [isLoadingForumTopics, setIsLoadingForumTopics] = useState(false);
+  const [activeChatForumTopics, setActiveChatForumTopics] = useState([]);
+  const [isLoadingActiveChatTopics, setIsLoadingActiveChatTopics] = useState(false);
   const [newChatInitialMessage, setNewChatInitialMessage] = useState("");
   const [isSendingNewChat, setIsSendingNewChat] = useState(false);
   const [newChatError, setNewChatError] = useState("");
@@ -405,6 +407,10 @@ const TelegramPage = () => {
       setActiveChatId(null);
     }
   }, [activeAccountId, activeAccount, activeChatId]);
+
+  useEffect(() => {
+    setActiveChatForumTopics([]);
+  }, [activeAccountId, activeChatId]);
 
   // Auto scroll to bottom of messages
   useEffect(() => {
@@ -630,6 +636,7 @@ const TelegramPage = () => {
                     name: messageThreadId
                       ? existingChat.customName || `${chatTitle} · ${topicChatName || `Topic ${messageThreadId}`}`
                       : existingChat.customName || chatTitle,
+                    parentGroupName: messageThreadId ? (existingChat.parentGroupName || chatTitle) : existingChat.parentGroupName,
                     topicName: topicChatName,
                     username: chatUsername || existingChat.username,
                     unreadCount: isCurrentlyActive
@@ -644,6 +651,7 @@ const TelegramPage = () => {
                   id: chatStorageId,
                   telegramChatId: chatId,
                   messageThreadId,
+                  parentGroupName: messageThreadId ? chatTitle : null,
                   topicName,
                   name: messageThreadId
                     ? `${chatTitle} · ${topicName || `Topic ${messageThreadId}`}`
@@ -1466,6 +1474,64 @@ const TelegramPage = () => {
     }
   };
 
+  const loadActiveChatTopics = async () => {
+    const groupId = activeChat?.telegramChatId || activeChat?.id;
+    const userAccount = accounts.find((account) => account.id === topicUserAccountId)
+      || accounts.find((account) => account.type === "user");
+    if (!userAccount) {
+      setSyncError("សូមភ្ជាប់ User Account ដែលបានចូលក្នុង Group នេះ ដើម្បីទាញ Topics។");
+      return;
+    }
+
+    setIsLoadingActiveChatTopics(true);
+    setSyncError(null);
+    setActiveChatForumTopics([]);
+    try {
+      const response = await fetch(
+        `${API_BASE}/telegram/accounts/${userAccount.id}/forum-topics/${encodeURIComponent(groupId)}`,
+        { headers: getAuthHeaders() }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "មិនអាចទាញ Topics បានទេ");
+      setActiveChatForumTopics(data.topics || []);
+      if (!data.topics?.length) setSyncError("រកមិនឃើញ Topics ក្នុង Group នេះទេ។");
+    } catch (error) {
+      setSyncError(error.message || "មិនអាចទាញ Topics បានទេ");
+    } finally {
+      setIsLoadingActiveChatTopics(false);
+    }
+  };
+
+  const openActiveChatTopic = (event) => {
+    const topic = activeChatForumTopics.find((item) => item.id === event.target.value);
+    if (!topic || !activeAccount || !activeChat) return;
+
+    const telegramChatId = activeChat.telegramChatId || activeChat.id;
+    const topicChatId = `${telegramChatId}:topic:${topic.id}`;
+    const existingTopicChat = activeAccount.chats.find((chat) => chat.id === topicChatId);
+    const parentGroupName = activeChat.parentGroupName || activeChat.name;
+    const topicChat = existingTopicChat || {
+      ...activeChat,
+      id: topicChatId,
+      telegramChatId,
+      messageThreadId: topic.id,
+      parentGroupName,
+      topicName: topic.name,
+      name: `${parentGroupName} · ${topic.name}`,
+      customName: undefined,
+      unreadCount: 0,
+      messages: []
+    };
+
+    if (!existingTopicChat) {
+      setAccounts((previous) => previous.map((account) => account.id !== activeAccount.id ? account : ({
+        ...account,
+        chats: [topicChat, ...account.chats]
+      })));
+    }
+    setActiveChatId(topicChatId);
+  };
+
   // Real Telegram API: Create New Chat and Send First Message
   const handleCreateNewChat = async (e) => {
     e.preventDefault();
@@ -1527,6 +1593,7 @@ const TelegramPage = () => {
           id: chatIdStr,
           telegramChatId,
           messageThreadId: topic?.id || null,
+          parentGroupName: topic ? resolvedName : null,
           topicName: topic?.name || null,
           name: topic ? `${resolvedName} · ${topic.name}` : resolvedName,
           customName: newChatName.trim()
@@ -2094,6 +2161,34 @@ const TelegramPage = () => {
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {activeAccount?.type !== "user" && activeChat.type === "group" && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={loadActiveChatTopics}
+                        disabled={isLoadingActiveChatTopics}
+                        className="px-2 py-1 text-[10px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-md disabled:opacity-50 cursor-pointer"
+                        title="ទាញ Topics របស់ Group"
+                      >
+                        {isLoadingActiveChatTopics ? "កំពុងទាញ..." : "ទាញ Topics"}
+                      </button>
+                      {activeChatForumTopics.length > 0 && (
+                        <select
+                          value={activeChat.messageThreadId || ""}
+                          onChange={openActiveChatTopic}
+                          className="max-w-32 px-1.5 py-1 text-[10px] bg-white border border-slate-200 rounded-md"
+                          aria-label="ជ្រើស Telegram topic"
+                        >
+                          <option value="">ជ្រើស Topic</option>
+                          {activeChatForumTopics.map((topic) => (
+                            <option key={topic.id} value={topic.id} disabled={topic.closed}>
+                              {topic.name}{topic.closed ? " (បិទ)" : ""}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  )}
                   <button
                     onClick={() => setShowChatInfo(!showChatInfo)}
                     className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
