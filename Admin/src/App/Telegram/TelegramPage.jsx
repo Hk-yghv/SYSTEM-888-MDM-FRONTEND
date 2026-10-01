@@ -87,6 +87,37 @@ const formatDuration = (secs) => {
   return `${m}:${s < 10 ? "0" : ""}${s}`;
 };
 
+const renderMessageText = (text, isMe) => {
+  const urlPattern = /https?:\/\/[^\s<>"']+/gi;
+  const segments = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = urlPattern.exec(String(text))) !== null) {
+    const rawUrl = match[0];
+    const url = rawUrl.replace(/[),.!?;:]+$/, "");
+    if (!url) continue;
+
+    segments.push(String(text).slice(lastIndex, match.index));
+    segments.push(
+      <a
+        key={`${match.index}-${url}`}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`underline break-all ${isMe ? "text-cyan-100" : "text-sky-700"}`}
+      >
+        {url}
+      </a>
+    );
+    segments.push(rawUrl.slice(url.length));
+    lastIndex = match.index + rawUrl.length;
+  }
+
+  segments.push(String(text).slice(lastIndex));
+  return segments;
+};
+
 // Inline Voice Note Player Component
 const VoiceNotePlayer = ({ audioUrl, duration, isMe }) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -2387,7 +2418,7 @@ const TelegramPage = () => {
 
                           {/* TEXT CONTENT */}
                           {msg.text && (
-                            <p className="whitespace-pre-wrap break-words px-1">{msg.text}</p>
+                            <p className="whitespace-pre-wrap break-words px-1">{renderMessageText(msg.text, isMe)}</p>
                           )}
 
                           {/* TIMESTAMP & STATUS */}
