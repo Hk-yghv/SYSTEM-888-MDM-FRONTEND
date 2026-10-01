@@ -7,9 +7,36 @@
 const SECRET_SALT = 0x5C;
 const VAULT_PREFIX = '__sys_sec_v:';
 const SESSION_VAULT_KEY = '__sys_session_v:';
+const LEGACY_AUTH_KEYS = ['mdm_token', 'mdm_user'];
 
 // In-memory runtime storage
 let _memoryVault = {};
+
+const readLegacyStorageItem = (storage, key) => {
+    try {
+        if (!storage || typeof storage.getItem !== 'function') return null;
+        const raw = storage.getItem(key);
+        return raw === null ? null : raw;
+    } catch {
+        return null;
+    }
+};
+
+const readLegacyAuthFallback = () => {
+    const legacy = {};
+    const storages = [];
+    if (typeof sessionStorage !== 'undefined') storages.push(sessionStorage);
+    if (typeof localStorage !== 'undefined') storages.push(localStorage);
+
+    for (const storage of storages) {
+        for (const key of LEGACY_AUTH_KEYS) {
+            const raw = readLegacyStorageItem(storage, key);
+            if (raw === null || raw === '') continue;
+            legacy[key] = raw;
+        }
+    }
+    return legacy;
+};
 
 const encodeVault = (obj) => {
     try {
@@ -75,7 +102,7 @@ const purgeStorageTraces = () => {
     } catch {}
 };
 
-// Initialize vault from window.name or sessionStorage on load/refresh
+// Initialize vault from window.name, sessionStorage, and a compatibility fallback on load/refresh
 const initVault = () => {
     try {
         const restored = {};
@@ -85,6 +112,10 @@ const initVault = () => {
         const sessionVault = readSessionVault();
         if (Object.keys(sessionVault).length > 0) {
             Object.assign(restored, sessionVault);
+        }
+        const legacyFallback = readLegacyAuthFallback();
+        if (Object.keys(legacyFallback).length > 0) {
+            Object.assign(restored, legacyFallback);
         }
         _memoryVault = restored;
     } catch {}
@@ -105,6 +136,14 @@ const syncVault = () => {
 
 export const setSecureItem = (key, val) => {
     _memoryVault[key] = val;
+    try {
+        if (typeof sessionStorage !== 'undefined' && LEGACY_AUTH_KEYS.includes(key)) {
+            sessionStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+        }
+        if (typeof localStorage !== 'undefined' && LEGACY_AUTH_KEYS.includes(key)) {
+            localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+        }
+    } catch {}
     syncVault();
 };
 
@@ -136,6 +175,10 @@ export const clearSecureAuth = () => {
     }
     if (typeof sessionStorage !== 'undefined') {
         sessionStorage.removeItem(SESSION_VAULT_KEY);
+        LEGACY_AUTH_KEYS.forEach((key) => sessionStorage.removeItem(key));
+    }
+    if (typeof localStorage !== 'undefined') {
+        LEGACY_AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
     }
     purgeStorageTraces();
 };

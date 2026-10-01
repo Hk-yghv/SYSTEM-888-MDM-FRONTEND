@@ -15,9 +15,7 @@ const API_BASE2 = import.meta.env.DEV ? (import.meta.env.VITE_API_BACKEND2 || AP
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
-        // Clean up legacy localStorage auth to enforce session-only auth
-        localStorage.removeItem('mdm_user');
-        localStorage.removeItem('mdm_token');
+        // Restore session auth without deleting the persisted token unexpectedly.
         return getSecureItem('mdm_user', true);
     });
 
