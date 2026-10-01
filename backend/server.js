@@ -70,7 +70,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS
 app.use(cors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-System-API-Key', 'x-system-api-key', 'X-Partner-API-Key', 'x-partner-api-key', 'X-Request-Timestamp', 'x-request-timestamp', 'X-Telegram-Media-Type', 'X-File-Name', 'X-File-Mime-Type', 'Cache-Control', 'cache-control', 'Pragma', 'pragma'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-username', 'X-System-API-Key', 'x-system-api-key', 'X-Partner-API-Key', 'x-partner-api-key', 'X-Request-Timestamp', 'x-request-timestamp', 'X-Telegram-Media-Type', 'X-File-Name', 'X-File-Mime-Type', 'Cache-Control', 'cache-control', 'Pragma', 'pragma'],
     credentials: true
 }));
 

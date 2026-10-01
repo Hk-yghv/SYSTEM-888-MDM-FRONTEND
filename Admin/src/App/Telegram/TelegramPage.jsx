@@ -1194,6 +1194,10 @@ const TelegramPage = () => {
   // Send a file through the correct Telegram account type.
   const uploadTelegramFile = async (file, requestedMediaType = null) => {
     if (!file || !activeChat || (activeAccount?.type !== "user" && !activeAccount?.botToken)) return;
+    if (activeAccount.type === "user" && file.size > 50 * 1024 * 1024) {
+      alert("ឯកសារធំពេក។ សូមជ្រើសរើសឯកសារមិនលើស 50 MB។");
+      return;
+    }
 
     const isImage = file.type.startsWith("image/");
     const isAudio = file.type.startsWith("audio/");
@@ -1293,7 +1297,7 @@ const TelegramPage = () => {
 
       const data = await res.json();
 
-      if (data.ok && data.result) {
+      if (res.ok && data.ok && data.result) {
         // Extract the file_id from the Telegram API response so we can resolve a persistent URL
         const result = data.result;
         let sentFileId = null;
@@ -1343,7 +1347,7 @@ const TelegramPage = () => {
           })
         );
       } else {
-        alert(`ផ្ញើ File មិនជោគជ័យ៖ ${data.description || "Telegram API Error"}`);
+        throw new Error(data.description || "Telegram API Error");
       }
     } catch (err) {
       console.error("Failed to upload attachment to telegram:", err);
