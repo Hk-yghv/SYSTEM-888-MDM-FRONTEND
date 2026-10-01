@@ -660,7 +660,7 @@ table tbody tr:hover {
 }
 
 /* ==========================================================================
-   GLOBAL PRINT STYLES - HIDE APP SHELL & PRINT ONLY DASHBOARD / PAGE CONTENT
+   GLOBAL PRINT STYLES - HIDE APP SHELL & PRINT ONLY ACTIVE CONTENT
    ========================================================================== */
 @media print {
     /* Hide layout shell: Top Header, Left Sidebar, Bottom Nav, Popovers, Drawers, Fixed Elements */
@@ -681,16 +681,8 @@ table tbody tr:hover {
     .foot,
     .footer,
     video,
-    .fixed:not(#cs2-print-area) {
+    .fixed:not(#cs2-print-area):not(#dashboard-print-area) {
         display: none !important;
-        visibility: hidden !important;
-        width: 0 !important;
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: absolute !important;
-        top: -99999px !important;
-        left: -99999px !important;
     }
 
     /* Reset root, body, flex layout and scroll containers so content flows continuously across printable pages */

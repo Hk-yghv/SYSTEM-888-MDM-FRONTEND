@@ -858,7 +858,9 @@ const Dashboard = () => {
                 </div>
             </header>
 
-            {/* ── Executive KPI Grid ── */}
+            {/* ── Printable Content Area (Starts at Page 1, No Blank Headers) ── */}
+            <div id="dashboard-print-area" className="dashboard-content-body">
+                {/* ── Executive KPI Grid ── */}
             <div className="executive-kpi-grid">
                 {/* Card 1: Disbursed */}
                 <div className="exec-card card-disbursed">
@@ -1337,6 +1339,7 @@ const Dashboard = () => {
                         </div>
                     )}
                 </div>
+            </div>
             </div>
 
             {/* ── Receipt Image Modal ── */}

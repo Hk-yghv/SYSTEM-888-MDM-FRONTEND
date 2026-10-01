@@ -1079,72 +1079,69 @@
 }
 
 @media print {
-    /* Reset background, text colors and overflow for complete multi-page pagination */
+    /* Reset html and body for clean, crisp white printing */
     html,
     body {
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
         background: #ffffff !important;
         color: #0f172a !important;
         overflow: visible !important;
-        height: auto !important;
-        min-height: auto !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        font-size: 11pt !important;
+        font-size: 10.5pt !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
 
-    /* Hide outer layout and header elements (Left sidebar, top navbar, mobile bottom nav, backdrop, footer, executive header, reload/action buttons) */
+    /* Hide outer navigation chrome, headers, fixed elements and menus */
+    header,
     aside,
     nav,
-    header,
-    .executive-header,
-    .top-ticker-row,
-    .header-main-bar,
     .mobile-sidebar,
+    .mobile-sidebar-open,
     .mobile-sidebar-backdrop,
     .mobile-bottom-nav,
+    .payment-alert-drawer,
+    .executive-header,
+    .top-user-actions,
+    .header-actions,
+    .timeframe-switch,
+    .system-status-chip,
+    .btn-action,
     .foot,
     .footer,
-    .header-actions,
-    .btn-action,
-    .timeframe-switch,
-    .top-user-actions,
+    .payment-filter-select,
     .mobile-table-hint,
     .custom-date-popover,
-    .brand-filter-select,
-    .system-status-chip,
+    .receipt-preview-backdrop,
     video,
-    .fixed {
+    .fixed:not(#cs2-print-area):not(#dashboard-print-area) {
         display: none !important;
     }
 
-    /* Container adjustments: allow full height and multi-page flow without clipping */
+    /* Container resets: Ensure dashboard starts directly on Page 1 with NO leading blank pages */
     #root,
     #root > div,
     .flex,
     .flex-1,
     .mobile-content-area,
-    .dashboard-root {
+    .dashboard-root,
+    #dashboard-print-area {
         display: block !important;
         position: static !important;
         overflow: visible !important;
         height: auto !important;
         max-height: none !important;
-        min-height: auto !important;
+        min-height: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
-    }
-
-    .dashboard-root {
-        padding: 4px 0 !important;
         background: #ffffff !important;
     }
 
-    /* Executive KPI Grid & Middle Dashboard Grid */
+    /* Executive KPI Grid */
     .executive-kpi-grid {
         display: grid !important;
         grid-template-columns: repeat(4, 1fr) !important;
@@ -1200,7 +1197,8 @@
         break-after: avoid;
     }
 
-    .table-container {
+    .table-container,
+    .table-responsive {
         overflow: visible !important;
         max-height: none !important;
         height: auto !important;
