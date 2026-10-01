@@ -8,6 +8,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Main Systems', path: '/dashboard', label: 'Dashboard Analysis', actions: ['read', 'export'] },
     { category: 'Main Systems', path: '/customer', label: 'Customer Directory', actions: ['read', 'export', 'seePhoto', 'detail', 'qrcode'] },
     { category: 'Main Systems', path: '/device', label: 'Device List & Actions', actions: ['read', 'export', 'information', 'deviceAction'] },
+    { category: 'Main Systems', path: '/telegram', label: 'Telegram Web (Multi-Account)', actions: ['read'] },
 
     { category: 'Contract Management', path: '/contract/application', label: 'Contract Application', actions: ['read', 'export', 'create', 'edit', 'delete', 'information', 'activate'] },
     { category: 'Contract Management', path: '/contract/activated', label: 'Contract Activated', actions: ['read', 'export', 'openFacebook', 'history', 'comment', 'lockDevice', 'setWallpaper', 'check', 'blacklist'] },

@@ -157,18 +157,20 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 )}
 
                 {/* Telegram Web Multi-Account Button (Placed right after payment alerts button - Icon Only) */}
-                <Link
-                    to="/telegram"
-                    className={`relative flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-3 rounded-[5px] transition-all cursor-pointer border shadow-md ${
-                        location.pathname === '/telegram'
-                            ? 'bg-sky-500 hover:bg-sky-600 text-white border-sky-600 shadow-sky-500/20'
-                            : 'bg-gray-100 hover:bg-sky-50 text-slate-900 hover:text-sky-600 border-gray-300 hover:border-sky-300 shadow-gray-200'
-                    }`}
-                    title={t('telegram') || 'Telegram Web (Multi-Account)'}
-                    aria-label="Telegram Web"
-                >
-                    <FaTelegramPlane className={`text-sm md:text-base ${location.pathname === '/telegram' ? 'text-white' : 'text-sky-500'}`} />
-                </Link>
+                {hasPermission('/telegram', 'read') && (
+                    <Link
+                        to="/telegram"
+                        className={`relative flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-3 rounded-[5px] transition-all cursor-pointer border shadow-md ${
+                            location.pathname === '/telegram'
+                                ? 'bg-sky-500 hover:bg-sky-600 text-white border-sky-600 shadow-sky-500/20'
+                                : 'bg-gray-100 hover:bg-sky-50 text-slate-900 hover:text-sky-600 border-gray-300 hover:border-sky-300 shadow-gray-200'
+                        }`}
+                        title={t('telegram') || 'Telegram Web (Multi-Account)'}
+                        aria-label="Telegram Web"
+                    >
+                        <FaTelegramPlane className={`text-sm md:text-base ${location.pathname === '/telegram' ? 'text-white' : 'text-sky-500'}`} />
+                    </Link>
+                )}
             </div>
         </header>
     );
