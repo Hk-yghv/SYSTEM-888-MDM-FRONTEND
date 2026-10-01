@@ -550,25 +550,21 @@ const CalculateSchedule2 = () => {
                         overflow: visible !important;
                         min-height: auto !important;
                     }
-                    #cs2-print-area > div {
-                        padding-left: 0 !important;
-                        padding-right: 0 !important;
-                        margin-left: 0 !important;
-                        margin-right: 0 !important;
+                    #cs2-print-area > div.grid-cols-2 {
+                        padding-left: ${printOrientation === 'landscape' ? '15.625%' : '0'} !important;
+                        padding-right: ${printOrientation === 'landscape' ? '15.625%' : '0'} !important;
                     }
-                    #cs2-print-area .grid-cols-2 {
-                        padding-left: 0 !important;
-                        padding-right: 0 !important;
+                    #cs2-print-area > div.overflow-x-auto {
+                        margin-left: ${printOrientation === 'landscape' ? '5.625%' : '0'} !important;
+                        margin-right: ${printOrientation === 'landscape' ? '5.625%' : '0'} !important;
+                        padding-left: ${printOrientation === 'landscape' ? '10%' : '0'} !important;
+                        padding-right: ${printOrientation === 'landscape' ? '10%' : '0'} !important;
                     }
                     #cs2-print-area div.overflow-x-auto,
                     #cs2-print-area div[class*="overflow-x-auto"] {
                         min-height: auto !important;
                         padding-bottom: 0 !important;
                         overflow: visible !important;
-                        margin-left: 0 !important;
-                        margin-right: 0 !important;
-                        padding-left: 0 !important;
-                        padding-right: 0 !important;
                     }
                     #cs2-print-area table {
                         width: 100% !important;
