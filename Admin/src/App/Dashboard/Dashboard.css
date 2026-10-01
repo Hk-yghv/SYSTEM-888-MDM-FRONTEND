@@ -1073,12 +1073,204 @@
     .header-actions { justify-content: flex-end; }
 }
 
+@page {
+    size: landscape;
+    margin: 8mm 6mm;
+}
+
 @media print {
-    body { background: #fff !important; color: #000 !important; }
-    .foot, .header-actions, .timeframe-switch, .top-user-actions { display: none !important; }
-    .chart-card, .exec-card, .header-main-bar, .top-ticker-row {
+    /* Reset background, text colors and overflow for complete multi-page pagination */
+    html,
+    body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        overflow: visible !important;
+        height: auto !important;
+        min-height: auto !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 11pt !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Hide outer layout elements (Left sidebar, top navbar, mobile bottom nav, backdrop, footer, reload/action buttons) */
+    aside,
+    nav,
+    header:not(.executive-header),
+    .mobile-sidebar,
+    .mobile-sidebar-backdrop,
+    .mobile-bottom-nav,
+    .foot,
+    .footer,
+    .header-actions,
+    .btn-action,
+    .timeframe-switch,
+    .top-user-actions,
+    .mobile-table-hint,
+    .custom-date-popover,
+    .brand-filter-select,
+    .system-status-chip,
+    video,
+    .fixed {
+        display: none !important;
+    }
+
+    /* Container adjustments: allow full height and multi-page flow without clipping */
+    #root,
+    #root > div,
+    .flex,
+    .flex-1,
+    .mobile-content-area,
+    .dashboard-root {
+        display: block !important;
+        position: static !important;
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+        min-height: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .dashboard-root {
+        padding: 4px 0 !important;
+        background: #ffffff !important;
+    }
+
+    /* Header styling for printed report */
+    .executive-header {
+        margin-bottom: 12px !important;
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    .top-ticker-row,
+    .header-main-bar {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        background: #f8fafc !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* Executive KPI Grid & Middle Dashboard Grid */
+    .executive-kpi-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .exec-card {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
+        padding: 10px 12px !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .middle-dashboard-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px !important;
+        margin-bottom: 12px !important;
+        page-break-inside: auto;
+        break-inside: auto;
+    }
+
+    .chart-card {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+        margin-bottom: 10px !important;
+    }
+
+    /* Tables & Multi-Page Customer Sections */
+    .customer-payment-card,
+    .payment-section {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
+        margin-bottom: 14px !important;
+        page-break-inside: auto;
+        break-inside: auto;
+        overflow: visible !important;
+    }
+
+    .payment-section-header {
+        background: #f1f5f9 !important;
+        border-bottom: 1px solid #cbd5e1 !important;
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    .table-container {
+        overflow: visible !important;
+        max-height: none !important;
+        height: auto !important;
+        border: none !important;
+    }
+
+    .analytics-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto;
+        break-inside: auto;
+    }
+
+    .analytics-table thead {
+        display: table-header-group !important;
+    }
+
+    .analytics-table th {
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        font-weight: 700 !important;
+        padding: 6px 8px !important;
+    }
+
+    .analytics-table td {
+        border: 1px solid #e2e8f0 !important;
+        padding: 5px 8px !important;
+        color: #1e293b !important;
+    }
+
+    .analytics-table tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* Brand Distribution Summary Grid */
+    .brand-summary-section {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+        margin-top: 12px !important;
+    }
+
+    .brand-card-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 8px !important;
+        overflow: visible !important;
+    }
+
+    .brand-item-card {
         box-shadow: none !important;
         border: 1px solid #cbd5e1 !important;
         page-break-inside: avoid;
+        break-inside: avoid;
     }
 }

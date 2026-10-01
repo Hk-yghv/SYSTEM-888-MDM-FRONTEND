@@ -6,7 +6,6 @@ import {
     FaChartLine,
     FaCalendarCheck,
     FaPrint,
-    FaRotateRight,
     FaCreditCard,
     FaArrowTrendUp,
     FaReceipt,
@@ -848,21 +847,12 @@ const Dashboard = () => {
                     <div className="header-actions">
                         <button
                             type="button"
-                            className="btn-action btn-print desktop-only"
+                            className="btn-action btn-print"
                             title="បោះពុម្ព ឬទាញយកជារបាយការណ៍ PDF"
                             onClick={handlePrint}
                         >
                             <FaPrint />
                             <span>Print Report</span>
-                        </button>
-                        <button
-                            type="button"
-                            className={`btn-action btn-reload ${reloading ? 'reloading' : ''}`}
-                            onClick={handleManualReload}
-                            title="ទាញទិន្នន័យថ្មីឡើងវិញ"
-                        >
-                            <FaRotateRight />
-                            <span>Reload</span>
                         </button>
                     </div>
                 </div>
