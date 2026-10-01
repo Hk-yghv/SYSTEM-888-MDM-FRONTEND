@@ -490,10 +490,10 @@ const Dashboard = () => {
                 rows.push({
                     id: `${contract._id || contract.id || 'c'}-${rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : 1)}`,
                     contractId: contract._id || contract.id,
-                    contractIid: contract.contractId || contract.contractIid || contract.code || `CT-${rows.length + 1}`,
+                    contractIid: contract.contractIid || contract.contractId || contract.contractNo || contract.code || (contract._id ? String(contract._id).slice(-6) : `CT-${rows.length + 1}`),
                     customerNameEn: nameEn,
                     customerNameKh: nameKh,
-                    customerName: nameEn || nameKh || 'Unknown',
+                    customerName: nameKh || nameEn || 'Unknown',
                     phone: phone,
                     dueDate: dueDateStr,
                     scheduledAmount: scheduledAmt,
@@ -546,10 +546,10 @@ const Dashboard = () => {
                     rows.push({
                         id: `${contract._id || contract.id || 'c'}-${rowData.monthIndex || rIdx + 1}`,
                         contractId: contract._id || contract.id,
-                        contractIid: contract.contractId || contract.contractIid || contract.code || `CT-${rows.length + 1}`,
+                        contractIid: contract.contractIid || contract.contractId || contract.contractNo || contract.code || (contract._id ? String(contract._id).slice(-6) : `CT-${rows.length + 1}`),
                         customerNameEn: nameEn,
                         customerNameKh: nameKh,
-                        customerName: nameEn || nameKh || 'Unknown',
+                        customerName: nameKh || nameEn || 'Unknown',
                         phone: phone,
                         dueDate: dueDateStr,
                         scheduledAmount: scheduledAmt,
@@ -1454,18 +1454,13 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
                                 <td data-label="#">{idx + 1}</td>
                                 <td data-label="ឈ្មោះភ្ញៀវ" className="customer-name-cell">
                                     <strong style={{ display: 'block', color: '#0f172a' }}>
-                                        {row.customerNameEn || row.customerName || 'Unknown'}
+                                        {row.customerNameKh || row.customerName || row.customerNameEn || 'មិនស្គាល់'}
                                     </strong>
-                                    {row.customerNameKh && (
-                                        <span style={{ fontSize: '11px', color: '#059669', fontWeight: '600', display: 'block' }}>
-                                            {row.customerNameKh}
-                                        </span>
-                                    )}
                                     <small style={{ color: '#64748b' }}>{row.phone}</small>
                                 </td>
-                                <td data-label="កិច្ចសន្យា">
+                                <td data-label="លេខកិច្ចសន្យា">
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <strong>{row.contractIid}</strong>
+                                        <strong>{row.contractIid || row.contractId || '-'}</strong>
                                         {row.monthLabel && <small style={{ fontSize: '11px', color: '#64748b' }}>{row.monthLabel}</small>}
                                     </div>
                                 </td>

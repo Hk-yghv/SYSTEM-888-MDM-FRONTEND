@@ -658,3 +658,77 @@ table tbody tr {
 table tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.14) !important;
 }
+
+/* ==========================================================================
+   GLOBAL PRINT STYLES - HIDE APP SHELL & PRINT ONLY DASHBOARD / PAGE CONTENT
+   ========================================================================== */
+@media print {
+    /* Hide layout shell: Top Header, Left Sidebar, Bottom Nav, Popovers, Drawers, Fixed Elements */
+    header,
+    aside,
+    nav,
+    .mobile-sidebar,
+    .mobile-sidebar-open,
+    .mobile-sidebar-backdrop,
+    .mobile-bottom-nav,
+    .payment-alert-drawer,
+    .executive-header,
+    .top-user-actions,
+    .header-actions,
+    .timeframe-switch,
+    .system-status-chip,
+    .btn-action,
+    .foot,
+    .footer,
+    video,
+    .fixed:not(#cs2-print-area) {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: absolute !important;
+        top: -99999px !important;
+        left: -99999px !important;
+    }
+
+    /* Reset root, body, flex layout and scroll containers so content flows continuously across printable pages */
+    html,
+    body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        overflow: visible !important;
+        height: auto !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 10.5pt !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    #root,
+    #root > div,
+    .h-screen,
+    .h-full,
+    .overflow-hidden,
+    .overflow-y-auto,
+    .overflow-x-auto,
+    .flex,
+    .flex-1,
+    .mobile-content-area,
+    .dashboard-root {
+        display: block !important;
+        position: static !important;
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}
