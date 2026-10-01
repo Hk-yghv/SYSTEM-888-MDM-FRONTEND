@@ -557,7 +557,6 @@ const CalculateSchedule2 = () => {
                         margin-right: 0 !important;
                     }
                     #cs2-print-area .grid-cols-2 {
-                        column-gap: 2.5rem !important;
                         padding-left: 0 !important;
                         padding-right: 0 !important;
                     }
