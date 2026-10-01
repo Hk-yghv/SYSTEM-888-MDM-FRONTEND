@@ -84,7 +84,7 @@ export default function createAuthRoutes(bot) {
                     deviceInfo,
                     path: '/api/auth/login',
                     payload: { reason: 'User Not Found' }
-                }).catch(() => {});
+                }).catch(() => { });
                 return res.status(401).json({ error: 'Invalid username or password' });
             }
 
@@ -129,7 +129,7 @@ export default function createAuthRoutes(bot) {
                     deviceInfo,
                     path: '/api/auth/login',
                     payload: { reason: 'Wrong Password' }
-                }).catch(() => {});
+                }).catch(() => { });
 
                 return res.status(401).json({
                     error: 'Invalid username or password'
@@ -224,7 +224,7 @@ export default function createAuthRoutes(bot) {
                 deviceInfo,
                 path: '/api/auth/login',
                 payload: { role: user.role, brand: user.brand }
-            }).catch(() => {});
+            }).catch(() => { });
 
             if (bot && user.telegramId) {
                 const time = new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
@@ -351,7 +351,7 @@ export default function createAuthRoutes(bot) {
                 ip,
                 deviceInfo: `${browser} on ${os}`,
                 path: '/api/auth/verify-otp'
-            }).catch(() => {});
+            }).catch(() => { });
 
             const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
             res.json({
@@ -383,7 +383,7 @@ export default function createAuthRoutes(bot) {
                 try {
                     const parsed = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
                     username = parsed?.username;
-                } catch {}
+                } catch { }
             }
             if (username) {
                 const now = new Date();
@@ -437,7 +437,7 @@ export default function createAuthRoutes(bot) {
                     ip,
                     deviceInfo: `${browser} on ${os}`,
                     path: '/api/auth/logout'
-                }).catch(() => {});
+                }).catch(() => { });
             }
             res.json({ success: true });
         } catch (err) {

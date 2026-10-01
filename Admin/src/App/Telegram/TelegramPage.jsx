@@ -22,9 +22,14 @@ import {
   FaExclamationTriangle,
   FaExternalLinkAlt,
   FaPaperPlane,
-  FaInfoCircle
+  FaInfoCircle,
+  FaCopy,
+  FaEye,
+  FaEyeSlash,
+  FaCircle,
+  FaRegSmile
 } from "react-icons/fa";
-import { MdOutlineSend, MdOutlineSwapHoriz } from "react-icons/md";
+import { MdOutlineSend, MdChatBubbleOutline, MdOutlineSmartToy } from "react-icons/md";
 
 const COLOR_PALETTE = [
   "#0284c7", // Sky Blue
@@ -36,7 +41,7 @@ const COLOR_PALETTE = [
   "#4f46e5"  // Indigo
 ];
 
-// Emojis for quick picker
+// Popular emojis for quick picker
 const POPULAR_EMOJIS = [
   "👍", "❤️", "🔥", "🎉", "👏", "😊", "🙏", "✅",
   "👌", "😍", "🤣", "🙌", "💯", "🚀", "💡", "⭐",
@@ -82,13 +87,16 @@ const TelegramPage = () => {
   const [showChatInfo, setShowChatInfo] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(null);
+  const [copiedId, setCopiedId] = useState(false);
 
   // Account Modal States
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState(null);
   const [modalAccountName, setModalAccountName] = useState("");
   const [modalBotToken, setModalBotToken] = useState("");
+  const [modalBotUsername, setModalBotUsername] = useState("");
   const [modalColor, setModalColor] = useState(COLOR_PALETTE[0]);
+  const [showTokenPassword, setShowTokenPassword] = useState(false);
   const [verifyingToken, setVerifyingToken] = useState(false);
   const [verifiedBotInfo, setVerifiedBotInfo] = useState(null);
   const [verifyError, setVerifyError] = useState("");
@@ -278,7 +286,7 @@ const TelegramPage = () => {
     setIsSyncing(false);
   };
 
-  // Real Telegram API: Verify Token
+  // Real Telegram API: Verify Token & fetch Bot Info
   const handleVerifyToken = async (tokenToVerify) => {
     const token = (tokenToVerify || modalBotToken).trim();
     if (!token) {
@@ -299,6 +307,9 @@ const TelegramPage = () => {
         if (!modalAccountName) {
           setModalAccountName(data.result.first_name || data.result.username || "Telegram Bot");
         }
+        if (!modalBotUsername && data.result.username) {
+          setModalBotUsername(`@${data.result.username}`);
+        }
         return data.result;
       } else {
         setVerifyError(data.description || "Token មិនត្រឹមត្រូវ សូមពិនិត្យម្តងទៀត");
@@ -312,7 +323,7 @@ const TelegramPage = () => {
     }
   };
 
-  // Save Account (Add or Edit)
+  // Save Account (Add or Edit with Custom Bot Name and Custom Username)
   const handleSaveAccount = async (e) => {
     e.preventDefault();
     const token = modalBotToken.trim();
@@ -321,10 +332,19 @@ const TelegramPage = () => {
       return;
     }
 
-    const botInfo = verifiedBotInfo || (await handleVerifyToken(token));
-    if (!botInfo) return;
+    // Format username with @
+    let cleanUsername = modalBotUsername.trim();
+    if (cleanUsername && !cleanUsername.startsWith("@")) {
+      cleanUsername = `@${cleanUsername}`;
+    }
 
-    const accountName = modalAccountName.trim() || botInfo.first_name || "Telegram Account";
+    let botInfo = verifiedBotInfo;
+    if (!botInfo) {
+      botInfo = await handleVerifyToken(token);
+    }
+
+    const finalUsername = cleanUsername || (botInfo?.username ? `@${botInfo.username}` : "");
+    const accountName = modalAccountName.trim() || botInfo?.first_name || finalUsername || "Telegram Bot";
 
     if (editingAccountId) {
       // Edit existing
@@ -336,8 +356,8 @@ const TelegramPage = () => {
                 name: accountName,
                 botToken: token,
                 color: modalColor,
-                botInfo: botInfo,
-                username: botInfo.username ? `@${botInfo.username}` : ""
+                botInfo: botInfo || a.botInfo,
+                username: finalUsername
               }
             : a
         )
@@ -355,8 +375,8 @@ const TelegramPage = () => {
         name: accountName,
         botToken: token,
         color: modalColor,
-        botInfo: botInfo,
-        username: botInfo.username ? `@${botInfo.username}` : "",
+        botInfo: botInfo || { first_name: accountName, username: finalUsername.replace("@", "") },
+        username: finalUsername,
         lastUpdateId: 0,
         chats: []
       };
@@ -384,11 +404,13 @@ const TelegramPage = () => {
   const openEditAccountModal = (acc, e) => {
     e?.stopPropagation();
     setEditingAccountId(acc.id);
-    setModalAccountName(acc.name);
-    setModalBotToken(acc.botToken);
+    setModalAccountName(acc.name || "");
+    setModalBotToken(acc.botToken || "");
+    setModalBotUsername(acc.username || (acc.botInfo?.username ? `@${acc.botInfo.username}` : ""));
     setModalColor(acc.color || COLOR_PALETTE[0]);
     setVerifiedBotInfo(acc.botInfo || null);
     setVerifyError("");
+    setShowTokenPassword(false);
     setIsAccountModalOpen(true);
   };
 
@@ -401,9 +423,11 @@ const TelegramPage = () => {
     setEditingAccountId(null);
     setModalAccountName("");
     setModalBotToken("");
+    setModalBotUsername("");
     setModalColor(COLOR_PALETTE[accounts.length % COLOR_PALETTE.length]);
     setVerifiedBotInfo(null);
     setVerifyError("");
+    setShowTokenPassword(false);
     setIsAccountModalOpen(true);
   };
 
@@ -412,8 +436,10 @@ const TelegramPage = () => {
     setEditingAccountId(null);
     setModalAccountName("");
     setModalBotToken("");
+    setModalBotUsername("");
     setVerifiedBotInfo(null);
     setVerifyError("");
+    setShowTokenPassword(false);
   };
 
   // Real Telegram API: Send Message
@@ -454,7 +480,6 @@ const TelegramPage = () => {
       })
     );
 
-    // Call Real Telegram sendMessage API
     try {
       const res = await fetch(`https://api.telegram.org/bot${activeAccount.botToken}/sendMessage`, {
         method: "POST",
@@ -468,7 +493,6 @@ const TelegramPage = () => {
       const data = await res.json();
 
       if (data.ok && data.result) {
-        // Update message with real telegram message_id & status delivered
         setAccounts((prev) =>
           prev.map((acc) => {
             if (acc.id === activeAccountId) {
@@ -496,7 +520,6 @@ const TelegramPage = () => {
           })
         );
       } else {
-        // Mark failed
         alert(`ផ្ញើសារមិនជោគជ័យ៖ ${data.description || "Telegram API Error"}`);
         setAccounts((prev) =>
           prev.map((acc) => {
@@ -640,20 +663,23 @@ const TelegramPage = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-68px)] w-full bg-[#f8fafc] text-slate-900 overflow-hidden font-sans">
-      {/* Top Bar: Multi-Account Management (1 to 5 Telegram Accounts) */}
-      <div className="flex-shrink-0 bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-xs z-10">
-        <div className="flex items-center gap-3 overflow-x-auto py-1 scrollbar-none">
-          <div className="flex items-center gap-2 pr-3 border-r border-slate-200">
-            <div className="w-9 h-9 rounded-xl bg-sky-500 text-white flex items-center justify-center shadow-xs">
+      
+      {/* ── TOP BAR: Multi-Bot Management (1 to 5 Telegram Accounts) ── */}
+      <div className="flex-shrink-0 bg-white border-b border-slate-200/90 px-4 py-2.5 flex items-center justify-between shadow-xs z-10 backdrop-blur-md">
+        <div className="flex items-center gap-3 overflow-x-auto py-1 scrollbar-none max-w-[75%]">
+          
+          {/* Brand & Connection Badge */}
+          <div className="flex items-center gap-2.5 pr-3.5 border-r border-slate-200/80 flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-md shadow-sky-500/20">
               <FaTelegramPlane className="text-xl" />
             </div>
             <div>
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <span>Telegram Live</span>
+              <div className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Telegram Bots</span>
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               </div>
-              <div className="text-[11px] text-slate-700 font-medium">
-                {accounts.length}/5 គណនីពិតប្រាកដ
+              <div className="text-[10px] text-slate-500 font-semibold">
+                {accounts.length}/5 គណនី Bot
               </div>
             </div>
           </div>
@@ -666,37 +692,38 @@ const TelegramPage = () => {
                 <div
                   key={acc.id}
                   onClick={() => setActiveAccountId(acc.id)}
-                  className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all border ${
+                  className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all border ${
                     isActive
-                      ? "bg-sky-50 border-sky-300 text-sky-900 shadow-xs ring-1 ring-sky-400"
-                      : "bg-slate-50 border-slate-200 text-slate-900 hover:bg-slate-100"
+                      ? "bg-gradient-to-r from-sky-50 to-blue-50/60 border-sky-300 text-sky-950 shadow-xs ring-2 ring-sky-400/40"
+                      : "bg-slate-50/90 border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <span
-                    className="w-2.5 h-2.5 rounded-full"
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-xs"
                     style={{ backgroundColor: acc.color || "#0284c7" }}
                   ></span>
-                  <span className="max-w-[130px] truncate">{acc.name}</span>
+                  
+                  <span className="max-w-[120px] sm:max-w-[140px] truncate">{acc.name}</span>
 
                   {acc.username && (
-                    <span className="text-[10px] text-slate-700 font-normal hidden md:inline">
+                    <span className="text-[10px] text-sky-700 bg-sky-100/70 px-1.5 py-0.5 rounded-md font-mono hidden md:inline">
                       {acc.username}
                     </span>
                   )}
 
                   {/* Actions on hover */}
-                  <div className="flex items-center gap-1 ml-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-0.5 ml-1 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
-                      title="កែសម្រួលគណនី"
+                      title="កែសម្រួលគណនី Bot"
                       onClick={(e) => openEditAccountModal(acc, e)}
-                      className="p-1 hover:text-sky-600 rounded text-slate-700 hover:bg-white"
+                      className="p-1 hover:text-sky-600 rounded-md text-slate-500 hover:bg-white transition-colors cursor-pointer"
                     >
-                      <FaEdit className="text-[10px]" />
+                      <FaEdit className="text-[11px]" />
                     </button>
                     <button
-                      title="លុបគណនី"
+                      title="លុបគណនី Bot"
                       onClick={(e) => handleDeleteAccount(acc.id, e)}
-                      className="p-1 hover:text-rose-600 rounded text-slate-700 hover:bg-white"
+                      className="p-1 hover:text-rose-600 rounded-md text-slate-500 hover:bg-white transition-colors cursor-pointer"
                     >
                       <FaTrash className="text-[10px]" />
                     </button>
@@ -709,29 +736,32 @@ const TelegramPage = () => {
             {accounts.length < 5 && (
               <button
                 onClick={openAddAccountModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 border border-dashed border-sky-300 hover:bg-sky-100 hover:border-sky-400 transition-all cursor-pointer shadow-2xs"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-sky-700 bg-sky-50 border border-dashed border-sky-300 hover:bg-sky-100/80 hover:border-sky-400 transition-all cursor-pointer shadow-2xs whitespace-nowrap"
               >
-                <FaPlus className="text-[11px]" />
-                <span>+ ភ្ជាប់គណនី Telegram</span>
+                <FaPlus className="text-[10px]" />
+                <span>+ ភ្ជាប់ Bot ថ្មី</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Right Sync & Bot Link */}
-        <div className="flex items-center gap-2 pl-3">
+        <div className="flex items-center gap-2 pl-3 flex-shrink-0">
           {activeAccount?.username && (
             <button
               onClick={() => {
                 const url = `https://t.me/${activeAccount.username.replace("@", "")}`;
                 navigator.clipboard.writeText(url);
-                alert(`បានចម្លង Link Bot៖ ${url}\nផ្ញើ Link នេះទៅកាន់ User ដើម្បីឱ្យគាត់ចុច START!`);
+                setCopiedId(true);
+                setTimeout(() => setCopiedId(false), 2500);
               }}
               title="ចម្លង Link Bot ដើម្បីផ្ញើឱ្យ User ចុច START"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 transition-colors border border-sky-200 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 transition-all border border-sky-200 cursor-pointer shadow-2xs"
             >
               <FaExternalLinkAlt className="text-[10px]" />
-              <span className="hidden sm:inline">Link Bot: {activeAccount.username}</span>
+              <span className="hidden sm:inline">
+                {copiedId ? "បាន Copy Link!" : `Bot: ${activeAccount.username}`}
+              </span>
             </button>
           )}
 
@@ -740,10 +770,10 @@ const TelegramPage = () => {
               onClick={handleManualSync}
               disabled={isSyncing}
               title="ទាញយកសារថ្មីៗពី Telegram Server"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-800 bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all border border-slate-200 cursor-pointer shadow-2xs"
             >
               <FaSyncAlt className={`text-xs ${isSyncing ? "animate-spin text-sky-600" : ""}`} />
-              <span className="hidden sm:inline">Refresh Sync</span>
+              <span className="hidden sm:inline">Sync</span>
             </button>
           )}
         </div>
@@ -752,58 +782,59 @@ const TelegramPage = () => {
       {/* Main Messenger Area */}
       {accounts.length === 0 ? (
         /* Empty State: Prompt to connect first Telegram account */
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-slate-50">
-          <div className="w-20 h-20 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center text-4xl mb-4 shadow-sm">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-slate-50 to-slate-100">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center text-4xl mb-4 shadow-xl shadow-sky-500/25 animate-bounce">
             <FaTelegramPlane />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">
-            ភ្ជាប់គណនី Telegram ពិតប្រាកដរបស់អ្នក (Real Telegram Connection)
+          <h2 className="text-xl font-black text-slate-900 mb-2">
+            ភ្ជាប់ Telegram Bot របស់អ្នក (Custom Bot Name & Username)
           </h2>
-          <p className="text-sm text-slate-800 max-w-lg mb-6 leading-relaxed">
-            ដើម្បីដំណើរការឆាត និងផ្ញើសារ Telegram ពិតប្រាកដនៅក្នុងប្រព័ន្ធ MDM សូមភ្ជាប់គណនី Telegram Bot Token របស់អ្នក។ លោកអ្នកអាចភ្ជាប់បានរហូតដល់ <strong>5 គណនី</strong> ផ្សេងគ្នា។
+          <p className="text-sm text-slate-600 max-w-lg mb-6 leading-relaxed">
+            ដើម្បីផ្ញើ និងទទួលសារ Telegram ផ្ទាល់ក្នុងប្រព័ន្ធ MDM សូមបញ្ចូល <strong>Bot Token</strong>, <strong>Username</strong>, និង <strong>ឈ្មោះ Bot តាមចិត្តរបស់អ្នក</strong>។ អ្នកអាចភ្ជាប់បានរហូតដល់ <strong>5 Bots</strong> ផ្សេងគ្នា។
           </p>
 
           <button
             onClick={openAddAccountModal}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold text-sm shadow-lg shadow-sky-600/30 transition-all cursor-pointer transform hover:-translate-y-0.5"
           >
             <FaPlus />
-            <span>ភ្ជាប់គណនី Telegram ឥឡូវនេះ</span>
+            <span>+ ភ្ជាប់ Telegram Bot ឥឡូវនេះ</span>
           </button>
 
           {/* Quick Guide Card */}
-          <div className="mt-8 p-4 bg-white rounded-xl border border-slate-200 text-left max-w-md shadow-xs">
-            <div className="text-xs font-bold text-slate-900 mb-2 flex items-center gap-1.5">
-              <FaInfoCircle className="text-sky-600" />
-              <span>របៀបយក Telegram Bot Token ក្នុងរយៈពេល ៣០ វិនាទី៖</span>
+          <div className="mt-8 p-5 bg-white rounded-2xl border border-slate-200 text-left max-w-md shadow-sm">
+            <div className="text-xs font-bold text-slate-900 mb-2.5 flex items-center gap-2">
+              <FaInfoCircle className="text-sky-600 text-base" />
+              <span>របៀបបង្កើត Telegram Bot ក្នុងរយៈពេល ៣០ វិនាទី៖</span>
             </div>
-            <ol className="text-xs text-slate-800 space-y-1.5 list-decimal list-inside leading-relaxed">
+            <ol className="text-xs text-slate-600 space-y-2 list-decimal list-inside leading-relaxed">
               <li>បើក Telegram App ហើយស្វែងរក <strong>@BotFather</strong></li>
-              <li>ផ្ញើសារពាក្យ <code>/newbot</code> ហើយដាក់ឈ្មោះ Bot របស់អ្នក</li>
+              <li>ផ្ញើសារពាក្យ <code>/newbot</code> រួចដាក់ឈ្មោះ Bot និង Username</li>
               <li>ចម្លង (Copy) <strong>API Token</strong> (ឧ. <code>7123456789:AAHKl...</code>)</li>
-              <li>យកមកបិទភ្ជាប់ (Paste) ក្នុងប្រព័ន្ធ MDM នេះជាការស្រេច!</li>
+              <li>យកមកដាក់ក្នុងប្រព័ន្ធនេះ និងកំណត់ឈ្មោះ Bot ដោយខ្លួនឯងបានភ្លាមៗ!</li>
             </ol>
           </div>
         </div>
       ) : (
         <div className="flex-1 flex overflow-hidden">
-          {/* LEFT COLUMN: Chat List & Search */}
-          <div className="w-80 md:w-96 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col h-full">
+          
+          {/* ── LEFT COLUMN: Chat List & Search ── */}
+          <div className="w-80 md:w-96 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col h-full shadow-2xs z-5">
             {/* Search & New Chat Bar */}
             <div className="p-3 border-b border-slate-100 flex items-center gap-2">
               <div className="flex-1 relative">
-                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 text-xs" />
+                <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                 <input
                   type="text"
                   placeholder="ស្វែងរកសារ ឬ Chat..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:bg-white transition-all font-medium"
+                  className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-medium"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-800"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1"
                   >
                     <FaTimes className="text-xs" />
                   </button>
@@ -812,14 +843,14 @@ const TelegramPage = () => {
               <button
                 onClick={() => setIsNewChatModalOpen(true)}
                 title="ផ្ញើសារទៅកាន់ Telegram Chat ID ថ្មី"
-                className="p-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-colors shadow-2xs cursor-pointer"
+                className="p-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl transition-all shadow-md shadow-sky-600/20 cursor-pointer flex-shrink-0"
               >
                 <FaPlus className="text-xs" />
               </button>
             </div>
 
             {/* Category Filter Tabs */}
-            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100 text-[11px] font-bold text-slate-800 overflow-x-auto scrollbar-none">
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-700 overflow-x-auto scrollbar-none gap-1">
               {[
                 { id: "all", label: "ទាំងអស់" },
                 { id: "personal", label: "ឯកជន" },
@@ -830,10 +861,10 @@ const TelegramPage = () => {
                 <button
                   key={cat.id}
                   onClick={() => setFilterCategory(cat.id)}
-                  className={`px-2.5 py-1 rounded-md transition-all whitespace-nowrap cursor-pointer ${
+                  className={`px-3 py-1 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                     filterCategory === cat.id
-                      ? "bg-white text-sky-700 shadow-2xs font-bold"
-                      : "hover:text-slate-950 text-slate-700"
+                      ? "bg-white text-sky-700 shadow-xs font-black border border-slate-200/80"
+                      : "hover:text-slate-950 text-slate-600"
                   }`}
                 >
                   {cat.label}
@@ -843,28 +874,28 @@ const TelegramPage = () => {
 
             {/* Sync Alert Banner if error */}
             {syncError && (
-              <div className="bg-amber-50 border-b border-amber-200 px-3 py-1.5 text-[11px] text-amber-900 flex items-center gap-1.5">
+              <div className="bg-amber-50 border-b border-amber-200 px-3.5 py-2 text-[11px] text-amber-900 flex items-center gap-2">
                 <FaExclamationTriangle className="text-amber-600 flex-shrink-0" />
                 <span className="truncate">{syncError}</span>
               </div>
             )}
 
             {/* Chats List Stream */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100/80">
               {filteredChats.length === 0 ? (
-                <div className="p-8 text-center text-slate-700">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center mx-auto mb-2 text-xl">
-                    <FaTelegramPlane />
+                <div className="p-8 text-center text-slate-500">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5 text-xl">
+                    <MdChatBubbleOutline />
                   </div>
-                  <div className="text-xs font-bold text-slate-900 mb-1">
+                  <div className="text-xs font-bold text-slate-800 mb-1">
                     មិនទាន់មានការសន្ទនានៅឡើយទេ
                   </div>
-                  <div className="text-[11px] text-slate-800 mb-3">
+                  <div className="text-[11px] text-slate-500 mb-3 max-w-[200px] mx-auto">
                     ចុចប៊ូតុង <strong>+</strong> ខាងលើដើម្បីចាប់ផ្តើមឆាត ឬឱ្យ User ផ្ញើសារចូល Bot របស់អ្នក។
                   </div>
                   <button
                     onClick={() => setIsNewChatModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 transition-all cursor-pointer"
                   >
                     <FaPlus className="text-[10px]" />
                     <span>+ ចាប់ផ្តើមឆាតថ្មី</span>
@@ -895,13 +926,15 @@ const TelegramPage = () => {
                           })
                         );
                       }}
-                      className={`p-3 flex items-start gap-3 cursor-pointer transition-colors ${
-                        isSelected ? "bg-sky-50/80 border-l-4 border-sky-600" : "hover:bg-slate-50"
+                      className={`p-3 flex items-start gap-3 cursor-pointer transition-all ${
+                        isSelected
+                          ? "bg-sky-50/90 border-l-4 border-sky-600 shadow-2xs"
+                          : "hover:bg-slate-50/90"
                       }`}
                     >
                       {/* Avatar */}
                       <div
-                        className="w-10 h-10 rounded-full text-white font-bold flex items-center justify-center text-sm flex-shrink-0 shadow-2xs"
+                        className="w-10 h-10 rounded-xl text-white font-bold flex items-center justify-center text-sm flex-shrink-0 shadow-xs"
                         style={{ backgroundColor: chat.color || "#0284c7" }}
                       >
                         {chat.type === "group" ? (
@@ -922,23 +955,23 @@ const TelegramPage = () => {
                             {chat.name}
                           </h4>
                           {lastMsg && (
-                            <span className="text-[10px] text-slate-700 font-medium whitespace-nowrap">
+                            <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
                               {lastMsg.time}
                             </span>
                           )}
                         </div>
 
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-[11px] text-slate-800 truncate font-normal">
+                          <p className="text-[11px] text-slate-500 truncate font-normal">
                             {lastMsg ? (
                               <>
                                 {lastMsg.sender === "me" && (
-                                  <span className="text-sky-700 font-semibold mr-1">អ្នក៖</span>
+                                  <span className="text-sky-600 font-bold mr-1">អ្នក៖</span>
                                 )}
                                 {lastMsg.text}
                               </>
                             ) : (
-                              <span className="italic text-slate-600">គ្មានសារ</span>
+                              <span className="italic text-slate-400">គ្មានសារ</span>
                             )}
                           </p>
 
@@ -956,14 +989,15 @@ const TelegramPage = () => {
             </div>
           </div>
 
-          {/* CENTER COLUMN: Live Chat Message Stream */}
+          {/* ── CENTER COLUMN: Live Chat Message Stream ── */}
           {activeChat ? (
             <div className="flex-1 flex flex-col h-full bg-[#f1f5f9] relative">
+              
               {/* Active Chat Header */}
               <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-xs z-10">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-9 h-9 rounded-full text-white font-bold flex items-center justify-center text-sm shadow-2xs"
+                    className="w-10 h-10 rounded-xl text-white font-bold flex items-center justify-center text-sm shadow-xs"
                     style={{ backgroundColor: activeChat.color || "#0284c7" }}
                   >
                     {activeChat.type === "group" ? (
@@ -976,14 +1010,15 @@ const TelegramPage = () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-xs font-bold text-slate-900">{activeChat.name}</h3>
-                      <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 text-[9px] font-semibold uppercase">
+                      <h3 className="text-xs font-black text-slate-900">{activeChat.name}</h3>
+                      <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[9px] font-bold uppercase">
                         {activeChat.type}
                       </span>
                     </div>
-                    <div className="text-[10px] text-slate-700 font-medium">
-                      Chat ID: <code className="text-sky-700 font-bold">{activeChat.id}</code>
-                      {activeChat.username && ` • ${activeChat.username}`}
+                    <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
+                      <span>Chat ID:</span>
+                      <code className="text-sky-700 font-bold bg-sky-50 px-1 py-0.2 rounded font-mono">{activeChat.id}</code>
+                      {activeChat.username && <span>• {activeChat.username}</span>}
                     </div>
                   </div>
                 </div>
@@ -991,10 +1026,10 @@ const TelegramPage = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowChatInfo(!showChatInfo)}
-                    className="p-2 text-slate-700 hover:text-slate-950 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                    title="ព័ត៌មានលម្អិត"
+                    className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                    title="ព័ត៌មានលម្អិត Chat"
                   >
-                    <FaInfoCircle className="text-sm" />
+                    <FaInfoCircle className="text-base" />
                   </button>
                 </div>
               </div>
@@ -1002,13 +1037,13 @@ const TelegramPage = () => {
               {/* Messages Feed */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {activeChat.messages?.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center text-slate-700">
-                    <div className="w-12 h-12 rounded-full bg-white text-sky-600 flex items-center justify-center shadow-xs mb-2">
-                      <FaTelegramPlane className="text-xl" />
+                  <div className="flex flex-col items-center justify-center h-full text-center text-slate-400">
+                    <div className="w-14 h-14 rounded-2xl bg-white text-sky-500 flex items-center justify-center shadow-sm mb-3 text-2xl">
+                      <FaTelegramPlane />
                     </div>
-                    <div className="text-xs font-bold text-slate-900">ចាប់ផ្តើមការសន្ទនាផ្ទាល់</div>
-                    <div className="text-[11px] text-slate-800 mt-1 max-w-xs">
-                      សារទាំងអស់ត្រូវបានផ្ញើ និងទទួលផ្ទាល់ពី Telegram App របស់ភាគីម្ខាងទៀត។
+                    <div className="text-xs font-bold text-slate-800">ចាប់ផ្តើមការសន្ទនាផ្ទាល់</div>
+                    <div className="text-[11px] text-slate-500 mt-1 max-w-xs leading-relaxed">
+                      សារទាំងអស់ត្រូវបានផ្ញើ និងទទួលផ្ទាល់ពី Telegram របស់ភាគីម្ខាងទៀត។
                     </div>
                   </div>
                 ) : (
@@ -1021,23 +1056,23 @@ const TelegramPage = () => {
                         className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                       >
                         {!isMe && (
-                          <span className="text-[10px] font-bold text-slate-800 mb-1 ml-2">
+                          <span className="text-[10px] font-bold text-slate-600 mb-1 ml-2">
                             {msg.senderName || activeChat.name}
                           </span>
                         )}
 
                         <div
-                          className={`max-w-[75%] md:max-w-[65%] rounded-2xl px-3.5 py-2 text-xs shadow-xs leading-relaxed relative ${
+                          className={`max-w-[80%] md:max-w-[70%] rounded-2xl px-4 py-2.5 text-xs shadow-xs leading-relaxed relative ${
                             isMe
-                              ? "bg-sky-600 text-white rounded-tr-xs"
-                              : "bg-white text-slate-900 rounded-tl-xs border border-slate-200"
+                              ? "bg-gradient-to-r from-sky-600 to-blue-600 text-white rounded-tr-xs"
+                              : "bg-white text-slate-900 rounded-tl-xs border border-slate-200/80"
                           }`}
                         >
                           <p className="whitespace-pre-wrap break-words">{msg.text}</p>
 
                           <div
-                            className={`flex items-center justify-end gap-1 mt-1 text-[9px] font-medium ${
-                              isMe ? "text-sky-100" : "text-slate-600"
+                            className={`flex items-center justify-end gap-1.5 mt-1.5 text-[9px] font-medium ${
+                              isMe ? "text-sky-100" : "text-slate-400"
                             }`}
                           >
                             <span>{msg.time}</span>
@@ -1063,7 +1098,7 @@ const TelegramPage = () => {
 
               {/* Emoji Picker Popup */}
               {showEmojiPicker && (
-                <div className="absolute bottom-16 left-4 bg-white border border-slate-200 rounded-xl p-3 shadow-lg z-20 w-64 grid grid-cols-6 gap-2">
+                <div className="absolute bottom-18 left-4 bg-white border border-slate-200 rounded-2xl p-3 shadow-xl z-20 w-72 grid grid-cols-6 gap-2">
                   {POPULAR_EMOJIS.map((em, idx) => (
                     <button
                       key={idx}
@@ -1072,7 +1107,7 @@ const TelegramPage = () => {
                         setMessageInput((prev) => prev + em);
                         setShowEmojiPicker(false);
                       }}
-                      className="text-lg p-1 hover:bg-slate-100 rounded-md transition-colors text-center cursor-pointer"
+                      className="text-xl p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-center cursor-pointer"
                     >
                       {em}
                     </button>
@@ -1083,15 +1118,15 @@ const TelegramPage = () => {
               {/* Message Input Box */}
               <form
                 onSubmit={handleSendMessage}
-                className="bg-white border-t border-slate-200 p-3 flex items-center gap-2 shadow-xs"
+                className="bg-white border-t border-slate-200 p-3 flex items-center gap-2.5 shadow-xs"
               >
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="p-2 text-slate-700 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  className="p-2.5 text-slate-500 hover:text-sky-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                   title="Emoji"
                 >
-                  <FaSmile className="text-base" />
+                  <FaSmile className="text-lg" />
                 </button>
 
                 <input
@@ -1099,40 +1134,40 @@ const TelegramPage = () => {
                   placeholder={`ផ្ញើសារ Telegram ទៅកាន់ ${activeChat.name}...`}
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  className="flex-1 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-medium"
+                  className="flex-1 px-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-medium"
                 />
 
                 <button
                   type="submit"
                   disabled={!messageInput.trim()}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-sky-600/20 cursor-pointer"
                 >
-                  <MdOutlineSend className="text-sm" />
+                  <MdOutlineSend className="text-base" />
                   <span className="hidden sm:inline">ផ្ញើ</span>
                 </button>
               </form>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 text-slate-700 p-6">
-              <div className="w-16 h-16 rounded-2xl bg-white text-sky-600 flex items-center justify-center text-3xl shadow-sm mb-3">
+            <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 text-slate-500 p-6">
+              <div className="w-16 h-16 rounded-2xl bg-white text-sky-500 flex items-center justify-center text-3xl shadow-sm mb-3">
                 <FaTelegramPlane />
               </div>
               <h3 className="text-sm font-bold text-slate-900 mb-1">សូមជ្រើសរើសការសន្ទនា</h3>
-              <p className="text-xs text-slate-800">
+              <p className="text-xs text-slate-500">
                 ជ្រើសរើស Chat ពីបញ្ជីខាងឆ្វេង ឬបង្កើត Chat ថ្មីដើម្បីចាប់ផ្តើមឆាត។
               </p>
             </div>
           )}
 
-          {/* RIGHT COLUMN: Chat & Account Information Drawer */}
+          {/* ── RIGHT COLUMN: Chat & Account Information Drawer ── */}
           {showChatInfo && activeChat && (
-            <div className="w-72 bg-white border-l border-slate-200 p-4 flex flex-col justify-between overflow-y-auto">
+            <div className="w-72 bg-white border-l border-slate-200 p-4 flex flex-col justify-between overflow-y-auto shadow-2xs">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                   <h4 className="text-xs font-bold text-slate-900">ព័ត៌មាន Chat</h4>
                   <button
                     onClick={() => setShowChatInfo(false)}
-                    className="text-slate-700 hover:text-slate-950 p-1"
+                    className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
                   >
                     <FaTimes className="text-xs" />
                   </button>
@@ -1140,35 +1175,35 @@ const TelegramPage = () => {
 
                 <div className="text-center mb-4">
                   <div
-                    className="w-16 h-16 rounded-full text-white font-bold flex items-center justify-center text-xl mx-auto shadow-xs mb-2"
+                    className="w-16 h-16 rounded-2xl text-white font-bold flex items-center justify-center text-xl mx-auto shadow-xs mb-2.5"
                     style={{ backgroundColor: activeChat.color || "#0284c7" }}
                   >
                     {activeChat.name?.charAt(0)?.toUpperCase()}
                   </div>
-                  <h3 className="text-xs font-bold text-slate-900">{activeChat.name}</h3>
+                  <h3 className="text-xs font-black text-slate-900">{activeChat.name}</h3>
                   {activeChat.username && (
-                    <div className="text-[11px] text-sky-700 font-medium">
+                    <div className="text-[11px] text-sky-700 font-mono mt-0.5">
                       {activeChat.username}
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
+                <div className="space-y-3 text-xs bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-4">
                   <div>
-                    <span className="text-[10px] text-slate-700 font-bold block">Telegram Chat ID:</span>
-                    <span className="font-mono text-slate-900 select-all font-semibold">
+                    <span className="text-[10px] text-slate-500 font-bold block">Telegram Chat ID:</span>
+                    <span className="font-mono text-slate-900 select-all font-bold text-[11px]">
                       {activeChat.id}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-700 font-bold block">ប្រភេទ Chat:</span>
-                    <span className="text-slate-900 font-semibold uppercase text-[11px]">
+                    <span className="text-[10px] text-slate-500 font-bold block">ប្រភេទ Chat:</span>
+                    <span className="text-slate-900 font-bold uppercase text-[10px] bg-slate-200/70 px-1.5 py-0.5 rounded">
                       {activeChat.type}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-700 font-bold block">ចំនួនសារសរុប:</span>
-                    <span className="text-slate-900 font-semibold">
+                    <span className="text-[10px] text-slate-500 font-bold block">ចំនួនសារសរុប:</span>
+                    <span className="text-slate-900 font-bold">
                       {activeChat.messages?.length || 0} សារ
                     </span>
                   </div>
@@ -1193,7 +1228,7 @@ const TelegramPage = () => {
                     );
                   }
                 }}
-                className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <FaTrash className="text-[11px]" />
                 <span>សម្អាតប្រវត្តិសារ</span>
@@ -1203,62 +1238,82 @@ const TelegramPage = () => {
         </div>
       )}
 
-      {/* MODAL: Connect / Edit Telegram Account */}
+      {/* ── MODAL: Connect / Edit Telegram Bot (Token + Username + Custom Bot Name) ── */}
       {isAccountModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
-            <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FaTelegramPlane className="text-sky-600 text-lg" />
-                <h3 className="text-sm font-bold text-slate-900">
-                  {editingAccountId ? "កែសម្រួលគណនី Telegram" : "ភ្ជាប់គណនី Telegram ថ្មី (Real Connection)"}
-                </h3>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 animate-scaleUp">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-sky-50 to-blue-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-xs">
+                  <FaTelegramPlane className="text-base" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">
+                    {editingAccountId ? "កែសម្រួលគណនី Bot" : "ភ្ជាប់ Telegram Bot ថ្មី"}
+                  </h3>
+                  <p className="text-[10px] text-slate-500">
+                    កំណត់ Token, Username, និងឈ្មោះ Bot តាមចិត្ត
+                  </p>
+                </div>
               </div>
               <button
                 onClick={closeAccountModal}
-                className="text-slate-600 hover:text-slate-900 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-white transition-colors cursor-pointer"
               >
-                <FaTimes />
+                <FaTimes className="text-sm" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveAccount} className="p-5 space-y-4">
-              {/* Bot Token Input */}
+            <form onSubmit={handleSaveAccount} className="p-6 space-y-4">
+              
+              {/* 1. Bot Token Input */}
               <div>
                 <label className="block text-xs font-bold text-slate-900 mb-1">
-                  Telegram Bot API Token <span className="text-rose-600">*</span>
+                  1. Telegram Bot API Token <span className="text-rose-600">*</span>
                 </label>
                 <div className="flex gap-2">
-                  <input
-                    type="password"
-                    placeholder="ឧ. 7123456789:AAHKlQp..."
-                    value={modalBotToken}
-                    onChange={(e) => setModalBotToken(e.target.value)}
-                    required
-                    className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
-                  />
+                  <div className="relative flex-1">
+                    <input
+                      type={showTokenPassword ? "text" : "password"}
+                      placeholder="ឧ. 7123456789:AAHKlQp9..."
+                      value={modalBotToken}
+                      onChange={(e) => setModalBotToken(e.target.value)}
+                      required
+                      className="w-full pl-3 pr-9 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowTokenPassword(!showTokenPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    >
+                      {showTokenPassword ? <FaEyeSlash className="text-xs" /> : <FaEye className="text-xs" />}
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleVerifyToken()}
                     disabled={verifyingToken || !modalBotToken.trim()}
-                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                    className="px-3.5 py-2.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold text-xs rounded-xl transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
                   >
-                    {verifyingToken ? "កំពុងពិនិត្យ..." : "ពិនិត្យ Token"}
+                    <FaSyncAlt className={`text-[10px] ${verifyingToken ? "animate-spin text-sky-600" : ""}`} />
+                    <span>{verifyingToken ? "កំពុងពិនិត្យ..." : "ពិនិត្យ Token"}</span>
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-700 mt-1">
-                  យកពី <strong>@BotFather</strong> ក្នុង Telegram
+                <p className="text-[10px] text-slate-500 mt-1">
+                  យក Token ពី <strong>@BotFather</strong> ក្នុង Telegram
                 </p>
               </div>
 
               {/* Verified Result Banner */}
               {verifiedBotInfo && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-start gap-2">
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 flex items-start gap-2.5">
                   <FaCheck className="text-emerald-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="font-bold">បានផ្ទៀងផ្ទាត់ដោយជោគជ័យ!</div>
-                    <div className="text-[11px] text-emerald-800">
-                      ឈ្មោះ៖ <strong>{verifiedBotInfo.first_name}</strong> • Username: @{verifiedBotInfo.username}
+                    <div className="font-black text-emerald-900">បានផ្ទៀងផ្ទាត់ដោយជោគជ័យ!</div>
+                    <div className="text-[11px] text-emerald-800 mt-0.5">
+                      Bot: <strong>{verifiedBotInfo.first_name}</strong> • Username: @{verifiedBotInfo.username}
                     </div>
                   </div>
                 </div>
@@ -1266,38 +1321,59 @@ const TelegramPage = () => {
 
               {/* Verify Error Banner */}
               {verifyError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-center gap-2">
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-center gap-2">
                   <FaExclamationTriangle className="text-rose-600 flex-shrink-0" />
                   <span>{verifyError}</span>
                 </div>
               )}
 
-              {/* Account Label */}
+              {/* 2. Bot Username Input */}
               <div>
                 <label className="block text-xs font-bold text-slate-900 mb-1">
-                  ឈ្មោះគណនីក្នុង System (Account Name)
+                  2. Bot Username
                 </label>
                 <input
                   type="text"
-                  placeholder="ឧ. Telegram Customer Care"
+                  placeholder="ឧ. @my_mdm_system_bot"
+                  value={modalBotUsername}
+                  onChange={(e) => setModalBotUsername(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Username របស់ Bot (ឧ. @my_bot)
+                </p>
+              </div>
+
+              {/* 3. Custom Bot Name / Display Name */}
+              <div>
+                <label className="block text-xs font-bold text-slate-900 mb-1">
+                  3. ឈ្មោះ Bot ដោយខ្លួនឯង (Custom Bot Display Name) <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="ឧ. Bot ជំនួយការលក់, MDM System Bot, Bot សាខាទី១..."
                   value={modalAccountName}
                   onChange={(e) => setModalAccountName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
+                  required
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-bold"
                 />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  ឈ្មោះដែលអ្នកចង់ឱ្យបង្ហាញនៅក្នុងប្រព័ន្ធ (Account Label)
+                </p>
               </div>
 
               {/* Color Badge Picker */}
               <div>
-                <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                <label className="block text-xs font-bold text-slate-900 mb-2">
                   ពណ៌សម្គាល់ (Color Badge)
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   {COLOR_PALETTE.map((color, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => setModalColor(color)}
-                      className={`w-7 h-7 rounded-full transition-transform cursor-pointer ${
+                      className={`w-7 h-7 rounded-full transition-transform cursor-pointer shadow-xs ${
                         modalColor === color ? "scale-125 ring-2 ring-slate-900" : "hover:scale-110"
                       }`}
                       style={{ backgroundColor: color }}
@@ -1307,20 +1383,20 @@ const TelegramPage = () => {
               </div>
 
               {/* Footer Actions */}
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeAccountModal}
-                  className="px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   បោះបង់
                 </button>
                 <button
                   type="submit"
                   disabled={verifyingToken}
-                  className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+                  className="px-6 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-sky-600/25 cursor-pointer"
                 >
-                  រក្សាទុក & ភ្ជាប់
+                  {editingAccountId ? "រក្សាទុកការកែប្រែ" : "រក្សាទុក & ភ្ជាប់ Bot"}
                 </button>
               </div>
             </form>
@@ -1328,20 +1404,20 @@ const TelegramPage = () => {
         </div>
       )}
 
-      {/* MODAL: Send Message to New Telegram Chat ID */}
+      {/* ── MODAL: Send Message to New Telegram Chat ID ── */}
       {isNewChatModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
-            <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200 animate-scaleUp">
+            <div className="px-5 py-4 bg-gradient-to-r from-sky-50 to-blue-50 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FaPaperPlane className="text-sky-600 text-base" />
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-black text-slate-900">
                   ចាប់ផ្តើមឆាតទៅកាន់ Telegram ថ្មី
                 </h3>
               </div>
               <button
                 onClick={() => setIsNewChatModalOpen(false)}
-                className="text-slate-600 hover:text-slate-900 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
               >
                 <FaTimes />
               </button>
@@ -1358,9 +1434,9 @@ const TelegramPage = () => {
                   value={newChatTargetId}
                   onChange={(e) => setNewChatTargetId(e.target.value)}
                   required
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono font-medium"
                 />
-                <p className="text-[10px] text-slate-700 mt-1">
+                <p className="text-[10px] text-slate-500 mt-1">
                   អាចជា User ID, Group ID ឬ Channel Username
                 </p>
               </div>
@@ -1374,7 +1450,7 @@ const TelegramPage = () => {
                   placeholder="ឧ. អតិថិជន សុខ ចាន់ណា"
                   value={newChatName}
                   onChange={(e) => setNewChatName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
                 />
               </div>
 
@@ -1387,21 +1463,21 @@ const TelegramPage = () => {
                   placeholder="សរសេរសារដើម្បីផ្ញើភ្លាមៗ..."
                   value={newChatInitialMessage}
                   onChange={(e) => setNewChatInitialMessage(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium resize-none"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium resize-none"
                 />
               </div>
 
               {newChatError && (
                 <div>
                   {newChatError.startsWith("bot_cant_initiate:") ? (
-                    <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-950 space-y-2.5">
+                    <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-950 space-y-2.5">
                       <div className="flex items-start gap-2">
                         <FaExclamationTriangle className="text-amber-600 flex-shrink-0 mt-0.5 text-sm" />
                         <div>
                           <div className="font-bold text-slate-900">
                             គោលការណ៍ Telegram (Telegram Policy)
                           </div>
-                          <div className="text-[11px] text-slate-800 leading-relaxed mt-0.5">
+                          <div className="text-[11px] text-slate-700 leading-relaxed mt-0.5">
                             Bot មិនអាចផ្ញើសារទៅកាន់ User មុនបានឡើយ ប្រសិនបើ User នោះមិនទាន់ធ្លាប់បានចុច <strong>START</strong> ក្នុង Bot របស់អ្នកជាមុនសិន។
                           </div>
                         </div>
@@ -1409,7 +1485,7 @@ const TelegramPage = () => {
 
                       {/* Bot Link & Action */}
                       {newChatError.split(":")[1] && (
-                        <div className="bg-white p-2.5 rounded-lg border border-amber-200 flex items-center justify-between gap-2">
+                        <div className="bg-white p-2.5 rounded-xl border border-amber-200 flex items-center justify-between gap-2">
                           <div className="truncate font-mono text-[11px] text-sky-800 font-bold">
                             https://t.me/{newChatError.split(":")[1]}
                           </div>
@@ -1422,7 +1498,7 @@ const TelegramPage = () => {
                                 );
                                 alert("បានចម្លង Link Bot រួចរាល់! សូមផ្ញើ Link នេះទៅកាន់ User ដើម្បីឱ្យគាត់ចុច START។");
                               }}
-                              className="px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-[10px] rounded-md border border-sky-200 cursor-pointer"
+                              className="px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-[10px] rounded-lg border border-sky-200 cursor-pointer"
                             >
                               Copy Link
                             </button>
@@ -1430,7 +1506,7 @@ const TelegramPage = () => {
                               href={`https://t.me/${newChatError.split(":")[1]}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-[10px] rounded-md flex items-center gap-1 cursor-pointer"
+                              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-[10px] rounded-lg flex items-center gap-1 cursor-pointer"
                             >
                               <span>បើក Telegram</span>
                               <FaExternalLinkAlt className="text-[8px]" />
@@ -1439,7 +1515,7 @@ const TelegramPage = () => {
                         </div>
                       )}
 
-                      <div className="text-[10px] text-slate-700">
+                      <div className="text-[10px] text-slate-600">
                         💡 <strong>វិធីដោះស្រាយ៖</strong> គ្រាន់តែឱ្យ User ម្ចាស់ Chat ID នេះចុចបើក Bot រួចចុច <strong>START</strong> (ឬផ្ញើសារមួយម៉ាត់) នោះប្រព័ន្ធនឹងចាប់ផ្ដើមឆាតបានភ្លាមៗ!
                       </div>
                     </div>
@@ -1456,14 +1532,14 @@ const TelegramPage = () => {
                 <button
                   type="button"
                   onClick={() => setIsNewChatModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   បោះបង់
                 </button>
                 <button
                   type="submit"
                   disabled={isSendingNewChat || !newChatTargetId.trim()}
-                  className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-sky-600/20 cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <FaPaperPlane className="text-xs" />
                   <span>{isSendingNewChat ? "កំពុងផ្ញើ..." : "ផ្ញើសារ & បង្កើត Chat"}</span>
