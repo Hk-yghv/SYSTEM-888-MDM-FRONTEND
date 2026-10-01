@@ -69,6 +69,28 @@ export const exportToExcel = (dataOrTitle, filenameOrColumns, optionalData, bran
 
     const colHeaders = columns ? columns.map(c => typeof c === 'string' ? c : (c.header || c.accessor || '')) : Object.keys(data[0]);
 
+    // Calculate auto column widths based on maximum content length
+    const colWidths = colHeaders.map((header, colIdx) => {
+        let maxLen = String(header || '').length;
+        // Count Khmer characters for wider visual scaling
+        const headerKhmer = (String(header || '').match(/[\u1780-\u17FF]/g) || []).length;
+        maxLen += headerKhmer * 0.5;
+
+        data.forEach((row, rowIdx) => {
+            const val = columns ? extractCellText(columns[colIdx], row, rowIdx) : (row[colHeaders[colIdx]] !== undefined && row[colHeaders[colIdx]] !== null ? String(row[colHeaders[colIdx]]) : '');
+            const str = String(val || '');
+            const khmerCount = (str.match(/[\u1780-\u17FF]/g) || []).length;
+            const effectiveLen = str.length + (khmerCount * 0.5);
+            if (effectiveLen > maxLen) {
+                maxLen = effectiveLen;
+            }
+        });
+
+        // Generous character width (approx 8.5px to 10px per character + cell padding)
+        const computedWidth = Math.max(90, Math.ceil(maxLen * 9.5 + 40));
+        return Math.min(600, computedWidth); // Cap max column width at 600px
+    });
+
     // Build styled HTML string for Excel
     const excelContent = `
         <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -80,24 +102,34 @@ export const exportToExcel = (dataOrTitle, filenameOrColumns, optionalData, bran
                     <x:ExcelWorksheets>
                         <x:ExcelWorksheet>
                             <x:Name>${title.replace(/[\\/?*\[\]]/g, '_').slice(0, 30)}</x:Name>
-                            <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+                            <x:WorksheetOptions>
+                                <x:DisplayGridlines/>
+                                <x:Selected/>
+                                <x:ProtectContents>False</x:ProtectContents>
+                                <x:ProtectObjects>False</x:ProtectObjects>
+                                <x:ProtectScenarios>False</x:ProtectScenarios>
+                            </x:WorksheetOptions>
                         </x:ExcelWorksheet>
                     </x:ExcelWorksheets>
                 </x:ExcelWorkbook>
             </xml>
             <![endif]-->
             <style>
-                body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 11pt; }
-                .title-header { background-color: #1e1b4b; color: #ffffff; font-size: 16pt; font-weight: bold; padding: 12px; height: 38px; text-align: left; }
-                .subtitle-header { background-color: #312e81; color: #c7d2fe; font-size: 10pt; padding: 6px; italic: true; height: 24px; }
-                th { background-color: #4f46e5 !important; color: #ffffff !important; font-weight: bold; border: 1px solid #312e81; padding: 8px 12px; height: 30px; font-size: 10pt; text-transform: uppercase; text-align: left; }
-                td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 10pt; vertical-align: middle; color: #0f172a; }
+                body { font-family: 'Segoe UI', 'Khmer OS Battambang', Tahoma, Arial, sans-serif; font-size: 11pt; }
+                table { border-collapse: collapse; table-layout: auto; }
+                .title-header { background-color: #1e1b4b; color: #ffffff; font-size: 15pt; font-weight: bold; padding: 12px; height: 38px; text-align: left; white-space: nowrap !important; }
+                .subtitle-header { background-color: #312e81; color: #c7d2fe; font-size: 10pt; padding: 6px; italic: true; height: 24px; white-space: nowrap !important; }
+                th { background-color: #4f46e5 !important; color: #ffffff !important; font-weight: bold; border: 1px solid #312e81; padding: 8px 14px; height: 32px; font-size: 10pt; text-transform: uppercase; text-align: center; white-space: nowrap !important; mso-number-format: "\\@"; }
+                td { border: 1px solid #cbd5e1; padding: 7px 14px; font-size: 10pt; vertical-align: middle; color: #0f172a; white-space: nowrap !important; mso-number-format: "\\@"; }
                 tr.even { background-color: #f8fafc; }
                 tr.summary { background-color: #e0e7ff !important; font-weight: bold; color: #1e1b4b; }
             </style>
         </head>
         <body>
             <table>
+                <colgroup>
+                    ${colWidths.map(w => `<col width="${w}" style="width: ${w}px;" />`).join('')}
+                </colgroup>
                 <tr>
                     <td colspan="${colHeaders.length}" class="title-header">${systemTitle} — ${title}</td>
                 </tr>
@@ -107,7 +139,7 @@ export const exportToExcel = (dataOrTitle, filenameOrColumns, optionalData, bran
                 <tr></tr>
                 <thead>
                     <tr>
-                        ${colHeaders.map(h => `<th>${h}</th>`).join('')}
+                        ${colHeaders.map((h, i) => `<th style="width: ${colWidths[i]}px;">${h}</th>`).join('')}
                     </tr>
                 </thead>
                 <tbody>
@@ -116,10 +148,10 @@ export const exportToExcel = (dataOrTitle, filenameOrColumns, optionalData, bran
         const isTotal = row.isTotalRow || row.isGrandTotal;
         return `
                             <tr class="${isTotal ? 'summary' : (isEven ? 'even' : '')}">
-                                ${columns ? columns.map(c => {
+                                ${columns ? columns.map((c, i) => {
             const val = extractCellText(c, row, idx);
-            return `<td>${val}</td>`;
-        }).join('') : Object.keys(data[0]).map(h => `<td>${row[h] !== undefined && row[h] !== null ? row[h] : ''}</td>`).join('')}
+            return `<td style="width: ${colWidths[i]}px;">${val}</td>`;
+        }).join('') : Object.keys(data[0]).map((h, i) => `<td style="width: ${colWidths[i]}px;">${row[h] !== undefined && row[h] !== null ? row[h] : ''}</td>`).join('')}
                             </tr>
                         `;
     }).join('')}
