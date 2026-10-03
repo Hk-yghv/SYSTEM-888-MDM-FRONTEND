@@ -575,7 +575,7 @@ const Dashboard = () => {
     // Active customer payment details for the tables
     const dueCustomerRows = useMemo(() => {
         return installmentCustomerRows
-            .filter(r => !r.isPaid && r.scheduledAmount > 0)
+            .filter(r => r.scheduledAmount > 0)
             .sort((a, b) => {
                 if (!a.dueDate) return 1;
                 if (!b.dueDate) return -1;
@@ -628,6 +628,10 @@ const Dashboard = () => {
     const dueTotalRemaining = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.outstandingAmount + r.penaltyAmount, 0), [dueCustomerRows]);
     const lateTotalPenalty = useMemo(() => overdueCustomerRows.reduce((s, r) => s + r.penaltyAmount, 0), [overdueCustomerRows]);
     const penaltyTotalAmount = useMemo(() => penaltyPaymentRows.reduce((s, r) => s + r.penaltyAmount, 0), [penaltyPaymentRows]);
+
+    const totalPaidPenalty = penaltyTotalAmount;
+    const totalUnpaidPenalty = lateTotalPenalty;
+    const totalPenaltyAll = totalPaidPenalty + totalUnpaidPenalty;
 
     const totalOverdueAlertCount = overdueCustomerRows.length;
 
@@ -1095,7 +1099,9 @@ const Dashboard = () => {
                     <div className="card-value color-purple">{formatMoney(totalScheduledAmount)}</div>
                     <div className="exec-card-footer split-footer">
                         <div className="stacked-stat">
-                            <span>ពិន័យ: <strong>{formatMoney(totalPenaltyAmount)}</strong></span>
+                            <span>ពិន័យសរុប: <strong>{formatMoney(totalPenaltyAll)}</strong></span>
+                            <span>ពិន័យបានបង់: <strong>{formatMoney(totalPaidPenalty)}</strong></span>
+                            <span>ពិន័យមិនទាន់បង់: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
                             <span>កាតព្វកិច្ចសរុប: <strong>{formatMoney(totalObligation)}</strong></span>
                         </div>
                         <span className="badge-pill badge-scheduled">SCHEDULED</span>
@@ -1113,6 +1119,7 @@ const Dashboard = () => {
                     <div className="card-value color-orange">{formatMoney(totalOutstandingAmount)}</div>
                     <div className="exec-card-footer">
                         <div className="stacked-stat">
+                            <span>ពិន័យមិនទាន់ប្រមូល: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
                             <span>អត្រាមិនទាន់ប្រមូល: <strong>{totalObligation > 0 ? ((totalOutstandingAmount / totalObligation) * 100).toFixed(2) : '0.00'}%</strong></span>
                         </div>
                         <span className="badge-pill badge-outstanding">OUTSTANDING</span>
