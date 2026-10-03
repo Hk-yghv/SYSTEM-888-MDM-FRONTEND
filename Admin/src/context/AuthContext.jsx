@@ -222,6 +222,17 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const loginWithAuthData = (data) => {
+        if (!data || !data.user || !data.token) {
+            throw new Error('Invalid authentication response');
+        }
+        setUser(data.user);
+        setToken(data.token);
+        setSecureItem('mdm_user', data.user);
+        setSecureItem('mdm_token', data.token);
+        return { success: true, user: data.user, deviceInfo: data.deviceInfo };
+    };
+
     // Granular RBAC Check Function — Strict Deny-by-Default
     const hasPermission = (pagePath, action = 'read') => {
         if (!user) return false;
@@ -245,7 +256,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, verifyOtp, logout, hasPermission, updateUserState, API_BASE, API_BASE1, API_BASE2, smartFetch, getActiveApiBase, API_POOL }}>
+        <AuthContext.Provider value={{ user, token, loading, login, verifyOtp, loginWithAuthData, logout, hasPermission, updateUserState, API_BASE, API_BASE1, API_BASE2, smartFetch, getActiveApiBase, API_POOL }}>
             {/* Fullscreen Blocked Modal — shown immediately when admin blocks the user */}
             {isBlocked && (
                 <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md select-none animate-fade-in">
