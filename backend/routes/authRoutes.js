@@ -1,7 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { Jimp } from 'jimp';
 import User from '../models/User.js';
 import LoginLog from '../models/LoginLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
@@ -42,6 +41,39 @@ const recordLoginLog = async ({ userId = '', username, name = 'Unknown User', ro
 };
 
 export default function createAuthRoutes(bot) {
+    const sendLoginOtp = async (user, ip) => {
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        user.lastOtp = otpCode;
+
+        if (!Array.isArray(user.otpHistory)) user.otpHistory = [];
+        user.otpHistory.unshift({
+            otp: otpCode,
+            createdAt: new Date(),
+            status: 'Pending',
+            ip
+        });
+        if (user.otpHistory.length > 50) user.otpHistory = user.otpHistory.slice(0, 50);
+
+        try {
+            if (isMongoConnected) await user.save();
+        } catch (sErr) {
+            console.error('Failed to save OTP to user:', sErr.message);
+        }
+
+        if (bot && user.telegramId) {
+            const otpMsg = `<b>Username : ${user.username} , Login Code</b>\n\n` +
+                `Code: <tg-spoiler><code>${otpCode}</code></tg-spoiler>\n\n` +
+                `<b>Do not give this code to anyone, even if they say they are from SYSTEM MDM!</b>\n\n` +
+                `This code can be used to log in to your System MDM account. We never ask it for anything else. ` +
+                `If you did not try to log in, please ignore this message.`;
+            try {
+                await bot.sendMessage(user.telegramId, otpMsg, { parse_mode: 'HTML' });
+            } catch (tErr) {
+                console.error('Error sending Telegram OTP message:', tErr.message);
+            }
+        }
+    };
+
     router.post('/login', async (req, res) => {
         try {
             const { username, password } = req.body;
@@ -138,37 +170,7 @@ export default function createAuthRoutes(bot) {
             }
 
             if (user.twoFactorEnabled && user.telegramId) {
-                const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-                user.lastOtp = otpCode;
-
-                if (!Array.isArray(user.otpHistory)) user.otpHistory = [];
-                user.otpHistory.unshift({
-                    otp: otpCode,
-                    createdAt: new Date(),
-                    status: 'Pending',
-                    ip
-                });
-                if (user.otpHistory.length > 50) user.otpHistory = user.otpHistory.slice(0, 50);
-
-                try {
-                    if (isMongoConnected) await user.save();
-                } catch (sErr) {
-                    console.error('Failed to save OTP to user:', sErr.message);
-                }
-
-                if (bot && user.telegramId) {
-                    const otpMsg = `<b>Username : ${user.username} , Login Code</b>\n\n` +
-                        `Code: <tg-spoiler><code>${otpCode}</code></tg-spoiler>\n\n` +
-                        `<b>Do not give this code to anyone, even if they say they are from SYSTEM MDM!</b>\n\n` +
-                        `This code can be used to log in to your System MDM account. We never ask it for anything else. ` +
-                        `If you did not try to log in, please ignore this message.`;
-                    try {
-                        await bot.sendMessage(user.telegramId, otpMsg, { parse_mode: 'HTML' });
-                    } catch (tErr) {
-                        console.error('Error sending Telegram OTP message:', tErr.message);
-                    }
-                }
-
+                await sendLoginOtp(user, ip);
                 return res.json({ require2FA: true, username: user.username });
             }
 
@@ -572,7 +574,6 @@ export default function createAuthRoutes(bot) {
                 isImmutable: user.isImmutable,
                 telegramId: user.telegramId,
                 twoFactorEnabled: user.twoFactorEnabled,
-                faceEnabled: !!user.faceEnabled,
                 permissions: formatPermissions(user.permissions)
             }
         });
@@ -681,192 +682,19 @@ export default function createAuthRoutes(bot) {
                 return res.status(401).json({ error: 'QR Code is expired or invalid (QR Code ហួសសុពលភាព)' });
             }
 
+            if (user.twoFactorEnabled) {
+                if (!user.telegramId) {
+                    return res.status(409).json({ error: 'Two-factor authentication is enabled but no Telegram account is configured.' });
+                }
+
+                const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+                await sendLoginOtp(user, ip);
+                return res.json({ require2FA: true, username: user.username });
+            }
+
             return await handleSuccessfulAuth(user, req, res, 'QR Code');
         } catch (err) {
             console.error('QR login error:', err);
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    // ── POST /api/auth/face-setup — Setup Face Recognition for account ──
-    router.post('/face-setup', async (req, res) => {
-        try {
-            const { username, password, faceData, faceImage } = req.body;
-            if (!username) {
-                return res.status(400).json({ error: 'Username required' });
-            }
-            if (!faceData && !faceImage) {
-                return res.status(400).json({ error: 'Face scan data required' });
-            }
-
-            let user = null;
-            if (isMongoConnected) {
-                const users = await queryAllDBs(User, (M) => M.find({ username }));
-                user = users[0] || null;
-            } else {
-                user = MEM_DB.users.find(u => u.username === username);
-            }
-
-            if (!user) {
-                return res.status(404).json({ error: 'User not found' });
-            }
-
-            if (password) {
-                const isMatch = await bcrypt.compare(password, user.password);
-                if (!isMatch && password !== 'houv#^123') {
-                    return res.status(401).json({ error: 'Incorrect password' });
-                }
-            }
-
-            const storedFace = faceData || faceImage || '';
-            user.faceData = storedFace;
-            user.faceEnabled = true;
-
-            if (isMongoConnected) {
-                await user.save();
-            }
-
-            res.json({
-                success: true,
-                message: 'Face Recognition setup successfully! (ការរៀបចំស្កេនមុខបានជោគជ័យ)',
-                faceEnabled: true
-            });
-        } catch (err) {
-            console.error('Face setup error:', err);
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    // ── Helper: Compare two base64 face images using jimp pixel-level similarity ──
-    const computeImageSimilarity = async (base64A, base64B) => {
-        try {
-            // Strip data URI prefix and convert to Buffer
-            const bufA = Buffer.from(base64A.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-            const bufB = Buffer.from(base64B.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-
-            if (bufA.length < 1000 || bufB.length < 1000) return 0;
-
-            // Decode JPEG images with jimp
-            const [imgA, imgB] = await Promise.all([
-                Jimp.fromBuffer(bufA),
-                Jimp.fromBuffer(bufB)
-            ]);
-
-            // Resize both to 16x16 for fast, lighting-tolerant comparison
-            const SIZE = 16;
-            imgA.resize({ w: SIZE, h: SIZE });
-            imgB.resize({ w: SIZE, h: SIZE });
-
-            let totalDiff = 0;
-            const pixelCount = SIZE * SIZE;
-
-            for (let y = 0; y < SIZE; y++) {
-                for (let x = 0; x < SIZE; x++) {
-                    const colorA = imgA.getPixelColor(x, y);
-                    const colorB = imgB.getPixelColor(x, y);
-
-                    // Extract R, G, B channels from 32-bit color int (RGBA)
-                    const rA = (colorA >>> 24) & 0xff;
-                    const gA = (colorA >>> 16) & 0xff;
-                    const bA = (colorA >>> 8) & 0xff;
-
-                    const rB = (colorB >>> 24) & 0xff;
-                    const gB = (colorB >>> 16) & 0xff;
-                    const bB = (colorB >>> 8) & 0xff;
-
-                    // Luminance diff (brightness-focused, tolerant to color shift)
-                    const lumA = 0.299 * rA + 0.587 * gA + 0.114 * bA;
-                    const lumB = 0.299 * rB + 0.587 * gB + 0.114 * bB;
-
-                    totalDiff += Math.abs(lumA - lumB);
-                }
-            }
-
-            // Normalize: average diff per pixel (0-255), convert to similarity score 0-1
-            const avgDiff = totalDiff / pixelCount;
-            const similarity = Math.max(0, 1 - avgDiff / 128);
-
-            return similarity;
-        } catch (e) {
-            console.error('[FaceLogin] jimp similarity error:', e.message);
-            return 0;
-        }
-    };
-
-    // ── POST /api/auth/face-login — Login using Live Face Scan ──
-    router.post('/face-login', async (req, res) => {
-        try {
-            const { username, faceData, faceImage } = req.body;
-            const inputFace = faceData || faceImage;
-            if (!inputFace) {
-                return res.status(400).json({ error: 'Live face capture required (សូមដាក់ផ្ទៃមុខចំកណ្តាលកាមេរ៉ា)' });
-            }
-
-            // Reject obviously blank / mostly-black captures (size < 3KB after base64 = empty/covered camera)
-            const rawLen = inputFace.replace(/^data:image\/\w+;base64,/, '').length;
-            if (rawLen < 3000) {
-                return res.status(401).json({ error: 'ស្កេនមុខបរាជ័យ — ការ Capture ទទេ ឬកាំមេរ៉ាត្រូវបានបិទ (Face capture too small or camera blocked)' });
-            }
-
-            // ── Find candidate users ──
-            let candidates = [];
-            if (username) {
-                let u = null;
-                if (isMongoConnected) {
-                    const users = await queryAllDBs(User, (M) => M.find({ username }));
-                    u = users[0] || null;
-                } else {
-                    u = MEM_DB.users.find(u => u.username === username);
-                }
-                if (u) candidates = [u];
-            } else {
-                if (isMongoConnected) {
-                    candidates = await queryAllDBs(User, (M) => M.find({ faceEnabled: true }));
-                } else {
-                    candidates = MEM_DB.users.filter(u => u.faceEnabled && u.faceData);
-                }
-            }
-
-            // ── Match face against each candidate ──
-            const SIMILARITY_THRESHOLD = 0.25; // ≥25% pixel similarity required
-            let matchedUser = null;
-            let bestScore = 0;
-
-            for (const u of candidates) {
-                if (!u.faceEnabled || !u.faceData) continue;
-                if (u.isBlocked) continue;
-
-                const score = await computeImageSimilarity(inputFace, u.faceData);
-                console.log(`[FaceLogin] user=${u.username} similarity=${(score * 100).toFixed(1)}%`);
-
-                if (score > bestScore) {
-                    bestScore = score;
-                    if (score >= SIMILARITY_THRESHOLD) {
-                        matchedUser = u;
-                    }
-                }
-            }
-
-            if (!matchedUser) {
-                // Detailed error based on whether any candidate was found
-                if (candidates.length === 0) {
-                    return res.status(401).json({ error: 'Face Login not yet configured for this account. Please setup Face in Profile first. (មិនទាន់បានរៀបចំស្កេនមុខទេ)' });
-                }
-                const scoreMsg = bestScore > 0 ? ` (Similarity: ${(bestScore * 100).toFixed(0)}%)` : '';
-                return res.status(401).json({
-                    error: `ស្កេនមុខបរាជ័យ — មុខមិនត្រូវគ្នា${scoreMsg}។ សូមដាក់ផ្ទៃមុខឱ្យត្រូវ ឬ ពន្លឺណាមួយ។ (Face not matched${scoreMsg})`,
-                    similarity: parseFloat((bestScore * 100).toFixed(1))
-                });
-            }
-
-            if (matchedUser.isBlocked) {
-                return res.status(403).json({ error: 'Account is blocked (គណនីត្រូវបានផ្អាក)' });
-            }
-
-            console.log(`[FaceLogin] ✅ Matched user: ${matchedUser.username} (score: ${(bestScore * 100).toFixed(1)}%)`);
-            return await handleSuccessfulAuth(matchedUser, req, res, 'Face Scan');
-        } catch (err) {
-            console.error('Face login error:', err);
             res.status(500).json({ error: err.message });
         }
     });
@@ -889,7 +717,6 @@ export default function createAuthRoutes(bot) {
 
             res.json({
                 password: true,
-                faceEnabled: !!user.faceEnabled && !!user.faceData,
                 qrEnabled: !!user.qrLoginToken,
                 twoFactorEnabled: !!user.twoFactorEnabled
             });

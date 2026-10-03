@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
@@ -9,14 +9,12 @@ import {
     FaLock,
     FaCheckCircle,
     FaQrcode,
-    FaCamera,
     FaDownload,
     FaTimes,
-    FaSync,
     FaUserCheck,
     FaExclamationTriangle
 } from 'react-icons/fa';
-import { MdOutlineEmail, MdFace } from 'react-icons/md';
+import { MdOutlineEmail } from 'react-icons/md';
 import { QRCodeCanvas } from 'qrcode.react';
 
 // MDM App Icon as SVG data URL for QR Code center embedding
@@ -49,103 +47,6 @@ const Profile = () => {
     const [qrLoading, setQrLoading] = useState(false);
     const [qrError, setQrError] = useState('');
     const qrCanvasRef = useRef(null);
-
-    // ── Login Methods: Face Setup Modal State ──
-    const [showFaceModal, setShowFaceModal] = useState(false);
-    const [facePassword, setFacePassword] = useState('');
-    const [faceStream, setFaceStream] = useState(null);
-    const [faceCapturedImage, setFaceCapturedImage] = useState(null);
-    const [faceSaving, setFaceSaving] = useState(false);
-    const [faceError, setFaceError] = useState('');
-    const [faceSuccess, setFaceSuccess] = useState('');
-    const faceVideoRef = useRef(null);
-    const faceCanvasRef = useRef(null);
-
-    // Cleanup camera stream when face modal closes
-    useEffect(() => {
-        if (!showFaceModal && faceStream) {
-            faceStream.getTracks().forEach(track => track.stop());
-            setFaceStream(null);
-        }
-    }, [showFaceModal, faceStream]);
-
-    // Handle Start Camera for Face Setup
-    const startFaceCamera = async () => {
-        setFaceError('');
-        setFaceCapturedImage(null);
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' }
-            });
-            setFaceStream(stream);
-            if (faceVideoRef.current) {
-                faceVideoRef.current.srcObject = stream;
-            }
-        } catch (err) {
-            setFaceError('មិនអាចបើកកាមេរ៉ាបានទេ សូមអនុញ្ញាត Camera Permission (Camera access denied)');
-        }
-    };
-
-    // Capture Frame from Camera
-    const captureFaceSnapshot = () => {
-        if (!faceVideoRef.current) return;
-        const video = faceVideoRef.current;
-        const canvas = faceCanvasRef.current || document.createElement('canvas');
-        canvas.width = 400;
-        canvas.height = 400;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, 400, 400);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        setFaceCapturedImage(dataUrl);
-
-        // Stop stream after capture
-        if (faceStream) {
-            faceStream.getTracks().forEach(track => track.stop());
-            setFaceStream(null);
-        }
-    };
-
-    // Save Face Setup
-    const handleSaveFaceSetup = async () => {
-        if (!faceCapturedImage) {
-            setFaceError('សូមថតរូបមុខរបស់អ្នកសិន (Please capture your face)');
-            return;
-        }
-        setFaceSaving(true);
-        setFaceError('');
-        setFaceSuccess('');
-
-        try {
-            const res = await fetch(`${API_BASE}/auth/face-setup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: user?.username,
-                    password: facePassword || undefined,
-                    faceData: faceCapturedImage
-                })
-            });
-            const data = await res.json();
-            setFaceSaving(false);
-
-            if (res.ok) {
-                setFaceSuccess('រៀបចំស្កេនផ្ទៃមុខបានជោគជ័យ! (Face Recognition Configured)');
-                if (user) {
-                    updateUserState({ ...user, faceEnabled: true });
-                }
-                setTimeout(() => {
-                    setShowFaceModal(false);
-                    setFaceCapturedImage(null);
-                    setFaceSuccess('');
-                }, 1500);
-            } else {
-                setFaceError(data.error || 'Failed to save face recognition');
-            }
-        } catch (err) {
-            setFaceSaving(false);
-            setFaceError('Server error while saving face');
-        }
-    };
 
     // Verify Account & Generate QR Code
     const handleGenerateQr = async (e) => {
@@ -301,7 +202,7 @@ const Profile = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                     {/* 1. Password (ពាក្យសម្ងាត់) */}
                     <div className="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 hover:border-indigo-500/40 transition-all flex flex-col justify-between space-y-3">
                         <div className="space-y-2">
@@ -327,48 +228,7 @@ const Profile = () => {
                         </div>
                     </div>
 
-                    {/* 2. Face Scan (ស្កេនផ្ទៃមុខ) */}
-                    <div className="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 hover:border-purple-500/40 transition-all flex flex-col justify-between space-y-3">
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <div className="w-10 h-10 rounded-xl bg-purple-950/80 border border-purple-700/60 flex items-center justify-center text-purple-400">
-                                    <MdFace className="text-2xl" />
-                                </div>
-                                {user?.faceEnabled ? (
-                                    <span className="px-2.5 py-1 bg-emerald-950/80 border border-emerald-700/80 text-emerald-300 rounded-full text-[11px] font-bold flex items-center gap-1.5 shadow-sm">
-                                        <FaCheckCircle className="text-emerald-400 text-xs" /> Done (រួចរាល់)
-                                    </span>
-                                ) : (
-                                    <span className="px-2.5 py-1 bg-amber-950/80 border border-amber-700/80 text-amber-300 rounded-full text-[11px] font-bold flex items-center gap-1">
-                                        <FaExclamationTriangle className="text-xs" /> ត្រូវ Setup មុខសិន
-                                    </span>
-                                )}
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-gray-100 text-sm">ស្កេនផ្ទៃមុខ (Face Scan)</h3>
-                                <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
-                                    {user?.faceEnabled
-                                        ? 'មុខងារស្កេនមុខបានបើកដំណើរការរួចរាល់ហើយ'
-                                        : 'ត្រូវឱ្យ Setup ផ្ទៃមុខតាមកាមេរ៉ាសិនទើបអាច Login បាន'}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="pt-2 border-t border-gray-800/80">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowFaceModal(true);
-                                    startFaceCamera();
-                                }}
-                                className="w-full py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/50 text-purple-300 hover:text-purple-200 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                            >
-                                <FaCamera />
-                                <span>{user?.faceEnabled ? 'ផ្លាស់ប្តូរ/រៀបចំមុខឡើងវិញ (Update Face)' : 'រៀបចំស្កេនមុខ (Setup Face)'}</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* 3. QR Code (ស្កេន QR Code) */}
+                    {/* 2. QR Code (ស្កេន QR Code) */}
                     <div className="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 hover:border-cyan-500/40 transition-all flex flex-col justify-between space-y-3">
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
@@ -404,123 +264,6 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
-
-            {/* ═══════════════════ MODAL: Setup Face Recognition ═══════════════════ */}
-            {showFaceModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-                    <div className="w-full max-w-md bg-[#0f1426] border border-gray-800 rounded-3xl p-6 shadow-2xl space-y-4">
-                        <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
-                                    <MdFace className="text-xl" />
-                                </div>
-                                <h3 className="font-bold text-gray-100 text-sm">រៀបចំស្កេនផ្ទៃមុខ (Setup Face Scan)</h3>
-                            </div>
-                            <button
-                                onClick={() => setShowFaceModal(false)}
-                                className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 cursor-pointer"
-                            >
-                                <FaTimes />
-                            </button>
-                        </div>
-
-                        {faceError && (
-                            <div className="p-2.5 rounded-[6px] bg-red-950/70 border border-red-800 text-red-300 text-xs font-semibold flex items-center gap-2">
-                                <FaExclamationTriangle />
-                                <span>{faceError}</span>
-                            </div>
-                        )}
-
-                        {faceSuccess && (
-                            <div className="p-2.5 rounded-[6px] bg-emerald-950/70 border border-emerald-800 text-emerald-300 text-xs font-semibold flex items-center gap-2">
-                                <FaCheckCircle />
-                                <span>{faceSuccess}</span>
-                            </div>
-                        )}
-
-                        <div className="relative w-full aspect-square bg-gray-950 rounded-2xl overflow-hidden border-2 border-dashed border-purple-500/40 flex items-center justify-center">
-                            {!faceCapturedImage ? (
-                                <>
-                                    <video
-                                        ref={faceVideoRef}
-                                        autoPlay
-                                        playsInline
-                                        muted
-                                        className="w-full h-full object-cover transform scale-x-[-1]"
-                                    />
-                                    {/* Face Guide Target Overlay */}
-                                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                                        <div className="w-56 h-56 rounded-full border-2 border-purple-400/80 border-dashed animate-pulse flex items-center justify-center">
-                                            <div className="w-48 h-48 rounded-full border border-purple-300/40"></div>
-                                        </div>
-                                    </div>
-                                    <p className="absolute bottom-3 text-[11px] text-purple-200 bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm">
-                                        សូមដាក់ផ្ទៃមុខចំកណ្តាលរង្វង់ (Place face inside circle)
-                                    </p>
-                                </>
-                            ) : (
-                                <div className="relative w-full h-full">
-                                    <img
-                                        src={faceCapturedImage}
-                                        alt="Captured Face"
-                                        className="w-full h-full object-cover transform scale-x-[-1]"
-                                    />
-                                    <div className="absolute top-2 right-2 px-2.5 py-1 bg-emerald-950/90 border border-emerald-700 text-emerald-300 rounded-full text-[10px] font-bold flex items-center gap-1">
-                                        <FaCheckCircle /> ថតរួចរាល់
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <canvas ref={faceCanvasRef} className="hidden" />
-
-                        <div className="flex gap-2">
-                            {!faceCapturedImage ? (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={startFaceCamera}
-                                        className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                                    >
-                                        <FaSync /> បើកកាមេរ៉ាឡើងវិញ
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={captureFaceSnapshot}
-                                        className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-[6px] text-xs shadow-lg shadow-purple-600/30 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                                    >
-                                        <FaCamera /> ថតរូបមុខ (Capture)
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={startFaceCamera}
-                                        className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                                    >
-                                        <FaSync /> ថតម្តងទៀត (Retake)
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={faceSaving}
-                                        onClick={handleSaveFaceSetup}
-                                        className="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-[6px] text-xs shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
-                                    >
-                                        {faceSaving ? (
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                        ) : (
-                                            <>
-                                                <FaCheckCircle /> រក្សាទុក (Save Face)
-                                            </>
-                                        )}
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* ═══════════════════ MODAL: QR Code Verification & Display & Download ═══════════════════ */}
             {showQrModal && (

@@ -11,18 +11,17 @@ import {
     FaExclamationTriangle,
     FaClock,
     FaQrcode,
-    FaCamera,
     FaUpload,
     FaSync,
     FaCheckCircle
 } from 'react-icons/fa';
-import { MdOutlineDashboard, MdFace } from 'react-icons/md';
+import { MdOutlineDashboard } from 'react-icons/md';
 import { getFirstAllowedRoute } from '../utils/permissionUtils';
 import { setSecureItem } from '../utils/secureStorage';
 import jsQR from 'jsqr';
 
 const SignIn = () => {
-    // Mode: 'password' | 'qrcode' | 'face'
+    // Mode: 'password' | 'qrcode'
     const [loginMode, setLoginMode] = useState('password');
 
     // Username & Password State
@@ -45,10 +44,6 @@ const SignIn = () => {
     const qrVideoRef = useRef(null);
     const qrAnimationRef = useRef(null);
     const fileInputRef = useRef(null);
-
-    // ── Face Login Camera State ──
-    const [faceStream, setFaceStream] = useState(null);
-    const faceVideoRef = useRef(null);
 
     // ── Server Wakeup & Health Verification State ──
     const [serverStatus, setServerStatus] = useState('checking'); // 'checking' | 'waking' | 'awake'
@@ -151,12 +146,8 @@ const SignIn = () => {
             qrStream.getTracks().forEach(t => t.stop());
             setQrStream(null);
         }
-        if (faceStream) {
-            faceStream.getTracks().forEach(t => t.stop());
-            setFaceStream(null);
-        }
         setQrScanning(false);
-    }, [qrStream, faceStream]);
+    }, [qrStream]);
 
     // Handle tab change
     const handleSwitchMode = (mode) => {
@@ -237,6 +228,14 @@ const SignIn = () => {
             }
 
             stopAllStreams();
+            if (data.require2FA) {
+                setUsername(data.username);
+                setOtp('');
+                setSecondPassword('');
+                setRequire2FA(true);
+                return;
+            }
+
             const authResult = loginWithAuthData(data);
             if (authResult.deviceInfo) {
                 setSecureItem('recent_login_device', authResult.deviceInfo);
@@ -328,94 +327,7 @@ const SignIn = () => {
         reader.readAsDataURL(file);
     };
 
-    // ── 3. Face Login ──
-    const startFaceCamera = async () => {
-        setError('');
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' }
-            });
-            setFaceStream(stream);
-            if (faceVideoRef.current) {
-                faceVideoRef.current.srcObject = stream;
-            }
-        } catch (err) {
-            setError('មិនអាចបើកកាមេរ៉ាស្កេនមុខបានទេ សូមអនុញ្ញាត Camera Permission');
-        }
-    };
-
-    const handleFaceLogin = async () => {
-        if (!faceVideoRef.current) return;
-
-        // ── Validate camera stream is active ──
-        if (!faceStream || !faceStream.active) {
-            setError('កាំមេរ៉ាមិនទាន់បើក — សូមចុច "បើកកាំមេរ៉ាឡើងវិញ" មុន (Camera not active)');
-            return;
-        }
-
-        const video = faceVideoRef.current;
-
-        // ── Validate video is actually playing with real frames ──
-        if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
-            setError('វីដេអូមិនទាន់ Ready — សូមមួលរង់ចាំបន្តិច ហើយព្យាយាមម្តងទៀត');
-            return;
-        }
-
-        setLoading(true);
-        setError('');
-
-        try {
-            const canvas = document.createElement('canvas');
-            canvas.width = 400;
-            canvas.height = 400;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, 400, 400);
-            const capturedData = canvas.toDataURL('image/jpeg', 0.85);
-
-            // ── Check that captured image is not blank/all-black (camera blocked) ──
-            const imageData = ctx.getImageData(0, 0, 400, 400);
-            const pixels = imageData.data;
-            let brightPixels = 0;
-            for (let i = 0; i < pixels.length; i += 16) { // sample every 4th pixel
-                const brightness = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
-                if (brightness > 20) brightPixels++;
-            }
-            const totalSampled = pixels.length / 16;
-            const brightRatio = brightPixels / totalSampled;
-
-            if (brightRatio < 0.05) {
-                setLoading(false);
-                setError('រូបភាពងងឹតខ្លាំង ឬ កាំមេរ៉ាត្រូវបានបាំង — សូមប្រាកដថាមុខអ្នកបង្ហាញឱ្យច្បាស់ (Camera appears blocked or too dark)');
-                return;
-            }
-
-            const res = await fetch(`${API_BASE}/auth/face-login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ faceData: capturedData })
-            });
-            const data = await res.json();
-            setLoading(false);
-
-            if (!res.ok) {
-                throw new Error(data.error || 'Face recognition login failed');
-            }
-
-            stopAllStreams();
-            const authResult = loginWithAuthData(data);
-            if (authResult.deviceInfo) {
-                setSecureItem('recent_login_device', authResult.deviceInfo);
-                setSecureItem('show_login_toast', 'true');
-            }
-            const targetRoute = getFirstAllowedRoute(authResult.user);
-            navigate(targetRoute);
-        } catch (err) {
-            setLoading(false);
-            setError(err.message || 'ស្កេនផ្ទៃមុខមិនជោគជ័យ សូមព្យាយាមម្តងទៀត');
-        }
-    };
-
-    // ── 4. 2FA Telegram OTP Verification ──
+    // ── 3. 2FA Telegram OTP Verification ──
     const handleVerifyOtp = async (e) => {
         e.preventDefault();
         setError('');
@@ -546,7 +458,7 @@ const SignIn = () => {
 
                 {/* ═══════════════════ LOGIN METHOD SELECTOR TABS ═══════════════════ */}
                 {!require2FA && (
-                    <div className="grid grid-cols-3 gap-1.5 p-1 bg-gray-900/90 rounded-xl border border-gray-800 text-xs font-bold">
+                    <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-900/90 rounded-xl border border-gray-800 text-xs font-bold">
                         <button
                             type="button"
                             onClick={() => handleSwitchMode('password')}
@@ -574,20 +486,6 @@ const SignIn = () => {
                             <span>QR Code</span>
                         </button>
 
-                        <button
-                            type="button"
-                            onClick={() => {
-                                handleSwitchMode('face');
-                                setTimeout(startFaceCamera, 100);
-                            }}
-                            className={`py-2 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${loginMode === 'face'
-                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-600/30'
-                                : 'text-gray-400 hover:text-gray-200'
-                                }`}
-                        >
-                            <MdFace className="text-sm" />
-                            <span>Scan មុខ</span>
-                        </button>
                     </div>
                 )}
 
@@ -712,57 +610,6 @@ const SignIn = () => {
                                 <span>កំពុងផ្ទៀងផ្ទាត់ QR Code...</span>
                             </div>
                         )}
-                    </div>
-                )}
-
-                {/* ═══════════════════ TAB 3: FACE SCAN LOGIN ═══════════════════ */}
-                {loginMode === 'face' && !require2FA && (
-                    <div className="space-y-4">
-                        {/* Live Webcam Box */}
-                        <div className="relative w-full aspect-square bg-black/90 rounded-2xl overflow-hidden border-2 border-dashed border-purple-500/50 flex flex-col items-center justify-center">
-                            <video
-                                ref={faceVideoRef}
-                                autoPlay
-                                playsInline
-                                muted
-                                className="w-full h-full object-cover transform scale-x-[-1]"
-                            />
-                            {/* Circular Face Guide Overlay */}
-                            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                                <div className="w-52 h-52 rounded-full border-2 border-purple-400/80 border-dashed animate-pulse flex items-center justify-center">
-                                    <div className="w-44 h-44 rounded-full border border-purple-300/30"></div>
-                                </div>
-                            </div>
-                            <p className="absolute bottom-2 text-[10px] text-purple-200 bg-black/70 px-3 py-1 rounded-full backdrop-blur-sm">
-                                សូមដាក់ផ្ទៃមុខចំកណ្តាលរង្វង់ (Align face in center)
-                            </p>
-                        </div>
-
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={startFaceCamera}
-                                className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                            >
-                                <FaSync /> បើកកាមេរ៉ាឡើងវិញ
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={loading}
-                                onClick={handleFaceLogin}
-                                className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-[6px] text-xs shadow-lg shadow-purple-600/30 transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
-                            >
-                                {loading ? (
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                ) : (
-                                    <>
-                                        <FaCamera />
-                                        <span>ស្កេនចូលប្រើ (Face Login)</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
                     </div>
                 )}
 

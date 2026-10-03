@@ -7,8 +7,6 @@ const userSchema = new mongoose.Schema({
     joinDate: { type: String, default: '' },
     qrCodePhoto: { type: String, default: '' },
     qrLoginToken: { type: String, default: '' },
-    faceData: { type: String, default: '' },
-    faceEnabled: { type: Boolean, default: false },
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true },
     password: { type: String, required: true },
