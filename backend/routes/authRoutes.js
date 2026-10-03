@@ -615,18 +615,89 @@ export default function createAuthRoutes(bot) {
             }
 
             const qrPayload = `mdm_qr_${randomBytes(32).toString('base64url')}`;
-            user.qrLoginToken = createHash('sha256').update(qrPayload).digest('hex');
-            user.qrLoginExpiresAt = new Date(Date.now() + durationMs);
-            if (isMongoConnected) await user.save();
+            const tokenHash = createHash('sha256').update(qrPayload).digest('hex');
+            const now = new Date();
+            const expiresAt = new Date(now.getTime() + durationMs);
+
+            if (isMongoConnected) {
+                const updateResult = await user.constructor.updateOne({
+                    _id: user._id,
+                    $or: [
+                        { qrLoginToken: { $in: ['', null] } },
+                        { qrLoginExpiresAt: null },
+                        { qrLoginExpiresAt: { $lte: now } }
+                    ]
+                }, {
+                    $set: {
+                        qrLoginToken: tokenHash,
+                        qrLoginExpiresAt: expiresAt
+                    }
+                });
+                if (updateResult.matchedCount === 0) {
+                    return res.status(409).json({
+                        error: 'មាន QR Code ដែលនៅមានសុពលភាពរួចហើយ។ សូមបើក QR ចាស់ ឬលុបវាមុនបង្កើតថ្មី។',
+                        expiresAt: user.qrLoginExpiresAt
+                    });
+                }
+            } else {
+                if (user.qrLoginToken && user.qrLoginExpiresAt && new Date(user.qrLoginExpiresAt) > now) {
+                    return res.status(409).json({
+                        error: 'មាន QR Code ដែលនៅមានសុពលភាពរួចហើយ។ សូមបើក QR ចាស់ ឬលុបវាមុនបង្កើតថ្មី។',
+                        expiresAt: user.qrLoginExpiresAt
+                    });
+                }
+                user.qrLoginToken = tokenHash;
+                user.qrLoginExpiresAt = expiresAt;
+            }
 
             res.json({
                 success: true,
                 qrPayload,
-                expiresAt: user.qrLoginExpiresAt
+                expiresAt
             });
         } catch (err) {
             console.error('QR generate error:', err);
             res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ── POST /api/auth/qr-delete — Revoke a previously generated QR code ──
+    router.post('/qr-delete', async (req, res) => {
+        try {
+            const qrPayload = typeof req.body?.qrPayload === 'string' ? req.body.qrPayload.trim() : '';
+            if (!/^mdm_qr_[A-Za-z0-9_-]{43}$/.test(qrPayload)) {
+                return res.status(400).json({ error: 'Invalid QR Code format (QR Code មិនត្រឹមត្រូវ)' });
+            }
+
+            const tokenHash = createHash('sha256').update(qrPayload).digest('hex');
+            let user = null;
+            if (isMongoConnected) {
+                const users = await queryAllDBs(User, (M) => M.find({ qrLoginToken: tokenHash }));
+                user = users[0] || null;
+            } else {
+                user = MEM_DB.users.find(u => u.qrLoginToken === tokenHash);
+            }
+
+            if (!user) {
+                return res.status(404).json({ error: 'QR Code មិនមានទៀតទេ ឬត្រូវបានលុបរួចហើយ។' });
+            }
+
+            if (isMongoConnected) {
+                await user.constructor.updateOne({
+                    _id: user._id,
+                    qrLoginToken: tokenHash
+                }, {
+                    $set: { qrLoginToken: '', qrLoginExpiresAt: null }
+                });
+            } else {
+                user.qrLoginToken = '';
+                user.qrLoginExpiresAt = null;
+            }
+
+            return res.json({ success: true });
+        } catch (err) {
+            console.error('QR delete error:', err);
+            return res.status(500).json({ error: err.message });
         }
     });
 
