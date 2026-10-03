@@ -1001,10 +1001,10 @@ const CalculateSchedule2 = () => {
                                                 className={`p-2 rounded-[5px] border text-xs cursor-pointer transition-all ${followsFormula
                                                     ? 'bg-red-50 border-red-500 shadow-xs ring-1 ring-red-400'
                                                     : isNewlyAdded
-                                                    ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-400 animate-pulse'
-                                                    : isActive
-                                                        ? 'bg-violet-50 border-violet-400 shadow-xs ring-1 ring-violet-400'
-                                                        : 'bg-[#fff] border-slate-200 hover:border-violet-300 hover:bg-slate-50'
+                                                        ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-400 animate-pulse'
+                                                        : isActive
+                                                            ? 'bg-violet-50 border-violet-400 shadow-xs ring-1 ring-violet-400'
+                                                            : 'bg-[#fff] border-slate-200 hover:border-violet-300 hover:bg-slate-50'
                                                     }`}>
                                                 <div className="flex items-start justify-between gap-1">
                                                     <div className="flex items-center gap-1.5 font-bold text-slate-800 truncate">
@@ -1087,24 +1087,24 @@ const CalculateSchedule2 = () => {
                             {/* Left Meta */}
                             <div className="space-y-2 w-full">
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="whitespace-nowrap text-slate-800">ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ:</span>
-                                    <span className="text-blue-500 font-bold">
+                                    <span className="whitespace-nowrap text-slate-800 text-[12px]">ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ:</span>
+                                    <span className="text-blue-500 font-bold  text-[12px]">
                                         {formatDate(result.startDate)}
                                     </span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800">ចំនួនទឹកប្រាក់បញ្ចាំ:</span>
-                                    <span className="text-blue-500 font-bold">
+                                    <span className="text-slate-800  text-[12px]">ចំនួនទឹកប្រាក់បញ្ចាំ:</span>
+                                    <span className="text-blue-500 font-bold  text-[12px]">
                                         {result.principal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} USD
                                     </span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800">រយៈពេល (ចំនួនខែ):</span>
-                                    <span className="text-blue-500 font-bold text-right">{result.months}</span>
+                                    <span className="text-slate-800  text-[12px]">រយៈពេល (ចំនួនខែ):</span>
+                                    <span className="text-blue-500 font-bold text-right  text-[12px]">{result.months}</span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800">ការប្រាក់ នឹង សេវ៉ាជួល:</span>
-                                    <span className="font-black text-right text-blue-500">
+                                    <span className="text-slate-800 text-[12px]">ការប្រាក់ នឹង សេវ៉ាជួល:</span>
+                                    <span className="font-black text-right  text-[12px] text-blue-500">
                                         {result.monthlyInterest.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
                                     </span>
                                 </div>
@@ -1113,16 +1113,16 @@ const CalculateSchedule2 = () => {
                             {/* Right Meta */}
                             <div className="space-y-2 text-left w-full">
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800">ឈ្មោះអតិថិជន:</span>
-                                    <span className="text-blue-500 font-bold text-right">{result.customerName || '—'}</span>
+                                    <span className="text-slate-800  text-[12px]">ឈ្មោះអតិថិជន:</span>
+                                    <span className="text-blue-500 font-bold  text-[12px] text-right">{result.customerName || '—'}</span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800">ប្រភេទទ្រព្យបញ្ចាំ:</span>
-                                    <span className="text-blue-500 font-bold text-right">{result.assetName || '—'}</span>
+                                    <span className="text-slate-800 text-[12px]">ប្រភេទទ្រព្យបញ្ចាំ:</span>
+                                    <span className="text-blue-500 font-bold text-[12px] text-right">{result.assetName || '—'}</span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800">លេខកិច្ចសន្យា:</span>
-                                    <span className="text-blue-500 font-bold text-right">
+                                    <span className="text-slate-800 text-[12px]">លេខកិច្ចសន្យា:</span>
+                                    <span className="text-blue-500 font-bold text-[12px] text-right">
                                         {result.contractNumber || '—'}
                                     </span>
                                 </div>
