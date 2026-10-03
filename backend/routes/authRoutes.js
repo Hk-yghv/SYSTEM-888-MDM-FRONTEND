@@ -580,12 +580,21 @@ export default function createAuthRoutes(bot) {
         });
     };
 
-    // ── POST /api/auth/qr-generate — Verify credentials and generate a one-time QR code ──
+    // ── POST /api/auth/qr-generate — Verify credentials and generate a reusable expiring QR code ──
     router.post('/qr-generate', async (req, res) => {
         try {
-            const { username, password } = req.body;
+            const { username, password, duration = '1d' } = req.body;
+            const durationMs = {
+                '1d': 24 * 60 * 60 * 1000,
+                '3d': 3 * 24 * 60 * 60 * 1000,
+                '7d': 7 * 24 * 60 * 60 * 1000,
+                '30d': 30 * 24 * 60 * 60 * 1000
+            }[duration];
             if (!username || !password) {
                 return res.status(400).json({ error: 'Username and password required to verify account' });
+            }
+            if (!durationMs) {
+                return res.status(400).json({ error: 'Invalid QR validity period' });
             }
 
             let user = null;
@@ -607,7 +616,7 @@ export default function createAuthRoutes(bot) {
 
             const qrPayload = `mdm_qr_${randomBytes(32).toString('base64url')}`;
             user.qrLoginToken = createHash('sha256').update(qrPayload).digest('hex');
-            user.qrLoginExpiresAt = new Date(Date.now() + 2 * 60 * 1000);
+            user.qrLoginExpiresAt = new Date(Date.now() + durationMs);
             if (isMongoConnected) await user.save();
 
             res.json({
@@ -653,21 +662,6 @@ export default function createAuthRoutes(bot) {
             if (user.twoFactorEnabled && !user.telegramId) {
                 return res.status(409).json({ error: 'Two-factor authentication is enabled but no Telegram account is configured.' });
             }
-
-            if (isMongoConnected) {
-                const consumed = await user.constructor.updateOne({
-                    _id: user._id,
-                    qrLoginToken: tokenHash,
-                    qrLoginExpiresAt: { $gt: now }
-                }, {
-                    $set: { qrLoginToken: '', qrLoginExpiresAt: null }
-                });
-                if (consumed.matchedCount !== 1) {
-                    return res.status(401).json({ error: 'QR Code is invalid, expired, or already used.' });
-                }
-            }
-            user.qrLoginToken = '';
-            user.qrLoginExpiresAt = null;
 
             if (user.twoFactorEnabled) {
                 const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';

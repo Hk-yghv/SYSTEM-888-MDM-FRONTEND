@@ -44,6 +44,8 @@ const Profile = () => {
     const [qrVerifyUsername, setQrVerifyUsername] = useState(user?.username || '');
     const [qrVerifyPassword, setQrVerifyPassword] = useState('');
     const [qrCodeData, setQrCodeData] = useState(null);
+    const [qrDuration, setQrDuration] = useState('1d');
+    const [qrExpiresAt, setQrExpiresAt] = useState(null);
     const [qrLoading, setQrLoading] = useState(false);
     const [qrError, setQrError] = useState('');
     const qrCanvasRef = useRef(null);
@@ -60,7 +62,8 @@ const Profile = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username: qrVerifyUsername || user?.username,
-                    password: qrVerifyPassword
+                    password: qrVerifyPassword,
+                    duration: qrDuration
                 })
             });
             const data = await res.json();
@@ -68,6 +71,7 @@ const Profile = () => {
 
             if (res.ok && data.qrPayload) {
                 setQrCodeData(data.qrPayload);
+                setQrExpiresAt(data.expiresAt);
             } else {
                 setQrError(data.error || 'ការផ្ទៀងផ្ទាត់មិនត្រឹមត្រូវ (Invalid username or password)');
             }
@@ -321,6 +325,20 @@ const Profile = () => {
                                     />
                                 </div>
 
+                                <div>
+                                    <label className="block font-semibold text-gray-400 mb-1">រយៈពេល QR មានសុពលភាព</label>
+                                    <select
+                                        value={qrDuration}
+                                        onChange={(e) => setQrDuration(e.target.value)}
+                                        className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-cyan-500 rounded-[6px] text-gray-100"
+                                    >
+                                        <option value="1d">១ ថ្ងៃ</option>
+                                        <option value="3d">៣ ថ្ងៃ</option>
+                                        <option value="7d">១ អាទិត្យ</option>
+                                        <option value="30d">១ ខែ</option>
+                                    </select>
+                                </div>
+
                                 <button
                                     type="submit"
                                     disabled={qrLoading}
@@ -362,8 +380,13 @@ const Profile = () => {
                                         QR Code សម្រាប់ Login របស់ <span className="text-cyan-400 font-mono">{user?.username}</span>
                                     </p>
                                     <p className="text-[11px] text-gray-400">
-                                        QR នេះមិនបង្ហាញ username ឬព័ត៌មានគណនីទេ ប្រើបានម្តង និងផុតកំណត់ក្នុង ២ នាទី
+                                        QR មិនបង្ហាញព័ត៌មានគណនីទេ ហើយអាចប្រើបានច្រើនដងរហូតដល់ផុតកំណត់។ អ្នកដែលមានរូប QR អាច Login បាន
                                     </p>
+                                    {qrExpiresAt && (
+                                        <p className="text-[11px] text-amber-300">
+                                            ផុតកំណត់៖ {new Date(qrExpiresAt).toLocaleString()}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex gap-2 pt-2">
@@ -379,6 +402,7 @@ const Profile = () => {
                                         type="button"
                                         onClick={() => {
                                             setQrCodeData(null);
+                                            setQrExpiresAt(null);
                                             setQrVerifyPassword('');
                                         }}
                                         className="py-2.5 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-[6px] text-xs transition-all cursor-pointer"
