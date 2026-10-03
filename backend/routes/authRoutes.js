@@ -742,6 +742,48 @@ export default function createAuthRoutes(bot) {
         }
     });
 
+    // ── Helper: Compare two base64 image data strings by pixel similarity ──
+    const computeImageSimilarity = (base64A, base64B) => {
+        try {
+            // Extract raw base64 payload (strip data URI prefix)
+            const rawA = base64A.replace(/^data:image\/\w+;base64,/, '');
+            const rawB = base64B.replace(/^data:image\/\w+;base64,/, '');
+
+            const bufA = Buffer.from(rawA, 'base64');
+            const bufB = Buffer.from(rawB, 'base64');
+
+            // Quick sanity: both must be non-trivially sized (≥1KB indicates real image content)
+            if (bufA.length < 1000 || bufB.length < 1000) return 0;
+
+            // Sample pixels at regular intervals across the raw byte buffer
+            // We skip JPEG/PNG headers (first 200 bytes) and compare body bytes
+            const SKIP = 200;
+            const SAMPLE_COUNT = 600;
+            const lenA = bufA.length - SKIP;
+            const lenB = bufB.length - SKIP;
+            const step = Math.max(1, Math.floor(Math.min(lenA, lenB) / SAMPLE_COUNT));
+
+            let matching = 0;
+            let total = 0;
+            const TOLERANCE = 30; // byte difference tolerance per sample
+
+            for (let i = SKIP; i < Math.min(bufA.length, bufB.length) - 4; i += step) {
+                const diff =
+                    Math.abs(bufA[i] - bufB[i]) +
+                    Math.abs(bufA[i + 1] - bufB[i + 1]) +
+                    Math.abs(bufA[i + 2] - bufB[i + 2]) +
+                    Math.abs(bufA[i + 3] - bufB[i + 3]);
+                if (diff <= TOLERANCE * 4) matching++;
+                total++;
+            }
+
+            return total > 0 ? matching / total : 0;
+        } catch (e) {
+            console.error('Face similarity error:', e.message);
+            return 0;
+        }
+    };
+
     // ── POST /api/auth/face-login — Login using Live Face Scan ──
     router.post('/face-login', async (req, res) => {
         try {
@@ -751,34 +793,69 @@ export default function createAuthRoutes(bot) {
                 return res.status(400).json({ error: 'Live face capture required (សូមដាក់ផ្ទៃមុខចំកណ្តាលកាមេរ៉ា)' });
             }
 
-            let user = null;
+            // Reject obviously blank / mostly-black captures (size < 3KB after base64 = empty/covered camera)
+            const rawLen = inputFace.replace(/^data:image\/\w+;base64,/, '').length;
+            if (rawLen < 3000) {
+                return res.status(401).json({ error: 'ស្កេនមុខបរាជ័យ — ការ Capture ទទេ ឬកាំមេរ៉ាត្រូវបានបិទ (Face capture too small or camera blocked)' });
+            }
+
+            // ── Find candidate users ──
+            let candidates = [];
             if (username) {
+                let u = null;
                 if (isMongoConnected) {
                     const users = await queryAllDBs(User, (M) => M.find({ username }));
-                    user = users[0] || null;
+                    u = users[0] || null;
                 } else {
-                    user = MEM_DB.users.find(u => u.username === username);
+                    u = MEM_DB.users.find(u => u.username === username);
                 }
+                if (u) candidates = [u];
             } else {
-                // Search across users with faceEnabled
-                let allUsers = [];
                 if (isMongoConnected) {
-                    allUsers = await queryAllDBs(User, (M) => M.find({ faceEnabled: true }));
+                    candidates = await queryAllDBs(User, (M) => M.find({ faceEnabled: true }));
                 } else {
-                    allUsers = MEM_DB.users.filter(u => u.faceEnabled);
+                    candidates = MEM_DB.users.filter(u => u.faceEnabled && u.faceData);
                 }
-                user = allUsers.find(u => u.faceData);
             }
 
-            if (!user || !user.faceEnabled || !user.faceData) {
-                return res.status(401).json({ error: 'Face Login not yet configured for this account. Please setup Face in Profile first. (មិនទាន់បានរៀបចំស្កេនមុខទេ)' });
+            // ── Match face against each candidate ──
+            const SIMILARITY_THRESHOLD = 0.25; // ≥25% pixel similarity required
+            let matchedUser = null;
+            let bestScore = 0;
+
+            for (const u of candidates) {
+                if (!u.faceEnabled || !u.faceData) continue;
+                if (u.isBlocked) continue;
+
+                const score = computeImageSimilarity(inputFace, u.faceData);
+                console.log(`[FaceLogin] user=${u.username} similarity=${(score * 100).toFixed(1)}%`);
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    if (score >= SIMILARITY_THRESHOLD) {
+                        matchedUser = u;
+                    }
+                }
             }
 
-            if (user.isBlocked) {
-                return res.status(403).json({ error: 'Account is blocked' });
+            if (!matchedUser) {
+                // Detailed error based on whether any candidate was found
+                if (candidates.length === 0) {
+                    return res.status(401).json({ error: 'Face Login not yet configured for this account. Please setup Face in Profile first. (មិនទាន់បានរៀបចំស្កេនមុខទេ)' });
+                }
+                const scoreMsg = bestScore > 0 ? ` (Similarity: ${(bestScore * 100).toFixed(0)}%)` : '';
+                return res.status(401).json({
+                    error: `ស្កេនមុខបរាជ័យ — មុខមិនត្រូវគ្នា${scoreMsg}។ សូមដាក់ផ្ទៃមុខឱ្យត្រូវ ឬ ពន្លឺណាមួយ។ (Face not matched${scoreMsg})`,
+                    similarity: parseFloat((bestScore * 100).toFixed(1))
+                });
             }
 
-            return await handleSuccessfulAuth(user, req, res, 'Face Scan');
+            if (matchedUser.isBlocked) {
+                return res.status(403).json({ error: 'Account is blocked (គណនីត្រូវបានផ្អាក)' });
+            }
+
+            console.log(`[FaceLogin] ✅ Matched user: ${matchedUser.username} (score: ${(bestScore * 100).toFixed(1)}%)`);
+            return await handleSuccessfulAuth(matchedUser, req, res, 'Face Scan');
         } catch (err) {
             console.error('Face login error:', err);
             res.status(500).json({ error: err.message });

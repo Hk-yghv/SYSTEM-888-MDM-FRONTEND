@@ -346,17 +346,48 @@ const SignIn = () => {
 
     const handleFaceLogin = async () => {
         if (!faceVideoRef.current) return;
+
+        // ── Validate camera stream is active ──
+        if (!faceStream || !faceStream.active) {
+            setError('កាំមេរ៉ាមិនទាន់បើក — សូមចុច "បើកកាំមេរ៉ាឡើងវិញ" មុន (Camera not active)');
+            return;
+        }
+
+        const video = faceVideoRef.current;
+
+        // ── Validate video is actually playing with real frames ──
+        if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
+            setError('វីដេអូមិនទាន់ Ready — សូមមួលរង់ចាំបន្តិច ហើយព្យាយាមម្តងទៀត');
+            return;
+        }
+
         setLoading(true);
         setError('');
 
         try {
-            const video = faceVideoRef.current;
             const canvas = document.createElement('canvas');
             canvas.width = 400;
             canvas.height = 400;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, 400, 400);
             const capturedData = canvas.toDataURL('image/jpeg', 0.85);
+
+            // ── Check that captured image is not blank/all-black (camera blocked) ──
+            const imageData = ctx.getImageData(0, 0, 400, 400);
+            const pixels = imageData.data;
+            let brightPixels = 0;
+            for (let i = 0; i < pixels.length; i += 16) { // sample every 4th pixel
+                const brightness = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+                if (brightness > 20) brightPixels++;
+            }
+            const totalSampled = pixels.length / 16;
+            const brightRatio = brightPixels / totalSampled;
+
+            if (brightRatio < 0.05) {
+                setLoading(false);
+                setError('រូបភាពងងឹតខ្លាំង ឬ កាំមេរ៉ាត្រូវបានបាំង — សូមប្រាកដថាមុខអ្នកបង្ហាញឱ្យច្បាស់ (Camera appears blocked or too dark)');
+                return;
+            }
 
             const res = await fetch(`${API_BASE}/auth/face-login`, {
                 method: 'POST',
