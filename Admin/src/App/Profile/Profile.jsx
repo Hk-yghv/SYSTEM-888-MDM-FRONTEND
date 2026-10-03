@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
@@ -49,6 +49,27 @@ const Profile = () => {
     const [qrLoading, setQrLoading] = useState(false);
     const [qrError, setQrError] = useState('');
     const qrCanvasRef = useRef(null);
+
+    useEffect(() => {
+        if (!qrCodeData || !qrExpiresAt) return;
+
+        const clearExpiredQr = () => {
+            if (Date.now() < new Date(qrExpiresAt).getTime()) return;
+            setQrCodeData(null);
+            setQrExpiresAt(null);
+            setQrError('QR Code បានផុតកំណត់ហើយ សូមបង្កើតថ្មី។');
+        };
+
+        const expiryInterval = window.setInterval(clearExpiredQr, 30000);
+        window.addEventListener('focus', clearExpiredQr);
+        document.addEventListener('visibilitychange', clearExpiredQr);
+
+        return () => {
+            window.clearInterval(expiryInterval);
+            window.removeEventListener('focus', clearExpiredQr);
+            document.removeEventListener('visibilitychange', clearExpiredQr);
+        };
+    }, [qrCodeData, qrExpiresAt]);
 
     // Verify Account & Generate QR Code
     const handleGenerateQr = async (e) => {

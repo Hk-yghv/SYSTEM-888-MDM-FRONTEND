@@ -642,17 +642,29 @@ export default function createAuthRoutes(bot) {
             const now = new Date();
             let user = null;
             if (isMongoConnected) {
-                const users = await queryAllDBs(User, (M) => M.find({
-                    qrLoginToken: tokenHash,
-                    qrLoginExpiresAt: { $gt: now }
-                }));
+                const users = await queryAllDBs(User, (M) => M.find({ qrLoginToken: tokenHash }));
                 user = users[0] || null;
             } else {
-                user = MEM_DB.users.find(u => u.qrLoginToken === tokenHash && new Date(u.qrLoginExpiresAt) > now);
+                user = MEM_DB.users.find(u => u.qrLoginToken === tokenHash);
             }
 
             if (!user) {
-                return res.status(401).json({ error: 'QR Code is invalid, expired, or already used.' });
+                return res.status(401).json({ error: 'QR Code is invalid or expired.' });
+            }
+
+            if (!user.qrLoginExpiresAt || new Date(user.qrLoginExpiresAt) <= now) {
+                if (isMongoConnected) {
+                    await user.constructor.updateOne({
+                        _id: user._id,
+                        qrLoginToken: tokenHash
+                    }, {
+                        $set: { qrLoginToken: '', qrLoginExpiresAt: null }
+                    });
+                } else {
+                    user.qrLoginToken = '';
+                    user.qrLoginExpiresAt = null;
+                }
+                return res.status(401).json({ error: 'QR Code has expired. Generate a new one to continue.' });
             }
 
             if (user.isBlocked) {
