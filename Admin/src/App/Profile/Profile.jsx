@@ -68,9 +68,6 @@ const Profile = () => {
 
             if (res.ok && data.qrPayload) {
                 setQrCodeData(data.qrPayload);
-                if (user) {
-                    updateUserState({ ...user, qrLoginToken: data.qrLoginToken || 'ACTIVE' });
-                }
             } else {
                 setQrError(data.error || 'ការផ្ទៀងផ្ទាត់មិនត្រឹមត្រូវ (Invalid username or password)');
             }
@@ -85,7 +82,7 @@ const Profile = () => {
         const canvas = document.getElementById('user-login-qr-canvas');
         if (!canvas) return;
         const link = document.createElement('a');
-        link.download = `mdm-login-qr-${user?.username || 'user'}.png`;
+        link.download = 'mdm-login-qr.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
     };
@@ -365,7 +362,7 @@ const Profile = () => {
                                         QR Code សម្រាប់ Login របស់ <span className="text-cyan-400 font-mono">{user?.username}</span>
                                     </p>
                                     <p className="text-[11px] text-gray-400">
-                                        អ្នកអាចស្កេនផ្ទាល់ ឬទាញយករូបភាពទុកសម្រាប់ Upload Login នៅពេលក្រោយ
+                                        QR នេះមិនបង្ហាញ username ឬព័ត៌មានគណនីទេ ប្រើបានម្តង និងផុតកំណត់ក្នុង ២ នាទី
                                     </p>
                                 </div>
 

@@ -208,7 +208,7 @@ const SignIn = () => {
         }
     };
 
-    // ── 2. QR Code Login (Direct Token) ──
+    // ── 2. QR Code Login ──
     const executeQrLogin = async (rawPayload) => {
         if (!rawPayload) return;
         setLoading(true);
@@ -218,7 +218,7 @@ const SignIn = () => {
             const res = await fetch(`${API_BASE}/auth/qr-login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ qrPayload: rawPayload, token: rawPayload })
+                body: JSON.stringify({ qrPayload: rawPayload })
             });
             const data = await res.json();
             setLoading(false);

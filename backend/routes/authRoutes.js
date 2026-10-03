@@ -1,6 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { createHash, randomBytes } from 'node:crypto';
 import User from '../models/User.js';
 import LoginLog from '../models/LoginLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
@@ -579,7 +580,7 @@ export default function createAuthRoutes(bot) {
         });
     };
 
-    // ── POST /api/auth/qr-generate — Verify credentials and generate persistent QR Login Code ──
+    // ── POST /api/auth/qr-generate — Verify credentials and generate a one-time QR code ──
     router.post('/qr-generate', async (req, res) => {
         try {
             const { username, password } = req.body;
@@ -604,29 +605,15 @@ export default function createAuthRoutes(bot) {
                 return res.status(401).json({ error: 'Incorrect password (ពាក្យសម្ងាត់មិនត្រឹមត្រូវ)' });
             }
 
-            // Generate or maintain persistent QR Login Secret Key
-            if (!user.qrLoginToken) {
-                user.qrLoginToken = 'mdm_qr_' + Buffer.from(`${user.username}:${Date.now()}:${Math.random()}`).toString('base64url');
-                if (isMongoConnected) {
-                    const UserWrite = getWriteModel(User) || User;
-                    await UserWrite.updateOne({ username: user.username }, { $set: { qrLoginToken: user.qrLoginToken } });
-                }
-            }
-
-            const qrPayload = JSON.stringify({
-                app: 'SYSTEM_MDM',
-                type: 'MDM_LOGIN_QR',
-                username: user.username,
-                name: user.name,
-                token: user.qrLoginToken
-            });
+            const qrPayload = `mdm_qr_${randomBytes(32).toString('base64url')}`;
+            user.qrLoginToken = createHash('sha256').update(qrPayload).digest('hex');
+            user.qrLoginExpiresAt = new Date(Date.now() + 2 * 60 * 1000);
+            if (isMongoConnected) await user.save();
 
             res.json({
                 success: true,
                 qrPayload,
-                username: user.username,
-                name: user.name,
-                qrLoginToken: user.qrLoginToken
+                expiresAt: user.qrLoginExpiresAt
             });
         } catch (err) {
             console.error('QR generate error:', err);
@@ -637,56 +624,52 @@ export default function createAuthRoutes(bot) {
     // ── POST /api/auth/qr-login — Sign in via QR code payload (Camera or Image upload) ──
     router.post('/qr-login', async (req, res) => {
         try {
-            const { qrPayload, token: directToken, username: directUser } = req.body;
-            let targetUsername = directUser || '';
-            let targetToken = directToken || '';
-
-            if (qrPayload) {
-                try {
-                    const parsed = typeof qrPayload === 'string' ? JSON.parse(qrPayload) : qrPayload;
-                    if (parsed && (parsed.type === 'MDM_LOGIN_QR' || parsed.app === 'SYSTEM_MDM')) {
-                        targetUsername = parsed.username || '';
-                        targetToken = parsed.token || '';
-                    } else if (typeof qrPayload === 'string' && qrPayload.startsWith('mdm_qr_')) {
-                        targetToken = qrPayload;
-                    }
-                } catch {
-                    if (typeof qrPayload === 'string') {
-                        targetToken = qrPayload.trim();
-                    }
-                }
-            }
-
-            if (!targetToken && !targetUsername) {
+            const qrPayload = typeof req.body?.qrPayload === 'string' ? req.body.qrPayload.trim() : '';
+            if (!/^mdm_qr_[A-Za-z0-9_-]{43}$/.test(qrPayload)) {
                 return res.status(400).json({ error: 'Invalid QR Code format (QR Code មិនត្រឹមត្រូវ)' });
             }
 
+            const tokenHash = createHash('sha256').update(qrPayload).digest('hex');
+            const now = new Date();
             let user = null;
             if (isMongoConnected) {
-                const query = targetUsername ? { username: targetUsername } : { qrLoginToken: targetToken };
-                const users = await queryAllDBs(User, (M) => M.find(query));
+                const users = await queryAllDBs(User, (M) => M.find({
+                    qrLoginToken: tokenHash,
+                    qrLoginExpiresAt: { $gt: now }
+                }));
                 user = users[0] || null;
             } else {
-                user = MEM_DB.users.find(u => (targetUsername && u.username === targetUsername) || (targetToken && u.qrLoginToken === targetToken));
+                user = MEM_DB.users.find(u => u.qrLoginToken === tokenHash && new Date(u.qrLoginExpiresAt) > now);
             }
 
             if (!user) {
-                return res.status(401).json({ error: 'User QR Code not registered or account inactive' });
+                return res.status(401).json({ error: 'QR Code is invalid, expired, or already used.' });
             }
 
             if (user.isBlocked) {
                 return res.status(403).json({ error: 'This account has been blocked (គណនីត្រូវបានផ្អាក)' });
             }
 
-            if (user.qrLoginToken && targetToken && user.qrLoginToken !== targetToken) {
-                return res.status(401).json({ error: 'QR Code is expired or invalid (QR Code ហួសសុពលភាព)' });
+            if (user.twoFactorEnabled && !user.telegramId) {
+                return res.status(409).json({ error: 'Two-factor authentication is enabled but no Telegram account is configured.' });
             }
 
-            if (user.twoFactorEnabled) {
-                if (!user.telegramId) {
-                    return res.status(409).json({ error: 'Two-factor authentication is enabled but no Telegram account is configured.' });
+            if (isMongoConnected) {
+                const consumed = await user.constructor.updateOne({
+                    _id: user._id,
+                    qrLoginToken: tokenHash,
+                    qrLoginExpiresAt: { $gt: now }
+                }, {
+                    $set: { qrLoginToken: '', qrLoginExpiresAt: null }
+                });
+                if (consumed.matchedCount !== 1) {
+                    return res.status(401).json({ error: 'QR Code is invalid, expired, or already used.' });
                 }
+            }
+            user.qrLoginToken = '';
+            user.qrLoginExpiresAt = null;
 
+            if (user.twoFactorEnabled) {
                 const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
                 await sendLoginOtp(user, ip);
                 return res.json({ require2FA: true, username: user.username });
@@ -717,7 +700,7 @@ export default function createAuthRoutes(bot) {
 
             res.json({
                 password: true,
-                qrEnabled: !!user.qrLoginToken,
+                qrEnabled: !!user.qrLoginToken && user.qrLoginExpiresAt > new Date(),
                 twoFactorEnabled: !!user.twoFactorEnabled
             });
         } catch (err) {
