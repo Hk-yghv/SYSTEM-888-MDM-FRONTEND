@@ -155,7 +155,7 @@ const SalaryPage = () => {
 
         // Sync with backend
         try {
-            await fetch(`${API_BASE}/salary/save-staff-info`, {
+            const res = await fetch(`${API_BASE}/salary/save-staff-info`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -167,10 +167,66 @@ const SalaryPage = () => {
                     qrCodePhoto: tempQrCodePhoto
                 })
             });
+            if (res.ok && isAdmin) {
+                fetchStaffDirectory();
+            }
         } catch (err) {
             console.error('Save staff info error:', err);
         }
     };
+
+    // Automatically load saved staff info from backend
+    const fetchStaffInfo = useCallback(async (targetStaff = selectedStaff) => {
+        try {
+            const targetKey = targetStaff?.key || targetStaff?.staffName || user?.username || '';
+            const uname = user?.username || '';
+            const params = new URLSearchParams({
+                username: uname,
+                staffKey: targetKey
+            });
+            const res = await fetch(`${API_BASE}/salary/staff-info?${params.toString()}`);
+            if (res.ok) {
+                const json = await res.json();
+                const d = json.data;
+                if (d) {
+                    if (d.staffNameKh) {
+                        setSavedStaffNameKh(d.staffNameKh);
+                        setTempNameKh(d.staffNameKh);
+                        localStorage.setItem('salary_saved_name_kh', d.staffNameKh);
+                    }
+                    if (d.staffNameEn) {
+                        setSavedStaffNameEn(d.staffNameEn);
+                        setTempNameEn(d.staffNameEn);
+                        localStorage.setItem('salary_saved_name_en', d.staffNameEn);
+                    }
+                    if (d.qrCodePhoto) {
+                        setSavedQrCodePhoto(d.qrCodePhoto);
+                        setTempQrCodePhoto(d.qrCodePhoto);
+                        localStorage.setItem('salary_saved_qr_code', d.qrCodePhoto);
+                    }
+                    if (d.joinDate) {
+                        setSavedJoinDate(d.joinDate);
+                        localStorage.setItem('salary_saved_join_date', d.joinDate);
+                        const parts = d.joinDate.split('-');
+                        if (parts.length >= 3) {
+                            setTempYear(parseInt(parts[0], 10));
+                            setTempMonth(parseInt(parts[1], 10));
+                            setTempDay(parseInt(parts[2], 10));
+                        }
+                        setIsEditingDate(false);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Fetch staff info error:', err);
+        }
+    }, [API_BASE, user, selectedStaff, isAdmin]);
+
+    useEffect(() => {
+        if (!isAdmin || selectedStaff) {
+            fetchStaffInfo(selectedStaff);
+        }
+    }, [isAdmin, selectedStaff, fetchStaffInfo]);
 
     const handleEditDate = () => {
         if (savedJoinDate) {

@@ -479,6 +479,84 @@ router.get('/stats', async (req, res) => {
     }
 });
 
+// GET /api/salary/staff-info - Get saved staff profile info (Khmer/English names, Join Date & QR Code)
+router.get('/staff-info', async (req, res) => {
+    try {
+        const { username = '', staffKey = '' } = req.query;
+        const targetUsername = (username || staffKey || '').trim().replace(/^@/, '');
+        const targetKey = (staffKey || username || '').trim();
+
+        if (!targetKey && !targetUsername) {
+            return res.status(400).json({ error: 'Username or staffKey required' });
+        }
+
+        let staffInfo = {
+            staffNameKh: '',
+            staffNameEn: '',
+            joinDate: '',
+            qrCodePhoto: ''
+        };
+
+        if (isMongoConnected) {
+            const userFilter = {
+                $or: [
+                    { username: targetUsername },
+                    { username: `@${targetUsername}` },
+                    { username: targetKey },
+                    { name: targetKey }
+                ].filter(c => Object.values(c)[0])
+            };
+            const users = await queryAllDBs(User, (M) => M.findOne(userFilter));
+            const foundUser = users.find(u => u != null);
+            if (foundUser) {
+                staffInfo.staffNameKh = foundUser.nameKh || '';
+                staffInfo.staffNameEn = foundUser.name || foundUser.username || '';
+                staffInfo.joinDate = foundUser.joinDate || '';
+                staffInfo.qrCodePhoto = foundUser.qrCodePhoto || '';
+            }
+
+            // Also check latest Salary record for this staff if fields are still empty
+            if (!staffInfo.joinDate || !staffInfo.staffNameKh || !staffInfo.qrCodePhoto) {
+                const salaryFilter = {
+                    $or: [
+                        { staffName: targetKey },
+                        { staffName: targetUsername },
+                        { staffName: `@${targetUsername}` },
+                        { staffNameEn: targetKey },
+                        { createdBy: targetUsername },
+                        { createdBy: `@${targetUsername}` }
+                    ].filter(c => Object.values(c)[0])
+                };
+                const salaries = await queryAllDBs(Salary, (M) => M.find(salaryFilter).sort({ createdAt: -1 }).limit(1));
+                const foundSalary = salaries.find(s => s != null);
+                const sItem = Array.isArray(foundSalary) ? foundSalary[0] : foundSalary;
+                if (sItem) {
+                    if (!staffInfo.staffNameKh && sItem.staffNameKh) staffInfo.staffNameKh = sItem.staffNameKh;
+                    if (!staffInfo.staffNameEn && (sItem.staffNameEn || sItem.staffName)) staffInfo.staffNameEn = sItem.staffNameEn || sItem.staffName;
+                    if (!staffInfo.joinDate && sItem.joinDate) staffInfo.joinDate = sItem.joinDate;
+                    if (!staffInfo.qrCodePhoto && sItem.qrCodePhoto) staffInfo.qrCodePhoto = sItem.qrCodePhoto;
+                }
+            }
+        } else {
+            const u = (MEM_DB.users || []).find(x => {
+                const uName = (x.username || '').replace(/^@/, '');
+                return uName === targetUsername || x.name === targetKey;
+            });
+            if (u) {
+                staffInfo.staffNameKh = u.nameKh || '';
+                staffInfo.staffNameEn = u.name || u.username || '';
+                staffInfo.joinDate = u.joinDate || '';
+                staffInfo.qrCodePhoto = u.qrCodePhoto || '';
+            }
+        }
+
+        return res.json({ success: true, data: staffInfo });
+    } catch (err) {
+        console.error('Fetch staff info error:', err);
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 // POST /api/salary/save-staff-info - Save or update staff profile info (Khmer/English names, Join Date & QR Code)
 router.post('/save-staff-info', async (req, res) => {
     try {

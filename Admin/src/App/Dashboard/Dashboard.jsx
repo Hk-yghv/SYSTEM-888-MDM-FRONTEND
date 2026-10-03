@@ -466,26 +466,47 @@ const Dashboard = () => {
                 if (!displayRow) return;
 
                 const rowData = getRowWithDueDate(displayRow, contract);
-                const penalty = getAutomaticPenalty(rowData, contract, rules);
                 const scheduledAmt = Number(rowData.scheduledAmount || rowData.amount || rowData.due || 0);
                 const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
                 const unpaidAmt = Math.max(0, scheduledAmt - paidAmt);
                 const isPaid = ['Paid', 'PayOff', 'Settled'].includes(rowData.status) || (unpaidAmt <= 0 && scheduledAmt > 0);
+                const dueDateStr = rowData.dueDate ? String(rowData.dueDate).split('T')[0] : '';
+                const paidDateStr = rowData.paidDate ? String(rowData.paidDate).split('T')[0] : '';
 
                 let diffDays = null;
                 let lateDays = 0;
-                const dueDateStr = rowData.dueDate ? String(rowData.dueDate).split('T')[0] : '';
                 if (dueDateStr) {
                     const dueDateObj = new Date(`${dueDateStr}T00:00:00`);
                     if (!isNaN(dueDateObj.getTime())) {
-                        diffDays = Math.round((dueDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                        if (diffDays < 0) {
-                            lateDays = Math.abs(diffDays);
+                        if (isPaid && paidDateStr) {
+                            const paidDateObj = new Date(`${paidDateStr}T00:00:00`);
+                            if (!isNaN(paidDateObj.getTime())) {
+                                const diff = Math.round((paidDateObj.getTime() - dueDateObj.getTime()) / (1000 * 60 * 60 * 24));
+                                if (diff > 0) lateDays = diff;
+                            }
+                        } else {
+                            diffDays = Math.round((dueDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                            if (diffDays < 0) {
+                                lateDays = Math.abs(diffDays);
+                            }
                         }
                     }
                 }
 
-                const isOverdue = !isPaid && (lateDays > 0 || penalty > 0 || (dueDateStr && dueDateStr < todayStr));
+                let calculatedPenalty = 0;
+                if (isPaid) {
+                    if (Number(rowData.penalty || 0) > 0) {
+                        calculatedPenalty = Number(rowData.penalty);
+                    } else if (lateDays > 0) {
+                        calculatedPenalty = getAutomaticPenalty({ ...rowData, status: 'Due' }, contract, rules);
+                    }
+                } else {
+                    calculatedPenalty = getAutomaticPenalty(rowData, contract, rules);
+                }
+
+                const paidPenalty = isPaid ? calculatedPenalty : 0;
+                const unpaidPenalty = isPaid ? 0 : calculatedPenalty;
+                const isOverdue = !isPaid && (lateDays > 0 || unpaidPenalty > 0 || (dueDateStr && dueDateStr < todayStr));
 
                 rows.push({
                     id: `${contract._id || contract.id || 'c'}-${rowData.monthIndex || (activeIdx !== -1 ? activeIdx + 1 : 1)}`,
@@ -496,10 +517,13 @@ const Dashboard = () => {
                     customerName: nameKh || nameEn || 'Unknown',
                     phone: phone,
                     dueDate: dueDateStr,
+                    paidDate: paidDateStr,
                     scheduledAmount: scheduledAmt,
                     paidAmount: paidAmt,
                     outstandingAmount: unpaidAmt,
-                    penaltyAmount: penalty,
+                    penaltyAmount: calculatedPenalty,
+                    paidPenaltyAmount: paidPenalty,
+                    unpaidPenaltyAmount: unpaidPenalty,
                     isPaid,
                     daysUntilDue: diffDays,
                     lateDays,
@@ -523,7 +547,6 @@ const Dashboard = () => {
                     // Match if either dueDate or paidDate is within the selected range
                     if (!isDueDateInRange && !isPaidDateInRange) return;
 
-                    const penalty = getAutomaticPenalty(rowData, contract, rules);
                     const scheduledAmt = Number(rowData.scheduledAmount || rowData.amount || rowData.due || 0);
                     const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
                     const unpaidAmt = Math.max(0, scheduledAmt - paidAmt);
@@ -534,14 +557,35 @@ const Dashboard = () => {
                     if (dueDateStr) {
                         const dueDateObj = new Date(`${dueDateStr}T00:00:00`);
                         if (!isNaN(dueDateObj.getTime())) {
-                            diffDays = Math.round((dueDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                            if (diffDays < 0) {
-                                lateDays = Math.abs(diffDays);
+                            if (isPaid && paidDateStr) {
+                                const paidDateObj = new Date(`${paidDateStr}T00:00:00`);
+                                if (!isNaN(paidDateObj.getTime())) {
+                                    const diff = Math.round((paidDateObj.getTime() - dueDateObj.getTime()) / (1000 * 60 * 60 * 24));
+                                    if (diff > 0) lateDays = diff;
+                                }
+                            } else {
+                                diffDays = Math.round((dueDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                                if (diffDays < 0) {
+                                    lateDays = Math.abs(diffDays);
+                                }
                             }
                         }
                     }
 
-                    const isOverdue = !isPaid && (lateDays > 0 || penalty > 0 || (dueDateStr && dueDateStr < todayStr));
+                    let calculatedPenalty = 0;
+                    if (isPaid) {
+                        if (Number(rowData.penalty || 0) > 0) {
+                            calculatedPenalty = Number(rowData.penalty);
+                        } else if (lateDays > 0) {
+                            calculatedPenalty = getAutomaticPenalty({ ...rowData, status: 'Due' }, contract, rules);
+                        }
+                    } else {
+                        calculatedPenalty = getAutomaticPenalty(rowData, contract, rules);
+                    }
+
+                    const paidPenalty = isPaid ? calculatedPenalty : 0;
+                    const unpaidPenalty = isPaid ? 0 : calculatedPenalty;
+                    const isOverdue = !isPaid && (lateDays > 0 || unpaidPenalty > 0 || (dueDateStr && dueDateStr < todayStr));
 
                     rows.push({
                         id: `${contract._id || contract.id || 'c'}-${rowData.monthIndex || rIdx + 1}`,
@@ -552,10 +596,13 @@ const Dashboard = () => {
                         customerName: nameKh || nameEn || 'Unknown',
                         phone: phone,
                         dueDate: dueDateStr,
+                        paidDate: paidDateStr,
                         scheduledAmount: scheduledAmt,
                         paidAmount: paidAmt,
                         outstandingAmount: unpaidAmt,
-                        penaltyAmount: penalty,
+                        penaltyAmount: calculatedPenalty,
+                        paidPenaltyAmount: paidPenalty,
+                        unpaidPenaltyAmount: unpaidPenalty,
                         isPaid,
                         daysUntilDue: diffDays,
                         lateDays,
@@ -625,13 +672,17 @@ const Dashboard = () => {
 
     // Section Summary Totals
     const dueTotalPaid = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.paidAmount, 0), [dueCustomerRows]);
-    const dueTotalRemaining = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.outstandingAmount + r.penaltyAmount, 0), [dueCustomerRows]);
-    const lateTotalPenalty = useMemo(() => overdueCustomerRows.reduce((s, r) => s + r.penaltyAmount, 0), [overdueCustomerRows]);
+    const dueTotalRemaining = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.outstandingAmount + r.unpaidPenaltyAmount, 0), [dueCustomerRows]);
+    const dueTotalPenalty = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.penaltyAmount, 0), [dueCustomerRows]);
+    const dueTotalPaidPenalty = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.paidPenaltyAmount, 0), [dueCustomerRows]);
+    const dueTotalUnpaidPenalty = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.unpaidPenaltyAmount, 0), [dueCustomerRows]);
+
+    const lateTotalPenalty = useMemo(() => overdueCustomerRows.reduce((s, r) => s + r.unpaidPenaltyAmount, 0), [overdueCustomerRows]);
     const penaltyTotalAmount = useMemo(() => penaltyPaymentRows.reduce((s, r) => s + r.penaltyAmount, 0), [penaltyPaymentRows]);
 
-    const totalPaidPenalty = penaltyTotalAmount;
-    const totalUnpaidPenalty = lateTotalPenalty;
-    const totalPenaltyAll = totalPaidPenalty + totalUnpaidPenalty;
+    const totalPaidPenalty = useMemo(() => penaltyTotalAmount + dueTotalPaidPenalty, [penaltyTotalAmount, dueTotalPaidPenalty]);
+    const totalUnpaidPenalty = useMemo(() => lateTotalPenalty || dueTotalUnpaidPenalty, [lateTotalPenalty, dueTotalUnpaidPenalty]);
+    const totalPenaltyAll = useMemo(() => totalPaidPenalty + totalUnpaidPenalty, [totalPaidPenalty, totalUnpaidPenalty]);
 
     const totalOverdueAlertCount = overdueCustomerRows.length;
 
@@ -1431,6 +1482,9 @@ const Dashboard = () => {
                             <span className="payment-total">
                                 នៅសល់ <strong>{formatMoney(dueTotalRemaining)}</strong>
                             </span>
+                            <span className="payment-total">
+                                ពិន័យសរុប <strong>{formatMoney(dueTotalPenalty)}</strong>
+                            </span>
                             <span className="payment-count">{dueCustomerRows.length} នាក់</span>
                         </div>
                     </div>
@@ -1611,14 +1665,22 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
                 </thead>
                 <tbody>
                     {rows.map((row, idx) => {
-                        const totalDue = row.scheduledAmount + row.penaltyAmount;
-                        const totalRemaining = row.outstandingAmount + row.penaltyAmount;
+                        const penaltyDisplayVal = row.isPaid
+                            ? (row.paidPenaltyAmount || row.penaltyAmount || 0)
+                            : (row.unpaidPenaltyAmount || row.penaltyAmount || 0);
+
+                        const totalDue = row.scheduledAmount + (row.isPaid ? (row.paidPenaltyAmount || 0) : row.penaltyAmount);
+                        const totalRemaining = row.isPaid ? 0 : (row.outstandingAmount + (row.unpaidPenaltyAmount || 0));
 
                         let statusLabel = 'ត្រូវបង់';
                         let statusClass = 'due';
 
                         if (row.isPaid || totalRemaining <= 0) {
-                            statusLabel = 'បានបង់';
+                            if (row.paidPenaltyAmount > 0 || row.lateDays > 0) {
+                                statusLabel = row.lateDays > 0 ? `បានបង់ (យឺត ${row.lateDays} ថ្ងៃ)` : 'បានបង់ (មានពិន័យ)';
+                            } else {
+                                statusLabel = 'បានបង់';
+                            }
                             statusClass = 'paid';
                         } else if (row.lateDays > 0 || (row.daysUntilDue !== null && row.daysUntilDue < 0)) {
                             const lateCount = row.lateDays || Math.abs(row.daysUntilDue);
@@ -1630,7 +1692,7 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
                                 statusLabel = `លើស ${lateCount} ថ្ងៃ`;
                             }
                             statusClass = 'overdue';
-                        } else if (row.penaltyAmount > 0) {
+                        } else if (row.unpaidPenaltyAmount > 0 || row.penaltyAmount > 0) {
                             statusLabel = 'មានពិន័យ';
                             statusClass = 'penalty';
                         } else if (row.daysUntilDue === 0) {
@@ -1663,7 +1725,9 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
                                 <td data-label="ត្រូវបង់" className="num">{formatMoney(totalDue)}</td>
                                 <td data-label="បានបង់" className="num color-green">{formatMoney(row.paidAmount)}</td>
                                 <td data-label="នៅសល់" className="num color-orange">{formatMoney(totalRemaining)}</td>
-                                <td data-label="ពិន័យ" className="num color-red">{formatMoney(row.penaltyAmount)}</td>
+                                <td data-label="ពិន័យ" className={`num ${row.isPaid && penaltyDisplayVal > 0 ? 'color-green' : (penaltyDisplayVal > 0 ? 'color-red' : '')}`}>
+                                    {formatMoney(penaltyDisplayVal)}
+                                </td>
                                 <td data-label="ស្ថានភាព">
                                     <span className={`payment-status payment-status-${statusClass}`}>
                                         {statusLabel}
