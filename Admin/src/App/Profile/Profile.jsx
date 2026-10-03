@@ -146,6 +146,7 @@ const Profile = () => {
             if (res.ok && data.qrPayload) {
                 setQrSession({ qrPayload: data.qrPayload, expiresAt: data.expiresAt });
                 setQrVerifyPassword('');
+                setShowQrModal(false);
             } else {
                 setQrError(data.error || 'ការផ្ទៀងផ្ទាត់មិនត្រឹមត្រូវ (Invalid username or password)');
             }
@@ -350,22 +351,71 @@ const Profile = () => {
                                 <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
                                     QR Code ដែលនៅមានសុពលភាពនឹងបង្ហាញឡើងវិញ។ ដើម្បីបង្កើត QR ថ្មី ត្រូវលុប QR បច្ចុប្បន្នជាមុន។
                                 </p>
+                                {qrCodeData && (
+                                    <div className="pt-2 text-center space-y-2">
+                                        <div className="p-3 bg-white rounded-xl inline-block shadow-lg border-2 border-cyan-500/30">
+                                            <QRCodeCanvas
+                                                id="user-login-qr-canvas"
+                                                value={qrCodeData}
+                                                size={180}
+                                                level="H"
+                                                marginSize={2}
+                                                imageSettings={{
+                                                    src: MDM_CENTER_ICON,
+                                                    x: undefined,
+                                                    y: undefined,
+                                                    height: 40,
+                                                    width: 40,
+                                                    excavate: true,
+                                                }}
+                                            />
+                                        </div>
+                                        <p className="text-[11px] text-amber-300">
+                                            ផុតកំណត់៖ {new Date(qrExpiresAt).toLocaleString()}
+                                        </p>
+                                        <p className="text-xs text-emerald-300 font-bold" aria-live="off">
+                                            នៅសល់៖ {countdownDays} ថ្ងៃ {countdownHours} ម៉ោង {countdownMinutes} នាទី {countdownRemainderSeconds} វិនាទី
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="pt-2 border-t border-gray-800/80">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowQrModal(true);
-                                    setQrVerifyUsername(user?.username || '');
-                                    setQrVerifyPassword('');
-                                    setQrError('');
-                                }}
-                                className="w-full py-2 bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/50 text-cyan-300 hover:text-cyan-200 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                            >
-                                <FaQrcode />
-                                <span>{qrCodeData ? 'បើក / បង្ហាញ QR Code' : 'បង្កើត QR Code'}</span>
-                            </button>
+                            {qrCodeData ? (
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleDownloadQr}
+                                        className="flex-1 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                    >
+                                        <FaDownload />
+                                        <span>ទាញយក QR</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleDeleteQr}
+                                        disabled={qrDeleting}
+                                        className="flex-1 py-2 bg-red-950/70 hover:bg-red-900/80 border border-red-800 text-red-300 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    >
+                                        <FaTrash />
+                                        {qrDeleting ? 'កំពុងលុប...' : 'លុប QR'}
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowQrModal(true);
+                                        setQrVerifyUsername(user?.username || '');
+                                        setQrVerifyPassword('');
+                                        setQrError('');
+                                    }}
+                                    className="w-full py-2 bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/50 text-cyan-300 hover:text-cyan-200 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                >
+                                    <FaQrcode />
+                                    <span>បង្កើត QR Code</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
