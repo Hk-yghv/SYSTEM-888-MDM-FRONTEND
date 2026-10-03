@@ -680,9 +680,10 @@ const Dashboard = () => {
     const lateTotalPenalty = useMemo(() => overdueCustomerRows.reduce((s, r) => s + r.unpaidPenaltyAmount, 0), [overdueCustomerRows]);
     const penaltyTotalAmount = useMemo(() => penaltyPaymentRows.reduce((s, r) => s + r.penaltyAmount, 0), [penaltyPaymentRows]);
 
-    const totalPaidPenalty = useMemo(() => penaltyTotalAmount + dueTotalPaidPenalty, [penaltyTotalAmount, dueTotalPaidPenalty]);
-    const totalUnpaidPenalty = useMemo(() => lateTotalPenalty || dueTotalUnpaidPenalty, [lateTotalPenalty, dueTotalUnpaidPenalty]);
-    const totalPenaltyAll = useMemo(() => totalPaidPenalty + totalUnpaidPenalty, [totalPaidPenalty, totalUnpaidPenalty]);
+    // Strictly calculate penalty metrics from the Due Customers Table (តារាងភ្ញៀវត្រូវបង់)
+    const totalPaidPenalty = useMemo(() => dueTotalPaidPenalty, [dueTotalPaidPenalty]);
+    const totalUnpaidPenalty = useMemo(() => dueTotalUnpaidPenalty, [dueTotalUnpaidPenalty]);
+    const totalPenaltyAll = useMemo(() => dueTotalPenalty, [dueTotalPenalty]);
 
     const totalOverdueAlertCount = overdueCustomerRows.length;
 
