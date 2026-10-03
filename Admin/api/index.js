@@ -1,5 +1,5 @@
 // Vercel Serverless API Multi-Backend Failover Gateway for SYSTEM MDM
-// React Frontend -> Vercel Serverless API Proxy -> Auto Failover (3 APIs) with x-system-api-key -> 888 MDM API
+// React Frontend -> Vercel Serverless API Proxy -> Auto Failover (4 APIs) with x-system-api-key -> 888 MDM API
 
 export const config = {
     api: {
@@ -24,8 +24,14 @@ export default async function handler(req, res) {
         return;
     }
 
-    // 2. High-Availability Multi-API Pool (Checks Server Environment Variables or defaults to 3 Render Backends)
-    const rawPool = [
+    // 2. High-Availability Multi-API Pool (four named URLs take precedence)
+    const configuredPool = [
+        process.env.MDM_API_URL_1,
+        process.env.MDM_API_URL_2,
+        process.env.MDM_API_URL_3,
+        process.env.MDM_API_URL_4,
+    ].filter(Boolean);
+    const legacyPool = configuredPool.length > 0 ? [] : [
         process.env.MDM_API_URL,
         process.env.MDM_API_URL1,
         process.env.MDM_API_URL2,
@@ -35,7 +41,8 @@ export default async function handler(req, res) {
         process.env.VITE_API_BACKEND1,
         process.env.VITE_API_BACKEND2,
         process.env.VITE_API_BACKEND3,
-    ].filter(Boolean).map(url => url.replace(/\/$/, ''));
+    ].filter(Boolean);
+    const rawPool = [...configuredPool, ...legacyPool].map(url => url.replace(/\/$/, ''));
 
     const API_POOL = rawPool.length > 0 ? Array.from(new Set(rawPool)) : [
         'https://system-mdm.onrender.com/api',
@@ -165,7 +172,7 @@ export default async function handler(req, res) {
     let lastError = null;
     let missingCalendarRoute = false;
 
-    // 7. Real-Time Failover Loop across all 3 Backend Servers
+    // 7. Real-Time Failover Loop across all configured backend servers
     for (let i = 0; i < API_POOL.length; i++) {
         const backendBase = API_POOL[i];
         const targetUrl = `${backendBase}/${cleanPath}${queryString}`;
@@ -221,7 +228,7 @@ export default async function handler(req, res) {
 
     // If all servers in pool fail
     return res.status(502).json({
-        error: 'High-Availability Gateway Error: All 3 MDM API backend servers are currently unreachable.',
+        error: `High-Availability Gateway Error: All ${API_POOL.length} configured MDM API backends are currently unreachable.`,
         details: lastError?.message || 'Server timeout or network failure'
     });
 }

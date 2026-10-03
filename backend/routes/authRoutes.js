@@ -1,6 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { Jimp } from 'jimp';
 import User from '../models/User.js';
 import LoginLog from '../models/LoginLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
@@ -722,13 +723,7 @@ export default function createAuthRoutes(bot) {
             user.faceEnabled = true;
 
             if (isMongoConnected) {
-                const UserWrite = getWriteModel(User) || User;
-                await UserWrite.updateOne({ username: user.username }, {
-                    $set: {
-                        faceData: storedFace,
-                        faceEnabled: true
-                    }
-                });
+                await user.save();
             }
 
             res.json({
@@ -742,44 +737,58 @@ export default function createAuthRoutes(bot) {
         }
     });
 
-    // ── Helper: Compare two base64 image data strings by pixel similarity ──
-    const computeImageSimilarity = (base64A, base64B) => {
+    // ── Helper: Compare two base64 face images using jimp pixel-level similarity ──
+    const computeImageSimilarity = async (base64A, base64B) => {
         try {
-            // Extract raw base64 payload (strip data URI prefix)
-            const rawA = base64A.replace(/^data:image\/\w+;base64,/, '');
-            const rawB = base64B.replace(/^data:image\/\w+;base64,/, '');
+            // Strip data URI prefix and convert to Buffer
+            const bufA = Buffer.from(base64A.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+            const bufB = Buffer.from(base64B.replace(/^data:image\/\w+;base64,/, ''), 'base64');
 
-            const bufA = Buffer.from(rawA, 'base64');
-            const bufB = Buffer.from(rawB, 'base64');
-
-            // Quick sanity: both must be non-trivially sized (≥1KB indicates real image content)
             if (bufA.length < 1000 || bufB.length < 1000) return 0;
 
-            // Sample pixels at regular intervals across the raw byte buffer
-            // We skip JPEG/PNG headers (first 200 bytes) and compare body bytes
-            const SKIP = 200;
-            const SAMPLE_COUNT = 600;
-            const lenA = bufA.length - SKIP;
-            const lenB = bufB.length - SKIP;
-            const step = Math.max(1, Math.floor(Math.min(lenA, lenB) / SAMPLE_COUNT));
+            // Decode JPEG images with jimp
+            const [imgA, imgB] = await Promise.all([
+                Jimp.fromBuffer(bufA),
+                Jimp.fromBuffer(bufB)
+            ]);
 
-            let matching = 0;
-            let total = 0;
-            const TOLERANCE = 30; // byte difference tolerance per sample
+            // Resize both to 16x16 for fast, lighting-tolerant comparison
+            const SIZE = 16;
+            imgA.resize({ w: SIZE, h: SIZE });
+            imgB.resize({ w: SIZE, h: SIZE });
 
-            for (let i = SKIP; i < Math.min(bufA.length, bufB.length) - 4; i += step) {
-                const diff =
-                    Math.abs(bufA[i] - bufB[i]) +
-                    Math.abs(bufA[i + 1] - bufB[i + 1]) +
-                    Math.abs(bufA[i + 2] - bufB[i + 2]) +
-                    Math.abs(bufA[i + 3] - bufB[i + 3]);
-                if (diff <= TOLERANCE * 4) matching++;
-                total++;
+            let totalDiff = 0;
+            const pixelCount = SIZE * SIZE;
+
+            for (let y = 0; y < SIZE; y++) {
+                for (let x = 0; x < SIZE; x++) {
+                    const colorA = imgA.getPixelColor(x, y);
+                    const colorB = imgB.getPixelColor(x, y);
+
+                    // Extract R, G, B channels from 32-bit color int (RGBA)
+                    const rA = (colorA >>> 24) & 0xff;
+                    const gA = (colorA >>> 16) & 0xff;
+                    const bA = (colorA >>> 8) & 0xff;
+
+                    const rB = (colorB >>> 24) & 0xff;
+                    const gB = (colorB >>> 16) & 0xff;
+                    const bB = (colorB >>> 8) & 0xff;
+
+                    // Luminance diff (brightness-focused, tolerant to color shift)
+                    const lumA = 0.299 * rA + 0.587 * gA + 0.114 * bA;
+                    const lumB = 0.299 * rB + 0.587 * gB + 0.114 * bB;
+
+                    totalDiff += Math.abs(lumA - lumB);
+                }
             }
 
-            return total > 0 ? matching / total : 0;
+            // Normalize: average diff per pixel (0-255), convert to similarity score 0-1
+            const avgDiff = totalDiff / pixelCount;
+            const similarity = Math.max(0, 1 - avgDiff / 128);
+
+            return similarity;
         } catch (e) {
-            console.error('Face similarity error:', e.message);
+            console.error('[FaceLogin] jimp similarity error:', e.message);
             return 0;
         }
     };
@@ -827,7 +836,7 @@ export default function createAuthRoutes(bot) {
                 if (!u.faceEnabled || !u.faceData) continue;
                 if (u.isBlocked) continue;
 
-                const score = computeImageSimilarity(inputFace, u.faceData);
+                const score = await computeImageSimilarity(inputFace, u.faceData);
                 console.log(`[FaceLogin] user=${u.username} similarity=${(score * 100).toFixed(1)}%`);
 
                 if (score > bestScore) {

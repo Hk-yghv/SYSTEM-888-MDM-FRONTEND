@@ -11,6 +11,7 @@ const API_BASE = import.meta.env.DEV
     : '/api';
 const API_BASE1 = import.meta.env.DEV ? (import.meta.env.VITE_API_BACKEND1 || API_BASE) : API_BASE;
 const API_BASE2 = import.meta.env.DEV ? (import.meta.env.VITE_API_BACKEND2 || API_BASE) : API_BASE;
+const TEN_MINUTES_MS = 10 * 60 * 1000;
 
 
 export const AuthProvider = ({ children }) => {
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }) => {
 
     const [token, setToken] = useState(() => getSecureItem('mdm_token') || '');
     const [loading, setLoading] = useState(false);
+    const [isBackendRecovering, setIsBackendRecovering] = useState(false);
     const [isBlocked, setIsBlocked] = useState(false);
 
     const pollingRef = useRef(null);
@@ -40,6 +42,7 @@ export const AuthProvider = ({ children }) => {
         }
         setUser(null);
         setToken('');
+        setIsBackendRecovering(false);
         clearSecureAuth();
     }, [user?.username]);
 
@@ -47,19 +50,48 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         if (!user?.username || !token) return;
 
-        const sendHeartbeat = () => {
-            fetch(`${API_BASE}/auth/heartbeat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({ username: user.username })
-            }).catch(() => { });
+        let isActive = true;
+        const postHeartbeat = () => fetch(`${API_BASE}/auth/heartbeat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ username: user.username })
+        });
+
+        const sendHeartbeat = async () => {
+            if (Date.now() - lastActivityRef.current >= TEN_MINUTES_MS) {
+                logout();
+                return;
+            }
+
+            try {
+                const response = await postHeartbeat();
+                if (response.ok || !isActive) return;
+            } catch {
+                if (!isActive) return;
+            }
+
+            setIsBackendRecovering(true);
+            try {
+                const healthResponse = await fetch(`${API_BASE}/health`, { cache: 'no-store' });
+                if (healthResponse.ok && isActive) {
+                    const retryResponse = await postHeartbeat();
+                    if (retryResponse.ok || !isActive) {
+                        setIsBackendRecovering(false);
+                        return;
+                    }
+                }
+            } catch {
+                // The backend is still unreachable; clear the stale session below.
+            }
+
+            if (isActive) logout();
         };
 
-        sendHeartbeat();
-        const hbInterval = setInterval(sendHeartbeat, 10000); // Heartbeat every 10s
+        void sendHeartbeat();
+        const hbInterval = setInterval(() => { void sendHeartbeat(); }, TEN_MINUTES_MS);
 
         const handleUnload = () => {
             if (user?.username) {
@@ -80,17 +112,18 @@ export const AuthProvider = ({ children }) => {
         window.addEventListener('pagehide', handleUnload);
 
         return () => {
+            isActive = false;
             clearInterval(hbInterval);
             window.removeEventListener('beforeunload', handleUnload);
             window.removeEventListener('pagehide', handleUnload);
         };
-    }, [user?.username, token]);
+    }, [user?.username, token, logout]);
 
-    // ── 15 Minute Inactivity Auto Logout
+    // ── 10 Minute Inactivity Auto Logout
     useEffect(() => {
         if (!user || !token) return;
 
-        const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes in ms
+        const INACTIVITY_TIMEOUT = TEN_MINUTES_MS;
 
         const resetActivity = () => {
             lastActivityRef.current = Date.now();
@@ -135,6 +168,8 @@ export const AuthProvider = ({ children }) => {
         if (user.isImmutable || user.username === '@hakyonghouv') return;
 
         const poll = async () => {
+            if (Date.now() - lastActivityRef.current >= TEN_MINUTES_MS) return;
+
             try {
                 const res = await fetch(`${API_BASE}/users/status-check?username=${encodeURIComponent(user.username)}`, {
                     headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -156,7 +191,7 @@ export const AuthProvider = ({ children }) => {
         };
 
         poll(); // immediate first check
-        pollingRef.current = setInterval(poll, 10000); // every 10s
+        pollingRef.current = setInterval(poll, TEN_MINUTES_MS);
 
         return () => clearInterval(pollingRef.current);
     }, [user, token, logout]);
@@ -295,6 +330,18 @@ export const AuthProvider = ({ children }) => {
                         <p className="text-[11px] text-gray-600 animate-pulse">
                             Signing out automatically...
                         </p>
+                    </div>
+                </div>
+            )}
+
+            {isBackendRecovering && (
+                <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-black/90 backdrop-blur-md" role="status" aria-live="polite">
+                    <div className="flex flex-col items-center gap-5 px-6 text-center">
+                        <div className="h-12 w-12 rounded-full border-4 border-cyan-900 border-t-cyan-400 animate-spin" />
+                        <div className="space-y-2">
+                            <h2 className="text-lg font-bold text-gray-100">កំពុងភ្ជាប់ទៅ Backend</h2>
+                            <p className="text-sm text-gray-400">កំពុងដាស់សេវា និងព្យាយាមភ្ជាប់ឡើងវិញ...</p>
+                        </div>
                     </div>
                 </div>
             )}
