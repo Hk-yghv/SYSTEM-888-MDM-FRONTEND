@@ -47,6 +47,7 @@ import LockPhoneReport from "../App/Report/pages/LockPhoneReport";
 import SetWallpaperReport from "../App/Report/pages/SetWallpaperReport";
 import InstallmentReport from "../App/Report/pages/InstallmentReport";
 import FollowUpReport from "../App/Report/pages/FollowUpReport";
+import FollowUp4Report from "../App/Report/pages/FollowUp4Report";
 
 // Wallpaper
 import ActionWallpaper from "../App/Wallpaper/pages/Actions";
@@ -149,6 +150,7 @@ const AppRoutes = () => {
       <Route path={json.report?.setWallpaper} element={renderProtected(json.report?.setWallpaper, SetWallpaperReport)} />
       <Route path={json.report?.installment} element={renderProtected(json.report?.installment, InstallmentReport)} />
       <Route path={json.report?.followUpReport || "/report/follow-up"} element={renderProtected(json.report?.followUpReport || "/report/follow-up", FollowUpReport)} />
+      <Route path={json.report?.followUp4Report || "/report/follow-up-4"} element={renderProtected(json.report?.followUp4Report || "/report/follow-up-4", FollowUp4Report)} />
       <Route path="/follow-up/report" element={renderProtected(json.report?.followUpReport || "/report/follow-up", FollowUpReport)} />
 
       {/* Wallpaper */}

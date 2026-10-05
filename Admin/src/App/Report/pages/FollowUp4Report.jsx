@@ -1,0 +1,451 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../../../context/AuthContext';
+import { useLanguage } from '../../../context/LanguageContext';
+import { FaCalendarAlt, FaCopy, FaFileAlt, FaSyncAlt } from 'react-icons/fa';
+
+const dateToInputValue = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const getDateKey = (record) => String(record.date || '').split('T')[0];
+const getCount = (value) => {
+    const count = Number(value);
+    return Number.isFinite(count) ? count : 0;
+};
+const getFormattedDate = (date) => {
+    const [year, month, day] = date.split('-');
+    return year && month && day ? `${day}/${month}/${year}` : date;
+};
+
+const detailFields = [
+    ['message', 'MESSAGE'],
+    ['page', 'PAGE'],
+    ['telegram', 'TG'],
+    ['noReply', 'NOREPLY'],
+    ['inquire', 'INQUIRE'],
+    ['rejectCs', 'REJECT CS'],
+    ['more', 'MORE'],
+    ['pageSubmit', 'PAGE SUBMIT'],
+    ['telegramSubmit', 'TG SUBMIT'],
+    ['call', 'CALL'],
+    ['review', 'REVIEW'],
+    ['reject', 'REJECT 1'],
+    ['reject2', 'REJECT 2'],
+    ['success1', 'SUCCESS 1'],
+    ['success2', 'SUCCESS 2']
+];
+
+const detailTableFields = [
+    ...detailFields.slice(0, 10),
+    ['totalSubmit', 'TOTAL SUBMIT'],
+    ...detailFields.slice(10, 13),
+    ['totalReject', 'TOTAL'],
+    ...detailFields.slice(13),
+    ['totalSuccess', 'TOTAL SUCCESS']
+];
+
+const getDetailValue = (row, field) => {
+    if (field === 'totalSubmit') return getCount(row.pageSubmit) + getCount(row.telegramSubmit) + getCount(row.call);
+    if (field === 'totalReject') return getCount(row.reject) + getCount(row.reject2);
+    if (field === 'totalSuccess') return getCount(row.success1) + getCount(row.success2);
+    return getCount(row[field]);
+};
+
+const getDailyReportText = (date, detail, rejectSubmitRows) => {
+    const totalSubmit = getCount(detail.pageSubmit) + getCount(detail.telegramSubmit) + getCount(detail.call);
+    const totalReject = getCount(detail.reject) + getCount(detail.reject2);
+    const totalSuccess = getCount(detail.success1) + getCount(detail.success2);
+    const reasons = rejectSubmitRows
+        .filter((row) => getDateKey(row) === date && getCount(row.count) > 0)
+        .reduce((names, row) => {
+            if (!names.includes(row.reason)) names.push(row.reason);
+            return names;
+        }, []);
+
+    return [
+        getFormattedDate(date),
+        `Total Message ${getCount(detail.message)}`,
+        `មិនឆ្លើយតប ${getCount(detail.noReply)}`,
+        `ឆ្លើយតប ${Math.max(0, getCount(detail.message) - getCount(detail.noReply))}`,
+        `សាកសួរ ${getCount(detail.inquire)}`,
+        `ដាក់ស្នើ ${totalSubmit}`,
+        `Review ${getCount(detail.review)}`,
+        `បរាជ័យ ${totalReject}`,
+        `ជោគជ័យ ${totalSuccess}`,
+        ...reasons.map((reason) => `- ${reason}`)
+    ].join('\n');
+};
+
+const FollowUp4Report = () => {
+    const { API_BASE1, API_BASE2, user, hasPermission } = useAuth();
+    const { t } = useLanguage();
+    const API_BASE = API_BASE1 || API_BASE2 || '/api';
+    const today = useMemo(() => dateToInputValue(new Date()), []);
+    const monthStart = useMemo(() => `${today.slice(0, 7)}-01`, [today]);
+    const [startDate, setStartDate] = useState(monthStart);
+    const [endDate, setEndDate] = useState(today);
+    const [selectedBrand, setSelectedBrand] = useState('');
+    const [brands, setBrands] = useState([]);
+    const [detailRows, setDetailRows] = useState([]);
+    const [rejectCsRows, setRejectCsRows] = useState([]);
+    const [rejectSubmitRows, setRejectSubmitRows] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [activeReport, setActiveReport] = useState(null);
+    const [copied, setCopied] = useState(false);
+    const [copyError, setCopyError] = useState('');
+
+    const isMasterAdmin = user?.username === '@hakyonghouv' ||
+        user?.username === 'hakyonghouv' ||
+        user?.isImmutable === true ||
+        ['administrator', 'admin'].includes(String(user?.role || '').toLowerCase());
+
+    useEffect(() => {
+        if (!isMasterAdmin) return;
+        let cancelled = false;
+        const fetchBrands = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/controlsystem?brand=`);
+                if (!response.ok) throw new Error(`Failed to load brands (${response.status})`);
+                const result = await response.json();
+                const brandCategory = result.droplists?.find((item) => item.category?.toLowerCase() === 'brands');
+                if (!cancelled && Array.isArray(brandCategory?.items)) {
+                    setBrands(brandCategory.items.map((brand) =>
+                        typeof brand === 'string' ? brand : brand.name || String(brand)
+                    ));
+                }
+            } catch (fetchError) {
+                console.error('Fetch Follow Up 4 report brands error:', fetchError);
+            }
+        };
+        fetchBrands();
+        return () => { cancelled = true; };
+    }, [API_BASE, isMasterAdmin]);
+
+    const fetchReportData = useCallback(async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const params = new URLSearchParams({
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            if (selectedBrand) params.set('brand', selectedBrand);
+            if (startDate) params.set('startDate', startDate);
+            if (endDate) params.set('endDate', endDate);
+            const query = params.toString();
+
+            const endpoints = ['detail', 'reject-cs', 'reject-submit'];
+            const responses = await Promise.all(endpoints.map((endpoint) =>
+                fetch(`${API_BASE}/follow-up-4/${endpoint}?${query}`)
+            ));
+            const failedResponse = responses.find((response) => !response.ok);
+            if (failedResponse) {
+                throw new Error(`Failed to load report data (${failedResponse.status})`);
+            }
+            const results = await Promise.all(responses.map((response) => response.json()));
+            setDetailRows(results[0].data || []);
+            setRejectCsRows(results[1].data || []);
+            setRejectSubmitRows(results[2].data || []);
+        } catch (fetchError) {
+            console.error('Fetch Follow Up 4 report error:', fetchError);
+            setError(fetchError.message || 'Failed to load report data');
+            setDetailRows([]);
+            setRejectCsRows([]);
+            setRejectSubmitRows([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [API_BASE, endDate, selectedBrand, startDate, user]);
+
+    useEffect(() => {
+        fetchReportData();
+    }, [fetchReportData]);
+
+    const reportRows = useMemo(() => {
+        const byDate = new Map();
+        const getOrCreate = (date) => {
+            if (!byDate.has(date)) {
+                const empty = Object.fromEntries(detailFields.map(([field]) => [field, 0]));
+                byDate.set(date, { date, ...empty });
+            }
+            return byDate.get(date);
+        };
+
+        detailRows.forEach((record) => {
+            const date = getDateKey(record);
+            if (!date) return;
+            const daily = getOrCreate(date);
+            detailFields.forEach(([field]) => {
+                if (field === 'message' && (record.message === undefined || record.message === null)) {
+                    daily.message += getCount(record.page) + getCount(record.telegram) + getCount(record.call);
+                } else {
+                    daily[field] += getCount(record[field]);
+                }
+            });
+        });
+        rejectCsRows.concat(rejectSubmitRows).forEach((record) => {
+            const date = getDateKey(record);
+            if (date) getOrCreate(date);
+        });
+
+        return Array.from(byDate.values()).sort((a, b) => b.date.localeCompare(a.date));
+    }, [detailRows, rejectCsRows, rejectSubmitRows]);
+
+    const detailTotals = useMemo(() => {
+        const totals = Object.fromEntries(detailFields.map(([field]) => [field, 0]));
+        reportRows.forEach((row) => {
+            detailFields.forEach(([field]) => { totals[field] += getCount(row[field]); });
+        });
+        return {
+            ...totals,
+            totalSubmit: totals.pageSubmit + totals.telegramSubmit + totals.call,
+            totalReject: totals.reject + totals.reject2,
+            totalSuccess: totals.success1 + totals.success2
+        };
+    }, [reportRows]);
+
+    const getGroupedRejectRows = useCallback((rows) => {
+        const reasonSet = new Set();
+        const groups = new Map();
+        rows.forEach((record) => {
+            const date = getDateKey(record);
+            if (!date) return;
+            const reason = record.reason || '';
+            reasonSet.add(reason);
+            if (!groups.has(date)) groups.set(date, { date, total: 0, reasons: {} });
+            const group = groups.get(date);
+            group.reasons[reason] = (group.reasons[reason] || 0) + getCount(record.count);
+            group.total += getCount(record.count);
+        });
+        const groupRows = Array.from(groups.values()).sort((a, b) => b.date.localeCompare(a.date));
+        const reasonTotals = Object.fromEntries(Array.from(reasonSet, (reason) => [reason, 0]));
+        groupRows.forEach((group) => {
+            Object.entries(group.reasons).forEach(([reason, count]) => {
+                reasonTotals[reason] += count;
+            });
+        });
+        return { reasons: Array.from(reasonSet), rows: groupRows, total: groupRows.reduce((sum, row) => sum + row.total, 0), reasonTotals };
+    }, []);
+
+    const groupedRejectCs = useMemo(() => getGroupedRejectRows(rejectCsRows), [getGroupedRejectRows, rejectCsRows]);
+    const groupedRejectSubmit = useMemo(() => getGroupedRejectRows(rejectSubmitRows), [getGroupedRejectRows, rejectSubmitRows]);
+
+    const openDailyReport = (row) => {
+        setCopied(false);
+        setCopyError('');
+        setActiveReport({
+            title: `${t('dailyReport') || 'របាយការណ៍ប្រចាំថ្ងៃ'} - ${getFormattedDate(row.date)}`,
+            text: getDailyReportText(row.date, row, rejectSubmitRows)
+        });
+    };
+
+    const openTotalReport = () => {
+        const reportDate = startDate && endDate
+            ? `${getFormattedDate(startDate)} - ${getFormattedDate(endDate)}`
+            : (startDate ? `ចាប់ពី ${getFormattedDate(startDate)}` : (endDate ? `ដល់ ${getFormattedDate(endDate)}` : 'សរុបទាំងអស់'));
+        const reasons = groupedRejectSubmit.reasons
+            .filter((reason) => groupedRejectSubmit.reasonTotals[reason] > 0);
+        const totalReportText = [
+            reportDate,
+            `Total Message ${detailTotals.message}`,
+            `មិនឆ្លើយតប ${detailTotals.noReply}`,
+            `ឆ្លើយតប ${Math.max(0, detailTotals.message - detailTotals.noReply)}`,
+            `សាកសួរ ${detailTotals.inquire}`,
+            `ដាក់ស្នើ ${detailTotals.totalSubmit}`,
+            `Review ${detailTotals.review}`,
+            `បរាជ័យ ${detailTotals.totalReject}`,
+            `ជោគជ័យ ${detailTotals.totalSuccess}`,
+            ...reasons.map((reason) => `- ${reason}`)
+        ].join('\n');
+        setCopied(false);
+        setCopyError('');
+        setActiveReport({ title: t('followUp4TotalReport') || 'Follow Up 4 Total Report', text: totalReportText });
+    };
+
+    const copyReport = async () => {
+        try {
+            await navigator.clipboard.writeText(activeReport.text);
+            setCopied(true);
+            setCopyError('');
+            window.setTimeout(() => setCopied(false), 1500);
+        } catch (clipboardError) {
+            console.error('Copy Follow Up 4 report error:', clipboardError);
+            setCopyError(t('copyFailed') || 'Copy failed. Please copy the report text manually.');
+        }
+    };
+
+    const permissionToView = hasPermission('/report/follow-up-4', 'read');
+
+    if (!permissionToView) {
+        return (
+            <div className="m-3 rounded-[5px] border border-rose-200 bg-white p-6 text-center font-semibold text-rose-600">
+                {t('accessDenied') || 'Access Denied'}
+            </div>
+        );
+    }
+
+    const renderRejectTable = (title, table, accent) => (
+        <section className="overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-3">
+                <h2 className={`text-sm font-black ${accent}`}>{title}</h2>
+                <span className="text-xs font-semibold text-slate-500">{table.rows.length} ថ្ងៃ</span>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full min-w-max text-xs">
+                    <thead className="bg-slate-100 text-[10px] font-bold uppercase text-slate-500">
+                        <tr>
+                            <th className="whitespace-nowrap px-3 py-2.5 text-left">កាលបរិច្ឆេទ</th>
+                            <th className="px-3 py-2.5 text-center">សរុប</th>
+                            {table.reasons.map((reason) => (
+                                <th key={reason} className="whitespace-nowrap px-3 py-2.5 text-center">{reason}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {loading ? (
+                            <tr><td colSpan={table.reasons.length + 2} className="px-3 py-8 text-center text-slate-400">កំពុងទាញយកទិន្នន័យ...</td></tr>
+                        ) : table.rows.length === 0 ? (
+                            <tr><td colSpan={table.reasons.length + 2} className="px-3 py-8 text-center text-slate-400">មិនមានទិន្នន័យ</td></tr>
+                        ) : table.rows.map((row) => (
+                            <tr key={row.date} className="hover:bg-slate-50">
+                                <td className="whitespace-nowrap px-3 py-2 font-mono font-semibold text-slate-700">{getFormattedDate(row.date)}</td>
+                                <td className="px-3 py-2 text-center font-black text-slate-800">{row.total}</td>
+                                {table.reasons.map((reason) => (
+                                    <td key={reason} className="px-3 py-2 text-center font-mono text-slate-600">{row.reasons[reason] || 0}</td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                    {table.rows.length > 0 && (
+                        <tfoot className="border-t-2 border-slate-300 bg-slate-100 font-black text-slate-700">
+                            <tr>
+                                <td className="px-3 py-2.5">{t('total') || 'សរុប'}</td>
+                                <td className="px-3 py-2.5 text-center">{table.total}</td>
+                                {table.reasons.map((reason) => (
+                                    <td key={reason} className="px-3 py-2.5 text-center">{table.reasonTotals[reason] || 0}</td>
+                                ))}
+                            </tr>
+                        </tfoot>
+                    )}
+                </table>
+            </div>
+        </section>
+    );
+
+    return (
+        <main className="mx-auto min-h-screen max-w-[1800px] space-y-5 p-2 sm:p-3">
+            <header className="flex flex-col justify-between gap-4 rounded-[5px] border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
+                <div>
+                    <h1 className="flex items-center gap-2 text-xl font-black tracking-tight text-slate-800">
+                        <FaFileAlt className="text-emerald-600" />
+                        {t('followUp4Report') || 'Follow Up 4 Report'}
+                    </h1>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-2 rounded-[5px] border border-slate-200 bg-slate-50 px-3 py-2">
+                        <FaCalendarAlt className="text-emerald-600" />
+                        <input aria-label="Start date" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="w-[130px] bg-transparent text-xs text-slate-700 outline-none" />
+                        <span className="text-xs text-slate-400">-</span>
+                        <input aria-label="End date" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="w-[130px] bg-transparent text-xs text-slate-700 outline-none" />
+                    </div>
+                    {isMasterAdmin && (
+                        <select aria-label="Brand" value={selectedBrand} onChange={(event) => setSelectedBrand(event.target.value)} className="rounded-[5px] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none">
+                            <option value="">ALL BRANDS</option>
+                            {brands.map((brand) => <option key={brand} value={brand}>{brand}</option>)}
+                        </select>
+                    )}
+                    <button onClick={openTotalReport} disabled={!reportRows.length || loading} className="flex items-center gap-2 rounded-[5px] bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
+                        <FaFileAlt />
+                        {t('viewTotalReport') || 'មើល Report សរុប'}
+                    </button>
+                    <button onClick={fetchReportData} disabled={loading} aria-label={t('refresh') || 'Refresh'} className="rounded-[5px] border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+                        <FaSyncAlt className={loading ? 'animate-spin' : ''} />
+                    </button>
+                </div>
+            </header>
+
+            {error && <div role="alert" className="rounded-[5px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div>}
+
+            <section className="overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-3">
+                    <h2 className="text-sm font-black text-sky-700">DETAIL</h2>
+                    <span className="text-xs font-semibold text-slate-500">{reportRows.length} ថ្ងៃ</span>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-max text-xs">
+                        <thead className="bg-slate-100 text-[10px] font-bold uppercase text-slate-500">
+                            <tr>
+                                <th className="whitespace-nowrap px-3 py-2.5 text-left">កាលបរិច្ឆេទ</th>
+                                {detailTableFields.map(([field, label]) => (
+                                    <th key={field} className="whitespace-nowrap px-2 py-2.5 text-center">{label}</th>
+                                ))}
+                                <th className="whitespace-nowrap px-3 py-2.5 text-center">សកម្មភាព</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {loading ? (
+                                <tr><td colSpan={detailTableFields.length + 2} className="px-3 py-10 text-center text-slate-400">កំពុងទាញយកទិន្នន័យ...</td></tr>
+                            ) : reportRows.length === 0 ? (
+                                <tr><td colSpan={detailTableFields.length + 2} className="px-3 py-10 text-center text-slate-400">មិនមានទិន្នន័យសម្រាប់ចន្លោះកាលបរិច្ឆេទនេះទេ</td></tr>
+                            ) : reportRows.map((row) => (
+                                <tr key={row.date} className="hover:bg-slate-50">
+                                    <td className="whitespace-nowrap px-3 py-2 font-mono font-bold text-slate-700">{getFormattedDate(row.date)}</td>
+                                    {detailTableFields.map(([field]) => (
+                                        <td key={field} className={`px-2 py-2 text-center font-mono ${['totalSubmit', 'totalReject', 'totalSuccess'].includes(field) ? 'font-black' : 'text-slate-600'}`}>
+                                            {getDetailValue(row, field)}
+                                        </td>
+                                    ))}
+                                    <td className="px-3 py-2 text-center">
+                                        <button onClick={() => openDailyReport(row)} className="whitespace-nowrap rounded-[5px] bg-sky-600 px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-sky-700">
+                                            មើល Report
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        {reportRows.length > 0 && (
+                            <tfoot className="border-t-2 border-slate-300 bg-slate-100 font-black text-slate-700">
+                                <tr>
+                                    <td className="whitespace-nowrap px-3 py-2.5">{t('total') || 'សរុប'}</td>
+                                    {detailTableFields.map(([field]) => (
+                                        <td key={field} className="px-2 py-2.5 text-center">{detailTotals[field]}</td>
+                                    ))}
+                                    <td className="px-3 py-2.5 text-center">-</td>
+                                </tr>
+                            </tfoot>
+                        )}
+                    </table>
+                </div>
+            </section>
+
+            {renderRejectTable('REJECT CS', groupedRejectCs, 'text-amber-700')}
+            {renderRejectTable('REJECT SUBMIT', groupedRejectSubmit, 'text-rose-700')}
+
+            {activeReport && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3" role="dialog" aria-modal="true" aria-label={activeReport.title}>
+                    <div className="w-full max-w-lg overflow-hidden rounded-[5px] bg-white shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                            <h2 className="font-black text-slate-800">{activeReport.title}</h2>
+                            <button onClick={() => setActiveReport(null)} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label="Close">×</button>
+                        </div>
+                        <pre className="max-h-[65vh] overflow-auto whitespace-pre-wrap px-5 py-4 font-sans text-sm leading-7 text-slate-800">{activeReport.text}</pre>
+                        <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+                            {copyError ? <p role="alert" className="text-xs text-rose-600">{copyError}</p> : <span />}
+                            <button onClick={copyReport} className="flex items-center gap-2 rounded-[5px] bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+                                <FaCopy /> {copied ? (t('copied') || 'បាន Copy') : (t('copyText') || 'Copy Text')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </main>
+    );
+};
+
+export default FollowUp4Report;

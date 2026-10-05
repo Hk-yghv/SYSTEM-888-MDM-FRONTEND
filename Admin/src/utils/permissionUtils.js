@@ -39,6 +39,7 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/report/set-wallpaper',
     '/report/installment',
     '/report/follow-up',
+    '/report/follow-up-4',
     '/history/login-history',
     '/history/device-history',
     '/follow-up/follow-up-1',

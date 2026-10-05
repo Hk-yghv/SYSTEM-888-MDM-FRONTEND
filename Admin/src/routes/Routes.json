@@ -15,7 +15,8 @@
         "lockPhone": "/report/lock-phone",
         "setWallpaper": "/report/set-wallpaper",
         "installment": "/report/installment",
-        "followUpReport": "/report/follow-up"
+        "followUpReport": "/report/follow-up",
+        "followUp4Report": "/report/follow-up-4"
     },
     "contract": {
         "application": "/contract/application",
