@@ -21,35 +21,8 @@ import { QRCodeCanvas } from 'qrcode.react';
 // MDM App Icon as SVG data URL for QR Code center embedding
 const MDM_CENTER_ICON = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%236366f1"/><stop offset="100%" stop-color="%23a855f7"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(%23g)"/><rect x="18" y="18" width="28" height="28" rx="6" fill="white"/><rect x="54" y="18" width="28" height="28" rx="6" fill="white"/><rect x="18" y="54" width="28" height="28" rx="6" fill="white"/><rect x="54" y="54" width="28" height="28" rx="6" fill="white"/></svg>`;
 
-const readSavedQr = (username) => {
-    if (!username) return null;
-
-    const storageKey = `mdm-login-qr:${username}`;
-    const savedQr = window.localStorage.getItem(storageKey);
-    if (!savedQr) return null;
-
-    try {
-        const session = JSON.parse(savedQr);
-        const expiresAt = new Date(session.expiresAt).getTime();
-        if (
-            typeof session.qrPayload === 'string' &&
-            /^mdm_qr_[A-Za-z0-9_-]{43}$/.test(session.qrPayload) &&
-            Number.isFinite(expiresAt) &&
-            expiresAt > Date.now()
-        ) {
-            return session;
-        }
-    } catch {
-        window.localStorage.removeItem(storageKey);
-        return null;
-    }
-
-    window.localStorage.removeItem(storageKey);
-    return null;
-};
-
 const Profile = () => {
-    const { user, updateUserState, API_BASE } = useAuth();
+    const { user, updateUserState, API_BASE, token } = useAuth();
     const { t } = useLanguage();
 
     // Telegram 2FA Settings State
@@ -71,15 +44,57 @@ const Profile = () => {
     const [showQrModal, setShowQrModal] = useState(false);
     const [qrVerifyUsername, setQrVerifyUsername] = useState(user?.username || '');
     const [qrVerifyPassword, setQrVerifyPassword] = useState('');
-    const [qrSession, setQrSession] = useState(() => readSavedQr(user?.username));
+    const [qrSession, setQrSession] = useState(null);
     const [qrDuration, setQrDuration] = useState('1d');
     const [qrLoading, setQrLoading] = useState(false);
+    const [qrSessionLoading, setQrSessionLoading] = useState(true);
     const [qrDeleting, setQrDeleting] = useState(false);
+    const [qrLegacyActive, setQrLegacyActive] = useState(false);
     const [qrRemainingMs, setQrRemainingMs] = useState(0);
     const [qrError, setQrError] = useState('');
-    const qrStorageKey = user?.username ? `mdm-login-qr:${user.username}` : null;
     const qrCodeData = qrSession?.qrPayload || null;
     const qrExpiresAt = qrSession?.expiresAt || null;
+
+    useEffect(() => {
+        if (user?.username) {
+            try {
+                window.localStorage.removeItem(`mdm-login-qr:${user.username}`);
+            } catch (err) {
+                console.warn('Could not remove the legacy browser-stored QR payload:', err);
+            }
+        }
+    }, [user?.username]);
+
+    useEffect(() => {
+        if (!token) {
+            setQrSessionLoading(false);
+            return undefined;
+        }
+
+        let cancelled = false;
+        const fetchQrSession = async () => {
+            setQrSessionLoading(true);
+            try {
+                const response = await fetch(`${API_BASE}/auth/qr-session`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Could not load QR codes');
+                if (!cancelled) {
+                    setQrSession(data.sessions?.[0] || null);
+                    setQrLegacyActive(!!data.legacyActive);
+                }
+            } catch (err) {
+                console.error('Fetch profile QR session error:', err);
+                if (!cancelled) setQrError(err.message || 'Could not load QR codes');
+            } finally {
+                if (!cancelled) setQrSessionLoading(false);
+            }
+        };
+
+        fetchQrSession();
+        return () => { cancelled = true; };
+    }, [API_BASE, token]);
 
     useEffect(() => {
         if (!qrSession || !qrExpiresAt) return;
@@ -93,6 +108,7 @@ const Profile = () => {
 
             setQrRemainingMs(0);
             setQrSession(null);
+            setQrLegacyActive(false);
             setQrError('QR Code បានផុតកំណត់ហើយ សូមបង្កើតថ្មី។');
         };
 
@@ -107,16 +123,6 @@ const Profile = () => {
             document.removeEventListener('visibilitychange', updateQrCountdown);
         };
     }, [qrSession, qrExpiresAt]);
-
-    useEffect(() => {
-        if (!qrStorageKey) return;
-
-        if (qrSession) {
-            window.localStorage.setItem(qrStorageKey, JSON.stringify(qrSession));
-        } else {
-            window.localStorage.removeItem(qrStorageKey);
-        }
-    }, [qrSession, qrStorageKey]);
 
     const countdownSeconds = Math.floor(qrRemainingMs / 1000);
     const countdownDays = Math.floor(countdownSeconds / 86400);
@@ -133,7 +139,10 @@ const Profile = () => {
         try {
             const res = await fetch(`${API_BASE}/auth/qr-generate`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     username: qrVerifyUsername || user?.username,
                     password: qrVerifyPassword,
@@ -144,7 +153,12 @@ const Profile = () => {
             setQrLoading(false);
 
             if (res.ok && data.qrPayload) {
-                setQrSession({ qrPayload: data.qrPayload, expiresAt: data.expiresAt });
+                setQrSession({
+                    qrPayload: data.qrPayload,
+                    createdAt: data.createdAt,
+                    expiresAt: data.expiresAt
+                });
+                setQrLegacyActive(false);
                 setQrVerifyPassword('');
                 setShowQrModal(false);
             } else {
@@ -157,20 +171,23 @@ const Profile = () => {
     };
 
     const handleDeleteQr = async () => {
-        if (!qrCodeData) return;
+        if (!qrSession && !qrLegacyActive) return;
         setQrDeleting(true);
         setQrError('');
 
         try {
-            const res = await fetch(`${API_BASE}/auth/qr-delete`, {
+            const res = await fetch(`${API_BASE}/auth/qr-session/delete`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ qrPayload: qrCodeData })
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                }
             });
             const data = await res.json();
 
             if (res.ok) {
                 setQrSession(null);
+                setQrLegacyActive(false);
                 setQrRemainingMs(0);
                 setQrVerifyPassword('');
             } else {
@@ -339,62 +356,85 @@ const Profile = () => {
                                     <FaQrcode className="text-xl" />
                                 </div>
                                 <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 ${
-                                    qrCodeData
+                                    qrSession || qrLegacyActive
                                         ? 'bg-emerald-950/80 border border-emerald-700/80 text-emerald-300'
                                         : 'bg-cyan-950/80 border border-cyan-700/80 text-cyan-300'
                                 }`}>
-                                    <FaKey className="text-xs" /> {qrCodeData ? 'QR មានសុពលភាព' : 'ត្រូវការ Verify គណនី'}
+                                    <FaKey className="text-xs" /> {qrSession || qrLegacyActive ? 'QR មានសុពលភាព' : 'ត្រូវការ Verify គណនី'}
                                 </span>
                             </div>
                             <div>
                                 <h3 className="font-bold text-gray-100 text-sm">ស្កេន QR Code (QR Login)</h3>
                                 <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
-                                    QR Code ដែលនៅមានសុពលភាពនឹងបង្ហាញឡើងវិញ។ ដើម្បីបង្កើត QR ថ្មី ត្រូវលុប QR បច្ចុប្បន្នជាមុន។
+                                    QR Code សកម្មត្រូវបានរក្សាទុកក្នុង database។ អាចលុប QR ចាស់ រួចបង្កើត QR ថ្មីបាន។
                                 </p>
-                                {qrCodeData && (
-                                    <div className="pt-2 text-center space-y-2">
-                                        <div className="p-3 bg-white rounded-xl inline-block shadow-lg border-2 border-cyan-500/30">
-                                            <QRCodeCanvas
-                                                id="user-login-qr-canvas"
-                                                value={qrCodeData}
-                                                size={180}
-                                                level="H"
-                                                marginSize={2}
-                                                imageSettings={{
-                                                    src: MDM_CENTER_ICON,
-                                                    x: undefined,
-                                                    y: undefined,
-                                                    height: 40,
-                                                    width: 40,
-                                                    excavate: true,
-                                                }}
-                                            />
-                                        </div>
-                                        <p className="text-[11px] text-amber-300">
-                                            ផុតកំណត់៖ {new Date(qrExpiresAt).toLocaleString()}
-                                        </p>
-                                        <p className="text-xs text-emerald-300 font-bold" aria-live="off">
-                                            នៅសល់៖ {countdownDays} ថ្ងៃ {countdownHours} ម៉ោង {countdownMinutes} នាទី {countdownRemainderSeconds} វិនាទី
-                                        </p>
+                                {qrSessionLoading && (
+                                    <p className="pt-2 text-xs text-cyan-300">កំពុងពិនិត្យ QR Code ក្នុង database...</p>
+                                )}
+                                {qrError && !showQrModal && (
+                                    <p role="alert" className="pt-2 text-xs text-rose-300">{qrError}</p>
+                                )}
+                                {qrLegacyActive && !qrCodeData && (
+                                    <div className="mt-2 rounded-[6px] border border-amber-700/60 bg-amber-950/40 p-3 text-[11px] text-amber-200">
+                                        មាន QR Code ចាស់នៅសុពលភាព ប៉ុន្តែ QR payload មិនទាន់បានរក្សាទុកក្នុង database ទេ។ សូមលុបវា ហើយបង្កើត QR ថ្មី។
                                     </div>
+                                )}
+                                {qrSession && (
+                                    <ul className="mt-2 space-y-2" aria-label="QR codes that are still valid">
+                                        <li className="rounded-[6px] border border-cyan-800/60 bg-slate-950/60 p-3">
+                                            <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-[11px]">
+                                                <span className="text-gray-300">បង្កើតនៅ៖ <strong className="text-cyan-200">{qrSession.createdAt ? new Date(qrSession.createdAt).toLocaleString() : 'មិនមានទិន្នន័យ'}</strong></span>
+                                                <span className="text-amber-300">ផុតកំណត់៖ {new Date(qrExpiresAt).toLocaleString()}</span>
+                                            </div>
+                                            <p className="mt-1 text-xs font-bold text-emerald-300" aria-live="off">
+                                                នៅសល់៖ {countdownDays} ថ្ងៃ {countdownHours} ម៉ោង {countdownMinutes} នាទី {countdownRemainderSeconds} វិនាទី
+                                            </p>
+                                            {qrCodeData && (
+                                                <div className="pt-2 text-center">
+                                                    <div className="inline-block rounded-xl border-2 border-cyan-500/30 bg-white p-3 shadow-lg">
+                                                        <QRCodeCanvas
+                                                            id="user-login-qr-canvas"
+                                                            value={qrCodeData}
+                                                            size={180}
+                                                            level="H"
+                                                            marginSize={2}
+                                                            imageSettings={{
+                                                                src: MDM_CENTER_ICON,
+                                                                x: undefined,
+                                                                y: undefined,
+                                                                height: 40,
+                                                                width: 40,
+                                                                excavate: true,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </li>
+                                    </ul>
+                                )}
+                                {qrCodeData && (
+                                    <p className="mt-2 text-center text-[11px] text-gray-400">QR នេះអាចប្រើបានរហូតដល់ផុតកំណត់។ អ្នកដែលមានរូប QR អាច Login បាន។</p>
                                 )}
                             </div>
                         </div>
                         <div className="pt-2 border-t border-gray-800/80">
-                            {qrCodeData ? (
+                            {qrSession || qrLegacyActive ? (
                                 <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={handleDownloadQr}
-                                        className="flex-1 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                                    >
-                                        <FaDownload />
-                                        <span>ទាញយក QR</span>
-                                    </button>
+                                    {qrCodeData && (
+                                        <button
+                                            type="button"
+                                            onClick={handleDownloadQr}
+                                            className="flex-1 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                        >
+                                            <FaDownload />
+                                            <span>ទាញយក QR</span>
+                                        </button>
+                                    )}
                                     <button
                                         type="button"
                                         onClick={handleDeleteQr}
-                                        disabled={qrDeleting}
+                                        disabled={qrDeleting || qrSessionLoading}
                                         className="flex-1 py-2 bg-red-950/70 hover:bg-red-900/80 border border-red-800 text-red-300 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                                     >
                                         <FaTrash />
@@ -404,13 +444,14 @@ const Profile = () => {
                             ) : (
                                 <button
                                     type="button"
+                                    disabled={qrSessionLoading}
                                     onClick={() => {
                                         setShowQrModal(true);
                                         setQrVerifyUsername(user?.username || '');
                                         setQrVerifyPassword('');
                                         setQrError('');
                                     }}
-                                    className="w-full py-2 bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/50 text-cyan-300 hover:text-cyan-200 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                                    className="w-full py-2 bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/50 text-cyan-300 hover:text-cyan-200 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:cursor-wait disabled:opacity-50"
                                 >
                                     <FaQrcode />
                                     <span>បង្កើត QR Code</span>

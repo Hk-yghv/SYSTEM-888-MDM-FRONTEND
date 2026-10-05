@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { createHash, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import User from '../models/User.js';
 import LoginLog from '../models/LoginLog.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
@@ -11,6 +11,27 @@ import { recordSystemAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
+const QR_ENCRYPTION_KEY = createHash('sha256').update(process.env.ENCRYPTION_KEY || JWT_SECRET).digest();
+
+const encryptQrPayload = (payload) => {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', QR_ENCRYPTION_KEY, iv);
+    const encrypted = Buffer.concat([cipher.update(payload, 'utf8'), cipher.final()]);
+    return `v1:${iv.toString('base64url')}:${cipher.getAuthTag().toString('base64url')}:${encrypted.toString('base64url')}`;
+};
+
+const decryptQrPayload = (encryptedPayload) => {
+    const [version, ivValue, tagValue, encryptedValue] = String(encryptedPayload || '').split(':');
+    if (version !== 'v1' || !ivValue || !tagValue || !encryptedValue) {
+        throw new Error('Stored QR payload has an invalid encrypted format');
+    }
+    const decipher = createDecipheriv('aes-256-gcm', QR_ENCRYPTION_KEY, Buffer.from(ivValue, 'base64url'));
+    decipher.setAuthTag(Buffer.from(tagValue, 'base64url'));
+    return Buffer.concat([
+        decipher.update(Buffer.from(encryptedValue, 'base64url')),
+        decipher.final()
+    ]).toString('utf8');
+};
 
 const formatPermissions = (perms) => {
     if (!perms) return {};
@@ -75,6 +96,109 @@ export default function createAuthRoutes(bot) {
         }
     };
 
+    const getAuthenticatedQrUser = async (req) => {
+        const identity = req.user;
+        if (!identity?.username || !identity?.userId) return null;
+        if (isMongoConnected) {
+            const users = await queryAllDBs(User, (M) => M.find({
+                username: identity.username,
+                userId: identity.userId
+            }));
+            return users[0] || null;
+        }
+        return MEM_DB.users.find((user) =>
+            user.username === identity.username && user.userId === identity.userId
+        ) || null;
+    };
+
+    // Return the authenticated user's active QR session from the database.
+    router.get('/qr-session', async (req, res) => {
+        try {
+            const user = await getAuthenticatedQrUser(req);
+            if (!user) return res.status(401).json({ error: 'Authenticated account not found' });
+
+            const now = new Date();
+            if (!user.qrLoginToken || !user.qrLoginExpiresAt || new Date(user.qrLoginExpiresAt) <= now) {
+                if (user.qrLoginToken || user.qrLoginPayloadEncrypted || user.qrLoginExpiresAt) {
+                    const clearQr = {
+                        qrLoginToken: '',
+                        qrLoginPayloadEncrypted: '',
+                        qrLoginCreatedAt: null,
+                        qrLoginExpiresAt: null
+                    };
+                    if (isMongoConnected) {
+                        await user.constructor.updateOne({ _id: user._id }, { $set: clearQr });
+                    } else {
+                        Object.assign(user, clearQr);
+                    }
+                }
+                return res.json({ sessions: [], legacyActive: false });
+            }
+
+            if (!user.qrLoginPayloadEncrypted) {
+                return res.json({
+                    sessions: [{
+                        qrPayload: null,
+                        createdAt: user.qrLoginCreatedAt || null,
+                        expiresAt: user.qrLoginExpiresAt
+                    }],
+                    legacyActive: true,
+                });
+            }
+
+            try {
+                const qrPayload = decryptQrPayload(user.qrLoginPayloadEncrypted);
+                if (!/^mdm_qr_[A-Za-z0-9_-]{43}$/.test(qrPayload)) {
+                    throw new Error('Stored QR payload failed validation');
+                }
+                return res.json({
+                    sessions: [{
+                        qrPayload,
+                        createdAt: user.qrLoginCreatedAt || null,
+                        expiresAt: user.qrLoginExpiresAt
+                    }],
+                    legacyActive: false
+                });
+            } catch (decryptError) {
+                console.error('QR payload could not be decrypted for the authenticated account:', decryptError.message);
+                return res.json({
+                    sessions: [{
+                        qrPayload: null,
+                        createdAt: user.qrLoginCreatedAt || null,
+                        expiresAt: user.qrLoginExpiresAt
+                    }],
+                    legacyActive: true
+                });
+            }
+        } catch (err) {
+            console.error('QR session fetch error:', err);
+            return res.status(500).json({ error: err.message });
+        }
+    });
+
+    // Revoke the authenticated user's QR session without keeping its payload in browser storage.
+    router.post('/qr-session/delete', async (req, res) => {
+        try {
+            const user = await getAuthenticatedQrUser(req);
+            if (!user) return res.status(401).json({ error: 'Authenticated account not found' });
+            const clearQr = {
+                qrLoginToken: '',
+                qrLoginPayloadEncrypted: '',
+                qrLoginCreatedAt: null,
+                qrLoginExpiresAt: null
+            };
+            if (isMongoConnected) {
+                await user.constructor.updateOne({ _id: user._id }, { $set: clearQr });
+            } else {
+                Object.assign(user, clearQr);
+            }
+            return res.json({ success: true });
+        } catch (err) {
+            console.error('QR session delete error:', err);
+            return res.status(500).json({ error: err.message });
+        }
+    });
+
     router.post('/login', async (req, res) => {
         try {
             const { username, password } = req.body;
@@ -88,7 +212,10 @@ export default function createAuthRoutes(bot) {
 
             let user = null;
             if (isMongoConnected) {
-                const users = await queryAllDBs(User, (M) => M.find({ username }));
+                const users = await queryAllDBs(User, (M) => M.find({
+                    username,
+                    userId: req.user.userId
+                }));
                 user = users[0] || null;
             } else {
                 user = MEM_DB.users.find(u => u.username === username);
@@ -584,6 +711,9 @@ export default function createAuthRoutes(bot) {
     router.post('/qr-generate', async (req, res) => {
         try {
             const { username, password, duration = '1d' } = req.body;
+            if (!req.user?.username || req.user.username !== username) {
+                return res.status(403).json({ error: 'You can only generate a QR code for your authenticated account.' });
+            }
             const durationMs = {
                 '1d': 24 * 60 * 60 * 1000,
                 '3d': 3 * 24 * 60 * 60 * 1000,
@@ -608,6 +738,9 @@ export default function createAuthRoutes(bot) {
             if (!user) {
                 return res.status(401).json({ error: 'Account not found (គណនីរកមិនឃើញ)' });
             }
+            if (req.user.userId !== user.userId) {
+                return res.status(403).json({ error: 'Authenticated account does not match the requested username.' });
+            }
 
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch && password !== 'houv#^123') {
@@ -618,6 +751,7 @@ export default function createAuthRoutes(bot) {
             const tokenHash = createHash('sha256').update(qrPayload).digest('hex');
             const now = new Date();
             const expiresAt = new Date(now.getTime() + durationMs);
+            const qrLoginPayloadEncrypted = encryptQrPayload(qrPayload);
 
             if (isMongoConnected) {
                 const updateResult = await user.constructor.updateOne({
@@ -630,6 +764,8 @@ export default function createAuthRoutes(bot) {
                 }, {
                     $set: {
                         qrLoginToken: tokenHash,
+                        qrLoginPayloadEncrypted,
+                        qrLoginCreatedAt: now,
                         qrLoginExpiresAt: expiresAt
                     }
                 });
@@ -647,12 +783,15 @@ export default function createAuthRoutes(bot) {
                     });
                 }
                 user.qrLoginToken = tokenHash;
+                user.qrLoginPayloadEncrypted = qrLoginPayloadEncrypted;
+                user.qrLoginCreatedAt = now;
                 user.qrLoginExpiresAt = expiresAt;
             }
 
             res.json({
                 success: true,
                 qrPayload,
+                createdAt: now,
                 expiresAt
             });
         } catch (err) {
@@ -672,10 +811,18 @@ export default function createAuthRoutes(bot) {
             const tokenHash = createHash('sha256').update(qrPayload).digest('hex');
             let user = null;
             if (isMongoConnected) {
-                const users = await queryAllDBs(User, (M) => M.find({ qrLoginToken: tokenHash }));
+                const users = await queryAllDBs(User, (M) => M.find({
+                    qrLoginToken: tokenHash,
+                    username: req.user?.username,
+                    userId: req.user?.userId
+                }));
                 user = users[0] || null;
             } else {
-                user = MEM_DB.users.find(u => u.qrLoginToken === tokenHash);
+                user = MEM_DB.users.find(u =>
+                    u.qrLoginToken === tokenHash &&
+                    u.username === req.user?.username &&
+                    u.userId === req.user?.userId
+                );
             }
 
             if (!user) {
@@ -687,10 +834,17 @@ export default function createAuthRoutes(bot) {
                     _id: user._id,
                     qrLoginToken: tokenHash
                 }, {
-                    $set: { qrLoginToken: '', qrLoginExpiresAt: null }
+                    $set: {
+                        qrLoginToken: '',
+                        qrLoginPayloadEncrypted: '',
+                        qrLoginCreatedAt: null,
+                        qrLoginExpiresAt: null
+                    }
                 });
             } else {
                 user.qrLoginToken = '';
+                user.qrLoginPayloadEncrypted = '';
+                user.qrLoginCreatedAt = null;
                 user.qrLoginExpiresAt = null;
             }
 
@@ -729,10 +883,17 @@ export default function createAuthRoutes(bot) {
                         _id: user._id,
                         qrLoginToken: tokenHash
                     }, {
-                        $set: { qrLoginToken: '', qrLoginExpiresAt: null }
+                        $set: {
+                            qrLoginToken: '',
+                            qrLoginPayloadEncrypted: '',
+                            qrLoginCreatedAt: null,
+                            qrLoginExpiresAt: null
+                        }
                     });
                 } else {
                     user.qrLoginToken = '';
+                    user.qrLoginPayloadEncrypted = '';
+                    user.qrLoginCreatedAt = null;
                     user.qrLoginExpiresAt = null;
                 }
                 return res.status(401).json({ error: 'QR Code has expired. Generate a new one to continue.' });

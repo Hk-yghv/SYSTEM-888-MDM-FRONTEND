@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema({
     joinDate: { type: String, default: '' },
     qrCodePhoto: { type: String, default: '' },
     qrLoginToken: { type: String, default: '' },
+    qrLoginPayloadEncrypted: { type: String, default: '' },
+    qrLoginCreatedAt: { type: Date, default: null },
     qrLoginExpiresAt: { type: Date, default: null },
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true },
@@ -49,4 +51,3 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);
-
