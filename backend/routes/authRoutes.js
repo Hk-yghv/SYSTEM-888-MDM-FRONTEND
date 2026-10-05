@@ -212,10 +212,7 @@ export default function createAuthRoutes(bot) {
 
             let user = null;
             if (isMongoConnected) {
-                const users = await queryAllDBs(User, (M) => M.find({
-                    username,
-                    userId: req.user.userId
-                }));
+                const users = await queryAllDBs(User, (M) => M.find({ username }));
                 user = users[0] || null;
             } else {
                 user = MEM_DB.users.find(u => u.username === username);
