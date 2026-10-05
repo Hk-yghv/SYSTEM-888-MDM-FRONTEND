@@ -680,11 +680,11 @@ function generatePawnSchedulePdf(data) {
  */
 let activeTelegramBot = null;
 
-export function sendTelegramMessage(chatId, message) {
+export function sendTelegramMessage(chatId, message, options) {
     if (!activeTelegramBot) {
         throw new Error('Telegram bot is not initialized');
     }
-    return activeTelegramBot.sendMessage(chatId, message);
+    return activeTelegramBot.sendMessage(chatId, message, options);
 }
 
 export function initTelegramBotService(bot) {

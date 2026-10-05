@@ -100,12 +100,30 @@ router.post('/lostphone/toggle-lock', async (req, res) => {
                 telegramNotifications.attempted = chatIds.length;
 
                 if (chatIds.length > 0) {
-                    const telegramText = `🔒 LOCK PHONE\n${resolvedDisplayText}\nHotline: ${phoneNumber || ''}`;
+                    const brandName = contract.brand || '';
+                    const hotlineNumber = phoneNumber || '';
+                    const telegramText = `LostPhone\n${brandName}\nDescription : ${resolvedDisplayText}\nPhone number: ${hotlineNumber}`;
+                    const inlineKeyboard = [];
+                    if (resolvedDisplayText && resolvedDisplayText.length <= 256) {
+                        inlineKeyboard.push([{
+                            text: 'Copy Description',
+                            copy_text: { text: resolvedDisplayText }
+                        }]);
+                    }
+                    if (hotlineNumber && hotlineNumber.length <= 256) {
+                        inlineKeyboard.push([{
+                            text: 'Copy Phone Number',
+                            copy_text: { text: hotlineNumber }
+                        }]);
+                    }
+                    const telegramOptions = inlineKeyboard.length > 0
+                        ? { reply_markup: { inline_keyboard: inlineKeyboard } }
+                        : undefined;
                     const deliveryResults = await Promise.allSettled(chatIds.map(async (chatId) => {
                         if (!/^-?\d+$/.test(chatId)) {
                             throw new Error('Invalid Telegram account/chat ID');
                         }
-                        await sendTelegramMessage(chatId, telegramText);
+                        await sendTelegramMessage(chatId, telegramText, telegramOptions);
                     }));
                     telegramNotifications.failed = deliveryResults.flatMap((result, index) =>
                         result.status === 'rejected'
