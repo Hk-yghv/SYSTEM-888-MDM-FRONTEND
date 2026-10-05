@@ -661,6 +661,7 @@ const FollowUp4 = () => {
         call: '',
         review: '',
         reject: '',
+        reject2: '',
         success1: '',
         success2: ''
     });
@@ -718,6 +719,8 @@ const FollowUp4 = () => {
             totalSubmit: 0,
             review: 0,
             reject: 0,
+            reject2: 0,
+            totalReject: 0,
             success1: 0,
             success2: 0,
             totalSuccess: 0
@@ -746,6 +749,8 @@ const FollowUp4 = () => {
             totals.totalSubmit += (ps + tgs + c);
             totals.review += Number(row.review || 0);
             totals.reject += Number(row.reject || 0);
+            totals.reject2 += Number(row.reject2 || 0);
+            totals.totalReject += Number(row.reject || 0) + Number(row.reject2 || 0);
             totals.success1 += s1;
             totals.success2 += s2;
             totals.totalSuccess += (s1 + s2);
@@ -788,6 +793,7 @@ const FollowUp4 = () => {
                         call: currentDay.call ?? '',
                         review: currentDay.review ?? '',
                         reject: currentDay.reject ?? '',
+                        reject2: currentDay.reject2 ?? '',
                         success1: currentDay.success1 ?? '',
                         success2: currentDay.success2 ?? ''
                     });
@@ -827,6 +833,7 @@ const FollowUp4 = () => {
                     call: existing.call ?? '',
                     review: existing.review ?? '',
                     reject: existing.reject ?? '',
+                    reject2: existing.reject2 ?? '',
                     success1: existing.success1 ?? '',
                     success2: existing.success2 ?? ''
                 });
@@ -834,7 +841,7 @@ const FollowUp4 = () => {
                 setDetailMetrics({
                     message: '', page: '', telegram: '', noReply: '', inquire: '',
                     rejectCs: '', more: '', pageSubmit: '', telegramSubmit: '', call: '',
-                    review: '', reject: '', success1: '', success2: ''
+                    review: '', reject: '', reject2: '', success1: '', success2: ''
                 });
             }
         } else {
@@ -842,7 +849,7 @@ const FollowUp4 = () => {
             setDetailMetrics({
                 message: '', page: '', telegram: '', noReply: '', inquire: '',
                 rejectCs: '', more: '', pageSubmit: '', telegramSubmit: '', call: '',
-                review: '', reject: '', success1: '', success2: ''
+                review: '', reject: '', reject2: '', success1: '', success2: ''
             });
         }
         setIsDetailModalOpen(true);
@@ -870,6 +877,7 @@ const FollowUp4 = () => {
                     call: Number(detailMetrics.call) || 0,
                     review: Number(detailMetrics.review) || 0,
                     reject: Number(detailMetrics.reject) || 0,
+                    reject2: Number(detailMetrics.reject2) || 0,
                     success1: Number(detailMetrics.success1) || 0,
                     success2: Number(detailMetrics.success2) || 0,
                     createdBy: user?.username || 'Staff'
@@ -969,6 +977,7 @@ const FollowUp4 = () => {
                 const message = (item.page || 0) + (item.telegram || 0) + (item.call || 0);
                 const verify = (item.noReply || 0) + (item.inquire || 0) + (item.rejectCs || 0) + (item.more || 0) + (item.pageSubmit || 0) + (item.telegramSubmit || 0) + (item.call || 0);
                 const totalSubmit = (item.pageSubmit || 0) + (item.telegramSubmit || 0) + (item.call || 0);
+                const totalReject = (Number(item.reject) || 0) + (Number(item.reject2) || 0);
                 const totalSuccess = (item.success1 || 0) + (item.success2 || 0);
                 return {
                     '#': idx + 1,
@@ -986,7 +995,9 @@ const FollowUp4 = () => {
                     'CALL': item.call || 0,
                     'TOTAL SUBMIT': totalSubmit,
                     'REVIEW': item.review || 0,
-                    'REJECT': item.reject || 0,
+                    'REJECT1': item.reject || 0,
+                    'REJECT2': item.reject2 || 0,
+                    'TOTAL': totalReject,
                     'TOTAL SUCCESS': totalSuccess,
                     'SUCCESS 1': item.success1 || 0,
                     'SUCCESS 2': item.success2 || 0
@@ -1661,7 +1672,9 @@ const FollowUp4 = () => {
                                         <th className="py-2.5 px-2 text-center text-emerald-400 font-bold">CALL</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-200 font-black bg-blue-200 border-x border-emerald-600/50 shadow-inner">TOTAL SUBMIT</th>
                                         <th className="py-2.5 px-2 text-center text-amber-400">REVIEW</th>
-                                        <th className="py-2.5 px-2 text-center text-rose-400">REJECT</th>
+                                        <th className="py-2.5 px-2 text-center text-rose-400">REJECT1</th>
+                                        <th className="py-2.5 px-2 text-center text-rose-300">REJECT2</th>
+                                        <th className="py-2.5 px-2 text-center text-rose-200 font-black bg-rose-950/30">TOTAL</th>
                                         <th className="py-2.5 px-2 text-center text-teal-400">SUCC 1</th>
                                         <th className="py-2.5 px-2 text-center text-emerald-300">SUCC 2</th>
                                         <th className="py-2.5 px-2 text-center text-teal-200 font-black bg-green-300 border-x border-teal-600/50 shadow-inner">TOTAL SUCCESS</th>
@@ -1671,14 +1684,14 @@ const FollowUp4 = () => {
                                 <tbody className="divide-y divide-slate-700/50">
                                     {detailLoading ? (
                                         <tr>
-                                            <td colSpan="18" className="text-center py-8 text-slate-400">
+                                            <td colSpan="20" className="text-center py-8 text-slate-400">
                                                 <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-sky-400" />
                                                 <p>កំពុងទាញយកទិន្នន័យ...</p>
                                             </td>
                                         </tr>
                                     ) : detailHistoryList.length === 0 ? (
                                         <tr>
-                                            <td colSpan="18" className="text-center py-8 text-slate-500 font-medium">
+                                            <td colSpan="20" className="text-center py-8 text-slate-500 font-medium">
                                                 មិនទាន់មានទិន្នន័យ Detail Metrics នៅឡើយទេ សូមចុច &quot;{t('addDetailMetrics')}&quot; ដើម្បីបញ្ចូល
                                             </td>
                                         </tr>
@@ -1703,6 +1716,10 @@ const FollowUp4 = () => {
                                                 </td>
                                                 <td className="py-2 px-2 text-center font-mono text-amber-400">{row.review || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-rose-400">{row.reject || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono text-rose-300">{row.reject2 || 0}</td>
+                                                <td className="py-2 px-2 text-center font-mono font-black text-rose-200 bg-rose-950/30 border-x border-rose-700/60">
+                                                    {(Number(row.reject) || 0) + (Number(row.reject2) || 0)}
+                                                </td>
                                                 <td className="py-2 px-2 text-center font-mono text-teal-400">{row.success1 || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono text-emerald-300 font-bold">{row.success2 || 0}</td>
                                                 <td className="py-2 px-2 text-center font-mono font-black text-teal-200 bg-green-200 border-x border-teal-700/60 shadow-inner">
@@ -1739,6 +1756,10 @@ const FollowUp4 = () => {
                                             </td>
                                             <td className="py-1 px-2 text-center font-mono text-amber-400">{grandDetailTotals.review}</td>
                                             <td className="py-1 px-2 text-center font-mono text-rose-400">{grandDetailTotals.reject}</td>
+                                            <td className="py-1 px-2 text-center font-mono text-rose-300">{grandDetailTotals.reject2}</td>
+                                            <td className="py-1 px-2 text-center font-mono font-black text-rose-200 bg-rose-950/30 border-x border-rose-700">
+                                                {grandDetailTotals.totalReject}
+                                            </td>
                                             <td className="py-1 px-2 text-center font-mono text-teal-400">{grandDetailTotals.success1}</td>
                                             <td className="py-1 px-2 text-center font-mono text-emerald-300">{grandDetailTotals.success2}</td>
                                             <td className="py-1 px-2 text-center font-mono font-black text-teal-200 bg-green-300 border-x border-teal-600 text-xs shadow-inner">

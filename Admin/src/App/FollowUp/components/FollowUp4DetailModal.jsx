@@ -237,6 +237,18 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
+                            <label className="block text-slate-400 font-semibold mb-1">REJECT2</label>
+                            <input
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                value={metrics.reject2 ?? ''}
+                                onChange={(e) => handleMetricChange('reject2', e.target.value)}
+                                className="w-full bg-slate-800 text-right text-rose-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none focus:border-rose-400 font-mono"
+                            />
+                        </div>
+
+                        <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
                             <label className="block text-slate-400 font-semibold mb-1">SUCCESS 1</label>
                             <input
                                 type="number"

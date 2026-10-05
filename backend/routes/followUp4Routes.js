@@ -457,6 +457,7 @@ router.post('/detail/save', async (req, res) => {
             call = 0,
             review = 0,
             reject = 0,
+            reject2 = 0,
             success1 = 0,
             success2 = 0,
             createdBy = ''
@@ -481,6 +482,7 @@ router.post('/detail/save', async (req, res) => {
             call: Number(call) || 0,
             review: Number(review) || 0,
             reject: Number(reject) || 0,
+            reject2: Number(reject2) || 0,
             success1: Number(success1) || 0,
             success2: Number(success2) || 0,
             createdBy

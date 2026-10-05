@@ -61,6 +61,7 @@ const followUp4DetailSchema = new mongoose.Schema({
     call: { type: Number, default: 0 }, // CALL
     review: { type: Number, default: 0 }, // REVIEW
     reject: { type: Number, default: 0 }, // REJECT
+    reject2: { type: Number, default: 0 }, // REJECT2
     success1: { type: Number, default: 0 }, // SUCCESS 1
     success2: { type: Number, default: 0 }, // SUCCESS 2
     createdBy: { type: String, default: '' }

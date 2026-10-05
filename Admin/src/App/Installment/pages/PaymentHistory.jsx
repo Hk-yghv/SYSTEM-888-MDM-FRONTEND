@@ -274,7 +274,7 @@ const PaymentHistory = () => {
                 </div>
 
                 {/* Date Range Filter Row */}
-                <div className='flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100'>
+                <div className='flex flex-wrap items-center justify-end gap-2 pt-1 border-t border-slate-100'>
                     <div className='flex items-center gap-1.5 text-xs font-bold text-slate-500'>
                         <FaFilter className='text-slate-400 text-[10px]' />
                         <span>Filter ថ្ងៃ:</span>
