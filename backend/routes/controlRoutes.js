@@ -159,7 +159,7 @@ router.get('/field-origins', async (req, res) => {
             return res.json({ origins: {}, brand: '' });
         }
 
-        const TRACKED_KEYS = ['call_phone_display', 'lockphone_display_text', 'lockphone_phone_number', 'roles', 'droplists', 'late_penalty_per_day'];
+        const TRACKED_KEYS = ['call_phone_display', 'lockphone_display_text', 'lockphone_phone_number', 'lockphone_telegram_chat_ids', 'roles', 'droplists', 'late_penalty_per_day'];
         const origins = {};
 
         if (isMongoConnected) {

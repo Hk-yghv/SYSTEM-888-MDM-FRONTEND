@@ -37,6 +37,8 @@ const ControlSystem = () => {
     const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer', 'Salary']);
     const [lockphoneDisplayText, setLockphoneDisplayText] = useState('ប្រព័ន្ធ SYSTEM MDM — ទូរស័ព្ទនេះត្រូវបានចាក់សោ ហេតុថាមានបំណុលជំពាក់');
     const [lockphonePhoneNumber, setLockphonePhoneNumber] = useState('+855 12 903 120');
+    const [lockphoneTelegramChatIds, setLockphoneTelegramChatIds] = useState([]);
+    const [newLockphoneTelegramChatId, setNewLockphoneTelegramChatId] = useState('');
     const [latePenaltyRules, setLatePenaltyRules] = useState([]);
     const [newPenaltyBrand, setNewPenaltyBrand] = useState(user?.brand || 'MDM');
     const [newPenaltyDays, setNewPenaltyDays] = useState(1);
@@ -212,6 +214,8 @@ const ControlSystem = () => {
 
                     if (data.lockphone_phone_number) setLockphonePhoneNumber(data.lockphone_phone_number);
                     else if (globalData.lockphone_phone_number) setLockphonePhoneNumber(globalData.lockphone_phone_number);
+                    if (Array.isArray(data.lockphone_telegram_chat_ids)) setLockphoneTelegramChatIds(data.lockphone_telegram_chat_ids.map(String));
+                    else setLockphoneTelegramChatIds(Array.isArray(globalData.lockphone_telegram_chat_ids) ? globalData.lockphone_telegram_chat_ids.map(String) : []);
 
                     const highPriorityRules = Array.isArray(data.late_penalty_rules) && data.late_penalty_rules.length > 0
                         ? data.late_penalty_rules
@@ -226,6 +230,7 @@ const ControlSystem = () => {
                 if (globalData.roles) setRoles(globalData.roles);
                 if (globalData.lockphone_display_text) setLockphoneDisplayText(globalData.lockphone_display_text);
                 if (globalData.lockphone_phone_number) setLockphonePhoneNumber(globalData.lockphone_phone_number);
+                setLockphoneTelegramChatIds(Array.isArray(globalData.lockphone_telegram_chat_ids) ? globalData.lockphone_telegram_chat_ids.map(String) : []);
                 setLatePenaltyRules(Array.isArray(globalData.late_penalty_rules) ? globalData.late_penalty_rules : []);
                 setNewPenaltyBrand(globalData?.brand || 'MDM');
             }
@@ -269,6 +274,54 @@ const ControlSystem = () => {
             setSaving(false);
             console.error('Save config error:', err);
             alert(`រក្សាទុកបរាជ័យ: Network Error (${err.message})`);
+        }
+    };
+
+    const addLockphoneTelegramChatId = () => {
+        const chatId = newLockphoneTelegramChatId.trim();
+        if (!/^-?\d+$/.test(chatId)) {
+            alert('Please enter a numeric Telegram account/chat ID.');
+            return;
+        }
+        if (!lockphoneTelegramChatIds.includes(chatId)) {
+            setLockphoneTelegramChatIds((ids) => [...ids, chatId]);
+        }
+        setNewLockphoneTelegramChatId('');
+    };
+
+    const saveLockphoneConfig = async () => {
+        setSaving(true);
+        setMessage('');
+        try {
+            const response = await fetch(`${API_BASE}/controlsystem`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    brand: selectedBrand,
+                    configs: [
+                        { key: 'lockphone_display_text', value: lockphoneDisplayText },
+                        { key: 'lockphone_phone_number', value: lockphonePhoneNumber },
+                        { key: 'lockphone_telegram_chat_ids', value: lockphoneTelegramChatIds }
+                    ]
+                })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || response.statusText || 'Server Error');
+            setMessage(`Lock Phone configuration updated for ${selectedBrand || 'Global'} successfully!`);
+            setTimeout(() => setMessage(''), 3000);
+            if (selectedBrand) {
+                setFieldOrigins((origins) => ({
+                    ...origins,
+                    lockphone_display_text: 'private',
+                    lockphone_phone_number: 'private',
+                    lockphone_telegram_chat_ids: 'private'
+                }));
+            }
+        } catch (err) {
+            console.error('Save Lock Phone config error:', err);
+            alert(`រក្សាទុកបរាជ័យ: ${err.message}`);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -667,6 +720,7 @@ const ControlSystem = () => {
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-red-400 text-xs font-bold uppercase">
                         <FaPhoneAlt /> Lost Phone Lock Display Text & Hotline Number
                         <OriginBadge fieldKey="lockphone_display_text" />
+                        <OriginBadge fieldKey="lockphone_telegram_chat_ids" />
                     </div>
 
                     <div className="space-y-3 text-xs">
@@ -693,12 +747,55 @@ const ControlSystem = () => {
                                 placeholder="+855 12 903 120"
                             />
                         </div>
+                        <div>
+                            <label className="block text-gray-400 font-semibold mb-1">Telegram account/chat IDs to notify on lock</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={newLockphoneTelegramChatId}
+                                    onChange={(e) => setNewLockphoneTelegramChatId(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            addLockphoneTelegramChatId();
+                                        }
+                                    }}
+                                    className="h-10 min-w-0 flex-1 rounded-[5px] border border-gray-700 bg-gray-900 px-3 font-mono text-gray-100"
+                                    placeholder="Telegram account/chat ID"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={addLockphoneTelegramChatId}
+                                    className="rounded-[5px] bg-slate-700 px-4 font-bold text-white hover:bg-slate-600"
+                                >
+                                    Add ID
+                                </button>
+                            </div>
+                            <p className="mt-1.5 text-[10px] leading-relaxed text-amber-400/80">
+                                Add a numeric Telegram ID for each recipient. Each recipient must start the bot first; negative group chat IDs are supported.
+                            </p>
+                            {lockphoneTelegramChatIds.length > 0 && (
+                                <ul className="mt-2 space-y-1">
+                                    {lockphoneTelegramChatIds.map((chatId) => (
+                                        <li key={chatId} className="flex items-center justify-between rounded-[5px] border border-gray-700 bg-gray-900 px-3 py-2 font-mono text-xs text-gray-200">
+                                            <span>{chatId}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setLockphoneTelegramChatIds((ids) => ids.filter((id) => id !== chatId))}
+                                                className="font-sans font-semibold text-rose-400 hover:text-rose-300"
+                                                aria-label={`Remove Telegram ID ${chatId}`}
+                                            >
+                                                Remove
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
                         <div className="pt-2 text-right">
                             <button
-                                onClick={() => {
-                                    saveConfigToMongoDB('lockphone_display_text', lockphoneDisplayText);
-                                    saveConfigToMongoDB('lockphone_phone_number', lockphonePhoneNumber);
-                                }}
+                                onClick={saveLockphoneConfig}
                                 disabled={saving}
                                 className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-[5px] font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-lg shadow-red-600/30"
                             >

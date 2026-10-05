@@ -2,10 +2,30 @@ import express from 'express';
 import Contract from '../models/Contract.js';
 import PhoneLog from '../models/PhoneLog.js';
 import DeviceActionLog from '../models/DeviceActionLog.js';
+import ControlSystem from '../models/ControlSystem.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { sendTelegramMessage } from '../services/telegramBotService.js';
 
 const router = express.Router();
+
+const getLockphoneTelegramChatIds = async (brand) => {
+    if (!isMongoConnected) {
+        const brandConfig = MEM_DB.controlSystems?.find((config) => config.brand === brand);
+        const globalConfig = MEM_DB.controlSystem || MEM_DB.controlSystems?.find((config) => !config.brand);
+        const configuredIds = brandConfig?.lockphone_telegram_chat_ids ?? globalConfig?.lockphone_telegram_chat_ids;
+        return Array.isArray(configuredIds) ? configuredIds : [];
+    }
+
+    const configurations = await queryAllDBs(ControlSystem, (Model) => Model.find({
+        key: 'lockphone_telegram_chat_ids',
+        brand: { $in: brand ? [brand, ''] : [''] }
+    }));
+    const brandConfig = configurations.find((config) => config.brand === brand);
+    const globalConfig = configurations.find((config) => !config.brand || config.brand === 'Global');
+    const configuredIds = brandConfig?.value ?? globalConfig?.value;
+    return Array.isArray(configuredIds) ? configuredIds : [];
+};
 
 // Toggle Phone Lock
 router.post('/lostphone/toggle-lock', async (req, res) => {
@@ -72,11 +92,43 @@ router.post('/lostphone/toggle-lock', async (req, res) => {
 
         MEM_DB.phoneLogs.unshift(logData);
 
+        let telegramNotifications = { attempted: 0, sent: 0, failed: [] };
+        if (newStatus === 'Locked') {
+            try {
+                const configuredIds = await getLockphoneTelegramChatIds(contract.brand || '');
+                const chatIds = [...new Set(configuredIds.map((chatId) => String(chatId).trim()).filter(Boolean))];
+                telegramNotifications.attempted = chatIds.length;
+
+                if (chatIds.length > 0) {
+                    const telegramText = `🔒 LOCK PHONE\n${resolvedDisplayText}\nHotline: ${phoneNumber || ''}`;
+                    const deliveryResults = await Promise.allSettled(chatIds.map(async (chatId) => {
+                        if (!/^-?\d+$/.test(chatId)) {
+                            throw new Error('Invalid Telegram account/chat ID');
+                        }
+                        await sendTelegramMessage(chatId, telegramText);
+                    }));
+                    telegramNotifications.failed = deliveryResults.flatMap((result, index) =>
+                        result.status === 'rejected'
+                            ? [{ chatId: chatIds[index], error: result.reason?.message || 'Telegram delivery failed' }]
+                            : []
+                    );
+                    telegramNotifications.sent = deliveryResults.length - telegramNotifications.failed.length;
+                    if (telegramNotifications.failed.length > 0) {
+                        console.error(`Lock phone Telegram delivery failed for ${telegramNotifications.failed.length} recipient(s).`);
+                    }
+                }
+            } catch (notificationError) {
+                console.error('Could not load Lock Phone Telegram configuration:', notificationError);
+                telegramNotifications.error = 'Could not load Telegram notification settings';
+            }
+        }
+
         res.json({
             success: true,
             newStatus: contract.lockPhoneStatus,
             contract,
-            log: logData
+            log: logData,
+            telegramNotifications
         });
     } catch (err) {
         console.error('Toggle phone lock error:', err);

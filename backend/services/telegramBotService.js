@@ -678,8 +678,18 @@ function generatePawnSchedulePdf(data) {
  * Initialize Telegram Bot Service with interactive /sys workflow
  * @param {TelegramBot} bot - The initialized node-telegram-bot-api instance
  */
+let activeTelegramBot = null;
+
+export function sendTelegramMessage(chatId, message) {
+    if (!activeTelegramBot) {
+        throw new Error('Telegram bot is not initialized');
+    }
+    return activeTelegramBot.sendMessage(chatId, message);
+}
+
 export function initTelegramBotService(bot) {
     if (!bot) return;
+    activeTelegramBot = bot;
 
     console.log('[TelegramBot] Initializing interactive /sys handler & Telegram service...');
 

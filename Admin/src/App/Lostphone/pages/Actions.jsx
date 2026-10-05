@@ -98,11 +98,22 @@ const Actions = () => {
                 })
             });
 
+            const result = await res.json().catch(() => ({}));
             if (res.ok) {
+                const failedNotifications = result.telegramNotifications?.failed || [];
+                if (result.telegramNotifications?.error) {
+                    alert(`Phone lock was saved, but Telegram notification failed: ${result.telegramNotifications.error}`);
+                } else if (failedNotifications.length > 0) {
+                    const failedIds = failedNotifications.map((notification) => notification.chatId).join(', ');
+                    alert(`Phone lock was saved, but Telegram could not send to: ${failedIds}`);
+                }
                 await fetchContracts(page);
+            } else {
+                alert(`Failed to update phone lock: ${result.error || res.statusText}`);
             }
         } catch (err) {
             console.error('Toggle lock error:', err);
+            alert(`Failed to update phone lock: ${err.message}`);
         } finally {
             setTogglingId(null);
         }
