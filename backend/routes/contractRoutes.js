@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import QRCode from 'qrcode';
 import Contract from '../models/Contract.js';
 import Payment from '../models/Payment.js';
@@ -611,35 +612,87 @@ router.put('/:id', async (req, res) => {
         let updatedDoc = null;
 
         if (isMongoConnected) {
-            const results = await queryAllDBs(Contract, async (BoundM) => {
-                try {
-                    let doc = await BoundM.findByIdAndUpdate(req.params.id, { $set: updateData }, { new: true });
-                    if (!doc) {
-                        doc = await BoundM.findOneAndUpdate({ contractId: req.params.id }, { $set: updateData }, { new: true });
+            if (appendComment && Object.prototype.hasOwnProperty.call(updateData, 'notes')) {
+                const previousComment = {
+                    _id: new mongoose.Types.ObjectId(),
+                    comment: '$notes',
+                    commentedAt: {
+                        $ifNull: ['$commentDate', { $ifNull: ['$updatedAt', { $ifNull: ['$createdAt', '$$NOW'] }] }]
+                    },
+                    editedBy: { $ifNull: ['$lastModifiedBy', ''] }
+                };
+                const commentHistoryExpression = {
+                    $concatArrays: [
+                        { $ifNull: ['$commentHistory', []] },
+                        {
+                            $cond: [
+                                { $ne: [{ $trim: { input: { $ifNull: ['$notes', ''] } } }, ''] },
+                                [previousComment],
+                                []
+                            ]
+                        }
+                    ]
+                };
+                const atomicUpdate = { ...updateData };
+                delete atomicUpdate.notes;
+                delete atomicUpdate.commentHistory;
+                delete atomicUpdate.commentDate;
+                const contractFilter = mongoose.Types.ObjectId.isValid(req.params.id)
+                    ? { $or: [{ _id: req.params.id }, { contractId: req.params.id }] }
+                    : { contractId: req.params.id };
+                const updatePipeline = [{
+                    $set: {
+                        ...Object.fromEntries(
+                            Object.entries(atomicUpdate).map(([key, value]) => [key, { $literal: value }])
+                        ),
+                        notes: { $literal: String(updateData.notes ?? '') },
+                        commentDate: '$$NOW',
+                        commentHistory: commentHistoryExpression,
+                        updatedAt: '$$NOW'
                     }
-                    return doc ? [doc] : [];
-                } catch {
-                    return [];
-                }
-            });
-            if (results && results.length > 0) {
-                updatedDoc = results[0];
-            }
-            if (!updatedDoc) {
+                }];
                 const WriteModel = getWriteModel(Contract);
                 if (WriteModel) {
+                    updatedDoc = await WriteModel.findOneAndUpdate(contractFilter, updatePipeline, { new: true, timestamps: false });
+                }
+                if (!updatedDoc) {
+                    const results = await queryAllDBs(Contract, async (BoundM) => {
+                        const doc = await BoundM.findOneAndUpdate(contractFilter, updatePipeline, { new: true, timestamps: false });
+                        return doc ? [doc] : [];
+                    });
+                    updatedDoc = results[0] || null;
+                }
+            } else {
+                const results = await queryAllDBs(Contract, async (BoundM) => {
                     try {
-                        updatedDoc = await WriteModel.findByIdAndUpdate(req.params.id, { $set: updateData }, { new: true }) ||
-                                     await WriteModel.findOneAndUpdate({ contractId: req.params.id }, { $set: updateData }, { new: true });
-                    } catch {}
+                        let doc = await BoundM.findByIdAndUpdate(req.params.id, { $set: updateData }, { new: true });
+                        if (!doc) {
+                            doc = await BoundM.findOneAndUpdate({ contractId: req.params.id }, { $set: updateData }, { new: true });
+                        }
+                        return doc ? [doc] : [];
+                    } catch {
+                        return [];
+                    }
+                });
+                if (results && results.length > 0) {
+                    updatedDoc = results[0];
+                }
+                if (!updatedDoc) {
+                    const WriteModel = getWriteModel(Contract);
+                    if (WriteModel) {
+                        try {
+                            updatedDoc = await WriteModel.findByIdAndUpdate(req.params.id, { $set: updateData }, { new: true }) ||
+                                         await WriteModel.findOneAndUpdate({ contractId: req.params.id }, { $set: updateData }, { new: true });
+                        } catch {}
+                    }
                 }
             }
         }
 
         const idx = MEM_DB.contracts.findIndex(c => c._id === req.params.id || c.contractId === req.params.id);
-        if (idx !== -1) {
+        if (idx !== -1 && !updatedDoc) {
             MEM_DB.contracts[idx] = { ...MEM_DB.contracts[idx], ...updateData };
-            if (!updatedDoc) updatedDoc = MEM_DB.contracts[idx];
+            updatedDoc = MEM_DB.contracts[idx];
         }
 
         if (updatedDoc) {
