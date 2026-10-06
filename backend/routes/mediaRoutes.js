@@ -1,6 +1,9 @@
 import express from 'express';
 import fetch from 'node-fetch';
 import crypto from 'crypto';
+import User from '../models/User.js';
+import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs } from '../config/multiDB.js';
 
 const router = express.Router();
 
@@ -13,20 +16,41 @@ const TOKEN_TTL_MS = 4 * 60 * 60 * 1000;
 // Allowed external image hosts for security proxying
 const ALLOWED_HOSTS = ['res.cloudinary.com', 'cloudinary.com', 'images.unsplash.com'];
 
-const requireCloudinaryAdmin = (req, res, next) => {
-    const user = req.user;
-    const isAdmin = user && (
-        user.role === 'Administrator' ||
-        user.role === 'Admin' ||
-        user.username === '@hakyonghouv' ||
-        user.username === 'hakyonghouv' ||
-        user.isImmutable === true
-    );
+const requireCloudinaryPermission = (action) => async (req, res, next) => {
+    try {
+        const identity = req.user;
+        let user = null;
+        if (identity?.username) {
+            if (isMongoConnected) {
+                const users = await queryAllDBs(User, Model => Model.find({ username: identity.username }));
+                user = users.find(item => !identity.userId || item.userId === identity.userId) || users[0] || null;
+            } else {
+                user = MEM_DB.users.find(item =>
+                    item.username === identity.username && (!identity.userId || item.userId === identity.userId)
+                ) || null;
+            }
+        }
 
-    if (!isAdmin) {
-        return res.status(403).json({ error: 'Administrator privileges are required to manage Cloudinary images.' });
+        const isAdmin = user && (
+            user.role === 'Administrator' ||
+            user.role === 'Admin' ||
+            user.username === '@hakyonghouv' ||
+            user.username === 'hakyonghouv' ||
+            user.isImmutable === true
+        );
+        const permissions = user?.permissions instanceof Map
+            ? Object.fromEntries(user.permissions)
+            : user?.permissions?.toObject?.() || user?.permissions || {};
+        const hasPermission = isAdmin || permissions['/all-picture']?.[action] === true;
+
+        if (!hasPermission) {
+            return res.status(403).json({ error: `Permission denied: ${action} access to All Picture is required.` });
+        }
+        return next();
+    } catch (err) {
+        console.error('Cloudinary permission lookup failed:', err);
+        return res.status(500).json({ error: 'Unable to verify Cloudinary image permissions.' });
     }
-    return next();
 };
 
 const getCloudinaryAdminConfig = () => {
@@ -267,7 +291,7 @@ router.post('/upload', async (req, res) => {
  * GET /api/media/assets
  * List uploaded Cloudinary images. Admin API credentials remain server-side.
  */
-router.get('/assets', requireCloudinaryAdmin, async (req, res) => {
+router.get('/assets', requireCloudinaryPermission('read'), async (req, res) => {
     const config = getCloudinaryAdminConfig();
     if (!config) {
         return res.status(503).json({
@@ -302,7 +326,7 @@ router.get('/assets', requireCloudinaryAdmin, async (req, res) => {
  * POST /api/media/assets/delete
  * Delete a bounded batch of uploaded images by their Cloudinary public IDs.
  */
-router.post('/assets/delete', requireCloudinaryAdmin, async (req, res) => {
+router.post('/assets/delete', requireCloudinaryPermission('delete'), async (req, res) => {
     const config = getCloudinaryAdminConfig();
     if (!config) {
         return res.status(503).json({

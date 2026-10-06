@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     FaCompress,
     FaDownload,
@@ -15,7 +15,7 @@ import {
 import { MdOutlinePhotoLibrary } from 'react-icons/md';
 import { useAuth } from '../../context/AuthContext';
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 18;
 
 const formatBytes = (bytes) => {
     if (!Number.isFinite(bytes)) return 'Unknown';
@@ -37,7 +37,10 @@ const formatDate = (date) => {
 };
 
 const AllPicture = () => {
-    const { smartFetch } = useAuth();
+    const { smartFetch, hasPermission } = useAuth();
+    const canDelete = hasPermission('/all-picture', 'delete');
+    const scrollContainerRef = useRef(null);
+    const loadMoreRef = useRef(null);
     const [assets, setAssets] = useState([]);
     const [nextCursor, setNextCursor] = useState('');
     const [search, setSearch] = useState('');
@@ -50,6 +53,24 @@ const AllPicture = () => {
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
+
+    const loadMore = useCallback(() => {
+        if (nextCursor && !loading && !loadingMore) {
+            requestAssets(nextCursor, true);
+        }
+    }, [loading, loadingMore, nextCursor, requestAssets]);
+
+    useEffect(() => {
+        const target = loadMoreRef.current;
+        const root = scrollContainerRef.current;
+        if (!target || !root || !nextCursor || loading || loadingMore) return undefined;
+
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) loadMore();
+        }, { root, rootMargin: '160px' });
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [assets.length, loadMore, loading, loadingMore, nextCursor]);
 
     const requestAssets = useCallback(async (cursor = '', append = false) => {
         append ? setLoadingMore(true) : setLoading(true);
@@ -208,7 +229,7 @@ const AllPicture = () => {
     ] : [];
 
     return (
-        <div className="h-full min-h-0 overflow-y-auto bg-slate-50 p-3 text-slate-800 sm:p-5">
+        <div ref={scrollContainerRef} className="h-full min-h-0 overflow-y-auto bg-slate-50 p-3 text-slate-800 sm:p-5">
             <div className="mx-auto max-w-[1600px] space-y-4">
                 <header className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
@@ -255,14 +276,16 @@ const AllPicture = () => {
                     </label>
                     <div className="flex items-center gap-3">
                         <span className="text-sm text-slate-500">{selectedIds.size} selected</span>
-                        <button
-                            type="button"
-                            onClick={() => deleteAssets([...selectedIds])}
-                            disabled={!selectedIds.size || deleting}
-                            className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <FaTrashAlt /> {deleting ? 'Deleting...' : 'Delete selected'}
-                        </button>
+                        {canDelete && (
+                            <button
+                                type="button"
+                                onClick={() => deleteAssets([...selectedIds])}
+                                disabled={!selectedIds.size || deleting}
+                                className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <FaTrashAlt /> {deleting ? 'Deleting...' : 'Delete selected'}
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -322,15 +345,10 @@ const AllPicture = () => {
                 )}
 
                 {nextCursor && !loading && (
-                    <div className="flex justify-center pb-2">
-                        <button
-                            type="button"
-                            onClick={() => requestAssets(nextCursor, true)}
-                            disabled={loadingMore}
-                            className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
-                        >
-                            {loadingMore ? 'Loading...' : 'Load more images'}
-                        </button>
+                    <div ref={loadMoreRef} className="flex min-h-16 items-center justify-center pb-2 text-sm text-slate-500">
+                        {loadingMore ? (
+                            <span className="inline-flex items-center gap-2"><FaSyncAlt className="animate-spin text-emerald-600" /> Loading 18 more images...</span>
+                        ) : 'Scroll to load more images'}
                     </div>
                 )}
             </div>
@@ -389,17 +407,19 @@ const AllPicture = () => {
                             <div className="mt-5 grid grid-cols-2 gap-2">
                                 <button type="button" onClick={() => copyUrl(activeAsset)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"><FaRegCopy /> Copy URL</button>
                                 <button type="button" onClick={() => downloadAsset(activeAsset)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"><FaDownload /> Download</button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const publicId = activeAsset.public_id;
-                                        deleteAssets([publicId]);
-                                    }}
-                                    disabled={deleting}
-                                    className="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
-                                >
-                                    <FaTrashAlt /> Delete image
-                                </button>
+                                {canDelete && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const publicId = activeAsset.public_id;
+                                            deleteAssets([publicId]);
+                                        }}
+                                        disabled={deleting}
+                                        className="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                                    >
+                                        <FaTrashAlt /> Delete image
+                                    </button>
+                                )}
                             </div>
                         </aside>
                     </section>
