@@ -54,24 +54,6 @@ const AllPicture = () => {
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
 
-    const loadMore = useCallback(() => {
-        if (nextCursor && !loading && !loadingMore) {
-            requestAssets(nextCursor, true);
-        }
-    }, [loading, loadingMore, nextCursor, requestAssets]);
-
-    useEffect(() => {
-        const target = loadMoreRef.current;
-        const root = scrollContainerRef.current;
-        if (!target || !root || !nextCursor || loading || loadingMore) return undefined;
-
-        const observer = new IntersectionObserver(([entry]) => {
-            if (entry.isIntersecting) loadMore();
-        }, { root, rootMargin: '160px' });
-        observer.observe(target);
-        return () => observer.disconnect();
-    }, [assets.length, loadMore, loading, loadingMore, nextCursor]);
-
     const requestAssets = useCallback(async (cursor = '', append = false) => {
         append ? setLoadingMore(true) : setLoading(true);
         setError('');
@@ -93,6 +75,24 @@ const AllPicture = () => {
             setLoadingMore(false);
         }
     }, [smartFetch]);
+
+    const loadMore = useCallback(() => {
+        if (nextCursor && !loading && !loadingMore) {
+            requestAssets(nextCursor, true);
+        }
+    }, [loading, loadingMore, nextCursor, requestAssets]);
+
+    useEffect(() => {
+        const target = loadMoreRef.current;
+        const root = scrollContainerRef.current;
+        if (!target || !root || !nextCursor || loading || loadingMore) return undefined;
+
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) loadMore();
+        }, { root, rootMargin: '160px' });
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [assets.length, loadMore, loading, loadingMore, nextCursor]);
 
     useEffect(() => {
         requestAssets();
