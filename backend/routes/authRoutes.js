@@ -573,33 +573,49 @@ export default function createAuthRoutes(bot) {
         }
     });
 
-    // POST /api/auth/heartbeat — Update lastSeen and refresh Online status & duration
+    // POST /api/auth/heartbeat — Verify the active account and refresh its online session.
     router.post('/heartbeat', async (req, res) => {
         try {
-            const { username } = req.body;
-            if (username) {
-                const now = new Date();
-                if (isMongoConnected) {
-                    const users = await queryAllDBs(User, (M) => M.find({ username }));
-                    for (const u of users) {
-                        u.status = 'Online';
-                        u.lastSeen = now;
-                        if (Array.isArray(u.onlineHistory) && u.onlineHistory.length > 0) {
-                            const latest = u.onlineHistory[0];
-                            if (!latest.logoutTime) {
-                                latest.lastSeen = now;
-                                latest.durationSeconds = Math.max(0, Math.round((now.getTime() - new Date(latest.loginTime).getTime()) / 1000));
-                            }
-                        }
-                        await u.save();
+            const { username, userId } = req.user || {};
+            if (!username || !userId || (req.body?.username && req.body.username !== username)) {
+                return res.status(401).json({ error: 'Authenticated session is invalid' });
+            }
+
+            let users = [];
+            if (isMongoConnected) {
+                users = await queryAllDBs(User, (Model) => Model.find({ username, userId }));
+            } else {
+                const memoryUser = MEM_DB.users.find((user) => user.username === username && user.userId === userId);
+                if (memoryUser) users = [memoryUser];
+            }
+
+            if (users.length === 0) {
+                return res.status(401).json({ error: 'Authenticated account not found' });
+            }
+            if (users.some((user) => user.isBlocked)) {
+                return res.status(423).json({ error: 'Account is blocked', code: 'ACCOUNT_BLOCKED' });
+            }
+
+            const now = new Date();
+            for (const user of users) {
+                user.status = 'Online';
+                user.lastSeen = now;
+                if (Array.isArray(user.onlineHistory) && user.onlineHistory.length > 0) {
+                    const latest = user.onlineHistory[0];
+                    if (!latest.logoutTime) {
+                        latest.lastSeen = now;
+                        latest.durationSeconds = Math.max(0, Math.round((now.getTime() - new Date(latest.loginTime).getTime()) / 1000));
                     }
                 }
-                const memUser = MEM_DB.users.find(u => u.username === username);
-                if (memUser) {
-                    memUser.status = 'Online';
-                    memUser.lastSeen = now;
-                }
+                if (isMongoConnected) await user.save();
             }
+
+            const memoryUser = MEM_DB.users.find((user) => user.username === username && user.userId === userId);
+            if (memoryUser) {
+                memoryUser.status = 'Online';
+                memoryUser.lastSeen = now;
+            }
+
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { FaBan } from 'react-icons/fa';
 import { smartFetch, getActiveApiBase, API_POOL } from '../utils/smartFetch';
 import { getSecureItem, setSecureItem, clearSecureAuth } from '../utils/secureStorage';
@@ -25,9 +25,6 @@ export const AuthProvider = ({ children }) => {
     const [isBackendRecovering, setIsBackendRecovering] = useState(false);
     const [isBlocked, setIsBlocked] = useState(false);
 
-    const pollingRef = useRef(null);
-    const lastActivityRef = useRef(Date.now());
-
     const logout = useCallback(() => {
         if (user?.username) {
             const currentToken = getSecureItem('mdm_token');
@@ -46,155 +43,107 @@ export const AuthProvider = ({ children }) => {
         clearSecureAuth();
     }, [user?.username]);
 
-    // Send periodic heartbeat to keep online status fresh & sendBeacon on unload
+    // Keep the authenticated session alive and recover from temporary backend outages.
     useEffect(() => {
         if (!user?.username || !token) return;
 
         let isActive = true;
-        const postHeartbeat = () => fetch(`${API_BASE}/auth/heartbeat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ username: user.username })
-        });
+        let heartbeatInFlight = false;
+        const pendingRequests = new Set();
+        const request = async (url, options = {}) => {
+            const controller = new AbortController();
+            pendingRequests.add(controller);
+            const timeoutId = window.setTimeout(() => controller.abort(), 10000);
+            try {
+                return await fetch(url, { ...options, signal: controller.signal });
+            } finally {
+                window.clearTimeout(timeoutId);
+                pendingRequests.delete(controller);
+            }
+        };
+        const waitBeforeRetry = () => new Promise((resolve) => window.setTimeout(resolve, 10000));
 
         const sendHeartbeat = async () => {
-            if (Date.now() - lastActivityRef.current >= TEN_MINUTES_MS) {
-                logout();
-                return;
-            }
+            if (heartbeatInFlight || !isActive) return;
+            heartbeatInFlight = true;
+            let recovering = false;
 
             try {
-                const response = await postHeartbeat();
-                if (response.ok || !isActive) return;
-            } catch {
-                if (!isActive) return;
-            }
+                while (isActive) {
+                    try {
+                        const response = await request(API_BASE + '/auth/heartbeat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify({ username: user.username }),
+                            cache: 'no-store'
+                        });
 
-            setIsBackendRecovering(true);
-            try {
-                const healthResponse = await fetch(`${API_BASE}/health`, { cache: 'no-store' });
-                if (healthResponse.ok && isActive) {
-                    const retryResponse = await postHeartbeat();
-                    if (retryResponse.ok || !isActive) {
-                        setIsBackendRecovering(false);
-                        return;
+                        if (response.ok) {
+                            if (recovering && isActive) setIsBackendRecovering(false);
+                            return;
+                        }
+                        if (response.status === 423) {
+                            if (isActive) {
+                                setIsBlocked(true);
+                                window.setTimeout(() => {
+                                    logout();
+                                    setIsBlocked(false);
+                                }, 4000);
+                            }
+                            return;
+                        }
+                        if (response.status === 401 || response.status === 403) {
+                            if (isActive) logout();
+                            return;
+                        }
+
+                        recovering = true;
+                        if (isActive) setIsBackendRecovering(true);
+                    } catch (error) {
+                        if (!isActive) return;
+                        if (error.name !== 'AbortError') {
+                            console.error('Session heartbeat failed; retrying backend connection:', error);
+                        }
+                        recovering = true;
+                        setIsBackendRecovering(true);
                     }
-                }
-            } catch {
-                // The backend is still unreachable; clear the stale session below.
-            }
 
-            if (isActive) logout();
+                    while (isActive) {
+                        try {
+                            const healthResponse = await request(API_BASE + '/health', { cache: 'no-store' });
+                            if (healthResponse.ok) break;
+                        } catch (error) {
+                            if (!isActive) return;
+                            if (error.name !== 'AbortError') {
+                                console.error('Backend health check failed; retrying:', error);
+                            }
+                        }
+                        await waitBeforeRetry();
+                    }
+                    if (isActive) await waitBeforeRetry();
+                }
+            } finally {
+                heartbeatInFlight = false;
+            }
         };
 
         void sendHeartbeat();
-        const hbInterval = setInterval(() => { void sendHeartbeat(); }, TEN_MINUTES_MS);
-
-        const handleUnload = () => {
-            if (user?.username) {
-                // sendBeacon doesn't support custom headers, use keepalive fetch instead
-                fetch(`${API_BASE}/auth/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                    },
-                    body: JSON.stringify({ username: user.username }),
-                    keepalive: true
-                }).catch(() => { });
-            }
-        };
-
-        window.addEventListener('beforeunload', handleUnload);
-        window.addEventListener('pagehide', handleUnload);
-
-        return () => {
-            isActive = false;
-            clearInterval(hbInterval);
-            window.removeEventListener('beforeunload', handleUnload);
-            window.removeEventListener('pagehide', handleUnload);
-        };
-    }, [user?.username, token, logout]);
-
-    // ── 10 Minute Inactivity Auto Logout
-    useEffect(() => {
-        if (!user || !token) return;
-
-        const INACTIVITY_TIMEOUT = TEN_MINUTES_MS;
-
-        const resetActivity = () => {
-            lastActivityRef.current = Date.now();
-        };
-
-        // Events to detect user activity
-        const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
-        activityEvents.forEach(evt => window.addEventListener(evt, resetActivity, { passive: true }));
-
-        const checkInactivity = () => {
-            if (Date.now() - lastActivityRef.current >= INACTIVITY_TIMEOUT) {
-                logout();
-            }
-        };
-
-        // Interval check every 10 seconds
-        const intervalId = setInterval(checkInactivity, 10000);
-
-        // Check when tab becomes visible again
+        const heartbeatInterval = window.setInterval(() => { void sendHeartbeat(); }, TEN_MINUTES_MS);
         const handleVisibilityChange = () => {
-            if (!document.hidden) {
-                checkInactivity();
-            }
+            if (!document.hidden) void sendHeartbeat();
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
-            activityEvents.forEach(evt => window.removeEventListener(evt, resetActivity));
-            clearInterval(intervalId);
+            isActive = false;
+            pendingRequests.forEach((controller) => controller.abort());
+            window.clearInterval(heartbeatInterval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [user, token, logout]);
-
-    // Real-time block status polling — every 10 seconds
-    useEffect(() => {
-        if (!user || !token) {
-            clearInterval(pollingRef.current);
-            return;
-        }
-
-        // Skip polling for Master Admin (they can never be blocked)
-        if (user.isImmutable || user.username === '@hakyonghouv') return;
-
-        const poll = async () => {
-            if (Date.now() - lastActivityRef.current >= TEN_MINUTES_MS) return;
-
-            try {
-                const res = await fetch(`${API_BASE}/users/status-check?username=${encodeURIComponent(user.username)}`, {
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.isBlocked) {
-                        setIsBlocked(true);
-                        // Wait 3s to show the modal then force logout
-                        setTimeout(() => {
-                            logout();
-                            setIsBlocked(false);
-                        }, 4000);
-                    }
-                }
-            } catch {
-                // Network error — silently ignore, will retry next interval
-            }
-        };
-
-        poll(); // immediate first check
-        pollingRef.current = setInterval(poll, TEN_MINUTES_MS);
-
-        return () => clearInterval(pollingRef.current);
-    }, [user, token, logout]);
+    }, [user?.username, token, logout]);
 
     const login = async (username, password) => {
         setLoading(true);

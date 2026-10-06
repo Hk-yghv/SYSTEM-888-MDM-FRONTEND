@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
-import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
     FaEdit, FaSearch, FaRegCalendarAlt,
@@ -120,8 +119,7 @@ const FollowUp4 = () => {
     const [submitLoading, setSubmitLoading] = useState(false);
     const [submitFormSaving, setSubmitFormSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [startDate, setStartDate] = useState(getTodayStr());
-    const [endDate, setEndDate] = useState(getTodayStr());
+    const [submitDate, setSubmitDate] = useState(getTodayStr());
 
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
@@ -155,8 +153,10 @@ const FollowUp4 = () => {
             if (user?.username) params.append('username', user.username);
             if (user?.isImmutable) params.append('isImmutable', String(user.isImmutable));
             if (selectedBrand) params.append('brand', selectedBrand);
-            if (startDate) params.append('startDate', startDate);
-            if (endDate) params.append('endDate', endDate);
+            if (submitDate) {
+                params.append('startDate', submitDate);
+                params.append('endDate', submitDate);
+            }
             if (searchTerm) params.append('search', searchTerm);
 
             const res = await fetch(`${API_BASE}/follow-up-4/submit?${params.toString()}`);
@@ -169,7 +169,7 @@ const FollowUp4 = () => {
         } finally {
             setSubmitLoading(false);
         }
-    }, [API_BASE, user, selectedBrand, startDate, endDate, searchTerm]);
+    }, [API_BASE, user, selectedBrand, submitDate, searchTerm]);
 
     useEffect(() => {
         if (activeTab === 'submit') {
@@ -1050,8 +1050,7 @@ const FollowUp4 = () => {
                 <button
                     onClick={() => {
                         const today = getTodayStr();
-                        setStartDate(today);
-                        setEndDate(today);
+                        setSubmitDate(today);
                         setActiveTab('submit');
                     }}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'submit'
@@ -1117,11 +1116,16 @@ const FollowUp4 = () => {
                                 />
                             </div>
 
-                            <DateRangeDropdown
-                                from={startDate}
-                                to={endDate}
-                                onApplyRange={(from, to) => { setStartDate(from); setEndDate(to); }}
-                            />
+                            <label className="inline-flex min-h-9 items-center gap-2 rounded-[5px] border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+                                <FaRegCalendarAlt className="shrink-0 text-emerald-600" />
+                                <span>ថ្ងៃដាក់ស្នើ</span>
+                                <input
+                                    type="date"
+                                    value={submitDate}
+                                    onChange={(event) => setSubmitDate(event.target.value || getTodayStr())}
+                                    className="min-w-0 bg-transparent text-xs text-emerald-900 outline-none"
+                                />
+                            </label>
                         </div>
 
                         {/* Add Button */}
