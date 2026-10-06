@@ -4,7 +4,7 @@ import json from "../../routes/Routes.json";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 
-import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate } from "react-icons/md";
+import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate, MdOutlinePhotoLibrary } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
 import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane } from "react-icons/fa";
 
@@ -451,6 +451,14 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 <Link to={json.salary || '/salary'} className={navItemClass(json.salary || '/salary')}>
                     <FaMoneyBillWave size={19} className={isActive(json.salary || '/salary') ? "text-white" : "text-emerald-600"} />
                     {t('salary') || 'Salary'}
+                </Link>
+            )}
+
+            {/* All Picture */}
+            {hasPermission(json.allPicture || '/all-picture', 'read') && (
+                <Link to={json.allPicture || '/all-picture'} className={navItemClass(json.allPicture || '/all-picture')}>
+                    <MdOutlinePhotoLibrary size={20} className={isActive(json.allPicture || '/all-picture') ? "text-white" : "text-emerald-600"} />
+                    All Picture
                 </Link>
             )}
 

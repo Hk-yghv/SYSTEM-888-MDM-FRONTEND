@@ -120,8 +120,8 @@ const FollowUp4 = () => {
     const [submitLoading, setSubmitLoading] = useState(false);
     const [submitFormSaving, setSubmitFormSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [submitStartDate, setSubmitStartDate] = useState('');
-    const [submitEndDate, setSubmitEndDate] = useState('');
+    const [submitStartDate, setSubmitStartDate] = useState(() => getTodayStr());
+    const [submitEndDate, setSubmitEndDate] = useState(() => getTodayStr());
 
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);

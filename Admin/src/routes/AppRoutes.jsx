@@ -80,6 +80,7 @@ import SalaryPage from "../App/Salary/pages/SalaryPage";
 import ControlSystem from "../App/Settings/pages/ControlSystem";
 import AllAccount from "../App/Settings/pages/AllAccount";
 import Profile from "../App/Profile/Profile";
+import AllPicture from "../App/Media/AllPicture";
 
 /**
  * Redirect root or unauthenticated users to their first permitted page
@@ -180,6 +181,9 @@ const AppRoutes = () => {
 
       {/* Salary */}
       <Route path={json.salary || "/salary"} element={renderProtected(json.salary || "/salary", SalaryPage)} />
+
+      {/* Cloudinary Media */}
+      <Route path={json.allPicture || "/all-picture"} element={renderProtected(json.allPicture || "/all-picture", AllPicture)} />
 
       {/* Settings & Profile */}
       <Route path={json.settings.allAccount} element={renderProtected(json.settings.allAccount, AllAccount)} />

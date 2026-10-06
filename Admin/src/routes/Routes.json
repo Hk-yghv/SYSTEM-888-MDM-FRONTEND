@@ -67,6 +67,7 @@
         "followUpSenSok": "/follow-up/follow-up-3"
     },
     "salary": "/salary",
+    "allPicture": "/all-picture",
     "settings": {
         "controlSystem": "/settings/control-system",
         "allAccount": "/settings/all-account",

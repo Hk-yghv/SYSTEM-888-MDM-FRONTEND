@@ -147,3 +147,10 @@ git remote -v
 # Update data in package-lock.json
 
 - ` npm install --package-lock-only `
+
+# All Picture (Cloudinary)
+
+The Admin All Picture page uses the Cloudinary Admin API to list and delete uploaded
+images. Configure `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` as backend
+environment variables; do not add the API secret to the Admin/Vite environment.
+The page supports loading image results in pages of up to 100 assets.

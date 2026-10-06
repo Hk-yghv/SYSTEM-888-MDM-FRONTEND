@@ -13,6 +13,49 @@ const TOKEN_TTL_MS = 4 * 60 * 60 * 1000;
 // Allowed external image hosts for security proxying
 const ALLOWED_HOSTS = ['res.cloudinary.com', 'cloudinary.com', 'images.unsplash.com'];
 
+const requireCloudinaryAdmin = (req, res, next) => {
+    const user = req.user;
+    const isAdmin = user && (
+        user.role === 'Administrator' ||
+        user.role === 'Admin' ||
+        user.username === '@hakyonghouv' ||
+        user.username === 'hakyonghouv' ||
+        user.isImmutable === true
+    );
+
+    if (!isAdmin) {
+        return res.status(403).json({ error: 'Administrator privileges are required to manage Cloudinary images.' });
+    }
+    return next();
+};
+
+const getCloudinaryAdminConfig = () => {
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.VITE_CLOUDINARY_CLOUD_NAME || 'ouuzfexp';
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!apiKey || !apiSecret) {
+        return null;
+    }
+
+    return {
+        cloudName,
+        authorization: `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')}`
+    };
+};
+
+const getCloudinaryAdminError = async (response) => {
+    const responseText = await response.text();
+    let message = responseText;
+    try {
+        const data = JSON.parse(responseText);
+        message = data.error?.message || responseText;
+    } catch {
+        // Keep the upstream response text for diagnostics when it is not JSON.
+    }
+    return message || `Cloudinary Admin API returned ${response.status}`;
+};
+
 /**
  * Generate HMAC-SHA256 signature for a given URL + expiry timestamp.
  */
@@ -217,6 +260,82 @@ router.post('/upload', async (req, res) => {
     } catch (err) {
         console.error('Media upload proxy error:', err);
         return res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+/**
+ * GET /api/media/assets
+ * List uploaded Cloudinary images. Admin API credentials remain server-side.
+ */
+router.get('/assets', requireCloudinaryAdmin, async (req, res) => {
+    const config = getCloudinaryAdminConfig();
+    if (!config) {
+        return res.status(503).json({
+            error: 'Cloudinary image management is not configured. Set CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET on the backend.'
+        });
+    }
+
+    const requestedLimit = Number.parseInt(req.query.max_results, 10);
+    const maxResults = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 100) : 100;
+    const params = new URLSearchParams({ max_results: String(maxResults) });
+    if (typeof req.query.next_cursor === 'string' && req.query.next_cursor.length <= 2048) {
+        params.set('next_cursor', req.query.next_cursor);
+    }
+
+    try {
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(config.cloudName)}/resources/image/upload?${params}`, {
+            headers: { Authorization: config.authorization }
+        });
+        if (!response.ok) {
+            const message = await getCloudinaryAdminError(response);
+            console.error('Cloudinary asset listing failed:', response.status, message);
+            return res.status(502).json({ error: `Cloudinary image listing failed: ${message}` });
+        }
+        return res.json(await response.json());
+    } catch (err) {
+        console.error('Cloudinary asset listing error:', err);
+        return res.status(502).json({ error: 'Unable to contact Cloudinary to list images.' });
+    }
+});
+
+/**
+ * POST /api/media/assets/delete
+ * Delete a bounded batch of uploaded images by their Cloudinary public IDs.
+ */
+router.post('/assets/delete', requireCloudinaryAdmin, async (req, res) => {
+    const config = getCloudinaryAdminConfig();
+    if (!config) {
+        return res.status(503).json({
+            error: 'Cloudinary image management is not configured. Set CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET on the backend.'
+        });
+    }
+
+    const publicIds = req.body?.public_ids;
+    if (!Array.isArray(publicIds) || publicIds.length < 1 || publicIds.length > 100 ||
+        publicIds.some(id => typeof id !== 'string' || !id.trim() || id.length > 255)) {
+        return res.status(400).json({ error: 'Provide between 1 and 100 valid Cloudinary public IDs.' });
+    }
+
+    try {
+        const body = new URLSearchParams();
+        [...new Set(publicIds)].forEach(id => body.append('public_ids[]', id));
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(config.cloudName)}/resources/image/upload`, {
+            method: 'DELETE',
+            headers: {
+                Authorization: config.authorization,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body
+        });
+        if (!response.ok) {
+            const message = await getCloudinaryAdminError(response);
+            console.error('Cloudinary asset deletion failed:', response.status, message);
+            return res.status(502).json({ error: `Cloudinary image deletion failed: ${message}` });
+        }
+        return res.json({ success: true, ...(await response.json()) });
+    } catch (err) {
+        console.error('Cloudinary asset deletion error:', err);
+        return res.status(502).json({ error: 'Unable to contact Cloudinary to delete images.' });
     }
 });
 
