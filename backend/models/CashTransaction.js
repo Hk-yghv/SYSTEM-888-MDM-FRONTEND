@@ -11,6 +11,7 @@ const cashTransactionSchema = new mongoose.Schema({
     category: { type: String, default: 'General' },
     description: { type: String, default: '' },
     photoUrl: { type: String, default: '' },
+    photoUrls: { type: [String], default: [] },
     performedBy: { type: String, default: '' },
     brand: { type: String, default: '' }
 }, { timestamps: true });

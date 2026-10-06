@@ -10,6 +10,7 @@ const salarySchema = new mongoose.Schema({
     month: { type: String, default: '' },   // Format: YYYY-MM
     year: { type: String, default: '' },    // Format: YYYY
     proofPhoto: { type: String, default: '' }, // Evidence / Receipt image URL or Base64
+    proofPhotos: { type: [String], default: [] },
     qrCodePhoto: { type: String, default: '' }, // QR Code image URL or Base64 (រូបភាព QR Code ទទួលប្រាក់)
     category: { type: String, default: 'Basic Salary' }, // 'Basic Salary', 'Bonus', 'Commission', 'Allowance', 'Other'
     paymentMethod: { type: String, default: 'ABA Bank' }, // 'ABA Bank', 'Cash', 'Wing', 'Bank Transfer', 'Other'

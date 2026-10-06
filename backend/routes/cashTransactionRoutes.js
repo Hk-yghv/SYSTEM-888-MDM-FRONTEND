@@ -10,6 +10,15 @@ if (!MEM_DB.cashTransactions) {
     MEM_DB.cashTransactions = [];
 }
 
+const normalizeCashTransaction = (record) => {
+    const normalized = record && typeof record.toObject === 'function' ? record.toObject() : { ...record };
+    const photoUrls = Array.isArray(normalized.photoUrls) ? normalized.photoUrls.filter(Boolean) : [];
+    if (photoUrls.length === 0 && normalized.photoUrl) photoUrls.push(normalized.photoUrl);
+    normalized.photoUrls = [...new Set(photoUrls)];
+    normalized.photoUrl = normalized.photoUrls[0] || '';
+    return normalized;
+};
+
 // GET /api/cash-transactions
 router.get('/cash-transactions', async (req, res) => {
     try {
@@ -71,7 +80,7 @@ router.get('/cash-transactions', async (req, res) => {
         }
 
         const total = allRecords.length;
-        const data = allRecords.slice(skip, skip + parseInt(limit));
+        const data = allRecords.slice(skip, skip + parseInt(limit)).map(normalizeCashTransaction);
 
         // Aggregations for KPI
         let totalUSD = 0;
@@ -108,11 +117,15 @@ router.get('/cash-transactions', async (req, res) => {
 // POST /api/cash-transactions (Create)
 router.post('/cash-transactions', async (req, res) => {
     try {
-        const { type, date, amount, currency, paymentMethod, category, description, photoUrl, performedBy, brand } = req.body;
+        const { type, date, amount, currency, paymentMethod, category, description, photoUrl, photoUrls, performedBy, brand } = req.body;
         if (!type || !amount) {
             return res.status(400).json({ error: 'Type and Amount are required.' });
         }
 
+        const images = [...new Set([
+            ...(Array.isArray(photoUrls) ? photoUrls : []),
+            ...(photoUrl ? [photoUrl] : [])
+        ].filter(Boolean))];
         const numAmount = Number(amount) || 0;
         const cur = currency === 'KHR' ? 'KHR' : 'USD';
         // 1 USD = 4000 KHR for unified reporting estimate
@@ -129,7 +142,8 @@ router.post('/cash-transactions', async (req, res) => {
             amountUSD,
             category: category || 'General',
             description: description || '',
-            photoUrl: photoUrl || '',
+            photoUrl: images[0] || '',
+            photoUrls: images,
             performedBy: performedBy || 'Admin',
             brand: brand || 'SYSTEM',
             createdAt: new Date().toISOString()
@@ -153,10 +167,14 @@ router.post('/cash-transactions', async (req, res) => {
 router.put('/cash-transactions/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { date, amount, currency, paymentMethod, category, description, photoUrl, performedBy } = req.body;
+        const { date, amount, currency, paymentMethod, category, description, photoUrl, photoUrls, performedBy } = req.body;
         const numAmount = Number(amount) || 0;
         const cur = currency === 'KHR' ? 'KHR' : 'USD';
         const amountUSD = cur === 'KHR' ? (numAmount / 4000) : numAmount;
+        const images = [...new Set([
+            ...(Array.isArray(photoUrls) ? photoUrls : []),
+            ...(photoUrl ? [photoUrl] : [])
+        ].filter(Boolean))];
 
         const updateData = {
             date,
@@ -166,7 +184,8 @@ router.put('/cash-transactions/:id', async (req, res) => {
             amountUSD,
             category,
             description,
-            photoUrl,
+            photoUrl: images[0] || '',
+            photoUrls: images,
             performedBy
         };
 

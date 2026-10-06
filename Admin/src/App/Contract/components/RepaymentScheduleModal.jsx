@@ -2,9 +2,11 @@ import { useLanguage } from '../../../context/LanguageContext';
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo, FaFilePdf, FaCalculator, FaImage, FaTimes } from 'react-icons/fa';
-import { MdClose, MdSwapHoriz, MdChevronLeft, MdChevronRight } from 'react-icons/md';
+import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo, FaFilePdf, FaCalculator, FaImage } from 'react-icons/fa';
+import { MdClose, MdSwapHoriz } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
+import ImageGalleryModal from '../../../components/ImageGalleryModal';
+import ImageUrlListInput from '../../../components/ImageUrlListInput';
 
 const round2 = roundMoney;
 
@@ -424,7 +426,8 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             amount: totalAmt,
             paidBy: paymentMethods[0] || 'Cash',
             description: '',
-            imageItems: []
+            imageItems: [],
+            imageUrls: []
         });
         setActiveDropdownIdx(null);
     };
@@ -496,13 +499,14 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         if (!payConfirm || payConfirmSubmitting) return;
         setPayConfirmSubmitting(true);
         try {
-            const { idx, mode, amount, paidBy, description, imageItems } = payConfirm;
+            const { idx, mode, amount, paidBy, description, imageItems, imageUrls } = payConfirm;
             const todayStr = new Date().toISOString().split('T')[0];
 
             // Upload images to Cloudinary first
             const uploadedUrls = imageItems.length > 0
                 ? await uploadImagesToCloudinary(imageItems)
                 : [];
+            const allImageUrls = [...new Set([...uploadedUrls, ...(imageUrls || [])])];
 
             let updated;
             const paidRow = rows[idx];
@@ -513,7 +517,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                     paidAmount: Number(amount),
                     paidDate: updated[idx].paidDate || todayStr,
                     comment: description,
-                    paymentImages: uploadedUrls,
+                    paymentImages: allImageUrls,
                     status: 'Paid'
                 };
             } else {
@@ -524,7 +528,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             paidAmount: Number(amount),
                             paidDate: r.paidDate || todayStr,
                             comment: description,
-                            paymentImages: uploadedUrls,
+                            paymentImages: allImageUrls,
                             status: 'PayOff'
                         };
                     }
@@ -554,7 +558,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         paidBy:          paidBy || user?.username || user?.name || '',
                         amount:          Number(amount),
                         description:     description           || '',
-                        paymentImages:   uploadedUrls,
+                        paymentImages:   allImageUrls,
                         paymentType:     mode,
                         monthLabel:      paidRow.labelName     || `Month ${paidRow.monthIndex}`,
                         monthIndex:      paidRow.monthIndex,
@@ -1117,72 +1121,13 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
         {/* ── Image Lightbox (payment proof viewer in schedule table) ────── */}
         {lightboxImages.length > 0 && (
-            <div
-                className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-[99999999] p-2"
-                onClick={() => setLightboxImages([])}
-            >
-                <div
-                    className="relative bg-white rounded-[5px] shadow-2xl max-w-2xl w-full mx-4 overflow-hidden"
-                    onClick={e => e.stopPropagation()}
-                >
-                    <div className="flex items-center justify-between px-4 py-1 border-b border-slate-200 bg-slate-50">
-                        <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                            <FaImage className="text-indigo-600" />
-                            រូបភាពភស្តុតាងបង់ប្រាក់
-                            {lightboxImages.length > 1 && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-300">
-                                    {lightboxIdx + 1} / {lightboxImages.length}
-                                </span>
-                            )}
-                        </span>
-                        <button
-                            onClick={() => setLightboxImages([])}
-                            className="p-2 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-red-600 transition-colors cursor-pointer"
-                        >
-                            <FaTimes size={14} />
-                        </button>
-                    </div>
-                    <div className="relative p-2 flex items-center justify-center bg-slate-100 min-h-[300px]">
-                        {lightboxImages.length > 1 && lightboxIdx > 0 && (
-                            <button
-                                onClick={() => setLightboxIdx(i => i - 1)}
-                                className="absolute left-2 p-2 rounded-full bg-white/80 hover:bg-white shadow-md text-slate-700 hover:text-indigo-600 cursor-pointer z-10"
-                            >
-                                <MdChevronLeft size={22} />
-                            </button>
-                        )}
-                        <img
-                            key={lightboxIdx}
-                            src={lightboxImages[lightboxIdx]}
-                            alt="payment proof"
-                            className="max-w-full max-h-[500px] object-contain rounded-lg shadow-md"
-                        />
-                        {lightboxImages.length > 1 && lightboxIdx < lightboxImages.length - 1 && (
-                            <button
-                                onClick={() => setLightboxIdx(i => i + 1)}
-                                className="absolute right-2 p-2 rounded-full bg-white/80 hover:bg-white shadow-md text-slate-700 hover:text-indigo-600 cursor-pointer z-10"
-                            >
-                                <MdChevronRight size={22} />
-                            </button>
-                        )}
-                    </div>
-                    {lightboxImages.length > 1 && (
-                        <div className="flex gap-2 px-4 py-1 bg-slate-50 border-t border-slate-200 overflow-x-auto">
-                            {lightboxImages.map((img, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setLightboxIdx(i)}
-                                    className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
-                                        i === lightboxIdx ? 'border-indigo-500 shadow-md' : 'border-slate-200 hover:border-indigo-300'
-                                    }`}
-                                >
-                                    <img src={img} alt={`thumb-${i}`} className="w-full h-full object-cover" />
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+            <ImageGalleryModal
+                images={lightboxImages}
+                index={lightboxIdx}
+                onIndexChange={setLightboxIdx}
+                onClose={() => setLightboxImages([])}
+                title="Payment proof"
+            />
         )}
 
         {/* ── Payment Confirmation Modal ──────────────────────────────────── */}
@@ -1256,6 +1201,31 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 className="w-full h-10 px-3 bg-slate-50 border border-slate-200 focus:border-indigo-400 rounded-[5px] text-slate-800 text-xs outline-none shadow-sm"
                             />
                         </div>
+
+                        <ImageUrlListInput
+                            onAddUrls={urls => setPayConfirm(prev => ({
+                                ...prev,
+                                imageUrls: [...new Set([...(prev.imageUrls || []), ...urls])]
+                            }))}
+                        />
+                        {payConfirm.imageUrls?.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                                {payConfirm.imageUrls.map((url, index) => (
+                                    <button
+                                        key={`${url}-${index}`}
+                                        type="button"
+                                        onClick={() => setPayConfirm(prev => ({
+                                            ...prev,
+                                            imageUrls: prev.imageUrls.filter((_, urlIndex) => urlIndex !== index)
+                                        }))}
+                                        className="max-w-full truncate rounded bg-indigo-50 px-2 py-1 text-[10px] font-semibold text-indigo-700"
+                                        title={`${url} (click to remove)`}
+                                    >
+                                        {url}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Multi-Image Upload */}
                         <div>

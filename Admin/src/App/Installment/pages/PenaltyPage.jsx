@@ -14,8 +14,13 @@ import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import LineChart from '../../../components/LineChart';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import { getProxyImageUrl } from '../../../utils/mediaUtils';
+import ImageGalleryModal from '../../../components/ImageGalleryModal';
 
 const LIMIT = 10;
+const getPhotoUrls = item => [...new Set([
+    ...(Array.isArray(item?.photoUrls) ? item.photoUrls : []),
+    ...(item?.photoUrl ? [item.photoUrl] : [])
+].filter(Boolean))];
 
 const PenaltyPage = () => {
     const { t } = useLanguage();
@@ -48,11 +53,13 @@ const PenaltyPage = () => {
         paymentMethod: 'Cash',
         category: 'General Penalty',
         description: '',
-        photoUrl: ''
+        photoUrl: '',
+        photoUrls: []
     });
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
-    const [selectedImage, setSelectedImage] = useState(null); // image preview modal
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
     const visibleDataList = selectedRecord ? [selectedRecord] : dataList;
 
@@ -75,11 +82,11 @@ const PenaltyPage = () => {
             if (res.ok) {
                 const data = await res.json();
                 const rawUrl = data.secure_url || data.url;
-                setFormData(prev => ({ ...prev, photoUrl: rawUrl }));
+                setFormData(prev => ({ ...prev, photoUrls: [...new Set([...prev.photoUrls, rawUrl])], photoUrl: prev.photoUrls[0] || rawUrl }));
             } else {
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    setFormData(prev => ({ ...prev, photoUrl: reader.result }));
+                    setFormData(prev => ({ ...prev, photoUrls: [...new Set([...prev.photoUrls, reader.result])], photoUrl: prev.photoUrls[0] || reader.result }));
                 };
                 reader.readAsDataURL(file);
             }
@@ -87,7 +94,7 @@ const PenaltyPage = () => {
             console.error('Cloudinary upload error:', err);
             const reader = new FileReader();
             reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, photoUrl: reader.result }));
+                setFormData(prev => ({ ...prev, photoUrls: [...new Set([...prev.photoUrls, reader.result])], photoUrl: prev.photoUrls[0] || reader.result }));
             };
             reader.readAsDataURL(file);
         } finally {
@@ -154,7 +161,8 @@ const PenaltyPage = () => {
                 paymentMethod: formData.paymentMethod,
                 category: formData.category,
                 description: formData.description,
-                photoUrl: formData.photoUrl,
+                photoUrl: formData.photoUrls[0] || formData.photoUrl,
+                photoUrls: formData.photoUrls,
                 performedBy: user?.name || user?.username || 'Admin',
                 brand: user?.brand || 'SYSTEM'
             };
@@ -180,7 +188,8 @@ const PenaltyPage = () => {
                     paymentMethod: 'Cash',
                     category: 'General Penalty',
                     description: '',
-                    photoUrl: ''
+                    photoUrl: '',
+                    photoUrls: []
                 });
                 fetchData(1, searchTerm, startDate, endDate);
             } else {
@@ -203,7 +212,8 @@ const PenaltyPage = () => {
             paymentMethod: item.paymentMethod || 'Cash',
             category: item.category || 'General Penalty',
             description: item.description || '',
-            photoUrl: item.photoUrl || ''
+            photoUrl: item.photoUrl || '',
+            photoUrls: getPhotoUrls(item)
         });
         setIsFormOpen(true);
     };
@@ -487,9 +497,9 @@ const PenaltyPage = () => {
                                             </td>
                                             <td className='px-4 py-1 font-medium text-slate-700 max-w-xs truncate'>{item.description || '-'}</td>
                                             <td className='px-4 py-1 text-center'>
-                                                {item.photoUrl ? (
-                                                    <button onClick={() => setSelectedImage(item.photoUrl)} className="text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center justify-center gap-1 mx-auto">
-                                                        <FaImage /> <span>View</span>
+                                                {getPhotoUrls(item).length ? (
+                                                    <button onClick={() => { setSelectedImages(getPhotoUrls(item)); setSelectedImageIndex(0); }} className="text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center justify-center gap-1 mx-auto">
+                                                        <FaImage /> <span>View{getPhotoUrls(item).length > 1 ? ` (${getPhotoUrls(item).length})` : ''}</span>
                                                     </button>
                                                 ) : <span className="text-slate-400 italic">No image</span>}
                                             </td>
@@ -607,17 +617,30 @@ const PenaltyPage = () => {
                                         className="w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-[5px] file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
                                     />
                                     {uploadingImage && <p className="text-[11px] text-amber-600 font-bold animate-pulse">☁️ កំពុង Upload រូបភាពទៅ Cloudinary...</p>}
-                                    <input
-                                        type="text"
+                                    <textarea
+                                        rows="2"
                                         placeholder="ឬបិទភ្ជាប់ URL: https://res.cloudinary.com/..."
-                                        value={formData.photoUrl}
-                                        onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
+                                        value={formData.photoUrls.join('\n')}
+                                        onChange={(e) => {
+                                            const photoUrls = [...new Set(e.target.value.split(/\r?\n/).map(url => url.trim()).filter(Boolean))];
+                                            setFormData(prev => ({ ...prev, photoUrls, photoUrl: photoUrls[0] || '' }));
+                                        }}
                                         className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-mono text-[11px] focus:outline-none focus:border-amber-500"
                                     />
-                                    {formData.photoUrl && (
-                                        <div className="flex items-center gap-2 pt-1">
-                                            <img src={formData.photoUrl} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs" />
-                                            <span className="text-[10px] text-amber-700 font-bold">✓ រូបភាពបានបញ្ចូលរួចរាល់</span>
+                                    {formData.photoUrls.length > 0 && (
+                                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                                            {formData.photoUrls.map((url, index) => (
+                                                <div key={`${url}-${index}`} className="relative">
+                                                    <img src={url} alt={`Receipt ${index + 1}`} className="h-12 w-12 rounded-lg border border-slate-300 object-cover shadow-xs" />
+                                                    <button type="button" onClick={() => setFormData(prev => {
+                                                        const photoUrls = prev.photoUrls.filter((_, imageIndex) => imageIndex !== index);
+                                                        return { ...prev, photoUrls, photoUrl: photoUrls[0] || '' };
+                                                    })} aria-label={`Remove image ${index + 1}`} className="absolute -right-1 -top-1 rounded-full bg-white p-1 text-rose-600 shadow">
+                                                        <FaTrashAlt size={10} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <span className="text-[10px] text-amber-700 font-bold">{formData.photoUrls.length} រូបភាពបានបញ្ចូល</span>
                                         </div>
                                     )}
                                 </div>
@@ -637,13 +660,14 @@ const PenaltyPage = () => {
             )}
 
             {/* Image Preview Modal */}
-            {selectedImage && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-2" onClick={() => setSelectedImage(null)}>
-                    <div className="relative bg-white rounded-[5px] p-2 max-w-xl max-h-[85vh] overflow-hidden border border-slate-200 shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <img src={selectedImage} alt="Receipt" className="max-w-full max-h-[75vh] object-contain rounded-[5px]" />
-                        <button onClick={() => setSelectedImage(null)} className="mt-2 w-full py-1.5 bg-amber-600 text-white font-bold rounded-[5px] text-xs">Close</button>
-                    </div>
-                </div>
+            {selectedImages.length > 0 && (
+                <ImageGalleryModal
+                    images={selectedImages}
+                    index={selectedImageIndex}
+                    onIndexChange={setSelectedImageIndex}
+                    onClose={() => setSelectedImages([])}
+                    title={t('receiptPhoto')}
+                />
             )}
         </div>
     );

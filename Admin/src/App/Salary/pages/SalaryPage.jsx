@@ -35,6 +35,13 @@ import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 import { getProxyImageUrl } from '../../../utils/mediaUtils';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
+import ImageGalleryModal from '../../../components/ImageGalleryModal';
+import ImageUrlListInput from '../../../components/ImageUrlListInput';
+
+const getProofPhotos = item => [...new Set([
+    ...(Array.isArray(item?.proofPhotos) ? item.proofPhotos : []),
+    ...(item?.proofPhoto ? [item.proofPhoto] : [])
+].filter(Boolean))];
 
 const KHMER_DAYS = [
     'ថ្ងៃអាទិត្យ',
@@ -110,6 +117,8 @@ const SalaryPage = () => {
     const [photoUploading, setPhotoUploading] = useState(false);
     const [qrPhotoUploading, setQrPhotoUploading] = useState(false);
     const [previewImage, setPreviewImage] = useState(null); // { url, title, filename }
+    const [proofGalleryImages, setProofGalleryImages] = useState([]);
+    const [proofGalleryIndex, setProofGalleryIndex] = useState(0);
 
     // Global Saved Join Date + Staff Names + Staff QR Code
     const [savedJoinDate, setSavedJoinDate] = useState(() => localStorage.getItem('salary_saved_join_date') || '');
@@ -284,6 +293,7 @@ const SalaryPage = () => {
         category: 'Basic Salary',
         paymentMethod: 'ABA Bank',
         proofPhoto: '',
+        proofPhotos: [],
         qrCodePhoto: '',
         note: '',
         brand: user?.brand || ''
@@ -481,6 +491,7 @@ const SalaryPage = () => {
             category: item.category || 'Basic Salary',
             paymentMethod: item.paymentMethod || 'ABA Bank',
             proofPhoto: item.proofPhoto || '',
+            proofPhotos: getProofPhotos(item),
             note: item.note || '',
             brand: item.brand || user?.brand || ''
         });
@@ -526,11 +537,17 @@ const SalaryPage = () => {
             if (res.ok) {
                 const data = await res.json();
                 const rawUrl = data.secure_url || data.url;
-                setFormData(prev => ({ ...prev, proofPhoto: rawUrl }));
+                setFormData(prev => {
+                    const proofPhotos = [...new Set([...getProofPhotos(prev), rawUrl])];
+                    return { ...prev, proofPhoto: proofPhotos[0] || '', proofPhotos };
+                });
             } else {
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    setFormData(prev => ({ ...prev, proofPhoto: reader.result }));
+                    setFormData(prev => {
+                        const proofPhotos = [...new Set([...getProofPhotos(prev), reader.result])];
+                        return { ...prev, proofPhoto: proofPhotos[0] || '', proofPhotos };
+                    });
                 };
                 reader.readAsDataURL(file);
             }
@@ -538,7 +555,10 @@ const SalaryPage = () => {
             console.error('Cloudinary upload error:', err);
             const reader = new FileReader();
             reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, proofPhoto: reader.result }));
+                setFormData(prev => {
+                    const proofPhotos = [...new Set([...getProofPhotos(prev), reader.result])];
+                    return { ...prev, proofPhoto: proofPhotos[0] || '', proofPhotos };
+                });
             };
             reader.readAsDataURL(file);
         } finally {
@@ -606,6 +626,8 @@ const SalaryPage = () => {
         try {
             const payload = {
                 ...formData,
+                proofPhotos: getProofPhotos(formData),
+                proofPhoto: getProofPhotos(formData)[0] || '',
                 staffName: formData.staffNameEn || formData.staffNameKh || formData.staffName || '',
                 staffNameKh: formData.staffNameKh || '',
                 staffNameEn: formData.staffNameEn || formData.staffName || '',
@@ -1542,19 +1564,18 @@ const SalaryPage = () => {
                                         </span>
                                     </td>
                                     <td className="px-4 py-1 text-center">
-                                        {item.proofPhoto ? (
+                                        {getProofPhotos(item).length > 0 ? (
                                             <button
                                                 type="button"
-                                                onClick={() => setPreviewImage({
-                                                    url: item.proofPhoto,
-                                                    title: `Evidence Photo - ${item.staffNameKh || item.staffNameEn || 'Staff'}`,
-                                                    filename: `Salary_Receipt_${(item.staffNameKh || item.staffNameEn || 'Staff').replace(/\s+/g, '_')}_${item.date || 'date'}.png`
-                                                })}
+                                                onClick={() => {
+                                                    setProofGalleryImages(getProofPhotos(item));
+                                                    setProofGalleryIndex(0);
+                                                }}
                                                 className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-[5px] text-[10px] font-bold cursor-pointer transition-all shadow-2xs active:scale-95"
                                                 title={t('receiptEvidence')}
                                             >
                                                 <FaEye />
-                                                <span>មើលរូប</span>
+                                                <span>មើលរូប{getProofPhotos(item).length > 1 ? ` (${getProofPhotos(item).length})` : ''}</span>
                                             </button>
                                         ) : (
                                             <span className="text-slate-400 text-[10px] italic">គ្មានរូប</span>
@@ -1626,6 +1647,15 @@ const SalaryPage = () => {
             )}
 
             {/* Image Preview Lightbox Modal with Download */}
+            {proofGalleryImages.length > 0 && (
+                <ImageGalleryModal
+                    images={proofGalleryImages}
+                    index={proofGalleryIndex}
+                    onIndexChange={setProofGalleryIndex}
+                    onClose={() => setProofGalleryImages([])}
+                    title={t('receiptEvidence')}
+                />
+            )}
             {previewImage && (
                 <div
                     className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2 animate-in fade-in duration-150"
@@ -1849,13 +1879,6 @@ const CreateEditSalaryModal = ({
                         </label>
                         <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={formData.proofPhoto}
-                                    onChange={(e) => setFormData({ ...formData, proofPhoto: e.target.value })}
-                                    placeholder="បញ្ចូល URL រូបភាព ឬ ចុចប៊ូតុង Upload..."
-                                    className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
-                                />
                                 <button
                                     type="button"
                                     onClick={() => photoFileRef.current?.click()}
@@ -1874,22 +1897,32 @@ const CreateEditSalaryModal = ({
                                 />
                             </div>
 
+                            <ImageUrlListInput
+                                onAddUrls={urls => setFormData(prev => {
+                                    const proofPhotos = [...new Set([...getProofPhotos(prev), ...urls])];
+                                    return { ...prev, proofPhoto: proofPhotos[0] || '', proofPhotos };
+                                })}
+                            />
+
                             {/* Preview Box */}
-                            {formData.proofPhoto && (
-                                <div className="relative inline-block border border-slate-300 dark:border-slate-700 rounded-[5px] overflow-hidden p-2 bg-slate-50 dark:bg-slate-800">
-                                    <img
-                                        src={formData.proofPhoto}
-                                        alt="Receipt Preview"
-                                        className="w-24 h-24 object-cover rounded-lg"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, proofPhoto: '' })}
-                                        className="absolute top-2 right-2 bg-rose-600 text-white p-2 rounded-full text-[9px] hover:bg-rose-500 cursor-pointer shadow-md"
-                                        title="ដករូបចេញ"
-                                    >
-                                        <FaTimes />
-                                    </button>
+                            {getProofPhotos(formData).length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {getProofPhotos(formData).map((url, index) => (
+                                        <div key={`${url}-${index}`} className="relative border border-slate-300 dark:border-slate-700 rounded-[5px] p-1 bg-slate-50 dark:bg-slate-800">
+                                            <img src={url} alt={`Receipt preview ${index + 1}`} className="h-16 w-16 rounded object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData(prev => {
+                                                    const proofPhotos = getProofPhotos(prev).filter((_, photoIndex) => photoIndex !== index);
+                                                    return { ...prev, proofPhoto: proofPhotos[0] || '', proofPhotos };
+                                                })}
+                                                className="absolute -right-1 -top-1 bg-rose-600 text-white p-1.5 rounded-full text-[9px] hover:bg-rose-500 cursor-pointer shadow-md"
+                                                title="ដករូបចេញ"
+                                            >
+                                                <FaTimes />
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>

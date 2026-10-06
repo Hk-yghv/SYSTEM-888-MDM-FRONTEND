@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
-import { FaMobileAlt, FaCheck, FaCloudUploadAlt, FaTrashAlt, FaExpand, FaImage, FaTimes } from "react-icons/fa";
+import { FaMobileAlt, FaCheck, FaCloudUploadAlt, FaTrashAlt, FaExpand, FaImage } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
+import ImageGalleryModal from '../../../components/ImageGalleryModal';
+import ImageUrlListInput from '../../../components/ImageUrlListInput';
 
 const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
     const { t } = useLanguage();
@@ -17,13 +19,15 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
     });
     const [receiptFile, setReceiptFile] = useState(null);
     const [receiptPreview, setReceiptPreview] = useState('');
+    const [receiptUrls, setReceiptUrls] = useState([]);
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [paymentSubmitting, setPaymentSubmitting] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [qrPayments, setQrPayments] = useState([]);
     const [loadingQrPayments, setLoadingQrPayments] = useState(false);
     const [previewLightbox, setPreviewLightbox] = useState(false);
-    const [viewHistoryImage, setViewHistoryImage] = useState(null);
+    const [viewHistoryImages, setViewHistoryImages] = useState([]);
+    const [viewHistoryImageIndex, setViewHistoryImageIndex] = useState(0);
 
     const fileInputRef = useRef(null);
 
@@ -36,8 +40,10 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
         setLoadingQrPayments(true);
         setReceiptFile(null);
         setReceiptPreview('');
+        setReceiptUrls([]);
         setPreviewLightbox(false);
-        setViewHistoryImage(null);
+        setViewHistoryImages([]);
+        setViewHistoryImageIndex(0);
 
         // Calculate initial amount from schedule or monthlyPayment
         let defaultAmount = Number(contract.monthlyPayment || contract.amount || 150);
@@ -159,6 +165,8 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
             if (receiptFile) {
                 photoUrl = await uploadReceiptImage(receiptFile);
             }
+            const paymentImages = [...new Set([...(photoUrl ? [photoUrl] : []), ...receiptUrls])];
+            const primaryPhoto = paymentImages[0] || '';
 
             const res = await fetch(`${API_BASE1}/payments`, {
                 method: 'POST',
@@ -166,9 +174,10 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                 body: JSON.stringify({
                     contractId: contract.contractId || contract._id,
                     customerName: `${contract.customerNameEn || ''} (${contract.customerNameKh || ''})`.trim(),
-                    photo: photoUrl,
-                    image: photoUrl,
-                    receiptImage: photoUrl,
+                    photo: primaryPhoto,
+                    image: primaryPhoto,
+                    receiptImage: primaryPhoto,
+                    paymentImages,
                     serialNumber: contract.serialNumber || '',
                     model: contract.model || '',
                     paidDate: phoneForm.paidDate,
@@ -185,8 +194,10 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                     paidBy: phoneForm.paidBy,
                     amount: Number(phoneForm.amount),
                     description: phoneForm.description,
-                    photo: photoUrl,
-                    image: photoUrl
+                    photo: primaryPhoto,
+                    image: primaryPhoto,
+                    receiptImage: primaryPhoto,
+                    paymentImages
                 };
 
                 setQrPayments(current => [savedPayment, ...current]);
@@ -412,6 +423,25 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                         </div>
                                     )}
 
+                                    <ImageUrlListInput
+                                        onAddUrls={urls => setReceiptUrls(current => [...new Set([...current, ...urls])])}
+                                    />
+                                    {receiptUrls.length > 0 && (
+                                        <div className="flex flex-wrap gap-2">
+                                            {receiptUrls.map((url, index) => (
+                                                <button
+                                                    key={`${url}-${index}`}
+                                                    type="button"
+                                                    onClick={() => setReceiptUrls(current => current.filter((_, urlIndex) => urlIndex !== index))}
+                                                    className="max-w-full truncate rounded bg-gray-800 px-2 py-1 text-[10px] text-emerald-300"
+                                                    title={`${url} (click to remove)`}
+                                                >
+                                                    {url}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     <div className="text-[10px] text-gray-400 text-left bg-gray-950/40 p-2.5 rounded-[5px] border border-gray-800">
                                         💡 <span className="text-gray-300 font-medium">ចំណាំ៖</span> រូបភាពដែលបានភ្ជាប់នឹងត្រូវរក្សាទុកជាភស្តុតាងនៃការបង់ប្រាក់ ហើយលោតទៅបង្ហាញនៅជួររូបភាពក្នុងទំព័រ <span className="text-emerald-400 font-mono">Payment History</span>។
                                     </div>
@@ -430,20 +460,24 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                     ) : qrPayments.length === 0 ? (
                                         <p className="py-4 text-center text-xs text-gray-500">No payment records yet.</p>
                                     ) : qrPayments.map((payment, index) => {
-                                        const proofImg = payment.photo || payment.image || payment.receiptImage;
+                                        const proofImages = Array.isArray(payment.paymentImages) && payment.paymentImages.length
+                                            ? payment.paymentImages.filter(Boolean)
+                                            : [payment.photo || payment.image || payment.receiptImage].filter(Boolean);
+                                        const proofImg = proofImages[0];
                                         return (
                                             <div key={payment._id || `${payment.paidDate}-${index}`} className="flex items-center justify-between gap-3 py-2 text-xs">
                                                 <div className="min-w-0 flex items-center gap-2">
                                                     {proofImg && (
                                                         <button
                                                             type="button"
-                                                            onClick={() => setViewHistoryImage(proofImg)}
+                                                            onClick={() => { setViewHistoryImages(proofImages); setViewHistoryImageIndex(0); }}
                                                             className="w-8 h-8 rounded-lg overflow-hidden border border-emerald-500/40 flex-shrink-0 cursor-pointer hover:scale-110 transition-transform"
                                                             title="មើលរូបភាពភស្តុតាង"
                                                         >
                                                             <img src={proofImg} alt="Receipt" className="w-full h-full object-cover" />
                                                         </button>
                                                     )}
+                                                    {proofImages.length > 1 && <span className="text-[10px] text-sky-300">{proofImages.length} photos</span>}
                                                     <div className="min-w-0">
                                                         <p className="text-gray-300 font-mono">{payment.paidDate || payment.paymentDate || '—'}</p>
                                                         <p className="text-gray-500 truncate">{payment.paidBy || 'System'} · {payment.description || '—'}</p>
@@ -488,26 +522,14 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
             )}
 
             {/* Lightbox for Payment History receipt image */}
-            {viewHistoryImage && (
-                <div
-                    className="fixed inset-0 bg-black/90 backdrop-blur-md z-[1000000] flex items-center justify-center p-2"
-                    onClick={() => setViewHistoryImage(null)}
-                >
-                    <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onClick={e => e.stopPropagation()}>
-                        <button
-                            type="button"
-                            onClick={() => setViewHistoryImage(null)}
-                            className="absolute -top-10 right-0 text-white hover:text-red-400 text-xl font-bold cursor-pointer"
-                        >
-                            <MdClose size={28} />
-                        </button>
-                        <img
-                            src={viewHistoryImage}
-                            alt="History Payment Proof"
-                            className="max-h-[80vh] max-w-full object-contain rounded-[5px] shadow-2xl border border-emerald-500/40"
-                        />
-                    </div>
-                </div>
+            {viewHistoryImages.length > 0 && (
+                <ImageGalleryModal
+                    images={viewHistoryImages}
+                    index={viewHistoryImageIndex}
+                    onIndexChange={setViewHistoryImageIndex}
+                    onClose={() => setViewHistoryImages([])}
+                    title="Payment proof"
+                />
             )}
         </>
     );

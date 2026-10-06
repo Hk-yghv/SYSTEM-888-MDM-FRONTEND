@@ -5,8 +5,9 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import ExportDropdown from '../../../components/ExportDropdown';
 import RepaymentScheduleModal from '../../Contract/components/RepaymentScheduleModal';
 import QrPaymentModal from '../components/QrPaymentModal';
-import { FaDollarSign, FaImage, FaTimes } from 'react-icons/fa';
+import { FaDollarSign, FaImage } from 'react-icons/fa';
 import { MdOutlineSync, MdQrCode2 } from 'react-icons/md';
+import ImageGalleryModal from '../../../components/ImageGalleryModal';
 
 const PAGE_SIZE = 25;
 const FETCH_LIMIT = 100000;
@@ -351,14 +352,13 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 />
             </>}
             {viewImages.length > 0 && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2" onClick={() => setViewImages([])}>
-                    <div className="relative max-h-full max-w-4xl" onClick={event => event.stopPropagation()}>
-                        <button onClick={() => setViewImages([])} className="absolute -right-3 -top-3 z-10 rounded-full bg-white p-2 text-slate-700" aria-label="Close image viewer"><FaTimes /></button>
-                        {viewImages.length > 1 && viewImageIndex > 0 && <button onClick={() => setViewImageIndex(index => index - 1)} className="absolute left-2 top-1/2 -translate-y-1/2 rounded bg-white/90 px-3 py-2">Previous</button>}
-                        <img src={viewImages[viewImageIndex]} alt="Payment proof" className="max-h-[85vh] max-w-full object-contain" />
-                        {viewImages.length > 1 && viewImageIndex < viewImages.length - 1 && <button onClick={() => setViewImageIndex(index => index + 1)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded bg-white/90 px-3 py-2">Next</button>}
-                    </div>
-                </div>
+                <ImageGalleryModal
+                    images={viewImages}
+                    index={viewImageIndex}
+                    onIndexChange={setViewImageIndex}
+                    onClose={() => setViewImages([])}
+                    title="Payment proof"
+                />
             )}
 
             <header className="space-y-3 rounded-lg border border-slate-200 bg-white p-2 shadow-xs">

@@ -659,6 +659,7 @@ router.post('/', async (req, res) => {
             amount,
             date,
             proofPhoto = '',
+            proofPhotos = [],
             qrCodePhoto = '',
             category = 'Basic Salary',
             paymentMethod = 'ABA Bank',
@@ -679,6 +680,10 @@ router.post('/', async (req, res) => {
         const year = parts[0] || new Date().getFullYear().toString();
         const month = parts.length >= 2 ? `${parts[0]}-${parts[1]}` : dateStr.slice(0, 7);
 
+        const allProofPhotos = [...new Set([
+            ...(Array.isArray(proofPhotos) ? proofPhotos : []),
+            ...(proofPhoto ? [proofPhoto] : [])
+        ].filter(Boolean))];
         const salaryData = {
             staffName: String(staffName || staffNameEn || staffNameKh || '').trim(),
             staffNameKh: String(staffNameKh).trim(),
@@ -688,7 +693,8 @@ router.post('/', async (req, res) => {
             date: dateStr,
             month,
             year,
-            proofPhoto: proofPhoto || '',
+            proofPhoto: allProofPhotos[0] || '',
+            proofPhotos: allProofPhotos,
             qrCodePhoto: qrCodePhoto || '',
             category: category || 'Basic Salary',
             paymentMethod: paymentMethod || 'ABA Bank',

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
+import ImageUrlListInput from '../../../components/ImageUrlListInput';
 import { formatIMEI } from '../../../utils/imeiFormatter';
 import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
@@ -319,8 +320,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         }
     };
 
-    const [inputPhotoUrl, setInputPhotoUrl] = useState('');
-
     const handlePhotoFileUpload = async (e) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
@@ -385,12 +384,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         }
     };
 
-    const handleAddDirectPhotoUrl = () => {
-        if (!inputPhotoUrl || !inputPhotoUrl.trim()) return;
-        const cleanUrl = inputPhotoUrl.trim();
+    const handleAddDirectPhotoUrls = (urls) => {
         setForm(prev => {
             const existing = Array.isArray(prev.photos) ? prev.photos : (prev.googleDrivePhotoUrl ? [prev.googleDrivePhotoUrl] : []);
-            const combined = [...existing, cleanUrl];
+            const combined = [...new Set([...existing, ...urls])];
             return {
                 ...prev,
                 photos: combined,
@@ -398,7 +395,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 customerPhoto: combined[0] || ''
             };
         });
-        setInputPhotoUrl('');
     };
 
     const handleRemovePhoto = (removeIndex) => {
@@ -593,22 +589,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             <Field label="URL Mosyle"><input className={`${inp} font-mono`} type="text" id="mosyleUrl" value={form.mosyleUrl || ''} onChange={handleChange} placeholder="https://" /></Field>
                             <Field label={t('evidencePhotos')} accent>
                                 <div className="flex flex-col gap-2">
-                                    <div className="flex items-center gap-1.5">
-                                        <input
-                                            className="flex-1 p-2 bg-gray-800/80 border border-amber-600/50 focus:border-amber-500 rounded-[5px] text-gray-100 font-mono text-xs outline-none transition-colors"
-                                            type="text"
-                                            value={inputPhotoUrl}
-                                            onChange={(e) => setInputPhotoUrl(e.target.value)}
-                                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddDirectPhotoUrl(); } }}
-                                            placeholder="Paste image URL and click Add, or Upload files..."
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleAddDirectPhotoUrl}
-                                            className="px-2.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[5px] text-[10px] font-bold flex items-center gap-1 cursor-pointer whitespace-nowrap transition-all"
-                                        >
-                                            Add URL
-                                        </button>
+                                    <div className="flex flex-col gap-2">
+                                        <ImageUrlListInput onAddUrls={handleAddDirectPhotoUrls} />
                                         <button
                                             type="button"
                                             onClick={() => photoFileRef.current?.click()}

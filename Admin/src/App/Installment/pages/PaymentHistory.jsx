@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
-import { MdOutlineSync, MdPictureAsPdf, MdChevronLeft, MdChevronRight } from "react-icons/md";
-import { FaFileExcel, FaImage, FaTimes, FaFilter } from 'react-icons/fa';
+import { MdOutlineSync, MdPictureAsPdf } from "react-icons/md";
+import { FaFileExcel, FaImage, FaFilter } from 'react-icons/fa';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
+import ImageGalleryModal from '../../../components/ImageGalleryModal';
 
 const LIMIT = 10;
 
@@ -158,77 +159,13 @@ const PaymentHistory = () => {
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
             {/* Image Viewer Modal — Gallery Support */}
             {viewImages.length > 0 && (
-                <div
-                    className='fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm'
-                    onClick={closeImageViewer}
-                >
-                    <div
-                        className='relative bg-white rounded-[5px] shadow-2xl max-w-2xl w-full mx-4 overflow-hidden'
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className='flex items-center justify-between px-4 py-1 border-b border-slate-200 bg-slate-50'>
-                            <span className='text-sm font-bold text-slate-700 flex items-center gap-2'>
-                                <FaImage className='text-emerald-600' />
-                                រូបភាពការបង់ប្រាក់
-                                {viewImages.length > 1 && (
-                                    <span className='text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300'>
-                                        {viewImageIdx + 1} / {viewImages.length}
-                                    </span>
-                                )}
-                            </span>
-                            <button
-                                onClick={closeImageViewer}
-                                className='p-2 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-red-600 transition-colors cursor-pointer'
-                            >
-                                <FaTimes />
-                            </button>
-                        </div>
-                        <div className='relative p-2 flex items-center justify-center bg-slate-100 min-h-[300px]'>
-                            {/* Prev button */}
-                            {viewImages.length > 1 && viewImageIdx > 0 && (
-                                <button
-                                    onClick={() => setViewImageIdx(i => i - 1)}
-                                    className='absolute left-2 p-2 rounded-full bg-white/80 hover:bg-white shadow-md text-slate-700 hover:text-emerald-600 transition-all cursor-pointer z-10'
-                                >
-                                    <MdChevronLeft size={22} />
-                                </button>
-                            )}
-                            <img
-                                key={viewImageIdx}
-                                src={viewImages[viewImageIdx]}
-                                alt='payment receipt'
-                                className='max-w-full max-h-[500px] object-contain rounded-lg shadow-md'
-                            />
-                            {/* Next button */}
-                            {viewImages.length > 1 && viewImageIdx < viewImages.length - 1 && (
-                                <button
-                                    onClick={() => setViewImageIdx(i => i + 1)}
-                                    className='absolute right-2 p-2 rounded-full bg-white/80 hover:bg-white shadow-md text-slate-700 hover:text-emerald-600 transition-all cursor-pointer z-10'
-                                >
-                                    <MdChevronRight size={22} />
-                                </button>
-                            )}
-                        </div>
-                        {/* Thumbnail strip for multiple images */}
-                        {viewImages.length > 1 && (
-                            <div className='flex gap-2 px-4 py-1 bg-slate-50 border-t border-slate-200 overflow-x-auto'>
-                                {viewImages.map((img, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setViewImageIdx(i)}
-                                        className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
-                                            i === viewImageIdx
-                                                ? 'border-emerald-500 shadow-md'
-                                                : 'border-slate-200 hover:border-emerald-300'
-                                        }`}
-                                    >
-                                        <img src={img} alt={`thumb-${i}`} className='w-full h-full object-cover' />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                <ImageGalleryModal
+                    images={viewImages}
+                    index={viewImageIdx}
+                    onIndexChange={setViewImageIdx}
+                    onClose={closeImageViewer}
+                    title="Payment receipts"
+                />
             )}
             {/* Header */}
             <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col gap-3 shadow-xs'>

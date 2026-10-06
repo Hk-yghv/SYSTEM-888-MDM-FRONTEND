@@ -3,8 +3,9 @@ import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { IoIosContact } from 'react-icons/io';
-import { MdOutlineSync, MdInfo, MdPictureAsPdf, MdTableChart, MdQrCode2, MdClose } from 'react-icons/md';
+import { MdOutlineSync, MdInfo, MdPictureAsPdf, MdTableChart, MdQrCode2 } from 'react-icons/md';
 import { FaFileExcel, FaQrcode, FaFileImage } from 'react-icons/fa';
+import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
@@ -44,6 +45,7 @@ const Customer = () => {
     // Action droplist & Photo Gallery modal states
     const [openMenuId, setOpenMenuId] = useState(null);
     const [photoGalleryCustomer, setPhotoGalleryCustomer] = useState(null);
+    const [photoGalleryIndex, setPhotoGalleryIndex] = useState(0);
 
     // Close action menu on window click
     useEffect(() => {
@@ -381,6 +383,7 @@ const Customer = () => {
                                                                     type="button"
                                                                     onClick={() => {
                                                                         setPhotoGalleryCustomer(item);
+                                                                        setPhotoGalleryIndex(0);
                                                                         setOpenMenuId(null);
                                                                     }}
                                                                     className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-semibold cursor-pointer transition-colors"
@@ -1504,89 +1507,40 @@ const Customer = () => {
             )}
 
             {/* Photo Gallery Modal for "See Photo" */}
-            {photoGalleryCustomer && (
-                <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2 animate-in fade-in duration-150"
-                    onClick={() => setPhotoGalleryCustomer(null)}
-                >
-                    <div
-                        className="bg-slate-900 border border-slate-700 rounded-[5px] max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between p-2 border-b border-slate-800 text-white bg-slate-950">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-base">
-                                    <FaFileImage />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                                        <span className='text-black'>{t('evidencePhotos')}</span>
-                                        <span className="text-xs text-emerald-400 font-mono font-bold">
-                                            {photoGalleryCustomer.customerNameEn} {photoGalleryCustomer.customerNameKh ? `(${photoGalleryCustomer.customerNameKh})` : ''}
-                                        </span>
-                                    </h3>
-                                    <p className="text-[11px] text-slate-400 font-mono">
-                                        Contract: {photoGalleryCustomer.contractIid || photoGalleryCustomer.contractId}
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setPhotoGalleryCustomer(null)}
-                                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer transition-colors"
-                            >
-                                <MdClose size={20} />
-                            </button>
-                        </div>
+            {photoGalleryCustomer && (() => {
+                const photosList = (Array.isArray(photoGalleryCustomer.photos) && photoGalleryCustomer.photos.length > 0)
+                    ? photoGalleryCustomer.photos
+                    : (Array.isArray(photoGalleryCustomer.evidencePhotos) && photoGalleryCustomer.evidencePhotos.length > 0)
+                        ? photoGalleryCustomer.evidencePhotos
+                        : [photoGalleryCustomer.googleDrivePhotoUrl, photoGalleryCustomer.customerPhoto].filter(Boolean);
+                const closeGallery = () => setPhotoGalleryCustomer(null);
 
-                        {/* Modal Body / Gallery Grid */}
-                        <div className="p-5 overflow-y-auto max-h-[75vh]">
-                            {(() => {
-                                const photosList = (Array.isArray(photoGalleryCustomer.photos) && photoGalleryCustomer.photos.length > 0)
-                                    ? photoGalleryCustomer.photos
-                                    : (Array.isArray(photoGalleryCustomer.evidencePhotos) && photoGalleryCustomer.evidencePhotos.length > 0)
-                                        ? photoGalleryCustomer.evidencePhotos
-                                        : [photoGalleryCustomer.googleDrivePhotoUrl, photoGalleryCustomer.customerPhoto].filter(Boolean);
+                if (photosList.length > 0) {
+                    const customerName = `${photoGalleryCustomer.customerNameEn || ''}${photoGalleryCustomer.customerNameKh ? ` (${photoGalleryCustomer.customerNameKh})` : ''}`;
+                    const contractId = photoGalleryCustomer.contractIid || photoGalleryCustomer.contractId || '';
+                    return (
+                        <ImageGalleryModal
+                            images={photosList}
+                            index={photoGalleryIndex}
+                            onIndexChange={setPhotoGalleryIndex}
+                            onClose={closeGallery}
+                            title={t('evidencePhotos')}
+                            subtitle={`${customerName}${contractId ? ` · Contract: ${contractId}` : ''}`}
+                        />
+                    );
+                }
 
-                                if (photosList.length === 0) {
-                                    return (
-                                        <div className="py-16 text-center text-slate-400 space-y-2">
-                                            <FaFileImage className="text-4xl mx-auto opacity-30 text-slate-400" />
-                                            <p className="text-xs font-semibold">គ្មានរូបភាពភស្តុតាងដែលបានភ្ជាប់សម្រាប់អតិថិជននេះទេ</p>
-                                            <p className="text-[11px] text-slate-500">No evidence photos attached for this application.</p>
-                                        </div>
-                                    );
-                                }
-
-                                return (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {photosList.map((pUrl, pIdx) => (
-                                            <div key={pIdx} className="bg-slate-950 border border-slate-800 rounded-[5px] overflow-hidden p-2 flex flex-col items-center shadow-lg">
-                                                <img
-                                                    src={pUrl}
-                                                    alt={`Evidence ${pIdx + 1}`}
-                                                    className="w-full max-h-[50vh] object-contain rounded-lg"
-                                                />
-                                                <div className="w-full flex items-center justify-between pt-2 px-1 text-[11px] text-slate-400 font-mono">
-                                                    <span>រូបភាពទី #{pIdx + 1}</span>
-                                                    <a
-                                                        href={pUrl}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="text-emerald-400 hover:underline font-bold"
-                                                    >
-                                                        View Fullscreen ↗
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                );
-                            })()}
+                return (
+                    <div className="fixed inset-0 z-[100000000] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm" onClick={closeGallery}>
+                        <div role="dialog" aria-modal="true" className="max-w-[84vw] rounded-lg border border-slate-700 bg-slate-900 p-6 text-center text-slate-300 shadow-2xl" onClick={event => event.stopPropagation()}>
+                            <FaFileImage className="mx-auto text-4xl text-slate-500" />
+                            <p className="mt-3 text-xs font-semibold">គ្មានរូបភាពភស្តុតាងដែលបានភ្ជាប់សម្រាប់អតិថិជននេះទេ</p>
+                            <p className="mt-1 text-[11px] text-slate-400">No evidence photos attached for this application.</p>
+                            <button type="button" onClick={closeGallery} className="mt-4 rounded bg-slate-700 px-3 py-1.5 text-xs font-bold text-white">Close</button>
                         </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
         </div>
     );

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
+import ImageGalleryModal from '../../../components/ImageGalleryModal';
+import ImageUrlListInput from '../../../components/ImageUrlListInput';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
@@ -10,7 +12,7 @@ import {
     FaTimesCircle, FaDollarSign, FaFilter,
     FaFileDownload, FaBuilding, FaUserTie,
     FaPhoneAlt, FaCoins, FaTags, FaComments,
-    FaImage, FaCamera, FaChevronLeft, FaChevronRight,
+    FaImage, FaCamera,
     FaTimes
 } from 'react-icons/fa';
 import { MdOutlineSync, MdPictureAsPdf, MdOutlineRateReview, MdOutlineAssignment, MdCall, MdCloudUpload } from 'react-icons/md';
@@ -281,6 +283,16 @@ const FollowUp2 = () => {
 
     const handleRemoveSelectedImage = (indexToRemove) => {
         setSelectedImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    };
+
+    const handleAddImageUrls = (urls) => {
+        setSelectedImages(prev => {
+            const existingUrls = new Set(prev.filter(item => item.type === 'url').map(item => item.url));
+            const newItems = urls
+                .filter(url => !existingUrls.has(url))
+                .map(url => ({ id: url, type: 'url', preview: url, url }));
+            return [...prev, ...newItems];
+        });
     };
 
     // Open Lightbox Viewer
@@ -1506,6 +1518,8 @@ const FollowUp2 = () => {
                                     </label>
                                 </div>
 
+                                <ImageUrlListInput onAddUrls={handleAddImageUrls} />
+
                                 {/* Thumbnails Grid */}
                                 {selectedImages && selectedImages.length > 0 && (
                                     <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 pt-2">
@@ -1641,58 +1655,13 @@ const FollowUp2 = () => {
             )}
 
             {/* Photo Lightbox / Preview Modal */}
-            {isPreviewOpen && previewImages.length > 0 && (
-                <div className="fixed inset-0 z-5000 flex items-center justify-center bg-black/85 backdrop-blur-sm p-2 animate-in fade-in duration-200" >
-                    <button
-                        onClick={() => setIsPreviewOpen(false)}
-                        className="absolute top-4 right-4 p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer z-50"
-                        title="Close"
-                    >
-                        <FaTimes size={20} />
-                    </button>
-
-                    <div className="relative max-w-4xl max-h-[85vh] flex flex-col items-center justify-center">
-                        <img
-                            src={previewImages[previewIndex]}
-                            alt="Preview Full"
-                            className="max-w-full max-h-[75vh] object-contain rounded-[5px] shadow-2xl border border-white/20"
-                        />
-
-                        {/* Navigation Arrows if multiple photos */}
-                        {previewImages.length > 1 && (
-                            <>
-                                <button
-                                    onClick={() => setPreviewIndex(prev => (prev > 0 ? prev - 1 : previewImages.length - 1))}
-                                    className="absolute left-2 sm:-left-12 top-1/2 -translate-y-1/2 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
-                                    title="Previous"
-                                >
-                                    <FaChevronLeft size={18} />
-                                </button>
-                                <button
-                                    onClick={() => setPreviewIndex(prev => (prev < previewImages.length - 1 ? prev + 1 : 0))}
-                                    className="absolute right-2 sm:-right-12 top-1/2 -translate-y-1/2 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full transition-all cursor-pointer border border-white/20 shadow-lg"
-                                    title="Next"
-                                >
-                                    <FaChevronRight size={18} />
-                                </button>
-                            </>
-                        )}
-
-                        {/* Counter & Thumbnails Bar */}
-                        <div className="mt-4 flex items-center gap-2 overflow-x-auto p-2 bg-black/40 rounded-[5px]">
-                            {previewImages.map((img, idx) => (
-                                <img
-                                    key={idx}
-                                    src={img}
-                                    alt={`Thumb ${idx}`}
-                                    onClick={() => setPreviewIndex(idx)}
-                                    className={`w-12 h-12 object-cover rounded-lg cursor-pointer border-2 transition-all ${previewIndex === idx ? 'border-indigo-500 scale-105' : 'border-transparent opacity-60 hover:opacity-100'
-                                        }`}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </div>
+            {isPreviewOpen && (
+                <ImageGalleryModal
+                    images={previewImages}
+                    index={previewIndex}
+                    onIndexChange={setPreviewIndex}
+                    onClose={() => setIsPreviewOpen(false)}
+                />
             )}
 
             {/* Export Range Props Modal */}

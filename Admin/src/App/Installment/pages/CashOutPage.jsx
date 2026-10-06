@@ -13,9 +13,13 @@ import Pagination from '../../../components/Pagination';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import LineChart from '../../../components/LineChart';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
-import { getProxyImageUrl } from '../../../utils/mediaUtils';
+import ImageGalleryModal from '../../../components/ImageGalleryModal';
 
 const LIMIT = 10;
+const getPhotoUrls = (item) => [...new Set([
+    ...(Array.isArray(item?.photoUrls) ? item.photoUrls : []),
+    ...(item?.photoUrl ? [item.photoUrl] : [])
+].filter(Boolean))];
 
 const CashOutPage = () => {
     const { t } = useLanguage();
@@ -47,49 +51,54 @@ const CashOutPage = () => {
         currency: 'USD',
         category: 'General Expense',
         description: '',
-        photoUrl: ''
+        photoUrls: []
     });
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
-    const [selectedImage, setSelectedImage] = useState(null); // image preview modal
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
     const visibleDataList = selectedRecord ? [selectedRecord] : dataList;
 
     const handleFileUpload = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
         setUploadingImage(true);
         try {
             const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
             const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-            const bodyData = new FormData();
-            bodyData.append('file', file);
-            bodyData.append('upload_preset', CLOUDINARY_PRESET);
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                method: 'POST',
-                body: bodyData
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                const rawUrl = data.secure_url || data.url;
-                setFormData(prev => ({ ...prev, photoUrl: rawUrl }));
-            } else {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setFormData(prev => ({ ...prev, photoUrl: reader.result }));
-                };
-                reader.readAsDataURL(file);
-            }
+            const uploadedUrls = await Promise.all(files.map(async (file) => {
+                try {
+                    const bodyData = new FormData();
+                    bodyData.append('file', file);
+                    bodyData.append('upload_preset', CLOUDINARY_PRESET);
+                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+                        method: 'POST',
+                        body: bodyData
+                    });
+                    if (!res.ok) throw new Error(`Cloudinary upload failed (${res.status})`);
+                    const data = await res.json();
+                    const url = data.secure_url || data.url;
+                    if (!url) throw new Error('Cloudinary response did not include an image URL');
+                    return url;
+                } catch (err) {
+                    console.warn('Cloudinary upload failed; using local image fallback:', err);
+                    return await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => typeof reader.result === 'string'
+                            ? resolve(reader.result)
+                            : reject(new Error(`Could not read ${file.name}`));
+                        reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }));
+            setFormData(prev => ({ ...prev, photoUrls: [...prev.photoUrls, ...uploadedUrls] }));
         } catch (err) {
-            console.error('Cloudinary upload error:', err);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, photoUrl: reader.result }));
-            };
-            reader.readAsDataURL(file);
+            console.error('Image upload error:', err);
+            alert(`Image upload failed: ${err.message}`);
         } finally {
+            e.target.value = '';
             setUploadingImage(false);
         }
     };
@@ -152,7 +161,8 @@ const CashOutPage = () => {
                 currency: formData.currency,
                 category: formData.category,
                 description: formData.description,
-                photoUrl: formData.photoUrl,
+                photoUrl: formData.photoUrls[0] || '',
+                photoUrls: formData.photoUrls,
                 performedBy: user?.name || user?.username || 'Admin',
                 brand: user?.brand || 'SYSTEM'
             };
@@ -177,7 +187,7 @@ const CashOutPage = () => {
                     currency: 'USD',
                     category: 'General Expense',
                     description: '',
-                    photoUrl: ''
+                    photoUrls: []
                 });
                 fetchData(1, searchTerm, startDate, endDate);
             } else {
@@ -199,7 +209,7 @@ const CashOutPage = () => {
             currency: item.currency || 'USD',
             category: item.category || 'General Expense',
             description: item.description || '',
-            photoUrl: item.photoUrl || ''
+            photoUrls: getPhotoUrls(item)
         });
         setIsFormOpen(true);
     };
@@ -303,7 +313,7 @@ const CashOutPage = () => {
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
-                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', category: 'General Expense', description: '', photoUrl: '' }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-rose-600/20'>
+                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', category: 'General Expense', description: '', photoUrls: [] }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-rose-600/20'>
                         <FaPlus className="text-xs" /><span>{t('createCashOut')}</span>
                     </button>
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
@@ -475,9 +485,9 @@ const CashOutPage = () => {
                                             </td>
                                             <td className='px-4 py-1 font-medium text-slate-700 max-w-xs truncate'>{item.description || '-'}</td>
                                             <td className='px-4 py-1 text-center'>
-                                                {item.photoUrl ? (
-                                                    <button onClick={() => setSelectedImage(item.photoUrl)} className="text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center justify-center gap-1 mx-auto">
-                                                        <FaImage /> <span>View</span>
+                                                {getPhotoUrls(item).length > 0 ? (
+                                                    <button onClick={() => { setSelectedImages(getPhotoUrls(item)); setSelectedImageIndex(0); }} className="text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center justify-center gap-1 mx-auto">
+                                                        <FaImage /> <span>View{getPhotoUrls(item).length > 1 ? ` (${getPhotoUrls(item).length})` : ''}</span>
                                                     </button>
                                                 ) : <span className="text-slate-400 italic">No image</span>}
                                             </td>
@@ -579,21 +589,29 @@ const CashOutPage = () => {
                                     <input
                                         type="file"
                                         accept="image/*"
+                                        multiple
                                         onChange={handleFileUpload}
                                         className="w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-[5px] file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100 cursor-pointer"
                                     />
                                     {uploadingImage && <p className="text-[11px] text-rose-600 font-bold animate-pulse">☁️ កំពុង Upload រូបភាពទៅ Cloudinary...</p>}
-                                    <input
-                                        type="text"
-                                        placeholder="ឬបិទភ្ជាប់ URL: https://res.cloudinary.com/..."
-                                        value={formData.photoUrl}
-                                        onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
+                                    <textarea
+                                        rows="2"
+                                        placeholder="ឬបិទភ្ជាប់ URL រូបភាព (មួយក្នុងមួយបន្ទាត់)"
+                                        value={formData.photoUrls.join('\n')}
+                                        onChange={(e) => setFormData({ ...formData, photoUrls: [...new Set(e.target.value.split(/\r?\n/).map(url => url.trim()).filter(Boolean))] })}
                                         className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-mono text-[11px] focus:outline-none focus:border-rose-500"
                                     />
-                                    {formData.photoUrl && (
-                                        <div className="flex items-center gap-2 pt-1">
-                                            <img src={formData.photoUrl} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs" />
-                                            <span className="text-[10px] text-emerald-700 font-bold">✓ រូបភាពបានបញ្ចូលរួចរាល់</span>
+                                    {formData.photoUrls.length > 0 && (
+                                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                                            {formData.photoUrls.map((url, index) => (
+                                                <div key={`${url}-${index}`} className="relative">
+                                                    <img src={url} alt={`Receipt ${index + 1}`} className="h-12 w-12 rounded-lg border border-slate-300 object-cover shadow-xs" />
+                                                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, photoUrls: prev.photoUrls.filter((_, imageIndex) => imageIndex !== index) }))} aria-label={`Remove image ${index + 1}`} className="absolute -right-1 -top-1 rounded-full bg-white p-1 text-rose-600 shadow">
+                                                        <FaTrashAlt size={10} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <span className="text-[10px] text-rose-700 font-bold">{formData.photoUrls.length} រូបភាពបានបញ្ចូល</span>
                                         </div>
                                     )}
                                 </div>
@@ -613,13 +631,14 @@ const CashOutPage = () => {
             )}
 
             {/* Image Preview Modal */}
-            {selectedImage && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-2" onClick={() => setSelectedImage(null)}>
-                    <div className="relative bg-white rounded-[5px] p-2 max-w-xl max-h-[85vh] overflow-hidden border border-slate-200 shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <img src={selectedImage} alt="Receipt" className="max-w-full max-h-[75vh] object-contain rounded-[5px]" />
-                        <button onClick={() => setSelectedImage(null)} className="mt-2 w-full py-1.5 bg-rose-600 text-white font-bold rounded-[5px] text-xs">Close</button>
-                    </div>
-                </div>
+            {selectedImages.length > 0 && (
+                <ImageGalleryModal
+                    images={selectedImages}
+                    index={selectedImageIndex}
+                    onIndexChange={setSelectedImageIndex}
+                    onClose={() => setSelectedImages([])}
+                    title={t('receiptPhoto')}
+                />
             )}
         </div>
     );
