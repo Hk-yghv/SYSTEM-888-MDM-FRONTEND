@@ -3,7 +3,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
-    FaEdit, FaSearch, FaRegCalendarAlt,
+    FaEdit, FaSearch,
     FaListUl, FaBuilding, FaBan,
     FaCalculator, FaChartBar, FaHistory, FaCheckCircle
 } from 'react-icons/fa';
@@ -11,6 +11,7 @@ import { MdOutlineSync } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import ExportDropdown from '../../../components/ExportDropdown';
 import CopyCell from '../../../components/CopyCell';
+import DateRangeDropdown from '../../../components/DateRangeDropdown';
 
 // Modular Prop-driven Subcomponents (Center Screen Modals)
 import FollowUp4SubmitModal from '../components/FollowUp4SubmitModal';
@@ -113,13 +114,14 @@ const FollowUp4 = () => {
     };
 
     // =========================================================
-    // TAB 1: FOLLOW UP SUBMIT STATE & LOGIC (Default: 3 Days)
+    // TAB 1: FOLLOW UP SUBMIT STATE & LOGIC
     // =========================================================
     const [submitList, setSubmitList] = useState([]);
     const [submitLoading, setSubmitLoading] = useState(false);
     const [submitFormSaving, setSubmitFormSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [submitDate, setSubmitDate] = useState(getTodayStr());
+    const [submitStartDate, setSubmitStartDate] = useState('');
+    const [submitEndDate, setSubmitEndDate] = useState('');
 
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
@@ -153,10 +155,8 @@ const FollowUp4 = () => {
             if (user?.username) params.append('username', user.username);
             if (user?.isImmutable) params.append('isImmutable', String(user.isImmutable));
             if (selectedBrand) params.append('brand', selectedBrand);
-            if (submitDate) {
-                params.append('startDate', submitDate);
-                params.append('endDate', submitDate);
-            }
+            if (submitStartDate) params.append('startDate', submitStartDate);
+            if (submitEndDate) params.append('endDate', submitEndDate);
             if (searchTerm) params.append('search', searchTerm);
 
             const res = await fetch(`${API_BASE}/follow-up-4/submit?${params.toString()}`);
@@ -169,7 +169,7 @@ const FollowUp4 = () => {
         } finally {
             setSubmitLoading(false);
         }
-    }, [API_BASE, user, selectedBrand, submitDate, searchTerm]);
+    }, [API_BASE, user, selectedBrand, submitStartDate, submitEndDate, searchTerm]);
 
     useEffect(() => {
         if (activeTab === 'submit') {
@@ -1049,8 +1049,6 @@ const FollowUp4 = () => {
             <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-700/80">
                 <button
                     onClick={() => {
-                        const today = getTodayStr();
-                        setSubmitDate(today);
                         setActiveTab('submit');
                     }}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'submit'
@@ -1116,16 +1114,15 @@ const FollowUp4 = () => {
                                 />
                             </div>
 
-                            <label className="inline-flex min-h-9 items-center gap-2 rounded-[5px] border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
-                                <FaRegCalendarAlt className="shrink-0 text-emerald-600" />
-                                <span>ថ្ងៃដាក់ស្នើ</span>
-                                <input
-                                    type="date"
-                                    value={submitDate}
-                                    onChange={(event) => setSubmitDate(event.target.value || getTodayStr())}
-                                    className="min-w-0 bg-transparent text-xs text-emerald-900 outline-none"
-                                />
-                            </label>
+                            <DateRangeDropdown
+                                from={submitStartDate}
+                                to={submitEndDate}
+                                label="ថ្ងៃដាក់ស្នើ"
+                                onApplyRange={(from, to) => {
+                                    setSubmitStartDate(from);
+                                    setSubmitEndDate(to);
+                                }}
+                            />
                         </div>
 
                         {/* Add Button */}
@@ -1326,32 +1323,15 @@ const FollowUp4 = () => {
 
                         <div className="flex flex-wrap items-center gap-2">
                             {/* Date Filter */}
-                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-[5px] border border-slate-700">
-                                <FaRegCalendarAlt className="text-rose-400 text-xs" />
-                                <input
-                                    type="date"
-                                    value={rejectSubmitStartDate}
-                                    onChange={(e) => setRejectSubmitStartDate(e.target.value)}
-                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
-                                    title="ចាប់ពីថ្ងៃ"
-                                />
-                                <span className="text-slate-500 text-xs">ដល់</span>
-                                <input
-                                    type="date"
-                                    value={rejectSubmitEndDate}
-                                    onChange={(e) => setRejectSubmitEndDate(e.target.value)}
-                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
-                                    title="ដល់ថ្ងៃ"
-                                />
-                                {(rejectSubmitStartDate || rejectSubmitEndDate) && (
-                                    <button
-                                        onClick={() => { setRejectSubmitStartDate(''); setRejectSubmitEndDate(''); }}
-                                        className="text-[11px] text-rose-400 hover:text-rose-300 ml-1 font-semibold cursor-pointer underline"
-                                    >
-                                        Clear
-                                    </button>
-                                )}
-                            </div>
+                            <DateRangeDropdown
+                                from={rejectSubmitStartDate}
+                                to={rejectSubmitEndDate}
+                                label="Date Filter"
+                                onApplyRange={(from, to) => {
+                                    setRejectSubmitStartDate(from);
+                                    setRejectSubmitEndDate(to);
+                                }}
+                            />
 
                             {hasPermission('/follow-up/follow-up-4', 'create') && (
                                 <button
@@ -1472,32 +1452,15 @@ const FollowUp4 = () => {
 
                         <div className="flex flex-wrap items-center gap-2">
                             {/* Date Filter */}
-                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-[5px] border border-slate-700">
-                                <FaRegCalendarAlt className="text-amber-400 text-xs" />
-                                <input
-                                    type="date"
-                                    value={rejectCsStartDate}
-                                    onChange={(e) => setRejectCsStartDate(e.target.value)}
-                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
-                                    title="ចាប់ពីថ្ងៃ"
-                                />
-                                <span className="text-slate-500 text-xs">ដល់</span>
-                                <input
-                                    type="date"
-                                    value={rejectCsEndDate}
-                                    onChange={(e) => setRejectCsEndDate(e.target.value)}
-                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
-                                    title="ដល់ថ្ងៃ"
-                                />
-                                {(rejectCsStartDate || rejectCsEndDate) && (
-                                    <button
-                                        onClick={() => { setRejectCsStartDate(''); setRejectCsEndDate(''); }}
-                                        className="text-[11px] text-rose-400 hover:text-rose-300 ml-1 font-semibold cursor-pointer underline"
-                                    >
-                                        Clear
-                                    </button>
-                                )}
-                            </div>
+                            <DateRangeDropdown
+                                from={rejectCsStartDate}
+                                to={rejectCsEndDate}
+                                label="Date Filter"
+                                onApplyRange={(from, to) => {
+                                    setRejectCsStartDate(from);
+                                    setRejectCsEndDate(to);
+                                }}
+                            />
 
                             {hasPermission('/follow-up/follow-up-4', 'create') && (
                                 <button
@@ -1618,32 +1581,15 @@ const FollowUp4 = () => {
 
                         <div className="flex flex-wrap items-center gap-2">
                             {/* Date Filter */}
-                            <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-[5px] border border-slate-700">
-                                <FaRegCalendarAlt className="text-sky-400 text-xs" />
-                                <input
-                                    type="date"
-                                    value={detailStartDate}
-                                    onChange={(e) => setDetailStartDate(e.target.value)}
-                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
-                                    title="ចាប់ពីថ្ងៃ"
-                                />
-                                <span className="text-slate-500 text-xs">ដល់</span>
-                                <input
-                                    type="date"
-                                    value={detailEndDate}
-                                    onChange={(e) => setDetailEndDate(e.target.value)}
-                                    className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
-                                    title="ដល់ថ្ងៃ"
-                                />
-                                {(detailStartDate || detailEndDate) && (
-                                    <button
-                                        onClick={() => { setDetailStartDate(''); setDetailEndDate(''); }}
-                                        className="text-[11px] text-rose-400 hover:text-rose-300 ml-1 font-semibold cursor-pointer underline"
-                                    >
-                                        Clear
-                                    </button>
-                                )}
-                            </div>
+                            <DateRangeDropdown
+                                from={detailStartDate}
+                                to={detailEndDate}
+                                label="Date Filter"
+                                onApplyRange={(from, to) => {
+                                    setDetailStartDate(from);
+                                    setDetailEndDate(to);
+                                }}
+                            />
 
                             {hasPermission('/follow-up/follow-up-4', 'create') && (
                                 <button

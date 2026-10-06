@@ -542,6 +542,8 @@ router.put('/:id', async (req, res) => {
         delete updateData.updatedAt;
         delete updateData.commentHistory;
         delete updateData.commentDate;
+        const appendComment = updateData.appendComment === true;
+        delete updateData.appendComment;
 
         // Fetch existing contract to capture prior state and compute diff
         let existingContract = null;
@@ -559,7 +561,7 @@ router.put('/:id', async (req, res) => {
             prevObj = existingContract.toObject ? existingContract.toObject() : { ...existingContract };
             const notesChanged = Object.prototype.hasOwnProperty.call(updateData, 'notes') &&
                 String(updateData.notes ?? '') !== String(prevObj.notes ?? '');
-            if (notesChanged) {
+            if (notesChanged || appendComment) {
                 const previousComment = String(prevObj.notes || '');
                 const commentHistory = Array.isArray(prevObj.commentHistory) ? [...prevObj.commentHistory] : [];
                 if (previousComment.trim()) {

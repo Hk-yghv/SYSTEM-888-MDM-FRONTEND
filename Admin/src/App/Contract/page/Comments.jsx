@@ -24,6 +24,7 @@ const Comments = () => {
     const [selectedInfo, setSelectedInfo] = useState(null);
     const [selectedCommentItem, setSelectedCommentItem] = useState(null);
     const [commentInput, setCommentInput] = useState('');
+    const [isAddingComment, setIsAddingComment] = useState(false);
     const [commentSaving, setCommentSaving] = useState(false);
     const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
     const [editingHistoryEntry, setEditingHistoryEntry] = useState(null);
@@ -67,6 +68,7 @@ const Comments = () => {
         if (!contract) return;
         setSelectedCommentItem(contract);
         setCommentInput('');
+        setIsAddingComment(true);
         setEditingHistoryEntry(null);
         setSelectedHistoryItem(null);
         setSearchParams(current => {
@@ -85,6 +87,7 @@ const Comments = () => {
     const openCommentEditor = (contract, append = false) => {
         setSelectedCommentItem(contract);
         setCommentInput(append ? '' : (contract.notes || ''));
+        setIsAddingComment(append);
         setEditingHistoryEntry(null);
     };
 
@@ -102,7 +105,11 @@ const Comments = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(isHistoryEdit
                     ? { comment: commentInput }
-                    : { notes: commentInput, lastModifiedBy: user?.username || 'Staff' })
+                    : {
+                        notes: commentInput,
+                        lastModifiedBy: user?.username || 'Staff',
+                        appendComment: isAddingComment
+                    })
             });
             if (!res.ok) {
                 const result = await res.json().catch(() => ({}));
@@ -112,6 +119,7 @@ const Comments = () => {
             if (selectedHistoryItem) setSelectedHistoryItem(updated);
             setSelectedCommentItem(null);
             setEditingHistoryEntry(null);
+            setIsAddingComment(false);
             setCommentInput('');
             await fetchCommentsContracts(page, searchTerm);
         } catch (err) {
@@ -396,7 +404,7 @@ const Comments = () => {
                             </h2>
                             <button
                                 type="button"
-                                onClick={() => { setSelectedCommentItem(null); setEditingHistoryEntry(null); }}
+                                onClick={() => { setSelectedCommentItem(null); setEditingHistoryEntry(null); setIsAddingComment(false); }}
                                 className="rounded px-2 py-1 text-slate-400 hover:bg-slate-800"
                                 aria-label="Close"
                             >×</button>
@@ -418,7 +426,7 @@ const Comments = () => {
                         <footer className="flex justify-end gap-2">
                             <button
                                 type="button"
-                                onClick={() => { setSelectedCommentItem(null); setEditingHistoryEntry(null); }}
+                                onClick={() => { setSelectedCommentItem(null); setEditingHistoryEntry(null); setIsAddingComment(false); }}
                                 className="rounded-[5px] bg-slate-700 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-600"
                             >Cancel</button>
                             <button
