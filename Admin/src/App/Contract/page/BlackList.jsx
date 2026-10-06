@@ -3,12 +3,13 @@ import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { AiOutlineMenu } from "react-icons/ai";
-import { MdOutlineSync, MdEdit, MdDelete, MdPictureAsPdf, MdSwapHoriz, MdSearch } from "react-icons/md";
+import { MdOutlineSync, MdEdit, MdDelete, MdPictureAsPdf, MdSwapHoriz } from "react-icons/md";
 import { FaFileExcel } from 'react-icons/fa';
 import CreateApplication from '../components/CreateApplication';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const BlackList = () => {
     const { t } = useLanguage();
@@ -23,25 +24,14 @@ const BlackList = () => {
     const [editData, setEditData] = useState(null);
     const [openEditModal, setOpenEditModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
 
-    const filteredContracts = contracts.filter(c => {
-        if (!searchTerm) return true;
-        const term = searchTerm.toLowerCase();
-        return (
-            (c.customerNameEn && c.customerNameEn.toLowerCase().includes(term)) ||
-            (c.customerNameKh && c.customerNameKh.toLowerCase().includes(term)) ||
-            (c.model && c.model.toLowerCase().includes(term)) ||
-            (c.serialNumber && c.serialNumber.toLowerCase().includes(term)) ||
-            (c.phone && c.phone.toLowerCase().includes(term)) ||
-            (c.idCardNumber && c.idCardNumber.toLowerCase().includes(term))
-        );
-    });
-
-    const fetchBlackListContracts = async (pg = page) => {
+    const fetchBlackListContracts = async (pg = page, search = searchTerm) => {
         setReloading(true);
         try {
             const brandParam = user?.brand ? `&userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}&username=${encodeURIComponent(user?.username || '')}&isImmutable=${user?.isImmutable ? 'true' : 'false'}` : '';
-            const res = await fetch(`${API_BASE1}/contracts?status=Blacklist&page=${pg}&limit=${LIMIT}${brandParam}`);
+            const searchParam = search.trim() ? `&search=${encodeURIComponent(search.trim())}` : '';
+            const res = await fetch(`${API_BASE1}/contracts?status=Blacklist&page=${pg}&limit=${LIMIT}${brandParam}${searchParam}`);
             if (res.ok) {
                 const data = await res.json();
                 setContracts(data.data || []);
@@ -54,7 +44,7 @@ const BlackList = () => {
         }
     };
 
-    useEffect(() => { fetchBlackListContracts(page); }, [page]);
+    useEffect(() => { fetchBlackListContracts(page, searchTerm); }, [page, searchTerm, API_BASE1, user]);
 
     const handleRestoreToActivated = async (item) => {
         if (!window.confirm(`តើអ្នកពិតជាចង់ផ្លាស់ប្តូរស្ថានភាពកុងត្រារបស់ "${item.customerNameEn || item.customerNameKh}" ត្រឡប់ទៅ Activated វិញមែនទេ?`)) return;
@@ -131,6 +121,8 @@ const BlackList = () => {
         exportToPDF('Blacklist Contracts Directory', columns, allData, user?.brand || '', orientation);
     };
 
+    const visibleContracts = selectedSearchRecord ? [selectedSearchRecord] : contracts;
+
     return (
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
             <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
@@ -140,16 +132,31 @@ const BlackList = () => {
                     </h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search customer, model, serial..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-red-500 focus:bg-white transition-all w-64 shadow-2xs"
-                        />
-                    </div>
+                    <DatabaseSearchInput
+                        apiBase={API_BASE1}
+                        endpoint="/contracts"
+                        params={{
+                            status: 'Blacklist',
+                            ...(user?.brand ? {
+                                userBrand: user.brand,
+                                userRole: user?.role || '',
+                                username: user?.username || '',
+                                isImmutable: user?.isImmutable ? 'true' : 'false'
+                            } : {})
+                        }}
+                        value={searchTerm}
+                        placeholder="Search customer, model, serial..."
+                        onChange={(value) => {
+                            setSelectedSearchRecord(null);
+                            setPage(1);
+                            setSearchTerm(value);
+                        }}
+                        onSelect={(record) => {
+                            setSelectedSearchRecord(record);
+                            setPage(1);
+                        }}
+                        className="w-64"
+                    />
                     {hasPermission('/contract/blacklist', 'export') && (
                         <>
                             <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
@@ -172,14 +179,14 @@ const BlackList = () => {
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
-                        {filteredContracts.length === 0 ? (
+                        {visibleContracts.length === 0 ? (
                             <tr>
                                 <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">No blacklist contracts found.</td>
                             </tr>
                         ) : (
-                            filteredContracts.map((item, idx) => (
+                            visibleContracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-red-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx + 1}</td>
                                     <td className='px-4 py-1 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
                                     <td className='px-4 py-1'>
                                         <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
@@ -228,7 +235,7 @@ const BlackList = () => {
                 </table>
             </div>
 
-            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
+            <Pagination currentPage={page} totalItems={selectedSearchRecord ? 1 : total} itemsPerPage={LIMIT} onPageChange={setPage} />
 
             <CreateApplication open={openEditModal} setOpen={setOpenEditModal} editData={editData} onSaved={fetchBlackListContracts} />
         </div>
@@ -236,4 +243,3 @@ const BlackList = () => {
 };
 
 export default BlackList;
-

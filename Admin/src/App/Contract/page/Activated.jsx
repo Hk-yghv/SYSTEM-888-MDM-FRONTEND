@@ -5,12 +5,13 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
 import { AiOutlineMenu } from "react-icons/ai";
-import { MdOutlineSync, MdInfo, MdCheckCircle, MdSearch, MdSwapHoriz, MdComment, MdPictureAsPdf, MdOutlineWallpaper } from "react-icons/md";
+import { MdOutlineSync, MdInfo, MdCheckCircle, MdSwapHoriz, MdComment, MdPictureAsPdf, MdOutlineWallpaper } from "react-icons/md";
 import { FaLock, FaFileExcel, FaHistory, FaCalendarAlt } from "react-icons/fa";
 import CustomModal from '../../../components/CustomModal';
 import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import ContractActivityHistoryModal from '../components/ContractActivityHistoryModal';
+import ContractSearchInput from '../../../components/ContractSearchInput';
 
 const Activated = () => {
     const { t } = useLanguage();
@@ -22,6 +23,9 @@ const Activated = () => {
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+    const [selectedContractId, setSelectedContractId] = useState('');
+    const [locatedIndex, setLocatedIndex] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [total, setTotal] = useState(0);
     const itemsPerPage = 10;
@@ -95,7 +99,7 @@ const Activated = () => {
         fetchCalcSchedules();
     }, [fetchCalcSchedules]);
 
-    const fetchActivatedContracts = React.useCallback(async (pg = currentPage, search = searchTerm) => {
+    const fetchActivatedContracts = React.useCallback(async (pg = currentPage, search = searchTerm, contractId = selectedContractId) => {
         setReloading(true);
         fetchCalcSchedules(); // Synchronize calculate schedules so bidirectional scan is always up-to-date
         try {
@@ -109,12 +113,19 @@ const Activated = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
-            if (search) params.set('search', search);
+            if (contractId) params.set('locateId', contractId);
+            else if (search) params.set('search', search);
             const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setActivatedContracts(data.data || []);
                 setTotal(data.total || 0);
+                if (contractId) {
+                    setLocatedIndex(data.locateIndex >= 0 ? data.locateIndex : null);
+                    setCurrentPage(data.page || pageToFetch);
+                } else {
+                    setLocatedIndex(null);
+                }
             }
         } catch (err) {
             console.error('Fetch activated contracts error:', err);
@@ -122,18 +133,15 @@ const Activated = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE1, user, itemsPerPage, searchTerm]);
+    }, [API_BASE1, user, itemsPerPage, searchTerm, selectedContractId]);
 
     useEffect(() => {
-        fetchActivatedContracts(currentPage, searchTerm);
-    }, [currentPage]);
+        fetchActivatedContracts(currentPage, searchTerm, selectedContractId);
+    }, [currentPage, fetchActivatedContracts, searchTerm, selectedContractId]);
 
-    useEffect(() => {
-        setCurrentPage(1);
-        fetchActivatedContracts(1, searchTerm);
-    }, [searchTerm]);
-
-    const filteredContracts = activatedContracts; // server already filters+paginates
+    const filteredContracts = selectedContractId
+        ? activatedContracts.filter(contract => String(contract._id) === selectedContractId || contract.contractId === selectedContractId)
+        : activatedContracts;
 
     const [redeemItem, setRedeemItem] = useState(null);
     const [redeemDateInput, setRedeemDateInput] = useState(new Date().toISOString().split('T')[0]);
@@ -250,7 +258,8 @@ const Activated = () => {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    notes: commentInput
+                    notes: commentInput,
+                    lastModifiedBy: user?.username || 'Staff'
                 })
             });
 
@@ -281,7 +290,8 @@ const Activated = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
-            if (searchTerm) params.set('search', searchTerm);
+            if (selectedContractId) params.set('contractId', selectedContractId);
+            else if (searchTerm) params.set('search', searchTerm);
             const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
@@ -297,6 +307,7 @@ const Activated = () => {
         const allData = await fetchAllForExport();
         const data = allData.map((c, idx) => ({
             'No': idx + 1,
+            'Input Date': c.inputDate || '',
             'Name (EN)': c.customerNameEn || '',
             'Name (KH)': c.customerNameKh || '',
             'ID Card': c.idCardNumber || '',
@@ -307,7 +318,8 @@ const Activated = () => {
             'Serial Number': c.serialNumber || '',
             'Total Amount ($)': c.amount || c.totalAmount || 0,
             'Monthly ($)': c.monthlyPayment || 0,
-            'Input Date': c.inputDate || '',
+            'Phone Lock Status': c.lockPhoneStatus || 'Unlocked',
+            'Wallpaper Lock Status': c.lockWallpaperStatus || 'Unlocked',
             'Status': c.status || 'Activated',
         }));
         exportToExcel(data, 'Activated_Contracts');
@@ -317,12 +329,15 @@ const Activated = () => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'Input Date', accessor: 'inputDate' },
             { header: 'Name EN', accessor: 'customerNameEn' },
             { header: 'Name KH', accessor: 'customerNameKh' },
             { header: 'Phone', accessor: 'phone' },
             { header: 'Model', accessor: 'model' },
             { header: 'Serial No.', accessor: 'serialNumber' },
             { header: 'Monthly ($)', cell: (r) => `$${r.monthlyPayment}` },
+            { header: 'Phone Lock Status', accessor: 'lockPhoneStatus' },
+            { header: 'Wallpaper Lock Status', accessor: 'lockWallpaperStatus' },
         ];
         exportToPDF('Activated Contracts Directory', columns, allData, user?.brand || '', orientation);
     };
@@ -406,13 +421,25 @@ const Activated = () => {
 
                 <div className="flex items-center gap-3">
                     <div className="relative">
-                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                        <ContractSearchInput
+                            value={searchInput}
+                            apiBase={API_BASE1}
+                            user={user}
+                            status="Activated"
                             placeholder="Search name, model, serial..."
-                            className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
+                            onChange={(value) => {
+                                setSearchInput(value);
+                                setSearchTerm(value);
+                                setSelectedContractId('');
+                                setLocatedIndex(null);
+                                setCurrentPage(1);
+                            }}
+                            onSelect={(contract) => {
+                                setSearchInput(contract.customerNameEn || contract.customerNameKh || contract.contractId || '');
+                                setSearchTerm('');
+                                setSelectedContractId(String(contract.contractId || contract._id || ''));
+                                setCurrentPage(1);
+                            }}
                         />
                     </div>
 
@@ -440,14 +467,15 @@ const Activated = () => {
                             <th className='px-4 py-1'>Brand</th>
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
                             <th className='px-4 py-1 text-center'>Monthly</th>
+                            <th className='px-4 py-1 text-center'>Device Status</th>
                             <th className='px-4 py-1 text-center'>Actions</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredContracts.length === 0 ? (
                             <tr>
-                                <td colSpan={10} className="text-center py-8 text-slate-500 italic font-medium">
-                                    {searchTerm ? `No results found for "${searchTerm}"` : 'No activated contracts yet. Activate contracts in Application page first.'}
+                                <td colSpan={11} className="text-center py-8 text-slate-500 italic font-medium">
+                                    {searchTerm || selectedContractId ? `No results found for "${searchInput}"` : 'No activated contracts yet. Activate contracts in Application page first.'}
                                 </td>
                             </tr>
                         ) : (
@@ -492,7 +520,7 @@ const Activated = () => {
 
                                 return (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{selectedContractId && locatedIndex !== null ? locatedIndex + 1 : (currentPage - 1) * itemsPerPage + idx + 1}</td>
                                     <td className='px-4 py-1 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
                                     <td className='px-4 py-1'>
                                         <div className="flex items-center gap-2">
@@ -518,6 +546,14 @@ const Activated = () => {
                                     </td>
                                     <td className='px-4 py-1 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber} className='font-mono text-slate-600 font-medium' /></td>
                                     <td className='px-4 py-1 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
+                                    <td className='px-4 py-1 text-center whitespace-nowrap'>
+                                        <span className={`mr-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${item.lockPhoneStatus === 'Locked' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700'}`}>
+                                            Phone {item.lockPhoneStatus || 'Unlocked'}
+                                        </span>
+                                        <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${item.lockWallpaperStatus === 'Locked' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700'}`}>
+                                            Wallpaper {item.lockWallpaperStatus || 'Unlocked'}
+                                        </span>
+                                    </td>
                                     <td className="px-4 py-1 text-center relative">
                                         <div className="flex items-center justify-center gap-2">
                                             {hasAnyAction ? (
@@ -576,8 +612,13 @@ const Activated = () => {
                                                             {canComment && (
                                                                 <button
                                                                     onClick={() => {
-                                                                        setSelectedCommentItem(item);
-                                                                        setCommentInput(item.notes || '');
+                                                                        if (item.notes || item.commentHistory?.length) {
+                                                                            const customerName = item.customerNameEn || item.customerNameKh || '';
+                                                                            navigate(`/contract/comments?search=${encodeURIComponent(customerName)}&addComment=${encodeURIComponent(item._id)}`);
+                                                                        } else {
+                                                                            setSelectedCommentItem(item);
+                                                                            setCommentInput('');
+                                                                        }
                                                                         setOpenMenuId(null);
                                                                     }}
                                                                     className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
@@ -643,7 +684,14 @@ const Activated = () => {
                 currentPage={currentPage}
                 totalItems={total}
                 itemsPerPage={itemsPerPage}
-                onPageChange={(pg) => setCurrentPage(pg)}
+                onPageChange={(pg) => {
+                    if (selectedContractId) {
+                        setSelectedContractId('');
+                        setSearchInput('');
+                        setLocatedIndex(null);
+                    }
+                    setCurrentPage(pg);
+                }}
             />
 
             {/* Comment Input Modal */}
@@ -663,13 +711,12 @@ const Activated = () => {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-1.5">Enter Comment Note</label>
+                            <label className="block text-xs font-semibold text-gray-400 mb-1.5">Enter Comment Note <span className="font-normal text-gray-500">(optional)</span></label>
                             <textarea
-                                required
                                 rows={4}
                                 value={commentInput}
                                 onChange={(e) => setCommentInput(e.target.value)}
-                                placeholder="Type comment or notes about this contract..."
+                                placeholder="Type comment or leave blank..."
                                 className="w-full p-2 bg-gray-900 border border-gray-700 rounded-[5px] text-xs text-gray-100 outline-none focus:border-cyan-500 font-sans"
                             ></textarea>
                         </div>

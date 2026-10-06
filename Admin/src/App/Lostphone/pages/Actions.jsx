@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { FaLock, FaUnlock } from 'react-icons/fa';
-import { MdOutlineSync, MdOutlinePhoneIphone, MdSearch } from 'react-icons/md';
+import { MdOutlineSync, MdOutlinePhoneIphone } from 'react-icons/md';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const LIMIT = 10;
 
@@ -19,8 +20,9 @@ const Actions = () => {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
 
-    const fetchContracts = async (pg = page) => {
+    const fetchContracts = async (pg = page, search = searchTerm) => {
         setReloading(true);
         try {
             const params = new URLSearchParams({
@@ -30,7 +32,8 @@ const Actions = () => {
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                ...(search.trim() ? { search: search.trim() } : {})
             });
             const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
 
@@ -48,21 +51,10 @@ const Actions = () => {
     };
 
     useEffect(() => {
-        fetchContracts(page);
-    }, [page]);
+        fetchContracts(page, searchTerm);
+    }, [page, searchTerm, API_BASE1, user]);
 
-    const filteredContracts = contracts.filter(c => {
-        if (!searchTerm) return true;
-        const term = searchTerm.toLowerCase();
-        return (
-            (c.customerNameEn && c.customerNameEn.toLowerCase().includes(term)) ||
-            (c.customerNameKh && c.customerNameKh.toLowerCase().includes(term)) ||
-            (c.model && c.model.toLowerCase().includes(term)) ||
-            (c.serialNumber && c.serialNumber.toLowerCase().includes(term)) ||
-            (c.phone && c.phone.toLowerCase().includes(term)) ||
-            (c.contractId && c.contractId.toLowerCase().includes(term))
-        );
-    });
+    const filteredContracts = selectedSearchRecord ? [selectedSearchRecord] : contracts;
 
     const handleToggleLock = async (contract, newStatus) => {
         const actionLabel = newStatus === 'LockPhone' || newStatus === 'Locked' ? t('lockPhone') : t('unlockPhone');
@@ -131,16 +123,29 @@ const Actions = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search customer, model, serial..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all w-64 shadow-2xs"
-                        />
-                    </div>
+                    <DatabaseSearchInput
+                        apiBase={API_BASE1}
+                        endpoint="/contracts"
+                        params={{
+                            status: 'Activated',
+                            userBrand: user?.brand || '',
+                            userRole: user?.role || '',
+                            username: user?.username || '',
+                            isImmutable: user?.isImmutable ? 'true' : 'false'
+                        }}
+                        value={searchTerm}
+                        placeholder="Search customer, model, serial..."
+                        onChange={(value) => {
+                            setSelectedSearchRecord(null);
+                            setPage(1);
+                            setSearchTerm(value);
+                        }}
+                        onSelect={(record) => {
+                            setSelectedSearchRecord(record);
+                            setPage(1);
+                        }}
+                        className="w-64"
+                    />
                 </div>
             </header>
 
@@ -168,7 +173,7 @@ const Actions = () => {
                                 const isLocked = item.lockPhoneStatus === 'Locked';
                                 return (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                        <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                        <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx + 1}</td>
                                         <td className='px-4 py-1 font-bold text-slate-900'>
                                             <CopyCell text={item.customerNameEn} className="font-bold text-slate-900 block" />
                                             {item.customerNameKh && <CopyCell text={item.customerNameKh} className="text-emerald-700 font-khmer text-xs font-semibold" />}
@@ -218,7 +223,7 @@ const Actions = () => {
                 </table>
             </div>
 
-            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
+            <Pagination currentPage={page} totalItems={selectedSearchRecord ? 1 : total} itemsPerPage={LIMIT} onPageChange={setPage} />
         </div>
     );
 };

@@ -1,34 +1,53 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { AiOutlineMenu } from "react-icons/ai";
-import { MdOutlineSync, MdEdit, MdDelete, MdComment, MdInfo, MdPictureAsPdf } from "react-icons/md";
-import { FaFileExcel } from 'react-icons/fa';
-import CreateApplication from '../components/CreateApplication';
+import { MdOutlineSync, MdEdit, MdDelete, MdComment, MdInfo } from "react-icons/md";
+import { FaHistory, FaPlus } from 'react-icons/fa';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const Comments = () => {
     const { t } = useLanguage();
     const { API_BASE1, user, hasPermission } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [contracts, setContracts] = useState([]);
-    const [reloading, setReloading] = useState(false);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const LIMIT = 10;
     const [openMenuId, setOpenMenuId] = useState(null);
-    const [editData, setEditData] = useState(null);
-    const [openEditModal, setOpenEditModal] = useState(false);
     const [selectedInfo, setSelectedInfo] = useState(null);
+    const [selectedCommentItem, setSelectedCommentItem] = useState(null);
+    const [commentInput, setCommentInput] = useState('');
+    const [commentSaving, setCommentSaving] = useState(false);
+    const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
+    const [editingHistoryEntry, setEditingHistoryEntry] = useState(null);
+    const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') || '');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
 
-    const fetchCommentsContracts = async (pg = page) => {
-        setReloading(true);
+    const isMasterAdmin = user?.username === '@hakyonghouv' ||
+        user?.username === 'hakyonghouv' ||
+        user?.isImmutable === true ||
+        ['administrator', 'admin'].includes(String(user?.role || '').toLowerCase());
+
+    const fetchCommentsContracts = async (pg = page, search = searchTerm) => {
         try {
-            const brandParam = user?.brand ? `&userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}&username=${encodeURIComponent(user?.username || '')}&isImmutable=${user?.isImmutable ? 'true' : 'false'}` : '';
-            const res = await fetch(`${API_BASE1}/contracts?status=Comments&page=${pg}&limit=${LIMIT}${brandParam}`);
+            const params = new URLSearchParams({
+                status: 'Comments',
+                page: String(pg),
+                limit: String(LIMIT),
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            if (search.trim()) params.set('search', search.trim());
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setContracts(data.data || []);
@@ -36,12 +55,72 @@ const Comments = () => {
             }
         } catch (err) {
             console.error('Fetch comments error:', err);
-        } finally {
-            setTimeout(() => setReloading(false), 500);
         }
     };
 
-    useEffect(() => { fetchCommentsContracts(page); }, [page]);
+    useEffect(() => { fetchCommentsContracts(page, searchTerm); }, [page, searchTerm, API_BASE1, user]);
+
+    useEffect(() => {
+        const commentId = searchParams.get('addComment');
+        if (!commentId || !contracts.length) return;
+        const contract = contracts.find(item => String(item._id) === commentId || item.contractId === commentId);
+        if (!contract) return;
+        setSelectedCommentItem(contract);
+        setCommentInput('');
+        setEditingHistoryEntry(null);
+        setSelectedHistoryItem(null);
+        setSearchParams(current => {
+            const next = new URLSearchParams(current);
+            next.delete('addComment');
+            return next;
+        }, { replace: true });
+    }, [contracts, searchParams, setSearchParams]);
+
+    const formatCommentDate = (dateValue, fallback = '') => {
+        if (!dateValue) return fallback || '—';
+        const date = new Date(dateValue);
+        return Number.isNaN(date.getTime()) ? String(dateValue) : date.toLocaleString();
+    };
+
+    const openCommentEditor = (contract, append = false) => {
+        setSelectedCommentItem(contract);
+        setCommentInput(append ? '' : (contract.notes || ''));
+        setEditingHistoryEntry(null);
+    };
+
+    const handleSaveComment = async (event) => {
+        event.preventDefault();
+        if (!selectedCommentItem) return;
+        setCommentSaving(true);
+        try {
+            const isHistoryEdit = Boolean(editingHistoryEntry);
+            const url = isHistoryEdit
+                ? `${API_BASE1}/contracts/${selectedCommentItem._id}/comment-history/${editingHistoryEntry._id}`
+                : `${API_BASE1}/contracts/${selectedCommentItem._id}`;
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(isHistoryEdit
+                    ? { comment: commentInput }
+                    : { notes: commentInput, lastModifiedBy: user?.username || 'Staff' })
+            });
+            if (!res.ok) {
+                const result = await res.json().catch(() => ({}));
+                throw new Error(result.error || `Failed to save comment (${res.status})`);
+            }
+            const updated = await res.json();
+            if (selectedHistoryItem) setSelectedHistoryItem(updated);
+            setSelectedCommentItem(null);
+            setEditingHistoryEntry(null);
+            setCommentInput('');
+            await fetchCommentsContracts(page, searchTerm);
+        } catch (err) {
+            console.error('Save contract comment error:', err);
+            window.alert(err.message || 'Failed to save comment');
+        } finally {
+            setCommentSaving(false);
+        }
+    };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Delete this record?')) return;
@@ -53,8 +132,17 @@ const Comments = () => {
 
     const fetchAllForExport = async () => {
         try {
-            const brandParam = user?.brand ? `&userBrand=${encodeURIComponent(user.brand)}&userRole=${encodeURIComponent(user?.role || '')}&username=${encodeURIComponent(user?.username || '')}&isImmutable=${user?.isImmutable ? 'true' : 'false'}` : '';
-            const res = await fetch(`${API_BASE1}/contracts?status=Comments&page=1&limit=999999${brandParam}`);
+            const params = new URLSearchParams({
+                status: 'Comments',
+                page: '1',
+                limit: '999999',
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            if (searchTerm.trim()) params.set('search', searchTerm.trim());
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 return data.data || [];
@@ -75,7 +163,7 @@ const Comments = () => {
             'Device Model': c.model || '',
             'Serial Number': c.serialNumber || '',
             'Comment Note': c.notes || '',
-            'Input Date': c.inputDate || '',
+            'Comment Date': formatCommentDate(c.commentDate, c.inputDate || ''),
             'Status': c.status || 'Comments',
         }));
         exportToExcel(data, 'Comments_Contracts');
@@ -90,9 +178,12 @@ const Comments = () => {
             { header: 'Phone', accessor: 'phone' },
             { header: 'Model', accessor: 'model' },
             { header: 'Comment Note', accessor: 'notes' },
+            { header: 'Comment Date', cell: (contract) => formatCommentDate(contract.commentDate, contract.inputDate || '') },
         ];
         exportToPDF('Comments Directory', columns, allData, user?.brand || '', orientation);
     };
+
+    const visibleContracts = selectedSearchRecord ? [selectedSearchRecord] : contracts;
 
     return (
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
@@ -106,6 +197,35 @@ const Comments = () => {
                     </h1>
                 </div>
                 <div className="flex items-center gap-3">
+                    <DatabaseSearchInput
+                        apiBase={API_BASE1}
+                        endpoint="/contracts"
+                        params={{
+                            status: 'Comments',
+                            userBrand: user?.brand || '',
+                            userRole: user?.role || '',
+                            username: user?.username || '',
+                            isImmutable: user?.isImmutable ? 'true' : 'false'
+                        }}
+                        value={searchTerm}
+                        placeholder="Search customer..."
+                        onChange={(value) => {
+                            setSelectedSearchRecord(null);
+                            setPage(1);
+                            setSearchTerm(value);
+                            setSearchParams(current => {
+                                const next = new URLSearchParams(current);
+                                if (value.trim()) next.set('search', value);
+                                else next.delete('search');
+                                return next;
+                            }, { replace: true });
+                        }}
+                        onSelect={(record) => {
+                            setSelectedSearchRecord(record);
+                            setPage(1);
+                        }}
+                        className="w-44"
+                    />
                     {hasPermission('/contract/comments', 'export') && (
                         <>
                             <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
@@ -119,7 +239,7 @@ const Comments = () => {
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
                             <th className='px-4 py-1 text-center'>No</th>
-                            <th className='px-4 py-1'>{t('inputDate')}</th>
+                            <th className='px-4 py-1'>Comment Date</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
                             <th className='px-4 py-1'>Comment Note</th>
@@ -129,15 +249,17 @@ const Comments = () => {
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
-                        {contracts.length === 0 ? (
+                        {visibleContracts.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="text-center py-8 text-slate-500 italic font-medium">No contracts with comments found.</td>
                             </tr>
                         ) : (
-                            contracts.map((item, idx) => (
+                            visibleContracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
-                                    <td className='px-4 py-1 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx + 1}</td>
+                                    <td className='px-4 py-1 font-mono text-slate-700 font-medium whitespace-nowrap'>
+                                        {formatCommentDate(item.commentDate, formatCommentDate(item.updatedAt, item.inputDate))}
+                                    </td>
                                     <td className='px-4 py-1'>
                                         <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
                                         {item.customerNameKh && <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs font-semibold' />}
@@ -166,8 +288,16 @@ const Comments = () => {
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/comments', 'edit') && (
-                                                        <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2">
-                                                            <MdEdit className="text-amber-600" /> Edit
+                                                        <button onClick={() => { openCommentEditor(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2">
+                                                            <MdEdit className="text-amber-600" /> Edit Latest Comment
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => { setSelectedHistoryItem(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2">
+                                                        <FaHistory className="text-indigo-600" /> View Comment History
+                                                    </button>
+                                                    {hasPermission('/contract/comments', 'edit') && (
+                                                        <button onClick={() => { openCommentEditor(item, true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-50 rounded-[5px] flex items-center gap-2">
+                                                            <FaPlus className="text-teal-600" /> Add Comment
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/comments', 'delete') && (
@@ -186,7 +316,123 @@ const Comments = () => {
                 </table>
             </div>
 
-            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
+            <Pagination currentPage={page} totalItems={selectedSearchRecord ? 1 : total} itemsPerPage={LIMIT} onPageChange={setPage} />
+
+            {selectedHistoryItem && (
+                <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/70 p-3">
+                    <section className="w-full max-w-3xl overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-2xl">
+                        <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                            <div>
+                                <h2 className="flex items-center gap-2 text-sm font-black text-indigo-800">
+                                    <FaHistory /> Comment History
+                                </h2>
+                                <p className="mt-1 text-xs text-slate-500">
+                                    {selectedHistoryItem.customerNameEn} · {selectedHistoryItem.model}
+                                </p>
+                            </div>
+                            <button onClick={() => setSelectedHistoryItem(null)} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label="Close">×</button>
+                        </header>
+                        <div className="max-h-[60vh] overflow-auto p-4">
+                            {(selectedHistoryItem.commentHistory || []).length === 0 ? (
+                                <p className="py-8 text-center text-sm text-slate-500">No previous comments.</p>
+                            ) : (
+                                <table className="w-full text-left text-xs">
+                                    <thead className="bg-slate-100 uppercase text-slate-600">
+                                        <tr>
+                                            <th className="whitespace-nowrap px-3 py-2">Comment Date</th>
+                                            <th className="px-3 py-2">Comment</th>
+                                            {isMasterAdmin && <th className="px-3 py-2 text-center">Action</th>}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {selectedHistoryItem.commentHistory.map((entry, index) => (
+                                            <tr key={entry._id || index}>
+                                                <td className="whitespace-nowrap px-3 py-2 font-mono text-slate-600">
+                                                    {formatCommentDate(entry.commentedAt)}
+                                                </td>
+                                                <td className="whitespace-pre-wrap px-3 py-2 text-slate-800">{entry.comment || '—'}</td>
+                                                {isMasterAdmin && (
+                                                    <td className="px-3 py-2 text-center">
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedCommentItem(selectedHistoryItem);
+                                                                setEditingHistoryEntry(entry);
+                                                                setCommentInput(entry.comment || '');
+                                                            }}
+                                                            className="inline-flex items-center gap-1 rounded-[5px] bg-amber-50 px-2 py-1 font-semibold text-amber-700 hover:bg-amber-100"
+                                                        >
+                                                            <MdEdit /> Edit
+                                                        </button>
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                        <footer className="flex justify-between border-t border-slate-200 px-4 py-3">
+                            {hasPermission('/contract/comments', 'edit') ? (
+                                <button
+                                    onClick={() => openCommentEditor(selectedHistoryItem, true)}
+                                    className="inline-flex items-center gap-2 rounded-[5px] bg-teal-600 px-3 py-2 text-xs font-bold text-white hover:bg-teal-700"
+                                >
+                                    <FaPlus /> Add Comment
+                                </button>
+                            ) : <span />}
+                            <button onClick={() => setSelectedHistoryItem(null)} className="rounded-[5px] bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300">Close</button>
+                        </footer>
+                    </section>
+                </div>
+            )}
+
+            {selectedCommentItem && (
+                <div className="fixed inset-0 z-[100001] flex items-center justify-center bg-black/75 p-3">
+                    <form onSubmit={handleSaveComment} className="w-full max-w-lg space-y-4 rounded-[5px] border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+                        <header className="flex items-center justify-between border-b border-slate-700 pb-3">
+                            <h2 className="flex items-center gap-2 text-sm font-black text-teal-300">
+                                <MdComment />
+                                {editingHistoryEntry ? 'Edit Archived Comment' : (selectedCommentItem.notes && commentInput === selectedCommentItem.notes ? 'Edit Latest Comment' : 'Add Comment')}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => { setSelectedCommentItem(null); setEditingHistoryEntry(null); }}
+                                className="rounded px-2 py-1 text-slate-400 hover:bg-slate-800"
+                                aria-label="Close"
+                            >×</button>
+                        </header>
+                        <div className="rounded-[5px] border border-slate-700 bg-slate-800/70 p-3 text-xs text-slate-300">
+                            <p>Customer: <span className="font-bold text-white">{selectedCommentItem.customerNameEn}</span></p>
+                            <p className="mt-1">Model: <span className="font-semibold text-white">{selectedCommentItem.model}</span></p>
+                        </div>
+                        <label className="block text-xs font-semibold text-slate-300">
+                            Comment <span className="font-normal text-slate-500">(optional)</span>
+                            <textarea
+                                rows={5}
+                                value={commentInput}
+                                onChange={(event) => setCommentInput(event.target.value)}
+                                placeholder="Write a comment or leave blank..."
+                                className="mt-2 w-full rounded-[5px] border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none focus:border-teal-500"
+                            />
+                        </label>
+                        <footer className="flex justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={() => { setSelectedCommentItem(null); setEditingHistoryEntry(null); }}
+                                className="rounded-[5px] bg-slate-700 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-600"
+                            >Cancel</button>
+                            <button
+                                type="submit"
+                                disabled={commentSaving}
+                                className="inline-flex items-center gap-2 rounded-[5px] bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-500 disabled:opacity-60"
+                            >
+                                {commentSaving ? <MdOutlineSync className="animate-spin" /> : <MdEdit />}
+                                Save
+                            </button>
+                        </footer>
+                    </form>
+                </div>
+            )}
 
             {/* Information Detail Modal */}
             {selectedInfo && (
@@ -214,12 +460,8 @@ const Comments = () => {
                 </div>
             )}
 
-            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
-
-            <CreateApplication open={openEditModal} setOpen={setOpenEditModal} editData={editData} onSaved={fetchCommentsContracts} />
         </div>
     );
 };
 
 export default Comments;
-

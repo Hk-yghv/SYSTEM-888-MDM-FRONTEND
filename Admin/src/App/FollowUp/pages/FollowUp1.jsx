@@ -3,7 +3,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
-    FaEdit, FaSearch, FaRegCalendarAlt,
+    FaEdit, FaRegCalendarAlt,
     FaListUl, FaChartPie, FaCheckCircle,
     FaTimesCircle, FaQuestionCircle, FaFilter,
     FaFileDownload, FaBuilding, FaComments,
@@ -14,6 +14,7 @@ import { exportToExcel, exportToPDF, exportMultiSheetExcel, exportFollowUp1PDF }
 import ExportDropdown from '../../../components/ExportDropdown';
 import Pagination from '../../../components/Pagination';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const LIMIT = 15;
 
@@ -42,6 +43,7 @@ const FollowUp1 = () => {
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
     const [filterDate, setFilterDate] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -142,6 +144,7 @@ const FollowUp1 = () => {
 
     const handleResetFilters = () => {
         setSearchTerm('');
+        setSelectedSearchRecord(null);
         setFilterDate('');
         setStartDate('');
         setEndDate('');
@@ -709,16 +712,35 @@ const FollowUp1 = () => {
             {/* Filter Controls */}
             <form onSubmit={handleSearchSubmit} className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center gap-3">
                 {/* Search Bar */}
-                <div className="relative flex-1 min-w-[200px]">
-                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
-                    <input
-                        type="text"
-                        placeholder="ស្វែងរកតាម Message, មូលហេតុ, Brand ឬ Created By..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-                    />
-                </div>
+                <DatabaseSearchInput
+                    apiBase={API_BASE}
+                    endpoint="/follow-up"
+                    params={{
+                        userBrand: user?.brand || '',
+                        userRole: user?.role || '',
+                        username: user?.username || '',
+                        isImmutable: user?.isImmutable ? 'true' : 'false',
+                        ...(filterDate ? { date: filterDate } : {}),
+                        ...(startDate ? { startDate } : {}),
+                        ...(endDate ? { endDate } : {}),
+                        ...(selectedBrand ? { brand: selectedBrand } : {})
+                    }}
+                    value={searchTerm}
+                    placeholder="ស្វែងរកតាម Message, មូលហេតុ, Brand ឬ Created By..."
+                    onChange={(value) => {
+                        setSearchTerm(value);
+                        setSelectedSearchRecord(null);
+                        setPage(1);
+                    }}
+                    onSelect={(record) => {
+                        setSelectedSearchRecord(record);
+                        setSearchTerm(record.message || record.reason || record.brand || record.createdBy || '');
+                        setPage(1);
+                    }}
+                    getLabel={(record) => record.message || record.reason || record.brand || record.createdBy || ''}
+                    getDescription={(record) => [record.date, record.brand, record.createdBy, record.reason].filter(Boolean).join(' · ')}
+                    className="relative flex-1 min-w-[200px]"
+                />
 
                 <DateRangeDropdown
                     from={startDate || filterDate}
@@ -816,14 +838,14 @@ const FollowUp1 = () => {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : dataList.length === 0 ? (
+                            ) : (selectedSearchRecord ? [selectedSearchRecord] : dataList).length === 0 ? (
                                 <tr>
                                     <td colSpan="14" className="py-12 text-center text-slate-400 font-normal">
                                         មិនមានទិន្នន័យ Follow up នៅឡើយទេ! សូមចុចប៊ូតុង "Create Entry" ដើម្បីបញ្ចូលទិន្នន័យថ្មី។
                                     </td>
                                 </tr>
                             ) : (
-                                dataList.map((item, index) => {
+                                (selectedSearchRecord ? [selectedSearchRecord] : dataList).map((item, index) => {
                                         const totalMsg = Number(item.totalMessages) || 0;
                                         const noResp = Number(item.noResponse) || 0;
                                         const req = Number(item.requested) || 0;
@@ -918,7 +940,7 @@ const FollowUp1 = () => {
                         </tbody>
 
                         {/* Summary Total Sticky/Footer Row */}
-                        {dataList.length > 0 && (
+                        {!selectedSearchRecord && dataList.length > 0 && (
                             <tfoot>
                                 <tr className="bg-emerald-500/10 dark:bg-emerald-950/40 border-t-2 border-emerald-500/30 text-xs font-bold text-[var(--app-text,#0f172a)]">
                                     <td colSpan="2" className="py-3.5 px-4 text-left font-bold text-emerald-800 dark:text-emerald-300">
@@ -958,7 +980,7 @@ const FollowUp1 = () => {
                 </div>
 
                 {/* Pagination */}
-                <div className="p-2 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
+                {!selectedSearchRecord && <div className="p-2 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
                     <span className="text-xs text-[var(--app-text-muted,#64748b)]">
                         បង្ហាញទំព័រ {page} នៃ {Math.ceil(total / LIMIT) || 1} (សរុប {total} កំណត់ត្រា)
                     </span>
@@ -968,7 +990,7 @@ const FollowUp1 = () => {
                         limit={LIMIT}
                         onPageChange={(p) => setPage(p)}
                     />
-                </div>
+                </div>}
             </div>
 
             {/* Create / Edit Form Modal */}

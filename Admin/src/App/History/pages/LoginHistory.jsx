@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
-import { FaHistory, FaFileExcel, FaSearch, FaUserShield, FaTelegramPlane, FaClock, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { FaHistory, FaFileExcel, FaUserShield, FaTelegramPlane, FaClock, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 import { MdOutlineSync, MdPictureAsPdf } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const LIMIT = 10;
 
@@ -20,6 +21,7 @@ const LoginHistory = () => {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
     const [roleFilter, setRoleFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
 
@@ -277,19 +279,31 @@ const LoginHistory = () => {
 
             {/* Filter Bar */}
             <div className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
-                <div className='relative flex-1 min-w-[240px]'>
-                    <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs' />
-                    <input
-                        type='text'
-                        value={searchTerm}
-                        onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                            setPage(1);
-                        }}
-                        placeholder={t('search')}
-                        className='w-full pl-9 pr-3 py-2 border border-slate-300 rounded-[5px] text-xs font-medium focus:outline-none focus:border-indigo-500 bg-slate-50'
-                    />
-                </div>
+                <DatabaseSearchInput
+                    apiBase={API_BASE2}
+                    endpoint="/history/login"
+                    params={{
+                        userUsername: user?.username || '',
+                        userRole: user?.role || '',
+                        ...(roleFilter ? { role: roleFilter } : {}),
+                        ...(statusFilter ? { status: statusFilter } : {})
+                    }}
+                    value={searchTerm}
+                    placeholder={t('search')}
+                    onChange={(value) => {
+                        setSearchTerm(value);
+                        setSelectedSearchRecord(null);
+                        setPage(1);
+                    }}
+                    onSelect={(record) => {
+                        setSelectedSearchRecord(record);
+                        setSearchTerm(record.username || record.name || '');
+                        setPage(1);
+                    }}
+                    getLabel={(record) => record.username || record.name || ''}
+                    getDescription={(record) => [record.role, record.status, record.date, record.time, record.ipAddress].filter(Boolean).join(' · ')}
+                    className="relative flex-1 min-w-[240px]"
+                />
 
                 <div className='flex items-center gap-2 flex-wrap'>
                     <div className='flex items-center gap-1.5'>
@@ -347,14 +361,14 @@ const LoginHistory = () => {
                             <tr>
                                 <td colSpan={9} className="text-center py-10 text-slate-400">Loading history logs...</td>
                             </tr>
-                        ) : logs.length === 0 ? (
+                        ) : (selectedSearchRecord ? [selectedSearchRecord] : logs).length === 0 ? (
                             <tr>
                                 <td colSpan={9} className="text-center py-10 text-slate-500 italic">
                                     No login history records found.
                                 </td>
                             </tr>
                         ) : (
-                            logs.map((item, idx) => (
+                            (selectedSearchRecord ? [selectedSearchRecord] : logs).map((item, idx) => (
                                 <tr key={item.id || idx} className='hover:bg-indigo-50/40 transition-colors'>
                                     <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>
                                         {(page - 1) * LIMIT + idx + 1}
@@ -406,7 +420,7 @@ const LoginHistory = () => {
                 </table>
             </div>
 
-            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
+            {!selectedSearchRecord && <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />}
         </div>
     );
 };

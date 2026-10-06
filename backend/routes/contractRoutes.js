@@ -17,20 +17,30 @@ const sanitizeAndDecryptContract = (c) => {
     return obj;
 };
 
+const isMasterAdminUser = (user) => (
+    user?.username === '@hakyonghouv' ||
+    user?.username === 'hakyonghouv' ||
+    user?.isImmutable === true ||
+    user?.role === 'Administrator' ||
+    user?.role === 'Admin'
+);
+
 // GET contracts
 router.get('/', async (req, res) => {
     try {
-        const { status, userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '', dateFrom = '', dateTo = '', requireSchedule = false } = req.query;
+        const { status, userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '', contractId = '', locateId = '', dateFrom = '', dateTo = '', requireSchedule = false } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true);
         const needsSchedule = requireSchedule === 'true' || requireSchedule === true;
 
         let query = {};
+        if (contractId) query.contractId = contractId;
         if (status === 'Comments') {
             query.$and = [{
                 $or: [
                     { status: 'Comments' },
-                    { status: 'Activated', notes: { $exists: true, $nin: ['', null] } }
+                    { status: 'Activated', notes: { $exists: true, $nin: ['', null] } },
+                    { status: 'Activated', commentHistory: { $exists: true, $ne: [] } }
                 ]
             }];
         } else if (status) {
@@ -53,6 +63,8 @@ router.get('/', async (req, res) => {
             const searchQuery = [
                 { customerNameEn: { $regex: search, $options: 'i' } },
                 { customerNameKh: { $regex: search, $options: 'i' } },
+                { phone: { $regex: search, $options: 'i' } },
+                { relativePhone: { $regex: search, $options: 'i' } },
                 { serialNumber: { $regex: search, $options: 'i' } },
                 { contractId: { $regex: search, $options: 'i' } },
                 { contractIid: { $regex: search, $options: 'i' } },
@@ -70,22 +82,35 @@ router.get('/', async (req, res) => {
             const total = allContracts.length;
             let actualSkip = skip;
             let actualPage = parseInt(page) || 1;
+            let locateIndex = -1;
+            if (locateId) {
+                locateIndex = allContracts.findIndex(c => String(c._id) === locateId || c.contractId === locateId);
+                if (locateIndex >= 0) {
+                    actualSkip = Math.floor(locateIndex / parseInt(limit)) * parseInt(limit);
+                    actualPage = Math.floor(locateIndex / parseInt(limit)) + 1;
+                }
+            }
             if (actualSkip >= total && total > 0) {
                 actualSkip = 0;
                 actualPage = 1;
             }
             const contracts = allContracts.slice(actualSkip, actualSkip + parseInt(limit));
             const data = contracts.map(sanitizeAndDecryptContract);
-            return res.json({ data, total, page: actualPage, totalPages: Math.ceil(total / parseInt(limit)) });
+            return res.json({ data, total, page: actualPage, totalPages: Math.ceil(total / parseInt(limit)), locateIndex });
         }
 
         let filtered = MEM_DB.contracts;
         if (status === 'Comments') {
-            filtered = filtered.filter(c => c.status === 'Comments' || (c.status === 'Activated' && c.notes));
+            filtered = filtered.filter(c =>
+                c.status === 'Comments' ||
+                (c.status === 'Activated' && c.notes) ||
+                (c.status === 'Activated' && Array.isArray(c.commentHistory) && c.commentHistory.length > 0)
+            );
         } else if (status) {
             filtered = filtered.filter(c => c.status === status);
         }
         if (brandFilter && (!isMasterAdmin || req.query.brand)) filtered = filtered.filter(c => c.brand === brandFilter);
+        if (contractId) filtered = filtered.filter(c => c.contractId === contractId);
         if (dateFrom || dateTo) {
             filtered = filtered.filter(c => {
                 const schedule = Array.isArray(c.repaymentSchedule) ? c.repaymentSchedule : [];
@@ -100,6 +125,8 @@ router.get('/', async (req, res) => {
         if (search) filtered = filtered.filter(c =>
             (c.customerNameEn || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.customerNameKh || '').toLowerCase().includes(search.toLowerCase()) ||
+            (c.phone || '').toLowerCase().includes(search.toLowerCase()) ||
+            (c.relativePhone || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.serialNumber || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.contractId || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.contractIid || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -111,12 +138,20 @@ router.get('/', async (req, res) => {
         const total = filtered.length;
         let actualSkip = skip;
         let actualPage = parseInt(page) || 1;
+        let locateIndex = -1;
+        if (locateId) {
+            locateIndex = filtered.findIndex(c => String(c._id) === locateId || c.contractId === locateId);
+            if (locateIndex >= 0) {
+                actualSkip = Math.floor(locateIndex / parseInt(limit)) * parseInt(limit);
+                actualPage = Math.floor(locateIndex / parseInt(limit)) + 1;
+            }
+        }
         if (actualSkip >= total && total > 0) {
             actualSkip = 0;
             actualPage = 1;
         }
         const data = filtered.slice(actualSkip, actualSkip + parseInt(limit)).map(sanitizeAndDecryptContract);
-        res.json({ data, total, page: actualPage, totalPages: Math.ceil(total / parseInt(limit)) });
+        res.json({ data, total, page: actualPage, totalPages: Math.ceil(total / parseInt(limit)), locateIndex });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -447,6 +482,56 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Edit an archived comment (master admins only)
+router.put('/:id/comment-history/:historyId', async (req, res) => {
+    if (!isMasterAdminUser(req.user)) {
+        return res.status(403).json({ error: 'Only a master admin can edit comment history' });
+    }
+    if (typeof req.body.comment !== 'string') {
+        return res.status(400).json({ error: 'Comment must be a string' });
+    }
+
+    try {
+        let updatedContract = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, async (BoundM) => {
+                const contract = await BoundM.findOne({
+                    $or: [{ _id: req.params.id }, { contractId: req.params.id }]
+                });
+                if (!contract) return [];
+                const historyEntry = contract.commentHistory.find(
+                    entry => String(entry._id) === req.params.historyId
+                );
+                if (!historyEntry) return [];
+                historyEntry.comment = req.body.comment;
+                historyEntry.editedBy = req.user.username || 'Master Admin';
+                await contract.save();
+                return [contract];
+            });
+            updatedContract = results[0] || null;
+        } else {
+            const contract = MEM_DB.contracts.find(
+                item => item._id === req.params.id || item.contractId === req.params.id
+            );
+            const historyEntry = contract?.commentHistory?.find(
+                entry => String(entry._id) === req.params.historyId
+            );
+            if (historyEntry) {
+                historyEntry.comment = req.body.comment;
+                historyEntry.editedBy = req.user.username || 'Master Admin';
+                updatedContract = contract;
+            }
+        }
+
+        if (!updatedContract) return res.status(404).json({ error: 'Contract or comment history entry not found' });
+        recordSystemAudit(req, 'EDIT_CONTRACT_COMMENT_HISTORY', `Edited comment history for contract ${req.params.id}`);
+        return res.json(sanitizeAndDecryptContract(updatedContract));
+    } catch (err) {
+        console.error('Edit contract comment history error:', err);
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 // UPDATE contract
 router.put('/:id', async (req, res) => {
     try {
@@ -455,6 +540,8 @@ router.put('/:id', async (req, res) => {
         delete updateData.__v;
         delete updateData.createdAt;
         delete updateData.updatedAt;
+        delete updateData.commentHistory;
+        delete updateData.commentDate;
 
         // Fetch existing contract to capture prior state and compute diff
         let existingContract = null;
@@ -470,6 +557,21 @@ router.put('/:id', async (req, res) => {
         let prevObj = {};
         if (existingContract) {
             prevObj = existingContract.toObject ? existingContract.toObject() : { ...existingContract };
+            const notesChanged = Object.prototype.hasOwnProperty.call(updateData, 'notes') &&
+                String(updateData.notes ?? '') !== String(prevObj.notes ?? '');
+            if (notesChanged) {
+                const previousComment = String(prevObj.notes || '');
+                const commentHistory = Array.isArray(prevObj.commentHistory) ? [...prevObj.commentHistory] : [];
+                if (previousComment.trim()) {
+                    commentHistory.push({
+                        comment: previousComment,
+                        commentedAt: prevObj.commentDate || prevObj.updatedAt || prevObj.createdAt || new Date(),
+                        editedBy: prevObj.lastModifiedBy || ''
+                    });
+                }
+                updateData.commentHistory = commentHistory;
+                updateData.commentDate = new Date();
+            }
             for (const key in updateData) {
                 if (key === 'editHistory' || key === 'lastModifiedBy' || key === 'modifiedByAdmin') continue;
                 if (JSON.stringify(prevObj[key]) !== JSON.stringify(updateData[key])) {
@@ -500,6 +602,8 @@ router.put('/:id', async (req, res) => {
                 updateData.modifiedByAdmin = true;
                 updateData.lastModifiedBy = req.body.lastModifiedBy || req.user?.username || 'Staff';
             }
+        } else if (Object.prototype.hasOwnProperty.call(updateData, 'notes')) {
+            updateData.commentDate = new Date();
         }
 
         let updatedDoc = null;

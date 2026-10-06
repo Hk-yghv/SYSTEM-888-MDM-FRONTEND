@@ -8,6 +8,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 import LineChart from '../../../components/LineChart';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const LIMIT = 10;
 
@@ -23,7 +24,9 @@ const InstallmentReport = () => {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedRecord, setSelectedRecord] = useState(null);
     const [pdfOrientation, setPdfOrientation] = useState('portrait');
+    const visibleDataList = selectedRecord ? [selectedRecord] : dataList;
 
     const fetchData = useCallback(async (pg = page, search = searchTerm) => {
         setReloading(true);
@@ -73,9 +76,13 @@ const InstallmentReport = () => {
     }, [API_BASE1, user]);
 
     useEffect(() => {
+        if (selectedRecord) return;
         fetchData(page, searchTerm);
+    }, [page, fetchData, searchTerm, selectedRecord]);
+
+    useEffect(() => {
         fetchFullData();
-    }, [page, fetchData, fetchFullData]);
+    }, [fetchFullData]);
 
     const fetchAllForExport = async () => {
         if (allPayments.length > 0) return allPayments;
@@ -371,6 +378,28 @@ const InstallmentReport = () => {
 
             {/* Tab 2: Detailed Info */}
             {activeTab === 'detail' && (
+                <>
+                <div className="rounded-[5px] border border-slate-200 bg-white p-2">
+                    <DatabaseSearchInput
+                        apiBase={API_BASE1}
+                        endpoint="payments"
+                        params={{ userBrand: user?.brand || '', userRole: user?.role || '', username: user?.username || '', isImmutable: user?.isImmutable ? 'true' : 'false' }}
+                        value={searchTerm}
+                        placeholder={t('search')}
+                        className="w-64"
+                        onChange={(value) => { setSelectedRecord(null); setSearchTerm(value); setPage(1); }}
+                        onSelect={(record) => {
+                            setSelectedRecord(record);
+                            setLoading(false);
+                            setSearchTerm(record.customerName || record.contractId || record.paymentId || record._id || '');
+                            setDataList([record]);
+                            setTotal(1);
+                            setPage(1);
+                        }}
+                        getLabel={(record) => record.customerName || record.contractId || record.paymentId || record._id}
+                        getDescription={(record) => [record.model, record.serialNumber, record.paidDate, record.amount && `$${record.amount}`].filter(Boolean).join(' · ')}
+                    />
+                </div>
                 <div className='w-full overflow-x-auto h-[calc(100vh-350px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
@@ -387,10 +416,10 @@ const InstallmentReport = () => {
                         <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                             {loading ? (
                                 <tr><td colSpan={7} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
-                            ) : dataList.length === 0 ? (
+                            ) : visibleDataList.length === 0 ? (
                                 <tr><td colSpan={7} className="text-center py-8 text-slate-500 italic">No payment transaction records found.</td></tr>
                             ) : (
-                                dataList.map((item, idx) => (
+                                visibleDataList.map((item, idx) => (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/40 transition-colors'>
                                         <td className='px-4 py-1 text-center font-mono font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
                                         <td className='px-4 py-1 font-bold text-slate-900'><CopyCell text={item.customerName || '-'} className='font-bold text-slate-900' /></td>
@@ -405,6 +434,7 @@ const InstallmentReport = () => {
                         </tbody>
                     </table>
                 </div>
+                </>
             )}
 
             {/* Tab 3: Summary Table */}
@@ -466,7 +496,7 @@ const InstallmentReport = () => {
                 </div>
             )}
 
-            {activeTab === 'detail' && <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />}
+            {activeTab === 'detail' && !selectedRecord && <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />}
         </div>
     );
 };

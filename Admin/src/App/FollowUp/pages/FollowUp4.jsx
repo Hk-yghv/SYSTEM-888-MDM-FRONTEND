@@ -120,7 +120,7 @@ const FollowUp4 = () => {
     const [submitLoading, setSubmitLoading] = useState(false);
     const [submitFormSaving, setSubmitFormSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [startDate, setStartDate] = useState(getPastDateStr(2)); // Default 3 days (today and past 2 days)
+    const [startDate, setStartDate] = useState(getTodayStr());
     const [endDate, setEndDate] = useState(getTodayStr());
 
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -1048,7 +1048,12 @@ const FollowUp4 = () => {
             {/* Navigation Tabs */}
             <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-700/80">
                 <button
-                    onClick={() => setActiveTab('submit')}
+                    onClick={() => {
+                        const today = getTodayStr();
+                        setStartDate(today);
+                        setEndDate(today);
+                        setActiveTab('submit');
+                    }}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'submit'
                         ? 'bg-emerald-600 text-white border-b-2 border-emerald-400 shadow-md'
                         : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'

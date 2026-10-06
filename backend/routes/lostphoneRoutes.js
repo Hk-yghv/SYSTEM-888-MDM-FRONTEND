@@ -157,9 +157,15 @@ router.post('/lostphone/toggle-lock', async (req, res) => {
 // GET Phone Logs
 router.get('/phonelogs', async (req, res) => {
     try {
-        const { action, userBrand, userRole, username, isImmutable, page = 1, limit = 10 } = req.query;
+        const { action, userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '' } = req.query;
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
         const skip = (parseInt(page) - 1) * parseInt(limit);
+        const searchTerm = String(search).trim();
+        const searchFields = [
+            'logId', 'contractId', 'customerName', 'model', 'serialNumber',
+            'action', 'performedBy', 'userName', 'date', 'time', 'reason',
+            'displayText', 'phoneNumber', 'brand'
+        ];
         let filter = {};
         if (action) filter.action = action;
         if (userBrand && !isMasterAdmin) {
@@ -167,6 +173,10 @@ router.get('/phonelogs', async (req, res) => {
                 ? await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'))
                 : MEM_DB.contracts.filter(c => c.brand === userBrand);
             filter.contractId = { $in: matchedContracts.map(c => c.contractId) };
+        }
+        if (searchTerm) {
+            const escapedSearch = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            filter.$or = searchFields.map(field => ({ [field]: { $regex: escapedSearch, $options: 'i' } }));
         }
 
         if (isMongoConnected) {
@@ -181,6 +191,12 @@ router.get('/phonelogs', async (req, res) => {
         if (userBrand && !isMasterAdmin) {
             const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
             filtered = filtered.filter(l => contractIds.includes(l.contractId));
+        }
+        if (searchTerm) {
+            const normalizedSearch = searchTerm.toLowerCase();
+            filtered = filtered.filter(log =>
+                searchFields.some(field => String(log[field] ?? '').toLowerCase().includes(normalizedSearch))
+            );
         }
         const total = filtered.length;
         const data = filtered.slice(skip, skip + parseInt(limit));

@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
-    FaEdit, FaSearch, FaRegCalendarAlt,
+    FaEdit, FaRegCalendarAlt,
     FaListUl, FaDollarSign, FaFilter,
     FaFileDownload, FaBuilding, FaUserTie,
     FaPhoneAlt, FaMapMarkerAlt, FaExternalLinkAlt,
@@ -14,6 +14,7 @@ import {
 import { MdOutlineSync, MdPictureAsPdf } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import CopyCell from '../../../components/CopyCell';
 
 const LIMIT = 15;
@@ -47,6 +48,7 @@ const FollowUp3 = () => {
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
     const [filterDate, setFilterDate] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -649,17 +651,35 @@ const FollowUp3 = () => {
             <div className="bg-white p-2 sm:p-2 rounded-[5px] border border-slate-100 shadow-sm space-y-3">
                 <div className="flex flex-col lg:flex-row items-center gap-3">
                     {/* Search Input */}
-                    <div className="relative flex-1 w-full">
-                        <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && fetchData(1)}
-                            placeholder="ស្វែងរកតាម ឈ្មោះ, លេខទូរស័ព្ទ, ទីតាំង, អ្នកឆ្លើយតប, Username, បរិយាយ..."
-                            className="w-full pl-10 pr-4 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700 bg-slate-50/50 hover:bg-white transition"
-                        />
-                    </div>
+                    <DatabaseSearchInput
+                        apiBase={API_BASE}
+                        endpoint="/follow-up-3"
+                        params={{
+                            username: user?.username || '',
+                            userRole: user?.role || '',
+                            userBrand: user?.brand || '',
+                            isImmutable: user?.isImmutable ? 'true' : 'false',
+                            ...(filterDate ? { date: filterDate } : {}),
+                            ...(startDate ? { startDate } : {}),
+                            ...(endDate ? { endDate } : {}),
+                            ...(selectedBrand ? { brand: selectedBrand } : {})
+                        }}
+                        value={searchTerm}
+                        placeholder="ស្វែងរកតាម ឈ្មោះ, លេខទូរស័ព្ទ, ទីតាំង, អ្នកឆ្លើយតប, Username, បរិយាយ..."
+                        onChange={(value) => {
+                            setSearchTerm(value);
+                            setSelectedSearchRecord(null);
+                            setPage(1);
+                        }}
+                        onSelect={(record) => {
+                            setSelectedSearchRecord(record);
+                            setSearchTerm(record.customerName || record.phone || record.location || '');
+                            setPage(1);
+                        }}
+                        getLabel={(record) => record.customerName || record.phone || record.location || ''}
+                        getDescription={(record) => [record.phone, record.date, record.location, record.responder, record.username].filter(Boolean).join(' · ')}
+                        className="relative flex-1 w-full"
+                    />
 
                     <DateRangeDropdown
                         from={startDate || filterDate}
@@ -700,6 +720,8 @@ const FollowUp3 = () => {
                             <button
                                 onClick={() => {
                                     setSearchTerm('');
+                                    setSelectedSearchRecord(null);
+                                    setPage(1);
                                     setFilterDate('');
                                     setStartDate('');
                                     setEndDate('');
@@ -746,14 +768,14 @@ const FollowUp3 = () => {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : dataList.length === 0 ? (
+                            ) : (selectedSearchRecord ? [selectedSearchRecord] : dataList).length === 0 ? (
                                 <tr>
                                     <td colSpan="13" className="py-12 text-center text-slate-400 font-semibold text-xs">
                                         មិនមានទិន្នន័យ Follow Up 3 នៅក្នុងប្រព័ន្ធឡើយ
                                     </td>
                                 </tr>
                             ) : (
-                                dataList.map((item, idx) => {
+                                (selectedSearchRecord ? [selectedSearchRecord] : dataList).map((item, idx) => {
                                     const rowNum = (page - 1) * LIMIT + idx + 1;
                                     return (
                                         <tr key={item._id || item.followUpId || idx} className="hover:bg-slate-50/70 transition">
@@ -917,7 +939,7 @@ const FollowUp3 = () => {
                 </div>
 
                 {/* Pagination */}
-                {!loading && total > 0 && (
+                {!selectedSearchRecord && !loading && total > 0 && (
                     <div className="p-2 border-t border-slate-100 flex items-center justify-between">
                         <p className="text-xs text-slate-500 font-medium">
                             បង្ហាញ <span className="font-bold text-slate-800">{Math.min((page - 1) * LIMIT + 1, total)}</span> - <span className="font-bold text-slate-800">{Math.min(page * LIMIT, total)}</span> នៃ <span className="font-bold text-slate-800">{total}</span>

@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
-import { FaLock, FaUnlock, FaFileExcel, FaSearch, FaCheckCircle, FaClock, FaPlus, FaMobileAlt, FaTimesCircle, FaBan } from 'react-icons/fa';
+import { FaLock, FaUnlock, FaFileExcel, FaCheckCircle, FaClock, FaPlus, FaMobileAlt, FaTimesCircle, FaBan } from 'react-icons/fa';
 import { MdOutlineSync, MdPictureAsPdf, MdOutlineWallpaper } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const LIMIT = 10;
 
@@ -21,6 +22,7 @@ const DeviceActionHistory = () => {
     const [total, setTotal] = useState(0);
 
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
     const [statusFilter, setStatusFilter] = useState('');
     const [actionFilter, setActionFilter] = useState('');
 
@@ -187,19 +189,33 @@ const DeviceActionHistory = () => {
 
             {/* Filter Bar */}
             <div className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-wrap items-center justify-between gap-3 shadow-xs'>
-                <div className='relative flex-1 min-w-[240px]'>
-                    <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs' />
-                    <input
-                        type='text'
-                        value={searchTerm}
-                        onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                            setPage(1);
-                        }}
-                        placeholder={t('search')}
-                        className='w-full pl-9 pr-3 py-2 border border-slate-300 rounded-[5px] text-xs font-medium focus:outline-none focus:border-amber-500 bg-slate-50'
-                    />
-                </div>
+                <DatabaseSearchInput
+                    apiBase={API_BASE2}
+                    endpoint="/history/device-actions"
+                    params={{
+                        userBrand: user?.brand || '',
+                        userRole: user?.role || '',
+                        username: user?.username || '',
+                        isImmutable: user?.isImmutable ? 'true' : 'false',
+                        ...(statusFilter ? { status: statusFilter } : {}),
+                        ...(actionFilter ? { actionType: actionFilter } : {})
+                    }}
+                    value={searchTerm}
+                    placeholder={t('search')}
+                    onChange={(value) => {
+                        setSearchTerm(value);
+                        setSelectedSearchRecord(null);
+                        setPage(1);
+                    }}
+                    onSelect={(record) => {
+                        setSelectedSearchRecord(record);
+                        setSearchTerm(record.customerName || record.serialNumber || record.performedBy || '');
+                        setPage(1);
+                    }}
+                    getLabel={(record) => record.customerName || record.serialNumber || record.performedBy || ''}
+                    getDescription={(record) => [record.model, record.serialNumber, record.actionType, record.date, record.status].filter(Boolean).join(' · ')}
+                    className="relative flex-1 min-w-[240px]"
+                />
 
                 <div className='flex items-center gap-3 flex-wrap'>
                     <div className='flex items-center gap-2'>
@@ -256,14 +272,14 @@ const DeviceActionHistory = () => {
                             <tr>
                                 <td colSpan={10} className="text-center py-10 text-slate-400">Loading device action logs...</td>
                             </tr>
-                        ) : logs.length === 0 ? (
+                        ) : (selectedSearchRecord ? [selectedSearchRecord] : logs).length === 0 ? (
                             <tr>
                                 <td colSpan={10} className="text-center py-10 text-slate-500 italic font-medium">
                                     No device history records found for Activated devices.
                                 </td>
                             </tr>
                         ) : (
-                            logs.map((item, idx) => {
+                            (selectedSearchRecord ? [selectedSearchRecord] : logs).map((item, idx) => {
                                 const isPending = item.status === 'Pending';
                                 const isRejected = item.status === 'Rejected';
                                 const isLock = item.actionType?.includes('Lock Phone');
@@ -438,12 +454,12 @@ const DeviceActionHistory = () => {
 
 
             {/* Pagination */}
-            <Pagination
+            {!selectedSearchRecord && <Pagination
                 currentPage={page}
                 totalItems={total}
                 itemsPerPage={LIMIT}
                 onPageChange={setPage}
-            />
+            />}
         </div>
     );
 };

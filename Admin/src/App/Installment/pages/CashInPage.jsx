@@ -4,7 +4,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import {
     FaPlusCircle, FaFileExcel, FaPlus, FaTrashAlt,
-    FaEdit, FaSearch, FaRegCalendarAlt, FaDollarSign,
+    FaEdit, FaRegCalendarAlt, FaDollarSign,
     FaMoneyBillWave, FaListUl, FaChartBar, FaImage
 } from 'react-icons/fa';
 import { MdOutlineSync, MdPictureAsPdf, MdPieChart, MdTableChart } from 'react-icons/md';
@@ -12,6 +12,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import LineChart from '../../../components/LineChart';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
 const LIMIT = 10;
@@ -31,6 +32,7 @@ const CashInPage = () => {
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedRecord, setSelectedRecord] = useState(null);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [pdfOrientation, setPdfOrientation] = useState('portrait');
@@ -50,6 +52,8 @@ const CashInPage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null); // image preview modal
+
+    const visibleDataList = selectedRecord ? [selectedRecord] : dataList;
 
     const handleFileUpload = async (e) => {
         const file = e.target.files?.[0];
@@ -128,8 +132,9 @@ const CashInPage = () => {
     }, [API_BASE, page, searchTerm, startDate, endDate, user]);
 
     useEffect(() => {
+        if (selectedRecord) return;
         fetchData(page, searchTerm, startDate, endDate);
-    }, [page, fetchData, searchTerm, startDate, endDate]);
+    }, [page, fetchData, searchTerm, startDate, endDate, selectedRecord]);
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
@@ -392,20 +397,41 @@ const CashInPage = () => {
                     {/* Filter Bar */}
                     <div className="p-2 bg-white rounded-[5px] border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <div className="relative">
-                                <FaSearch className="absolute left-3 top-3 text-slate-400 text-xs" />
-                                <input
-                                    type="text"
-                                    placeholder={t('searchPlaceholder')}
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-[5px] text-xs font-semibold focus:outline-none focus:border-emerald-500 w-52 sm:w-64"
-                                />
-                            </div>
+                            <DatabaseSearchInput
+                                apiBase={API_BASE}
+                                endpoint="cash-transactions"
+                                params={{
+                                    type: 'cash_in',
+                                    userBrand: user?.brand || '',
+                                    userRole: user?.role || '',
+                                    username: user?.username || '',
+                                    isImmutable: user?.isImmutable ? 'true' : 'false',
+                                    ...(startDate ? { startDate } : {}),
+                                    ...(endDate ? { endDate } : {})
+                                }}
+                                value={searchTerm}
+                                placeholder={t('searchPlaceholder')}
+                                className="w-52 sm:w-64"
+                                onChange={(value) => {
+                                    setSelectedRecord(null);
+                                    setSearchTerm(value);
+                                    setPage(1);
+                                }}
+                                onSelect={(record) => {
+                                    setSelectedRecord(record);
+                                    setLoading(false);
+                                    setSearchTerm(record.description || record.category || record.transactionId || record._id || '');
+                                    setDataList([record]);
+                                    setTotal(1);
+                                    setPage(1);
+                                }}
+                                getLabel={(record) => record.description || record.category || record.transactionId || record._id}
+                                getDescription={(record) => [record.category, record.date, record.amount && `${record.currency || 'USD'} ${record.amount}`, record.performedBy].filter(Boolean).join(' · ')}
+                            />
                             <DateRangeDropdown
                                 from={startDate}
                                 to={endDate}
-                                onApplyRange={(from, to) => { setStartDate(from); setEndDate(to); }}
+                                onApplyRange={(from, to) => { setSelectedRecord(null); setStartDate(from); setEndDate(to); }}
                             />
                         </div>
 
@@ -432,10 +458,10 @@ const CashInPage = () => {
                             <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                                 {loading ? (
                                     <tr><td colSpan={8} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
-                                ) : dataList.length === 0 ? (
+                                ) : visibleDataList.length === 0 ? (
                                     <tr><td colSpan={8} className="text-center py-8 text-slate-500 italic">{t('noData')}</td></tr>
                                 ) : (
-                                    dataList.map((item, idx) => (
+                                    visibleDataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-emerald-50/40 transition-colors'>
                                             <td className='px-4 py-1 text-center font-mono font-bold text-slate-500'>{(page - 1) * LIMIT + idx + 1}</td>
                                             <td className='px-4 py-1 font-mono font-bold text-slate-900'>{item.date || '-'}</td>
@@ -473,7 +499,7 @@ const CashInPage = () => {
                         </table>
                     </div>
 
-                    <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
+                    {!selectedRecord && <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />}
                 </div>
             )}
 

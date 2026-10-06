@@ -34,6 +34,7 @@ import SalaryBarChart from '../../../components/SalaryBarChart';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 import { getProxyImageUrl } from '../../../utils/mediaUtils';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const KHMER_DAYS = [
     'ថ្ងៃអាទិត្យ',
@@ -96,6 +97,7 @@ const SalaryPage = () => {
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState('');
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -440,6 +442,7 @@ const SalaryPage = () => {
 
     const handleResetFilters = () => {
         setSearchTerm('');
+        setSelectedSearchRecord(null);
         setSelectedMonth('');
         setSelectedPaymentMethod('');
         setStartDate('');
@@ -1391,19 +1394,36 @@ const SalaryPage = () => {
             {/* Filter & Search Bar */}
             <div className="bg-[var(--app-card,white)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[260px]">
-                    <div className="relative flex-1">
-                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            placeholder="ស្វែងរកតាមឈ្មោះបុគ្គលិក, កំណត់ចំណាំ, ឬប្រភេទ..."
-                            className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
-                        />
-                    </div>
+                    <DatabaseSearchInput
+                        apiBase={API_BASE}
+                        endpoint="/salary"
+                        params={{
+                            userBrand: user?.brand || '',
+                            userRole: user?.role || '',
+                            username: user?.username || '',
+                            isImmutable: user?.isImmutable ? 'true' : 'false',
+                            ...(isAdmin && activeStaffKey ? { staffName: activeStaffKey } : {}),
+                            ...(selectedMonth ? { month: selectedMonth } : {}),
+                            ...(selectedPaymentMethod ? { paymentMethod: selectedPaymentMethod } : {}),
+                            ...(startDate ? { startDate } : {}),
+                            ...(endDate ? { endDate } : {})
+                        }}
+                        value={searchTerm}
+                        placeholder="ស្វែងរកតាមឈ្មោះបុគ្គលិក, កំណត់ចំណាំ, ឬប្រភេទ..."
+                        onChange={(value) => {
+                            setSearchTerm(value);
+                            setSelectedSearchRecord(null);
+                            setCurrentPage(1);
+                        }}
+                        onSelect={(record) => {
+                            setSelectedSearchRecord(record);
+                            setSearchTerm(record.staffNameEn || record.staffNameKh || record.staffName || '');
+                            setCurrentPage(1);
+                        }}
+                        getLabel={(record) => record.staffNameEn || record.staffNameKh || record.staffName || ''}
+                        getDescription={(record) => [record.date, record.amount != null ? `$${Number(record.amount).toLocaleString()}` : '', record.paymentMethod, record.note || record.description].filter(Boolean).join(' · ')}
+                        className="relative flex-1"
+                    />
                     <button
                         type="submit"
                         className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-xs"
@@ -1477,7 +1497,7 @@ const SalaryPage = () => {
                                     កំពុងទាញយកទិន្នន័យប្រាក់ខែ...
                                 </td>
                             </tr>
-                        ) : salaries.length === 0 ? (
+                        ) : (selectedSearchRecord ? [selectedSearchRecord] : salaries).length === 0 ? (
                             <tr>
                                 <td colSpan={11} className="text-center py-12 text-slate-400 italic">
                                     <div className="flex flex-col items-center justify-center gap-2">
@@ -1487,7 +1507,7 @@ const SalaryPage = () => {
                                 </td>
                             </tr>
                         ) : (
-                            salaries.map((item, idx) => (
+                            (selectedSearchRecord ? [selectedSearchRecord] : salaries).map((item, idx) => (
                                 <tr key={item._id || item.id || idx} className="hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 transition-colors">
                                     <td className="px-4 py-1 text-center font-mono text-slate-500 font-semibold">
                                         {(currentPage - 1) * itemsPerPage + idx + 1}
@@ -1575,7 +1595,7 @@ const SalaryPage = () => {
                 </table>
 
                 {/* Pagination */}
-                {total > itemsPerPage && (
+                {!selectedSearchRecord && total > itemsPerPage && (
                     <div className="p-2 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
                         <Pagination
                             currentPage={currentPage}
@@ -1913,4 +1933,3 @@ const CreateEditSalaryModal = ({
 };
 
 export default SalaryPage;
-

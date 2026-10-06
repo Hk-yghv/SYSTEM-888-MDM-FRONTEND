@@ -3,13 +3,14 @@ import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { IoIosContact } from 'react-icons/io';
-import { MdOutlineSync, MdSearch, MdInfo, MdPictureAsPdf, MdTableChart, MdQrCode2, MdClose } from 'react-icons/md';
+import { MdOutlineSync, MdInfo, MdPictureAsPdf, MdTableChart, MdQrCode2, MdClose } from 'react-icons/md';
 import { FaFileExcel, FaQrcode, FaFileImage } from 'react-icons/fa';
 import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import IDCard3DViewer from '../../../components/IDCard3DViewer';
 import { formatIMEI } from '../../../utils/imeiFormatter';
+import ContractSearchInput from '../../../components/ContractSearchInput';
 
 
 const Customer = () => {
@@ -20,10 +21,12 @@ const Customer = () => {
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+    const [selectedContractId, setSelectedContractId] = useState('');
+    const [locatedIndex, setLocatedIndex] = useState(null);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [total, setTotal] = useState(0);
-    const [searchInput, setSearchInput] = useState('');
     const itemsPerPage = 10;
 
     // Customer QR Modal state
@@ -105,7 +108,7 @@ const Customer = () => {
         loadPayments();
     }, [selectedCustomer, API_BASE1]);
 
-    const fetchCustomers = useCallback(async (pg = currentPage, search = searchTerm) => {
+    const fetchCustomers = useCallback(async (pg = currentPage, search = searchTerm, contractId = selectedContractId) => {
         setReloading(true);
         try {
             const pageToFetch = typeof pg === 'number' ? pg : 1;
@@ -118,12 +121,19 @@ const Customer = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
-            if (search) params.set('search', search);
+            if (contractId) params.set('locateId', contractId);
+            else if (search) params.set('search', search);
             const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setCustomers(data.data || []);
                 setTotal(data.total || 0);
+                if (contractId) {
+                    setLocatedIndex(data.locateIndex >= 0 ? data.locateIndex : null);
+                    setCurrentPage(data.page || pageToFetch);
+                } else {
+                    setLocatedIndex(null);
+                }
             }
         } catch (err) {
             console.error('Fetch customers error:', err);
@@ -131,18 +141,15 @@ const Customer = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE1, user, itemsPerPage, searchTerm]);
+    }, [API_BASE1, user, itemsPerPage, searchTerm, selectedContractId]);
 
     useEffect(() => {
-        fetchCustomers(currentPage, searchTerm);
-    }, [currentPage]);
+        fetchCustomers(currentPage, searchTerm, selectedContractId);
+    }, [currentPage, fetchCustomers, searchTerm, selectedContractId]);
 
-    useEffect(() => {
-        setCurrentPage(1);
-        fetchCustomers(1, searchTerm);
-    }, [searchTerm]);
-
-    const filteredCustomers = customers; // server already filters+paginates
+    const filteredCustomers = selectedContractId
+        ? customers.filter(customer => String(customer._id) === selectedContractId || customer.contractId === selectedContractId)
+        : customers;
 
     const handleOpenQrModal = async (customer) => {
         setQrCustomer(customer);
@@ -178,7 +185,8 @@ const Customer = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
-            if (searchTerm) params.set('search', searchTerm);
+            if (selectedContractId) params.set('contractId', selectedContractId);
+            else if (searchTerm) params.set('search', searchTerm);
             const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
@@ -194,6 +202,7 @@ const Customer = () => {
         const allData = await fetchAllForExport();
         const excelData = allData.map((c, idx) => ({
             'No': idx + 1,
+            'Input Date': c.inputDate || '',
             'Name (EN)': c.customerNameEn || '',
             'Name (KH)': c.customerNameKh || '',
             'ID Card': c.idCardNumber || '',
@@ -214,7 +223,6 @@ const Customer = () => {
             'Monthly Installment ($)': c.monthlyPayment || 0,
             'Interest': c.interest || '',
             'Duration': c.duration || '',
-            'Input Date': c.inputDate || '',
             'Status': c.status || 'Activated',
         }));
         exportToExcel(excelData, 'MDM_Customer_List');
@@ -224,6 +232,7 @@ const Customer = () => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'Input Date', accessor: 'inputDate' },
             { header: 'Name EN', accessor: 'customerNameEn' },
             { header: 'ID Card', accessor: 'idCardNumber' },
             { header: 'Phone', accessor: 'phone' },
@@ -256,16 +265,25 @@ const Customer = () => {
                 <div className='flex flex-wrap items-center gap-2'>
                     {/* Search */}
                     <div className="relative">
-                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => {
-                                setSearchTerm(e.target.value);
+                        <ContractSearchInput
+                            value={searchInput}
+                            apiBase={API_BASE1}
+                            user={user}
+                            status="Activated"
+                            placeholder="Search name, phone, model..."
+                            onChange={(value) => {
+                                setSearchInput(value);
+                                setSearchTerm(value);
+                                setSelectedContractId('');
+                                setLocatedIndex(null);
                                 setCurrentPage(1);
                             }}
-                            placeholder="Search name, phone, model..."
-                            className="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-52 outline-none font-medium shadow-xs"
+                            onSelect={(contract) => {
+                                setSearchInput(contract.customerNameEn || contract.customerNameKh || contract.contractId || '');
+                                setSearchTerm('');
+                                setSelectedContractId(String(contract.contractId || contract._id || ''));
+                                setCurrentPage(1);
+                            }}
                         />
                     </div>
 
@@ -285,6 +303,7 @@ const Customer = () => {
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
                             <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1'>ថ្ងៃដាក់បញ្ចាំ</th>
                             <th className='px-4 py-1'>Customer</th>
                             <th className='px-4 py-1'>ID Card</th>
                             <th className='px-4 py-1'>Phone</th>
@@ -299,8 +318,8 @@ const Customer = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredCustomers.length === 0 ? (
                             <tr>
-                                <td colSpan={10} className="text-center py-8 text-slate-500 italic font-medium">
-                                    {searchTerm ? `No results for "${searchTerm}"` : 'No active customers found.'}
+                                <td colSpan={11} className="text-center py-8 text-slate-500 italic font-medium">
+                                    {searchTerm || selectedContractId ? `No results for "${searchInput}"` : 'No active customers found.'}
                                 </td>
                             </tr>
                         ) : (
@@ -313,7 +332,8 @@ const Customer = () => {
 
                                 return (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                        <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                        <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{selectedContractId && locatedIndex !== null ? locatedIndex + 1 : (currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                        <td className='px-4 py-1 whitespace-nowrap font-mono text-slate-700'><CopyCell text={item.inputDate || '-'} className='font-mono text-slate-700' /></td>
                                         <td className='px-4 py-1'>
                                             <div className="flex items-center gap-2">
                                                 <div>
@@ -435,7 +455,14 @@ const Customer = () => {
                 currentPage={currentPage}
                 totalItems={total}
                 itemsPerPage={itemsPerPage}
-                onPageChange={(pg) => setCurrentPage(pg)}
+                onPageChange={(pg) => {
+                    if (selectedContractId) {
+                        setSelectedContractId('');
+                        setSearchInput('');
+                        setLocatedIndex(null);
+                    }
+                    setCurrentPage(pg);
+                }}
             />
 
             {/* Full Customer Detail Modal */}

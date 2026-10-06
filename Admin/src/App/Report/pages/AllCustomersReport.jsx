@@ -7,6 +7,7 @@ import { FaFileExcel, FaUsers, FaDollarSign, FaMoneyBillWave, FaExchangeAlt, FaL
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import LineChart from '../../../components/LineChart';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const LIMIT = 10;
 
@@ -23,7 +24,9 @@ const AllCustomersReport = () => {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedRecord, setSelectedRecord] = useState(null);
     const [pdfOrientation, setPdfOrientation] = useState('portrait');
+    const visibleDataList = selectedRecord ? [selectedRecord] : dataList;
 
     const fetchData = useCallback(async (pg = page, search = searchTerm) => {
         setReloading(true);
@@ -91,9 +94,13 @@ const AllCustomersReport = () => {
     }, [API_BASE1, user]);
 
     useEffect(() => {
+        if (selectedRecord) return;
         fetchData(page, searchTerm);
+    }, [page, fetchData, searchTerm, selectedRecord]);
+
+    useEffect(() => {
         fetchFullData();
-    }, [page, fetchData, fetchFullData]);
+    }, [fetchFullData]);
 
     const fetchAllForExport = async () => {
         if (allContracts.length > 0) return allContracts;
@@ -500,6 +507,28 @@ const AllCustomersReport = () => {
 
             {/* Tab 2: Detailed Customer Information */}
             {activeTab === 'detail' && (
+                <>
+                <div className="rounded-[5px] border border-slate-200 bg-white p-2">
+                    <DatabaseSearchInput
+                        apiBase={API_BASE1}
+                        endpoint="contracts"
+                        params={{ userBrand: user?.brand || '', userRole: user?.role || '', username: user?.username || '', isImmutable: user?.isImmutable ? 'true' : 'false' }}
+                        value={searchTerm}
+                        placeholder={t('search')}
+                        className="w-64"
+                        onChange={(value) => { setSelectedRecord(null); setSearchTerm(value); setPage(1); }}
+                        onSelect={(record) => {
+                            setSelectedRecord(record);
+                            setLoading(false);
+                            setSearchTerm(record.customerNameEn || record.contractId || record.serialNumber || record._id || '');
+                            setDataList([record]);
+                            setTotal(1);
+                            setPage(1);
+                        }}
+                        getLabel={(record) => record.customerNameEn || record.contractId || record.serialNumber || record._id}
+                        getDescription={(record) => [record.customerNameKh, record.phone, record.model, record.serialNumber].filter(Boolean).join(' · ')}
+                    />
+                </div>
                 <div className='w-full h-[calc(100vh-350px)] overflow-auto pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                     <table className='w-full min-w-max text-left text-xs'>
                         <thead className='sticky top-0 z-10 bg-slate-800 text-white uppercase tracking-wide'>
@@ -512,9 +541,9 @@ const AllCustomersReport = () => {
                         <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                             {loading ? (
                                 <tr><td colSpan={50} className="py-10 text-center font-semibold text-indigo-600">Loading...</td></tr>
-                            ) : dataList.length === 0 ? (
+                            ) : visibleDataList.length === 0 ? (
                                 <tr><td colSpan={50} className="py-8 text-center italic text-slate-500">No customers found.</td></tr>
-                            ) : dataList.map((item, idx) => {
+                            ) : visibleDataList.map((item, idx) => {
                                 const customerPayments = (paymentsByContract.get(item.contractId) || [])
                                     .slice()
                                     .sort((a, b) => String(b.paidDate || b.createdAt || '').localeCompare(String(a.paidDate || a.createdAt || '')));
@@ -609,6 +638,7 @@ const AllCustomersReport = () => {
                         </tbody>
                     </table>
                 </div>
+                </>
             )}
 
             {/* Tab 3: Summary Breakdown Table (Like Report All) */}
@@ -678,7 +708,7 @@ const AllCustomersReport = () => {
                 </div>
             )}
 
-            {activeTab === 'detail' && <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />}
+            {activeTab === 'detail' && !selectedRecord && <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />}
         </div>
     );
 };

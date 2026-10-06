@@ -7,6 +7,7 @@ import { FaFileExcel, FaImage, FaTimes, FaFilter } from 'react-icons/fa';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const LIMIT = 10;
 
@@ -18,7 +19,7 @@ const PaymentHistory = () => {
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchInput, setSearchInput] = useState('');
+    const [selectedRecord, setSelectedRecord] = useState(null);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
 
@@ -67,20 +68,18 @@ const PaymentHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE1, user, activeDateFrom, activeDateTo]);
+    }, [API_BASE1, user, activeDateFrom, activeDateTo, searchTerm]);
 
-    useEffect(() => { fetchPayments(page, searchTerm, activeDateFrom, activeDateTo); }, [page]);
-    useEffect(() => { setPage(1); fetchPayments(1, searchTerm, activeDateFrom, activeDateTo); }, [searchTerm, activeDateFrom, activeDateTo]);
+    useEffect(() => {
+        if (selectedRecord) return;
+        fetchPayments(page, searchTerm, activeDateFrom, activeDateTo);
+    }, [page, searchTerm, activeDateFrom, activeDateTo, fetchPayments, selectedRecord]);
 
-    const totalPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-
-    const handleSearch = (e) => {
-        e.preventDefault();
-        setSearchTerm(searchInput);
-        setPage(1);
-    };
+    const visiblePayments = selectedRecord ? [selectedRecord] : payments;
+    const totalPaid = visiblePayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
     const handleApplyDateFilter = (from = dateFrom, to = dateTo) => {
+        setSelectedRecord(null);
         setDateFrom(from);
         setDateTo(to);
         setActiveDateFrom(from);
@@ -89,6 +88,7 @@ const PaymentHistory = () => {
     };
 
     const handleClearDateFilter = () => {
+        setSelectedRecord(null);
         setDateFrom('');
         setDateTo('');
         setActiveDateFrom('');
@@ -254,21 +254,36 @@ const PaymentHistory = () => {
                     )}
 
                     {/* Search */}
-                    <form onSubmit={handleSearch} className="flex items-center gap-1">
-                        <input
-                            type="text"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            placeholder={t('search')}
-                            className="px-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-44 font-medium outline-none shadow-xs"
-                        />
-                        <button type="submit" className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs">
-                            Go
-                        </button>
-                        {searchTerm && (
-                            <button type="button" onClick={() => { setSearchTerm(''); setSearchInput(''); }} className="px-2 py-1.5 text-slate-400 hover:text-red-600 text-xs cursor-pointer font-bold">✕</button>
-                        )}
-                    </form>
+                    <DatabaseSearchInput
+                        apiBase={API_BASE1}
+                        endpoint="payments"
+                        params={{
+                            userBrand: user?.brand || '',
+                            userRole: user?.role || '',
+                            username: user?.username || '',
+                            isImmutable: user?.isImmutable ? 'true' : 'false',
+                            ...(activeDateFrom ? { dateFrom: activeDateFrom } : {}),
+                            ...(activeDateTo ? { dateTo: activeDateTo } : {})
+                        }}
+                        value={searchTerm}
+                        placeholder={t('search')}
+                        className="w-44"
+                        onChange={(value) => {
+                            setSelectedRecord(null);
+                            setSearchTerm(value);
+                            setPage(1);
+                        }}
+                        onSelect={(record) => {
+                            setSelectedRecord(record);
+                            setLoading(false);
+                            setSearchTerm(record.customerName || record.contractId || record.paymentId || record._id || '');
+                            setPayments([record]);
+                            setTotal(1);
+                            setPage(1);
+                        }}
+                        getLabel={(record) => record.customerName || record.contractId || record.paymentId || record._id}
+                        getDescription={(record) => [record.model, record.serialNumber, record.paidDate, record.amount && `$${record.amount}`].filter(Boolean).join(' · ')}
+                    />
 
                 </div>
                 </div>
@@ -312,14 +327,14 @@ const PaymentHistory = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
                             <tr><td colSpan={9} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
-                        ) : payments.length === 0 ? (
+                        ) : visiblePayments.length === 0 ? (
                             <tr>
                                 <td colSpan={9} className="text-center py-8 text-slate-500 italic font-medium">
                                     No payment history records found.
                                 </td>
                             </tr>
                         ) : (
-                            payments.map((item, idx) => (
+                            visiblePayments.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
                                     <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
                                     <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'>{item.paidDate}</td>
@@ -376,11 +391,11 @@ const PaymentHistory = () => {
                         )}
                     </tbody>
                     {/* Grand Total Footer */}
-                    {!loading && payments.length > 0 && (
+                    {!loading && visiblePayments.length > 0 && (
                         <tfoot>
                             <tr className='bg-emerald-50 border-t-2 border-emerald-300'>
                                 <td colSpan={6} className='px-4 py-1 text-right text-xs font-black text-slate-700 uppercase tracking-wider'>
-                                    សរុបទំព័រនេះ ({payments.length} records):
+                                    សរុបទំព័រនេះ ({visiblePayments.length} records):
                                 </td>
                                 <td className='px-4 py-1 text-right font-black text-emerald-800 font-mono text-sm'>
                                     ${totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -392,12 +407,14 @@ const PaymentHistory = () => {
                 </table>
             </div>
 
-            <Pagination
-                currentPage={page}
-                totalItems={total}
-                itemsPerPage={LIMIT}
-                onPageChange={setPage}
-            />
+            {!selectedRecord && (
+                <Pagination
+                    currentPage={page}
+                    totalItems={total}
+                    itemsPerPage={LIMIT}
+                    onPageChange={setPage}
+                />
+            )}
         </div>
     );
 };

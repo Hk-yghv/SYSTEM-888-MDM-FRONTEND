@@ -11,6 +11,7 @@ import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import { formatIMEI } from '../../../utils/imeiFormatter';
 import RepaymentScheduleModal from '../components/RepaymentScheduleModal';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 
 const Application = () => {
@@ -23,7 +24,7 @@ const Application = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchInput, setSearchInput] = useState('');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
     const itemsPerPage = 10;
 
     const [openCreateModal, setOpenCreateModal] = useState(false);
@@ -62,8 +63,7 @@ const Application = () => {
         }
     }, [API_BASE1, currentPage, searchTerm, user]);
 
-    useEffect(() => { fetchApplications(currentPage, searchTerm); }, [currentPage]);
-    useEffect(() => { fetchApplications(1, searchTerm); setCurrentPage(1); }, [searchTerm]);
+    useEffect(() => { fetchApplications(currentPage, searchTerm); }, [fetchApplications, currentPage, searchTerm]);
 
     const handleOpenCreate = () => {
         setEditData(null);
@@ -155,6 +155,8 @@ const Application = () => {
         exportToPDF('Application Contracts Directory', columns, allData, user?.brand || '', orientation);
     };
 
+    const visibleContracts = selectedSearchRecord ? [selectedSearchRecord] : contracts;
+
     return (
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
             {/* Header */}
@@ -165,6 +167,29 @@ const Application = () => {
                     </h1>
                 </div>
                 <div className='flex items-center gap-3'>
+                    <DatabaseSearchInput
+                        apiBase={API_BASE1}
+                        endpoint="/contracts"
+                        params={{
+                            status: 'Application',
+                            userBrand: user?.brand || '',
+                            userRole: user?.role || '',
+                            username: user?.username || '',
+                            isImmutable: user?.isImmutable ? 'true' : 'false'
+                        }}
+                        value={searchTerm}
+                        placeholder="Search customer, model, serial..."
+                        className="w-64"
+                        onChange={(value) => {
+                            setSelectedSearchRecord(null);
+                            setCurrentPage(1);
+                            setSearchTerm(value);
+                        }}
+                        onSelect={(record) => {
+                            setSelectedSearchRecord(record);
+                            setCurrentPage(1);
+                        }}
+                    />
                     {/* Export to Excel & PDF */}
                     {hasPermission('/contract/application', 'export') && (
                         <>
@@ -200,14 +225,14 @@ const Application = () => {
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
-                        {contracts.length === 0 ? (
+                        {visibleContracts.length === 0 ? (
                             <tr>
                                 <td colSpan={9} className="text-center py-8 text-slate-500 italic font-medium">
                                     No pending applications found. Click "Create" to add a new application.
                                 </td>
                             </tr>
                         ) : (
-                            contracts.map((item, idx) => {
+                            visibleContracts.map((item, idx) => {
                                 const canInfo = hasPermission('/contract/application', 'information');
                                 const canActivate = hasPermission('/contract/application', 'activate');
                                 const canEdit = hasPermission('/contract/application', 'edit');
@@ -216,7 +241,7 @@ const Application = () => {
 
                                 return (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (currentPage - 1) * itemsPerPage) + idx + 1}</td>
                                     <td className='px-4 py-1 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
                                     <td className='px-4 py-1'>
                                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -312,7 +337,7 @@ const Application = () => {
             {/* Pagination controls */}
             <Pagination
                 currentPage={currentPage}
-                totalItems={total}
+                totalItems={selectedSearchRecord ? 1 : total}
                 itemsPerPage={itemsPerPage}
                 onPageChange={(pg) => setCurrentPage(pg)}
             />

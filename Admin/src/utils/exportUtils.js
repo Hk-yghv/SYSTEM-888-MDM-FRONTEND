@@ -36,9 +36,73 @@ const extractCellText = (col, row, idx) => {
     }
 };
 
+const addWorksheet = (workbook, name, title, headers, rows, totalRecords) => {
+    const worksheet = workbook.addWorksheet(name);
+    const titleRow = worksheet.addRow([title]);
+    worksheet.mergeCells(1, 1, 1, Math.max(1, headers.length));
+    titleRow.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    titleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF065F46' } };
+
+    const subtitleRow = worksheet.addRow([`Generated: ${new Date().toLocaleString()} | Total Records: ${totalRecords}`]);
+    worksheet.mergeCells(2, 1, 2, Math.max(1, headers.length));
+    subtitleRow.font = { italic: true, color: { argb: 'FFD1FAE5' } };
+    subtitleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF047857' } };
+    worksheet.addRow([]);
+
+    const headerRow = worksheet.addRow(headers);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF059669' } };
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    rows.forEach((values, index) => {
+        const row = worksheet.addRow(values);
+        const isTotal = Boolean(values.isGrandTotal || values.isTotalRow);
+        if (isTotal) {
+            row.font = { bold: true, color: { argb: 'FF064E3B' } };
+            row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+        } else if (index % 2 === 0) {
+            row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+        }
+    });
+
+    headers.forEach((header, columnIndex) => {
+        const contentLength = Math.max(
+            String(header || '').length,
+            ...rows.map(row => String(row[columnIndex] ?? '').length)
+        );
+        worksheet.getColumn(columnIndex + 1).width = Math.min(60, Math.max(12, contentLength + 2));
+    });
+    if (headers.length) {
+        worksheet.autoFilter = {
+            from: { row: 4, column: 1 },
+            to: { row: 4 + rows.length, column: headers.length }
+        };
+        worksheet.views = [{ state: 'frozen', ySplit: 4 }];
+    }
+    return worksheet;
+};
+
+const downloadWorkbook = (workbook, filename) => {
+    return workbook.xlsx.writeBuffer().then((buffer) => {
+        const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }).catch((error) => {
+        console.error('Excel workbook export error:', error);
+        alert(`Excel export failed: ${error.message}`);
+    });
+};
+
 /**
- * Rich Styled Excel Export (.xls HTML Format)
- * Opens in Excel with indigo headers, colored borders, formatted rows, and summary totals!
+ * Export database records as a standards-compliant .xlsx workbook.
  */
 export const exportToExcel = (dataOrTitle, filenameOrColumns, optionalData, brandName = '') => {
     let title = 'MDM_Report';
@@ -63,6 +127,37 @@ export const exportToExcel = (dataOrTitle, filenameOrColumns, optionalData, bran
     if (!data || !data.length) {
         alert('No data available to export');
         return;
+    }
+
+    if (typeof window !== 'undefined') {
+        return import('exceljs').then(({ default: ExcelJS }) => {
+            const headers = columns
+                ? columns.map(column => typeof column === 'string' ? column : (column.header || column.accessor || ''))
+                : Object.keys(data[0]);
+            const rows = data.map((row, rowIndex) => {
+                const values = headers.map((header, columnIndex) => (
+                    columns
+                        ? extractCellText(typeof columns[columnIndex] === 'string' ? { accessor: columns[columnIndex] } : columns[columnIndex], row, rowIndex)
+                        : (row[header] === undefined || row[header] === null ? '' : String(row[header]))
+                ));
+                values.isGrandTotal = Boolean(row.isGrandTotal);
+                values.isTotalRow = Boolean(row.isTotalRow);
+                return values;
+            });
+            const workbook = new ExcelJS.Workbook();
+            addWorksheet(
+                workbook,
+                String(title).replace(/[\\/?*\[\]:]/g, '_').slice(0, 31) || 'Report',
+                `${bName ? (bName.toUpperCase().startsWith('SYSTEM') ? bName.toUpperCase() : `SYSTEM ${bName.toUpperCase()}`) : 'MDM SYSTEM'} — ${title}`,
+                headers,
+                rows,
+                data.length
+            );
+            return downloadWorkbook(workbook, `${title.replace(/[^A-Za-z0-9_-]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            }).catch((error) => {
+                console.error('Excel workbook export error:', error);
+                alert(`Excel export failed: ${error.message}`);
+            });
     }
 
     const systemTitle = (bName || '').trim() ? ((bName || '').toUpperCase().startsWith('SYSTEM') ? bName.toUpperCase() : `SYSTEM ${(bName || '').toUpperCase()}`) : 'MDM SYSTEM';
@@ -352,14 +447,42 @@ export const exportToPDFLandscape = (title, columns, data, brandName = '') => {
     return exportToPDF(title, columns, data, brandName, 'landscape');
 };
 
-/**
- * Multi-Worksheet Excel XML Export
- * Supports 2 or more separate tabs (Worksheets) in a single Excel file
- */
+/** Export multiple worksheets to one .xlsx workbook. */
 export const exportMultiSheetExcel = (filename, sheets, brandName = '') => {
     if (!sheets || !sheets.length) {
         alert('No sheet data available to export');
         return;
+    }
+
+    if (typeof window !== 'undefined') {
+        return import('exceljs').then(({ default: ExcelJS }) => {
+            const brand = (brandName || '').trim();
+            const systemTitle = brand
+                ? (brand.toUpperCase().startsWith('SYSTEM') ? brand.toUpperCase() : `SYSTEM ${brand.toUpperCase()}`)
+                : 'MDM SYSTEM';
+            const workbook = new ExcelJS.Workbook();
+            sheets.forEach((sheet) => {
+                const columns = sheet.columns || [];
+                const data = sheet.data || [];
+                const headers = columns.map(column => typeof column === 'string'
+                    ? column
+                    : (column.header || column.accessor || ''));
+                const rows = data.map((row, rowIndex) => {
+                    const values = columns.map((column) => (
+                        extractCellText(typeof column === 'string' ? { accessor: column } : column, row, rowIndex) || ''
+                    ));
+                    values.isGrandTotal = Boolean(row.isGrandTotal);
+                    values.isTotalRow = Boolean(row.isTotalRow);
+                    return values;
+                });
+                const sheetName = (sheet.name || 'Sheet').replace(/[\\/?*\[\]:]/g, '_').slice(0, 31) || 'Sheet';
+                addWorksheet(workbook, sheetName, `${systemTitle} — ${sheet.title || sheetName}`, headers, rows, data.length);
+            });
+            return downloadWorkbook(workbook, `${filename.replace(/[^A-Za-z0-9_-]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }).catch((error) => {
+            console.error('Excel workbook export error:', error);
+            alert(`Excel export failed: ${error.message}`);
+        });
     }
 
     const bName = (brandName || '').trim();
@@ -881,4 +1004,3 @@ export const exportFollowUp1PDF = (title, columns, data, summary, dateRangeLabel
     printWindow.document.write(htmlContent);
     printWindow.document.close();
 };
-

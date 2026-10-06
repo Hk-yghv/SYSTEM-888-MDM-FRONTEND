@@ -10,6 +10,7 @@ import Device3DPointers from '../../../components/Device3DPointers';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import { formatIMEI } from '../../../utils/imeiFormatter';
 import CopyCell from '../../../components/CopyCell';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 
 const LIMIT = 10;
 
@@ -27,6 +28,7 @@ const Device = () => {
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
     const [selectedDevice, setSelectedDevice] = useState(null);
     const [brandFilter, setBrandFilter] = useState(''); // Admin only brand filter
     const [brandsList, setBrandsList] = useState([]);
@@ -96,7 +98,14 @@ const Device = () => {
         go();
     }, [user?.role, API_BASE]);
 
-    const filteredDevices = devices;
+    const filteredDevices = selectedSearchRecord ? [selectedSearchRecord] : devices;
+    const searchParams = {
+        status: 'Activated',
+        ...(user?.role === 'Administrator'
+            ? (brandFilter ? { brand: brandFilter } : {})
+            : (user?.brand ? { brand: user.brand } : {})
+        )
+    };
 
     const fetchAllForExport = async () => {
         try {
@@ -178,7 +187,10 @@ const Device = () => {
                     {user?.role === 'Administrator' && (
                         <select
                             value={brandFilter}
-                            onChange={(e) => setBrandFilter(e.target.value)}
+                            onChange={(e) => {
+                                setSelectedSearchRecord(null);
+                                setBrandFilter(e.target.value);
+                            }}
                             className="px-3 py-2 bg-white border border-purple-300 rounded-[5px] text-xs text-purple-900 font-semibold focus:border-purple-500 outline-none shadow-xs cursor-pointer"
                         >
                             <option value="">All Brands</option>
@@ -188,12 +200,22 @@ const Device = () => {
                         </select>
                     )}
 
-                    <input
-                        type="text"
+                    <DatabaseSearchInput
+                        apiBase={API_BASE1}
+                        endpoint="/contracts"
+                        params={searchParams}
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(value) => {
+                            setSelectedSearchRecord(null);
+                            setPage(1);
+                            setSearchTerm(value);
+                        }}
+                        onSelect={(record) => {
+                            setSelectedSearchRecord(record);
+                            setPage(1);
+                        }}
                         placeholder={t('search')}
-                        className="px-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-48 font-medium outline-none shadow-xs"
+                        className="w-48"
                     />
 
                 </div>
@@ -224,7 +246,7 @@ const Device = () => {
                         ) : (
                             filteredDevices.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx + 1}</td>
                                     <td className='px-4 py-1 font-bold text-slate-900 flex items-center gap-2'>
                                         <FaMobileAlt className="text-emerald-600 text-sm" />
                                         <CopyCell text={item.model} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />
@@ -266,7 +288,7 @@ const Device = () => {
                 </table>
             </div>
 
-            <Pagination currentPage={page} totalItems={total} itemsPerPage={LIMIT} onPageChange={setPage} />
+            <Pagination currentPage={page} totalItems={selectedSearchRecord ? 1 : total} itemsPerPage={LIMIT} onPageChange={setPage} />
             {selectedDevice && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[99999] p-2">
 

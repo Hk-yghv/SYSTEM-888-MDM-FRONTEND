@@ -2,6 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { FaCalendarAlt, FaCopy, FaFileAlt, FaSyncAlt } from 'react-icons/fa';
+import ExportDropdown from '../../../components/ExportDropdown';
+import CopyCell from '../../../components/CopyCell';
+import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 const dateToInputValue = (date) => {
     const year = date.getFullYear();
@@ -95,6 +98,7 @@ const FollowUp4Report = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [activeReport, setActiveReport] = useState(null);
+    const [activeReportView, setActiveReportView] = useState('text');
     const [copied, setCopied] = useState(false);
     const [copyError, setCopyError] = useState('');
 
@@ -223,7 +227,9 @@ const FollowUp4Report = () => {
             group.reasons[reason] = (group.reasons[reason] || 0) + getCount(record.count);
             group.total += getCount(record.count);
         });
-        const groupRows = Array.from(groups.values()).sort((a, b) => b.date.localeCompare(a.date));
+        const groupRows = Array.from(groups.values())
+            .filter((group) => group.total > 0)
+            .sort((a, b) => b.date.localeCompare(a.date));
         const reasonTotals = Object.fromEntries(Array.from(reasonSet, (reason) => [reason, 0]));
         groupRows.forEach((group) => {
             Object.entries(group.reasons).forEach(([reason, count]) => {
@@ -239,6 +245,7 @@ const FollowUp4Report = () => {
     const openDailyReport = (row) => {
         setCopied(false);
         setCopyError('');
+        setActiveReportView('text');
         setActiveReport({
             title: `${t('dailyReport') || 'របាយការណ៍ប្រចាំថ្ងៃ'} - ${getFormattedDate(row.date)}`,
             text: getDailyReportText(row.date, row, rejectSubmitRows)
@@ -263,9 +270,44 @@ const FollowUp4Report = () => {
             `ជោគជ័យ ${detailTotals.totalSuccess}`,
             ...reasons.map((reason) => `- ${reason}`)
         ].join('\n');
+        const rows = [
+            { label: 'Date Range', value: reportDate },
+            { label: 'Total Message', value: detailTotals.message },
+            { label: 'មិនឆ្លើយតប', value: detailTotals.noReply },
+            { label: 'ឆ្លើយតប', value: Math.max(0, detailTotals.message - detailTotals.noReply) },
+            { label: 'សាកសួរ', value: detailTotals.inquire },
+            { label: 'ដាក់ស្នើ', value: detailTotals.totalSubmit },
+            { label: 'Review', value: detailTotals.review },
+            { label: 'បរាជ័យ', value: detailTotals.totalReject },
+            { label: 'ជោគជ័យ', value: detailTotals.totalSuccess },
+            ...reasons.map((reason) => ({ label: reason, value: groupedRejectSubmit.reasonTotals[reason] || 0 }))
+        ];
+        const numericTotal = rows.reduce((sum, row) => sum + (typeof row.value === 'number' ? row.value : 0), 0);
+        const tableRows = [
+            ...rows,
+            ...Array.from({ length: 4 }, (_, index) => ({ label: '', value: '', spacer: true, id: `spacer-${index}` })),
+            { label: 'TOTAL COUNTS', value: numericTotal, isGrandTotal: true }
+        ];
         setCopied(false);
         setCopyError('');
-        setActiveReport({ title: t('followUp4TotalReport') || 'Follow Up 4 Total Report', text: totalReportText });
+        setActiveReport({ title: t('followUp4TotalReport') || 'Follow Up 4 Total Report', text: totalReportText, rows: tableRows });
+        setActiveReportView('text');
+    };
+
+    const totalReportColumns = [
+        { header: 'No', cell: (row, index) => row.spacer || row.isGrandTotal ? '' : index + 1 },
+        { header: 'Description', accessor: 'label' },
+        { header: 'Value', accessor: 'value' }
+    ];
+
+    const exportTotalReportExcel = () => {
+        if (!activeReport?.rows) return;
+        exportToExcel(activeReport.title, totalReportColumns, activeReport.rows, selectedBrand || user?.brand || '');
+    };
+
+    const exportTotalReportPdf = (orientation = 'portrait') => {
+        if (!activeReport?.rows) return;
+        exportToPDF(activeReport.title, totalReportColumns, activeReport.rows, selectedBrand || user?.brand || '', orientation);
     };
 
     const copyReport = async () => {
@@ -429,17 +471,53 @@ const FollowUp4Report = () => {
 
             {activeReport && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3" role="dialog" aria-modal="true" aria-label={activeReport.title}>
-                    <div className="w-full max-w-lg overflow-hidden rounded-[5px] bg-white shadow-2xl">
+                    <div className={`w-full ${activeReport.rows ? 'max-w-3xl' : 'max-w-lg'} overflow-hidden rounded-[5px] bg-white shadow-2xl`}>
                         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                             <h2 className="font-black text-slate-800">{activeReport.title}</h2>
                             <button onClick={() => setActiveReport(null)} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label="Close">×</button>
                         </div>
-                        <pre className="max-h-[65vh] overflow-auto whitespace-pre-wrap px-5 py-4 font-sans text-sm leading-7 text-slate-800">{activeReport.text}</pre>
+                        {activeReport.rows && (
+                            <nav className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2">
+                                <div className="flex gap-2">
+                                    <button onClick={() => setActiveReportView('text')} className={`rounded-[5px] px-3 py-1.5 text-xs font-bold ${activeReportView === 'text' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Text Report</button>
+                                    <button onClick={() => setActiveReportView('table')} className={`rounded-[5px] px-3 py-1.5 text-xs font-bold ${activeReportView === 'table' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Summary Table</button>
+                                </div>
+                                {activeReportView === 'table' && <ExportDropdown onExportExcel={exportTotalReportExcel} onExportPDF={exportTotalReportPdf} />}
+                            </nav>
+                        )}
+                        {activeReport.rows && activeReportView === 'table' ? (
+                            <div className="max-h-[65vh] overflow-auto p-4">
+                                <table className="w-full border-collapse text-sm">
+                                    <thead>
+                                        <tr className="bg-slate-100 text-left text-xs uppercase text-slate-600">
+                                            <th className="border border-slate-200 px-3 py-2 text-center">No</th>
+                                            <th className="border border-slate-200 px-3 py-2">Description</th>
+                                            <th className="border border-slate-200 px-3 py-2 text-right">Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {activeReport.rows.map((row, index) => (
+                                            <tr key={row.id || row.label || index} className={row.isGrandTotal ? 'border-t-2 border-emerald-600 bg-emerald-50 font-black text-emerald-900' : 'even:bg-slate-50'}>
+                                                <td className="border border-slate-200 px-3 py-2 text-center text-slate-500">{row.spacer || row.isGrandTotal ? '' : index + 1}</td>
+                                                <td className="border border-slate-200 px-3 py-2"><CopyCell text={row.label} className="text-slate-800" /></td>
+                                                <td className="border border-slate-200 px-3 py-2 text-right font-mono"><CopyCell text={row.value === '' ? '' : String(row.value)} className="text-slate-800" /></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <pre className="max-h-[65vh] overflow-auto whitespace-pre-wrap px-5 py-4 font-sans text-sm leading-7 text-slate-800">{activeReport.text}</pre>
+                        )}
                         <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
-                            {copyError ? <p role="alert" className="text-xs text-rose-600">{copyError}</p> : <span />}
-                            <button onClick={copyReport} className="flex items-center gap-2 rounded-[5px] bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">
-                                <FaCopy /> {copied ? (t('copied') || 'បាន Copy') : (t('copyText') || 'Copy Text')}
-                            </button>
+                            {activeReportView === 'text' ? (
+                                <>
+                                    {copyError ? <p role="alert" className="text-xs text-rose-600">{copyError}</p> : <span />}
+                                    <button onClick={copyReport} className="flex items-center gap-2 rounded-[5px] bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+                                        <FaCopy /> {copied ? (t('copied') || 'បាន Copy') : (t('copyText') || 'Copy Text')}
+                                    </button>
+                                </>
+                            ) : <button onClick={() => setActiveReport(null)} className="ml-auto rounded-[5px] bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300">Close</button>}
                         </div>
                     </div>
                 </div>

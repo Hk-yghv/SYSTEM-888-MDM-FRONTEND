@@ -871,7 +871,7 @@ const FollowUpReport = () => {
                                         }`}
                                 >
                                     <FaFileExcel className="text-emerald-600 text-base" />
-                                    <span>Microsoft Excel (.xls)</span>
+                                    <span>Microsoft Excel (.xlsx)</span>
                                 </button>
                                 <button
                                     type="button"

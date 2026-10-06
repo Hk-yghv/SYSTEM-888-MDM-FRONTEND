@@ -5,7 +5,7 @@ import { useAuth } from '../../../context/AuthContext';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import {
     FaPlusCircle, FaFileExcel, FaTrashAlt,
-    FaEdit, FaSearch, FaRegCalendarAlt,
+    FaEdit, FaRegCalendarAlt,
     FaListUl, FaChartPie, FaCheckCircle,
     FaTimesCircle, FaDollarSign, FaFilter,
     FaFileDownload, FaBuilding, FaUserTie,
@@ -17,6 +17,7 @@ import { MdOutlineSync, MdPictureAsPdf, MdOutlineRateReview, MdOutlineAssignment
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import ExportDropdown from '../../../components/ExportDropdown';
 import Pagination from '../../../components/Pagination';
+import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import CopyCell from '../../../components/CopyCell';
 import { getProxyImageUrl } from '../../../utils/mediaUtils';
 
@@ -53,6 +54,7 @@ const FollowUp2 = () => {
 
     // Filters
     const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') || '');
+    const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
     const [filterDate, setFilterDate] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -251,6 +253,7 @@ const FollowUp2 = () => {
 
     const handleResetFilters = () => {
         setSearchTerm('');
+        setSelectedSearchRecord(null);
         setFilterDate('');
         setStartDate('');
         setEndDate('');
@@ -553,11 +556,12 @@ const FollowUp2 = () => {
 
     // Group records by date for daily subtotal rendering & grand total calculation
     const groupedDateList = useMemo(() => {
-        if (!dataList || dataList.length === 0) return [];
+        const rows = selectedSearchRecord ? [selectedSearchRecord] : dataList;
+        if (!rows || rows.length === 0) return [];
 
         const map = new Map();
 
-        dataList.forEach(item => {
+        rows.forEach(item => {
             const d = item.date ? item.date.split('T')[0] : 'N/A';
 
             if (!map.has(d)) {
@@ -613,7 +617,7 @@ const FollowUp2 = () => {
         });
 
         return result;
-    }, [dataList]);
+    }, [dataList, selectedSearchRecord]);
 
     // Open Export Props Modal
     const handleOpenExportModal = (format = 'excel', orientation = 'landscape') => {
@@ -896,19 +900,36 @@ const FollowUp2 = () => {
             {/* Filter Controls */}
             <form onSubmit={handleSearchSubmit} className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-wrap items-center gap-3">
                 {/* Search Bar */}
-                <div className="relative flex-1 min-w-[200px]">
-                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
-                    <input
-                        type="text"
-                        placeholder="ស្វែងរកតាម ឈ្មោះ, Tel, អ្នកឆ្លើយតប, ទ្រព្យ, មូលហេតុ..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                            setPage(1);
-                        }}
-                        className="w-full pl-9 pr-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
-                    />
-                </div>
+                <DatabaseSearchInput
+                    apiBase={API_BASE}
+                    endpoint="/follow-up-2"
+                    params={{
+                        userBrand: user?.brand || '',
+                        userRole: user?.role || '',
+                        username: user?.username || '',
+                        isImmutable: user?.isImmutable ? 'true' : 'false',
+                        ...(filterDate ? { date: filterDate } : {}),
+                        ...(startDate ? { startDate } : {}),
+                        ...(endDate ? { endDate } : {}),
+                        ...(filterStatus ? { status: filterStatus } : {}),
+                        ...(selectedBrand ? { brand: selectedBrand } : {})
+                    }}
+                    value={searchTerm}
+                    placeholder="ស្វែងរកតាម ឈ្មោះ, Tel, អ្នកឆ្លើយតប, ទ្រព្យ, មូលហេតុ..."
+                    onChange={(value) => {
+                        setSearchTerm(value);
+                        setSelectedSearchRecord(null);
+                        setPage(1);
+                    }}
+                    onSelect={(record) => {
+                        setSelectedSearchRecord(record);
+                        setSearchTerm(record.customerName || record.phone || record.responder || '');
+                        setPage(1);
+                    }}
+                    getLabel={(record) => record.customerName || record.phone || record.responder || ''}
+                    getDescription={(record) => [record.phone, record.date, record.responder, record.model, record.reason].filter(Boolean).join(' · ')}
+                    className="relative flex-1 min-w-[200px]"
+                />
 
                 <DateRangeDropdown
                     from={startDate || filterDate}
@@ -1021,7 +1042,7 @@ const FollowUp2 = () => {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : dataList.length === 0 ? (
+                            ) : (selectedSearchRecord ? [selectedSearchRecord] : dataList).length === 0 ? (
                                 <tr>
                                     <td colSpan="14" className="py-12 text-center text-slate-400 font-normal">
                                         មិនមានទិន្នន័យ Follow up 2 នៅឡើយទេ! សូមចុចប៊ូតុង "Create Entry" ដើម្បីបញ្ចូលទិន្នន័យថ្មី។
@@ -1188,7 +1209,7 @@ const FollowUp2 = () => {
                         </tbody>
 
                         {/* Summary Total Sticky/Footer Row */}
-                        {dataList.length > 0 && (
+                        {!selectedSearchRecord && dataList.length > 0 && (
                             <tfoot>
                                 <tr className="bg-indigo-500/10 dark:bg-indigo-950/40 border-t-2 border-indigo-500/30 text-xs font-bold text-[var(--app-text,#0f172a)]">
 
@@ -1247,7 +1268,7 @@ const FollowUp2 = () => {
                 </div>
 
                 {/* Pagination */}
-                <div className="p-2 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
+                {!selectedSearchRecord && <div className="p-2 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
                     <span className="text-xs text-[var(--app-text-muted,#64748b)]">
                         បង្ហាញទំព័រ {page} នៃ {Math.ceil(total / LIMIT) || 1} (សរុប {total} កំណត់ត្រា)
                     </span>
@@ -1257,7 +1278,7 @@ const FollowUp2 = () => {
                         limit={LIMIT}
                         onPageChange={(p) => setPage(p)}
                     />
-                </div>
+                </div>}
             </div>
 
             {/* Create / Edit Form Modal */}
