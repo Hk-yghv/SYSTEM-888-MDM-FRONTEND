@@ -192,6 +192,20 @@ const Comments = () => {
     };
 
     const visibleContracts = selectedSearchRecord ? [selectedSearchRecord] : contracts;
+    const commentHistoryEntries = selectedHistoryItem
+        ? [
+            ...(Array.isArray(selectedHistoryItem.commentHistory) ? selectedHistoryItem.commentHistory : []),
+            ...(selectedHistoryItem.notes?.trim()
+                ? [{
+                    _id: 'latest-comment',
+                    comment: selectedHistoryItem.notes,
+                    commentedAt: selectedHistoryItem.commentDate,
+                    editedBy: selectedHistoryItem.lastModifiedBy,
+                    isCurrent: true
+                }]
+                : [])
+        ]
+        : [];
 
     return (
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 relative'>
@@ -341,7 +355,7 @@ const Comments = () => {
                             <button onClick={() => setSelectedHistoryItem(null)} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label="Close">×</button>
                         </header>
                         <div className="max-h-[60vh] overflow-auto p-4">
-                            {(selectedHistoryItem.commentHistory || []).length === 0 ? (
+                            {commentHistoryEntries.length === 0 ? (
                                 <p className="py-8 text-center text-sm text-slate-500">No previous comments.</p>
                             ) : (
                                 <table className="w-full text-left text-xs">
@@ -353,19 +367,27 @@ const Comments = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {selectedHistoryItem.commentHistory.map((entry, index) => (
+                                        {commentHistoryEntries.map((entry, index) => (
                                             <tr key={entry._id || index}>
                                                 <td className="whitespace-nowrap px-3 py-2 font-mono text-slate-600">
-                                                    {formatCommentDate(entry.commentedAt)}
+                                                    {formatCommentDate(entry.commentedAt, entry.isCurrent ? formatCommentDate(selectedHistoryItem.updatedAt, selectedHistoryItem.inputDate) : '')}
                                                 </td>
-                                                <td className="whitespace-pre-wrap px-3 py-2 text-slate-800">{entry.comment || '—'}</td>
+                                                <td className="whitespace-pre-wrap px-3 py-2 text-slate-800">
+                                                    {entry.isCurrent && <span className="mr-2 rounded bg-teal-50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-teal-700">Latest</span>}
+                                                    {entry.comment || '—'}
+                                                </td>
                                                 {isMasterAdmin && (
                                                     <td className="px-3 py-2 text-center">
                                                         <button
                                                             onClick={() => {
-                                                                setSelectedCommentItem(selectedHistoryItem);
-                                                                setEditingHistoryEntry(entry);
-                                                                setCommentInput(entry.comment || '');
+                                                                if (entry.isCurrent) {
+                                                                    openCommentEditor(selectedHistoryItem);
+                                                                } else {
+                                                                    setSelectedCommentItem(selectedHistoryItem);
+                                                                    setEditingHistoryEntry(entry);
+                                                                    setIsAddingComment(false);
+                                                                    setCommentInput(entry.comment || '');
+                                                                }
                                                             }}
                                                             className="inline-flex items-center gap-1 rounded-[5px] bg-amber-50 px-2 py-1 font-semibold text-amber-700 hover:bg-amber-100"
                                                         >

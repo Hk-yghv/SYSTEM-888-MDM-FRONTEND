@@ -61,6 +61,7 @@ import calculateScheduleRoutes from './routes/calculateScheduleRoutes.js';
 import calendarEventRoutes from './routes/calendarEventRoutes.js';
 import { initTelegramBotService } from './services/telegramBotService.js';
 import telegramRoutes from './routes/telegramRoutes.js';
+import { installTelegramSendRetry } from './utils/telegramSendRetry.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -84,6 +85,7 @@ let bot = null;
 if (process.env.TELEGRAM_BOT_TOKEN) {
     try {
         bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+        installTelegramSendRetry(bot);
         bot.on('polling_error', (err) => {
             // Log warning without crashing server on transient network glitches
             console.warn('[TelegramBot Polling]:', err.message);

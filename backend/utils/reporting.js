@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import LoginLog from '../models/LoginLog.js';
 import { MEM_DB } from '../config/db.js';
 import { queryAllDBs, isAnyDBConnected } from '../config/multiDB.js';
+import { installTelegramSendRetry } from './telegramSendRetry.js';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -148,6 +149,7 @@ const sendToTelegramWithRetry = async (bot, chatId, filePath, caption = '') => {
     if (!botInstance && process.env.TELEGRAM_BOT_TOKEN) {
         try {
             botInstance = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
+            installTelegramSendRetry(botInstance);
         } catch (e) {
             console.error('Failed to create fallback TelegramBot instance:', e.message);
         }
@@ -164,12 +166,10 @@ const sendToTelegramWithRetry = async (bot, chatId, filePath, caption = '') => {
     }
     console.log(`sendToTelegramWithRetry: Sending file ${filePath} (${stat.size} bytes) to chat ${chatId}`);
 
-    return withAutoRetry(async (attempt) => {
-        const stream = fs.createReadStream(filePath);
-        await botInstance.sendDocument(chatId, stream, { caption });
-        console.log(`sendToTelegramWithRetry: Success on attempt ${attempt}`);
-        return { success: true, attempts: attempt };
-    }, { retries: 3, delayMs: 2000, label: 'Send Telegram Document Report' });
+    installTelegramSendRetry(botInstance);
+    const stream = fs.createReadStream(filePath);
+    await botInstance.sendDocument(chatId, stream, { caption });
+    return { success: true };
 };
 
 // ==================== appendToGoogleSheet ====================
