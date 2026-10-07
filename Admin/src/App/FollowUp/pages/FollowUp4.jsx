@@ -383,6 +383,7 @@ const FollowUp4 = () => {
     const [rejectSubmitSaving, setRejectSubmitSaving] = useState(false);
     const [rejectSubmitLoading, setRejectSubmitLoading] = useState(false);
     const [isRejectSubmitModalOpen, setIsRejectSubmitModalOpen] = useState(false);
+    const [isRejectSubmitPreviewOpen, setIsRejectSubmitPreviewOpen] = useState(false);
     const [rejectSubmitHistoryList, setRejectSubmitHistoryList] = useState([]);
 
     const fetchRejectSubmitData = useCallback(async () => {
@@ -426,19 +427,33 @@ const FollowUp4 = () => {
     }, [activeTab, fetchRejectSubmitData]);
 
     const handleOpenCreateRejectSubmit = (targetDate = null) => {
-        if (targetDate) {
-            setRejectSubmitDate(targetDate);
-            const forDate = rejectSubmitHistoryList.filter(r => r.date === targetDate);
-            const countsObj = {};
-            forDate.forEach(r => {
-                countsObj[r.reason] = r.count;
-            });
-            setRejectSubmitCounts(countsObj);
-        } else {
-            setRejectSubmitDate(getTodayStr());
-            setRejectSubmitCounts({});
-        }
+        const nextDate = targetDate || getTodayStr();
+        setRejectSubmitDate(nextDate);
+        const forDate = rejectSubmitHistoryList.filter(r => r.date === nextDate);
+        const countsObj = {};
+        forDate.forEach(r => {
+            countsObj[r.reason] = r.count;
+        });
+        setRejectSubmitCounts(countsObj);
+        setIsRejectSubmitPreviewOpen(false);
         setIsRejectSubmitModalOpen(true);
+    };
+
+    const submitListForRejectDate = useMemo(() => {
+        const targetBrand = selectedBrand || user?.brand || '888MDM';
+        return submitList.filter(item => {
+            if (item.date !== rejectSubmitDate) return false;
+            if (!targetBrand) return true;
+            return item.brand === targetBrand || !item.brand;
+        });
+    }, [submitList, rejectSubmitDate, selectedBrand, user?.brand]);
+
+    const toggleRejectSubmitPreview = async () => {
+        const nextState = !isRejectSubmitPreviewOpen;
+        setIsRejectSubmitPreviewOpen(nextState);
+        if (nextState) {
+            await fetchSubmitData();
+        }
     };
 
     const handleSaveRejectSubmit = async () => {
@@ -1324,7 +1339,7 @@ const FollowUp4 = () => {
                             </p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2 relative">
                             {/* Date Filter */}
                             <DateRangeDropdown
                                 from={rejectSubmitStartDate}
@@ -1335,6 +1350,57 @@ const FollowUp4 = () => {
                                     setRejectSubmitEndDate(to);
                                 }}
                             />
+
+                            <div className="relative">
+                                <button
+                                    onClick={toggleRejectSubmitPreview}
+                                    className="flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-lg cursor-pointer"
+                                >
+                                    <FaListUl size={14} />
+                                    <span>FOLLOW UP</span>
+                                </button>
+
+                                {isRejectSubmitPreviewOpen && (
+                                    <div className="absolute right-0 top-full mt-2 w-[360px] max-w-[calc(100vw-2rem)] bg-slate-900 border border-slate-700 rounded-[5px] shadow-2xl z-20">
+                                        <div className="flex items-center justify-between p-2 border-b border-slate-700 bg-slate-800/80">
+                                            <span className="text-[11px] font-bold text-emerald-400">FOLLOW UP SUBMIT - {rejectSubmitDate}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsRejectSubmitPreviewOpen(false)}
+                                                className="text-slate-400 hover:text-white text-xs cursor-pointer"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                        <div className="max-h-72 overflow-y-auto p-2 space-y-2">
+                                            {submitLoading ? (
+                                                <div className="text-center text-xs text-slate-400 py-6">
+                                                    <MdOutlineSync className="animate-spin inline-block text-lg mb-2 text-emerald-400" />
+                                                    <div>កំពុងទាញយក...</div>
+                                                </div>
+                                            ) : submitListForRejectDate.length === 0 ? (
+                                                <div className="text-center text-xs text-slate-400 py-6 border border-dashed border-slate-700 rounded-[5px]">
+                                                    គ្មានข้อมูล FOLLOW UP SUBMIT សម្រាប់ {rejectSubmitDate}
+                                                </div>
+                                            ) : (
+                                                submitListForRejectDate.slice(0, 12).map((item, idx) => (
+                                                    <div key={item._id || idx} className="rounded-[5px] border border-slate-700 bg-slate-800/80 p-2">
+                                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                                            <span className="font-bold text-xs text-slate-100 truncate">{item.name || item.userName || 'No Name'}</span>
+                                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/70 text-emerald-300 font-bold">{item.status || 'PENDING'}</span>
+                                                        </div>
+                                                        <div className="text-[10px] text-slate-300 space-y-0.5">
+                                                            <div>Phone: <span className="font-mono text-slate-100">{item.phone || '-'}</span></div>
+                                                            <div>Model: <span className="font-mono text-slate-100">{item.model || '-'}</span></div>
+                                                            <div>Source: <span className="text-slate-100">{item.fromSource || '-'}</span></div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             {hasPermission('/follow-up/follow-up-4', 'create') && (
                                 <button

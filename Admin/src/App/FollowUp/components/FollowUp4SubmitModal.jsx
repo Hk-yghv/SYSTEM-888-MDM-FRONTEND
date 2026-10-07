@@ -261,7 +261,7 @@ const FollowUp4SubmitModal = ({
                                         aria-expanded={isModelOptionsOpen}
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => setIsModelOptionsOpen(open => !open)}
-                                        className="px-3 bg-slate-900 text-slate-300 text-xs border border-l-0 border-slate-700 rounded-r hover:text-white"
+                                        className="px-3 bg-slate-900 text-black text-xs border border-l-0 border-slate-700 rounded-r hover:text-white"
                                     >
                                         ▼
                                     </button>
@@ -283,7 +283,7 @@ const FollowUp4SubmitModal = ({
                                                     setFormData({ ...formData, model });
                                                     setIsModelOptionsOpen(false);
                                                 }}
-                                                className="block w-full px-3 py-2 text-left text-xs text-slate-100 hover:bg-slate-800"
+                                                className="block w-full px-3 py-2 text-left text-xs text-black hover:bg-slate-200"
                                             >
                                                 {model}
                                             </button>
