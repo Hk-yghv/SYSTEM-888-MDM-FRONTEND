@@ -88,7 +88,7 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">ថ្ងៃខែឆ្នាំ *</label>
+                            <label className="block text-xs font-semibold text-black mb-1">ថ្ងៃខែឆ្នាំ *</label>
                             <input
                                 type="date"
                                 required
@@ -99,7 +99,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">NAME</label>
+                            <label className="block text-xs font-semibold text-black mb-1">NAME</label>
                             <input
                                 type="text"
                                 placeholder="បញ្ចូលឈ្មោះ"
@@ -110,7 +110,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">USER NAME</label>
+                            <label className="block text-xs font-semibold text-black mb-1">USER NAME</label>
                             <input
                                 type="text"
                                 placeholder="Username"
@@ -123,7 +123,7 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">PHONE NUMBER</label>
+                            <label className="block text-xs font-semibold text-black mb-1">PHONE NUMBER</label>
                             <input
                                 type="text"
                                 placeholder="លេខទូរស័ព្ទ"
@@ -134,7 +134,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">NAME TELEGRAM</label>
+                            <label className="block text-xs font-semibold text-black mb-1">NAME TELEGRAM</label>
                             <input
                                 type="text"
                                 placeholder="ឈ្មោះ Telegram"
@@ -145,7 +145,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">PG/TL From</label>
+                            <label className="block text-xs font-semibold text-black mb-1">PG/TL From</label>
                             <select
                                 value={formData.fromSource}
                                 onChange={(e) => setFormData({ ...formData, fromSource: e.target.value })}
@@ -161,7 +161,7 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Name PG/TL From</label>
+                            <label className="block text-xs font-semibold text-black mb-1">Name PG/TL From</label>
                             <input
                                 type="text"
                                 placeholder="NAME PG/TL មកពី"
@@ -172,7 +172,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">PG/TL Contact</label>
+                            <label className="block text-xs font-semibold text-black mb-1">PG/TL Contact</label>
                             <select
                                 value={formData.contactType}
                                 onChange={(e) => setFormData({ ...formData, contactType: e.target.value })}
@@ -186,7 +186,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Name PG/TL Contact</label>
+                            <label className="block text-xs font-semibold text-black mb-1">Name PG/TL Contact</label>
                             <input
                                 type="text"
                                 placeholder="NAME PG/TL ទាក់ទង"
@@ -199,7 +199,7 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">វាយតម្លៃ</label>
+                            <label className="block text-xs font-semibold text-black mb-1">វាយតម្លៃ</label>
                             <input
                                 type="text"
                                 placeholder="តម្លៃវាយតម្លៃ (ឧទាហរណ៍៖ $500)"
@@ -210,7 +210,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">បានស្នើ</label>
+                            <label className="block text-xs font-semibold text-black mb-1">បានស្នើ</label>
                             <input
                                 type="text"
                                 placeholder="ចំនួនស្នើ (ឧទាហរណ៍៖ $400)"
@@ -221,7 +221,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">{t('collateral')}</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('collateral')}</label>
                             <div className="flex gap-1.5">
                                 <select
                                     value={formData.assetType}
@@ -239,7 +239,7 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">MODEL</label>
+                            <label className="block text-xs font-semibold text-black mb-1">MODEL</label>
                             <div className="relative">
                                 <div className="flex">
                                     <input
@@ -298,7 +298,7 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">{t('status')}</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('status')}</label>
                             <select
                                 value={formData.status}
                                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -312,7 +312,7 @@ const FollowUp4SubmitModal = ({
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-slate-300 mb-1">{t('description')}</label>
+                        <label className="block text-xs font-semibold text-black mb-1">{t('description')}</label>
                         <textarea
                             rows="3"
                             placeholder="ការបរិយាយបន្ថែម..."
