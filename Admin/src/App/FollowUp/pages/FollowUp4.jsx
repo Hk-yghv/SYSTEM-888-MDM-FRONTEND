@@ -1144,7 +1144,7 @@ const FollowUp4 = () => {
                                     placeholder="ស្វែងរក Name, Phone, Username..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full bg-slate-900/90 text-xs text-slate-100 pl-9 pr-3 py-2 rounded-lg border border-slate-700 outline-none focus:border-emerald-500"
+                                    className="w-full bg-slate-900/90 text-xs text-black pl-9 pr-3 py-2 rounded-lg border border-slate-700 outline-none focus:border-emerald-500"
                                 />
                             </div>
 
@@ -1163,7 +1163,7 @@ const FollowUp4 = () => {
                         {hasPermission('/follow-up/follow-up-4', 'create') && (
                             <button
                                 onClick={handleOpenCreateSubmitForm}
-                                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-md cursor-pointer"
+                                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-black font-semibold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-md cursor-pointer"
                             >
                                 <FaPlusCircle size={15} />
                                 <span>{t('addFollowUpSubmit')}</span>
