@@ -18,8 +18,10 @@ const RejectSubmitModal = ({
     counts = {},
     setCounts,
     onSave,
-    saving = false
+    saving = false,
+    submitList = []
 }) => {
+    const [showFollowUpTable, setShowFollowUpTable] = React.useState(false);
     if (!isOpen) return null;
 
     const handleCountChange = (reason, value) => {
@@ -46,6 +48,17 @@ const RejectSubmitModal = ({
 
     const totalCount = Object.values(counts).reduce((acc, curr) => acc + (Number(curr) || 0), 0);
 
+    const followUpRows = React.useMemo(() => {
+        const targetDate = (date || '').trim();
+        if (!targetDate) return [];
+
+        return (submitList || []).filter(item => {
+            if (!item || item.date !== targetDate) return false;
+            if (!brand) return true;
+            return item.brand === brand || !item.brand;
+        });
+    }, [submitList, date, brand]);
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
             <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -70,24 +83,82 @@ const RejectSubmitModal = ({
                 {/* Modal Body */}
                 <div className="p-6 overflow-y-auto space-y-4 flex-1">
                     {/* Date Selector & Total summary */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-2 rounded-[5px] border border-slate-700">
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <FaRegCalendarAlt className="text-rose-400 text-sm" />
-                            <span className="text-xs font-semibold text-slate-300">កាលបរិច្ឆេទ៖</span>
-                            <input
-                                type="date"
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                                className="bg-slate-800 text-sm text-slate-100 px-3 py-1.5 rounded-lg border border-slate-600 outline-none cursor-pointer font-mono font-bold"
-                            />
+                    <div className="space-y-3">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-2 rounded-[5px] border border-slate-700">
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <FaRegCalendarAlt className="text-rose-400 text-sm" />
+                                <span className="text-xs font-semibold text-slate-300">កាលបរិច្ឆេទ៖</span>
+                                <input
+                                    type="date"
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                    className="bg-slate-800 text-sm text-slate-100 px-3 py-1.5 rounded-lg border border-slate-600 outline-none cursor-pointer font-mono font-bold"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowFollowUpTable(prev => !prev)}
+                                    className="bg-slate-700 hover:bg-slate-600 text-slate-100 text-[11px] font-bold px-3 py-2 rounded-[5px] transition-all cursor-pointer"
+                                >
+                                    FOLLOW UP
+                                </button>
+                                <div className="text-right">
+                                    <span className="text-xs text-slate-400 mr-2">សរុបប្រចាំថ្ងៃ៖</span>
+                                    <span className="text-rose-400 font-mono font-bold text-base bg-rose-950/60 border border-rose-800/40 px-3 py-1 rounded-lg">
+                                        {totalCount} ករណី
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="text-right w-full sm:w-auto">
-                            <span className="text-xs text-slate-400 mr-2">សរុបប្រចាំថ្ងៃ៖</span>
-                            <span className="text-rose-400 font-mono font-bold text-base bg-rose-950/60 border border-rose-800/40 px-3 py-1 rounded-lg">
-                                {totalCount} ករណី
-                            </span>
-                        </div>
+                        {showFollowUpTable && (
+                            <div className="bg-slate-900/90 border border-slate-700 rounded-[5px] overflow-hidden shadow-xl">
+                                <div className="flex items-center justify-between p-2 border-b border-slate-700 bg-slate-800/80">
+                                    <span className="text-[11px] font-bold text-emerald-400">FOLLOW UP SUBMIT - {date}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowFollowUpTable(false)}
+                                        className="text-slate-400 hover:text-white text-xs cursor-pointer"
+                                    >
+                                        បិទ
+                                    </button>
+                                </div>
+                                <div className="max-h-64 overflow-y-auto">
+                                    {followUpRows.length === 0 ? (
+                                        <div className="text-center py-6 text-xs text-slate-400 px-3">
+                                            គ្មានข้อมูล FOLLOW UP SUBMIT សម្រាប់ {date}
+                                        </div>
+                                    ) : (
+                                        <table className="w-full text-left text-[11px] text-slate-200">
+                                            <thead className="bg-slate-950/80 text-slate-400 uppercase">
+                                                <tr>
+                                                    <th className="py-1.5 px-2">Name</th>
+                                                    <th className="py-1.5 px-2">Phone</th>
+                                                    <th className="py-1.5 px-2">Model</th>
+                                                    <th className="py-1.5 px-2">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-700/60">
+                                                {followUpRows.map((item, idx) => (
+                                                    <tr key={item._id || idx} className="hover:bg-slate-800/60">
+                                                        <td className="py-1.5 px-2 font-medium text-slate-100">{item.name || item.userName || 'N/A'}</td>
+                                                        <td className="py-1.5 px-2 font-mono text-slate-300">{item.phone || '-'}</td>
+                                                        <td className="py-1.5 px-2 font-mono text-slate-300">{item.model || '-'}</td>
+                                                        <td className="py-1.5 px-2">
+                                                            <span className="inline-block px-1.5 py-0.5 rounded bg-emerald-900/70 text-emerald-300 text-[10px] font-bold">
+                                                                {item.status || 'PENDING'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Dynamic Reason List */}
