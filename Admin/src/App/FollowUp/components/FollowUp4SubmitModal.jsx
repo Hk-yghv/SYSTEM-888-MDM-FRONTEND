@@ -111,7 +111,7 @@ const FollowUp4SubmitModal = ({
 
     const contactTypes = droplists.contactTypes && droplists.contactTypes.length > 0
         ? droplists.contactTypes
-        : ['Telegram', 'Chat', 'Call', 'Walk-in', 'Other'];
+        : ['Telegram', 'Page', 'Call', 'Walk-in', 'Other'];
 
     const statuses = droplists.statuses && droplists.statuses.length > 0
         ? droplists.statuses
