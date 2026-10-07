@@ -92,7 +92,7 @@ const FollowUp4SubmitModal = ({
     submitting = false,
     droplists = {
         sources: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'],
-        contactTypes: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'],
+        contactTypes: ['Telegram', 'Page', 'Call', 'Walk-in', 'Other'],
         statuses: ['PENDING', 'REVIEW', 'REJECT1', 'REJECT2', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
         assetTypes: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'],
         pgTlNames: [],
