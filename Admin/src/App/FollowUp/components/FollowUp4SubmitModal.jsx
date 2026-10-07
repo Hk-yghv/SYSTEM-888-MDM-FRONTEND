@@ -43,7 +43,7 @@ const SuggestionField = ({ id, value, onChange, options = [], placeholder, texta
                 onKeyDown={(event) => {
                     if (event.key === 'Escape') setIsOpen(false);
                 }}
-                className={`w-full bg-slate-900 text-slate-100 text-xs ${textarea ? 'p-2' : 'px-3 py-2'} rounded border border-slate-700 outline-none focus:border-emerald-500`}
+                className={`w-full bg-slate-200 text-black text-xs ${textarea ? 'p-2' : 'px-3 py-2'} rounded border border-slate-700 outline-none focus:border-emerald-500`}
             />
             {isOpen && (
                 <div
@@ -154,7 +154,7 @@ const FollowUp4SubmitModal = ({
                             <select
                                 value={formData.brand}
                                 onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                                className="w-full bg-slate-800 text-slate-100 text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 font-bold"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 font-bold"
                             >
                                 {brandsList.map((b, i) => (
                                     <option key={i} value={b}>{b}</option>
@@ -171,7 +171,7 @@ const FollowUp4SubmitModal = ({
                                 required
                                 value={formData.date}
                                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 font-mono"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 font-mono"
                             />
                         </div>
 
@@ -182,7 +182,7 @@ const FollowUp4SubmitModal = ({
                                 placeholder="បញ្ចូលឈ្មោះ"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500"
                             />
                         </div>
 
@@ -193,7 +193,7 @@ const FollowUp4SubmitModal = ({
                                 placeholder="Username"
                                 value={formData.userName}
                                 onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500"
                             />
                         </div>
                     </div>
@@ -206,7 +206,7 @@ const FollowUp4SubmitModal = ({
                                 placeholder="លេខទូរស័ព្ទ"
                                 value={formData.phone}
                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 font-mono"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 font-mono"
                             />
                         </div>
 
@@ -217,7 +217,7 @@ const FollowUp4SubmitModal = ({
                                 placeholder="ឈ្មោះ Telegram"
                                 value={formData.nameTelegram}
                                 onChange={(e) => setFormData({ ...formData, nameTelegram: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500"
                             />
                         </div>
 
@@ -226,7 +226,7 @@ const FollowUp4SubmitModal = ({
                             <select
                                 value={formData.fromSource}
                                 onChange={(e) => setFormData({ ...formData, fromSource: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 cursor-pointer"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 cursor-pointer"
                             >
                                 <option value="">-- ជ្រើសរើសប្រភព --</option>
                                 {sources.map((s, i) => (
@@ -253,7 +253,7 @@ const FollowUp4SubmitModal = ({
                             <select
                                 value={formData.contactType}
                                 onChange={(e) => setFormData({ ...formData, contactType: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 cursor-pointer"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 cursor-pointer"
                             >
                                 <option value="">-- ជ្រើសរើសប្រភេទទំនាក់ទំនង --</option>
                                 {contactTypes.map((c, i) => (
@@ -282,7 +282,7 @@ const FollowUp4SubmitModal = ({
                                 placeholder="តម្លៃវាយតម្លៃ (ឧទាហរណ៍៖ $500)"
                                 value={formData.appraisal}
                                 onChange={(e) => setFormData({ ...formData, appraisal: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 font-mono text-amber-300"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 font-mono text-amber-300"
                             />
                         </div>
 
@@ -293,7 +293,7 @@ const FollowUp4SubmitModal = ({
                                 placeholder="ចំនួនស្នើ (ឧទាហរណ៍៖ $400)"
                                 value={formData.requested}
                                 onChange={(e) => setFormData({ ...formData, requested: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 font-mono text-emerald-300"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 font-mono text-emerald-300"
                             />
                         </div>
 
@@ -303,7 +303,7 @@ const FollowUp4SubmitModal = ({
                                 <select
                                     value={formData.assetType}
                                     onChange={(e) => setFormData({ ...formData, assetType: e.target.value })}
-                                    className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 cursor-pointer"
+                                    className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 cursor-pointer"
                                 >
                                     <option value="">-- ជ្រើសរើស ឬ វាយបញ្ចូល --</option>
                                     {assetTypes.map((a, i) => (
@@ -330,7 +330,7 @@ const FollowUp4SubmitModal = ({
                                         onFocus={() => setIsModelOptionsOpen(true)}
                                         onBlur={() => setIsModelOptionsOpen(false)}
                                         onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded-l border border-slate-700 outline-none focus:border-emerald-500"
+                                        className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded-l border border-slate-600 outline-none focus:border-emerald-500"
                                     />
                                     <button
                                         type="button"
@@ -338,7 +338,7 @@ const FollowUp4SubmitModal = ({
                                         aria-expanded={isModelOptionsOpen}
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => setIsModelOptionsOpen(open => !open)}
-                                        className="px-3 bg-slate-900 text-black text-xs border border-l-0 border-slate-700 rounded-r hover:text-white"
+                                        className="px-3 bg-slate-200 text-black text-xs border border-l-0 border-slate-600 rounded-r hover:text-white"
                                     >
                                         ▼
                                     </button>
@@ -379,7 +379,7 @@ const FollowUp4SubmitModal = ({
                             <select
                                 value={formData.status}
                                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500 cursor-pointer font-bold text-amber-400"
+                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 cursor-pointer font-bold text-amber-400"
                             >
                                 {statuses.map((st, i) => (
                                     <option key={i} value={st}>{st}</option>
