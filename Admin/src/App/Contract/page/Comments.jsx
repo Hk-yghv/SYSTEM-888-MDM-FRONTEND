@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+    import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -278,8 +278,8 @@ const Comments = () => {
                         ) : (
                             visibleContracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx + 1}</td>
-                                    <td className='px-4 py-1 font-mono text-slate-700 font-medium whitespace-nowrap'>
+                                    <td className='px-4 py-1 text-center font-khmer text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx + 1}</td>
+                                    <td className='px-4 py-1 font-khmer text-slate-700 font-medium whitespace-nowrap'>
                                         {formatCommentDate(item.commentDate, formatCommentDate(item.updatedAt, item.inputDate))}
                                     </td>
                                     <td className='px-4 py-1'>
@@ -288,13 +288,13 @@ const Comments = () => {
                                     </td>
                                     <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
                                     <td className='px-4 py-1 text-teal-800 font-sans font-medium max-w-[260px] truncate' title={item.notes}>
-                                        💡 {item.notes || 'No comment provided'}
+                                        {item.notes || 'No comment provided'}
                                     </td>
                                     <td className='px-4 py-1 text-center'>
                                         <span className='px-3 py-1 bg-teal-50 text-teal-800 border border-teal-300 rounded-full font-bold text-[10px] uppercase'>Comments</span>
                                     </td>
-                                    <td className='px-4 py-1 text-center font-mono text-indigo-700 font-bold'>
-                                        <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
+                                    <td className='px-4 py-1 text-center font-khmer text-indigo-700 font-bold'>
+                                        <CopyCell text={item.contractIid || '—'} className='font-khmer font-bold text-indigo-700' />
                                     </td>
                                     <td className="px-4 py-1 text-center relative">
                                         <div className="relative inline-block text-left">
@@ -369,7 +369,7 @@ const Comments = () => {
                                     <tbody className="divide-y divide-slate-100">
                                         {commentHistoryEntries.map((entry, index) => (
                                             <tr key={entry._id || index}>
-                                                <td className="whitespace-nowrap px-3 py-2 font-mono text-slate-600">
+                                                <td className="whitespace-nowrap px-3 py-2 font-khmer text-slate-600">
                                                     {formatCommentDate(entry.commentedAt, entry.isCurrent ? formatCommentDate(selectedHistoryItem.updatedAt, selectedHistoryItem.inputDate) : '')}
                                                 </td>
                                                 <td className="whitespace-pre-wrap px-3 py-2 text-slate-800">
@@ -477,7 +477,7 @@ const Comments = () => {
                         <div className="p-2 bg-gray-900/80 rounded-[5px] border border-cyan-500/30 space-y-2 text-xs">
                             <p className="text-gray-400">Customer: <span className="text-gray-100 font-bold">{selectedInfo.customerNameEn}</span></p>
                             <p className="text-gray-400">Device Model: <span className="text-gray-200 font-semibold">{selectedInfo.model}</span></p>
-                            <p className="text-gray-400">Serial Number: <span className="text-indigo-300 font-mono">{selectedInfo.serialNumber}</span></p>
+                            <p className="text-gray-400">Serial Number: <span className="text-indigo-300 font-khmer">{selectedInfo.serialNumber}</span></p>
                             <div className="pt-2 border-t border-gray-800">
                                 <span className="text-cyan-400 font-bold block mb-1">Comment Note:</span>
                                 <p className="text-white bg-gray-950 p-2 rounded-[5px] border border-gray-800 font-sans leading-relaxed">{selectedInfo.notes || 'No notes'}</p>
