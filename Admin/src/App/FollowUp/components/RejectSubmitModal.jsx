@@ -19,7 +19,10 @@ const RejectSubmitModal = ({
     setCounts,
     onSave,
     saving = false,
-    submitList = []
+    submitList = [],
+    submitLoading = false,
+    submitError = '',
+    onLoadSubmitList
 }) => {
     const [showFollowUpTable, setShowFollowUpTable] = React.useState(false);
 
@@ -51,12 +54,8 @@ const RejectSubmitModal = ({
         const targetDate = (date || '').trim();
         if (!targetDate) return [];
 
-        return (submitList || []).filter(item => {
-            if (!item || item.date !== targetDate) return false;
-            if (!brand) return true;
-            return item.brand === brand || !item.brand;
-        });
-    }, [submitList, date, brand]);
+        return (submitList || []).filter(item => item && item.date === targetDate);
+    }, [submitList, date]);
 
     if (!isOpen) return null;
 
@@ -92,7 +91,11 @@ const RejectSubmitModal = ({
                                 <input
                                     type="date"
                                     value={date}
-                                    onChange={(e) => setDate(e.target.value)}
+                                    onChange={(e) => {
+                                        const nextDate = e.target.value;
+                                        setDate(nextDate);
+                                        if (showFollowUpTable) onLoadSubmitList?.(nextDate);
+                                    }}
                                     className="bg-slate-800 text-sm text-slate-100 px-3 py-1.5 rounded-lg border border-slate-600 outline-none cursor-pointer font-mono font-bold"
                                 />
                             </div>
@@ -100,7 +103,11 @@ const RejectSubmitModal = ({
                             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                                 <button
                                     type="button"
-                                    onClick={() => setShowFollowUpTable(prev => !prev)}
+                                    onClick={() => {
+                                        const nextOpen = !showFollowUpTable;
+                                        setShowFollowUpTable(nextOpen);
+                                        if (nextOpen) onLoadSubmitList?.(date);
+                                    }}
                                     className="bg-slate-700 hover:bg-slate-600 text-slate-100 text-[11px] font-bold px-3 py-2 rounded-[5px] transition-all cursor-pointer"
                                 >
                                     FOLLOW UP
@@ -126,32 +133,58 @@ const RejectSubmitModal = ({
                                         បិទ
                                     </button>
                                 </div>
-                                <div className="max-h-64 overflow-y-auto">
-                                    {followUpRows.length === 0 ? (
+                                <div className="max-h-72 overflow-auto">
+                                    {submitLoading ? (
+                                        <div className="text-center py-6 text-xs text-slate-400">កំពុងទាញយកទិន្នន័យ...</div>
+                                    ) : submitError ? (
+                                        <div className="text-center py-6 text-xs text-rose-300">{submitError}</div>
+                                    ) : followUpRows.length === 0 ? (
                                         <div className="text-center py-6 text-xs text-slate-400 px-3">
-                                            គ្មានข้อมูล FOLLOW UP SUBMIT សម្រាប់ {date}
+                                            គ្មាន FOLLOW UP SUBMIT សម្រាប់ {date}
                                         </div>
                                     ) : (
-                                        <table className="w-full text-left text-[11px] text-slate-200">
+                                        <table className="w-max min-w-full text-left text-[11px] text-slate-200">
                                             <thead className="bg-slate-950/80 text-slate-400 uppercase">
                                                 <tr>
-                                                    <th className="py-1.5 px-2">Name</th>
-                                                    <th className="py-1.5 px-2">Phone</th>
-                                                    <th className="py-1.5 px-2">Model</th>
-                                                    <th className="py-1.5 px-2">Status</th>
+                                                    <th className="py-1.5 px-2 text-center">#</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">ថ្ងៃខែឆ្នាំ</th>
+                                                    <th className="py-1.5 px-2">NAME</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">USER NAME</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">PHONE NUMBER</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">NAME TELEGRAM</th>
+                                                    <th className="py-1.5 px-2">មកពី</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">PG/TL From</th>
+                                                    <th className="py-1.5 px-2">ទាក់ទង</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">PG/TL Contact</th>
+                                                    <th className="py-1.5 px-2">វាយតម្លៃ</th>
+                                                    <th className="py-1.5 px-2">បានស្នើ</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">ប្រភេទទ្រព្យ</th>
+                                                    <th className="py-1.5 px-2">MODEL</th>
+                                                    <th className="py-1.5 px-2">STATUS</th>
+                                                    <th className="py-1.5 px-2">បរិយាយ</th>
+                                                    <th className="py-1.5 px-2 text-center">សកម្មភាព</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-700/60">
                                                 {followUpRows.map((item, idx) => (
                                                     <tr key={item._id || idx} className="hover:bg-slate-800/60">
-                                                        <td className="py-1.5 px-2 font-medium text-slate-100">{item.name || item.userName || 'N/A'}</td>
-                                                        <td className="py-1.5 px-2 font-mono text-slate-300">{item.phone || '-'}</td>
-                                                        <td className="py-1.5 px-2 font-mono text-slate-300">{item.model || '-'}</td>
-                                                        <td className="py-1.5 px-2">
-                                                            <span className="inline-block px-1.5 py-0.5 rounded bg-emerald-900/70 text-emerald-300 text-[10px] font-bold">
-                                                                {item.status || 'PENDING'}
-                                                            </span>
-                                                        </td>
+                                                        <td className="py-1.5 px-2 text-center text-slate-400">{idx + 1}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap font-mono text-emerald-300">{item.date || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap font-medium text-slate-100">{item.name || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap">{item.userName || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap font-mono text-cyan-300">{item.phone || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap text-sky-400">{item.nameTelegram || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap">{item.fromSource || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap">{item.namePgTlFrom || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap">{item.contactType || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap">{item.namePgTlContact || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap font-mono text-amber-300">{item.appraisal || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap font-mono text-emerald-300">{item.requested || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap">{item.assetType || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap font-mono">{item.model || '-'}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap font-bold">{item.status || 'PENDING'}</td>
+                                                        <td className="py-1.5 px-2 min-w-40">{item.description || '-'}</td>
+                                                        <td className="py-1.5 px-2 text-center text-slate-500">-</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -179,7 +212,7 @@ const RejectSubmitModal = ({
                                     key={idx}
                                     className="flex items-center justify-between bg-slate-900/80 hover:bg-slate-900 p-2 rounded-[5px] border border-slate-700/70 hover:border-slate-600 transition-all shadow-xs"
                                 >
-                                    <span className="text-xs font-semibold text-slate-200 flex items-center gap-2">
+                                    <span className="text-xs font-semibold text-black flex items-center gap-2">
                                         <span className="w-5 h-5 rounded-full bg-slate-800 text-black flex items-center justify-center text-[10px] font-mono">
                                             {idx + 1}
                                         </span>

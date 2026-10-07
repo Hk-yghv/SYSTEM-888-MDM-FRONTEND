@@ -384,6 +384,9 @@ const FollowUp4 = () => {
     const [rejectSubmitLoading, setRejectSubmitLoading] = useState(false);
     const [isRejectSubmitModalOpen, setIsRejectSubmitModalOpen] = useState(false);
     const [rejectSubmitHistoryList, setRejectSubmitHistoryList] = useState([]);
+    const [rejectSubmitFollowUpRows, setRejectSubmitFollowUpRows] = useState([]);
+    const [rejectSubmitFollowUpLoading, setRejectSubmitFollowUpLoading] = useState(false);
+    const [rejectSubmitFollowUpError, setRejectSubmitFollowUpError] = useState('');
 
     const fetchRejectSubmitData = useCallback(async () => {
         setRejectSubmitLoading(true);
@@ -436,6 +439,38 @@ const FollowUp4 = () => {
         setRejectSubmitCounts(countsObj);
         setIsRejectSubmitModalOpen(true);
     };
+
+    const fetchRejectSubmitFollowUpRows = useCallback(async (targetDate) => {
+        if (!targetDate) {
+            setRejectSubmitFollowUpRows([]);
+            return;
+        }
+
+        setRejectSubmitFollowUpLoading(true);
+        setRejectSubmitFollowUpError('');
+        try {
+            const params = new URLSearchParams({ date: targetDate });
+            if (user?.brand) params.append('userBrand', user.brand);
+            if (user?.role) params.append('userRole', user.role);
+            if (user?.username) params.append('username', user.username);
+            if (user?.isImmutable) params.append('isImmutable', String(user.isImmutable));
+            if (selectedBrand) params.append('brand', selectedBrand);
+
+            const res = await fetch(`${API_BASE}/follow-up-4/submit?${params.toString()}`);
+            const result = await res.json();
+            if (!res.ok) {
+                throw new Error(result.message || 'Failed to load Follow Up Submit records');
+            }
+
+            setRejectSubmitFollowUpRows(result.data || []);
+        } catch (err) {
+            console.error('Fetch Follow Up Submit for Reject Submit Error:', err);
+            setRejectSubmitFollowUpRows([]);
+            setRejectSubmitFollowUpError(err.message || 'Failed to load Follow Up Submit records');
+        } finally {
+            setRejectSubmitFollowUpLoading(false);
+        }
+    }, [API_BASE, selectedBrand, user]);
 
     const handleSaveRejectSubmit = async () => {
         setRejectSubmitSaving(true);
@@ -1758,7 +1793,10 @@ const FollowUp4 = () => {
                 setCounts={setRejectSubmitCounts}
                 onSave={handleSaveRejectSubmit}
                 saving={rejectSubmitSaving}
-                submitList={submitList}
+                submitList={rejectSubmitFollowUpRows}
+                submitLoading={rejectSubmitFollowUpLoading}
+                submitError={rejectSubmitFollowUpError}
+                onLoadSubmitList={fetchRejectSubmitFollowUpRows}
             />
 
             {/* 3. Reject CS Modal */}

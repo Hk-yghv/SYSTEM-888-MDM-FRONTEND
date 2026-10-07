@@ -107,7 +107,7 @@ const RejectCsModal = ({
                                     key={idx}
                                     className="flex items-center justify-between bg-slate-900/80 hover:bg-slate-900 p-2 rounded-[5px] border border-slate-700/70 hover:border-slate-600 transition-all shadow-xs"
                                 >
-                                    <span className="text-xs font-semibold text-slate-200 flex items-center gap-2">
+                                    <span className="text-xs font-semibold text-black flex items-center gap-2">
                                         <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-[10px] font-mono">
                                             {idx + 1}
                                         </span>
