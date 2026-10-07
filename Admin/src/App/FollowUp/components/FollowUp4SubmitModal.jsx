@@ -62,7 +62,7 @@ const SuggestionField = ({ id, value, onChange, options = [], placeholder, texta
                                 onChange(option);
                                 setIsOpen(false);
                             }}
-                            className="block w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-700"
+                            className="block w-full px-3 py-2 text-left text-xs text-black hover:bg-slate-200"
                         >
                             {option}
                         </button>
