@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
-import { FaLock, FaUnlock } from 'react-icons/fa';
+import { FaLock, FaUnlock, FaTimes, FaSpinner, FaShieldAlt } from 'react-icons/fa';
 import { MdOutlineSync, MdOutlinePhoneIphone } from 'react-icons/md';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
@@ -21,6 +21,9 @@ const Actions = () => {
     const [total, setTotal] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
+
+    // Confirmation Modal state
+    const [confirmModalData, setConfirmModalData] = useState(null); // { contract, newStatus }
 
     const fetchContracts = async (pg = page, search = searchTerm) => {
         setReloading(true);
@@ -56,9 +59,13 @@ const Actions = () => {
 
     const filteredContracts = selectedSearchRecord ? [selectedSearchRecord] : contracts;
 
-    const handleToggleLock = async (contract, newStatus) => {
-        const actionLabel = newStatus === 'LockPhone' || newStatus === 'Locked' ? t('lockPhone') : t('unlockPhone');
-        if (!window.confirm(t('confirmAction') + ` (${actionLabel})`)) return;
+    const handleOpenConfirm = (contract, newStatus) => {
+        setConfirmModalData({ contract, newStatus });
+    };
+
+    const handleExecuteToggleLock = async () => {
+        if (!confirmModalData) return;
+        const { contract, newStatus } = confirmModalData;
 
         setTogglingId(contract._id);
         try {
@@ -92,6 +99,21 @@ const Actions = () => {
 
             const result = await res.json().catch(() => ({}));
             if (res.ok) {
+                // Update local state directly and smoothly without reloading the page
+                setContracts(prev => prev.map(c => {
+                    if (c._id === contract._id || (c.contractId && c.contractId === contract.contractId)) {
+                        return { ...c, lockPhoneStatus: newStatus };
+                    }
+                    return c;
+                }));
+
+                setSelectedSearchRecord(prev => {
+                    if (prev && (prev._id === contract._id || (prev.contractId && prev.contractId === contract.contractId))) {
+                        return { ...prev, lockPhoneStatus: newStatus };
+                    }
+                    return prev;
+                });
+
                 const failedNotifications = result.telegramNotifications?.failed || [];
                 if (result.telegramNotifications?.error) {
                     alert(`Phone lock was saved, but Telegram notification failed: ${result.telegramNotifications.error}`);
@@ -99,7 +121,7 @@ const Actions = () => {
                     const failedIds = failedNotifications.map((notification) => notification.chatId).join(', ');
                     alert(`Phone lock was saved, but Telegram could not send to: ${failedIds}`);
                 }
-                await fetchContracts(page);
+                setConfirmModalData(null);
             } else {
                 alert(`Failed to update phone lock: ${result.error || res.statusText}`);
             }
@@ -194,18 +216,18 @@ const Actions = () => {
                                             {hasPermission('/lostphone/actions', 'edit') || hasPermission('/lostphone/actions', 'create') ? (
                                                 isLocked ? (
                                                     <button
-                                                        onClick={() => handleToggleLock(item, 'Unlocked')}
+                                                        onClick={() => handleOpenConfirm(item, 'Unlocked')}
                                                         disabled={togglingId === item._id}
-                                                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-emerald-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                                                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-emerald-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
                                                     >
                                                         <FaUnlock size={11} />
                                                         <span>Set to Unlock Phone</span>
                                                     </button>
                                                 ) : (
                                                     <button
-                                                        onClick={() => handleToggleLock(item, 'Locked')}
+                                                        onClick={() => handleOpenConfirm(item, 'Locked')}
                                                         disabled={togglingId === item._id}
-                                                        className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-red-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                                                        className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-red-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
                                                     >
                                                         <FaLock size={11} />
                                                         <span>Set to Lock Phone</span>
@@ -224,6 +246,127 @@ const Actions = () => {
             </div>
 
             <Pagination currentPage={page} totalItems={selectedSearchRecord ? 1 : total} itemsPerPage={LIMIT} onPageChange={setPage} />
+
+            {/* Custom Confirmation UI Modal */}
+            {confirmModalData && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4 animate-in fade-in duration-150"
+                    onClick={() => {
+                        if (!togglingId) setConfirmModalData(null);
+                    }}
+                >
+                    <div
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Close button */}
+                        <button
+                            type="button"
+                            disabled={!!togglingId}
+                            onClick={() => setConfirmModalData(null)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-md transition-colors cursor-pointer disabled:opacity-30"
+                        >
+                            <FaTimes size={16} />
+                        </button>
+
+                        {/* Top Icon */}
+                        <div className="flex flex-col items-center text-center space-y-2">
+                            <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform ${
+                                confirmModalData.newStatus === 'Locked'
+                                    ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-600 border border-rose-200 dark:border-rose-800 shadow-rose-500/20'
+                                    : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 border border-emerald-200 dark:border-emerald-800 shadow-emerald-500/20'
+                            }`}>
+                                {confirmModalData.newStatus === 'Locked' ? (
+                                    <FaLock className="text-2xl animate-pulse" />
+                                ) : (
+                                    <FaUnlock className="text-2xl animate-pulse" />
+                                )}
+                            </div>
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white font-khmer">
+                                {confirmModalData.newStatus === 'Locked'
+                                    ? 'បញ្ជាក់ការចាក់សោទូរស័ព្ទ (Lock Device)'
+                                    : 'បញ្ជាក់ការដោះសោទូរស័ព្ទ (Unlock Device)'}
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {confirmModalData.newStatus === 'Locked'
+                                    ? 'តើអ្នកពិតជាចង់កំណត់ចាក់សោ (Lock) លើឧបករណ៍នេះមែនទេ?'
+                                    : 'តើអ្នកពិតជាចង់កំណត់ដោះសោ (Unlock) លើឧបករណ៍នេះមែនទេ?'}
+                            </p>
+                        </div>
+
+                        {/* Device Info Summary Card */}
+                        <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-xs space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">អតិថិជន (Customer):</span>
+                                <span className="font-bold text-slate-800 dark:text-slate-100 truncate max-w-[200px]">
+                                    {confirmModalData.contract?.customerNameKh || confirmModalData.contract?.customerNameEn || '—'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">ម៉ូឌែល (Model):</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-100">
+                                    {confirmModalData.contract?.model || '—'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">Serial / IMEI:</span>
+                                <span className="font-mono font-bold text-emerald-600">
+                                    {confirmModalData.contract?.serialNumber || '—'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700">
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">សកម្មភាព (Action):</span>
+                                <span className={`px-2 py-0.5 rounded font-bold text-[11px] ${
+                                    confirmModalData.newStatus === 'Locked'
+                                        ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                }`}>
+                                    {confirmModalData.newStatus === 'Locked' ? '🔴 Set to Lock Phone' : '🟢 Set to Unlock Phone'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-end gap-2.5 pt-2">
+                            <button
+                                type="button"
+                                disabled={!!togglingId}
+                                onClick={() => setConfirmModalData(null)}
+                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold cursor-pointer transition-all disabled:opacity-40"
+                            >
+                                បោះបង់ (Cancel)
+                            </button>
+                            <button
+                                type="button"
+                                disabled={!!togglingId}
+                                onClick={handleExecuteToggleLock}
+                                className={`px-5 py-2 text-white font-bold rounded-lg text-xs cursor-pointer transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50 ${
+                                    confirmModalData.newStatus === 'Locked'
+                                        ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30'
+                                        : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30'
+                                }`}
+                            >
+                                {togglingId ? (
+                                    <>
+                                        <FaSpinner className="animate-spin text-xs" />
+                                        <span>កំពុងដំណើរការ...</span>
+                                    </>
+                                ) : confirmModalData.newStatus === 'Locked' ? (
+                                    <>
+                                        <FaLock size={11} />
+                                        <span>បញ្ជាក់ចាក់សោ (Confirm Lock)</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <FaUnlock size={11} />
+                                        <span>បញ្ជាក់ដោះសោ (Confirm Unlock)</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
