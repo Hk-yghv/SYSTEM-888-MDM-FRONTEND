@@ -287,7 +287,7 @@ const Comments = () => {
                                         {item.customerNameKh && <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs font-semibold' />}
                                     </td>
                                     <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
-                                    <td className='px-4 py-1 text-teal-800 font-sans font-medium max-w-[260px] truncate' title={item.notes}>
+                                    <td className='px-4 py-1 text-teal-800 font-khmer max-w-[260px] truncate' title={item.notes}>
                                         {item.notes || 'No comment provided'}
                                     </td>
                                     <td className='px-4 py-1 text-center'>

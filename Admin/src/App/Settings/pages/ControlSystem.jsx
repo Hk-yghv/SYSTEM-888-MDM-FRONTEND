@@ -1,16 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
+import { CONTROL_SYSTEM_PATH, CONTROL_SYSTEM_SECTIONS } from '../../../utils/controlSystemPermissions';
 import { IoIosSettings } from 'react-icons/io';
 import { MdOutlineSync, MdAddCircle, MdDelete, MdSave, MdOutlineSettingsBackupRestore } from 'react-icons/md';
 import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup, FaGlobeAmericas, FaDollarSign, FaFolder, FaFolderOpen, FaShieldAlt } from 'react-icons/fa';
 import './ControlSystem.css';
 
+const FOLLOW_UP_SUGGESTION_LISTS = [
+    { category: 'Follow Up 4 PG/TL Names', items: [] },
+    { category: 'Follow Up 4 Descriptions', items: [] }
+];
+
+const ensureFollowUpSuggestionLists = (lists) => {
+    const result = Array.isArray(lists) ? [...lists] : [];
+    FOLLOW_UP_SUGGESTION_LISTS.forEach(defaultList => {
+        if (!result.some(list => list.category === defaultList.category)) {
+            result.push({ ...defaultList, items: [...defaultList.items] });
+        }
+    });
+    return result;
+};
+
+const isFollowUpDroplist = (category) => category.startsWith('Follow Up 4 ') || category.startsWith('Reject ');
 
 
 const ControlSystem = () => {
     const { t } = useLanguage();
-    const { API_BASE, user } = useAuth();
+    const { API_BASE, user, hasPermission } = useAuth();
 
     const [selectedBrand, setSelectedBrand] = useState(user?.brand || '');
     const [brandsList, setBrandsList] = useState(['MDM', 'ECloud']);
@@ -24,6 +41,8 @@ const ControlSystem = () => {
         { category: 'Follow Up 4 Contact Types', items: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'] },
         { category: 'Follow Up 4 Statuses', items: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'] },
         { category: 'Follow Up 4 Asset Types', items: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'] },
+        ...FOLLOW_UP_SUGGESTION_LISTS,
+        ...FOLLOW_UP_SUGGESTION_LISTS,
         { category: 'Reject Submit Reasons', items: ['ឯកសារមិនគ្រប់', 'ព័ត៌មានមិនច្បាស់', 'អតិថិជនប្តូរចិត្ត', 'ទាក់ទងមិនបាន', 'ផ្សេងៗ'] },
         { category: 'Reject CS Reasons', items: ['តម្លៃមិនព្រម', 'គ្មានសមត្ថភាពបង់', 'លក្ខខណ្ឌមិនត្រូវ', 'មិនឆ្លើយតប', 'ផ្សេងៗ'] }
     ]);
@@ -58,10 +77,8 @@ const ControlSystem = () => {
     // Dedicated Follow Up 4 inputs
     const [newRejectSubmitInput, setNewRejectSubmitInput] = useState('');
     const [newRejectCsInput, setNewRejectCsInput] = useState('');
-    const [newFollowUpSourceInput, setNewFollowUpSourceInput] = useState('');
-    const [newFollowUpContactInput, setNewFollowUpContactInput] = useState('');
-    const [newFollowUpStatusInput, setNewFollowUpStatusInput] = useState('');
-    const [newFollowUpAssetInput, setNewFollowUpAssetInput] = useState('');
+    const [newWorkflowOption, setNewWorkflowOption] = useState('');
+    const [selectedWorkflowCategory, setSelectedWorkflowCategory] = useState('Follow Up 4 Sources');
 
     const [restoring, setRestoring] = useState(false);
     const [activeFile, setActiveFile] = useState('lock-screen');
@@ -92,10 +109,36 @@ const ControlSystem = () => {
             files: [{ id: 'brands', label: 'Brand directory', icon: <FaGlobeAmericas />, color: 'text-violet-400' }]
         }] : [])
     ];
-    const activeExplorerFile = explorerFolders.flatMap(folder => folder.files).find(file => file.id === activeFile)
-        || explorerFolders[0].files[0];
+    const canAccessSection = (sectionId) => {
+        const section = CONTROL_SYSTEM_SECTIONS.find(entry => entry.id === sectionId);
+        return !!section && hasPermission(section.path, 'read');
+    };
+    const canEditSection = (sectionId) => {
+        const section = CONTROL_SYSTEM_SECTIONS.find(entry => entry.id === sectionId);
+        return !!section && hasPermission(section.path, 'edit');
+    };
+    const canDeleteSection = (sectionId) => {
+        const section = CONTROL_SYSTEM_SECTIONS.find(entry => entry.id === sectionId);
+        return !!section && hasPermission(section.path, 'delete');
+    };
+    const accessibleExplorerFolders = explorerFolders
+        .map(folder => ({
+            ...folder,
+            files: folder.files.filter(file =>
+                canAccessSection(file.id) && (file.id !== 'brands' || (user?.role === 'Administrator' && selectedBrand === ''))
+            )
+        }))
+        .filter(folder => folder.files.length > 0);
+    const accessibleFiles = accessibleExplorerFolders.flatMap(folder => folder.files);
+    const activeExplorerFile = accessibleFiles.find(file => file.id === activeFile) || accessibleFiles[0] || null;
+    const workflowDroplists = droplists.filter(list => isFollowUpDroplist(list.category));
+    const systemDroplists = droplists.filter(list => !isFollowUpDroplist(list.category));
 
     const handleRestoreFromFirebase = async () => {
+        if (user?.role !== 'Administrator' || !hasPermission(CONTROL_SYSTEM_PATH, 'edit')) {
+            alert('You do not have permission to restore Control System data.');
+            return;
+        }
         const isConfirmed = window.confirm(
             t('restoreNotice') + ':\n\n' +
             'តើអ្នកពិតជាចង់ផ្ទេរទិន្នន័យពី Firebase មក MongoDB វិញមែនទេ?\n' +
@@ -163,6 +206,7 @@ const ControlSystem = () => {
                 { category: 'Follow Up 4 Contact Types', items: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'] },
                 { category: 'Follow Up 4 Statuses', items: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'] },
                 { category: 'Follow Up 4 Asset Types', items: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'] },
+                ...FOLLOW_UP_SUGGESTION_LISTS,
                 { category: 'Reject Submit Reasons', items: ['ឯកសារមិនគ្រប់', 'ព័ត៌មានមិនច្បាស់', 'អតិថិជនប្តូរចិត្ត', 'ទាក់ទងមិនបាន', 'ផ្សេងៗ'] },
                 { category: 'Reject CS Reasons', items: ['តម្លៃមិនព្រម', 'គ្មានសមត្ថភាពបង់', 'លក្ខខណ្ឌមិនត្រូវ', 'មិនឆ្លើយតប', 'ផ្សេងៗ'] }
             ];
@@ -170,7 +214,7 @@ const ControlSystem = () => {
             if (globalRes.ok) {
                 globalData = await globalRes.json();
                 if (globalData.droplists && Array.isArray(globalData.droplists) && globalData.droplists.length > 0) {
-                    globalDroplists = globalData.droplists;
+                    globalDroplists = ensureFollowUpSuggestionLists(globalData.droplists);
                 }
                 const brandCat = globalDroplists.find(d => d.category === 'Brands');
                 if (brandCat && Array.isArray(brandCat.items)) {
@@ -248,7 +292,20 @@ const ControlSystem = () => {
         fetchFieldOrigins(selectedBrand);
     }, [selectedBrand]);
 
-    const saveConfigToMongoDB = async (key, value) => {
+    const saveConfigToMongoDB = async (key, value, sectionId = null, permissionAction = 'edit') => {
+        const mappedSectionId = sectionId || ({
+            lockphone_display_text: 'lock-screen',
+            lockphone_phone_number: 'lock-screen',
+            lockphone_telegram_chat_ids: 'lock-screen',
+            late_penalty_rules: 'penalties',
+            roles: 'roles',
+            droplists: activeExplorerFile?.id
+        })[key];
+        const section = CONTROL_SYSTEM_SECTIONS.find(entry => entry.id === mappedSectionId);
+        if (!section || !hasPermission(section.path, permissionAction)) {
+            alert(`You do not have ${permissionAction} permission for this Control System section.`);
+            return;
+        }
         setSaving(true);
         setMessage('');
         try {
@@ -290,6 +347,10 @@ const ControlSystem = () => {
     };
 
     const saveLockphoneConfig = async () => {
+        if (!canEditSection('lock-screen')) {
+            alert('You do not have edit permission for Device & Security.');
+            return;
+        }
         setSaving(true);
         setMessage('');
         try {
@@ -326,68 +387,79 @@ const ControlSystem = () => {
     };
 
     const handleAddRole = () => {
+        if (!canEditSection('roles')) return;
         if (!newRoleInput.trim()) return;
         const updated = [...roles, newRoleInput.trim()];
         setRoles(updated);
         setNewRoleInput('');
-        saveConfigToMongoDB('roles', updated);
+        saveConfigToMongoDB('roles', updated, 'roles');
     };
 
     const handleDeleteRole = (index) => {
+        if (!canDeleteSection('roles')) return;
         if (roles[index] === 'Administrator') {
             alert('Administrator role cannot be removed!');
             return;
         }
         const updated = roles.filter((_, idx) => idx !== index);
         setRoles(updated);
-        saveConfigToMongoDB('roles', updated);
+        saveConfigToMongoDB('roles', updated, 'roles', 'delete');
     };
 
     const handleAddItemToCategory = () => {
+        if (!canEditSection('dropdowns')) return;
         if (!newItemInput.trim()) return;
-        const updated = [...droplists];
-        updated[selectedCategoryIdx].items.push(newItemInput.trim());
+        const selectedCategory = systemDroplists[selectedCategoryIdx];
+        if (!selectedCategory) return;
+        const updated = droplists.map(category => category.category === selectedCategory.category
+            ? { ...category, items: [...category.items, newItemInput.trim()] }
+            : category);
         setDroplists(updated);
         setNewItemInput('');
-        saveConfigToMongoDB('droplists', updated);
+        saveConfigToMongoDB('droplists', updated, 'dropdowns');
     };
 
     const handleDeleteItemFromCategory = (catIdx, itemIdx) => {
-        const updated = [...droplists];
-        updated[catIdx].items.splice(itemIdx, 1);
+        if (!canDeleteSection('dropdowns')) return;
+        const selectedCategory = systemDroplists[catIdx];
+        if (!selectedCategory) return;
+        const updated = droplists.map(category => category.category === selectedCategory.category
+            ? { ...category, items: category.items.filter((_, index) => index !== itemIdx) }
+            : category);
         setDroplists(updated);
-        saveConfigToMongoDB('droplists', updated);
+        saveConfigToMongoDB('droplists', updated, 'dropdowns', 'delete');
     };
 
     const handleAddSpecificReason = (categoryName, reasonText, setInput) => {
+        if (!canEditSection('follow-up')) return;
         const text = reasonText.trim();
         if (!text) return;
-        const updated = [...droplists];
-        const catIdx = updated.findIndex(d => d.category === categoryName);
-        if (catIdx !== -1) {
-            if (!updated[catIdx].items.includes(text)) {
-                updated[catIdx].items.push(text);
-            }
-        } else {
-            updated.push({ category: categoryName, items: [text] });
-        }
+        const categoryExists = droplists.some(category => category.category === categoryName);
+        const updated = categoryExists
+            ? droplists.map(category => category.category === categoryName && !category.items.includes(text)
+                ? { ...category, items: [...category.items, text] }
+                : category)
+            : [...droplists, { category: categoryName, items: [text] }];
         setDroplists(updated);
         if (setInput) setInput('');
-        saveConfigToMongoDB('droplists', updated);
+        saveConfigToMongoDB('droplists', updated, 'follow-up');
     };
 
     const handleDeleteSpecificReason = (categoryName, itemIndex) => {
-        const updated = [...droplists];
-        const catIdx = updated.findIndex(d => d.category === categoryName);
-        if (catIdx !== -1) {
-            updated[catIdx].items.splice(itemIndex, 1);
-            setDroplists(updated);
-            saveConfigToMongoDB('droplists', updated);
-        }
+        if (!canDeleteSection('follow-up')) return;
+        const updated = droplists.map(category => category.category === categoryName
+            ? { ...category, items: category.items.filter((_, index) => index !== itemIndex) }
+            : category);
+        setDroplists(updated);
+        saveConfigToMongoDB('droplists', updated, 'follow-up', 'delete');
     };
 
     // --- Brand Management (Global Config only) ---
     const handleAddBrand = async () => {
+        if (!canEditSection('brands') || user?.role !== 'Administrator' || selectedBrand !== '') {
+            alert('You do not have edit permission for Organization settings.');
+            return;
+        }
         const name = newBrandInput.trim();
         if (!name) return;
         if (brandsList.includes(name)) {
@@ -443,6 +515,10 @@ const ControlSystem = () => {
     };
 
     const handleCloneFromGlobal = async () => {
+        if (!hasPermission(CONTROL_SYSTEM_PATH, 'edit')) {
+            alert('Clone from Global requires full Control System edit permission.');
+            return;
+        }
         if (!selectedBrand) return;
         if (!window.confirm(`តើអ្នកពិតជាចង់ចម្លងរាល់ការកំណត់ពី Global មកជំនួសការកំណត់របស់ Brand '${selectedBrand}' ដែរឬទេ?`)) return;
         setSaving(true);
@@ -469,10 +545,18 @@ const ControlSystem = () => {
     const [deleteBrandModal, setDeleteBrandModal] = useState({ open: false, brandName: '' });
 
     const handleDeleteBrandClick = (brandName) => {
+        if (!canDeleteSection('brands')) {
+            alert('You do not have delete permission for Organization settings.');
+            return;
+        }
         setDeleteBrandModal({ open: true, brandName });
     };
 
     const handleConfirmDeleteBrand = async () => {
+        if (!canDeleteSection('brands')) {
+            alert('You do not have delete permission for Organization settings.');
+            return;
+        }
         const brandName = deleteBrandModal.brandName;
         if (!brandName) return;
         setSaving(true);
@@ -502,6 +586,10 @@ const ControlSystem = () => {
     };
 
     const handleSaveAllConfigs = async () => {
+        if (!hasPermission(CONTROL_SYSTEM_PATH, 'edit')) {
+            alert('Save All requires full Control System edit permission.');
+            return;
+        }
         setSaving(true);
         setMessage('');
         try {
@@ -577,7 +665,7 @@ const ControlSystem = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {user?.role === 'Administrator' && (
+                    {user?.role === 'Administrator' && hasPermission(CONTROL_SYSTEM_PATH, 'edit') && (
                         <button
                             type="button"
                             onClick={handleRestoreFromFirebase}
@@ -589,14 +677,16 @@ const ControlSystem = () => {
                             <span>{restoring ? 'កំពុង Restore...' : 'Restore from Firebase'}</span>
                         </button>
                     )}
-                    <button
-                        onClick={handleSaveAllConfigs}
-                        disabled={saving}
-                        className='flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold cursor-pointer shadow-lg shadow-emerald-600/20 transition-all'
-                    >
-                        <MdSave size={16} />
-                        <span>{saving ? 'រក្សាទុក...' : 'Save All Settings'}</span>
-                    </button>
+                    {hasPermission(CONTROL_SYSTEM_PATH, 'edit') && (
+                        <button
+                            onClick={handleSaveAllConfigs}
+                            disabled={saving}
+                            className='flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold cursor-pointer shadow-lg shadow-emerald-600/20 transition-all'
+                        >
+                            <MdSave size={16} />
+                            <span>{saving ? 'រក្សាទុក...' : 'Save All Settings'}</span>
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -621,16 +711,18 @@ const ControlSystem = () => {
                         </select>
 
                         {selectedBrand && (
-                            <button
-                                type="button"
-                                onClick={handleCloneFromGlobal}
-                                disabled={saving}
-                                className="px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 rounded-md text-xs font-bold transition-all border border-sky-200 flex items-center gap-1.5 cursor-pointer"
-                                title="Copy all current Global configurations into this brand"
-                            >
-                                <MdOutlineSettingsBackupRestore className="text-sm" />
-                                <span>{t('syncFromGlobal')}</span>
-                            </button>
+                            hasPermission(CONTROL_SYSTEM_PATH, 'edit') && (
+                                <button
+                                    type="button"
+                                    onClick={handleCloneFromGlobal}
+                                    disabled={saving}
+                                    className="px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 rounded-md text-xs font-bold transition-all border border-sky-200 flex items-center gap-1.5 cursor-pointer"
+                                    title="Copy all current Global configurations into this brand"
+                                >
+                                    <MdOutlineSettingsBackupRestore className="text-sm" />
+                                    <span>{t('syncFromGlobal')}</span>
+                                </button>
+                            )
                         )}
                     </div>
                 </div>
@@ -673,7 +765,7 @@ const ControlSystem = () => {
                             <FaFolderOpen className="text-sky-700" /> Computer
                         </div>
                         <nav aria-label="Control system folders" className="space-y-2 pl-4">
-                            {explorerFolders.map(folder => {
+                            {accessibleExplorerFolders.map(folder => {
                                 const folderIsOpen = folder.files.some(file => file.id === activeExplorerFile.id);
                                 return (
                                     <div key={folder.name}>
@@ -702,6 +794,12 @@ const ControlSystem = () => {
                     </aside>
 
                     <main className="min-w-0 bg-white">
+                        {!activeExplorerFile && (
+                            <div className="p-6 text-sm text-slate-500">
+                                You do not have read permission for any Control System section.
+                            </div>
+                        )}
+                        {activeExplorerFile && <>
                         <div className="grid grid-cols-[minmax(120px,1fr)_minmax(110px,.8fr)_minmax(100px,1fr)] border-b border-slate-300 bg-[#f3f3f3] px-3 py-2 text-xs font-semibold text-slate-700">
                             <span>Name</span><span>Type</span><span>Data</span>
                         </div>
@@ -730,6 +828,7 @@ const ControlSystem = () => {
                                 type="text"
                                 value={lockphoneDisplayText}
                                 onChange={(e) => setLockphoneDisplayText(e.target.value)}
+                                disabled={!canEditSection('lock-screen')}
                                 className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-khmer"
                                 placeholder="e.g. ទូរស័ព្ទរបស់ {{customerName}} ត្រូវបានចាក់សោ"
                             />
@@ -743,6 +842,7 @@ const ControlSystem = () => {
                                 type="text"
                                 value={lockphonePhoneNumber}
                                 onChange={(e) => setLockphonePhoneNumber(e.target.value)}
+                                disabled={!canEditSection('lock-screen')}
                                 className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-mono"
                                 placeholder="+855 12 903 120"
                             />
@@ -755,6 +855,7 @@ const ControlSystem = () => {
                                     inputMode="numeric"
                                     value={newLockphoneTelegramChatId}
                                     onChange={(e) => setNewLockphoneTelegramChatId(e.target.value)}
+                                    disabled={!canEditSection('lock-screen')}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             e.preventDefault();
@@ -767,6 +868,7 @@ const ControlSystem = () => {
                                 <button
                                     type="button"
                                     onClick={addLockphoneTelegramChatId}
+                                    disabled={!canEditSection('lock-screen')}
                                     className="rounded-[5px] bg-slate-700 px-4 font-bold text-white hover:bg-slate-600"
                                 >
                                     Add ID
@@ -780,14 +882,21 @@ const ControlSystem = () => {
                                     {lockphoneTelegramChatIds.map((chatId) => (
                                         <li key={chatId} className="flex items-center justify-between rounded-[5px] border border-gray-700 bg-gray-900 px-3 py-2 font-mono text-xs text-gray-200">
                                             <span>{chatId}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => setLockphoneTelegramChatIds((ids) => ids.filter((id) => id !== chatId))}
-                                                className="font-sans font-semibold text-rose-400 hover:text-rose-300"
-                                                aria-label={`Remove Telegram ID ${chatId}`}
-                                            >
-                                                Remove
-                                            </button>
+                                            {canDeleteSection('lock-screen') && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (!canDeleteSection('lock-screen')) return;
+                                                        const updated = lockphoneTelegramChatIds.filter(id => id !== chatId);
+                                                        setLockphoneTelegramChatIds(updated);
+                                                        saveConfigToMongoDB('lockphone_telegram_chat_ids', updated, 'lock-screen', 'delete');
+                                                    }}
+                                                    className="font-sans font-semibold text-rose-400 hover:text-rose-300"
+                                                    aria-label={`Remove Telegram ID ${chatId}`}
+                                                >
+                                                    Remove
+                                                </button>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>
@@ -796,7 +905,7 @@ const ControlSystem = () => {
                         <div className="pt-2 text-right">
                             <button
                                 onClick={saveLockphoneConfig}
-                                disabled={saving}
+                                disabled={saving || !canEditSection('lock-screen')}
                                 className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-[5px] font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-lg shadow-red-600/30"
                             >
                                 <MdSave size={16} /> Save Lock Config
@@ -821,6 +930,7 @@ const ControlSystem = () => {
                                 <select
                                     value={newPenaltyBrand}
                                     onChange={(e) => setNewPenaltyBrand(e.target.value)}
+                                    disabled={!canEditSection('penalties')}
                                     className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-semibold"
                                 >
                                     <option value="">Global</option>
@@ -837,6 +947,7 @@ const ControlSystem = () => {
                                     step="1"
                                     value={newPenaltyDays}
                                     onChange={(e) => setNewPenaltyDays(Number(e.target.value) || 0)}
+                                    disabled={!canEditSection('penalties')}
                                     className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-mono"
                                 />
                             </div>
@@ -848,6 +959,7 @@ const ControlSystem = () => {
                                     step="0.01"
                                     value={newPenaltyAmount}
                                     onChange={(e) => setNewPenaltyAmount(Number(e.target.value) || 0)}
+                                    disabled={!canEditSection('penalties')}
                                     className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-mono"
                                 />
                             </div>
@@ -857,6 +969,7 @@ const ControlSystem = () => {
                             <button
                                 type="button"
                                 onClick={() => {
+                                    if (!canEditSection('penalties')) return;
                                     const brandValue = (newPenaltyBrand || selectedBrand || 'MDM').trim();
                                     if (!brandValue || newPenaltyDays < 0 || newPenaltyAmount < 0) return;
                                     const nextRule = { brand: brandValue, afterDays: Number(newPenaltyDays), penaltyPerDay: Number(newPenaltyAmount) };
@@ -864,6 +977,7 @@ const ControlSystem = () => {
                                     setNewPenaltyDays(1);
                                     setNewPenaltyAmount(0);
                                 }}
+                                disabled={!canEditSection('penalties')}
                                 className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-[5px] font-bold cursor-pointer"
                             >
                                 Add Rule
@@ -886,6 +1000,7 @@ const ControlSystem = () => {
                                                 next[idx].brand = e.target.value;
                                                 setLatePenaltyRules(next);
                                             }}
+                                            disabled={!canEditSection('penalties')}
                                             className="w-28 h-9 px-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 text-[11px] font-semibold"
                                         />
                                         <input
@@ -897,6 +1012,7 @@ const ControlSystem = () => {
                                                 next[idx].afterDays = Number(e.target.value) || 0;
                                                 setLatePenaltyRules(next);
                                             }}
+                                            disabled={!canEditSection('penalties')}
                                             className="w-20 h-9 px-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 text-[11px] font-mono"
                                         />
                                         <input
@@ -909,15 +1025,23 @@ const ControlSystem = () => {
                                                 next[idx].penaltyPerDay = Number(e.target.value) || 0;
                                                 setLatePenaltyRules(next);
                                             }}
+                                            disabled={!canEditSection('penalties')}
                                             className="w-28 h-9 px-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 text-[11px] font-mono"
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={() => setLatePenaltyRules(prev => prev.filter((_, i) => i !== idx))}
-                                            className="ml-auto px-2 py-1.5 bg-red-900/60 hover:bg-red-800 text-red-200 rounded-lg text-[10px] font-bold cursor-pointer"
-                                        >
-                                            Remove
-                                        </button>
+                                        {canDeleteSection('penalties') && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (!canDeleteSection('penalties')) return;
+                                                    const updated = latePenaltyRules.filter((_, index) => index !== idx);
+                                                    setLatePenaltyRules(updated);
+                                                    saveConfigToMongoDB('late_penalty_rules', updated, 'penalties', 'delete');
+                                                }}
+                                                className="ml-auto px-2 py-1.5 bg-red-900/60 hover:bg-red-800 text-red-200 rounded-lg text-[10px] font-bold cursor-pointer"
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
                                     </div>
                                 ))
                             )}
@@ -926,7 +1050,7 @@ const ControlSystem = () => {
                         <div className="pt-2 text-right">
                             <button
                                 onClick={() => saveConfigToMongoDB('late_penalty_rules', latePenaltyRules)}
-                                disabled={saving}
+                                disabled={saving || !canEditSection('penalties')}
                                 className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-[5px] font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-lg shadow-amber-600/30"
                             >
                                 <MdSave size={16} /> Save Late Penalty Rules
@@ -950,11 +1074,13 @@ const ControlSystem = () => {
                                 type="text"
                                 value={newRoleInput}
                                 onChange={(e) => setNewRoleInput(e.target.value)}
+                                disabled={!canEditSection('roles')}
                                 placeholder="Add new role (e.g. Supervisor)"
                                 className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
                             />
                             <button
                                 onClick={handleAddRole}
+                                disabled={!canEditSection('roles')}
                                 className="px-4 h-10 bg-purple-600 hover:bg-purple-500 text-white rounded-[5px] font-bold flex items-center gap-1 cursor-pointer"
                             >
                                 <MdAddCircle size={16} /> Add Role
@@ -965,7 +1091,7 @@ const ControlSystem = () => {
                             {roles.map((r, rIdx) => (
                                 <div key={rIdx} className="flex items-center gap-2 px-3 py-1.5 bg-gray-900/80 border border-gray-700 rounded-[5px] font-semibold text-gray-200">
                                     <span>{r}</span>
-                                    {r !== 'Administrator' && (
+                                    {r !== 'Administrator' && canDeleteSection('roles') && (
                                         <button onClick={() => handleDeleteRole(rIdx)} className="text-red-400 hover:text-red-300">✕</button>
                                     )}
                                 </div>
@@ -995,6 +1121,54 @@ const ControlSystem = () => {
                         កំណត់បញ្ជីមូលហេតុ (Reasons) និងជម្រើស Droplists សម្រាប់ទំព័រ <strong className="text-rose-400 font-semibold">Reject Submit</strong> និង <strong className="text-amber-400 font-semibold">Reject CS</strong> ដោយឡែកពីគ្នា។ ទិន្នន័យដែលបានបញ្ចូលនៅទីនេះ នឹងបង្ហាញជាប្រអប់បំពេញលេខនៅក្នុង Modal នៃទំព័រ Follow Up 4 តាម Brand នីមួយៗភ្លាមៗ។
                     </p>
 
+                    <div className="rounded-[5px] border border-sky-600/30 bg-slate-900/80 p-3 space-y-3">
+                        <h4 className="text-xs font-bold text-sky-300">FOLLOW UP 4 DROPDOWN OPTIONS</h4>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <select
+                                value={selectedWorkflowCategory}
+                                onChange={(event) => setSelectedWorkflowCategory(event.target.value)}
+                                className="h-9 rounded-[5px] border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100"
+                            >
+                                {workflowDroplists.map(list => (
+                                    <option key={list.category} value={list.category}>{list.category}</option>
+                                ))}
+                            </select>
+                            <input
+                                value={newWorkflowOption}
+                                onChange={(event) => setNewWorkflowOption(event.target.value)}
+                                onKeyDown={(event) => event.key === 'Enter' && handleAddSpecificReason(selectedWorkflowCategory, newWorkflowOption, setNewWorkflowOption)}
+                                placeholder="បញ្ចូលជម្រើសថ្មី (អាចបន្ថែមបានច្រើន)"
+                                disabled={!canEditSection('follow-up')}
+                                className="h-9 min-w-0 flex-1 rounded-[5px] border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => handleAddSpecificReason(selectedWorkflowCategory, newWorkflowOption, setNewWorkflowOption)}
+                                disabled={!canEditSection('follow-up') || !newWorkflowOption.trim()}
+                                className="h-9 rounded-[5px] bg-sky-600 px-3 text-xs font-bold text-white disabled:opacity-40"
+                            >
+                                <MdAddCircle className="inline mr-1" /> បន្ថែម
+                            </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {(workflowDroplists.find(list => list.category === selectedWorkflowCategory)?.items || []).map((option, index) => (
+                                <span key={`${option}-${index}`} className="inline-flex items-center gap-2 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-200">
+                                    {option}
+                                    {canDeleteSection('follow-up') && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteSpecificReason(selectedWorkflowCategory, index)}
+                                            aria-label={`Delete ${option}`}
+                                            className="text-rose-400 hover:text-rose-300"
+                                        >
+                                            <MdDelete size={13} />
+                                        </button>
+                                    )}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                         {/* Box A: Reject Submit Reasons */}
                         <div className="p-2 rounded-[5px] bg-slate-900/90 border border-rose-600/30 space-y-3">
@@ -1012,6 +1186,7 @@ const ControlSystem = () => {
                                     type="text"
                                     value={newRejectSubmitInput}
                                     onChange={(e) => setNewRejectSubmitInput(e.target.value)}
+                                    disabled={!canEditSection('follow-up')}
                                     onKeyDown={(e) => e.key === 'Enter' && handleAddSpecificReason('Reject Submit Reasons', newRejectSubmitInput, setNewRejectSubmitInput)}
                                     placeholder="បញ្ចូលមូលហេតុ Reject Submit ថ្មី (ឧ. ភ្ញៀវមិនឆ្លើយតប)..."
                                     className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-[5px] text-slate-100 text-xs focus:border-rose-500 outline-none"
@@ -1019,7 +1194,7 @@ const ControlSystem = () => {
                                 <button
                                     type="button"
                                     onClick={() => handleAddSpecificReason('Reject Submit Reasons', newRejectSubmitInput, setNewRejectSubmitInput)}
-                                    disabled={!newRejectSubmitInput.trim()}
+                                    disabled={!canEditSection('follow-up') || !newRejectSubmitInput.trim()}
                                     className="px-3.5 h-9 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white rounded-[5px] text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-rose-600/20"
                                 >
                                     <MdAddCircle size={15} /> <span>បន្ថែម</span>
@@ -1039,14 +1214,16 @@ const ControlSystem = () => {
                                             </span>
                                             {reason}
                                         </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDeleteSpecificReason('Reject Submit Reasons', rIdx)}
-                                            className="text-rose-400 hover:text-rose-300 hover:bg-rose-950/60 p-2 rounded-lg cursor-pointer transition-colors"
-                                            title="លុបមូលហេតុនេះ"
-                                        >
-                                            <MdDelete size={15} />
-                                        </button>
+                                        {canDeleteSection('follow-up') && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteSpecificReason('Reject Submit Reasons', rIdx)}
+                                                className="text-rose-400 hover:text-rose-300 hover:bg-rose-950/60 p-2 rounded-lg cursor-pointer transition-colors"
+                                                title="លុបមូលហេតុនេះ"
+                                            >
+                                                <MdDelete size={15} />
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -1068,6 +1245,7 @@ const ControlSystem = () => {
                                     type="text"
                                     value={newRejectCsInput}
                                     onChange={(e) => setNewRejectCsInput(e.target.value)}
+                                    disabled={!canEditSection('follow-up')}
                                     onKeyDown={(e) => e.key === 'Enter' && handleAddSpecificReason('Reject CS Reasons', newRejectCsInput, setNewRejectCsInput)}
                                     placeholder="បញ្ចូលមូលហេតុ Reject CS ថ្មី (ឧ. តម្លៃមិនព្រម, គ្មានលទ្ធភាព)..."
                                     className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-[5px] text-slate-100 text-xs focus:border-amber-500 outline-none"
@@ -1075,7 +1253,7 @@ const ControlSystem = () => {
                                 <button
                                     type="button"
                                     onClick={() => handleAddSpecificReason('Reject CS Reasons', newRejectCsInput, setNewRejectCsInput)}
-                                    disabled={!newRejectCsInput.trim()}
+                                    disabled={!canEditSection('follow-up') || !newRejectCsInput.trim()}
                                     className="px-3.5 h-9 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white rounded-[5px] text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-amber-600/20"
                                 >
                                     <MdAddCircle size={15} /> <span>បន្ថែម</span>
@@ -1095,14 +1273,16 @@ const ControlSystem = () => {
                                             </span>
                                             {reason}
                                         </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDeleteSpecificReason('Reject CS Reasons', rIdx)}
-                                            className="text-amber-400 hover:text-amber-300 hover:bg-amber-950/60 p-2 rounded-lg cursor-pointer transition-colors"
-                                            title="លុបមូលហេតុនេះ"
-                                        >
-                                            <MdDelete size={15} />
-                                        </button>
+                                        {canDeleteSection('follow-up') && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteSpecificReason('Reject CS Reasons', rIdx)}
+                                                className="text-amber-400 hover:text-amber-300 hover:bg-amber-950/60 p-2 rounded-lg cursor-pointer transition-colors"
+                                                title="លុបមូលហេតុនេះ"
+                                            >
+                                                <MdDelete size={15} />
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -1127,7 +1307,7 @@ const ControlSystem = () => {
                                 onChange={(e) => setSelectedCategoryIdx(Number(e.target.value))}
                                 className="h-9 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-semibold"
                             >
-                                {droplists.map((d, dIdx) => (
+                                {systemDroplists.map((d, dIdx) => (
                                     <option key={dIdx} value={dIdx}>{d.category}</option>
                                 ))}
                             </select>
@@ -1138,11 +1318,13 @@ const ControlSystem = () => {
                                 type="text"
                                 value={newItemInput}
                                 onChange={(e) => setNewItemInput(e.target.value)}
-                                placeholder={`Add item to ${droplists[selectedCategoryIdx]?.category}...`}
+                                placeholder={`Add item to ${systemDroplists[selectedCategoryIdx]?.category}...`}
+                                disabled={!canEditSection('dropdowns')}
                                 className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
                             />
                             <button
                                 onClick={handleAddItemToCategory}
+                                disabled={!canEditSection('dropdowns') || !newItemInput.trim()}
                                 className="px-4 h-10 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[5px] font-bold flex items-center gap-1 cursor-pointer"
                             >
                                 <MdAddCircle size={16} /> Add Option
@@ -1150,19 +1332,21 @@ const ControlSystem = () => {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                            {droplists.map((cat, catIdx) => (
+                            {systemDroplists.map((cat, catIdx) => (
                                 <div key={catIdx} className="p-2 rounded-[5px] bg-gray-950/60 border border-gray-800 space-y-2">
                                     <h4 className="font-bold text-gray-200 border-b border-gray-800 pb-1.5">{cat.category}</h4>
                                     <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
                                         {cat.items.map((item, itemIdx) => (
                                             <div key={itemIdx} className="flex items-center justify-between p-2 rounded-lg bg-gray-900/60 text-gray-300 text-[11px]">
                                                 <span>{item}</span>
-                                                <button
-                                                    onClick={() => handleDeleteItemFromCategory(catIdx, itemIdx)}
-                                                    className="text-red-400 hover:text-red-300 cursor-pointer"
-                                                >
-                                                    <MdDelete size={14} />
-                                                </button>
+                                                {canDeleteSection('dropdowns') && (
+                                                    <button
+                                                        onClick={() => handleDeleteItemFromCategory(catIdx, itemIdx)}
+                                                        className="text-red-400 hover:text-red-300 cursor-pointer"
+                                                    >
+                                                        <MdDelete size={14} />
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -1192,12 +1376,13 @@ const ControlSystem = () => {
                             value={newBrandInput}
                             onChange={(e) => setNewBrandInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddBrand()}
+                            disabled={!canEditSection('brands')}
                             placeholder="New brand name (e.g. SuperTech)"
                             className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 focus:border-amber-500 outline-none"
                         />
                         <button
                             onClick={handleAddBrand}
-                            disabled={saving || !newBrandInput.trim()}
+                            disabled={saving || !canEditSection('brands') || !newBrandInput.trim()}
                             className="px-4 h-10 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-[5px] font-bold flex items-center gap-1 cursor-pointer transition-all"
                         >
                             <MdAddCircle size={16} /> Add Brand
@@ -1215,20 +1400,23 @@ const ControlSystem = () => {
                             >
                                 <FaLayerGroup size={11} className="text-amber-400" />
                                 <span>{br}</span>
-                                <button
-                                    onClick={() => handleDeleteBrandClick(br)}
-                                    disabled={saving}
-                                    className="text-red-400 hover:text-red-300 cursor-pointer disabled:opacity-50 transition-colors"
-                                    title={`Remove brand '${br}'`}
-                                >
-                                    <MdDelete size={14} />
-                                </button>
+                                {canDeleteSection('brands') && (
+                                    <button
+                                        onClick={() => handleDeleteBrandClick(br)}
+                                        disabled={saving}
+                                        className="text-red-400 hover:text-red-300 cursor-pointer disabled:opacity-50 transition-colors"
+                                        title={`Remove brand '${br}'`}
+                                    >
+                                        <MdDelete size={14} />
+                                    </button>
+                                )}
                             </div>
                         ))}
                     </div>
                 </div>
             )}
                         </div>
+                        </>}
                     </main>
                 </div>
             </div>

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { FaBan } from 'react-icons/fa';
 import { smartFetch, getActiveApiBase, API_POOL } from '../utils/smartFetch';
 import { getSecureItem, setSecureItem, clearSecureAuth } from '../utils/secureStorage';
+import { CONTROL_SYSTEM_PATH, CONTROL_SYSTEM_SECTIONS } from '../utils/controlSystemPermissions';
 
 const AuthContext = createContext();
 
@@ -229,7 +230,28 @@ export const AuthProvider = ({ children }) => {
 
         if (!user.permissions) return false;
 
-        const pagePerms = user.permissions[pagePath] || (user.permissions instanceof Map ? user.permissions.get(pagePath) : user.permissions.get?.(pagePath));
+        const getPagePermissions = (path) => user.permissions[path] ||
+            (user.permissions instanceof Map ? user.permissions.get(path) : user.permissions.get?.(path));
+        const pagePerms = getPagePermissions(pagePath);
+
+        if (pagePath === CONTROL_SYSTEM_PATH && action === 'read') {
+            return !!pagePerms?.read || CONTROL_SYSTEM_SECTIONS.some(section => {
+                const permissions = getPagePermissions(section.path);
+                return permissions?.read || permissions?.edit || permissions?.delete;
+            });
+        }
+
+        if (pagePath.startsWith(`${CONTROL_SYSTEM_PATH}/`)) {
+            const sectionPerms = pagePerms;
+            const parentPerms = getPagePermissions(CONTROL_SYSTEM_PATH);
+            if (sectionPerms) {
+                if (action === 'read' && (sectionPerms.read || sectionPerms.edit || sectionPerms.delete)) return true;
+                return !!sectionPerms[action];
+            }
+            if (action === 'read') return !!(parentPerms?.read || parentPerms?.edit || parentPerms?.delete);
+            return !!parentPerms?.[action] || (action === 'delete' && !!parentPerms?.edit);
+        }
+
         if (!pagePerms) return false; // Strict RBAC: Deny if not specifically granted
         return !!pagePerms[action];
     };

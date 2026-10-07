@@ -1,6 +1,81 @@
 import { useLanguage } from '../../../context/LanguageContext';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { FaPlusCircle, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
+
+const SuggestionField = ({ id, value, onChange, options = [], placeholder, textarea = false }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [opensAbove, setOpensAbove] = useState(false);
+    const fieldRef = useRef(null);
+    const normalizedValue = value || '';
+    const suggestions = [...new Set(options.filter(option => typeof option === 'string').map(option => option.trim()).filter(Boolean))]
+        .filter(option => option.toLowerCase().includes(normalizedValue.trim().toLowerCase()));
+
+    const openOptions = () => {
+        const rect = fieldRef.current?.getBoundingClientRect();
+        const modalRect = fieldRef.current?.closest('.follow-up-modal-scroll')?.getBoundingClientRect();
+        if (rect) {
+            const below = Math.min(window.innerHeight, modalRect?.bottom ?? window.innerHeight) - rect.bottom;
+            const above = rect.top - Math.max(0, modalRect?.top ?? 0);
+            setOpensAbove(below < 190 && above > below);
+        }
+        setIsOpen(true);
+    };
+
+    const Field = textarea ? 'textarea' : 'input';
+    return (
+        <div className="relative" ref={fieldRef}>
+            <Field
+                type={textarea ? undefined : 'text'}
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={isOpen}
+                aria-controls={`${id}-options`}
+                rows={textarea ? 3 : undefined}
+                placeholder={placeholder}
+                value={normalizedValue}
+                onFocus={openOptions}
+                onClick={openOptions}
+                onChange={(event) => {
+                    onChange(event.target.value);
+                    openOptions();
+                }}
+                onBlur={() => window.setTimeout(() => setIsOpen(false), 120)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Escape') setIsOpen(false);
+                }}
+                className={`w-full bg-slate-900 text-slate-100 text-xs ${textarea ? 'p-2' : 'px-3 py-2'} rounded border border-slate-700 outline-none focus:border-emerald-500`}
+            />
+            {isOpen && (
+                <div
+                    id={`${id}-options`}
+                    role="listbox"
+                    className={`absolute z-30 w-full max-h-48 overflow-y-auto rounded border border-slate-700 bg-slate-900 shadow-xl ${opensAbove ? 'bottom-full mb-1' : 'top-full mt-1'}`}
+                >
+                    {suggestions.length ? suggestions.map((option, index) => (
+                        <button
+                            key={`${option}-${index}`}
+                            type="button"
+                            role="option"
+                            aria-selected={normalizedValue === option}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => {
+                                onChange(option);
+                                setIsOpen(false);
+                            }}
+                            className="block w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-700"
+                        >
+                            {option}
+                        </button>
+                    )) : (
+                        <div className="px-3 py-2 text-xs text-slate-400">
+                            គ្មានជម្រើសត្រូវគ្នា — អាចវាយបញ្ចូលតម្លៃថ្មីបាន
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 /**
  * FollowUp4SubmitModal
@@ -18,8 +93,10 @@ const FollowUp4SubmitModal = ({
     droplists = {
         sources: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'],
         contactTypes: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'],
-        statuses: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
-        assetTypes: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other']
+        statuses: ['PENDING', 'REVIEW', 'REJECT1', 'REJECT2', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
+        assetTypes: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'],
+        pgTlNames: [],
+        descriptions: []
     },
     isMasterAdmin = false,
     brandsList = ['888MDM', 'ECloud']
@@ -34,7 +111,7 @@ const FollowUp4SubmitModal = ({
 
     const contactTypes = droplists.contactTypes && droplists.contactTypes.length > 0
         ? droplists.contactTypes
-        : ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'];
+        : ['Telegram', 'Chat', 'Call', 'Walk-in', 'Other'];
 
     const statuses = droplists.statuses && droplists.statuses.length > 0
         ? droplists.statuses
@@ -53,7 +130,7 @@ const FollowUp4SubmitModal = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
-            <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto">
+            <div className="follow-up-modal-scroll bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/60 sticky top-0 z-10">
                     <div className="flex items-center gap-2 text-emerald-400 font-bold text-base">
@@ -162,12 +239,12 @@ const FollowUp4SubmitModal = ({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-xs font-semibold text-black mb-1">Name PG/TL From</label>
-                            <input
-                                type="text"
+                            <SuggestionField
+                                id="follow-up-pg-tl-from"
                                 placeholder="NAME PG/TL មកពី"
                                 value={formData.namePgTlFrom}
-                                onChange={(e) => setFormData({ ...formData, namePgTlFrom: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
+                                options={droplists.pgTlNames}
+                                onChange={(namePgTlFrom) => setFormData({ ...formData, namePgTlFrom })}
                             />
                         </div>
 
@@ -187,12 +264,12 @@ const FollowUp4SubmitModal = ({
 
                         <div>
                             <label className="block text-xs font-semibold text-black mb-1">Name PG/TL Contact</label>
-                            <input
-                                type="text"
+                            <SuggestionField
+                                id="follow-up-pg-tl-contact"
                                 placeholder="NAME PG/TL ទាក់ទង"
                                 value={formData.namePgTlContact}
-                                onChange={(e) => setFormData({ ...formData, namePgTlContact: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
+                                options={droplists.pgTlNames}
+                                onChange={(namePgTlContact) => setFormData({ ...formData, namePgTlContact })}
                             />
                         </div>
                     </div>
@@ -313,12 +390,13 @@ const FollowUp4SubmitModal = ({
 
                     <div>
                         <label className="block text-xs font-semibold text-black mb-1">{t('description')}</label>
-                        <textarea
-                            rows="3"
+                        <SuggestionField
+                            id="follow-up-description"
+                            textarea
                             placeholder="ការបរិយាយបន្ថែម..."
                             value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full bg-slate-900 text-slate-100 text-xs p-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
+                            options={droplists.descriptions}
+                            onChange={(description) => setFormData({ ...formData, description })}
                         />
                     </div>
 

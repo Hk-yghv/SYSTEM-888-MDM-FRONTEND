@@ -3,6 +3,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { FaShieldAlt, FaUserPlus, FaLock, FaTelegramPlane, FaHistory, FaBan, FaUnlock } from 'react-icons/fa';
 import { MdOutlineSync, MdDelete, MdEdit } from 'react-icons/md';
+import { CONTROL_SYSTEM_SECTIONS } from '../../../utils/controlSystemPermissions';
 
 const ALL_SYSTEM_PAGES = [
     { category: 'Main Systems', path: '/dashboard', label: 'Dashboard Analysis', actions: ['read', 'export'] },
@@ -65,7 +66,12 @@ const ALL_SYSTEM_PAGES = [
 
     { category: 'Settings & Profile', path: '/profile', label: 'User Profile', actions: ['read', 'edit'] },
     { category: 'Settings & Profile', path: '/settings/all-account', label: 'All Account Management', actions: ['read', 'create', 'edit', 'delete'] },
-    { category: 'Settings & Profile', path: '/settings/control-system', label: 'Control System Settings', actions: ['read', 'edit'] }
+    ...CONTROL_SYSTEM_SECTIONS.map(section => ({
+        category: 'Control System',
+        path: section.path,
+        label: section.label,
+        actions: ['read', 'create', 'edit', 'delete']
+    }))
 ];
 
 const AllAccount = () => {
