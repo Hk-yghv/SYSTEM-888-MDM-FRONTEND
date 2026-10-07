@@ -264,7 +264,7 @@ router.post('/', async (req, res) => {
 
 /**
  * PUT /api/saved-urls/:id
- * Update existing Saved URL
+ * Update existing Saved URL — only the creator or Master Admin can edit
  */
 router.put('/:id', async (req, res) => {
     try {
@@ -277,8 +277,38 @@ router.put('/:id', async (req, res) => {
             description,
             tags,
             brand,
-            updatedBy
+            updatedBy,
+            username,
+            isImmutable,
+            userRole
         } = req.body;
+
+        const isMasterAdmin = (
+            username === '@hakyonghouv' ||
+            username === 'hakyonghouv' ||
+            isImmutable === true ||
+            isImmutable === 'true' ||
+            userRole === 'Administrator' ||
+            userRole === 'Admin'
+        );
+
+        // Fetch the existing record to check ownership
+        let existingDoc = null;
+        if (isMongoConnected) {
+            const Model = getWriteModel(SavedUrl);
+            existingDoc = await Model.findById(id);
+        } else {
+            existingDoc = (MEM_DB.savedUrls || []).find(item => item._id === id || item.id === id);
+        }
+
+        if (!existingDoc) {
+            return res.status(404).json({ error: 'Saved URL not found' });
+        }
+
+        // Permission check: only creator or master admin may edit
+        if (!isMasterAdmin && norm(existingDoc.createdBy) !== norm(username || updatedBy || '')) {
+            return res.status(403).json({ error: 'Permission denied. Only the creator or an Administrator can edit this URL.' });
+        }
 
         let cleanUrl = url ? url.trim() : undefined;
         if (cleanUrl && !/^https?:\/\//i.test(cleanUrl) && !/^mailto:/i.test(cleanUrl) && !/^tel:/i.test(cleanUrl)) {
@@ -315,7 +345,7 @@ router.put('/:id', async (req, res) => {
         recordSystemAudit({
             action: 'UPDATE_SAVED_URL',
             details: `Saved URL updated: "${updatedDoc.title}"`,
-            username: updatedBy || 'Administrator'
+            username: updatedBy || username || 'Administrator'
         });
 
         res.json({ success: true, data: updatedDoc });

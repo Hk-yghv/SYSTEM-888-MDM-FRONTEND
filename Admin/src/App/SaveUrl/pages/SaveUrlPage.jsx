@@ -296,7 +296,11 @@ const SaveUrlPage = () => {
                 description: formData.description.trim(),
                 brand: formData.brand,
                 createdBy: editingItem ? editingItem.createdBy : (user?.username || user?.name || 'Administrator'),
-                updatedBy: user?.username || user?.name || 'Administrator'
+                updatedBy: user?.username || user?.name || 'Administrator',
+                // Auth info so backend can verify ownership on PUT
+                username: user?.username || '',
+                isImmutable: user?.isImmutable || false,
+                userRole: user?.role || ''
             };
 
             const url = editingItem
