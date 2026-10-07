@@ -328,12 +328,26 @@ const SaveUrlPage = () => {
         }
     };
 
+    // Check if current user is master admin
+    const isMasterAdmin = (
+        user?.username === '@hakyonghouv' ||
+        user?.username === 'hakyonghouv' ||
+        user?.isImmutable === true ||
+        user?.role === 'Administrator' ||
+        user?.role === 'Admin'
+    );
+
     // Delete URL Handler
     const handleExecuteDelete = async () => {
         if (!deleteModalItem) return;
         setDeleting(true);
         try {
-            const res = await fetch(`${API_BASE}/saved-urls/${deleteModalItem._id || deleteModalItem.id}?username=${encodeURIComponent(user?.username || '')}`, {
+            const params = new URLSearchParams({
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userRole: user?.role || ''
+            });
+            const res = await fetch(`${API_BASE}/saved-urls/${deleteModalItem._id || deleteModalItem.id}?${params.toString()}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
@@ -682,6 +696,9 @@ const SaveUrlPage = () => {
                                 const isPublic = item.visibility === 'Public';
                                 const createdDateStr = item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : '—';
                                 const isCopied = copiedId === (item._id || item.id);
+                                // Only the creator or master admin can edit/delete
+                                const isOwner = isMasterAdmin ||
+                                    (item.createdBy || '').trim().toLowerCase() === (user?.username || '').trim().toLowerCase();
 
                                 return (
                                     <tr key={item._id || item.id || idx} className="hover:bg-emerald-50/40 transition-colors">
@@ -769,23 +786,27 @@ const SaveUrlPage = () => {
                                                     <FaExternalLinkAlt size={12} />
                                                 </button>
 
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleOpenEdit(item)}
-                                                    className="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition-colors cursor-pointer"
-                                                    title="កែប្រែ (Edit URL)"
-                                                >
-                                                    <FaEdit size={13} />
-                                                </button>
+                                                {isOwner && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenEdit(item)}
+                                                        className="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition-colors cursor-pointer"
+                                                        title="កែប្រែ (Edit URL)"
+                                                    >
+                                                        <FaEdit size={13} />
+                                                    </button>
+                                                )}
 
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setDeleteModalItem(item)}
-                                                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
-                                                    title="លុប (Delete URL)"
-                                                >
-                                                    <FaTrash size={12} />
-                                                </button>
+                                                {isOwner && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setDeleteModalItem(item)}
+                                                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                                                        title="លុប (Delete URL)"
+                                                    >
+                                                        <FaTrash size={12} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

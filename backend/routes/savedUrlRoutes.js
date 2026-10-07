@@ -327,13 +327,44 @@ router.put('/:id', async (req, res) => {
 
 /**
  * DELETE /api/saved-urls/:id
- * Delete a Saved URL
+ * Delete a Saved URL — only the creator or Master Admin can delete
  */
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { username = 'Administrator' } = req.query;
+        const {
+            username = '',
+            isImmutable = 'false',
+            userRole = ''
+        } = req.query;
 
+        const isMasterAdmin = (
+            username === '@hakyonghouv' ||
+            username === 'hakyonghouv' ||
+            isImmutable === 'true' ||
+            userRole === 'Administrator' ||
+            userRole === 'Admin'
+        );
+
+        // Fetch the record first to check ownership
+        let existingDoc = null;
+        if (isMongoConnected) {
+            const Model = getWriteModel(SavedUrl);
+            existingDoc = await Model.findById(id);
+        } else {
+            existingDoc = (MEM_DB.savedUrls || []).find(item => item._id === id || item.id === id);
+        }
+
+        if (!existingDoc) {
+            return res.status(404).json({ error: 'Saved URL not found or already deleted' });
+        }
+
+        // Permission check: only creator or master admin may delete
+        if (!isMasterAdmin && norm(existingDoc.createdBy) !== norm(username)) {
+            return res.status(403).json({ error: 'Permission denied. Only the creator or an Administrator can delete this URL.' });
+        }
+
+        // Proceed with deletion
         let deletedDoc = null;
         if (isMongoConnected) {
             const Model = getWriteModel(SavedUrl);
