@@ -1,5 +1,4 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import CalendarEvent from '../models/CalendarEvent.js';
 import User from '../models/User.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
@@ -10,18 +9,7 @@ const router = express.Router();
 if (!Array.isArray(MEM_DB.calendarEvents)) MEM_DB.calendarEvents = [];
 
 const getRequestIdentity = async (req) => {
-    let username = req.user?.username;
-    if (!username) {
-        const token = req.headers.authorization?.startsWith('Bearer ')
-            ? req.headers.authorization.slice(7)
-            : '';
-        if (!token) return null;
-        try {
-            username = jwt.verify(token, process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy').username;
-        } catch {
-            return null;
-        }
-    }
+    const username = req.user?.username;
     if (!username) return null;
     const users = isMongoConnected
         ? await queryAllDBs(User, (Model) => Model.find({ username }).limit(1))

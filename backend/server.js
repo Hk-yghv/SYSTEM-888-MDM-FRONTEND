@@ -67,9 +67,17 @@ const app = express();
 app.disable('x-powered-by');
 
 // CORS Hardening
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*';
+const configuredOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(origin => origin && origin !== '*')
+    : [];
+const allowedOrigins = configuredOrigins.length > 0
+    ? configuredOrigins
+    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4173', 'http://127.0.0.1:4173'];
 app.use(cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error('Origin is not allowed by CORS'));
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-username', 'X-System-API-Key', 'x-system-api-key', 'X-Partner-API-Key', 'x-partner-api-key', 'X-Request-Timestamp', 'x-request-timestamp', 'X-Telegram-Media-Type', 'X-File-Name', 'X-File-Mime-Type', 'Cache-Control', 'cache-control', 'Pragma', 'pragma'],
     credentials: true

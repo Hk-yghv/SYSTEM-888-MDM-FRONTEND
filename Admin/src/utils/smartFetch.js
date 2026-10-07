@@ -1,6 +1,4 @@
 // High-Availability Multi-API Real-Time Failover & Smart Cache Engine for SYSTEM MDM
-import { getSecureItem } from './secureStorage';
-
 const normalizeUrl = (url) => (url ? url.replace(/\/$/, '') : '');
 
 const rawApiPool = import.meta.env.DEV ? [
@@ -30,6 +28,9 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes default TTL for GET requests
 const NON_CACHEABLE_PATHS = [
     '/auth/login',
     '/auth/verify-otp',
+    '/auth/session',
+    '/auth/logout',
+    '/auth/heartbeat',
     '/users/status-check',
     '/phone-app/status',
     '/phone-app/consume-scanned-doc',
@@ -100,18 +101,17 @@ export const smartFetch = async (inputUrlOrPath, options = {}) => {
         const targetUrl = `${currentBase}${relativePath}`;
 
         try {
-            const token = getSecureItem('mdm_token');
             const sanitizedHeaders = { ...(options.headers || {}) };
             delete sanitizedHeaders['x-system-api-key'];
             delete sanitizedHeaders['X-System-Api-Key'];
 
             const mergedHeaders = {
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
                 ...sanitizedHeaders
             };
 
             const requestOptions = {
                 ...options,
+                credentials: 'include',
                 headers: mergedHeaders
             };
 

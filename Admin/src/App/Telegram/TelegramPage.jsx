@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import EmojiPicker from "emoji-picker-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
-import { getSecureItem } from "../../utils/secureStorage";
 import {
   FaTelegramPlane,
   FaPlus,
@@ -221,7 +220,7 @@ const VoiceNotePlayer = ({ audioUrl, duration, isMe }) => {
 
 const TelegramPage = () => {
   const { t } = useLanguage();
-  const { user, token: authToken } = useAuth();
+  const { user } = useAuth();
   const messagesEndRef = useRef(null);
   const pollingRef = useRef(null);
   const isSyncingRef = useRef(false);
@@ -238,10 +237,8 @@ const TelegramPage = () => {
     : "/api";
 
   const getAuthHeaders = () => {
-    const token = authToken || getSecureItem("mdm_token") || "";
     return {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(user?.username ? { "x-username": user.username } : {})
     };
   };
@@ -273,7 +270,7 @@ const TelegramPage = () => {
       })));
     }
     return resolvedMessages;
-  }, [API_BASE, authToken, user?.username]);
+  }, [API_BASE, user?.username]);
 
   // Accounts state — starts empty, loaded from DB on mount
   const [accounts, setAccounts] = useState([]);
@@ -816,7 +813,7 @@ const TelegramPage = () => {
     } catch (err) {
       setSyncError(err.message || "Could not sync Telegram account");
     }
-  }, [API_BASE, activeAccountId, activeChatId, authToken, resolveUserMessageMedia, user?.username]);
+  }, [API_BASE, activeAccountId, activeChatId, resolveUserMessageMedia, user?.username]);
 
   // Real-Time Polling Effect for active account
   useEffect(() => {
@@ -868,7 +865,7 @@ const TelegramPage = () => {
     };
     loadUserMessages();
     return () => { cancelled = true; };
-  }, [API_BASE, activeAccount?.id, activeAccount?.type, activeChatId, authToken, resolveUserMessageMedia, user?.username]);
+  }, [API_BASE, activeAccount?.id, activeAccount?.type, activeChatId, resolveUserMessageMedia, user?.username]);
 
   // Manual Refresh Button
   const handleManualSync = async () => {

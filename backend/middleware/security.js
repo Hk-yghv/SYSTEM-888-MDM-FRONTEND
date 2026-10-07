@@ -24,6 +24,14 @@ const isPenaltyReadPath = (req) => (
     String(req.query?.type || '').toLowerCase() === 'penalty'
 );
 
+const getSessionCookieToken = (cookieHeader = '') => {
+    const sessionCookie = cookieHeader
+        .split(';')
+        .map((cookie) => cookie.trim())
+        .find((cookie) => cookie.startsWith('mdm_session='));
+    return sessionCookie ? sessionCookie.slice('mdm_session='.length) : null;
+};
+
 let telegramBotInstance = null;
 export const setSecurityTelegramBot = (bot) => {
     telegramBotInstance = bot;
@@ -224,6 +232,7 @@ export const verifySecurityAuth = (req, res, next) => {
     const publicPaths = [
         '/api/auth/login',
         '/api/auth/verify-otp',
+        '/api/auth/qr-login',
         '/api/health',
         '/api/history/report-schedule',
         '/api/calculate-schedules/stream',
@@ -258,7 +267,8 @@ export const verifySecurityAuth = (req, res, next) => {
     const systemKey = req.headers['x-system-api-key'];
     const partnerKey = req.headers['x-partner-api-key'];
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const token = bearerToken || getSessionCookieToken(req.headers.cookie);
     const acceptHeader = (req.headers['accept'] || '').toLowerCase();
     const userAgent = (req.headers['user-agent'] || '').toLowerCase();
 

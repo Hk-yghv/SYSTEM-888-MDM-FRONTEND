@@ -22,7 +22,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 const MDM_CENTER_ICON = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%236366f1"/><stop offset="100%" stop-color="%23a855f7"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(%23g)"/><rect x="18" y="18" width="28" height="28" rx="6" fill="white"/><rect x="54" y="18" width="28" height="28" rx="6" fill="white"/><rect x="18" y="54" width="28" height="28" rx="6" fill="white"/><rect x="54" y="54" width="28" height="28" rx="6" fill="white"/></svg>`;
 
 const Profile = () => {
-    const { user, updateUserState, API_BASE, token } = useAuth();
+    const { user, updateUserState, API_BASE } = useAuth();
     const { t } = useLanguage();
 
     // Telegram 2FA Settings State
@@ -66,7 +66,7 @@ const Profile = () => {
     }, [user?.username]);
 
     useEffect(() => {
-        if (!token) {
+        if (!user?.username) {
             setQrSessionLoading(false);
             return undefined;
         }
@@ -75,9 +75,7 @@ const Profile = () => {
         const fetchQrSession = async () => {
             setQrSessionLoading(true);
             try {
-                const response = await fetch(`${API_BASE}/auth/qr-session`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await fetch(`${API_BASE}/auth/qr-session`);
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || 'Could not load QR codes');
                 if (!cancelled) {
@@ -94,7 +92,7 @@ const Profile = () => {
 
         fetchQrSession();
         return () => { cancelled = true; };
-    }, [API_BASE, token]);
+    }, [API_BASE, user?.username]);
 
     useEffect(() => {
         if (!qrSession || !qrExpiresAt) return;
@@ -140,8 +138,7 @@ const Profile = () => {
             const res = await fetch(`${API_BASE}/auth/qr-generate`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     username: qrVerifyUsername || user?.username,
@@ -178,10 +175,7 @@ const Profile = () => {
         try {
             const res = await fetch(`${API_BASE}/auth/qr-session/delete`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
             const data = await res.json();
 

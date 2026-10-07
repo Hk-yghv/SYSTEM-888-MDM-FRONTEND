@@ -86,7 +86,14 @@ import AllPicture from "../App/Media/AllPicture";
  * Redirect root or unauthenticated users to their first permitted page
  */
 export const RootRedirect = () => {
-  const { user, hasPermission } = useAuth();
+  const { user, authInitialized, hasPermission } = useAuth();
+  if (!authInitialized) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center bg-[#070913] text-gray-300">
+        Loading session...
+      </div>
+    );
+  }
   const targetRoute = getFirstAllowedRoute(user, hasPermission);
   return <Navigate to={targetRoute} replace />;
 };

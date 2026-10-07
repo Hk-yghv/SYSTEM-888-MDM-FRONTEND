@@ -12,6 +12,29 @@ import { recordSystemAudit } from '../utils/auditLogger.js';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
 const QR_ENCRYPTION_KEY = createHash('sha256').update(process.env.ENCRYPTION_KEY || JWT_SECRET).digest();
+const AUTH_COOKIE_NAME = 'mdm_session';
+const AUTH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const AUTH_COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/api',
+    maxAge: AUTH_COOKIE_MAX_AGE_MS
+};
+const AUTH_COOKIE_CLEAR_OPTIONS = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/api'
+};
+
+const setAuthCookie = (res, token) => {
+    res.cookie(AUTH_COOKIE_NAME, token, AUTH_COOKIE_OPTIONS);
+};
+
+const clearAuthCookie = (res) => {
+    res.clearCookie(AUTH_COOKIE_NAME, AUTH_COOKIE_CLEAR_OPTIONS);
+};
 
 const encryptQrPayload = (payload) => {
     const iv = randomBytes(12);
@@ -39,6 +62,20 @@ const formatPermissions = (perms) => {
     if (typeof perms.toObject === 'function') return perms.toObject();
     return perms;
 };
+
+const formatAuthUser = (user) => ({
+    userId: user.userId,
+    name: user.name,
+    nameKh: user.nameKh || '',
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    brand: user.brand || '',
+    isImmutable: user.isImmutable,
+    telegramId: user.telegramId,
+    twoFactorEnabled: user.twoFactorEnabled,
+    permissions: formatPermissions(user.permissions)
+});
 
 const recordLoginLog = async ({ userId = '', username, name = 'Unknown User', role = 'Guest', brand = 'SYSTEM', ip, deviceInfo, status = 'Failed', reason = '' }) => {
     try {
@@ -368,23 +405,15 @@ export default function createAuthRoutes(bot) {
                 } catch (tErr) { }
             }
 
-            const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
-
+            const token = jwt.sign(
+                { userId: user.userId, username: user.username },
+                JWT_SECRET,
+                { expiresIn: '30d' }
+            );
+            setAuthCookie(res, token);
             res.json({
-                token,
                 deviceInfo: { ip, os, browser },
-                user: {
-                    userId: user.userId,
-                    name: user.name,
-                    username: user.username,
-                    email: user.email,
-                    role: user.role,
-                    brand: user.brand || '',
-                    isImmutable: user.isImmutable,
-                    telegramId: user.telegramId,
-                    twoFactorEnabled: user.twoFactorEnabled,
-                    permissions: formatPermissions(user.permissions)
-                }
+                user: formatAuthUser(user)
             });
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -481,38 +510,51 @@ export default function createAuthRoutes(bot) {
                 path: '/api/auth/verify-otp'
             }).catch(() => { });
 
-            const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
+            const token = jwt.sign(
+                { userId: user.userId, username: user.username },
+                JWT_SECRET,
+                { expiresIn: '30d' }
+            );
+            setAuthCookie(res, token);
             res.json({
-                token,
                 deviceInfo: { ip, os, browser },
-                user: {
-                    userId: user.userId,
-                    name: user.name,
-                    username: user.username,
-                    email: user.email,
-                    role: user.role,
-                    brand: user.brand || '',
-                    isImmutable: user.isImmutable,
-                    telegramId: user.telegramId,
-                    twoFactorEnabled: user.twoFactorEnabled,
-                    permissions: formatPermissions(user.permissions)
-                }
+                user: formatAuthUser(user)
             });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
     });
 
+    router.get('/session', async (req, res) => {
+        try {
+            const { username, userId } = req.user || {};
+            if (!username || !userId) {
+                return res.status(401).json({ error: 'Authenticated session is invalid' });
+            }
+
+            let users = [];
+            if (isMongoConnected) {
+                users = await queryAllDBs(User, (Model) => Model.find({ username, userId }));
+            } else {
+                const memoryUser = MEM_DB.users.find((user) => user.username === username && user.userId === userId);
+                if (memoryUser) users = [memoryUser];
+            }
+
+            const user = users[0];
+            if (!user) return res.status(401).json({ error: 'Authenticated account not found' });
+            if (user.isBlocked) return res.status(423).json({ error: 'Account is blocked', code: 'ACCOUNT_BLOCKED' });
+
+            return res.json({ user: formatAuthUser(user) });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
+    });
+
     // POST /api/auth/logout — Mark user Offline immediately & close online session
     router.post('/logout', async (req, res) => {
         try {
-            let username = req.body?.username;
-            if (!username && req.body) {
-                try {
-                    const parsed = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-                    username = parsed?.username;
-                } catch { }
-            }
+            const username = req.user?.username;
+            if (!username) return res.status(401).json({ error: 'Authenticated session is invalid' });
             if (username) {
                 const now = new Date();
                 let loggedUser = null;
@@ -567,6 +609,7 @@ export default function createAuthRoutes(bot) {
                     path: '/api/auth/logout'
                 }).catch(() => { });
             }
+            clearAuthCookie(res);
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -699,24 +742,16 @@ export default function createAuthRoutes(bot) {
             } catch (tErr) { }
         }
 
-        const token = jwt.sign({ userId: user.userId, username: user.username }, JWT_SECRET);
+        const token = jwt.sign(
+            { userId: user.userId, username: user.username },
+            JWT_SECRET,
+            { expiresIn: '30d' }
+        );
+        setAuthCookie(res, token);
 
         return res.json({
-            token,
             deviceInfo: { ip, os, browser },
-            user: {
-                userId: user.userId,
-                name: user.name,
-                nameKh: user.nameKh || '',
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                brand: user.brand || '',
-                isImmutable: user.isImmutable,
-                telegramId: user.telegramId,
-                twoFactorEnabled: user.twoFactorEnabled,
-                permissions: formatPermissions(user.permissions)
-            }
+            user: formatAuthUser(user)
         });
     };
 

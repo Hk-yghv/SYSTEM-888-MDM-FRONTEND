@@ -12,7 +12,17 @@ export const config = {
 export default async function handler(req, res) {
     // 1. CORS Configuration
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    const configuredOrigins = (process.env.ALLOWED_ORIGINS || '')
+        .split(',')
+        .map(origin => origin.trim())
+        .filter(origin => origin && origin !== '*');
+    const requestOrigin = req.headers.origin;
+    const requestHost = req.headers['x-forwarded-host'] || req.headers.host;
+    const sameHostOrigins = requestHost ? [`https://${requestHost}`, `http://${requestHost}`] : [];
+    if (requestOrigin && (configuredOrigins.includes(requestOrigin) || sameHostOrigins.includes(requestOrigin))) {
+        res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+        res.setHeader('Vary', 'Origin');
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',
@@ -23,6 +33,12 @@ export default async function handler(req, res) {
         res.status(200).end();
         return;
     }
+
+    const sessionCookie = (req.headers.cookie || '')
+        .split(';')
+        .map(cookie => cookie.trim())
+        .find(cookie => cookie.startsWith('mdm_session='));
+    const sessionCookieToken = sessionCookie ? sessionCookie.slice('mdm_session='.length) : null;
 
     // 2. High-Availability Multi-API Pool (Checks Server Environment Variables or defaults to 3 Render Backends)
     const rawPool = [
@@ -68,6 +84,9 @@ export default async function handler(req, res) {
     if (req.headers['authorization']) {
         forwardHeaders['authorization'] = req.headers['authorization'];
     }
+    if (sessionCookie) {
+        forwardHeaders['cookie'] = sessionCookie;
+    }
     if (req.headers['content-type']) {
         forwardHeaders['content-type'] = req.headers['content-type'];
     }
@@ -112,6 +131,12 @@ export default async function handler(req, res) {
             const contentType = backendRes.headers.get('content-type');
             if (contentType) {
                 res.setHeader('Content-Type', contentType);
+            }
+            const setCookies = typeof backendRes.headers.getSetCookie === 'function'
+                ? backendRes.headers.getSetCookie()
+                : [backendRes.headers.get('set-cookie')].filter(Boolean);
+            if (setCookies.length > 0) {
+                res.setHeader('Set-Cookie', setCookies);
             }
 
             const arrayBuffer = await backendRes.arrayBuffer();

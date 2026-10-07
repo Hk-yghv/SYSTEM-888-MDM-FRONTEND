@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { FaBan } from 'react-icons/fa';
-import { smartFetch, getActiveApiBase, API_POOL } from '../utils/smartFetch';
-import { getSecureItem, setSecureItem, clearSecureAuth } from '../utils/secureStorage';
+import { smartFetch, getActiveApiBase, API_POOL, invalidateApiCache } from '../utils/smartFetch';
+import { clearSecureAuth } from '../utils/secureStorage';
 import { CONTROL_SYSTEM_PATH, CONTROL_SYSTEM_SECTIONS } from '../utils/controlSystemPermissions';
 
 const AuthContext = createContext();
@@ -16,37 +16,59 @@ const TEN_MINUTES_MS = 10 * 60 * 1000;
 
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(() => {
-        // Restore session auth without deleting the persisted token unexpectedly.
-        return getSecureItem('mdm_user', true);
-    });
-
-    const [token, setToken] = useState(() => getSecureItem('mdm_token') || '');
+    const authOperationRef = useRef(0);
+    const [user, setUser] = useState(null);
+    const [authInitialized, setAuthInitialized] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isBackendRecovering, setIsBackendRecovering] = useState(false);
     const [isBlocked, setIsBlocked] = useState(false);
 
     const logout = useCallback(() => {
-        if (user?.username) {
-            const currentToken = getSecureItem('mdm_token');
-            fetch(`${API_BASE}/auth/logout`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {})
-                },
-                body: JSON.stringify({ username: user.username })
-            }).catch(() => { });
-        }
+        authOperationRef.current += 1;
+        fetch(`${API_BASE}/auth/logout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({})
+        }).catch(() => { });
         setUser(null);
-        setToken('');
+        invalidateApiCache();
         setIsBackendRecovering(false);
         clearSecureAuth();
-    }, [user?.username]);
+    }, []);
+
+    useEffect(() => {
+        let isActive = true;
+        const operationAtStart = authOperationRef.current;
+        const restoreSession = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/auth/session`, {
+                    credentials: 'include',
+                    cache: 'no-store'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (isActive && operationAtStart === authOperationRef.current) setUser(data.user || null);
+                } else if (response.status === 423 && isActive && operationAtStart === authOperationRef.current) {
+                    setIsBlocked(true);
+                    window.setTimeout(() => {
+                        logout();
+                        setIsBlocked(false);
+                    }, 4000);
+                }
+            } catch (error) {
+                console.error('Unable to restore authenticated session:', error);
+            } finally {
+                if (isActive) setAuthInitialized(true);
+            }
+        };
+        void restoreSession();
+        return () => { isActive = false; };
+    }, [logout]);
 
     // Keep the authenticated session alive and recover from temporary backend outages.
     useEffect(() => {
-        if (!user?.username || !token) return;
+        if (!user?.username) return;
 
         let isActive = true;
         let heartbeatInFlight = false;
@@ -75,9 +97,9 @@ export const AuthProvider = ({ children }) => {
                         const response = await request(API_BASE + '/auth/heartbeat', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': 'Bearer ' + token
+                                'Content-Type': 'application/json'
                             },
+                            credentials: 'include',
                             body: JSON.stringify({ username: user.username }),
                             cache: 'no-store'
                         });
@@ -144,9 +166,10 @@ export const AuthProvider = ({ children }) => {
             window.clearInterval(heartbeatInterval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [user?.username, token, logout]);
+    }, [user?.username, logout]);
 
     const login = async (username, password) => {
+        authOperationRef.current += 1;
         setLoading(true);
         try {
             const res = await fetch(`${API_BASE}/auth/login`, {
@@ -171,9 +194,7 @@ export const AuthProvider = ({ children }) => {
             }
 
             setUser(data.user);
-            setToken(data.token);
-            setSecureItem('mdm_user', data.user);
-            setSecureItem('mdm_token', data.token);
+            invalidateApiCache();
             return { success: true, user: data.user, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
@@ -182,6 +203,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const verifyOtp = async (username, otp, secondPassword) => {
+        authOperationRef.current += 1;
         setLoading(true);
         try {
             const res = await fetch(`${API_BASE}/auth/verify-otp`, {
@@ -197,9 +219,7 @@ export const AuthProvider = ({ children }) => {
             }
 
             setUser(data.user);
-            setToken(data.token);
-            setSecureItem('mdm_user', data.user);
-            setSecureItem('mdm_token', data.token);
+            invalidateApiCache();
             return { success: true, user: data.user, deviceInfo: data.deviceInfo };
         } catch (err) {
             setLoading(false);
@@ -208,18 +228,18 @@ export const AuthProvider = ({ children }) => {
     };
 
     const loginWithAuthData = (data) => {
-        if (!data || !data.user || !data.token) {
+        authOperationRef.current += 1;
+        if (!data || !data.user) {
             throw new Error('Invalid authentication response');
         }
         setUser(data.user);
-        setToken(data.token);
-        setSecureItem('mdm_user', data.user);
-        setSecureItem('mdm_token', data.token);
+        invalidateApiCache();
         return { success: true, user: data.user, deviceInfo: data.deviceInfo };
     };
 
     // Granular RBAC Check Function — Strict Deny-by-Default
     const hasPermission = (pagePath, action = 'read') => {
+        if (typeof pagePath !== 'string' || !pagePath) return false;
         if (!user) return false;
         // Master Admin (@hakyonghouv or isImmutable) has full access to all pages and actions
         if (user.username === '@hakyonghouv' || user.isImmutable) {
@@ -258,11 +278,10 @@ export const AuthProvider = ({ children }) => {
 
     const updateUserState = (updatedUser) => {
         setUser(updatedUser);
-        setSecureItem('mdm_user', updatedUser);
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, verifyOtp, loginWithAuthData, logout, hasPermission, updateUserState, API_BASE, API_BASE1, API_BASE2, smartFetch, getActiveApiBase, API_POOL }}>
+        <AuthContext.Provider value={{ user, authInitialized, loading, login, verifyOtp, loginWithAuthData, logout, hasPermission, updateUserState, API_BASE, API_BASE1, API_BASE2, smartFetch, getActiveApiBase, API_POOL }}>
             {/* Fullscreen Blocked Modal — shown immediately when admin blocks the user */}
             {isBlocked && (
                 <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md select-none animate-fade-in">

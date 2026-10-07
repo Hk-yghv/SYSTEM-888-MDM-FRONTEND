@@ -45,7 +45,7 @@ const getIdentityParams = (user) => ({
 });
 
 const KhmerCalendarPage = () => {
-    const { API_BASE1, user, token, hasPermission } = useAuth();
+    const { API_BASE1, user, hasPermission } = useAuth();
     const navigate = useNavigate();
     const [visibleMonth, setVisibleMonth] = useState(() => {
         const now = new Date();
@@ -88,7 +88,7 @@ const KhmerCalendarPage = () => {
             setLoading(true);
             setLoadError('');
             const identity = getIdentityParams(user);
-            const requestHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+            const requestHeaders = {};
             const eventParams = new URLSearchParams({ startDate: visibleStart, endDate: visibleEnd });
             try {
                 const [contractResult, eventResult] = await Promise.all([
@@ -134,7 +134,7 @@ const KhmerCalendarPage = () => {
         };
         loadCalendar();
         return () => { cancelled = true; };
-    }, [API_BASE1, user, token, visibleStart, visibleEnd]);
+    }, [API_BASE1, user, visibleStart, visibleEnd]);
 
     const dueByDate = useMemo(() => {
         const grouped = new Map();
@@ -235,7 +235,7 @@ const KhmerCalendarPage = () => {
         try {
             const response = await fetch(`${API_BASE1}/calendar-events${editingId ? `/${encodeURIComponent(editingId)}` : ''}`, {
                 method: editingId ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
             const result = await response.json();
@@ -259,7 +259,7 @@ const KhmerCalendarPage = () => {
         try {
             const response = await fetch(`${API_BASE1}/calendar-events/${encodeURIComponent(eventId)}`, {
                 method: 'DELETE',
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
+                headers: {}
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'មិនអាចលុបបានទេ');

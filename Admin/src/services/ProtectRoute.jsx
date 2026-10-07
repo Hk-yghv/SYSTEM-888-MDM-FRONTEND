@@ -6,11 +6,19 @@ import { FaLock } from 'react-icons/fa';
 import { getFirstAllowedRoute } from '../utils/permissionUtils';
 
 const ProtectRoute = ({ children, pagePath }) => {
-    const { token, user, hasPermission } = useAuth();
+    const { user, authInitialized, hasPermission } = useAuth();
     const { t } = useLanguage();
     const location = useLocation();
 
-    if (!token || !user) {
+    if (!authInitialized) {
+        return (
+            <div className="w-full h-[93vh] flex items-center justify-center bg-[#070913] text-gray-300">
+                Loading session...
+            </div>
+        );
+    }
+
+    if (!user) {
         return <Navigate to="/signin" replace />;
     }
 
