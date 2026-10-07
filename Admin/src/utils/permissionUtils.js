@@ -48,6 +48,7 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/follow-up/follow-up-4',
     '/salary',
     '/all-picture',
+    '/save-url',
     '/settings/all-account',
     '/settings/control-system',
     '/profile'

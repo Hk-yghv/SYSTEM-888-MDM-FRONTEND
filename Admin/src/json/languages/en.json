@@ -1,4 +1,4 @@
-{
+﻿{
   "systemTitle": "SYSTEM MDM",
   "dashboard": "Dashboard",
   "customer": "All Customer",
@@ -23,6 +23,7 @@
   "cashIn": "Cash In",
   "penalty": "Penalty",
   "lostPhone": "Lost Phone",
+  "saveUrl": "Save URL",
   "actions": "Actions",
   "lockPhone": "Lock Phone",
   "unlockPhone": "Unlock Phone",

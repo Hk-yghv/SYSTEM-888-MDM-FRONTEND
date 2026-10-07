@@ -1,4 +1,4 @@
-{
+﻿{
   "systemTitle": "SYSTEM MDM",
   "dashboard": "Bảng Điều Khiển",
   "customer": "Tất Cả Khách Hàng",
@@ -13,6 +13,7 @@
   "installment": "Trả Góp",
   "paymentHistory": "Lịch Sử Thanh Toán",
   "lostPhone": "Báo Mất Máy",
+  "saveUrl": "Lưu URL",
   "actions": "Hành Động",
   "lockPhone": "Máy Đã Khóa",
   "unlockPhone": "Máy Mở Khóa",

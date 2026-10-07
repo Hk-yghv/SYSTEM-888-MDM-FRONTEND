@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate, MdOutlinePhotoLibrary } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark } from "react-icons/fa";
 
 const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onToggleHeader }) => {
     const [openMenu, setOpenMenu] = useState("");
@@ -459,6 +459,14 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 <Link to={json.allPicture || '/all-picture'} className={navItemClass(json.allPicture || '/all-picture')}>
                     <MdOutlinePhotoLibrary size={20} className={isActive(json.allPicture || '/all-picture') ? "text-white" : "text-emerald-600"} />
                     All Picture
+                </Link>
+            )}
+
+            {/* Save URL */}
+            {hasPermission(json.saveUrl || '/save-url', 'read') && (
+                <Link to={json.saveUrl || '/save-url'} className={navItemClass(json.saveUrl || '/save-url')}>
+                    <FaBookmark size={17} className={isActive(json.saveUrl || '/save-url') ? "text-white" : "text-emerald-600"} />
+                    {t('saveUrl') || 'Save URL'}
                 </Link>
             )}
 

@@ -1,4 +1,4 @@
-{
+﻿{
   "systemTitle": "ລະບົບ SYSTEM MDM",
   "dashboard": "ໜ້າຫຼັກ (Dashboard)",
   "customer": "ລູກຄ້າທັງໝົດ",
@@ -13,6 +13,7 @@
   "installment": "ຜ່ອນຊໍາລະ",
   "paymentHistory": "ປະວັດການຊໍາລະ",
   "lostPhone": "ໂທລະສັບເສຍ",
+  "saveUrl": "ບັນທຶກ URL",
   "actions": "ການດໍາເນີນງານ",
   "lockPhone": "ເຄື່ອງທີ່ລັອກ",
   "unlockPhone": "ເຄື່ອງທີ່ປົດລັອກ",

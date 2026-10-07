@@ -68,6 +68,7 @@
     },
     "salary": "/salary",
     "allPicture": "/all-picture",
+    "saveUrl": "/save-url",
     "settings": {
         "controlSystem": "/settings/control-system",
         "allAccount": "/settings/all-account",

@@ -81,6 +81,7 @@ import ControlSystem from "../App/Settings/pages/ControlSystem";
 import AllAccount from "../App/Settings/pages/AllAccount";
 import Profile from "../App/Profile/Profile";
 import AllPicture from "../App/Media/AllPicture";
+import SaveUrlPage from "../App/SaveUrl/pages/SaveUrlPage";
 
 /**
  * Redirect root or unauthenticated users to their first permitted page
@@ -191,6 +192,9 @@ const AppRoutes = () => {
 
       {/* Cloudinary Media */}
       <Route path={json.allPicture || "/all-picture"} element={renderProtected(json.allPicture || "/all-picture", AllPicture)} />
+
+      {/* Save URL */}
+      <Route path={json.saveUrl || "/save-url"} element={renderProtected(json.saveUrl || "/save-url", SaveUrlPage)} />
 
       {/* Settings & Profile */}
       <Route path={json.settings.allAccount} element={renderProtected(json.settings.allAccount, AllAccount)} />

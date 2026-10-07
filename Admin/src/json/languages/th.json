@@ -1,4 +1,4 @@
-{
+﻿{
   "systemTitle": "ระบบ SYSTEM MDM",
   "dashboard": "แดชบอร์ด",
   "customer": "ลูกค้าทั้งหมด",
@@ -13,6 +13,7 @@
   "installment": "ผ่อนชำระ",
   "paymentHistory": "ประวัติการชำระเงิน",
   "lostPhone": "โทรศัพท์หาย",
+  "saveUrl": "บันทึก URL",
   "actions": "การดำเนินการ",
   "lockPhone": "เครื่องที่ล็อค",
   "unlockPhone": "เครื่องที่ปลดล็อค",

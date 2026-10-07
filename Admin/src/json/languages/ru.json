@@ -1,4 +1,4 @@
-{
+﻿{
   "systemTitle": "SYSTEM MDM",
   "dashboard": "Панель управления",
   "customer": "Все Клиенты",
@@ -13,6 +13,7 @@
   "installment": "Рассрочка",
   "paymentHistory": "История платежей",
   "lostPhone": "Утерянные телефоны",
+  "saveUrl": "Сохранить URL",
   "actions": "Действия",
   "lockPhone": "Заблокированные",
   "unlockPhone": "Разблокированные",

@@ -1,4 +1,4 @@
-{
+﻿{
   "systemTitle": "SYSTEM MDM",
   "dashboard": "ダッシュボード",
   "customer": "全顧客情報",
@@ -15,6 +15,7 @@
   "installment": "分割払い",
   "paymentHistory": "支払い履歴",
   "lostPhone": "紛失端末",
+  "saveUrl": "URL保存",
   "actions": "操作",
   "lockPhone": "ロック済み端末",
   "unlockPhone": "ロック解除端末",
