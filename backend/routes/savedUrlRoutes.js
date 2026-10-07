@@ -116,18 +116,17 @@ router.get('/', async (req, res) => {
             allRecords.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         }
 
-        // Apply visibility permissions:
-        // - Public: everyone can view
-        // - Private: only createdBy user or Master Admin can view
         const currentUsernameNorm = norm(username);
-        let filtered = allRecords.filter(item => {
-            if (item.visibility === 'Private' && !isMasterAdmin) {
-                if (norm(item.createdBy) !== currentUsernameNorm) {
-                    return false;
-                }
-            }
-            return true;
-        });
+
+        // ── TABLE FILTER LOGIC ──────────────────────────────────────────────────
+        // Master Admin sees every record.
+        // Regular users see ONLY the records they personally created
+        //   (both Public and Private that belong to them).
+        // Public URLs created by other users are visible only in the Top Showcase
+        // endpoint (/public), NOT in this table.
+        let filtered = isMasterAdmin
+            ? [...allRecords]
+            : allRecords.filter(item => norm(item.createdBy) === currentUsernameNorm);
 
         // Brand filter for non-admin
         if (userBrand && !isMasterAdmin) {
@@ -161,15 +160,19 @@ router.get('/', async (req, res) => {
         const total = filtered.length;
         const paginated = filtered.slice(skip, skip + limitNum);
 
-        // Compute categories list & stats
+        // Compute stats relative to the user's own records only (non-admin)
+        const ownRecords = isMasterAdmin
+            ? allRecords
+            : allRecords.filter(item => norm(item.createdBy) === currentUsernameNorm);
+
         const categoriesCount = {};
-        allRecords.forEach(r => {
+        ownRecords.forEach(r => {
             const cat = r.category || 'General';
             categoriesCount[cat] = (categoriesCount[cat] || 0) + 1;
         });
 
-        const publicCount = allRecords.filter(r => r.visibility === 'Public').length;
-        const privateCount = allRecords.filter(r => r.visibility === 'Private').length;
+        const publicCount  = ownRecords.filter(r => r.visibility === 'Public').length;
+        const privateCount = ownRecords.filter(r => r.visibility === 'Private').length;
 
         res.json({
             success: true,
@@ -178,7 +181,7 @@ router.get('/', async (req, res) => {
             page: pageNum,
             limit: limitNum,
             stats: {
-                totalAll: allRecords.length,
+                totalAll: ownRecords.length,
                 publicCount,
                 privateCount,
                 categoriesCount

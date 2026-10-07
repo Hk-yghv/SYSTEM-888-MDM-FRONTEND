@@ -627,6 +627,24 @@ const SaveUrlPage = () => {
                 </div>
             </div>
 
+            {/* My URLs Table label */}
+            <div className="flex items-center justify-between gap-2 px-1">
+                <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded bg-slate-100 text-slate-500 flex items-center justify-center text-[10px]">
+                        <FaLock />
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-700">
+                        URL របស់ខ្ញុំ (My Saved URLs)
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-normal">
+                        — បង្ហាញតែ URL ដែលអ្នកបង្កើតផ្ទាល់ប៉ុណ្ណោះ
+                    </span>
+                </div>
+                <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    Public URLs របស់អ្នកដទៃ → ឃើញខាងលើ
+                </span>
+            </div>
+
             {/* Saved URLs Table */}
             <div className="w-full overflow-x-auto rounded-[5px] border border-slate-200 bg-white shadow-md table-container">
                 <table className="w-full text-left text-xs whitespace-nowrap">
