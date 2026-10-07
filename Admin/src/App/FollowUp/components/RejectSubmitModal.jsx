@@ -22,7 +22,6 @@ const RejectSubmitModal = ({
     submitList = []
 }) => {
     const [showFollowUpTable, setShowFollowUpTable] = React.useState(false);
-    if (!isOpen) return null;
 
     const handleCountChange = (reason, value) => {
         const val = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
@@ -58,6 +57,8 @@ const RejectSubmitModal = ({
             return item.brand === brand || !item.brand;
         });
     }, [submitList, date, brand]);
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">

@@ -20,8 +20,6 @@ const RejectCsModal = ({
     onSave,
     saving = false
 }) => {
-    if (!isOpen) return null;
-
     const handleCountChange = (reason, value) => {
         const val = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
         setCounts(prev => ({
@@ -45,6 +43,8 @@ const RejectCsModal = ({
     };
 
     const totalCount = Object.values(counts).reduce((acc, curr) => acc + (Number(curr) || 0), 0);
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
