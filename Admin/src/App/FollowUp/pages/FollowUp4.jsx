@@ -188,6 +188,9 @@ const FollowUp4 = () => {
 
     const handleOpenCreateSubmitForm = () => {
         setEditingItem(null);
+        const telegramContactType = droplists.contactTypes.find(
+            contactType => typeof contactType === 'string' && contactType.trim().toLowerCase() === 'telegram'
+        );
         setFormData({
             date: getTodayStr(),
             name: '',
@@ -196,7 +199,7 @@ const FollowUp4 = () => {
             nameTelegram: '',
             fromSource: droplists.sources[0] || 'PAGE',
             namePgTlFrom: '',
-            contactType: droplists.contactTypes[0] || 'Call',
+            contactType: telegramContactType || droplists.contactTypes[0] || 'Telegram',
             namePgTlContact: '',
             appraisal: '',
             requested: '',
