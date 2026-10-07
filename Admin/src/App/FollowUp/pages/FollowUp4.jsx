@@ -37,6 +37,7 @@ const FollowUp4 = () => {
         contactTypes: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'],
         statuses: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
         assetTypes: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'],
+        models: [],
         rejectSubmitReasons: [],
         rejectCsReasons: []
     });
@@ -70,6 +71,7 @@ const FollowUp4 = () => {
                     const ct = findCat(['Follow Up 4 Contact Types', 'Contact Types', 'ប្រភេទទំនាក់ទំនង', 'ទាក់ទង']);
                     const st = findCat(['Follow Up 4 Statuses', 'Statuses', 'ស្ថានភាព']);
                     const ast = findCat(['Follow Up 4 Asset Types', 'Asset Types', 'ប្រភេទទ្រព្យ']);
+                    const modelOptions = findCat(['Device Models', 'Models', 'ម៉ូឌែល']);
                     const rsr = findCat(['Reject Submit Reasons', 'Reject Submit', 'មូលហេតុ Reject Submit']);
                     const rcr = findCat(['Reject CS Reasons', 'Reject CS', 'មូលហេតុ Reject CS']);
                     const bList = findCat(['Brands', 'Brand']);
@@ -81,6 +83,7 @@ const FollowUp4 = () => {
                         contactTypes: (ct && ct.length > 0) ? ct : prev.contactTypes,
                         statuses: (st && st.length > 0) ? st : prev.statuses,
                         assetTypes: (ast && ast.length > 0) ? ast : prev.assetTypes,
+                        models: modelOptions || prev.models,
                         rejectSubmitReasons: (rsr && Array.isArray(rsr)) ? rsr : [],
                         rejectCsReasons: (rcr && Array.isArray(rcr)) ? rcr : []
                     }));

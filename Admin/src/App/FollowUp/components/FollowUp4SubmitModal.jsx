@@ -1,5 +1,5 @@
 import { useLanguage } from '../../../context/LanguageContext';
-import React from 'react';
+import React, { useState } from 'react';
 import { FaPlusCircle, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
 
 /**
@@ -25,6 +25,7 @@ const FollowUp4SubmitModal = ({
     brandsList = ['888MDM', 'ECloud']
 }) => {
     const { t } = useLanguage();
+    const [isModelOptionsOpen, setIsModelOptionsOpen] = useState(false);
     if (!isOpen) return null;
 
     const sources = droplists.sources && droplists.sources.length > 0
@@ -42,6 +43,13 @@ const FollowUp4SubmitModal = ({
     const assetTypes = droplists.assetTypes && droplists.assetTypes.length > 0
         ? droplists.assetTypes
         : ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'];
+
+    const modelOptions = Array.isArray(droplists.models)
+        ? droplists.models.filter(model => typeof model === 'string' && model.trim())
+        : [];
+    const filteredModelOptions = modelOptions.filter(model =>
+        model.toLowerCase().includes((formData.model || '').trim().toLowerCase())
+    );
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
@@ -232,13 +240,61 @@ const FollowUp4SubmitModal = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-semibold text-slate-300 mb-1">MODEL</label>
-                            <input
-                                type="text"
-                                placeholder="ម៉ូឌែលទូរស័ព្ទ/ឧបករណ៍"
-                                value={formData.model}
-                                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                                className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded border border-slate-700 outline-none focus:border-emerald-500"
-                            />
+                            <div className="relative">
+                                <div className="flex">
+                                    <input
+                                        type="text"
+                                        role="combobox"
+                                        aria-autocomplete="list"
+                                        aria-expanded={isModelOptionsOpen}
+                                        aria-controls="follow-up-model-options"
+                                        placeholder="ម៉ូឌែលទូរស័ព្ទ/ឧបករណ៍"
+                                        value={formData.model}
+                                        onFocus={() => setIsModelOptionsOpen(true)}
+                                        onBlur={() => setIsModelOptionsOpen(false)}
+                                        onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                                        className="w-full bg-slate-900 text-slate-100 text-xs px-3 py-2 rounded-l border border-slate-700 outline-none focus:border-emerald-500"
+                                    />
+                                    <button
+                                        type="button"
+                                        aria-label="Show model options"
+                                        aria-expanded={isModelOptionsOpen}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => setIsModelOptionsOpen(open => !open)}
+                                        className="px-3 bg-slate-900 text-slate-300 text-xs border border-l-0 border-slate-700 rounded-r hover:text-white"
+                                    >
+                                        ▼
+                                    </button>
+                                </div>
+                                {isModelOptionsOpen && (
+                                    <div
+                                        id="follow-up-model-options"
+                                        role="listbox"
+                                        className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded border border-slate-700 bg-slate-900 shadow-xl"
+                                    >
+                                        {filteredModelOptions.length > 0 ? filteredModelOptions.map((model, index) => (
+                                            <button
+                                                key={`${model}-${index}`}
+                                                type="button"
+                                                role="option"
+                                                aria-selected={formData.model === model}
+                                                onMouseDown={(e) => e.preventDefault()}
+                                                onClick={() => {
+                                                    setFormData({ ...formData, model });
+                                                    setIsModelOptionsOpen(false);
+                                                }}
+                                                className="block w-full px-3 py-2 text-left text-xs text-slate-100 hover:bg-slate-800"
+                                            >
+                                                {model}
+                                            </button>
+                                        )) : (
+                                            <div className="px-3 py-2 text-xs text-slate-400">
+                                                គ្មានម៉ូឌែលត្រូវគ្នា — អាចវាយបញ្ចូលម៉ូឌែលថ្មីបាន
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div>
