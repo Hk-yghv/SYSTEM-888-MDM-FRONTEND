@@ -1725,6 +1725,8 @@ const CreateEditSalaryModal = ({
     photoFileRef,
     handlePhotoUpload
 }) => {
+    const { t } = useLanguage();
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-2 animate-in fade-in duration-150">
             <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] w-full max-w-lg shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
@@ -1732,7 +1734,7 @@ const CreateEditSalaryModal = ({
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--app-border,#e2e8f0)] bg-emerald-600 text-white shrink-0">
                     <h3 className="text-sm font-bold flex items-center gap-2">
                         <FaMoneyBillWave />
-                        <span>{editingItem ? [t('editSalary')]: 'បញ្ចូលប្រាក់ខែថ្មី (Create Salary Entry)'}</span>
+                        <span>{editingItem ? (t('editSalary') || 'កែប្រែប្រាក់ខែ') : 'បញ្ចូលប្រាក់ខែថ្មី (Create Salary Entry)'}</span>
                     </h3>
                     <button
                         onClick={() => setOpenModal(false)}
