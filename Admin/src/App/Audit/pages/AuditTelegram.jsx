@@ -667,6 +667,7 @@ const AuditTelegram = () => {
                                 <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Contact Name</th>
                                 <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Username</th>
                                 <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Phone number</th>
+                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200 whitespace-nowrap">Status Audit</th>
                                 <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">Status Account</th>
                                 <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Account Activity</th>
                                 <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Note Audit</th>
@@ -677,7 +678,7 @@ const AuditTelegram = () => {
                         <tbody>
                             {paginatedRows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={12} className="px-4 py-12 text-center text-slate-400 font-medium">
+                                    <td colSpan={13} className="px-4 py-12 text-center text-slate-400 font-medium">
                                         {loading ? (
                                             <div className="flex flex-col items-center justify-center gap-2">
                                                 <FaSpinner className="animate-spin text-2xl text-emerald-600" />
@@ -766,16 +767,29 @@ const AuditTelegram = () => {
                                                 )}
                                             </td>
 
-                                            {/* Status Account */}
+                                            {/* Status Audit (Auto by System) */}
+                                            <td className={`px-3.5 ${rowCellClass} text-center whitespace-nowrap`}>
+                                                {row.isAudited ? (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-300 shadow-2xs">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                                        <span>បាន Audit</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-300 shadow-2xs">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                                                        <span>មិនទាន់ Audit</span>
+                                                    </span>
+                                                )}
+                                            </td>
+
+                                            {/* Status Account (Manual Input) */}
                                             <td className={`px-3.5 ${rowCellClass} text-center`}>
                                                 {row.statusAccount ? (
                                                     <span className={`inline-block px-2.5 py-0.5 rounded-[5px] text-[11px] font-bold border ${getStatusBadgeClass(row.statusAccount)}`}>
                                                         {row.statusAccount}
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-block px-2 py-0.5 rounded-[5px] text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-300">
-                                                        មិនទាន់ Audit
-                                                    </span>
+                                                    <span className="text-slate-300 text-[11px] font-medium">—</span>
                                                 )}
                                             </td>
 
