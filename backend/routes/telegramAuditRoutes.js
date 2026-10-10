@@ -18,15 +18,19 @@ const getTodayDateStr = () => {
     return `${y}-${m}-${day}`;
 };
 
-const formatAuditDateTime = () => {
-    const d = new Date();
+const formatAuditDateTime = (date = new Date()) => {
+    const d = date instanceof Date ? date : new Date(date);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
+    let hours = d.getHours();
     const minutes = String(d.getMinutes()).padStart(2, '0');
     const seconds = String(d.getSeconds()).padStart(2, '0');
-    return `${y}-${m}-${day} ${hours}:${minutes}:${seconds}`;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const strHours = String(hours).padStart(2, '0');
+    return `${y}-${m}-${day} ${strHours}:${minutes}:${seconds} ${ampm}`;
 };
 
 // ── Background Auto-Submit Worker (Runs every 30 seconds) ─────────

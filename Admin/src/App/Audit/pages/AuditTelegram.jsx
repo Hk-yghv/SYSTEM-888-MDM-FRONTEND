@@ -17,6 +17,46 @@ const formatDateToYMD = (d) => {
     return `${y}-${m}-${day}`;
 };
 
+const formatAuditDateTimeDisplay = (val) => {
+    if (!val) return '';
+    const str = String(val).trim();
+    if (!str) return '';
+
+    // If it already ends with AM or PM, return normalized
+    if (/ (AM|PM)$/i.test(str)) {
+        return str.replace(/ (am|pm)$/i, (m, p) => ` ${p.toUpperCase()}`);
+    }
+
+    // Try parsing "YYYY-MM-DD HH:mm:ss" or "YYYY-MM-DD HH:mm"
+    const match = str.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (match) {
+        const [, datePart, rawH, min, sec] = match;
+        let h = parseInt(rawH, 10);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        const hh = String(h).padStart(2, '0');
+        const secondsPart = sec !== undefined ? `:${sec}` : '';
+        return `${datePart} ${hh}:${min}${secondsPart} ${ampm}`;
+    }
+
+    // Fallback date parsing
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+        const y = parsed.getFullYear();
+        const m = String(parsed.getMonth() + 1).padStart(2, '0');
+        const d = String(parsed.getDate()).padStart(2, '0');
+        let h = parsed.getHours();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        const hh = String(h).padStart(2, '0');
+        const min = String(parsed.getMinutes()).padStart(2, '0');
+        const sec = String(parsed.getSeconds()).padStart(2, '0');
+        return `${y}-${m}-${d} ${hh}:${min}:${sec} ${ampm}`;
+    }
+
+    return str;
+};
+
 const getStatusBadgeClass = (status) => {
     const s = String(status || '').toLowerCase().trim();
     if (s.includes('active') || s.includes('normal') || s.includes('good')) {
@@ -807,7 +847,7 @@ const AuditTelegram = () => {
                                             <td className={`px-3.5 ${rowCellClass} text-center font-mono text-[11px] text-slate-600 whitespace-nowrap`}>
                                                 {row.auditDateTime ? (
                                                     <span className="bg-slate-100 px-2 py-0.5 rounded-[5px] font-bold text-slate-700 border border-slate-200">
-                                                        {row.auditDateTime}
+                                                        {formatAuditDateTimeDisplay(row.auditDateTime)}
                                                     </span>
                                                 ) : (
                                                     <span className="text-slate-300">—</span>
@@ -1217,7 +1257,7 @@ const AuditTelegram = () => {
                                                 </span>
                                                 {log.auditDateTime && (
                                                     <span className="text-[11px] font-mono text-slate-400">
-                                                        ({log.auditDateTime})
+                                                        ({formatAuditDateTimeDisplay(log.auditDateTime)})
                                                     </span>
                                                 )}
                                             </div>
