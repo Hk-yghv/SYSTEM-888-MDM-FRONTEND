@@ -557,13 +557,19 @@ const AuditTelegram = () => {
                     <p className="text-xs font-bold text-slate-500">អតិថិជនសរុប (Activate)</p>
                     <p className="text-xl font-black text-slate-800 mt-1">{totalItems}</p>
                 </div>
-                <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
-                    <p className="text-xs font-bold text-emerald-600">បាន Audit ថ្ងៃនេះ</p>
-                    <p className="text-xl font-black text-emerald-700 mt-1">{auditedCount}</p>
+                <div className="bg-white p-3.5 rounded-[5px] border border-blue-200 shadow-2xs bg-blue-50/25">
+                    <p className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 shadow-xs shadow-blue-500/50"></span>
+                        បាន Audit (បន្ទាត់ខៀវ)
+                    </p>
+                    <p className="text-xl font-black text-blue-700 mt-1">{auditedCount}</p>
                 </div>
-                <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
-                    <p className="text-xs font-bold text-amber-600">នៅសល់មិនទាន់ Audit</p>
-                    <p className="text-xl font-black text-amber-700 mt-1">{pendingCount}</p>
+                <div className="bg-white p-3.5 rounded-[5px] border border-rose-200 shadow-2xs bg-rose-50/25">
+                    <p className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-rose-500 shadow-xs shadow-rose-500/50"></span>
+                        នៅសល់មិនទាន់ Audit (បន្ទាត់ក្រហម)
+                    </p>
+                    <p className="text-xl font-black text-rose-700 mt-1">{pendingCount}</p>
                 </div>
                 <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
                     <p className="text-xs font-bold text-slate-500">ស្ថានភាពថ្ងៃ {selectedDate}</p>
@@ -619,8 +625,8 @@ const AuditTelegram = () => {
                             className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-[5px] px-2.5 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer"
                         >
                             <option value="All">ស្ថានភាពទាំងអស់ (All)</option>
-                            <option value="Audited">បាន Audit រួចរាល់</option>
-                            <option value="Pending">នៅសល់មិនទាន់ Audit</option>
+                            <option value="Audited">🔵 បាន Audit រួចរាល់ (បន្ទាត់ខៀវ)</option>
+                            <option value="Pending">🔴 នៅសល់មិនទាន់ Audit (បន្ទាត់ក្រហម)</option>
                             {availableStatuses.map(st => (
                                 <option key={st} value={st}>{st}</option>
                             ))}
@@ -650,25 +656,25 @@ const AuditTelegram = () => {
 
             {/* Main Data Table */}
             <div className="bg-white rounded-[5px] border border-slate-200 shadow-xs overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
+                <div className="overflow-x-auto p-2">
+                    <table className="w-full text-left border-separate border-spacing-y-1.5 border-spacing-x-0 text-xs">
                         <thead>
-                            <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-black tracking-wider uppercase text-[11px]">
-                                <th className="px-3.5 py-3 text-center w-12">#</th>
-                                <th className="px-3.5 py-3">ឈ្មោះអតិថិជន</th>
-                                <th className="px-3.5 py-3 text-center">Contract iid</th>
-                                <th className="px-3.5 py-3 text-right">Amount</th>
-                                <th className="px-3.5 py-3">Contact Name</th>
-                                <th className="px-3.5 py-3">Username</th>
-                                <th className="px-3.5 py-3">Phone number</th>
-                                <th className="px-3.5 py-3 text-center">Status Account</th>
-                                <th className="px-3.5 py-3">Account Activity</th>
-                                <th className="px-3.5 py-3">Note Audit</th>
-                                <th className="px-3.5 py-3 text-center">ថ្ងៃ Audit</th>
-                                <th className="px-3.5 py-3 text-center w-28">Action</th>
+                            <tr className="text-slate-700 font-black tracking-wider uppercase text-[11px]">
+                                <th className="px-3.5 py-3 text-center w-12 bg-slate-100/90 border-b border-slate-200 first:rounded-l-[5px]">#</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">ឈ្មោះអតិថិជន</th>
+                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">Contract iid</th>
+                                <th className="px-3.5 py-3 text-right bg-slate-100/90 border-b border-slate-200">Amount</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Contact Name</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Username</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Phone number</th>
+                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">Status Account</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Account Activity</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Note Audit</th>
+                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">ថ្ងៃ Audit</th>
+                                <th className="px-3.5 py-3 text-center w-28 bg-slate-100/90 border-b border-slate-200 last:rounded-r-[5px]">Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody>
                             {paginatedRows.length === 0 ? (
                                 <tr>
                                     <td colSpan={12} className="px-4 py-12 text-center text-slate-400 font-medium">
@@ -686,19 +692,32 @@ const AuditTelegram = () => {
                                 paginatedRows.map((row, idx) => {
                                     const rowNum = (currentPage - 1) * itemsPerPage + idx + 1;
                                     const isRowMenuOpen = openMenuId === row.rawContractId;
+                                    const rowBorderColor = row.isAudited ? 'border-blue-500' : 'border-rose-400';
+                                    const rowBgColor = row.isAudited ? 'bg-blue-50/20 hover:bg-blue-50/45' : 'bg-rose-50/15 hover:bg-rose-50/40';
+                                    const rowCellClass = `py-2.5 border-y-2 ${rowBorderColor} first:border-l-2 first:rounded-l-[5px] last:border-r-2 last:rounded-r-[5px] transition-colors`;
 
                                     return (
                                         <tr
                                             key={row.rawContractId}
-                                            className="hover:bg-slate-50/80 transition-colors"
+                                            className={`${rowBgColor} transition-colors group`}
                                         >
-                                            {/* No. */}
-                                            <td className="px-3.5 py-2.5 text-center font-mono font-bold text-slate-500">
-                                                {rowNum}
+                                            {/* No. with Status Indicator Dot */}
+                                            <td className={`px-3.5 ${rowCellClass} text-center font-mono font-bold`}>
+                                                <div className="flex items-center justify-center gap-1.5">
+                                                    <span
+                                                        className={`w-2 h-2 rounded-full ${
+                                                            row.isAudited
+                                                                ? 'bg-blue-500 shadow-xs shadow-blue-500/50'
+                                                                : 'bg-rose-500 shadow-xs shadow-rose-500/50 animate-pulse'
+                                                        }`}
+                                                        title={row.isAudited ? 'បាន Audit រួចរាល់ (បន្ទាត់ខៀវ)' : 'នៅសល់មិនទាន់ Audit (បន្ទាត់ក្រហម)'}
+                                                    ></span>
+                                                    <span className={row.isAudited ? 'text-blue-900 font-black' : 'text-rose-900 font-bold'}>{rowNum}</span>
+                                                </div>
                                             </td>
 
                                             {/* Customer Name */}
-                                            <td className="px-3.5 py-2.5">
+                                            <td className={`px-3.5 ${rowCellClass}`}>
                                                 <div className="flex items-center gap-1.5 font-bold text-slate-800">
                                                     <span>{row.customerName}</span>
                                                     <CopyButton text={row.customerName} />
@@ -706,7 +725,7 @@ const AuditTelegram = () => {
                                             </td>
 
                                             {/* Contract iid */}
-                                            <td className="px-3.5 py-2.5 text-center font-mono font-bold text-indigo-700">
+                                            <td className={`px-3.5 ${rowCellClass} text-center font-mono font-bold text-indigo-700`}>
                                                 <div className="flex items-center justify-center gap-1">
                                                     <span>{row.contractIid}</span>
                                                     <CopyButton text={row.contractIid} />
@@ -714,12 +733,12 @@ const AuditTelegram = () => {
                                             </td>
 
                                             {/* Amount */}
-                                            <td className="px-3.5 py-2.5 text-right font-mono font-bold text-emerald-700">
+                                            <td className={`px-3.5 ${rowCellClass} text-right font-mono font-bold text-emerald-700`}>
                                                 ${Number(row.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </td>
 
                                             {/* Contact Name Customer */}
-                                            <td className="px-3.5 py-2.5 text-slate-700 font-medium">
+                                            <td className={`px-3.5 ${rowCellClass} text-slate-700 font-medium`}>
                                                 {row.contactName ? (
                                                     <span className="font-semibold">{row.contactName}</span>
                                                 ) : (
@@ -728,7 +747,7 @@ const AuditTelegram = () => {
                                             </td>
 
                                             {/* Username */}
-                                            <td className="px-3.5 py-2.5 text-slate-700 font-mono">
+                                            <td className={`px-3.5 ${rowCellClass} text-slate-700 font-mono`}>
                                                 {row.username ? (
                                                     <span className="text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-[5px] border border-sky-200">
                                                         {row.username.startsWith('@') ? row.username : `@${row.username}`}
@@ -739,7 +758,7 @@ const AuditTelegram = () => {
                                             </td>
 
                                             {/* Phone number */}
-                                            <td className="px-3.5 py-2.5 text-slate-700 font-mono">
+                                            <td className={`px-3.5 ${rowCellClass} text-slate-700 font-mono`}>
                                                 {row.phoneNumber ? (
                                                     <span className="font-bold">{row.phoneNumber}</span>
                                                 ) : (
@@ -748,28 +767,30 @@ const AuditTelegram = () => {
                                             </td>
 
                                             {/* Status Account */}
-                                            <td className="px-3.5 py-2.5 text-center">
+                                            <td className={`px-3.5 ${rowCellClass} text-center`}>
                                                 {row.statusAccount ? (
                                                     <span className={`inline-block px-2.5 py-0.5 rounded-[5px] text-[11px] font-bold border ${getStatusBadgeClass(row.statusAccount)}`}>
                                                         {row.statusAccount}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-slate-300 text-[11px] italic">មិនទាន់ Audit</span>
+                                                    <span className="inline-block px-2 py-0.5 rounded-[5px] text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-300">
+                                                        មិនទាន់ Audit
+                                                    </span>
                                                 )}
                                             </td>
 
                                             {/* Account Activity */}
-                                            <td className="px-3.5 py-2.5 text-slate-600 max-w-xs truncate" title={row.accountActivity}>
+                                            <td className={`px-3.5 ${rowCellClass} text-slate-600 max-w-xs truncate`} title={row.accountActivity}>
                                                 {row.accountActivity || <span className="text-slate-300">—</span>}
                                             </td>
 
                                             {/* Note Audit */}
-                                            <td className="px-3.5 py-2.5 text-slate-600 max-w-xs truncate" title={row.noteAudit}>
+                                            <td className={`px-3.5 ${rowCellClass} text-slate-600 max-w-xs truncate`} title={row.noteAudit}>
                                                 {row.noteAudit || <span className="text-slate-300">—</span>}
                                             </td>
 
                                             {/* Audit Date / Time */}
-                                            <td className="px-3.5 py-2.5 text-center font-mono text-[11px] text-slate-600 whitespace-nowrap">
+                                            <td className={`px-3.5 ${rowCellClass} text-center font-mono text-[11px] text-slate-600 whitespace-nowrap`}>
                                                 {row.auditDateTime ? (
                                                     <span className="bg-slate-100 px-2 py-0.5 rounded-[5px] font-bold text-slate-700 border border-slate-200">
                                                         {row.auditDateTime}
@@ -780,7 +801,7 @@ const AuditTelegram = () => {
                                             </td>
 
                                             {/* Action Column */}
-                                            <td className="px-3.5 py-2.5 text-center relative">
+                                            <td className={`px-3.5 ${rowCellClass} text-center relative`}>
                                                 <div className="flex items-center justify-center gap-1.5">
                                                     {/* Audit Button (Icon in front of Menu) */}
                                                     <button
@@ -790,7 +811,9 @@ const AuditTelegram = () => {
                                                         className={`w-8 h-8 rounded-[5px] flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
                                                             isSubmitted
                                                                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                                                : 'bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600'
+                                                                : row.isAudited
+                                                                    ? 'bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-300 hover:border-blue-600'
+                                                                    : 'bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600'
                                                         }`}
                                                     >
                                                         <FaEdit size={14} />
@@ -799,7 +822,7 @@ const AuditTelegram = () => {
                                                     {/* Action Menu (Droplist) */}
                                                     <div className="relative row-action-menu-container">
                                                         <button
-                                                            onClick={(e) => {
+                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setOpenMenuId(isRowMenuOpen ? null : row.rawContractId);
                                                             }}
