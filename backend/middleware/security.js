@@ -18,6 +18,8 @@ const PARTNER_ALLOWED_PATH_PREFIXES = [
     '/api/cash-transactions',
     '/api/telegram-audit',
     '/telegram-audit',
+    '/api/cashflow-trader',
+    '/cashflow-trader',
     '/api/health',
 ];
 

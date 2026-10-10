@@ -1,6 +1,7 @@
 // Ordered list of all primary routes in the application
 export const ORDERED_SYSTEM_ROUTES = [
     '/dashboard',
+    '/cashflow/monitor',
     '/calendar',
     '/telegram',
     '/customer',

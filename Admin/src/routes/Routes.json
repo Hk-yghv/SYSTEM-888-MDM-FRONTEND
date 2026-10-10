@@ -2,6 +2,7 @@
     "start": "/",
     "signin": "/signin",
     "dashboard": "/dashboard",
+    "cashFlowTrader": "/cashflow/monitor",
     "calendar": "/calendar",
     "telegram": "/telegram",
     "customer": "/customer",

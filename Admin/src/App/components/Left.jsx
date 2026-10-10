@@ -110,11 +110,19 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
             <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5 custom-scrollbar flex flex-col">
                 {/* Dashboard */}
                 {hasPermission('/dashboard', 'read') && (
-                <Link to={json.dashboard} className={navItemClass(json.dashboard)}>
-                    <MdDashboard size={20} className={isActive(json.dashboard) ? "text-white" : "text-emerald-600"} />
-                    {t('dashboard')}
-                </Link>
-            )}
+                    <Link to={json.dashboard} className={navItemClass(json.dashboard)}>
+                        <MdDashboard size={20} className={isActive(json.dashboard) ? "text-white" : "text-emerald-600"} />
+                        {t('dashboard')}
+                    </Link>
+                )}
+
+                {/* Cash Flow Trader */}
+                {hasPermission(json.cashFlowTrader || '/cashflow/monitor', 'read') && (
+                    <Link to={json.cashFlowTrader || '/cashflow/monitor'} className={navItemClass(json.cashFlowTrader || '/cashflow/monitor')}>
+                        <MdOutlineBarChart size={20} className={isActive(json.cashFlowTrader || '/cashflow/monitor') ? "text-white" : "text-emerald-600"} />
+                        {t('cashFlowTrader') || 'Cash Flow Trader'}
+                    </Link>
+                )}
 
             {/* Customer */}
             {hasPermission('/customer', 'read') && (

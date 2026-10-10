@@ -7,6 +7,7 @@ import { CONTROL_SYSTEM_SECTIONS } from '../../../utils/controlSystemPermissions
 
 const ALL_SYSTEM_PAGES = [
     { category: 'Main Systems', path: '/dashboard', label: 'Dashboard Analysis', actions: ['read', 'export'] },
+    { category: 'Main Systems', path: '/cashflow/monitor', label: 'Cash Flow Trader (លំហូរសាច់ប្រាក់)', actions: ['read', 'export'] },
     { category: 'Main Systems', path: '/customer', label: 'Customer Directory', actions: ['read', 'export', 'seePhoto', 'detail', 'qrcode'] },
     { category: 'Main Systems', path: '/device', label: 'Device List & Actions', actions: ['read', 'export', 'information', 'deviceAction'] },
     { category: 'Main Systems', path: '/telegram', label: 'Telegram Web (Multi-Account)', actions: ['read'] },

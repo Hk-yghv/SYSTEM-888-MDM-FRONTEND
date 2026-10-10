@@ -63,6 +63,7 @@ import calendarEventRoutes from './routes/calendarEventRoutes.js';
 import { initTelegramBotService } from './services/telegramBotService.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import telegramAuditRoutes from './routes/telegramAuditRoutes.js';
+import cashFlowTraderRoutes from './routes/cashFlowTraderRoutes.js';
 import { installTelegramSendRetry } from './utils/telegramSendRetry.js';
 
 const app = express();
@@ -192,6 +193,8 @@ app.use('/api/calendar-events', calendarEventRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/telegram-audit', telegramAuditRoutes);
 app.use('/telegram-audit', telegramAuditRoutes);
+app.use('/api/cashflow-trader', cashFlowTraderRoutes);
+app.use('/cashflow-trader', cashFlowTraderRoutes);
 
 // ── Interactive HTML Partner API Documentation Route ──
 const docsHtmlPath = path.resolve(__dirname, '../docs/index.html');
