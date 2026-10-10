@@ -16,6 +16,8 @@ const PARTNER_ALLOWED_PATH_PREFIXES = [
     '/api/dashboard',
     '/dashboard',
     '/api/cash-transactions',
+    '/api/telegram-audit',
+    '/telegram-audit',
     '/api/health',
 ];
 

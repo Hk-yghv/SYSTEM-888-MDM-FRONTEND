@@ -49,6 +49,7 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/salary',
     '/all-picture',
     '/save-url',
+    '/audit/telegram',
     '/settings/all-account',
     '/settings/control-system',
     '/profile'

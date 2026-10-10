@@ -63,6 +63,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Salary System', path: '/salary', label: 'Salary Management (គ្រប់គ្រងប្រាក់ខែ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 
     { category: 'Tools & Utilities', path: '/save-url', label: 'Save URL (រក្សាទុក URL)', actions: ['read', 'create', 'edit', 'delete'] },
+    { category: 'Audit System', path: '/audit/telegram', label: 'Audit Telegram (សវនកម្មតេឡេក្រាម)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 
     { category: 'Media Management', path: '/all-picture', label: 'All Picture (Cloudinary)', actions: ['read', 'delete'] },
 

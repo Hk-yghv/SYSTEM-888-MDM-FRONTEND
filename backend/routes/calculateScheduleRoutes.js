@@ -10,14 +10,20 @@ if (!MEM_DB.calculateSchedules) {
     MEM_DB.calculateSchedules = [];
 }
 
+const sseClients = new Set();
+
 export const broadcastCalculateUpdate = (eventData) => {
-    const payload = `data: ${JSON.stringify(eventData)}\n\n`;
-    for (const client of sseClients) {
-        try {
-            client.res.write(payload);
-        } catch (e) {
-            sseClients.delete(client);
+    try {
+        const payload = `data: ${JSON.stringify(eventData)}\n\n`;
+        for (const client of sseClients) {
+            try {
+                client.res.write(payload);
+            } catch (e) {
+                sseClients.delete(client);
+            }
         }
+    } catch (err) {
+        console.error('[broadcastCalculateUpdate] Error:', err);
     }
 };
 

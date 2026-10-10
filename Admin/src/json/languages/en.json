@@ -1,4 +1,4 @@
-﻿{
+{
   "systemTitle": "SYSTEM MDM",
   "dashboard": "Dashboard",
   "customer": "All Customer",
@@ -24,6 +24,8 @@
   "penalty": "Penalty",
   "lostPhone": "Lost Phone",
   "saveUrl": "Save URL",
+  "audit": "Audit",
+  "auditTelegram": "Audit Telegram",
   "actions": "Actions",
   "lockPhone": "Lock Phone",
   "unlockPhone": "Unlock Phone",

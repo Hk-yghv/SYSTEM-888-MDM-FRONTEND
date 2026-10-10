@@ -62,6 +62,7 @@ import calculateScheduleRoutes from './routes/calculateScheduleRoutes.js';
 import calendarEventRoutes from './routes/calendarEventRoutes.js';
 import { initTelegramBotService } from './services/telegramBotService.js';
 import telegramRoutes from './routes/telegramRoutes.js';
+import telegramAuditRoutes from './routes/telegramAuditRoutes.js';
 import { installTelegramSendRetry } from './utils/telegramSendRetry.js';
 
 const app = express();
@@ -189,6 +190,8 @@ app.use('/api/calculate-schedules', calculateScheduleRoutes);
 app.use('/calculate-schedules', calculateScheduleRoutes);
 app.use('/api/calendar-events', calendarEventRoutes);
 app.use('/api/telegram', telegramRoutes);
+app.use('/api/telegram-audit', telegramAuditRoutes);
+app.use('/telegram-audit', telegramAuditRoutes);
 
 // ── Interactive HTML Partner API Documentation Route ──
 const docsHtmlPath = path.resolve(__dirname, '../docs/index.html');
