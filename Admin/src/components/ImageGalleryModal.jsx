@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 
@@ -5,44 +6,66 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
     if (!images?.length) return null;
 
     const currentIndex = Math.min(Math.max(index, 0), images.length - 1);
+    const hasMultiple = images.length > 1;
+
+    // Keyboard navigation (Arrow keys & Escape)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose?.();
+            } else if (e.key === 'ArrowLeft' && hasMultiple && currentIndex > 0) {
+                onIndexChange(currentIndex - 1);
+            } else if (e.key === 'ArrowRight' && hasMultiple && currentIndex < images.length - 1) {
+                onIndexChange(currentIndex + 1);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [currentIndex, hasMultiple, onClose, onIndexChange]);
 
     return (
         <div
-            className="fixed inset-0 z-[100000000] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm"
+            className="fixed inset-0 z-[100000000] flex items-center justify-center bg-black/80 p-3 sm:p-5 backdrop-blur-sm animate-in fade-in duration-150"
             onClick={onClose}
         >
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-label={title}
-                className="max-w-[84vw] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl"
+                className="flex flex-col max-h-[92vh] sm:max-h-[94vh] max-w-[94vw] sm:max-w-[88vw] md:max-w-[84vw] overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-2xl"
                 onClick={event => event.stopPropagation()}
             >
-                <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-3 py-2">
+                {/* Modal Header */}
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-3 py-1.5 sm:py-2 bg-white">
                     <div className="min-w-0">
-                        <div className="text-sm font-semibold text-slate-700">
-                            {title}
-                            {images.length > 1 && <span className="ml-2 text-xs text-slate-500">{currentIndex + 1} / {images.length}</span>}
+                        <div className="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <span className="truncate">{title}</span>
+                            {hasMultiple && (
+                                <span className="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded-[3px] text-[10px] sm:text-[11px] font-mono text-slate-600 font-semibold shrink-0">
+                                    {currentIndex + 1} / {images.length}
+                                </span>
+                            )}
                         </div>
-                        {subtitle && <div className="truncate text-xs text-slate-500">{subtitle}</div>}
+                        {subtitle && <div className="truncate text-[11px] text-slate-500">{subtitle}</div>}
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
                         aria-label="Close image viewer"
-                        className="rounded p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600"
+                        className="rounded-[4px] p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                     >
-                        <FaTimes />
+                        <FaTimes size={15} />
                     </button>
                 </div>
 
-                <div className="relative flex items-center justify-center bg-slate-100 p-2">
-                    {images.length > 1 && currentIndex > 0 && (
+                {/* Main Image Stage - Maximum visibility with proper margin */}
+                <div className="relative flex-1 min-h-0 flex items-center justify-center bg-slate-100/90 p-1.5 sm:p-2.5 overflow-hidden">
+                    {hasMultiple && currentIndex > 0 && (
                         <button
                             type="button"
                             onClick={() => onIndexChange(currentIndex - 1)}
                             aria-label="Previous image"
-                            className="absolute left-3 z-10 rounded-full bg-white/90 p-2 text-slate-700 shadow-md hover:bg-white"
+                            className="absolute left-2.5 z-10 rounded-full bg-white/90 p-2 text-slate-700 shadow-md hover:bg-white hover:scale-105 active:scale-95 transition-all cursor-pointer"
                         >
                             <MdChevronLeft size={22} />
                         </button>
@@ -51,22 +74,25 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                         key={images[currentIndex]}
                         src={images[currentIndex]}
                         alt={`${title} ${currentIndex + 1}`}
-                        className="block max-h-[65vh] max-w-[80vw] object-contain"
+                        className={`block max-w-full object-contain select-none transition-transform duration-150 ${
+                            hasMultiple ? 'max-h-[74vh] sm:max-h-[77vh]' : 'max-h-[82vh] sm:max-h-[84vh]'
+                        }`}
                     />
-                    {images.length > 1 && currentIndex < images.length - 1 && (
+                    {hasMultiple && currentIndex < images.length - 1 && (
                         <button
                             type="button"
                             onClick={() => onIndexChange(currentIndex + 1)}
                             aria-label="Next image"
-                            className="absolute right-3 z-10 rounded-full bg-white/90 p-2 text-slate-700 shadow-md hover:bg-white"
+                            className="absolute right-2.5 z-10 rounded-full bg-white/90 p-2 text-slate-700 shadow-md hover:bg-white hover:scale-105 active:scale-95 transition-all cursor-pointer"
                         >
                             <MdChevronRight size={22} />
                         </button>
                     )}
                 </div>
 
-                {images.length > 1 && (
-                    <div className="flex max-w-[82vw] justify-center gap-2 overflow-x-auto border-t border-slate-200 bg-slate-50 p-2">
+                {/* Compact Thumbnail Strip for 2+ Images - small space at the bottom */}
+                {hasMultiple && (
+                    <div className="shrink-0 flex justify-center items-center gap-1.5 sm:gap-2 overflow-x-auto border-t border-slate-200 bg-slate-50 px-2 py-1.5 max-w-full">
                         {images.map((image, imageIndex) => (
                             <button
                                 key={`${image}-${imageIndex}`}
@@ -74,8 +100,10 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                                 onClick={() => onIndexChange(imageIndex)}
                                 aria-label={`Show image ${imageIndex + 1}`}
                                 aria-current={imageIndex === currentIndex ? 'true' : undefined}
-                                className={`h-12 w-12 flex-shrink-0 overflow-hidden rounded border-2 transition-colors ${
-                                    imageIndex === currentIndex ? 'border-indigo-500' : 'border-slate-200 hover:border-indigo-300'
+                                className={`h-10 w-10 sm:h-12 sm:w-12 shrink-0 overflow-hidden rounded-[4px] border-2 transition-all cursor-pointer ${
+                                    imageIndex === currentIndex
+                                        ? 'border-indigo-600 ring-2 ring-indigo-500/30 scale-105 shadow-xs'
+                                        : 'border-slate-300 hover:border-indigo-400 opacity-70 hover:opacity-100'
                                 }`}
                             >
                                 <img src={image} alt="" className="h-full w-full object-cover" />

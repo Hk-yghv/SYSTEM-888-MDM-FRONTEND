@@ -1532,11 +1532,11 @@ const Customer = () => {
 
                 return (
                     <div className="fixed inset-0 z-[100000000] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm" onClick={closeGallery}>
-                        <div role="dialog" aria-modal="true" className="max-w-[84vw] rounded-lg border border-slate-700 bg-slate-900 p-6 text-center text-slate-300 shadow-2xl" onClick={event => event.stopPropagation()}>
+                        <div role="dialog" aria-modal="true" className="max-w-[84vw] rounded-[5px] border border-slate-700 bg-slate-900 p-6 text-center text-slate-300 shadow-2xl" onClick={event => event.stopPropagation()}>
                             <FaFileImage className="mx-auto text-4xl text-slate-500" />
                             <p className="mt-3 text-xs font-semibold">គ្មានរូបភាពភស្តុតាងដែលបានភ្ជាប់សម្រាប់អតិថិជននេះទេ</p>
                             <p className="mt-1 text-[11px] text-slate-400">No evidence photos attached for this application.</p>
-                            <button type="button" onClick={closeGallery} className="mt-4 rounded bg-slate-700 px-3 py-1.5 text-xs font-bold text-white">Close</button>
+                            <button type="button" onClick={closeGallery} className="mt-4 rounded-[5px] bg-slate-700 px-3 py-1.5 text-xs font-bold text-white cursor-pointer hover:bg-slate-600 transition-colors">Close</button>
                         </div>
                     </div>
                 );
