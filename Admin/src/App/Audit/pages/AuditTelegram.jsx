@@ -4,10 +4,10 @@ import { useLanguage } from '../../../context/LanguageContext';
 import {
     FaTelegramPlane, FaClipboardCheck, FaCalendarAlt, FaSearch, FaSync,
     FaLock, FaCheckCircle, FaExclamationTriangle, FaUserPlus, FaUserEdit,
-    FaHistory, FaCopy, FaCheck, FaTimes, FaSpinner, FaFilter, FaArrowRight
+    FaHistory, FaCopy, FaCheck, FaTimes, FaSpinner, FaFilter, FaArrowRight,
+    FaClipboardList, FaEdit
 } from 'react-icons/fa';
 import { AiOutlineMenu } from 'react-icons/ai';
-import { BsThreeDotsVertical } from 'react-icons/bs';
 
 const formatDateToYMD = (d) => {
     if (!d || !(d instanceof Date) || isNaN(d)) return '';
@@ -108,7 +108,15 @@ const AuditTelegram = () => {
     // Confirmation Modals
     const [confirmSubmitModal, setConfirmSubmitModal] = useState(false);
     const [submittingDaily, setSubmittingDaily] = useState(false);
-    const [jumpConfirmModal, setJumpConfirmModal] = useState(null); // { date, customerName }
+    const [jumpConfirmModal, setJumpConfirmModal] = useState(null);
+
+    // ─── Real recorded statuses only from database/table (NO hardcoded values) ──
+    const availableStatuses = useMemo(() => {
+        const set = new Set();
+        (distinctStatuses || []).forEach(s => s && set.add(String(s).trim()));
+        Object.values(auditMap || {}).forEach(a => a?.statusAccount && set.add(String(a.statusAccount).trim()));
+        return Array.from(set).filter(Boolean);
+    }, [distinctStatuses, auditMap]);
 
     // ─── Fetch Contracts (from Activate) ───────────────────────────
     const fetchContracts = useCallback(async () => {
@@ -117,7 +125,7 @@ const AuditTelegram = () => {
             const params = new URLSearchParams({
                 status: 'Activated',
                 page: 1,
-                limit: 500, // Load active contracts
+                limit: 500,
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
@@ -147,7 +155,7 @@ const AuditTelegram = () => {
                     setAuditMap(data.auditMap || {});
                     setIsSubmitted(Boolean(data.isSubmitted));
                     setSubmissionInfo(data.submissionInfo || null);
-                    if (Array.isArray(data.distinctStatuses) && data.distinctStatuses.length > 0) {
+                    if (Array.isArray(data.distinctStatuses)) {
                         setDistinctStatuses(data.distinctStatuses);
                     }
                 }
@@ -266,12 +274,13 @@ const AuditTelegram = () => {
         }
         setAuditModalItem(row);
         const currentStatus = row.statusAccount || '';
-        const existsInSuggestions = distinctStatuses.includes(currentStatus);
+        const existsInSuggestions = availableStatuses.includes(currentStatus);
 
+        const hasOptions = availableStatuses.length > 0;
         setAuditForm({
             statusAccount: existsInSuggestions || !currentStatus ? currentStatus : '__CUSTOM__',
             customStatus: existsInSuggestions ? '' : currentStatus,
-            isCustomStatus: Boolean(currentStatus && !existsInSuggestions),
+            isCustomStatus: Boolean(!hasOptions || (currentStatus && !existsInSuggestions)),
             accountActivity: row.accountActivity || '',
             noteAudit: row.noteAudit || ''
         });
@@ -309,7 +318,6 @@ const AuditTelegram = () => {
             });
             const data = await res.json();
             if (res.ok && data.success) {
-                // Update local audit map
                 setAuditMap(prev => ({
                     ...prev,
                     [auditModalItem.rawContractId]: data.data
@@ -455,17 +463,17 @@ const AuditTelegram = () => {
     };
 
     return (
-        <div className="p-4 sm:p-6 space-y-5 bg-slate-50 min-h-screen font-sans">
+        <div className="p-4 sm:p-6 space-y-4 bg-slate-50 min-h-screen font-sans">
             {/* Header & Page Title */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-[5px] border border-slate-200 shadow-xs">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-                        <FaTelegramPlane size={24} />
+                    <div className="w-11 h-11 rounded-[5px] bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+                        <FaClipboardList size={22} />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Audit Telegram</h1>
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <span className="px-2 py-0.5 rounded-[5px] text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                                 Activate Sync
                             </span>
                         </div>
@@ -478,7 +486,7 @@ const AuditTelegram = () => {
                 {/* Date Search & Status & Daily Submit Button */}
                 <div className="flex flex-wrap items-center gap-2.5">
                     {/* Date Picker (Auto defaults to Today) */}
-                    <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-300">
+                    <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-[5px] border border-slate-300">
                         <FaCalendarAlt className="text-emerald-600 text-sm" />
                         <span className="text-xs font-bold text-slate-600">ថ្ងៃ Audit:</span>
                         <input
@@ -493,7 +501,7 @@ const AuditTelegram = () => {
                         {selectedDate !== todayStr && (
                             <button
                                 onClick={() => setSelectedDate(todayStr)}
-                                className="ml-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded transition-colors"
+                                className="ml-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded-[5px] transition-colors"
                             >
                                 ថ្ងៃនេះ
                             </button>
@@ -502,12 +510,12 @@ const AuditTelegram = () => {
 
                     {/* Status Badge */}
                     {isSubmitted ? (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold shadow-2xs">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold shadow-2xs">
                             <FaLock size={12} />
                             <span>បាន Submit រួចរាល់ (Locked)</span>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-bold shadow-2xs">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-bold shadow-2xs">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             <span>កំពុងដំណើរការ (Editable)</span>
                         </div>
@@ -517,7 +525,7 @@ const AuditTelegram = () => {
                     <button
                         onClick={() => setConfirmSubmitModal(true)}
                         disabled={isSubmitted || submittingDaily}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer ${
+                        className={`flex items-center gap-2 px-4 py-2 rounded-[5px] text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer ${
                             isSubmitted
                                 ? 'bg-slate-200 text-slate-500 border border-slate-300 cursor-not-allowed'
                                 : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-600/20 active:scale-95'
@@ -536,7 +544,7 @@ const AuditTelegram = () => {
                         onClick={() => fetchAuditState(selectedDate)}
                         disabled={reloading}
                         title="Reload"
-                        className="p-2.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 shadow-2xs cursor-pointer transition-colors"
+                        className="p-2.5 rounded-[5px] bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 shadow-2xs cursor-pointer transition-colors"
                     >
                         <FaSync className={`text-sm ${reloading ? 'animate-spin text-emerald-600' : ''}`} />
                     </button>
@@ -545,19 +553,19 @@ const AuditTelegram = () => {
 
             {/* Statistics Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
                     <p className="text-xs font-bold text-slate-500">អតិថិជនសរុប (Activate)</p>
                     <p className="text-xl font-black text-slate-800 mt-1">{totalItems}</p>
                 </div>
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
                     <p className="text-xs font-bold text-emerald-600">បាន Audit ថ្ងៃនេះ</p>
                     <p className="text-xl font-black text-emerald-700 mt-1">{auditedCount}</p>
                 </div>
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
                     <p className="text-xs font-bold text-amber-600">នៅសល់មិនទាន់ Audit</p>
                     <p className="text-xl font-black text-amber-700 mt-1">{pendingCount}</p>
                 </div>
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+                <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
                     <p className="text-xs font-bold text-slate-500">ស្ថានភាពថ្ងៃ {selectedDate}</p>
                     <p className="text-sm font-bold mt-1.5">
                         {isSubmitted ? (
@@ -574,7 +582,7 @@ const AuditTelegram = () => {
             </div>
 
             {/* Table Filter Controls */}
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-white p-3 rounded-[5px] border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-3 flex-1">
                     {/* Search Input */}
                     <div className="relative min-w-[260px] flex-1 max-w-md">
@@ -587,7 +595,7 @@ const AuditTelegram = () => {
                                 setSearchTerm(e.target.value);
                                 setCurrentPage(1);
                             }}
-                            className="w-full pl-9 pr-3 py-2 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                            className="w-full pl-9 pr-3 py-2 text-xs font-medium rounded-[5px] border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                         />
                         {searchTerm && (
                             <button
@@ -599,7 +607,7 @@ const AuditTelegram = () => {
                         )}
                     </div>
 
-                    {/* Status Filter */}
+                    {/* Status Filter: Only show recorded statuses from the table/database */}
                     <div className="flex items-center gap-1.5">
                         <FaFilter className="text-slate-400 text-xs" />
                         <select
@@ -608,12 +616,12 @@ const AuditTelegram = () => {
                                 setStatusFilter(e.target.value);
                                 setCurrentPage(1);
                             }}
-                            className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                            className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-[5px] px-2.5 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer"
                         >
                             <option value="All">ស្ថានភាពទាំងអស់ (All)</option>
                             <option value="Audited">បាន Audit រួចរាល់</option>
                             <option value="Pending">នៅសល់មិនទាន់ Audit</option>
-                            {distinctStatuses.map(st => (
+                            {availableStatuses.map(st => (
                                 <option key={st} value={st}>{st}</option>
                             ))}
                         </select>
@@ -629,7 +637,7 @@ const AuditTelegram = () => {
                             setItemsPerPage(Number(e.target.value));
                             setCurrentPage(1);
                         }}
-                        className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-bold text-slate-700 cursor-pointer"
+                        className="bg-slate-50 border border-slate-200 rounded-[5px] px-2 py-1.5 font-bold text-slate-700 cursor-pointer"
                     >
                         <option value={10}>10</option>
                         <option value={15}>15</option>
@@ -641,7 +649,7 @@ const AuditTelegram = () => {
             </div>
 
             {/* Main Data Table */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="bg-white rounded-[5px] border border-slate-200 shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                         <thead>
@@ -722,7 +730,7 @@ const AuditTelegram = () => {
                                             {/* Username */}
                                             <td className="px-3.5 py-2.5 text-slate-700 font-mono">
                                                 {row.username ? (
-                                                    <span className="text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+                                                    <span className="text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-[5px] border border-sky-200">
                                                         {row.username.startsWith('@') ? row.username : `@${row.username}`}
                                                     </span>
                                                 ) : (
@@ -742,7 +750,7 @@ const AuditTelegram = () => {
                                             {/* Status Account */}
                                             <td className="px-3.5 py-2.5 text-center">
                                                 {row.statusAccount ? (
-                                                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadgeClass(row.statusAccount)}`}>
+                                                    <span className={`inline-block px-2.5 py-0.5 rounded-[5px] text-[11px] font-bold border ${getStatusBadgeClass(row.statusAccount)}`}>
                                                         {row.statusAccount}
                                                     </span>
                                                 ) : (
@@ -763,7 +771,7 @@ const AuditTelegram = () => {
                                             {/* Audit Date / Time */}
                                             <td className="px-3.5 py-2.5 text-center font-mono text-[11px] text-slate-600 whitespace-nowrap">
                                                 {row.auditDateTime ? (
-                                                    <span className="bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-700 border border-slate-200">
+                                                    <span className="bg-slate-100 px-2 py-0.5 rounded-[5px] font-bold text-slate-700 border border-slate-200">
                                                         {row.auditDateTime}
                                                     </span>
                                                 ) : (
@@ -779,13 +787,13 @@ const AuditTelegram = () => {
                                                         onClick={() => handleOpenAuditModal(row)}
                                                         disabled={isSubmitted}
                                                         title={isSubmitted ? "Locked (Submitted)" : "Audit ទិន្នន័យ"}
-                                                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
+                                                        className={`w-8 h-8 rounded-[5px] flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
                                                             isSubmitted
                                                                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                                                                 : 'bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600'
                                                         }`}
                                                     >
-                                                        <FaClipboardCheck size={14} />
+                                                        <FaEdit size={14} />
                                                     </button>
 
                                                     {/* Action Menu (Droplist) */}
@@ -796,18 +804,18 @@ const AuditTelegram = () => {
                                                                 setOpenMenuId(isRowMenuOpen ? null : row.rawContractId);
                                                             }}
                                                             title="Menu"
-                                                            className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+                                                            className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
                                                         >
                                                             <AiOutlineMenu size={14} />
                                                         </button>
 
                                                         {/* Droplist Menu Popup */}
                                                         {isRowMenuOpen && (
-                                                            <div className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                            <div className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-[5px] shadow-xl z-50 p-1.5 space-y-1 animate-in fade-in duration-150">
                                                                 {/* Activity Log */}
                                                                 <button
                                                                     onClick={() => handleOpenHistoryModal(row)}
-                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                                                                    className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
                                                                 >
                                                                     <FaHistory className="text-emerald-600" />
                                                                     <span>Activity log</span>
@@ -817,7 +825,7 @@ const AuditTelegram = () => {
                                                                 {!row.hasContactInfo ? (
                                                                     <button
                                                                         onClick={() => handleOpenContactModal(row)}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <FaUserPlus className="text-indigo-600" />
                                                                         <span>Add Contact</span>
@@ -826,7 +834,7 @@ const AuditTelegram = () => {
                                                                     /* Edit Contact (Shown once info is entered) */
                                                                     <button
                                                                         onClick={() => handleOpenContactModal(row)}
-                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-amber-700 hover:bg-amber-50 rounded-lg flex items-center gap-2 cursor-pointer transition-colors"
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <FaUserEdit className="text-amber-600" />
                                                                         <span>Edit Contact</span>
@@ -858,7 +866,7 @@ const AuditTelegram = () => {
                             <button
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={currentPage === 1}
-                                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-bold"
+                                className="px-3 py-1.5 rounded-[5px] border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-bold"
                             >
                                 ថយក្រោយ
                             </button>
@@ -868,7 +876,7 @@ const AuditTelegram = () => {
                             <button
                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-bold"
+                                className="px-3 py-1.5 rounded-[5px] border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-bold"
                             >
                                 បន្ទាប់
                             </button>
@@ -882,26 +890,26 @@ const AuditTelegram = () => {
             {/* ═════════════════════════════════════════════════════════════ */}
             {auditModalItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                         {/* Modal Header */}
-                        <div className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between">
+                        <div className="px-5 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
-                                <FaClipboardCheck size={20} />
+                                <FaEdit size={18} />
                                 <div>
-                                    <h3 className="font-black text-base tracking-tight">Audit Telegram Account</h3>
-                                    <p className="text-xs text-emerald-100 font-medium">កាលបរិច្ឆេទ: {selectedDate}</p>
+                                    <h3 className="font-black text-sm tracking-tight">Audit Telegram Account</h3>
+                                    <p className="text-[11px] text-emerald-100 font-medium">កាលបរិច្ឆេទ: {selectedDate}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setAuditModalItem(null)}
                                 className="text-white/80 hover:text-white p-1 cursor-pointer"
                             >
-                                <FaTimes size={18} />
+                                <FaTimes size={16} />
                             </button>
                         </div>
 
                         {/* Customer Information Preview */}
-                        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-semibold">
+                        <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-semibold">
                             <div>
                                 <span className="text-slate-500">ឈ្មោះអតិថិជន: </span>
                                 <span className="font-black text-slate-800">{auditModalItem.customerName}</span>
@@ -913,44 +921,64 @@ const AuditTelegram = () => {
                         </div>
 
                         {/* Modal Form */}
-                        <form onSubmit={handleSaveAudit} className="p-6 space-y-4 overflow-y-auto flex-1">
-                            {/* Status Account with intelligent previous values + custom input */}
+                        <form onSubmit={handleSaveAudit} className="p-5 space-y-4 overflow-y-auto flex-1">
+                            {/* Status Account: ONLY shows previously recorded statuses from DB (no auto defaults) */}
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1">
                                     Status Account <span className="text-rose-500">*</span>
                                 </label>
-                                <select
-                                    value={auditForm.isCustomStatus ? '__CUSTOM__' : auditForm.statusAccount}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        if (val === '__CUSTOM__') {
-                                            setAuditForm(prev => ({ ...prev, isCustomStatus: true, statusAccount: '__CUSTOM__' }));
-                                        } else {
-                                            setAuditForm(prev => ({ ...prev, isCustomStatus: false, statusAccount: val }));
-                                        }
-                                    }}
-                                    className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
-                                >
-                                    <option value="">-- ជ្រើសរើស Status Account --</option>
-                                    {distinctStatuses.map(st => (
-                                        <option key={st} value={st}>{st}</option>
-                                    ))}
-                                    <option value="__CUSTOM__">✏️ + បញ្ចូលស្ថានភាពផ្សេងទៀត (Custom Status)</option>
-                                </select>
 
-                                {/* Custom Status Input if selected */}
-                                {auditForm.isCustomStatus && (
-                                    <div className="mt-2">
-                                        <input
-                                            type="text"
-                                            placeholder="បញ្ចូល Status Account ថ្មី..."
-                                            value={auditForm.customStatus}
-                                            onChange={(e) => setAuditForm(prev => ({ ...prev, customStatus: e.target.value }))}
-                                            required
-                                            autoFocus
-                                            className="w-full text-xs font-bold text-slate-800 bg-emerald-50/50 border border-emerald-300 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                                        />
-                                    </div>
+                                {availableStatuses.length > 0 ? (
+                                    <>
+                                        <select
+                                            value={auditForm.isCustomStatus ? '__CUSTOM__' : auditForm.statusAccount}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === '__CUSTOM__') {
+                                                    setAuditForm(prev => ({ ...prev, isCustomStatus: true, statusAccount: '__CUSTOM__' }));
+                                                } else {
+                                                    setAuditForm(prev => ({ ...prev, isCustomStatus: false, statusAccount: val }));
+                                                }
+                                            }}
+                                            className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-[5px] px-3 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                                        >
+                                            <option value="">-- ជ្រើសរើស Status Account --</option>
+                                            {availableStatuses.map(st => (
+                                                <option key={st} value={st}>{st}</option>
+                                            ))}
+                                            <option value="__CUSTOM__">✏️ + បញ្ចូលស្ថានភាពថ្មី (Custom Status)</option>
+                                        </select>
+
+                                        {auditForm.isCustomStatus && (
+                                            <div className="mt-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="បញ្ចូល Status Account ថ្មី..."
+                                                    value={auditForm.customStatus}
+                                                    onChange={(e) => setAuditForm(prev => ({ ...prev, customStatus: e.target.value }))}
+                                                    required
+                                                    autoFocus
+                                                    className="w-full text-xs font-bold text-slate-800 bg-emerald-50/50 border border-emerald-300 rounded-[5px] px-3 py-2 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                                />
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    /* If no statuses entered before, directly show input to type */
+                                    <input
+                                        type="text"
+                                        placeholder="បញ្ចូល Status Account..."
+                                        value={auditForm.customStatus || auditForm.statusAccount}
+                                        onChange={(e) => setAuditForm(prev => ({
+                                            ...prev,
+                                            isCustomStatus: true,
+                                            customStatus: e.target.value,
+                                            statusAccount: e.target.value
+                                        }))}
+                                        required
+                                        autoFocus
+                                        className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-[5px] px-3 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                    />
                                 )}
                             </div>
 
@@ -964,7 +992,7 @@ const AuditTelegram = () => {
                                     placeholder="បញ្ចូលសកម្មភាពគណនី Telegram..."
                                     value={auditForm.accountActivity}
                                     onChange={(e) => setAuditForm(prev => ({ ...prev, accountActivity: e.target.value }))}
-                                    className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-300 rounded-lg p-3 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                    className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-300 rounded-[5px] p-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                                 />
                             </div>
 
@@ -978,23 +1006,23 @@ const AuditTelegram = () => {
                                     placeholder="កំណត់សម្គាល់បន្ថែមពីសវនកម្ម..."
                                     value={auditForm.noteAudit}
                                     onChange={(e) => setAuditForm(prev => ({ ...prev, noteAudit: e.target.value }))}
-                                    className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-300 rounded-lg p-3 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                    className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-300 rounded-[5px] p-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                                 />
                             </div>
 
                             {/* Modal Actions */}
-                            <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-3">
+                            <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => setAuditModalItem(null)}
-                                    className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                                    className="px-4 py-2 rounded-[5px] text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={savingAudit}
-                                    className="px-5 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                                    className="px-5 py-2 rounded-[5px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
                                 >
                                     {savingAudit ? <FaSpinner className="animate-spin text-sm" /> : <FaCheck className="text-sm" />}
                                     <span>Audit</span>
@@ -1010,28 +1038,28 @@ const AuditTelegram = () => {
             {/* ═════════════════════════════════════════════════════════════ */}
             {contactModalItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
+                    <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
                         {/* Header */}
-                        <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-sky-600 text-white flex items-center justify-between">
+                        <div className="px-5 py-3.5 bg-gradient-to-r from-indigo-600 to-sky-600 text-white flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
-                                {contactModalItem.hasContactInfo ? <FaUserEdit size={18} /> : <FaUserPlus size={18} />}
+                                {contactModalItem.hasContactInfo ? <FaUserEdit size={16} /> : <FaUserPlus size={16} />}
                                 <div>
-                                    <h3 className="font-black text-base tracking-tight">
+                                    <h3 className="font-black text-sm tracking-tight">
                                         {contactModalItem.hasContactInfo ? 'Edit Contact Info' : 'Add Contact Info'}
                                     </h3>
-                                    <p className="text-xs text-sky-100 font-medium">{contactModalItem.customerName}</p>
+                                    <p className="text-[11px] text-sky-100 font-medium">{contactModalItem.customerName}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setContactModalItem(null)}
                                 className="text-white/80 hover:text-white p-1 cursor-pointer"
                             >
-                                <FaTimes size={18} />
+                                <FaTimes size={16} />
                             </button>
                         </div>
 
                         {/* Form */}
-                        <form onSubmit={handleSaveContact} className="p-6 space-y-4">
+                        <form onSubmit={handleSaveContact} className="p-5 space-y-3.5">
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1">
                                     Contact Name Customer
@@ -1041,7 +1069,7 @@ const AuditTelegram = () => {
                                     placeholder="បញ្ចូលឈ្មោះអ្នកទំនាក់ទំនង..."
                                     value={contactForm.contactName}
                                     onChange={(e) => setContactForm(prev => ({ ...prev, contactName: e.target.value }))}
-                                    className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                    className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-[5px] px-3 py-2 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                 />
                             </div>
 
@@ -1054,7 +1082,7 @@ const AuditTelegram = () => {
                                     placeholder="@username..."
                                     value={contactForm.username}
                                     onChange={(e) => setContactForm(prev => ({ ...prev, username: e.target.value }))}
-                                    className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
+                                    className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-[5px] px-3 py-2 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
                                 />
                             </div>
 
@@ -1067,22 +1095,22 @@ const AuditTelegram = () => {
                                     placeholder="012 345 678..."
                                     value={contactForm.phoneNumber}
                                     onChange={(e) => setContactForm(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                                    className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
+                                    className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-[5px] px-3 py-2 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
                                 />
                             </div>
 
-                            <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-3">
+                            <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => setContactModalItem(null)}
-                                    className="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                                    className="px-4 py-2 rounded-[5px] text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={savingContact}
-                                    className="px-5 py-2 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                                    className="px-5 py-2 rounded-[5px] text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
                                 >
                                     {savingContact ? <FaSpinner className="animate-spin text-sm" /> : <FaCheck className="text-sm" />}
                                     <span>រក្សាទុក Contact</span>
@@ -1098,14 +1126,14 @@ const AuditTelegram = () => {
             {/* ═════════════════════════════════════════════════════════════ */}
             {historyModalItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                    <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
                         {/* Header */}
-                        <div className="px-6 py-4 bg-gradient-to-r from-slate-800 to-slate-900 text-white flex items-center justify-between">
+                        <div className="px-5 py-3.5 bg-gradient-to-r from-slate-800 to-slate-900 text-white flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
-                                <FaHistory size={20} className="text-emerald-400" />
+                                <FaHistory size={18} className="text-emerald-400" />
                                 <div>
-                                    <h3 className="font-black text-base tracking-tight">Activity Log History</h3>
-                                    <p className="text-xs text-slate-300 font-medium">
+                                    <h3 className="font-black text-sm tracking-tight">Activity Log History</h3>
+                                    <p className="text-[11px] text-slate-300 font-medium">
                                         {historyModalItem.customerName} ({historyModalItem.contractIid})
                                     </p>
                                 </div>
@@ -1114,20 +1142,20 @@ const AuditTelegram = () => {
                                 onClick={() => setHistoryModalItem(null)}
                                 className="text-white/80 hover:text-white p-1 cursor-pointer"
                             >
-                                <FaTimes size={18} />
+                                <FaTimes size={16} />
                             </button>
                         </div>
 
                         {/* Instruction info */}
-                        <div className="px-6 py-2.5 bg-emerald-50 border-b border-emerald-200 text-xs text-emerald-800 font-bold flex items-center justify-between">
+                        <div className="px-4 py-2 bg-emerald-50 border-b border-emerald-200 text-xs text-emerald-800 font-bold flex items-center justify-between">
                             <span>💡 ចុចលើជួរកាតណាមួយ ដើម្បីស្វែងរកឈ្មោះ និងនាំទៅកាន់ថ្ងៃ Audit នោះ</span>
-                            <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-emerald-300">
+                            <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded-[5px] border border-emerald-300">
                                 {historyLogs.length} Records
                             </span>
                         </div>
 
                         {/* History Cards Container */}
-                        <div className="p-6 overflow-y-auto space-y-3.5 flex-1 bg-slate-50">
+                        <div className="p-4 overflow-y-auto space-y-3 flex-1 bg-slate-50">
                             {loadingHistory ? (
                                 <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
                                     <FaSpinner className="animate-spin text-2xl text-emerald-600" />
@@ -1142,7 +1170,7 @@ const AuditTelegram = () => {
                                     <div
                                         key={log._id || index}
                                         onClick={() => handleHistoryCardClick(log)}
-                                        className="group bg-white p-4 rounded-xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all duration-200 cursor-pointer relative"
+                                        className="group bg-white p-3.5 rounded-[5px] border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all duration-200 cursor-pointer relative"
                                     >
                                         <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2 mb-2">
                                             <div className="flex items-center gap-2">
@@ -1159,7 +1187,7 @@ const AuditTelegram = () => {
 
                                             <div className="flex items-center gap-2">
                                                 {log.statusAccount && (
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadgeClass(log.statusAccount)}`}>
+                                                    <span className={`px-2 py-0.5 rounded-[5px] text-[10px] font-bold border ${getStatusBadgeClass(log.statusAccount)}`}>
                                                         {log.statusAccount}
                                                     </span>
                                                 )}
@@ -1169,12 +1197,12 @@ const AuditTelegram = () => {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                                             <div>
                                                 <span className="text-[11px] font-bold text-slate-400 block mb-0.5">
                                                     Account Activity:
                                                 </span>
-                                                <p className="text-slate-700 font-medium bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                                <p className="text-slate-700 font-medium bg-slate-50 p-2 rounded-[5px] border border-slate-100">
                                                     {log.accountActivity || '—'}
                                                 </p>
                                             </div>
@@ -1183,14 +1211,14 @@ const AuditTelegram = () => {
                                                 <span className="text-[11px] font-bold text-slate-400 block mb-0.5">
                                                     Note Audit:
                                                 </span>
-                                                <p className="text-slate-700 font-medium bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                                <p className="text-slate-700 font-medium bg-slate-50 p-2 rounded-[5px] border border-slate-100">
                                                     {log.noteAudit || '—'}
                                                 </p>
                                             </div>
                                         </div>
 
                                         {log.auditedBy && (
-                                            <div className="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
+                                            <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
                                                 <span>Audited by: <strong className="text-slate-600">{log.auditedBy}</strong></span>
                                                 {log.contractIid && <span>IID: {log.contractIid}</span>}
                                             </div>
@@ -1201,10 +1229,10 @@ const AuditTelegram = () => {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="p-4 bg-white border-t border-slate-200 flex justify-end">
+                        <div className="p-3.5 bg-white border-t border-slate-200 flex justify-end">
                             <button
                                 onClick={() => setHistoryModalItem(null)}
-                                className="px-5 py-2 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                                className="px-5 py-1.5 rounded-[5px] text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                             >
                                 បិទ (Close)
                             </button>
@@ -1218,9 +1246,9 @@ const AuditTelegram = () => {
             {/* ═════════════════════════════════════════════════════════════ */}
             {jumpConfirmModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md p-6 space-y-4">
-                        <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-                            <FaCalendarAlt size={22} />
+                    <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-md p-6 space-y-4">
+                        <div className="w-11 h-11 rounded-[5px] bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                            <FaCalendarAlt size={20} />
                         </div>
                         <div className="text-center space-y-1">
                             <h4 className="text-base font-black text-slate-800">បញ្ជាក់ការផ្លាស់ប្តូរកាលបរិច្ឆេទ</h4>
@@ -1232,13 +1260,13 @@ const AuditTelegram = () => {
                         <div className="flex items-center justify-center gap-3 pt-2">
                             <button
                                 onClick={() => setJumpConfirmModal(null)}
-                                className="px-5 py-2 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                                className="px-5 py-2 rounded-[5px] text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                             >
                                 បោះបង់
                             </button>
                             <button
                                 onClick={confirmJumpToDate}
-                                className="px-6 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                                className="px-6 py-2 rounded-[5px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
                             >
                                 យល់ព្រមទៅកាន់ថ្ងៃនេះ
                             </button>
@@ -1252,9 +1280,9 @@ const AuditTelegram = () => {
             {/* ═════════════════════════════════════════════════════════════ */}
             {confirmSubmitModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md p-6 space-y-4">
-                        <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
-                            <FaExclamationTriangle size={22} />
+                    <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-md p-6 space-y-4">
+                        <div className="w-11 h-11 rounded-[5px] bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                            <FaExclamationTriangle size={20} />
                         </div>
                         <div className="text-center space-y-2">
                             <h4 className="text-base font-black text-slate-800">
@@ -1264,7 +1292,7 @@ const AuditTelegram = () => {
                                 តើអ្នកពិតជាចង់ Submit ទិន្នន័យ Audit សម្រាប់ថ្ងៃ{' '}
                                 <strong className="text-rose-600 font-black">{selectedDate}</strong> មែនទេ?
                             </p>
-                            <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200 font-bold">
+                            <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-[5px] border border-amber-200 font-bold">
                                 ⚠️ បន្ទាប់ពី Submit រួច ទិន្នន័យសម្រាប់ថ្ងៃនេះនឹងត្រូវបានចាក់សោរ (Locked) ហើយអ្នកនឹងមិនអាចកែប្រែបានទៀតទេ!
                             </p>
                         </div>
@@ -1272,14 +1300,14 @@ const AuditTelegram = () => {
                             <button
                                 onClick={() => setConfirmSubmitModal(false)}
                                 disabled={submittingDaily}
-                                className="px-5 py-2 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                                className="px-5 py-2 rounded-[5px] text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                             >
                                 បោះបង់
                             </button>
                             <button
                                 onClick={handleConfirmDailySubmit}
                                 disabled={submittingDaily}
-                                className="px-6 py-2 rounded-lg text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 transition-all cursor-pointer flex items-center gap-2"
+                                className="px-6 py-2 rounded-[5px] text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 transition-all cursor-pointer flex items-center gap-2"
                             >
                                 {submittingDaily ? <FaSpinner className="animate-spin text-sm" /> : <FaCheck className="text-sm" />}
                                 <span>យល់ព្រម Submit & Lock</span>

@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate, MdOutlinePhotoLibrary } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt } from "react-icons/fa";
 
 const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onToggleHeader }) => {
     const [openMenu, setOpenMenu] = useState("");
@@ -475,7 +475,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 <div className="flex-shrink-0">
                     <div onClick={() => toggleMenu("audit")} className={dropdownHeaderClass("audit")}>
                         <p className="flex items-center gap-3">
-                            <FaClipboardCheck size={18} className="text-emerald-600" />
+                            <FaTasks size={18} className="text-emerald-600" />
                             {t('audit') || 'Audit'}
                         </p>
                         <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "audit" || location.pathname.startsWith('/audit') ? "rotate-180" : ""}`} />
@@ -484,7 +484,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                     <div className={`overflow-hidden transition-all duration-300 ${openMenu === "audit" || location.pathname.startsWith('/audit') ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                         {hasPermission(json.audit?.telegram || '/audit/telegram', 'read') && (
                             <Link to={json.audit?.telegram || '/audit/telegram'} className={subItemClass(json.audit?.telegram || '/audit/telegram')}>
-                                <FaTelegramPlane size={15} />
+                                <FaFileAlt size={15} />
                                 {t('auditTelegram') || 'Audit Telegram'}
                             </Link>
                         )}

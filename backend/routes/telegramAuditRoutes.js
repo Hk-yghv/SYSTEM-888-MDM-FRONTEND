@@ -145,14 +145,6 @@ router.get('/', async (req, res) => {
             distinctStatuses = [...new Set((MEM_DB.telegramAuditLogs || []).map(l => l.statusAccount).filter(Boolean))];
         }
 
-        // Default status list suggestions if empty
-        const defaultStatusSuggestions = ['Active', 'Pending', 'Suspended', 'Normal', 'Restricted', 'Blocked', 'Not Responding'];
-        for (const def of defaultStatusSuggestions) {
-            if (!distinctStatuses.includes(def)) {
-                distinctStatuses.push(def);
-            }
-        }
-
         // Map contacts by contractId for quick O(1) lookup
         const contactMap = {};
         for (const c of contacts) {
