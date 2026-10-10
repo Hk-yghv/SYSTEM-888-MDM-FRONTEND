@@ -59,8 +59,29 @@ const CashFlowTrader = () => {
     const [filterFlowType, setFilterFlowType] = useState('All'); // All | Surplus | Deficit | InflowOnly | OutflowOnly
     const [expandedDays, setExpandedDays] = useState({});
 
-    // Chart Hover State
+    // Chart Hover & Zoom State
     const [hoveredPoint, setHoveredPoint] = useState(null);
+    const chartScrollRef = React.useRef(null);
+    const [zoomLevel, setZoomLevel] = useState(1); // 0.6x to 2.5x
+
+    const handleZoomIn = () => setZoomLevel(prev => Math.min(2.5, +(prev + 0.25).toFixed(2)));
+    const handleZoomOut = () => setZoomLevel(prev => Math.max(0.6, +(prev - 0.25).toFixed(2)));
+    const handleResetZoom = () => setZoomLevel(1);
+
+    const handleScrollLeft = () => {
+        if (chartScrollRef.current) chartScrollRef.current.scrollBy({ left: -350, behavior: 'smooth' });
+    };
+    const handleScrollRight = () => {
+        if (chartScrollRef.current) chartScrollRef.current.scrollBy({ left: 350, behavior: 'smooth' });
+    };
+    const handleScrollToLatest = () => {
+        if (chartScrollRef.current) chartScrollRef.current.scrollTo({ left: chartScrollRef.current.scrollWidth, behavior: 'smooth' });
+    };
+
+    const formatPriceDollar = (val) => {
+        const num = Number(val || 0);
+        return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
 
     // ─── Fetch Trader Metrics from Backend ───────────────────────────
     const fetchTraderMetrics = useCallback(async () => {
@@ -135,14 +156,18 @@ const CashFlowTrader = () => {
     }, [dailyRecords]);
 
     // ─── JAPANESE CANDLESTICK DATA ENGINE (TradingView Style) ────────
-    const chartHeight = 350;
-    const chartWidth = 960;
-    const paddingLeft = 16;
-    const paddingRight = 84; // Dedicated right-axis price scale
+    const chartHeight = 360;
     const paddingTop = 26;
-    const paddingBottom = 34; // Dedicated bottom-axis time scale
-    const drawableWidth = chartWidth - paddingLeft - paddingRight;
+    const paddingBottom = 44; // Dedicated bottom-axis time scale
     const drawableHeight = chartHeight - paddingTop - paddingBottom;
+
+    // Zoom-based dynamic candle width & spacing so candles are NEVER cramped
+    const baseStepX = 48; // Base spacing at 100% zoom
+    const stepX = Math.round(baseStepX * zoomLevel);
+    const candleW = Math.max(8, Math.round(stepX * 0.58));
+
+    const paddingTimelineLeft = 24;
+    const paddingTimelineRight = 36;
 
     // Generate/Extract Candlesticks based on candleTimeframe & records
     const candlesticks = useMemo(() => {
@@ -168,6 +193,7 @@ const CashFlowTrader = () => {
                         id: `candle-${dStr}`,
                         date: dStr,
                         timeLabel: `${d.getDate()} ${d.toLocaleString('en-US', { month: 'short' })}`,
+                        dayNumber: `${d.getDate()}`,
                         open, high, low, close,
                         cashIn: change > 0 ? Math.round(Math.abs(change) * 50) : 100,
                         cashOut: change < 0 ? Math.round(Math.abs(change) * 50) : 50,
@@ -195,6 +221,7 @@ const CashFlowTrader = () => {
                         id: `candle-${r.date}`,
                         date: r.date,
                         timeLabel,
+                        dayNumber: !isNaN(dObj.getTime()) ? `${dObj.getDate()}` : `${idx + 1}`,
                         open, high, low, close,
                         cashIn: r.cashIn,
                         cashOut: r.cashOut,
@@ -250,6 +277,7 @@ const CashFlowTrader = () => {
                     id: `candle-intra-${i}`,
                     date: targetDateStr,
                     timeLabel: label,
+                    dayNumber: timeStr,
                     open,
                     high,
                     low,
@@ -287,7 +315,12 @@ const CashFlowTrader = () => {
         return list;
     }, [chronologicalRecords, candleTimeframe, summary.totalCashIn, todayStr]);
 
-    // Price Bounds & Ticks Calculation for the Right Axis
+    // Timeline width expands dynamically so candles never cram together
+    const timelineWidth = useMemo(() => {
+        return Math.max(860, candlesticks.length * stepX + paddingTimelineLeft + paddingTimelineRight);
+    }, [candlesticks.length, stepX, paddingTimelineLeft, paddingTimelineRight]);
+
+    // Price Bounds & Ticks Calculation for the Left Price Scale (in Dollars)
     const { minPrice, maxPrice, paddedMin, paddedMax, paddedRange, priceTicks } = useMemo(() => {
         if (candlesticks.length === 0) {
             return { minPrice: 4148, maxPrice: 4175, paddedMin: 4148, paddedMax: 4175, paddedRange: 27, priceTicks: [] };
@@ -304,7 +337,7 @@ const CashFlowTrader = () => {
         const pMax = max + span * 0.08;
         const pRange = pMax - pMin;
 
-        // Generate 14-16 price ticks on the right Y-axis
+        // Generate 14-16 price ticks on the Y-axis
         const tickCount = 14;
         const ticks = [];
         for (let i = 0; i <= tickCount; i++) {
@@ -334,11 +367,9 @@ const CashFlowTrader = () => {
     const candlePoints = useMemo(() => {
         const count = candlesticks.length;
         if (count === 0) return [];
-        const stepX = drawableWidth / Math.max(count, 1);
-        const candleW = Math.max(3.5, Math.min(13, stepX * 0.62));
 
         return candlesticks.map((c, i) => {
-            const x = paddingLeft + (i + 0.5) * stepX;
+            const x = paddingTimelineLeft + (i + 0.5) * stepX;
             const yOpen = priceToY(c.open);
             const yClose = priceToY(c.close);
             const yHigh = priceToY(c.high);
@@ -369,11 +400,22 @@ const CashFlowTrader = () => {
                 color
             };
         });
-    }, [candlesticks, drawableWidth, paddingLeft, priceToY]);
+    }, [candlesticks, stepX, candleW, paddingTimelineLeft, priceToY]);
 
     const latestCandle = useMemo(() => {
         return candlePoints[candlePoints.length - 1] || null;
     }, [candlePoints]);
+
+    // Auto scroll timeline to right on candle count change or timeframe switch
+    useEffect(() => {
+        if (chartScrollRef.current) {
+            setTimeout(() => {
+                if (chartScrollRef.current) {
+                    chartScrollRef.current.scrollLeft = chartScrollRef.current.scrollWidth;
+                }
+            }, 80);
+        }
+    }, [candlesticks.length, candleTimeframe]);
 
     const toggleExpandDay = (date) => {
         setExpandedDays(prev => ({ ...prev, [date]: !prev[date] }));
@@ -539,12 +581,13 @@ const CashFlowTrader = () => {
             </div>
 
             {/* ═════════════════════════════════════════════════════════════ */}
-            {/* TRADER CANDLESTICK CHART (EXACT TRADINGVIEW / K-LINE STYLE)    */}
+            {/* TRADER CANDLESTICK CHART (LEFT DOLLAR AXIS + ZOOM & SCROLL)    */}
             {/* ═════════════════════════════════════════════════════════════ */}
             <div className="bg-white border border-slate-200 rounded-[5px] p-3 sm:p-4 shadow-xs">
-                {/* Chart Header Bar: Pair, Timeframe Buttons, and Indicators */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5 pb-2.5 border-b border-slate-100">
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
+                {/* Chart Header Bar: Pair, Timeframe, Zoom & Scroll Toolbar */}
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 mb-2.5 pb-2.5 border-b border-slate-100">
+                    {/* Left: Symbol & Timeframe & Indicators */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 text-xs">
                         {/* Trading Pair Symbol */}
                         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-[5px] bg-slate-100 border border-slate-200 font-mono font-black text-slate-900">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -556,7 +599,7 @@ const CashFlowTrader = () => {
                             {[
                                 { key: 'M15', label: '15m' },
                                 { key: 'H1', label: '1h' },
-                                { key: 'D1', label: '1D' }
+                                { key: 'D1', label: '1D (ថ្ងៃ)' }
                             ].map(tf => (
                                 <button
                                     key={tf.key}
@@ -595,20 +638,82 @@ const CashFlowTrader = () => {
                                 <span>Net Area</span>
                             </button>
                         </div>
-
-                        <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-slate-500 font-medium">
-                            <span className="text-emerald-600 font-bold">▲</span> Swing High & <span className="text-rose-600 font-bold">▼</span> Swing Low Signals
-                        </span>
                     </div>
 
-                    {/* Quick Guidance / Hint */}
-                    <div className="text-[11px] text-slate-500 font-mono flex items-center gap-2">
-                        <span>💡 ចុចលើ Candle ណាមួយ ដើម្បី Scroll ទៅរកថ្ងៃនោះ</span>
+                    {/* Right: Zoom & Horizontal Scroll Controls */}
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                        {/* Zoom Controls (ព្រងីក / បង្រួម) */}
+                        <div className="flex items-center bg-slate-100 p-0.5 rounded-[5px] border border-slate-200">
+                            <button
+                                onClick={handleZoomOut}
+                                title="បង្រួម (Zoom Out)"
+                                className="px-2 py-0.5 rounded-[4px] font-bold text-slate-700 hover:bg-slate-200 hover:text-slate-900 cursor-pointer transition-colors"
+                            >
+                                🔍 −
+                            </button>
+                            <span className="px-2 py-0.5 font-bold text-[11px] text-slate-900 bg-white rounded-[3px] border border-slate-200 shadow-2xs">
+                                {Math.round(zoomLevel * 100)}%
+                            </span>
+                            <button
+                                onClick={handleZoomIn}
+                                title="ព្រងីក (Zoom In)"
+                                className="px-2 py-0.5 rounded-[4px] font-bold text-slate-700 hover:bg-slate-200 hover:text-slate-900 cursor-pointer transition-colors"
+                            >
+                                🔍 +
+                            </button>
+                            <button
+                                onClick={handleResetZoom}
+                                title="Reset Zoom to 100%"
+                                className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-200 cursor-pointer"
+                            >
+                                ⟲ Reset
+                            </button>
+                        </div>
+
+                        {/* Zoom Preset Chips */}
+                        <div className="hidden sm:flex items-center bg-slate-100 p-0.5 rounded-[5px] border border-slate-200 text-[10px] font-bold">
+                            {[0.75, 1, 1.5, 2].map(z => (
+                                <button
+                                    key={z}
+                                    onClick={() => setZoomLevel(z)}
+                                    className={`px-1.5 py-0.5 rounded-[3px] cursor-pointer transition-all ${
+                                        zoomLevel === z ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-200'
+                                    }`}
+                                >
+                                    {Math.round(z * 100)}%
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Horizontal Scroll Quick Buttons */}
+                        <div className="flex items-center bg-slate-100 p-0.5 rounded-[5px] border border-slate-200">
+                            <button
+                                onClick={handleScrollLeft}
+                                title="Scroll ទៅឆ្វេង (អតីតកាល)"
+                                className="px-2 py-0.5 rounded-[4px] text-xs font-bold text-slate-700 hover:bg-slate-200 hover:text-slate-900 cursor-pointer"
+                            >
+                                ◀ ឆ្វេង
+                            </button>
+                            <button
+                                onClick={handleScrollRight}
+                                title="Scroll ទៅស្តាំ (បច្ចុប្បន្ន)"
+                                className="px-2 py-0.5 rounded-[4px] text-xs font-bold text-slate-700 hover:bg-slate-200 hover:text-slate-900 cursor-pointer"
+                            >
+                                ស្តាំ ▶
+                            </button>
+                            <button
+                                onClick={handleScrollToLatest}
+                                title="Jump to Latest Candle"
+                                className="px-2 py-0.5 rounded-[4px] text-xs font-bold bg-white text-emerald-700 hover:bg-emerald-50 border border-slate-200 cursor-pointer shadow-2xs"
+                            >
+                                ⏭ ចុងក្រោយ
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Top OHLC Inspection Ticker Bar (Classic TradingView Style) */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 py-1 text-[11px] font-mono text-slate-700 bg-slate-50/70 rounded-[4px] mb-2 border border-slate-100">
+                {/* Top OHLC Inspection Ticker Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-2 py-1 text-[11px] font-mono text-slate-700 bg-slate-50/80 rounded-[4px] mb-2 border border-slate-200">
                     {(() => {
                         const activeCandle = hoveredPoint || latestCandle;
                         if (!activeCandle) return <span>កំពុងរៀបចំទិន្នន័យ...</span>;
@@ -617,359 +722,400 @@ const CashFlowTrader = () => {
                         const isUp = diff >= 0;
 
                         return (
-                            <>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
                                 <span className="text-slate-500 font-bold">{activeCandle.timeLabel}</span>
-                                <span>O <b className="text-slate-900">{activeCandle.open.toFixed(3)}</b></span>
-                                <span>H <b className="text-slate-900">{activeCandle.high.toFixed(3)}</b></span>
-                                <span>L <b className="text-slate-900">{activeCandle.low.toFixed(3)}</b></span>
+                                <span>O <b className="text-slate-900">{formatPriceDollar(activeCandle.open)}</b></span>
+                                <span>H <b className="text-slate-900">{formatPriceDollar(activeCandle.high)}</b></span>
+                                <span>L <b className="text-slate-900">{formatPriceDollar(activeCandle.low)}</b></span>
                                 <span>C <b className={isUp ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'}>
-                                    {activeCandle.close.toFixed(3)}
+                                    {formatPriceDollar(activeCandle.close)}
                                 </b></span>
                                 <span className={isUp ? 'text-emerald-700 font-black' : 'text-rose-700 font-black'}>
-                                    {isUp ? '+' : ''}{diff.toFixed(3)} ({isUp ? '+' : ''}{pct}%)
+                                    {isUp ? '+' : ''}{diff >= 0 ? '+' : ''}{formatPriceDollar(diff)} ({isUp ? '+' : ''}{pct}%)
                                 </span>
-                                <span className="hidden lg:inline text-slate-400">|</span>
+                                <span className="hidden lg:inline text-slate-300">|</span>
                                 <span className="hidden lg:inline text-slate-600">
-                                    Inflow: <b className="text-emerald-700 font-bold">${activeCandle.cashIn.toLocaleString()}</b>
+                                    In: <b className="text-emerald-700 font-bold">${activeCandle.cashIn.toLocaleString()}</b>
                                 </span>
                                 <span className="hidden lg:inline text-slate-600">
-                                    Outflow: <b className="text-rose-700 font-bold">${activeCandle.cashOut.toLocaleString()}</b>
+                                    Out: <b className="text-rose-700 font-bold">${activeCandle.cashOut.toLocaleString()}</b>
                                 </span>
-                            </>
+                            </div>
                         );
                     })()}
+
+                    <span className="text-[10px] text-slate-500 italic hidden sm:inline">
+                        💡 អូស Scroll ឆ្វេង-ស្តាំ ឬចុចលើ Candle ដើម្បី Scroll ទៅរកកាលបរិច្ឆេទនោះ
+                    </span>
                 </div>
 
-                {/* SVG Candlestick Canvas (Pure White Background, Right Price Scale, Fractals) */}
-                <div className="relative w-full overflow-x-auto select-none bg-white rounded-[5px] border border-slate-200">
-                    {loading ? (
-                        <div className="h-[340px] flex flex-col items-center justify-center gap-2 text-slate-500 text-xs font-mono">
-                            <FaSpinner className="animate-spin text-2xl text-emerald-600" />
-                            <span>កំពុងទាញយកទិន្នន័យក្រាហ្វិក...</span>
+                {/* ═════════════════════════════════════════════════════════════ */}
+                {/* DUAL-COLUMN CHART: STICKY LEFT DOLLAR AXIS + SCROLLABLE TIMELINE */}
+                {/* ═════════════════════════════════════════════════════════════ */}
+                <div className="flex border border-slate-200 rounded-[5px] bg-white overflow-hidden shadow-xs relative">
+                    {/* ─── COLUMN 1: STICKY LEFT AXIS (DOLLAR AMOUNTS - ចំនួនដុល្លា $) ─── */}
+                    <div className="w-[96px] sm:w-[108px] shrink-0 border-r border-slate-200 bg-white select-none z-10 relative">
+                        {/* Axis Top Label */}
+                        <div className="h-[24px] flex items-center px-2 text-[10px] font-mono font-bold text-slate-500 border-b border-slate-100 bg-slate-50/70">
+                            តម្លៃ ($)
                         </div>
-                    ) : candlePoints.length === 0 ? (
-                        <div className="h-[340px] flex items-center justify-center text-slate-400 text-xs font-mono">
-                            មិនទាន់មានទិន្នន័យប្រតិបត្តិការក្នុងចន្លោះពេលនេះឡើយ
-                        </div>
-                    ) : (
-                        <svg
-                            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                            className="w-full h-[350px] overflow-visible bg-white"
-                        >
-                            <defs>
-                                <linearGradient id="tradingNetAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#089981" stopOpacity="0.25" />
-                                    <stop offset="100%" stopColor="#089981" stopOpacity="0.0" />
-                                </linearGradient>
-                            </defs>
 
-                            {/* White Background Canvas */}
-                            <rect width={chartWidth} height={chartHeight} fill="#ffffff" />
+                        <svg width="100%" height={chartHeight} className="overflow-visible bg-white">
+                            {/* Axis Right Border Line */}
+                            <line
+                                x1="100%"
+                                y1={paddingTop}
+                                x2="100%"
+                                y2={chartHeight - paddingBottom}
+                                stroke="#cbd5e1"
+                                strokeWidth="1"
+                            />
 
-                            {/* Horizontal Grid Lines & Right-Axis Price Labels */}
+                            {/* Price Ticks in Dollars ($) on Left Axis */}
                             {priceTicks.map((pt, idx) => (
-                                <g key={`pt-${idx}`}>
-                                    {/* Horizontal Grid Line */}
+                                <g key={`left-pt-${idx}`}>
+                                    {/* Tick notch */}
                                     <line
-                                        x1={paddingLeft}
+                                        x1="92%"
                                         y1={pt.y}
-                                        x2={chartWidth - paddingRight}
+                                        x2="100%"
+                                        y2={pt.y}
+                                        stroke="#94a3b8"
+                                        strokeWidth="1"
+                                    />
+                                    {/* Dollar Price Text Label */}
+                                    <text
+                                        x="86%"
+                                        y={pt.y + 3.5}
+                                        fill="#475569"
+                                        fontSize="10"
+                                        fontFamily="monospace"
+                                        fontWeight="600"
+                                        textAnchor="end"
+                                    >
+                                        {formatPriceDollar(pt.val)}
+                                    </text>
+                                </g>
+                            ))}
+
+                            {/* Latest Price Badge on Left Axis (Solid Colored Badge in $) */}
+                            {latestCandle && (
+                                <g>
+                                    <rect
+                                        x="4"
+                                        y={latestCandle.yClose - 8.5}
+                                        width="92"
+                                        height="17"
+                                        fill={latestCandle.color}
+                                        rx="3"
+                                    />
+                                    <text
+                                        x="50"
+                                        y={latestCandle.yClose + 3.5}
+                                        fill="#ffffff"
+                                        fontSize="9.5"
+                                        fontWeight="bold"
+                                        fontFamily="monospace"
+                                        textAnchor="middle"
+                                    >
+                                        {formatPriceDollar(latestCandle.close)}
+                                    </text>
+                                </g>
+                            )}
+
+                            {/* Hovered Price Badge on Left Axis */}
+                            {hoveredPoint && (
+                                <g pointerEvents="none">
+                                    <rect
+                                        x="4"
+                                        y={hoveredPoint.yClose - 8.5}
+                                        width="92"
+                                        height="17"
+                                        fill="#0f172a"
+                                        rx="3"
+                                    />
+                                    <text
+                                        x="50"
+                                        y={hoveredPoint.yClose + 3.5}
+                                        fill="#ffffff"
+                                        fontSize="9.5"
+                                        fontWeight="bold"
+                                        fontFamily="monospace"
+                                        textAnchor="middle"
+                                    >
+                                        {formatPriceDollar(hoveredPoint.close)}
+                                    </text>
+                                </g>
+                            )}
+                        </svg>
+                    </div>
+
+                    {/* ─── COLUMN 2: SCROLLABLE CANDLESTICK TIMELINE (overflow-x-auto) ─── */}
+                    <div
+                        ref={chartScrollRef}
+                        className="flex-1 overflow-x-auto select-none bg-white relative scroll-smooth"
+                        style={{ minHeight: `${chartHeight}px` }}
+                    >
+                        {loading ? (
+                            <div className="h-[360px] flex flex-col items-center justify-center gap-2 text-slate-500 text-xs font-mono">
+                                <FaSpinner className="animate-spin text-2xl text-emerald-600" />
+                                <span>កំពុងទាញយកទិន្នន័យក្រាហ្វិក...</span>
+                            </div>
+                        ) : candlePoints.length === 0 ? (
+                            <div className="h-[360px] flex items-center justify-center text-slate-400 text-xs font-mono">
+                                មិនទាន់មានទិន្នន័យប្រតិបត្តិការក្នុងចន្លោះពេលនេះឡើយ
+                            </div>
+                        ) : (
+                            <svg
+                                width={timelineWidth}
+                                height={chartHeight}
+                                className="overflow-visible bg-white"
+                            >
+                                <defs>
+                                    <linearGradient id="tradingNetAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#089981" stopOpacity="0.25" />
+                                        <stop offset="100%" stopColor="#089981" stopOpacity="0.0" />
+                                    </linearGradient>
+                                </defs>
+
+                                {/* Background Canvas */}
+                                <rect width={timelineWidth} height={chartHeight} fill="#ffffff" />
+
+                                {/* Horizontal Grid Lines Across the Full Timeline */}
+                                {priceTicks.map((pt, idx) => (
+                                    <line
+                                        key={`grid-line-${idx}`}
+                                        x1="0"
+                                        y1={pt.y}
+                                        x2={timelineWidth}
                                         y2={pt.y}
                                         stroke="#f1f5f9"
                                         strokeWidth="1"
                                         strokeDasharray="2 3"
                                     />
-                                    {/* Right-Axis Price Label */}
-                                    <text
-                                        x={chartWidth - paddingRight + 8}
-                                        y={pt.y + 3.5}
-                                        fill="#64748b"
-                                        fontSize="10"
-                                        fontFamily="monospace"
-                                        textAnchor="start"
-                                    >
-                                        {pt.val.toFixed(3)}
-                                    </text>
-                                </g>
-                            ))}
+                                ))}
 
-                            {/* Bottom Axis Baseline */}
-                            <line
-                                x1={paddingLeft}
-                                y1={chartHeight - paddingBottom}
-                                x2={chartWidth - paddingRight}
-                                y2={chartHeight - paddingBottom}
-                                stroke="#e2e8f0"
-                                strokeWidth="1"
-                            />
+                                {/* Bottom Axis Baseline (Time/Day Axis) */}
+                                <line
+                                    x1="0"
+                                    y1={chartHeight - paddingBottom}
+                                    x2={timelineWidth}
+                                    y2={chartHeight - paddingBottom}
+                                    stroke="#e2e8f0"
+                                    strokeWidth="1.2"
+                                />
 
-                            {/* Right Axis Baseline */}
-                            <line
-                                x1={chartWidth - paddingRight}
-                                y1={paddingTop}
-                                x2={chartWidth - paddingRight}
-                                y2={chartHeight - paddingBottom}
-                                stroke="#e2e8f0"
-                                strokeWidth="1"
-                            />
+                                {/* Net Area Mode Line (if activated) */}
+                                {chartMode === 'net' && (
+                                    <g>
+                                        <path
+                                            d={(() => {
+                                                if (candlePoints.length === 0) return '';
+                                                const first = candlePoints[0];
+                                                const last = candlePoints[candlePoints.length - 1];
+                                                const bY = chartHeight - paddingBottom;
+                                                let p = `M ${first.x} ${first.yClose}`;
+                                                for (let i = 1; i < candlePoints.length; i++) {
+                                                    p += ` L ${candlePoints[i].x} ${candlePoints[i].yClose}`;
+                                                }
+                                                return `${p} L ${last.x} ${bY} L ${first.x} ${bY} Z`;
+                                            })()}
+                                            fill="url(#tradingNetAreaGrad)"
+                                        />
+                                        <path
+                                            d={(() => {
+                                                if (candlePoints.length === 0) return '';
+                                                let p = `M ${candlePoints[0].x} ${candlePoints[0].yClose}`;
+                                                for (let i = 1; i < candlePoints.length; i++) {
+                                                    p += ` L ${candlePoints[i].x} ${candlePoints[i].yClose}`;
+                                                }
+                                                return p;
+                                            })()}
+                                            fill="none"
+                                            stroke="#089981"
+                                            strokeWidth="2"
+                                        />
+                                    </g>
+                                )}
 
-                            {/* Vertical Time Grid Lines & Time Labels at Bottom */}
-                            {candlePoints
-                                .filter((_, idx) => idx % Math.max(1, Math.floor(candlePoints.length / 5)) === 0 || idx === candlePoints.length - 1)
-                                .map((pt) => (
-                                    <g key={`time-${pt.id}`}>
+                                {/* Candlestick Columns (Real Japanese K-Line) */}
+                                {candlePoints.map((pt) => (
+                                    <g key={pt.id}>
+                                        {/* Center Vertical Wick (High to Low) */}
                                         <line
                                             x1={pt.x}
-                                            y1={paddingTop}
+                                            y1={pt.yHigh}
                                             x2={pt.x}
-                                            y2={chartHeight - paddingBottom}
-                                            stroke="#f8fafc"
-                                            strokeDasharray="2 3"
+                                            y2={pt.yLow}
+                                            stroke={pt.color}
+                                            strokeWidth="1.3"
                                         />
+
+                                        {/* Candle Body (Open to Close) */}
+                                        <rect
+                                            x={pt.x - pt.candleW / 2}
+                                            y={pt.bodyTop}
+                                            width={pt.candleW}
+                                            height={pt.bodyH}
+                                            fill={pt.color}
+                                            rx="1"
+                                        />
+
+                                        {/* Swing High Pivot Triangle (▲) */}
+                                        {pt.isSwingHigh && (
+                                            <polygon
+                                                points={`${pt.x},${pt.yHigh - 10} ${pt.x - 3.5},${pt.yHigh - 4} ${pt.x + 3.5},${pt.yHigh - 4}`}
+                                                fill="#475569"
+                                            />
+                                        )}
+
+                                        {/* Swing Low Pivot Triangle (▼) */}
+                                        {pt.isSwingLow && (
+                                            <polygon
+                                                points={`${pt.x},${pt.yLow + 10} ${pt.x - 3.5},${pt.yLow + 4} ${pt.x + 3.5},${pt.yLow + 4}`}
+                                                fill="#475569"
+                                            />
+                                        )}
+
+                                        {/* Bottom Day/Time Labels (ចំនួនថ្ងៃ) */}
                                         <line
                                             x1={pt.x}
                                             y1={chartHeight - paddingBottom}
                                             x2={pt.x}
                                             y2={chartHeight - paddingBottom + 5}
-                                            stroke="#94a3b8"
+                                            stroke="#cbd5e1"
                                             strokeWidth="1"
                                         />
                                         <text
                                             x={pt.x}
                                             y={chartHeight - paddingBottom + 16}
-                                            fill="#64748b"
+                                            fill="#475569"
                                             fontSize="9.5"
+                                            fontWeight="600"
                                             fontFamily="monospace"
                                             textAnchor="middle"
                                         >
                                             {pt.timeLabel}
                                         </text>
+                                        <text
+                                            x={pt.x}
+                                            y={chartHeight - paddingBottom + 28}
+                                            fill="#94a3b8"
+                                            fontSize="8"
+                                            fontFamily="sans-serif"
+                                            textAnchor="middle"
+                                        >
+                                            {candleTimeframe === 'D1' ? getDayNameKhmer(pt.date).replace('ថ្ងៃ', '') : `Vol: $${(pt.cashIn + pt.cashOut).toLocaleString()}`}
+                                        </text>
                                     </g>
                                 ))}
 
-                            {/* Optional Net Area Mode Line */}
-                            {chartMode === 'net' && (
-                                <g>
-                                    <path
-                                        d={(() => {
-                                            if (candlePoints.length === 0) return '';
-                                            const first = candlePoints[0];
-                                            const last = candlePoints[candlePoints.length - 1];
-                                            const bY = chartHeight - paddingBottom;
-                                            let p = `M ${first.x} ${first.yClose}`;
-                                            for (let i = 1; i < candlePoints.length; i++) {
-                                                p += ` L ${candlePoints[i].x} ${candlePoints[i].yClose}`;
-                                            }
-                                            return `${p} L ${last.x} ${bY} L ${first.x} ${bY} Z`;
-                                        })()}
-                                        fill="url(#tradingNetAreaGrad)"
-                                    />
-                                    <path
-                                        d={(() => {
-                                            if (candlePoints.length === 0) return '';
-                                            let p = `M ${candlePoints[0].x} ${candlePoints[0].yClose}`;
-                                            for (let i = 1; i < candlePoints.length; i++) {
-                                                p += ` L ${candlePoints[i].x} ${candlePoints[i].yClose}`;
-                                            }
-                                            return p;
-                                        })()}
-                                        fill="none"
-                                        stroke="#089981"
-                                        strokeWidth="2"
-                                    />
-                                </g>
-                            )}
-
-                            {/* JAPANESE CANDLESTICKS (Real K-Line with High/Low wicks) */}
-                            {candlePoints.map((pt) => (
-                                <g key={pt.id}>
-                                    {/* Center Wick (Extends from High to Low) */}
+                                {/* Latest Price Reference Line Across the Full Timeline */}
+                                {latestCandle && (
                                     <line
-                                        x1={pt.x}
-                                        y1={pt.yHigh}
-                                        x2={pt.x}
-                                        y2={pt.yLow}
-                                        stroke={pt.color}
-                                        strokeWidth="1.2"
-                                    />
-
-                                    {/* Candle Body (Open to Close) */}
-                                    <rect
-                                        x={pt.x - pt.candleW / 2}
-                                        y={pt.bodyTop}
-                                        width={pt.candleW}
-                                        height={pt.bodyH}
-                                        fill={pt.color}
-                                        rx="0.5"
-                                    />
-
-                                    {/* Swing High Pivot Triangle (▲) */}
-                                    {pt.isSwingHigh && (
-                                        <polygon
-                                            points={`${pt.x},${pt.yHigh - 10} ${pt.x - 3.5},${pt.yHigh - 4} ${pt.x + 3.5},${pt.yHigh - 4}`}
-                                            fill="#475569"
-                                        />
-                                    )}
-
-                                    {/* Swing Low Pivot Triangle (▼) */}
-                                    {pt.isSwingLow && (
-                                        <polygon
-                                            points={`${pt.x},${pt.yLow + 10} ${pt.x - 3.5},${pt.yLow + 4} ${pt.x + 3.5},${pt.yLow + 4}`}
-                                            fill="#475569"
-                                        />
-                                    )}
-                                </g>
-                            ))}
-
-                            {/* Latest / Current Price Line & Badge on Right Axis (like 4151.469 in user image!) */}
-                            {latestCandle && (
-                                <g>
-                                    {/* Horizontal Guideline Across Canvas */}
-                                    <line
-                                        x1={paddingLeft}
+                                        x1="0"
                                         y1={latestCandle.yClose}
-                                        x2={chartWidth - paddingRight}
+                                        x2={timelineWidth}
                                         y2={latestCandle.yClose}
                                         stroke={latestCandle.color}
                                         strokeWidth="1"
                                         strokeDasharray="2 2"
                                     />
+                                )}
 
-                                    {/* Right Axis Solid Colored Price Badge */}
+                                {/* Interactive Touch / Click Columns */}
+                                {candlePoints.map((pt) => (
                                     <rect
-                                        x={chartWidth - paddingRight + 2}
-                                        y={latestCandle.yClose - 8.5}
-                                        width={paddingRight - 6}
-                                        height={17}
-                                        fill={latestCandle.color}
-                                        rx="2"
+                                        key={`hit-${pt.id}`}
+                                        x={pt.x - stepX / 2}
+                                        y={paddingTop}
+                                        width={stepX}
+                                        height={drawableHeight}
+                                        fill="transparent"
+                                        className="cursor-crosshair"
+                                        onMouseEnter={() => setHoveredPoint(pt)}
+                                        onMouseLeave={() => setHoveredPoint(null)}
+                                        onClick={() => handleScrollToDate(pt.date)}
                                     />
-                                    <text
-                                        x={chartWidth - paddingRight + (paddingRight - 6) / 2 + 2}
-                                        y={latestCandle.yClose + 3.5}
-                                        fill="#ffffff"
-                                        fontSize="10"
-                                        fontWeight="bold"
-                                        fontFamily="monospace"
-                                        textAnchor="middle"
-                                    >
-                                        {latestCandle.close.toFixed(3)}
-                                    </text>
-                                </g>
-                            )}
+                                ))}
 
-                            {/* Interactive Touch / Hover Hit Areas */}
-                            {candlePoints.map((pt) => (
-                                <rect
-                                    key={`hit-${pt.id}`}
-                                    x={pt.x - pt.candleW * 1.6}
-                                    y={paddingTop}
-                                    width={pt.candleW * 3.2}
-                                    height={drawableHeight}
-                                    fill="transparent"
-                                    className="cursor-crosshair"
-                                    onMouseEnter={() => setHoveredPoint(pt)}
-                                    onMouseLeave={() => setHoveredPoint(null)}
-                                    onClick={() => handleScrollToDate(pt.date)}
-                                />
-                            ))}
+                                {/* Crosshair Lines on Hover */}
+                                {hoveredPoint && (
+                                    <g pointerEvents="none">
+                                        {/* Vertical Crosshair Line */}
+                                        <line
+                                            x1={hoveredPoint.x}
+                                            y1={paddingTop}
+                                            x2={hoveredPoint.x}
+                                            y2={chartHeight - paddingBottom}
+                                            stroke="#64748b"
+                                            strokeWidth="1"
+                                            strokeDasharray="3 3"
+                                        />
 
-                            {/* Active Hover Crosshairs & Floating Price/Time Tags */}
-                            {hoveredPoint && (
-                                <g pointerEvents="none">
-                                    {/* Vertical Crosshair Line */}
-                                    <line
-                                        x1={hoveredPoint.x}
-                                        y1={paddingTop}
-                                        x2={hoveredPoint.x}
-                                        y2={chartHeight - paddingBottom}
-                                        stroke="#64748b"
-                                        strokeWidth="1"
-                                        strokeDasharray="3 3"
-                                    />
+                                        {/* Horizontal Crosshair Line */}
+                                        <line
+                                            x1="0"
+                                            y1={hoveredPoint.yClose}
+                                            x2={timelineWidth}
+                                            y2={hoveredPoint.yClose}
+                                            stroke="#64748b"
+                                            strokeWidth="1"
+                                            strokeDasharray="3 3"
+                                        />
 
-                                    {/* Horizontal Crosshair Line */}
-                                    <line
-                                        x1={paddingLeft}
-                                        y1={hoveredPoint.yClose}
-                                        x2={chartWidth - paddingRight}
-                                        y2={hoveredPoint.yClose}
-                                        stroke="#64748b"
-                                        strokeWidth="1"
-                                        strokeDasharray="3 3"
-                                    />
+                                        {/* Floating Time Tag on Bottom Axis */}
+                                        <rect
+                                            x={hoveredPoint.x - 42}
+                                            y={chartHeight - paddingBottom + 2}
+                                            width={84}
+                                            height={16}
+                                            fill="#0f172a"
+                                            rx="2"
+                                        />
+                                        <text
+                                            x={hoveredPoint.x}
+                                            y={chartHeight - paddingBottom + 13}
+                                            fill="#ffffff"
+                                            fontSize="9"
+                                            fontFamily="monospace"
+                                            textAnchor="middle"
+                                        >
+                                            {hoveredPoint.timeLabel}
+                                        </text>
+                                    </g>
+                                )}
+                            </svg>
+                        )}
 
-                                    {/* Floating Price Tag on Right Axis */}
-                                    <rect
-                                        x={chartWidth - paddingRight + 2}
-                                        y={hoveredPoint.yClose - 8.5}
-                                        width={paddingRight - 6}
-                                        height={17}
-                                        fill="#334155"
-                                        rx="2"
-                                    />
-                                    <text
-                                        x={chartWidth - paddingRight + (paddingRight - 6) / 2 + 2}
-                                        y={hoveredPoint.yClose + 3.5}
-                                        fill="#ffffff"
-                                        fontSize="10"
-                                        fontFamily="monospace"
-                                        textAnchor="middle"
-                                    >
-                                        {hoveredPoint.close.toFixed(3)}
-                                    </text>
-
-                                    {/* Floating Time Tag on Bottom Axis */}
-                                    <rect
-                                        x={hoveredPoint.x - 42}
-                                        y={chartHeight - paddingBottom + 2}
-                                        width={84}
-                                        height={16}
-                                        fill="#334155"
-                                        rx="2"
-                                    />
-                                    <text
-                                        x={hoveredPoint.x}
-                                        y={chartHeight - paddingBottom + 13}
-                                        fill="#ffffff"
-                                        fontSize="9"
-                                        fontFamily="monospace"
-                                        textAnchor="middle"
-                                    >
-                                        {hoveredPoint.timeLabel}
-                                    </text>
-                                </g>
-                            )}
-                        </svg>
-                    )}
-
-                    {/* Floating HUD Tooltip Card */}
-                    {hoveredPoint && (
-                        <div
-                            className="absolute top-3 right-24 bg-white/95 border border-slate-300 rounded-[5px] p-2.5 shadow-xl backdrop-blur-md text-[11px] font-mono pointer-events-none animate-in fade-in duration-150 z-20"
-                        >
-                            <p className="font-bold text-slate-900 border-b border-slate-100 pb-1 mb-1">
-                                📅 {hoveredPoint.timeLabel} ({hoveredPoint.date})
-                            </p>
-                            <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
-                                <span>Open: <b>{hoveredPoint.open.toFixed(3)}</b></span>
-                                <span>High: <b>{hoveredPoint.high.toFixed(3)}</b></span>
-                                <span>Low: <b>{hoveredPoint.low.toFixed(3)}</b></span>
-                                <span>Close: <b className={hoveredPoint.isGreen ? 'text-emerald-700' : 'text-rose-700'}>{hoveredPoint.close.toFixed(3)}</b></span>
+                        {/* Floating HUD Tooltip Card */}
+                        {hoveredPoint && (
+                            <div
+                                className="fixed bottom-6 right-6 bg-white/95 border border-slate-300 rounded-[5px] p-3 shadow-2xl backdrop-blur-md text-[11px] font-mono pointer-events-none animate-in fade-in duration-150 z-30"
+                            >
+                                <p className="font-bold text-slate-900 border-b border-slate-100 pb-1 mb-1">
+                                    📅 {hoveredPoint.timeLabel} ({hoveredPoint.date})
+                                </p>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-slate-700">
+                                    <span>Open: <b>{formatPriceDollar(hoveredPoint.open)}</b></span>
+                                    <span>High: <b>{formatPriceDollar(hoveredPoint.high)}</b></span>
+                                    <span>Low: <b>{formatPriceDollar(hoveredPoint.low)}</b></span>
+                                    <span>Close: <b className={hoveredPoint.isGreen ? 'text-emerald-700' : 'text-rose-700'}>{formatPriceDollar(hoveredPoint.close)}</b></span>
+                                </div>
+                                <div className="border-t border-slate-100 pt-1 mt-1">
+                                    <p className="text-emerald-700 font-bold">
+                                        ចូល (Inflow): ${hoveredPoint.cashIn.toLocaleString()}
+                                    </p>
+                                    <p className="text-rose-700 font-bold">
+                                        ចេញ (Outflow): ${hoveredPoint.cashOut.toLocaleString()}
+                                    </p>
+                                    <p className={hoveredPoint.netFlow >= 0 ? 'text-teal-700 font-black' : 'text-rose-700 font-black'}>
+                                        សល់ (Net): {hoveredPoint.netFlow >= 0 ? '+' : ''}${hoveredPoint.netFlow.toLocaleString()}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="border-t border-slate-100 pt-1 mt-1">
-                                <p className="text-emerald-700 font-bold">
-                                    ចូល (Inflow): ${hoveredPoint.cashIn.toLocaleString()}
-                                </p>
-                                <p className="text-rose-700 font-bold">
-                                    ចេញ (Outflow): ${hoveredPoint.cashOut.toLocaleString()}
-                                </p>
-                                <p className={hoveredPoint.netFlow >= 0 ? 'text-teal-700 font-black' : 'text-rose-700 font-black'}>
-                                    សល់ (Net): {hoveredPoint.netFlow >= 0 ? '+' : ''}${hoveredPoint.netFlow.toLocaleString()}
-                                </p>
-                            </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
 
