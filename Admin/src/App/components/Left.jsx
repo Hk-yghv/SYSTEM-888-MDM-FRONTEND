@@ -384,6 +384,12 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             {hasPermission(json.report?.followUp4Report || '/report/follow-up-4', 'read') && (
                                 <Link to={json.report?.followUp4Report || '/report/follow-up-4'} className={subItemClass(json.report?.followUp4Report || '/report/follow-up-4')}>{t('followUp4Report') || 'Follow Up 4 Report'}</Link>
                             )}
+                            {hasPermission(json.audit?.telegram || '/audit/telegram', 'read') && (
+                                <Link to={json.audit?.reportTelegram || '/audit/telegram/report'} className={subItemClass(json.audit?.reportTelegram || '/audit/telegram/report')}>
+                                    <FaChartBar size={14} />
+                                    {t('reportAuditTelegram') || 'Report Audit Telegram'}
+                                </Link>
+                            )}
 
                         </div>
                     </div>
@@ -495,12 +501,6 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             <Link to={json.audit?.telegram || '/audit/telegram'} className={subItemClass(json.audit?.telegram || '/audit/telegram')}>
                                 <FaFileAlt size={15} />
                                 {t('auditTelegram') || 'Audit Telegram'}
-                            </Link>
-                        )}
-                        {hasPermission(json.audit?.telegram || '/audit/telegram', 'read') && (
-                            <Link to={json.audit?.reportTelegram || '/audit/telegram/report'} className={subItemClass(json.audit?.reportTelegram || '/audit/telegram/report')}>
-                                <FaChartBar size={15} />
-                                {t('reportAuditTelegram') || 'Report Audit Telegram'}
                             </Link>
                         )}
                     </div>
