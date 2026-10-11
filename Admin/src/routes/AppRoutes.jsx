@@ -84,6 +84,7 @@ import Profile from "../App/Profile/Profile";
 import AllPicture from "../App/Media/AllPicture";
 import SaveUrlPage from "../App/SaveUrl/pages/SaveUrlPage";
 import AuditTelegram from "../App/Audit/pages/AuditTelegram";
+import ReportAuditTelegram from "../App/Audit/pages/ReportAuditTelegram";
 
 /**
  * Redirect root or unauthenticated users to their first permitted page
@@ -201,6 +202,7 @@ const AppRoutes = () => {
 
       {/* Audit Telegram */}
       <Route path={json.audit?.telegram || "/audit/telegram"} element={renderProtected(json.audit?.telegram || "/audit/telegram", AuditTelegram)} />
+      <Route path={json.audit?.reportTelegram || "/audit/telegram/report"} element={renderProtected(json.audit?.reportTelegram || "/audit/telegram/report", ReportAuditTelegram)} />
 
       {/* Settings & Profile */}
       <Route path={json.settings.allAccount} element={renderProtected(json.settings.allAccount, AllAccount)} />

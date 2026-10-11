@@ -506,6 +506,116 @@ router.get('/history/:contractId', async (req, res) => {
     }
 });
 
+// ── GET /api/telegram-audit/report (Report Audit Telegram - last N days) ─
+router.get('/report', async (req, res) => {
+    try {
+        const { days = 7, brand = '' } = req.query;
+        const numDays = Math.max(1, Math.min(90, parseInt(days, 10) || 7));
+
+        // Build last N dates (inclusive of today)
+        const today = new Date();
+        const dates = [];
+        for (let i = numDays - 1; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            dates.push(`${y}-${m}-${day}`);
+        }
+
+        const startDate = dates[0];
+        const endDate = dates[dates.length - 1];
+
+        let logs = [];
+        let submissions = [];
+
+        if (isMongoConnected) {
+            const query = { auditDate: { $gte: startDate, $lte: endDate } };
+            logs = await queryAllDBs(TelegramAuditLog, (M) => M.find(query).lean());
+            submissions = await queryAllDBs(TelegramAuditSubmission, (M) =>
+                M.find({ auditDate: { $gte: startDate, $lte: endDate } }).lean()
+            );
+        } else {
+            logs = (MEM_DB.telegramAuditLogs || []).filter(l => l.auditDate >= startDate && l.auditDate <= endDate);
+            submissions = (MEM_DB.telegramAuditSubmissions || []).filter(s => s.auditDate >= startDate && s.auditDate <= endDate);
+        }
+
+        // Deduplicate logs from multiDB
+        const seenLogs = new Set();
+        const uniqueLogs = [];
+        for (const log of logs) {
+            const key = `${log.contractId}_${log.auditDate}`;
+            if (!seenLogs.has(key)) {
+                seenLogs.add(key);
+                uniqueLogs.push(log);
+            }
+        }
+
+        // Submission map by date
+        const submissionMap = {};
+        for (const s of submissions) {
+            if (s.auditDate) submissionMap[s.auditDate] = s;
+        }
+
+        // Aggregate per date
+        const reportByDate = {};
+        for (const dateStr of dates) {
+            reportByDate[dateStr] = {
+                date: dateStr,
+                isSubmitted: Boolean(submissionMap[dateStr]?.isSubmitted || dateStr < getTodayDateStr()),
+                totalAudited: 0,
+                statusAccountBreakdown: {},   // { statusValue: count }
+                accountActivityBreakdown: {}, // { activityValue: count }
+                noteAuditBreakdown: {},        // { noteValue: count }
+            };
+        }
+
+        for (const log of uniqueLogs) {
+            const d = log.auditDate;
+            if (!reportByDate[d]) continue;
+            const entry = reportByDate[d];
+
+            entry.totalAudited++;
+
+            // Status Account
+            const sa = String(log.statusAccount || '').trim() || '(គ្មាន)';
+            entry.statusAccountBreakdown[sa] = (entry.statusAccountBreakdown[sa] || 0) + 1;
+
+            // Account Activity
+            const aa = String(log.accountActivity || '').trim() || '(គ្មាន)';
+            entry.accountActivityBreakdown[aa] = (entry.accountActivityBreakdown[aa] || 0) + 1;
+
+            // Note Audit
+            const na = String(log.noteAudit || '').trim() || '(គ្មាន)';
+            entry.noteAuditBreakdown[na] = (entry.noteAuditBreakdown[na] || 0) + 1;
+        }
+
+        // Collect all distinct keys across all dates
+        const allStatusKeys = new Set();
+        const allActivityKeys = new Set();
+        const allNoteKeys = new Set();
+
+        for (const entry of Object.values(reportByDate)) {
+            Object.keys(entry.statusAccountBreakdown).forEach(k => allStatusKeys.add(k));
+            Object.keys(entry.accountActivityBreakdown).forEach(k => allActivityKeys.add(k));
+            Object.keys(entry.noteAuditBreakdown).forEach(k => allNoteKeys.add(k));
+        }
+
+        res.json({
+            success: true,
+            dates,
+            report: reportByDate,
+            allStatusKeys: Array.from(allStatusKeys),
+            allActivityKeys: Array.from(allActivityKeys),
+            allNoteKeys: Array.from(allNoteKeys),
+        });
+    } catch (err) {
+        console.error('Error in GET /telegram-audit/report:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // ── POST /api/telegram-audit/submit (Manual Daily Submit) ─────────
 router.post('/submit', async (req, res) => {
     try {
