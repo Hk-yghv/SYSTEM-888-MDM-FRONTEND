@@ -71,7 +71,8 @@
     "allPicture": "/all-picture",
     "saveUrl": "/save-url",
     "audit": {
-        "telegram": "/audit/telegram"
+        "telegram": "/audit/telegram",
+        "reportTelegram": "/audit/telegram/report"
     },
     "settings": {
         "controlSystem": "/settings/control-system",

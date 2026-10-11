@@ -6,7 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate, MdOutlinePhotoLibrary } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar } from "react-icons/fa";
+
 
 const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onToggleHeader }) => {
     const [openMenu, setOpenMenu] = useState("");
@@ -494,6 +495,12 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             <Link to={json.audit?.telegram || '/audit/telegram'} className={subItemClass(json.audit?.telegram || '/audit/telegram')}>
                                 <FaFileAlt size={15} />
                                 {t('auditTelegram') || 'Audit Telegram'}
+                            </Link>
+                        )}
+                        {hasPermission(json.audit?.telegram || '/audit/telegram', 'read') && (
+                            <Link to={json.audit?.reportTelegram || '/audit/telegram/report'} className={subItemClass(json.audit?.reportTelegram || '/audit/telegram/report')}>
+                                <FaChartBar size={15} />
+                                {t('reportAuditTelegram') || 'Report Audit Telegram'}
                             </Link>
                         )}
                     </div>
