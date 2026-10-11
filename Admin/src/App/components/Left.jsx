@@ -56,6 +56,15 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [accountOpen]);
 
+    // Auto open active section on initial route change
+    useEffect(() => {
+        if (location.pathname.startsWith('/report') || location.pathname === '/audit/telegram/report') {
+            setOpenMenu('report');
+        } else if (location.pathname.startsWith('/audit')) {
+            setOpenMenu('audit');
+        }
+    }, [location.pathname]);
+
     const handleLogout = async () => {
         try {
             await logout();
@@ -355,10 +364,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 <MdOutlineBarChart size={20} className="text-emerald-600" />
                                 <span>{t('report')}</span>
                             </p>
-                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "report" || location.pathname.startsWith('/report') || location.pathname === '/audit/telegram/report' ? "rotate-180" : ""}`} />
+                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "report" ? "rotate-180" : ""}`} />
                         </div>
 
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" || location.pathname.startsWith('/report') || location.pathname === '/audit/telegram/report' ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.report.allCustomers, 'read') && (
                                 <Link to={json.report.allCustomers} className={subItemClass(json.report.allCustomers)}>{t('allCustomerReport')}</Link>
                             )}
@@ -495,10 +504,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             <FaTasks size={18} className="text-emerald-600" />
                             {t('audit') || 'Audit'}
                         </p>
-                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "audit" || location.pathname.startsWith('/audit') ? "rotate-180" : ""}`} />
+                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "audit" ? "rotate-180" : ""}`} />
                     </div>
 
-                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "audit" || location.pathname.startsWith('/audit') ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "audit" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                         {hasPermission(json.audit?.telegram || '/audit/telegram', 'read') && (
                             <Link to={json.audit?.telegram || '/audit/telegram'} className={subItemClass(json.audit?.telegram || '/audit/telegram')}>
                                 <FaFileAlt size={15} />
