@@ -17,7 +17,8 @@
         "setWallpaper": "/report/set-wallpaper",
         "installment": "/report/installment",
         "followUpReport": "/report/follow-up",
-        "followUp4Report": "/report/follow-up-4"
+        "followUp4Report": "/report/follow-up-4",
+        "reportTelegram": "/audit/telegram/report"
     },
     "contract": {
         "application": "/contract/application",

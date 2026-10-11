@@ -118,6 +118,7 @@ const AuditTelegram = () => {
     const [contactMap, setContactMap] = useState({});
     const [contactByName, setContactByName] = useState({});
     const [auditMap, setAuditMap] = useState({});
+    const [latestAuditMap, setLatestAuditMap] = useState({});
     const [distinctStatuses, setDistinctStatuses] = useState([]);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [submissionInfo, setSubmissionInfo] = useState(null);
@@ -168,8 +169,9 @@ const AuditTelegram = () => {
         const set = new Set();
         (distinctStatuses || []).forEach(s => s && set.add(String(s).trim()));
         Object.values(auditMap || {}).forEach(a => a?.statusAccount && set.add(String(a.statusAccount).trim()));
+        Object.values(latestAuditMap || {}).forEach(a => a?.statusAccount && set.add(String(a.statusAccount).trim()));
         return Array.from(set).filter(Boolean);
-    }, [distinctStatuses, auditMap]);
+    }, [distinctStatuses, auditMap, latestAuditMap]);
 
     // ─── Fetch Contracts (from Activate) ───────────────────────────
     const fetchContracts = useCallback(async () => {
@@ -207,6 +209,7 @@ const AuditTelegram = () => {
                     setContactMap(data.contactMap || {});
                     setContactByName(data.contactByName || {});
                     setAuditMap(data.auditMap || {});
+                    setLatestAuditMap(data.latestAuditMap || {});
                     setIsSubmitted(Boolean(data.isSubmitted));
                     setSubmissionInfo(data.submissionInfo || null);
                     if (Array.isArray(data.distinctStatuses)) {
@@ -259,6 +262,7 @@ const AuditTelegram = () => {
                             (cNameGen && contactByName[cNameGen]) ||
                             {};
             const audit = auditMap[cId] || {};
+            const latestAudit = latestAuditMap[cId] || {};
 
             const customerName = contract.customerNameKh || contract.customerNameEn || contract.customerName || '—';
             const contractIid = contract.contractIid || contract.contractIdCustom || contract.contractId || contract._id || '—';
@@ -272,6 +276,11 @@ const AuditTelegram = () => {
             const accountActivity = audit.accountActivity || '';
             const noteAudit = audit.noteAudit || '';
             const auditDateTime = audit.auditDateTime || '';
+
+            const previousStatusAccount = latestAudit.statusAccount || '';
+            const previousAccountActivity = latestAudit.accountActivity || '';
+            const previousNoteAudit = latestAudit.noteAudit || '';
+            const previousAuditDate = latestAudit.auditDate || '';
 
             const hasContactInfo = Boolean(contactName || username || phoneNumber);
             const isAudited = Boolean(statusAccount || accountActivity || noteAudit);
@@ -289,6 +298,10 @@ const AuditTelegram = () => {
                 accountActivity,
                 noteAudit,
                 auditDateTime,
+                previousStatusAccount,
+                previousAccountActivity,
+                previousNoteAudit,
+                previousAuditDate,
                 hasContactInfo,
                 isAudited
             };
@@ -302,7 +315,7 @@ const AuditTelegram = () => {
                     String(item.contactName).toLowerCase().includes(s) ||
                     String(item.username).toLowerCase().includes(s) ||
                     String(item.phoneNumber).toLowerCase().includes(s) ||
-                    String(item.statusAccount).toLowerCase().includes(s) ||
+                    String(item.statusAccount || item.previousStatusAccount).toLowerCase().includes(s) ||
                     String(item.accountActivity).toLowerCase().includes(s) ||
                     String(item.noteAudit).toLowerCase().includes(s);
                 if (!matchSearch) return false;
@@ -312,12 +325,12 @@ const AuditTelegram = () => {
             if (statusFilter !== 'All') {
                 if (statusFilter === 'Audited' && !item.isAudited) return false;
                 if (statusFilter === 'Pending' && item.isAudited) return false;
-                if (statusFilter !== 'Audited' && statusFilter !== 'Pending' && item.statusAccount !== statusFilter) return false;
+                if (statusFilter !== 'Audited' && statusFilter !== 'Pending' && item.statusAccount !== statusFilter && item.previousStatusAccount !== statusFilter) return false;
             }
 
             return true;
         });
-    }, [contracts, contactMap, auditMap, searchTerm, statusFilter]);
+    }, [contracts, contactMap, auditMap, latestAuditMap, searchTerm, statusFilter]);
 
     // Pagination slice
     const totalItems = filteredRows.length;
@@ -338,16 +351,20 @@ const AuditTelegram = () => {
             return;
         }
         setAuditModalItem(row);
-        const currentStatus = row.statusAccount || '';
-        const existsInSuggestions = availableStatuses.includes(currentStatus);
 
+        // Auto-capture previous status on a new day or if not yet audited today!
+        const currentStatus = row.statusAccount || row.previousStatusAccount || '';
+        const currentActivity = row.accountActivity || row.previousAccountActivity || '';
+        const currentNote = row.noteAudit || row.previousNoteAudit || '';
+
+        const existsInSuggestions = availableStatuses.includes(currentStatus);
         const hasOptions = availableStatuses.length > 0;
         setAuditForm({
             statusAccount: existsInSuggestions || !currentStatus ? currentStatus : '__CUSTOM__',
             customStatus: existsInSuggestions ? '' : currentStatus,
             isCustomStatus: Boolean(!hasOptions || (currentStatus && !existsInSuggestions)),
-            accountActivity: row.accountActivity || '',
-            noteAudit: row.noteAudit || ''
+            accountActivity: currentActivity,
+            noteAudit: currentNote
         });
     };
 
@@ -386,6 +403,16 @@ const AuditTelegram = () => {
                 setAuditMap(prev => ({
                     ...prev,
                     [auditModalItem.rawContractId]: data.data
+                }));
+                setLatestAuditMap(prev => ({
+                    ...prev,
+                    [auditModalItem.rawContractId]: {
+                        statusAccount: finalStatus,
+                        accountActivity: auditForm.accountActivity.trim(),
+                        noteAudit: auditForm.noteAudit.trim(),
+                        auditDate: selectedDate,
+                        auditDateTime: data.data?.auditDateTime || ''
+                    }
                 }));
                 if (finalStatus && !distinctStatuses.includes(finalStatus)) {
                     setDistinctStatuses(prev => [...prev, finalStatus]);
@@ -874,6 +901,14 @@ const AuditTelegram = () => {
                                                     <span className={`inline-block px-2.5 py-0.5 rounded-[5px] text-[11px] font-bold border ${getStatusBadgeClass(row.statusAccount)}`}>
                                                         {row.statusAccount}
                                                     </span>
+                                                ) : row.previousStatusAccount ? (
+                                                    <span
+                                                        className="inline-block px-2 py-0.5 rounded-[5px] text-[10px] font-bold border border-slate-200 bg-slate-50 text-slate-500 cursor-pointer hover:border-emerald-300 hover:text-emerald-700"
+                                                        title={`ស្ថានភាពពីមុន: ${row.previousStatusAccount} (${row.previousAuditDate || ''})`}
+                                                        onClick={() => handleOpenAuditModal(row)}
+                                                    >
+                                                        {row.previousStatusAccount} <span className="text-[9px] text-slate-400 font-normal">(ពីមុន)</span>
+                                                    </span>
                                                 ) : (
                                                     <span className="text-slate-300 text-[11px] font-medium">—</span>
                                                 )}
@@ -1054,9 +1089,16 @@ const AuditTelegram = () => {
                         <form onSubmit={handleSaveAudit} className="p-5 space-y-4 overflow-y-auto flex-1">
                             {/* Status Account: ONLY shows previously recorded statuses from DB (no auto defaults) */}
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">
-                                    Status Account <span className="text-rose-500">*</span>
-                                </label>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-xs font-bold text-slate-700">
+                                        Status Account <span className="text-rose-500">*</span>
+                                    </label>
+                                    {!auditModalItem.statusAccount && auditModalItem.previousStatusAccount && (
+                                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                            ចាប់យកពីមុន: {auditModalItem.previousStatusAccount} ({auditModalItem.previousAuditDate || ''})
+                                        </span>
+                                    )}
+                                </div>
 
                                 {availableStatuses.length > 0 ? (
                                     <>

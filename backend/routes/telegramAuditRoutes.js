@@ -1,7 +1,7 @@
 import express from 'express';
 import { TelegramAuditContact, TelegramAuditLog, TelegramAuditSubmission } from '../models/TelegramAudit.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
-import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { queryAllDBs, getWriteModel, dbInstances } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
@@ -115,6 +115,7 @@ router.get('/', async (req, res) => {
         let contacts = [];
         let audits = [];
         let distinctStatuses = [];
+        const latestAuditMap = {};
 
         if (isMongoConnected) {
             // Check submission state in DB if not already locked
@@ -132,10 +133,64 @@ router.get('/', async (req, res) => {
             // Fetch logs for this targetDate
             audits = await queryAllDBs(TelegramAuditLog, (M) => M.find({ auditDate: targetDate }).lean());
 
-            // Get distinct statusAccount options from all past audits
-            const statusResults = await queryAllDBs(TelegramAuditLog, (M) => M.distinct('statusAccount'));
-            const flattenedStatuses = statusResults.flat().filter(Boolean).map(s => String(s).trim());
-            distinctStatuses = [...new Set(flattenedStatuses)];
+            // Get distinct statusAccount options from all past audits across all connected DBs
+            const statusSet = new Set();
+            for (const instance of dbInstances) {
+                if (instance.status !== 'connected' || !instance.conn) continue;
+                try {
+                    let BoundModel;
+                    try {
+                        BoundModel = instance.conn.model('TelegramAuditLog');
+                    } catch {
+                        BoundModel = instance.conn.model('TelegramAuditLog', TelegramAuditLog.schema);
+                    }
+                    const list = await BoundModel.distinct('statusAccount', {
+                        statusAccount: { $exists: true, $nin: ['', null] }
+                    });
+                    if (Array.isArray(list)) {
+                        list.forEach(s => {
+                            const trimmed = String(s || '').trim();
+                            if (trimmed) statusSet.add(trimmed);
+                        });
+                    }
+                } catch (e) {
+                    console.warn('[telegramAuditRoutes] distinct status fetch error on', instance.name, e.message);
+                }
+            }
+            distinctStatuses = Array.from(statusSet);
+
+            // Compute latest audit for each contractId across all dates
+            const latestLogs = await queryAllDBs(TelegramAuditLog, (M) =>
+                M.aggregate([
+                    { $match: { statusAccount: { $exists: true, $nin: ['', null] } } },
+                    { $sort: { auditDate: -1, createdAt: -1 } },
+                    {
+                        $group: {
+                            _id: '$contractId',
+                            contractIid: { $first: '$contractIid' },
+                            customerName: { $first: '$customerName' },
+                            statusAccount: { $first: '$statusAccount' },
+                            accountActivity: { $first: '$accountActivity' },
+                            noteAudit: { $first: '$noteAudit' },
+                            auditDate: { $first: '$auditDate' },
+                            auditDateTime: { $first: '$auditDateTime' }
+                        }
+                    }
+                ])
+            );
+            if (Array.isArray(latestLogs)) {
+                for (const item of latestLogs) {
+                    if (item._id) {
+                        latestAuditMap[String(item._id)] = {
+                            statusAccount: item.statusAccount || '',
+                            accountActivity: item.accountActivity || '',
+                            noteAudit: item.noteAudit || '',
+                            auditDate: item.auditDate || '',
+                            auditDateTime: item.auditDateTime || ''
+                        };
+                    }
+                }
+            }
         } else {
             if (!isSubmitted) {
                 submissionInfo = MEM_DB.telegramAuditSubmissions.find(s => s.auditDate === targetDate) || null;
@@ -146,7 +201,28 @@ router.get('/', async (req, res) => {
 
             contacts = MEM_DB.telegramAuditContacts || [];
             audits = (MEM_DB.telegramAuditLogs || []).filter(l => l.auditDate === targetDate);
-            distinctStatuses = [...new Set((MEM_DB.telegramAuditLogs || []).map(l => l.statusAccount).filter(Boolean))];
+            distinctStatuses = [
+                ...new Set(
+                    (MEM_DB.telegramAuditLogs || [])
+                        .map(l => String(l.statusAccount || '').trim())
+                        .filter(Boolean)
+                )
+            ];
+
+            const sortedMem = [...(MEM_DB.telegramAuditLogs || [])]
+                .filter(l => l.statusAccount)
+                .sort((a, b) => (b.auditDate || '').localeCompare(a.auditDate || ''));
+            for (const l of sortedMem) {
+                if (l.contractId && !latestAuditMap[String(l.contractId)]) {
+                    latestAuditMap[String(l.contractId)] = {
+                        statusAccount: l.statusAccount || '',
+                        accountActivity: l.accountActivity || '',
+                        noteAudit: l.noteAudit || '',
+                        auditDate: l.auditDate || '',
+                        auditDateTime: l.auditDateTime || ''
+                    };
+                }
+            }
         }
 
         // Map contacts by contractId, contractIid, and customerName for persistent O(1) lookup
@@ -181,6 +257,7 @@ router.get('/', async (req, res) => {
             contactMap,
             contactByName,
             auditMap,
+            latestAuditMap,
             distinctStatuses
         });
     } catch (err) {

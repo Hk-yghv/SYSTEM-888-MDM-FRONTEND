@@ -17,7 +17,7 @@ const DB_CONFIGS = [
 ];
 
 // Each entry: { name, uri, conn, status: 'connected'|'failed'|'pending'|'not_configured' }
-const dbInstances = [];
+export const dbInstances = [];
 
 // ── Connect All ──────────────────────────────────────────────────────────────
 

@@ -346,17 +346,19 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 hasPermission(json.report.setWallpaper, 'read') ||
                 hasPermission(json.report.installment, 'read') ||
                 hasPermission(json.report?.followUpReport || '/report/follow-up', 'read') ||
-                hasPermission(json.report?.followUp4Report || '/report/follow-up-4', 'read')) && (
+                hasPermission(json.report?.followUp4Report || '/report/follow-up-4', 'read') ||
+                hasPermission(json.report?.reportTelegram || '/audit/telegram/report', 'read') ||
+                hasPermission(json.audit?.telegram || '/audit/telegram', 'read')) && (
                     <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("report")} className={dropdownHeaderClass("report")}>
                             <p className="flex items-center gap-3">
                                 <MdOutlineBarChart size={20} className="text-emerald-600" />
                                 <span>{t('report')}</span>
                             </p>
-                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "report" ? "rotate-180" : ""}`} />
+                            <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "report" || location.pathname.startsWith('/report') || location.pathname === '/audit/telegram/report' ? "rotate-180" : ""}`} />
                         </div>
 
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" || location.pathname.startsWith('/report') || location.pathname === '/audit/telegram/report' ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.report.allCustomers, 'read') && (
                                 <Link to={json.report.allCustomers} className={subItemClass(json.report.allCustomers)}>{t('allCustomerReport')}</Link>
                             )}
@@ -384,8 +386,8 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             {hasPermission(json.report?.followUp4Report || '/report/follow-up-4', 'read') && (
                                 <Link to={json.report?.followUp4Report || '/report/follow-up-4'} className={subItemClass(json.report?.followUp4Report || '/report/follow-up-4')}>{t('followUp4Report') || 'Follow Up 4 Report'}</Link>
                             )}
-                            {hasPermission(json.audit?.telegram || '/audit/telegram', 'read') && (
-                                <Link to={json.audit?.reportTelegram || '/audit/telegram/report'} className={subItemClass(json.audit?.reportTelegram || '/audit/telegram/report')}>
+                            {(hasPermission(json.report?.reportTelegram || '/audit/telegram/report', 'read') || hasPermission(json.audit?.telegram || '/audit/telegram', 'read')) && (
+                                <Link to={json.report?.reportTelegram || json.audit?.reportTelegram || '/audit/telegram/report'} className={subItemClass(json.report?.reportTelegram || json.audit?.reportTelegram || '/audit/telegram/report')}>
                                     <FaChartBar size={14} />
                                     {t('reportAuditTelegram') || 'Report Audit Telegram'}
                                 </Link>

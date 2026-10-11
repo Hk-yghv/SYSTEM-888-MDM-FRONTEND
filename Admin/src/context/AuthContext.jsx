@@ -241,8 +241,8 @@ export const AuthProvider = ({ children }) => {
     const hasPermission = (pagePath, action = 'read') => {
         if (typeof pagePath !== 'string' || !pagePath) return false;
         if (!user) return false;
-        // Master Admin (@hakyonghouv or isImmutable) has full access to all pages and actions
-        if (user.username === '@hakyonghouv' || user.isImmutable) {
+        // Master Admin (@hakyonghouv, isImmutable, or Administrator) has full access
+        if (user.username === '@hakyonghouv' || user.username === 'hakyonghouv' || user.isImmutable || user.role === 'Administrator') {
             return true;
         }
         // Profile and Phone App pages are accessible to any authenticated user
@@ -252,7 +252,12 @@ export const AuthProvider = ({ children }) => {
 
         const getPagePermissions = (path) => user.permissions[path] ||
             (user.permissions instanceof Map ? user.permissions.get(path) : user.permissions.get?.(path));
-        const pagePerms = getPagePermissions(pagePath);
+        let pagePerms = getPagePermissions(pagePath);
+
+        // Fallback for /audit/telegram/report if not explicitly configured: inherit from /audit/telegram
+        if (!pagePerms && pagePath === '/audit/telegram/report') {
+            pagePerms = getPagePermissions('/audit/telegram');
+        }
 
         if (pagePath === CONTROL_SYSTEM_PATH && action === 'read') {
             return !!pagePerms?.read || CONTROL_SYSTEM_SECTIONS.some(section => {
