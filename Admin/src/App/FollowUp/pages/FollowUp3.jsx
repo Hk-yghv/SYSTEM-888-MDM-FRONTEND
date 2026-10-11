@@ -946,7 +946,8 @@ const FollowUp3 = () => {
                         </p>
                         <Pagination
                             currentPage={page}
-                            totalPages={Math.ceil(total / LIMIT)}
+                            totalItems={total}
+                            itemsPerPage={LIMIT}
                             onPageChange={handlePageChange}
                         />
                     </div>

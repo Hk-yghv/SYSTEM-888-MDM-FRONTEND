@@ -101,9 +101,22 @@ const AuditTelegram = () => {
     const todayStr = useMemo(() => formatDateToYMD(new Date()), []);
     const [selectedDate, setSelectedDate] = useState(todayStr);
 
+    // Admin ធំ (Super Admin) Permission Check
+    const isAdmin = useMemo(() => {
+        return Boolean(
+            user?.isImmutable ||
+            user?.username === '@hakyonghouv' ||
+            user?.username === 'hakyonghouv' ||
+            user?.role === 'Administrator' ||
+            user?.role === 'Admin' ||
+            user?.role === 'SuperAdmin'
+        );
+    }, [user]);
+
     // Data States
     const [contracts, setContracts] = useState([]);
     const [contactMap, setContactMap] = useState({});
+    const [contactByName, setContactByName] = useState({});
     const [auditMap, setAuditMap] = useState({});
     const [distinctStatuses, setDistinctStatuses] = useState([]);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -192,6 +205,7 @@ const AuditTelegram = () => {
                 const data = await res.json();
                 if (data.success) {
                     setContactMap(data.contactMap || {});
+                    setContactByName(data.contactByName || {});
                     setAuditMap(data.auditMap || {});
                     setIsSubmitted(Boolean(data.isSubmitted));
                     setSubmissionInfo(data.submissionInfo || null);
@@ -232,7 +246,18 @@ const AuditTelegram = () => {
     const filteredRows = useMemo(() => {
         return contracts.map(contract => {
             const cId = String(contract._id);
-            const contact = contactMap[cId] || {};
+            const cIid = String(contract.contractIid || contract.contractIdCustom || contract.contractId || '');
+            const cNameKh = String(contract.customerNameKh || '').trim().toLowerCase();
+            const cNameEn = String(contract.customerNameEn || '').trim().toLowerCase();
+            const cNameGen = String(contract.customerName || '').trim().toLowerCase();
+
+            // Persistent contact match: by ID, contractIid, or Customer Name
+            const contact = contactMap[cId] ||
+                            (cIid && contactMap[cIid]) ||
+                            (cNameKh && contactByName[cNameKh]) ||
+                            (cNameEn && contactByName[cNameEn]) ||
+                            (cNameGen && contactByName[cNameGen]) ||
+                            {};
             const audit = auditMap[cId] || {};
 
             const customerName = contract.customerNameKh || contract.customerNameEn || contract.customerName || '—';
@@ -380,6 +405,10 @@ const AuditTelegram = () => {
     // ─── Open Contact Modal (Add / Edit) ─────────────────────────────
     const handleOpenContactModal = (row) => {
         setOpenMenuId(null);
+        if (row.hasContactInfo && !isAdmin) {
+            alert('Contact នេះបានរក្សាទុករួចហើយ (ជាប់រហូត)! មានតែ Admin ធំ (Super Admin) ទេទើបអាចចូលទៅកែប្រែបាន។');
+            return;
+        }
         setContactModalItem(row);
         setContactForm({
             contactName: row.contactName || '',
@@ -393,6 +422,11 @@ const AuditTelegram = () => {
         e?.preventDefault();
         if (!contactModalItem) return;
 
+        if (contactModalItem.hasContactInfo && !isAdmin) {
+            alert('អ្នកមិនមានសិទ្ធិកែប្រែ Contact នេះទេ! មានតែ Admin ធំទេទើបអាចកែប្រែបាន។');
+            return;
+        }
+
         setSavingContact(true);
         try {
             const base = API_BASE || '';
@@ -403,7 +437,10 @@ const AuditTelegram = () => {
                 contactName: contactForm.contactName.trim(),
                 username: contactForm.username.trim(),
                 phoneNumber: contactForm.phoneNumber.trim(),
-                brand: user?.brand || contactModalItem.brand || ''
+                brand: user?.brand || contactModalItem.brand || '',
+                userRole: user?.role || '',
+                requesterUsername: user?.username || '',
+                isImmutable: Boolean(user?.isImmutable)
             };
 
             const res = await fetch(`${base}/telegram-audit/contact`, {
@@ -415,9 +452,18 @@ const AuditTelegram = () => {
             if (res.ok && data.success) {
                 setContactMap(prev => ({
                     ...prev,
-                    [contactModalItem.rawContractId]: data.data
+                    [contactModalItem.rawContractId]: data.data,
+                    ...(contactModalItem.contractIid ? { [contactModalItem.contractIid]: data.data } : {})
                 }));
+                if (contactModalItem.customerName) {
+                    const norm = String(contactModalItem.customerName).trim().toLowerCase();
+                    setContactByName(prev => ({
+                        ...prev,
+                        [norm]: data.data
+                    }));
+                }
                 setContactModalItem(null);
+                fetchAuditState(selectedDate);
             } else {
                 alert('បរាជ័យក្នុងការរក្សាទុក Contact: ' + (data.error || 'Server error'));
             }
@@ -898,7 +944,7 @@ const AuditTelegram = () => {
                                                                     <span>Activity log</span>
                                                                 </button>
 
-                                                                {/* Add Contact (Only if contact info is empty) */}
+                                                                {/* Add Contact (When empty) / Edit Contact (Admin ធំ Only) / Contact Locked */}
                                                                 {!row.hasContactInfo ? (
                                                                     <button
                                                                         onClick={() => handleOpenContactModal(row)}
@@ -907,15 +953,22 @@ const AuditTelegram = () => {
                                                                         <FaUserPlus className="text-indigo-600" />
                                                                         <span>Add Contact</span>
                                                                     </button>
-                                                                ) : (
-                                                                    /* Edit Contact (Shown once info is entered) */
+                                                                ) : isAdmin ? (
                                                                     <button
                                                                         onClick={() => handleOpenContactModal(row)}
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <FaUserEdit className="text-amber-600" />
-                                                                        <span>Edit Contact</span>
+                                                                        <span>Edit Contact (Admin)</span>
                                                                     </button>
+                                                                ) : (
+                                                                    <div
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-100 rounded-[5px] flex items-center gap-2 cursor-not-allowed select-none"
+                                                                        title="Contact បានរក្សាទុកជាប់រហូត (មានតែ Admin ធំទេទើបអាចកែប្រែបាន)"
+                                                                    >
+                                                                        <FaLock className="text-slate-400" size={12} />
+                                                                        <span>Contact Locked</span>
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                         )}
@@ -1117,13 +1170,24 @@ const AuditTelegram = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
                         {/* Header */}
-                        <div className="px-5 py-3.5 bg-gradient-to-r from-indigo-600 to-sky-600 text-white flex items-center justify-between">
+                        <div className={`px-5 py-3.5 text-white flex items-center justify-between ${
+                            contactModalItem.hasContactInfo
+                                ? 'bg-gradient-to-r from-amber-600 via-indigo-600 to-sky-600'
+                                : 'bg-gradient-to-r from-indigo-600 to-sky-600'
+                        }`}>
                             <div className="flex items-center gap-2.5">
                                 {contactModalItem.hasContactInfo ? <FaUserEdit size={16} /> : <FaUserPlus size={16} />}
                                 <div>
-                                    <h3 className="font-black text-sm tracking-tight">
-                                        {contactModalItem.hasContactInfo ? 'Edit Contact Info' : 'Add Contact Info'}
-                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-black text-sm tracking-tight">
+                                            {contactModalItem.hasContactInfo ? 'Edit Contact Info (Admin ធំ)' : 'Add Contact Info'}
+                                        </h3>
+                                        {contactModalItem.hasContactInfo && (
+                                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-400 text-amber-950 uppercase">
+                                                Admin ធំ
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-[11px] text-sky-100 font-medium">{contactModalItem.customerName}</p>
                                 </div>
                             </div>
@@ -1133,6 +1197,20 @@ const AuditTelegram = () => {
                             >
                                 <FaTimes size={16} />
                             </button>
+                        </div>
+
+                        {/* Informational Banner */}
+                        <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs font-medium text-slate-700">
+                            {contactModalItem.hasContactInfo ? (
+                                <p className="text-amber-800 font-semibold flex items-center gap-1.5">
+                                    <FaLock size={11} className="text-amber-600" />
+                                    <span>Contact នេះជាប់លើឈ្មោះអតិថិជននេះរួចរាល់ហើយ មានតែ Admin ធំទេទើបអាចកែប្រែបាន។</span>
+                                </p>
+                            ) : (
+                                <p className="text-slate-600">
+                                    💡 ពេល Add Contact ហើយ ព័ត៌មាននឹង<strong className="text-indigo-700">ជាប់លើឈ្មោះអតិថិជននេះរហូត</strong> (មិនបាច់បញ្ចូលរាល់ថ្ងៃទេ) ហើយមានតែ Admin ធំទេទើបអាចកែប្រែបាន។
+                                </p>
+                            )}
                         </div>
 
                         {/* Form */}
@@ -1186,11 +1264,15 @@ const AuditTelegram = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={savingContact}
-                                    className="px-5 py-2 rounded-[5px] text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                                    disabled={savingContact || (contactModalItem.hasContactInfo && !isAdmin)}
+                                    className={`px-5 py-2 rounded-[5px] text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all active:scale-95 ${
+                                        contactModalItem.hasContactInfo && !isAdmin
+                                            ? 'bg-slate-300 cursor-not-allowed text-slate-500'
+                                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20 cursor-pointer'
+                                    }`}
                                 >
                                     {savingContact ? <FaSpinner className="animate-spin text-sm" /> : <FaCheck className="text-sm" />}
-                                    <span>រក្សាទុក Contact</span>
+                                    <span>{contactModalItem.hasContactInfo ? 'កែប្រែ Contact' : 'រក្សាទុក Contact'}</span>
                                 </button>
                             </div>
                         </form>

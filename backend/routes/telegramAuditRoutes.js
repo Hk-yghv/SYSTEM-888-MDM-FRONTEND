@@ -149,11 +149,19 @@ router.get('/', async (req, res) => {
             distinctStatuses = [...new Set((MEM_DB.telegramAuditLogs || []).map(l => l.statusAccount).filter(Boolean))];
         }
 
-        // Map contacts by contractId for quick O(1) lookup
+        // Map contacts by contractId, contractIid, and customerName for persistent O(1) lookup
         const contactMap = {};
+        const contactByName = {};
         for (const c of contacts) {
             if (c.contractId) {
                 contactMap[String(c.contractId)] = c;
+            }
+            if (c.contractIid) {
+                contactMap[String(c.contractIid)] = c;
+            }
+            if (c.customerName) {
+                const norm = String(c.customerName).trim().toLowerCase();
+                contactByName[norm] = c;
             }
         }
 
@@ -171,6 +179,7 @@ router.get('/', async (req, res) => {
             isSubmitted,
             submissionInfo,
             contactMap,
+            contactByName,
             auditMap,
             distinctStatuses
         });
@@ -183,10 +192,69 @@ router.get('/', async (req, res) => {
 // ── POST /api/telegram-audit/contact (Save / Edit Customer Contact) ─
 router.post('/contact', async (req, res) => {
     try {
-        const { contractId, contractIid = '', customerName = '', contactName = '', username = '', phoneNumber = '', brand = '' } = req.body;
+        const {
+            contractId,
+            contractIid = '',
+            customerName = '',
+            contactName = '',
+            username = '',
+            phoneNumber = '',
+            brand = '',
+            userRole = '',
+            requesterUsername = '',
+            isImmutable = false
+        } = req.body;
+
         if (!contractId) {
             return res.status(400).json({ success: false, error: 'Contract ID is required.' });
         }
+
+        const isMasterAdmin = (
+            requesterUsername === '@hakyonghouv' ||
+            requesterUsername === 'hakyonghouv' ||
+            isImmutable === true ||
+            isImmutable === 'true' ||
+            userRole === 'Administrator' ||
+            userRole === 'Admin' ||
+            userRole === 'SuperAdmin'
+        );
+
+        // Check if this contact already exists in database
+        let existing = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(TelegramAuditContact, (M) =>
+                M.findOne({
+                    $or: [
+                        { contractId: String(contractId) },
+                        ...(contractIid ? [{ contractIid: String(contractIid) }] : []),
+                        ...(customerName ? [{ customerName: String(customerName) }] : [])
+                    ]
+                }).lean()
+            );
+            existing = results.find(r => r != null) || null;
+        } else {
+            existing = (MEM_DB.telegramAuditContacts || []).find(c =>
+                String(c.contractId) === String(contractId) ||
+                (contractIid && String(c.contractIid) === String(contractIid)) ||
+                (customerName && c.customerName === customerName)
+            );
+        }
+
+        const alreadyHasInfo = Boolean(
+            existing && (existing.contactName || existing.username || existing.phoneNumber)
+        );
+
+        // Rule: Once contact is added, it is locked. Only Admin ធំ (Super Admin) can edit it!
+        if (alreadyHasInfo && !isMasterAdmin) {
+            return res.status(403).json({
+                success: false,
+                error: 'Contact នេះបានរក្សាទុករួចហើយ! មានតែ Admin ធំ (Super Admin) ទេទើបអាចកែប្រែបាន។'
+            });
+        }
+
+        const trimmedContactName = String(contactName || '').trim();
+        const trimmedUsername = String(username || '').trim();
+        const trimmedPhone = String(phoneNumber || '').trim();
 
         let savedContact = null;
         if (isMongoConnected) {
@@ -198,20 +266,34 @@ router.post('/contact', async (req, res) => {
                         contractId: String(contractId),
                         contractIid: String(contractIid || ''),
                         customerName: String(customerName || ''),
-                        contactName: String(contactName || '').trim(),
-                        username: String(username || '').trim(),
-                        phoneNumber: String(phoneNumber || '').trim(),
+                        contactName: trimmedContactName,
+                        username: trimmedUsername,
+                        phoneNumber: trimmedPhone,
                         brand: String(brand || '')
                     }
                 },
                 { upsert: true, new: true }
             );
+
+            // Also keep all records for this customerName synchronized
+            if (customerName) {
+                await Model.updateMany(
+                    { customerName: String(customerName), contractId: { $ne: String(contractId) } },
+                    {
+                        $set: {
+                            contactName: trimmedContactName,
+                            username: trimmedUsername,
+                            phoneNumber: trimmedPhone
+                        }
+                    }
+                ).catch(() => {});
+            }
         } else {
             let found = MEM_DB.telegramAuditContacts.find(c => String(c.contractId) === String(contractId));
             if (found) {
-                found.contactName = String(contactName || '').trim();
-                found.username = String(username || '').trim();
-                found.phoneNumber = String(phoneNumber || '').trim();
+                found.contactName = trimmedContactName;
+                found.username = trimmedUsername;
+                found.phoneNumber = trimmedPhone;
                 found.contractIid = String(contractIid || '');
                 found.customerName = String(customerName || '');
                 savedContact = found;
@@ -221,18 +303,43 @@ router.post('/contact', async (req, res) => {
                     contractId: String(contractId),
                     contractIid: String(contractIid || ''),
                     customerName: String(customerName || ''),
-                    contactName: String(contactName || '').trim(),
-                    username: String(username || '').trim(),
-                    phoneNumber: String(phoneNumber || '').trim(),
+                    contactName: trimmedContactName,
+                    username: trimmedUsername,
+                    phoneNumber: trimmedPhone,
                     brand: String(brand || ''),
                     createdAt: new Date(),
                     updatedAt: new Date()
                 };
                 MEM_DB.telegramAuditContacts.push(savedContact);
             }
+
+            if (customerName) {
+                MEM_DB.telegramAuditContacts.forEach(c => {
+                    if (c.customerName === customerName && String(c.contractId) !== String(contractId)) {
+                        c.contactName = trimmedContactName;
+                        c.username = trimmedUsername;
+                        c.phoneNumber = trimmedPhone;
+                    }
+                });
+            }
         }
 
-        res.json({ success: true, message: 'Contact saved successfully', data: savedContact });
+        // Record audit trail
+        recordSystemAudit({
+            category: 'Audit',
+            level: 'Info',
+            action: alreadyHasInfo ? 'TELEGRAM_AUDIT_CONTACT_UPDATE' : 'TELEGRAM_AUDIT_CONTACT_ADD',
+            taskCategory: 'Audit Telegram',
+            description: `${alreadyHasInfo ? 'Edited' : 'Added'} Contact for ${customerName || contractId} (${trimmedUsername || trimmedPhone})`,
+            username: requesterUsername || 'User',
+            brand: brand || ''
+        }).catch(() => {});
+
+        res.json({
+            success: true,
+            message: alreadyHasInfo ? 'បានកែប្រែ Contact ដោយជោគជ័យ' : 'បានរក្សាទុក Contact ជាប់ជាអចិន្ត្រៃយ៍ដោយជោគជ័យ',
+            data: savedContact
+        });
     } catch (err) {
         console.error('Error saving telegram audit contact:', err);
         res.status(500).json({ success: false, error: err.message });
