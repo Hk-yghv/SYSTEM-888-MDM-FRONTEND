@@ -230,7 +230,7 @@ const ReportAuditTelegram = () => {
                                     {allStatusKeys.length > 0 && (
                                         <th
                                             colSpan={allStatusKeys.length}
-                                            className="px-3 py-2 bg-blue-600 text-white font-black text-center border border-blue-700 whitespace-nowrap"
+                                            className="px-3 py-2 bg-gray-600 text-white font-black text-center border border-blue-700 whitespace-nowrap"
                                         >
                                             Status Account
                                         </th>
@@ -239,7 +239,7 @@ const ReportAuditTelegram = () => {
                                     {allActivityKeys.length > 0 && (
                                         <th
                                             colSpan={allActivityKeys.length}
-                                            className="px-3 py-2 bg-violet-600 text-white font-black text-center border border-violet-700 whitespace-nowrap"
+                                            className="px-3 py-2 bg-pink-600 text-white font-black text-center border border-pink-700 whitespace-nowrap"
                                         >
                                             Account Activity
                                         </th>

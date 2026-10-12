@@ -166,9 +166,42 @@ router.get('/', async (req, res) => {
         if (isMongoConnected) {
             // Check submission state in DB if not already locked
             if (!isSubmitted) {
-                const subResults = await queryAllDBs(TelegramAuditSubmission, (M) => M.findOne({ auditDate: targetDate }));
-                submissionInfo = subResults.find(r => r != null) || null;
-                if (submissionInfo && submissionInfo.isSubmitted) {
+                // 1. Direct check on active write model
+                try {
+                    const WriteSubModel = getWriteModel(TelegramAuditSubmission);
+                    if (WriteSubModel) {
+                        const direct = await WriteSubModel.findOne({ auditDate: targetDate }).lean();
+                        if (direct && direct.isSubmitted) {
+                            submissionInfo = direct;
+                            isSubmitted = true;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[telegramAuditRoutes] write DB submission check error:', e.message);
+                }
+
+                // 2. Query across all DBs with find()
+                if (!isSubmitted) {
+                    try {
+                        const subResults = await queryAllDBs(TelegramAuditSubmission, (M) => M.find({ auditDate: targetDate }).lean());
+                        const found = Array.isArray(subResults)
+                            ? subResults.find(r => r && r.isSubmitted)
+                            : (subResults && subResults.isSubmitted ? subResults : null);
+                        if (found) {
+                            submissionInfo = found;
+                            isSubmitted = true;
+                        }
+                    } catch (e) {
+                        console.warn('[telegramAuditRoutes] queryAllDBs submission check error:', e.message);
+                    }
+                }
+            }
+
+            // 3. Fallback check in memory
+            if (!isSubmitted && Array.isArray(MEM_DB.telegramAuditSubmissions)) {
+                const memFound = MEM_DB.telegramAuditSubmissions.find(s => s.auditDate === targetDate && s.isSubmitted);
+                if (memFound) {
+                    submissionInfo = memFound;
                     isSubmitted = true;
                 }
             }
@@ -511,23 +544,36 @@ router.post('/log', async (req, res) => {
             });
         }
 
+        let isAlreadySubmitted = false;
         if (isMongoConnected) {
-            const SubModel = getWriteModel(TelegramAuditSubmission);
-            const existingSub = await SubModel.findOne({ auditDate: targetDate });
-            if (existingSub && existingSub.isSubmitted) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'ទិន្នន័យសម្រាប់ថ្ងៃនេះត្រូវបាន Submit រួចហើយ មិនអាចកែប្រែបានទៀតទេ!'
-                });
+            try {
+                const SubModel = getWriteModel(TelegramAuditSubmission);
+                if (SubModel) {
+                    const existingSub = await SubModel.findOne({ auditDate: targetDate });
+                    if (existingSub && existingSub.isSubmitted) {
+                        isAlreadySubmitted = true;
+                    }
+                }
+            } catch {}
+            if (!isAlreadySubmitted) {
+                try {
+                    const subResults = await queryAllDBs(TelegramAuditSubmission, (M) => M.find({ auditDate: targetDate }).lean());
+                    if (Array.isArray(subResults) && subResults.some(r => r && r.isSubmitted)) {
+                        isAlreadySubmitted = true;
+                    }
+                } catch {}
             }
-        } else {
-            const existingSub = MEM_DB.telegramAuditSubmissions.find(s => s.auditDate === targetDate);
-            if (existingSub && existingSub.isSubmitted) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'ទិន្នន័យសម្រាប់ថ្ងៃនេះត្រូវបាន Submit រួចហើយ មិនអាចកែប្រែបានទៀតទេ!'
-                });
-            }
+        }
+        if (!isAlreadySubmitted && Array.isArray(MEM_DB.telegramAuditSubmissions)) {
+            const memSub = MEM_DB.telegramAuditSubmissions.find(s => s.auditDate === targetDate && s.isSubmitted);
+            if (memSub) isAlreadySubmitted = true;
+        }
+
+        if (isAlreadySubmitted) {
+            return res.status(400).json({
+                success: false,
+                error: 'ទិន្នន័យសម្រាប់ថ្ងៃនេះត្រូវបាន Submit និងចាក់សោររួចហើយ មិនអាចកែប្រែបានទៀតទេ!'
+            });
         }
 
         const nowFormatted = (auditDateTime && typeof auditDateTime === 'string' && auditDateTime.trim())
@@ -769,37 +815,70 @@ router.post('/submit', async (req, res) => {
 
         let subDoc = null;
         if (isMongoConnected) {
-            const SubModel = getWriteModel(TelegramAuditSubmission);
-            subDoc = await SubModel.findOneAndUpdate(
-                { auditDate: targetDate },
-                {
-                    $set: {
-                        auditDate: targetDate,
-                        isSubmitted: true,
-                        submittedAt: new Date(),
-                        submittedBy: String(submittedBy || 'Staff'),
-                        brand: String(brand || '')
+            // Upsert across all connected DBs to ensure persistent lock everywhere
+            for (const instance of dbInstances) {
+                if (instance.status !== 'connected' || !instance.conn) continue;
+                try {
+                    let BoundSubModel;
+                    try {
+                        BoundSubModel = instance.conn.model('TelegramAuditSubmission');
+                    } catch {
+                        BoundSubModel = instance.conn.model('TelegramAuditSubmission', TelegramAuditSubmission.schema);
                     }
-                },
-                { upsert: true, new: true }
-            );
-        } else {
-            let found = MEM_DB.telegramAuditSubmissions.find(s => s.auditDate === targetDate);
-            if (found) {
-                found.isSubmitted = true;
-                found.submittedAt = new Date();
-                found.submittedBy = String(submittedBy || 'Staff');
-                subDoc = found;
-            } else {
-                subDoc = {
-                    auditDate: targetDate,
-                    isSubmitted: true,
-                    submittedAt: new Date(),
-                    submittedBy: String(submittedBy || 'Staff'),
-                    brand: String(brand || '')
-                };
-                MEM_DB.telegramAuditSubmissions.push(subDoc);
+                    const resDoc = await BoundSubModel.findOneAndUpdate(
+                        { auditDate: targetDate },
+                        {
+                            $set: {
+                                auditDate: targetDate,
+                                isSubmitted: true,
+                                submittedAt: new Date(),
+                                submittedBy: String(submittedBy || 'Staff'),
+                                brand: String(brand || '')
+                            }
+                        },
+                        { upsert: true, new: true }
+                    );
+                    if (!subDoc) subDoc = resDoc;
+                } catch (e) {
+                    console.warn('[telegramAuditRoutes] submit upsert error on', instance.name, e.message);
+                }
             }
+            if (!subDoc) {
+                const SubModel = getWriteModel(TelegramAuditSubmission) || TelegramAuditSubmission;
+                subDoc = await SubModel.findOneAndUpdate(
+                    { auditDate: targetDate },
+                    {
+                        $set: {
+                            auditDate: targetDate,
+                            isSubmitted: true,
+                            submittedAt: new Date(),
+                            submittedBy: String(submittedBy || 'Staff'),
+                            brand: String(brand || '')
+                        }
+                    },
+                    { upsert: true, new: true }
+                );
+            }
+        }
+
+        // Always keep memory updated as cache/fallback
+        let found = MEM_DB.telegramAuditSubmissions.find(s => s.auditDate === targetDate);
+        if (found) {
+            found.isSubmitted = true;
+            found.submittedAt = new Date();
+            found.submittedBy = String(submittedBy || 'Staff');
+            found.brand = String(brand || '');
+            if (!subDoc) subDoc = found;
+        } else {
+            const memItem = {
+                auditDate: targetDate,
+                isSubmitted: true,
+                submittedAt: new Date(),
+                submittedBy: String(submittedBy || 'Staff'),
+                brand: String(brand || '')
+            };
+            MEM_DB.telegramAuditSubmissions.push(memItem);
+            if (!subDoc) subDoc = memItem;
         }
 
         recordSystemAudit({

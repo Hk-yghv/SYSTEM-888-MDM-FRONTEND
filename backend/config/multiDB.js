@@ -155,7 +155,9 @@ export const queryAllDBs = async (baseModel, queryFn) => {
             const docs = await queryFn(BoundModel);
 
             // Got results → return immediately, don't query other DBs
-            if (Array.isArray(docs) && docs.length > 0) {
+            if (Array.isArray(docs)) {
+                if (docs.length > 0) return docs;
+            } else if (docs !== null && docs !== undefined) {
                 return docs;
             }
 

@@ -267,8 +267,20 @@ const AuditTelegram = () => {
                     setContactByName(data.contactByName || {});
                     setAuditMap(data.auditMap || {});
                     setLatestAuditMap(data.latestAuditMap || {});
-                    setIsSubmitted(Boolean(data.isSubmitted));
-                    setSubmissionInfo(data.submissionInfo || null);
+
+                    const serverSubmitted = Boolean(data.isSubmitted);
+                    const localSubmitted = localStorage.getItem(`telegram_audit_submitted_${targetDate}`) === 'true';
+                    const locked = serverSubmitted || localSubmitted;
+
+                    setIsSubmitted(locked);
+                    setSubmissionInfo(data.submissionInfo || (locked ? { isSubmitted: true, auditDate: targetDate } : null));
+
+                    if (locked) {
+                        try {
+                            localStorage.setItem(`telegram_audit_submitted_${targetDate}`, 'true');
+                        } catch {}
+                    }
+
                     if (Array.isArray(data.distinctStatuses)) {
                         setDistinctStatuses(data.distinctStatuses);
                     }
@@ -403,7 +415,8 @@ const AuditTelegram = () => {
 
     // ─── Open Audit Modal ────────────────────────────────────────────
     const handleOpenAuditModal = (row) => {
-        if (isSubmitted) {
+        const isLocallyLocked = localStorage.getItem(`telegram_audit_submitted_${selectedDate}`) === 'true';
+        if (isSubmitted || isLocallyLocked) {
             alert('ទិន្នន័យសម្រាប់ថ្ងៃនេះត្រូវបាន Submit និងចាក់សោររួចហើយ មិនអាចកែប្រែបានទៀតទេ!');
             return;
         }
@@ -428,6 +441,11 @@ const AuditTelegram = () => {
     // ─── Save Audit Record ───────────────────────────────────────────
     const handleSaveAudit = async (e) => {
         e?.preventDefault();
+        const isLocallyLocked = localStorage.getItem(`telegram_audit_submitted_${selectedDate}`) === 'true';
+        if (isSubmitted || isLocallyLocked) {
+            alert('ទិន្នន័យសម្រាប់ថ្ងៃនេះត្រូវបាន Submit និងចាក់សោររួចហើយ មិនអាចកែប្រែបានទៀតទេ!');
+            return;
+        }
         if (!auditModalItem) return;
 
         let finalStatus = auditForm.isCustomStatus ? auditForm.customStatus.trim() : auditForm.statusAccount.trim();
@@ -625,6 +643,9 @@ const AuditTelegram = () => {
             if (res.ok && data.success) {
                 setIsSubmitted(true);
                 setSubmissionInfo(data.data);
+                try {
+                    localStorage.setItem(`telegram_audit_submitted_${selectedDate}`, 'true');
+                } catch {}
                 setConfirmSubmitModal(false);
                 alert(data.message || `បាន Submit និងចាក់សោរទិន្នន័យសម្រាប់ថ្ងៃ ${selectedDate} ដោយជោគជ័យ!`);
                 fetchAuditState(selectedDate);
@@ -965,9 +986,19 @@ const AuditTelegram = () => {
                                                     </span>
                                                 ) : row.previousStatusAccount ? (
                                                     <span
-                                                        className="inline-block px-2 py-0.5 rounded-[5px] text-[10px] font-bold border border-slate-200 bg-slate-50 text-slate-500 cursor-pointer hover:border-emerald-300 hover:text-emerald-700"
+                                                        className={`inline-block px-2 py-0.5 rounded-[5px] text-[10px] font-bold border border-slate-200 bg-slate-50 text-slate-500 ${
+                                                            isSubmitted
+                                                                ? 'cursor-not-allowed opacity-75'
+                                                                : 'cursor-pointer hover:border-emerald-300 hover:text-emerald-700'
+                                                        }`}
                                                         title={`ស្ថានភាពពីមុន: ${row.previousStatusAccount} (${row.previousAuditDate || ''})`}
-                                                        onClick={() => handleOpenAuditModal(row)}
+                                                        onClick={() => {
+                                                            if (isSubmitted) {
+                                                                alert('ទិន្នន័យសម្រាប់ថ្ងៃនេះត្រូវបាន Submit និងចាក់សោររួចហើយ មិនអាចកែប្រែបានទៀតទេ!');
+                                                                return;
+                                                            }
+                                                            handleOpenAuditModal(row);
+                                                        }}
                                                     >
                                                         {row.previousStatusAccount} <span className="text-[9px] text-slate-400 font-normal">(ពីមុន)</span>
                                                     </span>
