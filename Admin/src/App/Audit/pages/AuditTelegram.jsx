@@ -194,6 +194,14 @@ const AuditTelegram = () => {
     });
     const [savingAudit, setSavingAudit] = useState(false);
 
+    // Check if Status Account has been filled (cannot fill Account Activity or Note Audit if false)
+    const isStatusFilled = useMemo(() => {
+        if (auditForm.isCustomStatus) {
+            return Boolean(auditForm.customStatus && auditForm.customStatus.trim());
+        }
+        return Boolean(auditForm.statusAccount && auditForm.statusAccount !== '__CUSTOM__' && auditForm.statusAccount.trim());
+    }, [auditForm.isCustomStatus, auditForm.customStatus, auditForm.statusAccount]);
+
     // Contact Modal State (Add / Edit)
     const [contactModalItem, setContactModalItem] = useState(null);
     const [contactForm, setContactForm] = useState({
@@ -305,11 +313,11 @@ const AuditTelegram = () => {
 
             // Persistent contact match: by ID, contractIid, or Customer Name
             const contact = contactMap[cId] ||
-                            (cIid && contactMap[cIid]) ||
-                            (cNameKh && contactByName[cNameKh]) ||
-                            (cNameEn && contactByName[cNameEn]) ||
-                            (cNameGen && contactByName[cNameGen]) ||
-                            {};
+                (cIid && contactMap[cIid]) ||
+                (cNameKh && contactByName[cNameKh]) ||
+                (cNameEn && contactByName[cNameEn]) ||
+                (cNameGen && contactByName[cNameGen]) ||
+                {};
             const audit = auditMap[cId] || {};
             const latestAudit = latestAuditMap[cId] || {};
 
@@ -401,10 +409,10 @@ const AuditTelegram = () => {
         }
         setAuditModalItem(row);
 
-        // Auto-capture previous status on a new day or if not yet audited today!
-        const currentStatus = row.statusAccount || row.previousStatusAccount || '';
-        const currentActivity = row.accountActivity || row.previousAccountActivity || '';
-        const currentNote = row.noteAudit || row.previousNoteAudit || '';
+        // If already audited today, load today's values; otherwise leave empty so auditor must fill Status Account first
+        const currentStatus = row.statusAccount || '';
+        const currentActivity = row.statusAccount ? (row.accountActivity || '') : '';
+        const currentNote = row.statusAccount ? (row.noteAudit || '') : '';
 
         const existsInSuggestions = availableStatuses.includes(currentStatus);
         const hasOptions = availableStatuses.length > 0;
@@ -425,6 +433,11 @@ const AuditTelegram = () => {
         let finalStatus = auditForm.isCustomStatus ? auditForm.customStatus.trim() : auditForm.statusAccount.trim();
         if (finalStatus === '__CUSTOM__') {
             finalStatus = auditForm.customStatus.trim();
+        }
+
+        if (!finalStatus) {
+            alert('សូមជ្រើសរើស ឬបញ្ចូល Status Account ជាមុនសិន!');
+            return;
         }
 
         setSavingAudit(true);
@@ -689,11 +702,10 @@ const AuditTelegram = () => {
                     <button
                         onClick={() => setConfirmSubmitModal(true)}
                         disabled={isSubmitted || submittingDaily}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-[5px] text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer ${
-                            isSubmitted
-                                ? 'bg-slate-200 text-slate-500 border border-slate-300 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-600/20 active:scale-95'
-                        }`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-[5px] text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer ${isSubmitted
+                            ? 'bg-slate-200 text-slate-500 border border-slate-300 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-600/20 active:scale-95'
+                            }`}
                     >
                         {submittingDaily ? (
                             <FaSpinner className="animate-spin text-sm" />
@@ -718,20 +730,20 @@ const AuditTelegram = () => {
             {/* Statistics Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
-                    <p className="text-xs font-bold text-slate-500">អតិថិជនសរុប (Activate)</p>
+                    <p className="text-xs font-bold text-slate-500">អតិថិជនសរុប</p>
                     <p className="text-xl font-black text-slate-800 mt-1">{totalItems}</p>
                 </div>
                 <div className="bg-white p-3.5 rounded-[5px] border border-blue-200 shadow-2xs bg-blue-50/25">
                     <p className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-blue-500 shadow-xs shadow-blue-500/50"></span>
-                        បាន Audit (បន្ទាត់ខៀវ)
+                        បាន Audit
                     </p>
                     <p className="text-xl font-black text-blue-700 mt-1">{auditedCount}</p>
                 </div>
                 <div className="bg-white p-3.5 rounded-[5px] border border-rose-200 shadow-2xs bg-rose-50/25">
                     <p className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-rose-500 shadow-xs shadow-rose-500/50"></span>
-                        នៅសល់មិនទាន់ Audit (បន្ទាត់ក្រហម)
+                        នៅសល់មិនទាន់ Audit
                     </p>
                     <p className="text-xl font-black text-rose-700 mt-1">{pendingCount}</p>
                 </div>
@@ -870,11 +882,10 @@ const AuditTelegram = () => {
                                             <td className={`px-3.5 ${rowCellClass} text-center font-mono font-bold`}>
                                                 <div className="flex items-center justify-center gap-1.5">
                                                     <span
-                                                        className={`w-2 h-2 rounded-full ${
-                                                            row.isAudited
-                                                                ? 'bg-blue-500 shadow-xs shadow-blue-500/50'
-                                                                : 'bg-rose-500 shadow-xs shadow-rose-500/50 animate-pulse'
-                                                        }`}
+                                                        className={`w-2 h-2 rounded-full ${row.isAudited
+                                                            ? 'bg-blue-500 shadow-xs shadow-blue-500/50'
+                                                            : 'bg-rose-500 shadow-xs shadow-rose-500/50 animate-pulse'
+                                                            }`}
                                                         title={row.isAudited ? 'បាន Audit រួចរាល់ (បន្ទាត់ខៀវ)' : 'នៅសល់មិនទាន់ Audit (បន្ទាត់ក្រហម)'}
                                                     ></span>
                                                     <span className={row.isAudited ? 'text-blue-900 font-black' : 'text-rose-900 font-bold'}>{rowNum}</span>
@@ -994,13 +1005,12 @@ const AuditTelegram = () => {
                                                         onClick={() => handleOpenAuditModal(row)}
                                                         disabled={isSubmitted}
                                                         title={isSubmitted ? "Locked (Submitted)" : "Audit ទិន្នន័យ"}
-                                                        className={`w-8 h-8 rounded-[5px] flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
-                                                            isSubmitted
-                                                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                                                : row.isAudited
-                                                                    ? 'bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-300 hover:border-blue-600'
-                                                                    : 'bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600'
-                                                        }`}
+                                                        className={`w-8 h-8 rounded-[5px] flex items-center justify-center transition-all cursor-pointer shadow-2xs ${isSubmitted
+                                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                                            : row.isAudited
+                                                                ? 'bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-300 hover:border-blue-600'
+                                                                : 'bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 hover:border-emerald-600'
+                                                            }`}
                                                     >
                                                         <FaEdit size={14} />
                                                     </button>
@@ -1008,7 +1018,7 @@ const AuditTelegram = () => {
                                                     {/* Action Menu (Droplist) */}
                                                     <div className="relative row-action-menu-container">
                                                         <button
-                                                             onClick={(e) => {
+                                                            onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setOpenMenuId(isRowMenuOpen ? null : row.rawContractId);
                                                             }}
@@ -1145,9 +1155,32 @@ const AuditTelegram = () => {
                                         Status Account <span className="text-rose-500">*</span>
                                     </label>
                                     {!auditModalItem.statusAccount && auditModalItem.previousStatusAccount && (
-                                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                            ចាប់យកពីមុន: {auditModalItem.previousStatusAccount} ({auditModalItem.previousAuditDate || ''})
-                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const prevSt = String(auditModalItem.previousStatusAccount).trim();
+                                                const exists = availableStatuses.includes(prevSt);
+                                                if (exists) {
+                                                    setAuditForm(prev => ({
+                                                        ...prev,
+                                                        isCustomStatus: false,
+                                                        statusAccount: prevSt,
+                                                        customStatus: ''
+                                                    }));
+                                                } else {
+                                                    setAuditForm(prev => ({
+                                                        ...prev,
+                                                        isCustomStatus: true,
+                                                        statusAccount: '__CUSTOM__',
+                                                        customStatus: prevSt
+                                                    }));
+                                                }
+                                            }}
+                                            title="ចុចដើម្បីជ្រើសរើសស្ថានភាពពីមុននេះ"
+                                            className="text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 active:scale-95 px-2 py-0.5 rounded border border-emerald-300 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                                        >
+                                            <span>📋 យកពីមុន: {auditModalItem.previousStatusAccount} {auditModalItem.previousAuditDate ? `(${auditModalItem.previousAuditDate})` : ''}</span>
+                                        </button>
                                     )}
                                 </div>
 
@@ -1205,31 +1238,53 @@ const AuditTelegram = () => {
                                 )}
                             </div>
 
-                            {/* Account Activity */}
+                            {/* Account Activity (Disabled if Status Account is not filled) */}
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">
-                                    Account Activity (សកម្មភាពគណនី)
-                                </label>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-xs font-bold text-slate-700">
+                                        Account Activity
+                                    </label>
+                                    {!isStatusFilled && (
+                                        <span className="text-[10px] font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                                            🔒 ត្រូវបំពេញ Status Account សិន
+                                        </span>
+                                    )}
+                                </div>
                                 <textarea
                                     rows={3}
-                                    placeholder="បញ្ចូលសកម្មភាពគណនី Telegram..."
+                                    disabled={!isStatusFilled}
+                                    placeholder={!isStatusFilled ? "សូមជ្រើសរើស ឬបញ្ចូល Status Account ជាមុនសិន..." : "បញ្ចូលសកម្មភាពគណនី Telegram..."}
                                     value={auditForm.accountActivity}
                                     onChange={(e) => setAuditForm(prev => ({ ...prev, accountActivity: e.target.value }))}
-                                    className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-300 rounded-[5px] p-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                    className={`w-full text-xs font-medium rounded-[5px] p-2.5 transition-all ${!isStatusFilled
+                                        ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed select-none'
+                                        : 'text-slate-800 bg-white border border-slate-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
+                                        }`}
                                 />
                             </div>
 
-                            {/* Note Audit */}
+                            {/* Note Audit (Disabled if Status Account is not filled) */}
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">
-                                    Note Audit (កំណត់សម្គាល់)
-                                </label>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-xs font-bold text-slate-700">
+                                        Note Audit
+                                    </label>
+                                    {!isStatusFilled && (
+                                        <span className="text-[10px] font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                                            🔒 ត្រូវបំពេញ Status Account សិន
+                                        </span>
+                                    )}
+                                </div>
                                 <textarea
                                     rows={3}
-                                    placeholder="កំណត់សម្គាល់បន្ថែមពីសវនកម្ម..."
+                                    disabled={!isStatusFilled}
+                                    placeholder={!isStatusFilled ? "សូមជ្រើសរើស ឬបញ្ចូល Status Account ជាមុនសិន..." : "កំណត់សម្គាល់បន្ថែមពីសវនកម្ម..."}
                                     value={auditForm.noteAudit}
                                     onChange={(e) => setAuditForm(prev => ({ ...prev, noteAudit: e.target.value }))}
-                                    className="w-full text-xs font-medium text-slate-800 bg-white border border-slate-300 rounded-[5px] p-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                    className={`w-full text-xs font-medium rounded-[5px] p-2.5 transition-all ${!isStatusFilled
+                                        ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed select-none'
+                                        : 'text-slate-800 bg-white border border-slate-300 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
+                                        }`}
                                 />
                             </div>
 
@@ -1244,8 +1299,11 @@ const AuditTelegram = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={savingAudit}
-                                    className="px-5 py-2 rounded-[5px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                                    disabled={savingAudit || !isStatusFilled}
+                                    className={`px-5 py-2 rounded-[5px] text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all ${savingAudit || !isStatusFilled
+                                        ? 'bg-slate-300 cursor-not-allowed opacity-70 shadow-none'
+                                        : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20 cursor-pointer active:scale-95'
+                                        }`}
                                 >
                                     {savingAudit ? <FaSpinner className="animate-spin text-sm" /> : <FaCheck className="text-sm" />}
                                     <span>Audit</span>
@@ -1263,11 +1321,10 @@ const AuditTelegram = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
                         {/* Header */}
-                        <div className={`px-5 py-3.5 text-white flex items-center justify-between ${
-                            contactModalItem.hasContactInfo
-                                ? 'bg-gradient-to-r from-amber-600 via-indigo-600 to-sky-600'
-                                : 'bg-gradient-to-r from-indigo-600 to-sky-600'
-                        }`}>
+                        <div className={`px-5 py-3.5 text-white flex items-center justify-between ${contactModalItem.hasContactInfo
+                            ? 'bg-gradient-to-r from-amber-600 via-indigo-600 to-sky-600'
+                            : 'bg-gradient-to-r from-indigo-600 to-sky-600'
+                            }`}>
                             <div className="flex items-center gap-2.5">
                                 {contactModalItem.hasContactInfo ? <FaUserEdit size={16} /> : <FaUserPlus size={16} />}
                                 <div>
@@ -1358,11 +1415,10 @@ const AuditTelegram = () => {
                                 <button
                                     type="submit"
                                     disabled={savingContact || (contactModalItem.hasContactInfo && !isAdmin)}
-                                    className={`px-5 py-2 rounded-[5px] text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all active:scale-95 ${
-                                        contactModalItem.hasContactInfo && !isAdmin
-                                            ? 'bg-slate-300 cursor-not-allowed text-slate-500'
-                                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20 cursor-pointer'
-                                    }`}
+                                    className={`px-5 py-2 rounded-[5px] text-xs font-bold text-white shadow-md flex items-center gap-2 transition-all active:scale-95 ${contactModalItem.hasContactInfo && !isAdmin
+                                        ? 'bg-slate-300 cursor-not-allowed text-slate-500'
+                                        : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20 cursor-pointer'
+                                        }`}
                                 >
                                     {savingContact ? <FaSpinner className="animate-spin text-sm" /> : <FaCheck className="text-sm" />}
                                     <span>{contactModalItem.hasContactInfo ? 'កែប្រែ Contact' : 'រក្សាទុក Contact'}</span>

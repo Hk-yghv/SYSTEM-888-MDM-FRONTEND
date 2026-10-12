@@ -496,6 +496,10 @@ router.post('/log', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Contract ID and Audit Date are required.' });
         }
 
+        if (!String(statusAccount || '').trim()) {
+            return res.status(400).json({ success: false, error: 'Status Account is required. សូមបំពេញ Status Account ជាមុនសិន!' });
+        }
+
         const targetDate = String(auditDate).trim();
         const todayStr = getTodayDateStr();
 
