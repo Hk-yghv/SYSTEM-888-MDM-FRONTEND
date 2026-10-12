@@ -17,6 +17,38 @@ const formatDateToYMD = (d) => {
     return `${y}-${m}-${day}`;
 };
 
+const formatNowAuditDateTime = () => {
+    try {
+        const d = new Date();
+        const p = Object.fromEntries(
+            new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Phnom_Penh',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            }).formatToParts(d).map(x => [x.type, x.value])
+        );
+        const ampm = (p.dayPeriod || (d.getHours() >= 12 ? 'PM' : 'AM')).toUpperCase();
+        return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second} ${ampm}`;
+    } catch {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        let h = d.getHours();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        const hh = String(h).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+        const sec = String(d.getSeconds()).padStart(2, '0');
+        return `${y}-${m}-${day} ${hh}:${min}:${sec} ${ampm}`;
+    }
+};
+
 const formatAuditDateTimeDisplay = (val) => {
     if (!val) return '';
     const str = String(val).trim();
@@ -39,19 +71,36 @@ const formatAuditDateTimeDisplay = (val) => {
         return `${datePart} ${hh}:${min}${secondsPart} ${ampm}`;
     }
 
-    // Fallback date parsing
+    // Fallback date parsing (e.g. ISO string or UTC date)
     const parsed = new Date(str);
     if (!isNaN(parsed.getTime())) {
-        const y = parsed.getFullYear();
-        const m = String(parsed.getMonth() + 1).padStart(2, '0');
-        const d = String(parsed.getDate()).padStart(2, '0');
-        let h = parsed.getHours();
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        const hh = String(h).padStart(2, '0');
-        const min = String(parsed.getMinutes()).padStart(2, '0');
-        const sec = String(parsed.getSeconds()).padStart(2, '0');
-        return `${y}-${m}-${d} ${hh}:${min}:${sec} ${ampm}`;
+        try {
+            const p = Object.fromEntries(
+                new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'Asia/Phnom_Penh',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                }).formatToParts(parsed).map(x => [x.type, x.value])
+            );
+            const ampm = (p.dayPeriod || (parsed.getHours() >= 12 ? 'PM' : 'AM')).toUpperCase();
+            return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second} ${ampm}`;
+        } catch {
+            const y = parsed.getFullYear();
+            const m = String(parsed.getMonth() + 1).padStart(2, '0');
+            const day = String(parsed.getDate()).padStart(2, '0');
+            let h = parsed.getHours();
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            const hh = String(h).padStart(2, '0');
+            const min = String(parsed.getMinutes()).padStart(2, '0');
+            const sec = String(parsed.getSeconds()).padStart(2, '0');
+            return `${y}-${m}-${d} ${hh}:${min}:${sec} ${ampm}`;
+        }
     }
 
     return str;
@@ -381,11 +430,13 @@ const AuditTelegram = () => {
         setSavingAudit(true);
         try {
             const base = API_BASE || '';
+            const clientDateTime = formatNowAuditDateTime();
             const payload = {
                 contractId: auditModalItem.rawContractId,
                 contractIid: auditModalItem.contractIid,
                 customerName: auditModalItem.customerName,
                 auditDate: selectedDate,
+                auditDateTime: clientDateTime,
                 statusAccount: finalStatus,
                 accountActivity: auditForm.accountActivity.trim(),
                 noteAudit: auditForm.noteAudit.trim(),
@@ -411,7 +462,7 @@ const AuditTelegram = () => {
                         accountActivity: auditForm.accountActivity.trim(),
                         noteAudit: auditForm.noteAudit.trim(),
                         auditDate: selectedDate,
-                        auditDateTime: data.data?.auditDateTime || ''
+                        auditDateTime: data.data?.auditDateTime || clientDateTime
                     }
                 }));
                 if (finalStatus && !distinctStatuses.includes(finalStatus)) {

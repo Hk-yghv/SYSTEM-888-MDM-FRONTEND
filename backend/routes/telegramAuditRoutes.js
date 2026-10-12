@@ -11,26 +11,72 @@ if (!MEM_DB.telegramAuditLogs) MEM_DB.telegramAuditLogs = [];
 if (!MEM_DB.telegramAuditSubmissions) MEM_DB.telegramAuditSubmissions = [];
 
 const getTodayDateStr = () => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    try {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Phnom_Penh',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(new Date());
+    } catch {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
 };
 
 const formatAuditDateTime = (date = new Date()) => {
-    const d = date instanceof Date ? date : new Date(date);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    let hours = d.getHours();
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    const seconds = String(d.getSeconds()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const strHours = String(hours).padStart(2, '0');
-    return `${y}-${m}-${day} ${strHours}:${minutes}:${seconds} ${ampm}`;
+    if (!date) return '';
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}(:\d{2})?\s+(AM|PM)$/i.test(date.trim())) {
+        return date.trim().replace(/ (am|pm)$/i, (m, p) => ' ' + p.toUpperCase());
+    }
+    try {
+        const d = date instanceof Date ? date : new Date(date);
+        if (isNaN(d.getTime())) return typeof date === 'string' ? date : '';
+        const p = Object.fromEntries(
+            new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Phnom_Penh',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            }).formatToParts(d).map(x => [x.type, x.value])
+        );
+        const ampm = (p.dayPeriod || (d.getHours() >= 12 ? 'PM' : 'AM')).toUpperCase();
+        return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second} ${ampm}`;
+    } catch {
+        const d = date instanceof Date ? date : new Date(date);
+        if (isNaN(d.getTime())) return typeof date === 'string' ? date : '';
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        let hours = d.getHours();
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        const seconds = String(d.getSeconds()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        const strHours = String(hours).padStart(2, '0');
+        return `${y}-${m}-${day} ${strHours}:${minutes}:${seconds} ${ampm}`;
+    }
+};
+
+const resolveAuditDateTime = (item) => {
+    if (!item) return '';
+    if (item.createdAt) {
+        return formatAuditDateTime(item.createdAt);
+    }
+    if (item.updatedAt) {
+        return formatAuditDateTime(item.updatedAt);
+    }
+    if (item.auditDateTime) {
+        return formatAuditDateTime(item.auditDateTime);
+    }
+    return '';
 };
 
 // ── Background Auto-Submit Worker (Runs every 30 seconds) ─────────
@@ -173,7 +219,9 @@ router.get('/', async (req, res) => {
                             accountActivity: { $first: '$accountActivity' },
                             noteAudit: { $first: '$noteAudit' },
                             auditDate: { $first: '$auditDate' },
-                            auditDateTime: { $first: '$auditDateTime' }
+                            auditDateTime: { $first: '$auditDateTime' },
+                            createdAt: { $first: '$createdAt' },
+                            updatedAt: { $first: '$updatedAt' }
                         }
                     }
                 ])
@@ -181,12 +229,13 @@ router.get('/', async (req, res) => {
             if (Array.isArray(latestLogs)) {
                 for (const item of latestLogs) {
                     if (item._id) {
+                        const resolvedDT = resolveAuditDateTime(item);
                         latestAuditMap[String(item._id)] = {
                             statusAccount: item.statusAccount || '',
                             accountActivity: item.accountActivity || '',
                             noteAudit: item.noteAudit || '',
                             auditDate: item.auditDate || '',
-                            auditDateTime: item.auditDateTime || ''
+                            auditDateTime: resolvedDT || item.auditDateTime || ''
                         };
                     }
                 }
@@ -214,12 +263,13 @@ router.get('/', async (req, res) => {
                 .sort((a, b) => (b.auditDate || '').localeCompare(a.auditDate || ''));
             for (const l of sortedMem) {
                 if (l.contractId && !latestAuditMap[String(l.contractId)]) {
+                    const resolvedDT = resolveAuditDateTime(l);
                     latestAuditMap[String(l.contractId)] = {
                         statusAccount: l.statusAccount || '',
                         accountActivity: l.accountActivity || '',
                         noteAudit: l.noteAudit || '',
                         auditDate: l.auditDate || '',
-                        auditDateTime: l.auditDateTime || ''
+                        auditDateTime: resolvedDT || l.auditDateTime || ''
                     };
                 }
             }
@@ -244,6 +294,9 @@ router.get('/', async (req, res) => {
         // Map audits by contractId
         const auditMap = {};
         for (const a of audits) {
+            if (a.createdAt || a.updatedAt) {
+                a.auditDateTime = resolveAuditDateTime(a);
+            }
             if (a.contractId) {
                 auditMap[String(a.contractId)] = a;
             }
@@ -431,6 +484,7 @@ router.post('/log', async (req, res) => {
             contractIid = '',
             customerName = '',
             auditDate,
+            auditDateTime = '',
             statusAccount = '',
             accountActivity = '',
             noteAudit = '',
@@ -472,7 +526,9 @@ router.post('/log', async (req, res) => {
             }
         }
 
-        const nowFormatted = formatAuditDateTime();
+        const nowFormatted = (auditDateTime && typeof auditDateTime === 'string' && auditDateTime.trim())
+            ? formatAuditDateTime(auditDateTime.trim())
+            : formatAuditDateTime();
         let savedLog = null;
 
         if (isMongoConnected) {
@@ -495,6 +551,12 @@ router.post('/log', async (req, res) => {
                 },
                 { upsert: true, new: true }
             );
+            if (savedLog && savedLog.toObject) {
+                savedLog = savedLog.toObject();
+            }
+            if (savedLog) {
+                savedLog.auditDateTime = nowFormatted;
+            }
         } else {
             let found = MEM_DB.telegramAuditLogs.find(
                 l => String(l.contractId) === String(contractId) && l.auditDate === targetDate
@@ -569,6 +631,8 @@ router.get('/history/:contractId', async (req, res) => {
         const seen = new Set();
         const uniqueHistory = [];
         for (const h of history) {
+            const dt = resolveAuditDateTime(h);
+            if (dt) h.auditDateTime = dt;
             const key = `${h.contractId}_${h.auditDate}_${h.auditDateTime}`;
             if (!seen.has(key)) {
                 seen.add(key);
@@ -589,15 +653,15 @@ router.get('/report', async (req, res) => {
         const { days = 7, brand = '' } = req.query;
         const numDays = Math.max(1, Math.min(90, parseInt(days, 10) || 7));
 
-        // Build last N dates (inclusive of today)
-        const today = new Date();
+        // Build last N dates (inclusive of today in Asia/Phnom_Penh)
+        const todayStr = getTodayDateStr();
+        const [todayY, todayM, todayD] = todayStr.split('-').map(Number);
         const dates = [];
         for (let i = numDays - 1; i >= 0; i--) {
-            const d = new Date(today);
-            d.setDate(d.getDate() - i);
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
+            const d = new Date(Date.UTC(todayY, todayM - 1, todayD - i));
+            const y = d.getUTCFullYear();
+            const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(d.getUTCDate()).padStart(2, '0');
             dates.push(`${y}-${m}-${day}`);
         }
 
