@@ -58,11 +58,11 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                     </button>
                 </div>
 
-                {/* Wrapper: relative so both scrollable area and button overlay are positioned here */}
-                <div className="relative flex-1 min-h-0">
+                {/* Stage: overflow-hidden contains layout; inner div scrolls; buttons fixed */}
+                <div className="relative flex-1 min-h-0 overflow-hidden bg-slate-100/90">
 
-                    {/* Scrollable image area - image can be scrolled independently */}
-                    <div className="absolute inset-0 overflow-auto bg-slate-100/90 p-4 sm:p-6 flex">
+                    {/* Scrollable image — w-full h-full fills parent height properly */}
+                    <div className="w-full h-full overflow-auto p-4 sm:p-6 flex">
                         <img
                             key={images[currentIndex]}
                             src={images[currentIndex]}
@@ -71,7 +71,7 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                         />
                     </div>
 
-                    {/* Nav buttons overlay - sits on top, OUTSIDE scrollable div, stays fixed */}
+                    {/* Nav buttons — absolute on outer div, outside scroll area → stay fixed */}
                     {hasMultiple && (
                         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-between px-2.5 sm:px-3">
                             <div className="pointer-events-auto">
