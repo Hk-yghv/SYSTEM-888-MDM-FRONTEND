@@ -66,7 +66,7 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                             key={images[currentIndex]}
                             src={images[currentIndex]}
                             alt={`${title} ${currentIndex + 1}`}
-                            className="m-auto max-w-full max-h-full object-contain select-none transition-transform duration-150"
+                            className="m-auto block max-w-full h-auto object-contain select-none transition-transform duration-150"
                         />
                     </div>
 
@@ -94,28 +94,6 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                         </button>
                     )}
                 </div>
-
-                {/* Compact Thumbnail Strip for 2+ Images - Exactly 15px gap to divider border */}
-                {hasMultiple && (
-                    <div className="shrink-0 flex justify-center items-center gap-2 overflow-x-auto border-t border-slate-200 bg-slate-50 px-3 pt-[15px] pb-[15px] max-w-full">
-                        {images.map((image, imageIndex) => (
-                            <button
-                                key={`${image}-${imageIndex}`}
-                                type="button"
-                                onClick={() => onIndexChange(imageIndex)}
-                                aria-label={`Show image ${imageIndex + 1}`}
-                                aria-current={imageIndex === currentIndex ? 'true' : undefined}
-                                className={`h-11 w-11 sm:h-12 sm:w-12 shrink-0 overflow-hidden rounded-[5px] border-2 transition-all cursor-pointer ${
-                                    imageIndex === currentIndex
-                                        ? 'border-indigo-600 ring-2 ring-indigo-500/30 scale-105 shadow-xs'
-                                        : 'border-slate-300 hover:border-indigo-400 opacity-70 hover:opacity-100'
-                                }`}
-                            >
-                                <img src={image} alt="" className="h-full w-full object-cover" />
-                            </button>
-                        ))}
-                    </div>
-                )}
             </div>
         </div>
     );
