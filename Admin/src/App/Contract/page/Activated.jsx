@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ExportDropdown from '../../../components/ExportDropdown';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -6,7 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
 import { AiOutlineMenu } from "react-icons/ai";
 import { MdOutlineSync, MdInfo, MdCheckCircle, MdSwapHoriz, MdComment, MdPictureAsPdf, MdOutlineWallpaper } from "react-icons/md";
-import { FaLock, FaFileExcel, FaHistory, FaCalendarAlt } from "react-icons/fa";
+import { FaLock, FaFileExcel, FaHistory, FaCalendarAlt, FaUsers, FaClock, FaFilter, FaTimes, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import CustomModal from '../../../components/CustomModal';
 import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
@@ -43,6 +43,13 @@ const Activated = () => {
     // UI Custom Modal alert state
     const [uiModal, setUiModal] = useState({ open: false, title: '', message: '', type: 'info' });
 
+    // Full Activated contracts list for overall statistics across whole database
+    const [allActivatedList, setAllActivatedList] = useState([]);
+    const [summaryLoading, setSummaryLoading] = useState(false);
+    const [summaryExpanded, setSummaryExpanded] = useState(true);
+    const [selectedDurationFilter, setSelectedDurationFilter] = useState(null);
+    const [selectedMonthFilter, setSelectedMonthFilter] = useState(null);
+
     // Helper functions for 3-way matching (Name, Principal, Loan Date)
     const normalizeStr = (str) => String(str || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
@@ -74,8 +81,80 @@ const Activated = () => {
         return clean.toLowerCase();
     };
 
+    // Khmer Month dictionary for accurate calendar parsing
+    const KHMER_MONTH_NAMES = {
+        '01': 'មករា',
+        '02': 'កុម្ភៈ',
+        '03': 'មីនា',
+        '04': 'មេសា',
+        '05': 'ឧសភា',
+        '06': 'មិថុនា',
+        '07': 'កក្កដា',
+        '08': 'សីហា',
+        '09': 'កញ្ញា',
+        '10': 'តុលា',
+        '11': 'វិច្ឆិកា',
+        '12': 'ធ្នូ',
+    };
+
+    const parseMonthKey = useCallback((dateVal) => {
+        if (!dateVal) return null;
+        const clean = String(dateVal).trim().split('T')[0].split(' ')[0];
+        const ymd = clean.match(/^(\d{4})[-\/](\d{1,2})/);
+        if (ymd) {
+            const m = String(ymd[2]).padStart(2, '0');
+            const y = ymd[1];
+            return {
+                key: `${y}-${m}`,
+                year: y,
+                month: m,
+                labelKh: `ខែ ${m}/${y} (${KHMER_MONTH_NAMES[m] || m})`,
+                labelEn: `${m}/${y}`
+            };
+        }
+        const dmy = clean.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+        if (dmy) {
+            const m = String(dmy[2]).padStart(2, '0');
+            const y = dmy[3];
+            return {
+                key: `${y}-${m}`,
+                year: y,
+                month: m,
+                labelKh: `ខែ ${m}/${y} (${KHMER_MONTH_NAMES[m] || m})`,
+                labelEn: `${m}/${y}`
+            };
+        }
+        const d = new Date(clean);
+        if (!isNaN(d.getTime())) {
+            const y = String(d.getFullYear());
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            return {
+                key: `${y}-${m}`,
+                year: y,
+                month: m,
+                labelKh: `ខែ ${m}/${y} (${KHMER_MONTH_NAMES[m] || m})`,
+                labelEn: `${m}/${y}`
+            };
+        }
+        return null;
+    }, []);
+
+    const parseDurationKey = useCallback((durationVal) => {
+        if (!durationVal) return { key: 'unspecified', num: 9999, labelKh: 'មិនបានបញ្ជាក់', labelEn: 'Unspecified' };
+        const str = String(durationVal).trim().toLowerCase();
+        const matched = str.match(/\d+/);
+        if (!matched) return { key: 'other', num: 9998, labelKh: 'ផ្សេងៗ', labelEn: 'Other' };
+        const num = parseInt(matched[0], 10);
+        return {
+            key: `${num}_months`,
+            num,
+            labelKh: `${num} ខែ`,
+            labelEn: `${num} Mo`
+        };
+    }, []);
+
     // Fetch saved calculation schedules to link matching records
-    const fetchCalcSchedules = React.useCallback(async () => {
+    const fetchCalcSchedules = useCallback(async () => {
         try {
             const brand = user?.brand || '';
             const username = user?.username || '';
@@ -99,9 +178,39 @@ const Activated = () => {
         fetchCalcSchedules();
     }, [fetchCalcSchedules]);
 
-    const fetchActivatedContracts = React.useCallback(async (pg = currentPage, search = searchTerm, contractId = selectedContractId) => {
+    // Fetch entire activated list for accurate summary metrics
+    const fetchFullActivated = useCallback(async () => {
+        setSummaryLoading(true);
+        try {
+            const params = new URLSearchParams({
+                status: 'Activated',
+                page: 1,
+                limit: 999999,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                setAllActivatedList(data.data || []);
+            }
+        } catch (err) {
+            console.error('Fetch full activated for summary error:', err);
+        } finally {
+            setSummaryLoading(false);
+        }
+    }, [API_BASE1, user]);
+
+    useEffect(() => {
+        fetchFullActivated();
+    }, [fetchFullActivated]);
+
+    const fetchActivatedContracts = useCallback(async (pg = currentPage, search = searchTerm, contractId = selectedContractId) => {
         setReloading(true);
-        fetchCalcSchedules(); // Synchronize calculate schedules so bidirectional scan is always up-to-date
+        fetchCalcSchedules();
+        fetchFullActivated();
         try {
             const pageToFetch = typeof pg === 'number' ? pg : 1;
             const params = new URLSearchParams({
@@ -133,15 +242,137 @@ const Activated = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE1, user, itemsPerPage, searchTerm, selectedContractId]);
+    }, [API_BASE1, user, itemsPerPage, searchTerm, selectedContractId, fetchCalcSchedules, fetchFullActivated]);
 
     useEffect(() => {
         fetchActivatedContracts(currentPage, searchTerm, selectedContractId);
     }, [currentPage, fetchActivatedContracts, searchTerm, selectedContractId]);
 
-    const filteredContracts = selectedContractId
-        ? activatedContracts.filter(contract => String(contract._id) === selectedContractId || contract.contractId === selectedContractId)
-        : activatedContracts;
+    // Computed Summary Data by Loan Duration and Calendar Month
+    const summaryData = useMemo(() => {
+        const grandTotalCount = allActivatedList.length;
+        let grandTotalAmount = 0;
+        let grandTotalMonthly = 0;
+
+        const durationMap = {};
+        const monthMap = {};
+
+        allActivatedList.forEach(c => {
+            const amt = Number(c.amount || c.totalAmount || 0);
+            const monthly = Number(c.monthlyPayment || 0);
+            grandTotalAmount += amt;
+            grandTotalMonthly += monthly;
+
+            // 1. Group by Loan Duration (រយៈពេលកម្ចី)
+            const dObj = parseDurationKey(c.duration);
+            if (!durationMap[dObj.key]) {
+                durationMap[dObj.key] = {
+                    key: dObj.key,
+                    num: dObj.num,
+                    labelKh: dObj.labelKh,
+                    labelEn: dObj.labelEn,
+                    count: 0,
+                    totalAmount: 0,
+                    totalMonthly: 0
+                };
+            }
+            durationMap[dObj.key].count += 1;
+            durationMap[dObj.key].totalAmount += amt;
+            durationMap[dObj.key].totalMonthly += monthly;
+
+            // 2. Group by Submission Month (ខែប្រតិទិនដែលបានដាក់ស្នើ)
+            const mDate = c.inputDate || (c.createdAt ? String(c.createdAt).split('T')[0] : '');
+            const mObj = parseMonthKey(mDate);
+            const mKey = mObj ? mObj.key : 'unknown';
+            if (!monthMap[mKey]) {
+                monthMap[mKey] = {
+                    key: mKey,
+                    labelKh: mObj ? mObj.labelKh : 'គ្មានកាលបរិច្ឆេទ',
+                    labelEn: mObj ? mObj.labelEn : 'No Date',
+                    year: mObj ? mObj.year : '0000',
+                    month: mObj ? mObj.month : '00',
+                    count: 0,
+                    totalAmount: 0,
+                    totalMonthly: 0
+                };
+            }
+            monthMap[mKey].count += 1;
+            monthMap[mKey].totalAmount += amt;
+            monthMap[mKey].totalMonthly += monthly;
+        });
+
+        const durationList = Object.values(durationMap).sort((a, b) => a.num - b.num);
+        const monthList = Object.values(monthMap).sort((a, b) => b.key.localeCompare(a.key));
+
+        return {
+            grandTotalCount,
+            grandTotalAmount,
+            grandTotalMonthly,
+            durationList,
+            monthList
+        };
+    }, [allActivatedList, parseDurationKey, parseMonthKey]);
+
+    const isSummaryFilterActive = Boolean(selectedDurationFilter || selectedMonthFilter);
+
+    const handleToggleDurationFilter = (durationKey) => {
+        setSelectedDurationFilter(prev => prev === durationKey ? null : durationKey);
+        setCurrentPage(1);
+    };
+
+    const handleToggleMonthFilter = (monthKey) => {
+        setSelectedMonthFilter(prev => prev === monthKey ? null : monthKey);
+        setCurrentPage(1);
+    };
+
+    const handleClearSummaryFilters = () => {
+        setSelectedDurationFilter(null);
+        setSelectedMonthFilter(null);
+        setCurrentPage(1);
+    };
+
+    // Client-side filtered list when user clicks on a duration or month badge
+    const activeFilteredContracts = useMemo(() => {
+        if (!isSummaryFilterActive) return [];
+        let list = allActivatedList;
+        if (selectedDurationFilter) {
+            list = list.filter(c => parseDurationKey(c.duration).key === selectedDurationFilter);
+        }
+        if (selectedMonthFilter) {
+            list = list.filter(c => {
+                const mDate = c.inputDate || (c.createdAt ? String(c.createdAt).split('T')[0] : '');
+                const mObj = parseMonthKey(mDate);
+                return (mObj ? mObj.key : 'unknown') === selectedMonthFilter;
+            });
+        }
+        if (selectedContractId) {
+            list = list.filter(contract => String(contract._id) === selectedContractId || contract.contractId === selectedContractId);
+        } else if (searchTerm) {
+            const s = searchTerm.toLowerCase();
+            list = list.filter(c =>
+                (c.customerNameEn && c.customerNameEn.toLowerCase().includes(s)) ||
+                (c.customerNameKh && c.customerNameKh.toLowerCase().includes(s)) ||
+                (c.phone && c.phone.includes(s)) ||
+                (c.serialNumber && c.serialNumber.toLowerCase().includes(s)) ||
+                (c.model && c.model.toLowerCase().includes(s)) ||
+                (c.contractId && c.contractId.toLowerCase().includes(s))
+            );
+        }
+        return list;
+    }, [isSummaryFilterActive, allActivatedList, selectedDurationFilter, selectedMonthFilter, selectedContractId, searchTerm, parseDurationKey, parseMonthKey]);
+
+    // Final list of contracts to display in table
+    const displayedContracts = useMemo(() => {
+        if (isSummaryFilterActive) {
+            const start = (currentPage - 1) * itemsPerPage;
+            return activeFilteredContracts.slice(start, start + itemsPerPage);
+        }
+        return selectedContractId
+            ? activatedContracts.filter(contract => String(contract._id) === selectedContractId || contract.contractId === selectedContractId)
+            : activatedContracts;
+    }, [isSummaryFilterActive, activeFilteredContracts, currentPage, itemsPerPage, selectedContractId, activatedContracts]);
+
+    const displayedTotal = isSummaryFilterActive ? activeFilteredContracts.length : total;
 
     const [redeemItem, setRedeemItem] = useState(null);
     const [redeemDateInput, setRedeemDateInput] = useState(new Date().toISOString().split('T')[0]);
@@ -280,6 +511,12 @@ const Activated = () => {
     };
 
     const fetchAllForExport = async () => {
+        if (isSummaryFilterActive) {
+            return activeFilteredContracts;
+        }
+        if (allActivatedList.length > 0 && !searchTerm && !selectedContractId) {
+            return allActivatedList;
+        }
         try {
             const params = new URLSearchParams({
                 status: 'Activated',
@@ -316,6 +553,7 @@ const Activated = () => {
             'Phone': c.phone || '',
             'Device Model': c.model || '',
             'Serial Number': c.serialNumber || '',
+            'Duration': c.duration || '',
             'Total Amount ($)': c.amount || c.totalAmount || 0,
             'Monthly ($)': c.monthlyPayment || 0,
             'Phone Lock Status': c.lockPhoneStatus || 'Unlocked',
@@ -335,6 +573,7 @@ const Activated = () => {
             { header: 'Phone', accessor: 'phone' },
             { header: 'Model', accessor: 'model' },
             { header: 'Serial No.', accessor: 'serialNumber' },
+            { header: 'Duration', accessor: 'duration' },
             { header: 'Monthly ($)', cell: (r) => `$${r.monthlyPayment}` },
             { header: 'Phone Lock Status', accessor: 'lockPhoneStatus' },
             { header: 'Wallpaper Lock Status', accessor: 'lockWallpaperStatus' },
@@ -414,7 +653,7 @@ const Activated = () => {
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('activated')}</span>
                         <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-normal">
-                            {filteredContracts.length} Records
+                            {displayedTotal} Records
                         </span>
                     </h1>
                 </div>
@@ -453,8 +692,212 @@ const Activated = () => {
                 </div>
             </header>
 
+            {/* Applications Summary Dashboard (By Duration & Calendar Month) */}
+            <div className="w-full bg-white border border-slate-200 rounded-[5px] p-3 shadow-xs space-y-3">
+                {/* Summary Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-[5px] bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold">
+                            <FaUsers size={16} />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                                <span>ស្ថិតិសរុបភ្ញៀវដាក់ស្នើ (Applications Breakdown)</span>
+                                {summaryLoading && (
+                                    <MdOutlineSync className="animate-spin text-emerald-600 text-sm" />
+                                )}
+                            </h2>
+                            <p className="text-[11px] text-slate-500 font-medium">
+                                សរុបភ្ញៀវតាមរយៈពេលកម្ចីប៉ុន្មានខែ (Duration) និងតាមខែប្រតិទិនដែលបានដាក់ស្នើ
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {/* Grand Total Counters */}
+                        <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-[5px]">
+                            <span className="text-[11px] text-emerald-800 font-bold">ភ្ញៀវសរុប៖</span>
+                            <span className="text-xs font-black text-emerald-700 font-mono">{summaryData.grandTotalCount.toLocaleString()} នាក់</span>
+                        </div>
+                        {summaryData.grandTotalAmount > 0 && (
+                            <div className="hidden md:flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-[5px]">
+                                <span className="text-[11px] text-blue-800 font-bold">កម្ចីសរុប៖</span>
+                                <span className="text-xs font-black text-blue-700 font-mono">${summaryData.grandTotalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                        )}
+
+                        {/* Toggle Collapse/Expand Button */}
+                        <button
+                            type="button"
+                            onClick={() => setSummaryExpanded(!summaryExpanded)}
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[5px] text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
+                            title={summaryExpanded ? "បង្រួម" : "ពង្រីក"}
+                        >
+                            {summaryExpanded ? <FaChevronUp size={11} /> : <FaChevronDown size={11} />}
+                            <span className="text-[11px]">{summaryExpanded ? 'បង្រួម' : 'ពង្រីក'}</span>
+                        </button>
+                    </div>
+                </div>
+
+                {summaryExpanded && (
+                    <div className="space-y-3 pt-0.5">
+                        {/* 2-Column Grid: 1. By Duration, 2. By Month */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            {/* Column 1: By Loan Duration */}
+                            <div className="bg-slate-50/70 border border-slate-200 rounded-[5px] p-2.5 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                        <FaClock className="text-indigo-600 text-xs" />
+                                        <span className="text-xs font-bold text-slate-800">
+                                            ១. សរុបតាមរយៈពេលកម្ចី (By Loan Duration)
+                                        </span>
+                                    </div>
+                                    <span className="text-[10px] font-mono text-slate-500 font-medium">
+                                        {summaryData.durationList.length} ប្រភេទ
+                                    </span>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {summaryData.durationList.length === 0 ? (
+                                        <span className="text-xs text-slate-400 italic">មិនទាន់មានទិន្នន័យ</span>
+                                    ) : (
+                                        summaryData.durationList.map((d) => {
+                                            const isSelected = selectedDurationFilter === d.key;
+                                            const pct = summaryData.grandTotalCount > 0
+                                                ? Math.round((d.count / summaryData.grandTotalCount) * 100)
+                                                : 0;
+                                            return (
+                                                <button
+                                                    key={d.key}
+                                                    type="button"
+                                                    onClick={() => handleToggleDurationFilter(d.key)}
+                                                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-[5px] border text-xs transition-all cursor-pointer shadow-2xs ${
+                                                        isSelected
+                                                            ? 'bg-indigo-600 border-indigo-700 text-white font-bold ring-2 ring-indigo-300'
+                                                            : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50'
+                                                    }`}
+                                                    title={`ចុចដើម្បីច្រោះមើលភ្ញៀវដាក់ស្នើ ${d.labelKh}`}
+                                                >
+                                                    <span className={`text-[11px] font-bold ${isSelected ? 'text-white' : 'text-slate-800'}`}>
+                                                        {d.labelKh}
+                                                        <span className={`ml-1 text-[10px] font-normal opacity-80 ${isSelected ? 'text-indigo-100' : 'text-slate-500'}`}>
+                                                            ({d.labelEn})
+                                                        </span>
+                                                    </span>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-mono font-black ${
+                                                            isSelected
+                                                                ? 'bg-indigo-800 text-white'
+                                                                : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                                        }`}>
+                                                            {d.count} នាក់
+                                                        </span>
+                                                        <span className={`text-[10px] font-mono ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>
+                                                            {pct}%
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Column 2: By Submission Month */}
+                            <div className="bg-slate-50/70 border border-slate-200 rounded-[5px] p-2.5 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                        <FaCalendarAlt className="text-emerald-600 text-xs" />
+                                        <span className="text-xs font-bold text-slate-800">
+                                            ២. សរុបតាមខែដាក់ស្នើ (By Submission Month)
+                                        </span>
+                                    </div>
+                                    <span className="text-[10px] font-mono text-slate-500 font-medium">
+                                        {summaryData.monthList.length} ខែ
+                                    </span>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
+                                    {summaryData.monthList.length === 0 ? (
+                                        <span className="text-xs text-slate-400 italic">មិនទាន់មានទិន្នន័យ</span>
+                                    ) : (
+                                        summaryData.monthList.map((m) => {
+                                            const isSelected = selectedMonthFilter === m.key;
+                                            const pct = summaryData.grandTotalCount > 0
+                                                ? Math.round((m.count / summaryData.grandTotalCount) * 100)
+                                                : 0;
+                                            return (
+                                                <button
+                                                    key={m.key}
+                                                    type="button"
+                                                    onClick={() => handleToggleMonthFilter(m.key)}
+                                                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-[5px] border text-xs transition-all cursor-pointer shadow-2xs ${
+                                                        isSelected
+                                                            ? 'bg-emerald-600 border-emerald-700 text-white font-bold ring-2 ring-emerald-300'
+                                                            : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50'
+                                                    }`}
+                                                    title={`ចុចដើម្បីច្រោះមើលភ្ញៀវដាក់ស្នើក្នុង ${m.labelKh}`}
+                                                >
+                                                    <span className={`text-[11px] font-bold ${isSelected ? 'text-white' : 'text-slate-800'}`}>
+                                                        {m.labelKh}
+                                                    </span>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-mono font-black ${
+                                                            isSelected
+                                                                ? 'bg-emerald-800 text-white'
+                                                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        }`}>
+                                                            {m.count} នាក់
+                                                        </span>
+                                                        <span className={`text-[10px] font-mono ${isSelected ? 'text-emerald-200' : 'text-slate-400'}`}>
+                                                            {pct}%
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Active Filter Notification Banner */}
+                        {(selectedDurationFilter || selectedMonthFilter) && (
+                            <div className="flex items-center justify-between p-2 bg-amber-50 border border-amber-200 rounded-[5px] text-xs animate-in fade-in duration-150">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-bold text-amber-900 flex items-center gap-1">
+                                        <FaFilter className="text-amber-600 text-xs" /> កំពុងច្រោះទិន្នន័យ៖
+                                    </span>
+                                    {selectedDurationFilter && (
+                                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded font-bold border border-indigo-200 text-[11px]">
+                                            រយៈពេល៖ {summaryData.durationList.find(d => d.key === selectedDurationFilter)?.labelKh || selectedDurationFilter}
+                                        </span>
+                                    )}
+                                    {selectedMonthFilter && (
+                                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold border border-emerald-200 text-[11px]">
+                                            ខែដាក់ស្នើ៖ {summaryData.monthList.find(m => m.key === selectedMonthFilter)?.labelKh || selectedMonthFilter}
+                                        </span>
+                                    )}
+                                    <span className="text-slate-600 font-medium">
+                                        (បង្ហាញ {activeFilteredContracts.length} នាក់)
+                                    </span>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleClearSummaryFilters}
+                                    className="px-2.5 py-1 bg-amber-200/70 hover:bg-amber-300 text-amber-900 rounded-[5px] font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                                >
+                                    <FaTimes size={10} /> បង្ហាញទាំងអស់ (Clear)
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
             {/* Table */}
-            <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
+            <div className='w-full overflow-x-auto min-h-[400px] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
@@ -472,14 +915,14 @@ const Activated = () => {
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
-                        {filteredContracts.length === 0 ? (
+                        {displayedContracts.length === 0 ? (
                             <tr>
                                 <td colSpan={11} className="text-center py-8 text-slate-500 italic font-medium">
-                                    {searchTerm || selectedContractId ? `No results found for "${searchInput}"` : 'No activated contracts yet. Activate contracts in Application page first.'}
+                                    {searchTerm || selectedContractId ? `No results found for "${searchInput}"` : isSummaryFilterActive ? 'រកមិនឃើញទិន្នន័យដែលត្រូវនឹងតម្រងដែលបានជ្រើសរើសឡើយ' : 'No activated contracts yet. Activate contracts in Application page first.'}
                                 </td>
                             </tr>
                         ) : (
-                            filteredContracts.map((item, idx) => {
+                            displayedContracts.map((item, idx) => {
                                 const canOpenMosyle = !!(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL);
                                 const canOpenFb = hasPermission('/contract/activated', 'openFacebook') && !!item.urlFb;
                                 const canHistory = hasPermission('/contract/activated', 'history');
@@ -545,7 +988,14 @@ const Activated = () => {
                                         </span>
                                     </td>
                                     <td className='px-4 py-1 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber} className='font-mono text-slate-600 font-medium' /></td>
-                                    <td className='px-4 py-1 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
+                                    <td className='px-4 py-1 text-center font-mono font-bold text-emerald-700'>
+                                        <div>${item.monthlyPayment}/mo</div>
+                                        {item.duration && (
+                                            <span className='px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-sans font-semibold inline-block mt-0.5'>
+                                                {item.duration}
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className='px-4 py-1 text-center whitespace-nowrap'>
                                         <span className={`mr-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${item.lockPhoneStatus === 'Locked' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700'}`}>
                                             Phone {item.lockPhoneStatus || 'Unlocked'}
@@ -682,7 +1132,7 @@ const Activated = () => {
             {/* Pagination controls */}
             <Pagination
                 currentPage={currentPage}
-                totalItems={total}
+                totalItems={displayedTotal}
                 itemsPerPage={itemsPerPage}
                 onPageChange={(pg) => {
                     if (selectedContractId) {
