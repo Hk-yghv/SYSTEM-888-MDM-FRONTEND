@@ -58,10 +58,10 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                     </button>
                 </div>
 
-                {/* Main Image Stage - Maximum visibility, scrollable if image overflows */}
-                <div className="relative flex-1 min-h-0 bg-slate-100/90 overflow-hidden">
-                    {/* Scrollable image container */}
-                    <div className="w-full h-full overflow-auto p-2 sm:p-4 flex">
+                {/* Main Image Stage - scrollable when image is too large */}
+                <div className="relative flex-1 min-h-0">
+                    {/* Scrollable image container - overflow-auto makes scrollbar visible */}
+                    <div className="absolute inset-0 overflow-auto bg-slate-100/90 p-4 sm:p-6 flex">
                         <img
                             key={images[currentIndex]}
                             src={images[currentIndex]}
@@ -70,7 +70,7 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                         />
                     </div>
 
-                    {/* Previous button */}
+                    {/* Previous button - overlays on top of scrollable area */}
                     {hasMultiple && currentIndex > 0 && (
                         <button
                             type="button"
@@ -82,7 +82,7 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                         </button>
                     )}
 
-                    {/* Next button */}
+                    {/* Next button - overlays on top of scrollable area */}
                     {hasMultiple && currentIndex < images.length - 1 && (
                         <button
                             type="button"
