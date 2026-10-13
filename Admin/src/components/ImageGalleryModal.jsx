@@ -58,41 +58,46 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                     </button>
                 </div>
 
-                {/* Main Image Stage - Maximum visibility with proper margin */}
-                <div className="relative flex-1 min-h-0 flex items-center justify-center bg-slate-100/90 p-1.5 sm:p-2.5 overflow-hidden">
+                {/* Main Image Stage - Maximum visibility, scrollable if image overflows */}
+                <div className="relative flex-1 min-h-0 bg-slate-100/90 overflow-hidden">
+                    {/* Scrollable image container */}
+                    <div className="w-full h-full overflow-auto p-2 sm:p-4 flex">
+                        <img
+                            key={images[currentIndex]}
+                            src={images[currentIndex]}
+                            alt={`${title} ${currentIndex + 1}`}
+                            className="m-auto max-w-full max-h-full object-contain select-none transition-transform duration-150"
+                        />
+                    </div>
+
+                    {/* Previous button */}
                     {hasMultiple && currentIndex > 0 && (
                         <button
                             type="button"
                             onClick={() => onIndexChange(currentIndex - 1)}
                             aria-label="Previous image"
-                            className="absolute left-2.5 z-10 rounded-full bg-white/90 p-2 text-slate-700 shadow-md hover:bg-white hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                            className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/90 hover:bg-white p-2 sm:p-2.5 text-slate-700 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
                         >
-                            <MdChevronLeft size={22} />
+                            <MdChevronLeft size={24} />
                         </button>
                     )}
-                    <img
-                        key={images[currentIndex]}
-                        src={images[currentIndex]}
-                        alt={`${title} ${currentIndex + 1}`}
-                        className={`block max-w-full object-contain select-none transition-transform duration-150 ${
-                            hasMultiple ? 'max-h-[74vh] sm:max-h-[77vh]' : 'max-h-[82vh] sm:max-h-[84vh]'
-                        }`}
-                    />
+
+                    {/* Next button */}
                     {hasMultiple && currentIndex < images.length - 1 && (
                         <button
                             type="button"
                             onClick={() => onIndexChange(currentIndex + 1)}
                             aria-label="Next image"
-                            className="absolute right-2.5 z-10 rounded-full bg-white/90 p-2 text-slate-700 shadow-md hover:bg-white hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                            className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/90 hover:bg-white p-2 sm:p-2.5 text-slate-700 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
                         >
-                            <MdChevronRight size={22} />
+                            <MdChevronRight size={24} />
                         </button>
                     )}
                 </div>
 
-                {/* Compact Thumbnail Strip for 2+ Images - small space at the bottom */}
+                {/* Compact Thumbnail Strip for 2+ Images - Exactly 15px gap to divider border */}
                 {hasMultiple && (
-                    <div className="shrink-0 flex justify-center items-center gap-1.5 sm:gap-2 overflow-x-auto border-t border-slate-200 bg-slate-50 px-2 py-1.5 max-w-full">
+                    <div className="shrink-0 flex justify-center items-center gap-2 overflow-x-auto border-t border-slate-200 bg-slate-50 px-3 pt-[15px] pb-[15px] max-w-full">
                         {images.map((image, imageIndex) => (
                             <button
                                 key={`${image}-${imageIndex}`}
@@ -100,7 +105,7 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                                 onClick={() => onIndexChange(imageIndex)}
                                 aria-label={`Show image ${imageIndex + 1}`}
                                 aria-current={imageIndex === currentIndex ? 'true' : undefined}
-                                className={`h-10 w-10 sm:h-12 sm:w-12 shrink-0 overflow-hidden rounded-[4px] border-2 transition-all cursor-pointer ${
+                                className={`h-11 w-11 sm:h-12 sm:w-12 shrink-0 overflow-hidden rounded-[5px] border-2 transition-all cursor-pointer ${
                                     imageIndex === currentIndex
                                         ? 'border-indigo-600 ring-2 ring-indigo-500/30 scale-105 shadow-xs'
                                         : 'border-slate-300 hover:border-indigo-400 opacity-70 hover:opacity-100'

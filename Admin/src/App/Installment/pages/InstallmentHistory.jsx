@@ -228,12 +228,22 @@ const InstallmentHistory = ({ mode = 'history' }) => {
             const todayTimestamp = new Date(`${today}T00:00:00`).getTime();
             const daysUntilDue = Math.round((dueTimestamp - todayTimestamp) / 86400000);
             const isLastMonth = schedule.length > 0 && (index === schedule.length - 1 || Number(rawRow.monthIndex) === schedule.length);
-            const isRedeem = Boolean(isLastMonth || contract.status === 'Redeem' || rawRow.status === 'PayOff');
-            const type = contract.status === 'Redeem' && row.status === 'PayOff'
+            const isContractRedeemed = contract.status === 'Redeem';
+            const isPayoff = row.status === 'PayOff' || rawRow.status === 'PayOff';
+            const activeSchedule = schedule.filter(r => r.status !== 'Settled');
+            const isLastActiveRow = activeSchedule.length > 0 && (
+                index === activeSchedule.length - 1 || Number(rawRow.monthIndex) === activeSchedule.length
+            );
+            const isRedeem = Boolean(
+                isContractRedeemed && (isPayoff || isLastMonth || (isLastActiveRow && isPaid))
+            );
+            const type = isRedeem
                 ? 'Redeem'
-                : row.status === 'PayOff' ? 'Payoff'
-                    : row.status === 'Paid' ? (isLastMonth ? 'Redeem' : 'Pad')
-                        : isRedeem ? 'Redeem' : '';
+                : isPayoff
+                    ? 'Payoff'
+                    : isPaid
+                        ? 'Pad'
+                        : '';
 
             return [{
                 ...row,
@@ -271,8 +281,9 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 const filterDate = isHistoryPage ? row.paidDate : row.dueDate;
                 if (dateRange.from && filterDate < dateRange.from) return false;
                 if (dateRange.to && filterDate > dateRange.to) return false;
-                if (paymentTypeFilter === 'regular' && row.isRedeem) return false;
-                if (paymentTypeFilter === 'redeem' && !row.isRedeem) return false;
+                const isRedeemOrPayoff = Boolean(row.isRedeem || row.type === 'Payoff');
+                if (paymentTypeFilter === 'regular' && isRedeemOrPayoff) return false;
+                if (paymentTypeFilter === 'redeem' && !isRedeemOrPayoff) return false;
                 return true;
             })
             .filter(row => !query || [row.customerName, row.customerNameKh, row.contractId, row.model,
@@ -308,7 +319,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
         'Paid Amount': row.paidAmount,
         'Unpaid Amount': row.unpaidAmount,
         Status: row.isPaid ? 'Paid' : row.daysUntilDue < 0 ? 'Overdue' : row.daysUntilDue === 0 ? 'Due Today' : 'Upcoming',
-        Type: row.type || (row.isRedeem ? 'Redeem' : 'Pad')
+        Type: row.type || '—'
     }));
 
     const exportExcel = () => exportToExcel(exportRows, 'Installment_History');
@@ -494,29 +505,33 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                         <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-bold text-rose-700">${row.unpaidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="px-3 py-1 text-center">{images.length ? <button onClick={() => openImageGallery(row)} className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800"><FaImage /> View{images.length > 1 ? ` (${images.length})` : ''}</button> : <span className="text-slate-300">—</span>}</td>
                                         <td className="px-3 py-1">{row.type ? <span className={`inline-flex rounded-[4px] border px-2 py-1 font-bold ${typeClass}`}>{row.type}</span> : <span className="text-slate-300">—</span>}</td>
-                                        {!isHistoryPage && <td className="px-3 py-1">
-                                            <div className="flex items-center justify-center gap-1.5">
-                                                {row.isRedeem ? (
-                                                    <button
-                                                        onClick={() => openScheduleForRow(row)}
-                                                        title="Open Redeem actions"
-                                                        className="inline-flex items-center gap-1 rounded-[5px] border border-purple-300 bg-purple-100 px-2.5 py-1 font-bold text-purple-800 hover:bg-purple-200 transition-colors shadow-2xs cursor-pointer"
-                                                    >
-                                                        <FaDollarSign /> Redeem
+                                        {!isHistoryPage && <td className="px-3 py-1 text-center">
+                                            {!row.isPaid ? (
+                                                <div className="flex items-center justify-center gap-1.5">
+                                                    {row.isRedeem ? (
+                                                        <button
+                                                            onClick={() => openScheduleForRow(row)}
+                                                            title="Open Redeem actions"
+                                                            className="inline-flex items-center gap-1 rounded-[5px] border border-purple-300 bg-purple-100 px-2.5 py-1 font-bold text-purple-800 hover:bg-purple-200 transition-colors shadow-2xs cursor-pointer"
+                                                        >
+                                                            <FaDollarSign /> Redeem
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => openScheduleForRow(row)}
+                                                            title="Open Paid actions"
+                                                            className="inline-flex items-center gap-1 rounded-[5px] border border-emerald-300 bg-emerald-50 px-2.5 py-1 font-bold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer"
+                                                        >
+                                                            <FaDollarSign /> Paid
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => setSelectedQrContract(row.contract)} title="Open QR payment" className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800">
+                                                        <MdQrCode2 /> QR
                                                     </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => openScheduleForRow(row)}
-                                                        title="Open Paid actions"
-                                                        className="inline-flex items-center gap-1 rounded-[5px] border border-emerald-300 bg-emerald-50 px-2.5 py-1 font-bold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer"
-                                                    >
-                                                        <FaDollarSign /> Paid
-                                                    </button>
-                                                )}
-                                                <button onClick={() => setSelectedQrContract(row.contract)} title="Open QR payment" className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800">
-                                                    <MdQrCode2 /> QR
-                                                </button>
-                                            </div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-300 font-bold">—</span>
+                                            )}
                                         </td>}
                                     </tr>;
                                 })}
