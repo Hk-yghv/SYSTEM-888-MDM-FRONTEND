@@ -32,7 +32,7 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                 role="dialog"
                 aria-modal="true"
                 aria-label={title}
-                className="flex flex-col max-h-[92vh] sm:max-h-[94vh] max-w-[94vw] sm:max-w-[88vw] md:max-w-[84vw] overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-2xl"
+                className="flex flex-col h-[92vh] sm:h-[94vh] max-w-[94vw] sm:max-w-[88vw] md:max-w-[84vw] overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-2xl"
                 onClick={event => event.stopPropagation()}
             >
                 {/* Modal Header */}
