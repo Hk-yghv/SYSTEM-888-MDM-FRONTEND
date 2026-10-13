@@ -58,20 +58,24 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                     </button>
                 </div>
 
-                {/* Main Image Stage - scrollable when image is too large */}
-                <div className="relative flex-1 min-h-0 overflow-auto bg-slate-100/90 p-4 sm:p-6 flex">
-                    <img
-                        key={images[currentIndex]}
-                        src={images[currentIndex]}
-                        alt={`${title} ${currentIndex + 1}`}
-                        className="m-auto block max-w-full h-auto object-contain select-none transition-transform duration-150"
-                    />
+                {/* Wrapper: relative so both scrollable area and button overlay are positioned here */}
+                <div className="relative flex-1 min-h-0">
 
-                    {/* Nav buttons - sticky overlay that doesn't scroll with image */}
+                    {/* Scrollable image area - image can be scrolled independently */}
+                    <div className="absolute inset-0 overflow-auto bg-slate-100/90 p-4 sm:p-6 flex">
+                        <img
+                            key={images[currentIndex]}
+                            src={images[currentIndex]}
+                            alt={`${title} ${currentIndex + 1}`}
+                            className="m-auto block max-w-full h-auto object-contain select-none transition-transform duration-150"
+                        />
+                    </div>
+
+                    {/* Nav buttons overlay - sits on top, OUTSIDE scrollable div, stays fixed */}
                     {hasMultiple && (
-                        <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-2.5 sm:px-3">
+                        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-between px-2.5 sm:px-3">
                             <div className="pointer-events-auto">
-                                {currentIndex > 0 ? (
+                                {currentIndex > 0 && (
                                     <button
                                         type="button"
                                         onClick={() => onIndexChange(currentIndex - 1)}
@@ -80,10 +84,10 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                                     >
                                         <MdChevronLeft size={24} />
                                     </button>
-                                ) : <span />}
+                                )}
                             </div>
                             <div className="pointer-events-auto">
-                                {currentIndex < images.length - 1 ? (
+                                {currentIndex < images.length - 1 && (
                                     <button
                                         type="button"
                                         onClick={() => onIndexChange(currentIndex + 1)}
@@ -92,7 +96,7 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                                     >
                                         <MdChevronRight size={24} />
                                     </button>
-                                ) : <span />}
+                                )}
                             </div>
                         </div>
                     )}
