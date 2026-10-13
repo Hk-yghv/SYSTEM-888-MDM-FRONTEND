@@ -90,6 +90,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
     const [period, setPeriod] = useState(initialSearch ? 'Custom' : 'Today');
     const [customFrom, setCustomFrom] = useState('');
     const [customTo, setCustomTo] = useState('');
+    const [paymentTypeFilter, setPaymentTypeFilter] = useState('all');
     const [page, setPage] = useState(1);
     const [reloadVersion, setReloadVersion] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -207,7 +208,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
     useEffect(() => {
         setViewImages([]);
         setViewImageIndex(0);
-    }, [dateRange.from, dateRange.to, selectedBrand, search]);
+    }, [dateRange.from, dateRange.to, selectedBrand, search, paymentTypeFilter]);
 
     const scheduleRows = useMemo(() => contracts.flatMap(contract => {
         const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
@@ -226,10 +227,13 @@ const InstallmentHistory = ({ mode = 'history' }) => {
             const dueTimestamp = new Date(`${row.dueDate}T00:00:00`).getTime();
             const todayTimestamp = new Date(`${today}T00:00:00`).getTime();
             const daysUntilDue = Math.round((dueTimestamp - todayTimestamp) / 86400000);
+            const isLastMonth = schedule.length > 0 && (index === schedule.length - 1 || Number(rawRow.monthIndex) === schedule.length);
+            const isRedeem = Boolean(isLastMonth || contract.status === 'Redeem' || rawRow.status === 'PayOff');
             const type = contract.status === 'Redeem' && row.status === 'PayOff'
                 ? 'Redeem'
                 : row.status === 'PayOff' ? 'Payoff'
-                    : row.status === 'Paid' ? 'Pad' : '';
+                    : row.status === 'Paid' ? (isLastMonth ? 'Redeem' : 'Pad')
+                        : isRedeem ? 'Redeem' : '';
 
             return [{
                 ...row,
@@ -252,6 +256,8 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 unpaidAmount,
                 isPaid,
                 daysUntilDue,
+                isLastMonth,
+                isRedeem,
                 type
             }];
         });
@@ -265,15 +271,17 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 const filterDate = isHistoryPage ? row.paidDate : row.dueDate;
                 if (dateRange.from && filterDate < dateRange.from) return false;
                 if (dateRange.to && filterDate > dateRange.to) return false;
+                if (paymentTypeFilter === 'regular' && row.isRedeem) return false;
+                if (paymentTypeFilter === 'redeem' && !row.isRedeem) return false;
                 return true;
             })
             .filter(row => !query || [row.customerName, row.customerNameKh, row.contractId, row.model,
                 row.contractIid, row.serialNumber, row.brand, row.labelName, row.monthLabel]
                 .some(value => String(value || '').toLowerCase().includes(query)))
             .sort((left, right) => (isHistoryPage ? left.paidDate : left.dueDate).localeCompare(isHistoryPage ? right.paidDate : right.dueDate) || left.customerName.localeCompare(right.customerName));
-    }, [scheduleRows, search, isHistoryPage, dateRange]);
+    }, [scheduleRows, search, isHistoryPage, dateRange, paymentTypeFilter]);
 
-    useEffect(() => { setPage(1); }, [search, period, customFrom, customTo, selectedBrand]);
+    useEffect(() => { setPage(1); }, [search, period, customFrom, customTo, selectedBrand, paymentTypeFilter]);
 
     const customerCount = new Set(filteredRows.map(row => row.contractId)).size;
     const paidTotal = filteredRows.reduce((sum, row) => sum + row.paidAmount, 0);
@@ -300,7 +308,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
         'Paid Amount': row.paidAmount,
         'Unpaid Amount': row.unpaidAmount,
         Status: row.isPaid ? 'Paid' : row.daysUntilDue < 0 ? 'Overdue' : row.daysUntilDue === 0 ? 'Due Today' : 'Upcoming',
-        Type: row.type
+        Type: row.type || (row.isRedeem ? 'Redeem' : 'Pad')
     }));
 
     const exportExcel = () => exportToExcel(exportRows, 'Installment_History');
@@ -409,6 +417,18 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                         Search
                         <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Customer, contract, serial..." className="h-9 w-56 rounded-[5px] border border-slate-300 px-2 text-xs font-medium text-slate-800 outline-none focus:border-emerald-500" />
                     </label>
+                    <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">
+                        ប្រភេទបង់ (Type)
+                        <select
+                            value={paymentTypeFilter}
+                            onChange={event => setPaymentTypeFilter(event.target.value)}
+                            className="h-9 min-w-44 rounded-[5px] border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-800 outline-none focus:border-emerald-500 cursor-pointer"
+                        >
+                            <option value="all">ទាំងអស់ (All)</option>
+                            <option value="regular">បង់ធម្មតា (Regular)</option>
+                            <option value="redeem">បង់ផ្តាច់ (Redeem)</option>
+                        </select>
+                    </label>
                     {isMasterAdmin && <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">
                         Brand
                         <select value={selectedBrand} onChange={event => setSelectedBrand(event.target.value)} className="h-9 min-w-40 rounded-[5px] border border-slate-300 bg-white px-2 text-xs text-slate-800">
@@ -455,7 +475,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                         : row.daysUntilDue < 0 ? 'border-rose-300 bg-rose-50 text-rose-800'
                                             : row.daysUntilDue === 0 ? 'border-amber-300 bg-amber-50 text-amber-900'
                                                 : 'border-sky-300 bg-sky-50 text-sky-800';
-                                    const typeClass = row.type === 'Redeem' ? 'border-amber-300 bg-amber-50 text-amber-800'
+                                    const typeClass = row.type === 'Redeem' ? 'border-purple-300 bg-purple-50 text-purple-800'
                                         : row.type === 'Payoff' ? 'border-indigo-300 bg-indigo-50 text-indigo-800'
                                             : 'border-emerald-300 bg-emerald-50 text-emerald-800';
                                     return <tr key={row._id} className={row.isPaid ? 'bg-emerald-50/20' : row.daysUntilDue < 0 ? 'bg-rose-50/30' : row.daysUntilDue === 0 ? 'bg-amber-50/40' : 'hover:bg-slate-50'}>
@@ -476,9 +496,23 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                         <td className="px-3 py-1">{row.type ? <span className={`inline-flex rounded-[4px] border px-2 py-1 font-bold ${typeClass}`}>{row.type}</span> : <span className="text-slate-300">—</span>}</td>
                                         {!isHistoryPage && <td className="px-3 py-1">
                                             <div className="flex items-center justify-center gap-1.5">
-                                                <button onClick={() => openScheduleForRow(row)} title="Open Pad, Payoff, or Redeem actions" className="inline-flex items-center gap-1 rounded-[5px] border border-emerald-300 bg-emerald-50 px-2 py-1 font-bold text-emerald-800">
-                                                    <FaDollarSign /> Pay / Redeem
-                                                </button>
+                                                {row.isRedeem ? (
+                                                    <button
+                                                        onClick={() => openScheduleForRow(row)}
+                                                        title="Open Redeem actions"
+                                                        className="inline-flex items-center gap-1 rounded-[5px] border border-purple-300 bg-purple-100 px-2.5 py-1 font-bold text-purple-800 hover:bg-purple-200 transition-colors shadow-2xs cursor-pointer"
+                                                    >
+                                                        <FaDollarSign /> Redeem
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => openScheduleForRow(row)}
+                                                        title="Open Paid actions"
+                                                        className="inline-flex items-center gap-1 rounded-[5px] border border-emerald-300 bg-emerald-50 px-2.5 py-1 font-bold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer"
+                                                    >
+                                                        <FaDollarSign /> Paid
+                                                    </button>
+                                                )}
                                                 <button onClick={() => setSelectedQrContract(row.contract)} title="Open QR payment" className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800">
                                                     <MdQrCode2 /> QR
                                                 </button>
