@@ -59,39 +59,42 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                 </div>
 
                 {/* Main Image Stage - scrollable when image is too large */}
-                <div className="relative flex-1 min-h-0">
-                    {/* Scrollable image container - overflow-auto makes scrollbar visible */}
-                    <div className="absolute inset-0 overflow-auto bg-slate-100/90 p-4 sm:p-6 flex">
-                        <img
-                            key={images[currentIndex]}
-                            src={images[currentIndex]}
-                            alt={`${title} ${currentIndex + 1}`}
-                            className="m-auto block max-w-full h-auto object-contain select-none transition-transform duration-150"
-                        />
-                    </div>
+                <div className="relative flex-1 min-h-0 overflow-auto bg-slate-100/90 p-4 sm:p-6 flex">
+                    <img
+                        key={images[currentIndex]}
+                        src={images[currentIndex]}
+                        alt={`${title} ${currentIndex + 1}`}
+                        className="m-auto block max-w-full h-auto object-contain select-none transition-transform duration-150"
+                    />
 
-                    {/* Previous button - overlays on top of scrollable area */}
-                    {hasMultiple && currentIndex > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => onIndexChange(currentIndex - 1)}
-                            aria-label="Previous image"
-                            className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/90 hover:bg-white p-2 sm:p-2.5 text-slate-700 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                        >
-                            <MdChevronLeft size={24} />
-                        </button>
-                    )}
-
-                    {/* Next button - overlays on top of scrollable area */}
-                    {hasMultiple && currentIndex < images.length - 1 && (
-                        <button
-                            type="button"
-                            onClick={() => onIndexChange(currentIndex + 1)}
-                            aria-label="Next image"
-                            className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 z-10 rounded-full bg-white/90 hover:bg-white p-2 sm:p-2.5 text-slate-700 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                        >
-                            <MdChevronRight size={24} />
-                        </button>
+                    {/* Nav buttons - sticky overlay that doesn't scroll with image */}
+                    {hasMultiple && (
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-2.5 sm:px-3">
+                            <div className="pointer-events-auto">
+                                {currentIndex > 0 ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => onIndexChange(currentIndex - 1)}
+                                        aria-label="Previous image"
+                                        className="rounded-full bg-white/90 hover:bg-white p-2 sm:p-2.5 text-slate-700 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                                    >
+                                        <MdChevronLeft size={24} />
+                                    </button>
+                                ) : <span />}
+                            </div>
+                            <div className="pointer-events-auto">
+                                {currentIndex < images.length - 1 ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => onIndexChange(currentIndex + 1)}
+                                        aria-label="Next image"
+                                        className="rounded-full bg-white/90 hover:bg-white p-2 sm:p-2.5 text-slate-700 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                                    >
+                                        <MdChevronRight size={24} />
+                                    </button>
+                                ) : <span />}
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
