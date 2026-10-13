@@ -61,14 +61,16 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                 {/* Stage: overflow-hidden contains layout; inner div scrolls; buttons fixed */}
                 <div className="relative flex-1 min-h-0 overflow-hidden bg-slate-100/90">
 
-                    {/* Scrollable image — w-full h-full fills parent height properly */}
-                    <div className="w-full h-full overflow-auto p-4 sm:p-6 flex">
-                        <img
-                            key={images[currentIndex]}
-                            src={images[currentIndex]}
-                            alt={`${title} ${currentIndex + 1}`}
-                            className="m-auto block max-w-full h-auto object-contain select-none transition-transform duration-150"
-                        />
+                    {/* Scrollable image — no flex on scroll container so image can overflow and scroll */}
+                    <div className="w-full h-full overflow-auto p-4 sm:p-6">
+                        <div className="flex justify-center">
+                            <img
+                                key={images[currentIndex]}
+                                src={images[currentIndex]}
+                                alt={`${title} ${currentIndex + 1}`}
+                                className="block max-w-full h-auto object-contain select-none transition-transform duration-150"
+                            />
+                        </div>
                     </div>
 
                     {/* Nav buttons — absolute on outer div, outside scroll area → stay fixed */}
