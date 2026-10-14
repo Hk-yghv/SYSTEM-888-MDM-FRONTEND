@@ -101,10 +101,11 @@ const Comments = () => {
     const openCommentEditor = (contract, append = false) => {
         setSelectedCommentItem(contract);
         const activeToday = hasActiveCommentToday(contract);
-        setCommentInput(append || !activeToday ? '' : (contract.notes || ''));
-        setIsAddingComment(append || !activeToday);
+        const isCreating = append || !activeToday;
+        setCommentInput(isCreating ? '' : (contract.notes || ''));
+        setIsAddingComment(isCreating);
         setEditingHistoryEntry(null);
-        setIsDateAppended(false);
+        setIsDateAppended(!isCreating);
     };
 
     const handleSaveComment = async (event) => {
@@ -461,7 +462,7 @@ const Comments = () => {
                                 value={commentInput}
                                 onChange={(event) => {
                                     setCommentInput(event.target.value);
-                                    if (!event.target.value.includes('ថ្ងៃទី')) {
+                                    if (isAddingComment && !event.target.value.includes('ថ្ងៃទី')) {
                                         setIsDateAppended(false);
                                     }
                                 }}
