@@ -267,6 +267,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 isPaid,
                 daysUntilDue,
                 isLastMonth,
+                isLastActiveRow,
                 isRedeem,
                 type
             }];
@@ -508,7 +509,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                         {!isHistoryPage && <td className="px-3 py-1 text-center">
                                             {!row.isPaid ? (
                                                 <div className="flex items-center justify-center gap-1.5">
-                                                    {row.isRedeem ? (
+                                                    {(row.isRedeem || row.isLastMonth || row.isLastActiveRow) ? (
                                                         <button
                                                             onClick={() => openScheduleForRow(row)}
                                                             title="Open Redeem actions"

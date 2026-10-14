@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { FaDollarSign, FaLock, FaCalendarAlt, FaCheckCircle, FaSave, FaEdit, FaUndo, FaFilePdf, FaCalculator, FaImage } from 'react-icons/fa';
-import { MdClose, MdSwapHoriz } from 'react-icons/md';
+import { MdClose, MdSwapHoriz, MdMoneyOff } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
@@ -45,6 +45,9 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     const [payConfirm, setPayConfirm] = useState(null);
     const [payConfirmSubmitting, setPayConfirmSubmitting] = useState(false);
     // payConfirm = { idx, mode: 'Paid' | 'PayOff', amount, paidBy, description, imageItems: [{file, preview}] }
+
+    // ── Wave Penalty Modal State ──────────────────────────────────────────────
+    const [waivePenaltyModal, setWaivePenaltyModal] = useState(null);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -239,6 +242,22 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         return diffDays * Number(bestRule?.penaltyPerDay || bestRule?.amount || bestRule?.penalty || 0);
     };
 
+    const computeLateDays = (row) => {
+        if (!row || !row.dueDate) return 0;
+        const due = new Date(`${row.dueDate}T00:00:00`);
+        if (Number.isNaN(due.getTime())) return 0;
+
+        let targetDate = new Date();
+        if (row.paidDate && (row.status === 'Paid' || row.status === 'PayOff')) {
+            const paid = new Date(`${row.paidDate}T00:00:00`);
+            if (!Number.isNaN(paid.getTime())) {
+                targetDate = paid;
+            }
+        }
+        targetDate.setHours(0, 0, 0, 0);
+        return Math.max(0, Math.floor((targetDate - due) / 86400000));
+    };
+
     useEffect(() => {
         const fetchLatePenaltySetting = async () => {
             const brand = contract?.brand || user?.brand || '';
@@ -355,11 +374,16 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 ? round2(Number(row.interest))
                 : (generatedRows[index]?.interest ?? round2(totalLoan * (ratePercent / 100)));
 
+            const effectivePenalty = row.isPenaltyWaived
+                ? round2(Number(row.penalty || 0))
+                : (autoPenalty > 0 ? autoPenalty : round2(Number(row.penalty || 0)));
+
             return {
                 ...rowWithDueDate,
                 interest: rowInterest,
-                penalty: autoPenalty > 0 ? autoPenalty : round2(Number(row.penalty || 0)),
-                totalAmount: autoPenalty > 0 ? round2(scheduledAmount + autoPenalty) : total
+                penalty: effectivePenalty,
+                totalAmount: round2(scheduledAmount + effectivePenalty),
+                isPenaltyWaived: Boolean(row.isPenaltyWaived)
             };
         });
 
@@ -805,6 +829,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 <th className="px-3 py-1">ថ្ងៃខែត្រូវបង់</th>
                                 <th className="px-3 py-1 font-mono text-emerald-700">Total loan amount</th>
                                 <th className="px-3 py-1 text-violet-700 font-mono font-bold">ការប្រាក់</th>
+                                <th className="px-3 py-1 text-center font-bold text-rose-600">ចំនួនថ្ងៃពិន័យ</th>
                                 <th className="px-3 py-1 text-amber-600 font-bold">ពិន័យ</th>
                                 <th className="px-3 py-1 text-sky-700 font-bold">ត្រូវបង់</th>
                                 <th className="px-3 py-1 text-emerald-700 font-extrabold">Total</th>
@@ -874,6 +899,20 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                     placeholder={String(displayInterest)}
                                                 />
                                             )}
+                                        </td>
+
+                                        {/* Late Days / ចំនួនថ្ងៃពិន័យ */}
+                                        <td className="px-3 py-2.5 text-center font-mono font-bold">
+                                            {(() => {
+                                                const lDays = computeLateDays(row);
+                                                return lDays > 0 ? (
+                                                    <span className="text-rose-600 font-khmer px-2 py-0.5 rounded bg-rose-50 border border-rose-200">
+                                                        {lDays} ថ្ងៃ
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-slate-400 font-khmer">0 ថ្ងៃ</span>
+                                                );
+                                            })()}
                                         </td>
 
                                         {/* Penalty */}
@@ -985,81 +1024,104 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                 {row.status === 'Settled' ? (
                                                     <span className="text-slate-400 italic text-[10px]">Settled</span>
                                                 ) : isCurrentActive || isMasterAdmin ? (
-                                                    <div className="relative inline-block text-left">
-                                                        <button
-                                                            id={`pay-btn-${idx}`}
-                                                            type="button"
-                                                            onClick={() => setActiveDropdownIdx(activeDropdownIdx === idx ? null : idx)}
-                                                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-md transition-transform hover:scale-110 cursor-pointer ${row.status === 'Paid' ? 'bg-emerald-600 text-white' : row.status === 'PayOff' ? 'bg-indigo-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-gray-950'}`}
-                                                        >
-                                                            <FaDollarSign />
-                                                        </button>
-
-                                                        {activeDropdownIdx === idx && createPortal(
-                                                            <div
-                                                                ref={dropdownRef}
-                                                                className="fixed w-44 bg-white border border-slate-200 rounded-[5px] shadow-2xl overflow-hidden"
-                                                                style={(() => {
-                                                                    const btn = document.getElementById(`pay-btn-${idx}`);
-                                                                    if (!btn) return { top: 0, left: 0, zIndex: 999999 };
-                                                                    const r = btn.getBoundingClientRect();
-                                                                    const spaceBelow = window.innerHeight - r.bottom;
-                                                                    const left = Math.min(r.left, window.innerWidth - 184);
-                                                                    return spaceBelow < 200
-                                                                        ? { bottom: `${window.innerHeight - r.top + 4}px`, left: `${left}px`, zIndex: 999999 }
-                                                                        : { top: `${r.bottom + 6}px`, left: `${left}px`, zIndex: 999999 };
-                                                                })()}
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        <div className="relative inline-block text-left">
+                                                            <button
+                                                                id={`pay-btn-${idx}`}
+                                                                type="button"
+                                                                onClick={() => setActiveDropdownIdx(activeDropdownIdx === idx ? null : idx)}
+                                                                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-md transition-transform hover:scale-110 cursor-pointer ${row.status === 'Paid' ? 'bg-emerald-600 text-white' : row.status === 'PayOff' ? 'bg-indigo-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-gray-950'}`}
+                                                                title="Payment Options"
                                                             >
-                                                                <div className="px-2.5 py-1 bg-indigo-50 border-b border-slate-200 text-[9px] font-bold text-indigo-700 uppercase">
-                                                                    Payment Options
-                                                                </div>
+                                                                <FaDollarSign />
+                                                            </button>
 
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleSaveRowDraft(idx)}
-                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-emerald-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
+                                                            {activeDropdownIdx === idx && createPortal(
+                                                                <div
+                                                                    ref={dropdownRef}
+                                                                    className="fixed w-44 bg-white border border-slate-200 rounded-[5px] shadow-2xl overflow-hidden"
+                                                                    style={(() => {
+                                                                        const btn = document.getElementById(`pay-btn-${idx}`);
+                                                                        if (!btn) return { top: 0, left: 0, zIndex: 999999 };
+                                                                        const r = btn.getBoundingClientRect();
+                                                                        const spaceBelow = window.innerHeight - r.bottom;
+                                                                        const left = Math.min(r.left, window.innerWidth - 184);
+                                                                        return spaceBelow < 200
+                                                                            ? { bottom: `${window.innerHeight - r.top + 4}px`, left: `${left}px`, zIndex: 999999 }
+                                                                            : { top: `${r.bottom + 6}px`, left: `${left}px`, zIndex: 999999 };
+                                                                    })()}
                                                                 >
-                                                                    <FaSave size={11} /> Save
-                                                                </button>
+                                                                    <div className="px-2.5 py-1 bg-indigo-50 border-b border-slate-200 text-[9px] font-bold text-indigo-700 uppercase">
+                                                                        Payment Options
+                                                                    </div>
 
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => { handleRowChange(idx, 'status', 'Pending'); setActiveDropdownIdx(null); }}
-                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-sky-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
-                                                                >
-                                                                    <FaEdit size={11} /> Edit
-                                                                </button>
-
-                                                                {!isLastMonth && row.status !== 'PayOff' && (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => openPayConfirm(idx, 'Paid')}
-                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-amber-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
+                                                                        onClick={() => handleSaveRowDraft(idx)}
+                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-emerald-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
                                                                     >
-                                                                        <FaCheckCircle size={11} /> Paid
+                                                                        <FaSave size={11} /> Save
                                                                     </button>
-                                                                )}
 
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => openPayConfirm(idx, 'PayOff')}
-                                                                    className="w-full px-3 py-1.5 text-left text-xs font-bold text-indigo-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
-                                                                >
-                                                                    <FaLock size={11} /> Pay Off
-                                                                </button>
-
-                                                                {isMasterAdmin && (row.status === 'Paid' || row.status === 'PayOff') && (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => handleRevertRow(idx)}
-                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
+                                                                        onClick={() => { handleRowChange(idx, 'status', 'Pending'); setActiveDropdownIdx(null); }}
+                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-sky-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
                                                                     >
-                                                                        <FaUndo size={11} /> Revert / Unlock
+                                                                        <FaEdit size={11} /> Edit
                                                                     </button>
-                                                                )}
-                                                            </div>,
-                                                            document.body
-                                                        )}
+
+                                                                    {!isLastMonth && row.status !== 'PayOff' && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => openPayConfirm(idx, 'Paid')}
+                                                                            className="w-full px-3 py-1.5 text-left text-xs font-bold text-amber-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
+                                                                        >
+                                                                            <FaCheckCircle size={11} /> Paid
+                                                                        </button>
+                                                                    )}
+
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => openPayConfirm(idx, 'PayOff')}
+                                                                        className="w-full px-3 py-1.5 text-left text-xs font-bold text-indigo-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
+                                                                    >
+                                                                        <FaLock size={11} /> Pay Off
+                                                                    </button>
+
+                                                                    {isMasterAdmin && (row.status === 'Paid' || row.status === 'PayOff') && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleRevertRow(idx)}
+                                                                            className="w-full px-3 py-1.5 text-left text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
+                                                                        >
+                                                                            <FaUndo size={11} /> Revert / Unlock
+                                                                        </button>
+                                                                    )}
+                                                                </div>,
+                                                                document.body
+                                                            )}
+                                                        </div>
+
+                                                        {/* Wave Penalty Button */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const lDays = computeLateDays(row);
+                                                                setWaivePenaltyModal({
+                                                                    idx,
+                                                                    monthLabel: row.labelName || `Month ${row.monthIndex || idx + 1}`,
+                                                                    dueDate: row.dueDate || '',
+                                                                    lateDays: lDays,
+                                                                    currentPenalty: Number(row.penalty || 0),
+                                                                    newPenalty: Number(row.penalty || 0)
+                                                                });
+                                                            }}
+                                                            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-300 shadow-sm transition-transform hover:scale-110 cursor-pointer"
+                                                            title="Wave Penalty (កំណត់តម្លៃពិន័យ)"
+                                                        >
+                                                            <MdMoneyOff size={13} />
+                                                        </button>
                                                     </div>
                                                 ) : (
                                                     <span className="text-slate-400 text-[10px]">—</span>
@@ -1312,6 +1374,105 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         </button>
                     </div>
 
+                </div>
+            </div>
+        )}
+
+        {/* Wave Penalty Modal */}
+        {waivePenaltyModal && (
+            <div className="fixed inset-0 z-[1000002] flex items-center justify-center bg-black/75 backdrop-blur-xs p-3">
+                <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <span className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-200">
+                                <MdMoneyOff size={16} />
+                            </span>
+                            <span>Wave Penalty (កំណត់តម្លៃពិន័យ)</span>
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={() => setWaivePenaltyModal(null)}
+                            className="text-slate-400 hover:text-slate-600 font-bold p-1 cursor-pointer"
+                        >✕</button>
+                    </div>
+
+                    <div className="rounded-lg bg-slate-50 p-3 space-y-1.5 text-xs border border-slate-200">
+                        <div className="flex justify-between">
+                            <span className="text-slate-500 font-medium">ខែ/ថ្ងៃ៖</span>
+                            <span className="font-bold text-slate-800">{waivePenaltyModal.monthLabel}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-slate-500 font-medium">ថ្ងៃត្រូវបង់៖</span>
+                            <span className="font-mono font-bold text-slate-800">{waivePenaltyModal.dueDate || '—'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-slate-500 font-medium">ចំនួនថ្ងៃពិន័យ៖</span>
+                            <span className="font-khmer font-bold text-rose-600">{waivePenaltyModal.lateDays} ថ្ងៃ</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-slate-500 font-medium">ពិន័យបច្ចុប្បន្ន៖</span>
+                            <span className="font-mono font-bold text-amber-600">${formatMoney(waivePenaltyModal.currentPenalty)}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                            តម្លៃពិន័យថ្មី ($) <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-slate-400 font-bold">$</span>
+                            <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                value={waivePenaltyModal.newPenalty}
+                                onChange={(e) => setWaivePenaltyModal(prev => ({
+                                    ...prev,
+                                    newPenalty: e.target.value
+                                }))}
+                                placeholder="0.00"
+                                className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 rounded-lg text-sm font-mono font-bold text-slate-900 outline-none"
+                                autoFocus
+                            />
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 italic">
+                            * កែប្រែតែតម្លៃពិន័យ ចំនួនថ្ងៃយឺតនៅដដែល
+                        </p>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                        <button
+                            type="button"
+                            onClick={() => setWaivePenaltyModal(null)}
+                            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                        >
+                            {t('cancel')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                const targetIdx = waivePenaltyModal.idx;
+                                const penaltyVal = Math.max(0, Number(waivePenaltyModal.newPenalty) || 0);
+                                const updated = [...rows];
+                                const targetRow = updated[targetIdx];
+                                const schedAmount = Number(targetRow.scheduledAmount || 0);
+
+                                updated[targetIdx] = {
+                                    ...targetRow,
+                                    penalty: penaltyVal,
+                                    totalAmount: round2(penaltyVal + schedAmount),
+                                    isPenaltyWaived: true
+                                };
+
+                                setRows(updated);
+                                setWaivePenaltyModal(null);
+                                await autoSaveRows(updated);
+                            }}
+                            className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold shadow-md shadow-rose-600/30 cursor-pointer transition-colors"
+                        >
+                            Submit
+                        </button>
+                    </div>
                 </div>
             </div>
         )}
