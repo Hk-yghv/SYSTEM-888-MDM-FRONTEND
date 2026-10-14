@@ -26,6 +26,61 @@ const isMasterAdminUser = (user) => (
     user?.role === 'Admin'
 );
 
+const rotateExpiredComments = async (contractsList) => {
+    if (!Array.isArray(contractsList) || contractsList.length === 0) return;
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Phnom_Penh' });
+
+    for (const doc of contractsList) {
+        if (!doc.notes || !String(doc.notes).trim()) continue;
+
+        const commentDate = doc.commentDate || doc.updatedAt || doc.createdAt;
+        const commentDateStr = commentDate ? new Date(commentDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Phnom_Penh' }) : '';
+
+        // If the comment was recorded before today in Asia/Phnom_Penh (UTC+7)
+        if (commentDateStr && commentDateStr !== todayStr) {
+            const prevNote = String(doc.notes);
+            const prevDate = commentDate;
+            const prevUser = doc.lastModifiedBy || 'Staff';
+
+            if (!Array.isArray(doc.commentHistory)) {
+                doc.commentHistory = [];
+            }
+            const alreadyInHistory = doc.commentHistory.some(h =>
+                h.comment === prevNote &&
+                new Date(h.commentedAt).getTime() === new Date(prevDate).getTime()
+            );
+            if (!alreadyInHistory) {
+                doc.commentHistory.push({
+                    comment: prevNote,
+                    commentedAt: prevDate,
+                    editedBy: prevUser
+                });
+            }
+            doc.notes = '';
+            doc.commentDate = null;
+
+            if (isMongoConnected) {
+                try {
+                    await queryAllDBs(Contract, async (BoundM) => {
+                        await BoundM.updateOne(
+                            { _id: doc._id },
+                            {
+                                $set: {
+                                    notes: '',
+                                    commentDate: null,
+                                    commentHistory: doc.commentHistory
+                                }
+                            }
+                        );
+                    });
+                } catch (e) {
+                    console.error('Error auto-archiving expired comment for contract', doc._id, e);
+                }
+            }
+        }
+    }
+};
+
 // GET contracts
 router.get('/', async (req, res) => {
     try {
@@ -80,6 +135,7 @@ router.get('/', async (req, res) => {
 
         if (isMongoConnected) {
             const allContracts = await queryAllDBs(Contract, (M) => M.find(query).sort({ createdAt: -1 }));
+            await rotateExpiredComments(allContracts);
             const total = allContracts.length;
             let actualSkip = skip;
             let actualPage = parseInt(page) || 1;
@@ -110,6 +166,7 @@ router.get('/', async (req, res) => {
         } else if (status) {
             filtered = filtered.filter(c => c.status === status);
         }
+        await rotateExpiredComments(filtered);
         if (brandFilter && (!isMasterAdmin || req.query.brand)) filtered = filtered.filter(c => c.brand === brandFilter);
         if (contractId) filtered = filtered.filter(c => c.contractId === contractId);
         if (dateFrom || dateTo) {

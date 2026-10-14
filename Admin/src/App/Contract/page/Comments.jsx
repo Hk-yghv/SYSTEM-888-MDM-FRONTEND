@@ -4,12 +4,13 @@ import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { AiOutlineMenu } from "react-icons/ai";
-import { MdOutlineSync, MdEdit, MdDelete, MdComment, MdInfo } from "react-icons/md";
+import { MdOutlineSync, MdEdit, MdDelete, MdComment, MdInfo, MdDateRange } from "react-icons/md";
 import { FaHistory, FaPlus } from 'react-icons/fa';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
+import { getKhmerCurrentDateString, hasActiveCommentToday } from '../../../utils/khmerDateUtils';
 
 const Comments = () => {
     const { t } = useLanguage();
@@ -26,6 +27,7 @@ const Comments = () => {
     const [commentInput, setCommentInput] = useState('');
     const [isAddingComment, setIsAddingComment] = useState(false);
     const [commentSaving, setCommentSaving] = useState(false);
+    const [isDateAppended, setIsDateAppended] = useState(false);
     const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
     const [editingHistoryEntry, setEditingHistoryEntry] = useState(null);
     const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') || '');
@@ -69,6 +71,7 @@ const Comments = () => {
         setSelectedCommentItem(contract);
         setCommentInput('');
         setIsAddingComment(true);
+        setIsDateAppended(false);
         setEditingHistoryEntry(null);
         setSelectedHistoryItem(null);
         setSearchParams(current => {
@@ -84,11 +87,24 @@ const Comments = () => {
         return Number.isNaN(date.getTime()) ? String(dateValue) : date.toLocaleString();
     };
 
+    const handleAppendDate = () => {
+        const dateText = getKhmerCurrentDateString();
+        setCommentInput(prev => {
+            const trimmed = (prev || '').trim();
+            if (!trimmed) return dateText;
+            if (trimmed.endsWith(dateText)) return trimmed;
+            return `${trimmed} ${dateText}`;
+        });
+        setIsDateAppended(true);
+    };
+
     const openCommentEditor = (contract, append = false) => {
         setSelectedCommentItem(contract);
-        setCommentInput(append ? '' : (contract.notes || ''));
-        setIsAddingComment(append);
+        const activeToday = hasActiveCommentToday(contract);
+        setCommentInput(append || !activeToday ? '' : (contract.notes || ''));
+        setIsAddingComment(append || !activeToday);
         setEditingHistoryEntry(null);
+        setIsDateAppended(false);
     };
 
     const handleSaveComment = async (event) => {
@@ -120,6 +136,7 @@ const Comments = () => {
             setSelectedCommentItem(null);
             setEditingHistoryEntry(null);
             setIsAddingComment(false);
+            setIsDateAppended(false);
             setCommentInput('');
             await fetchCommentsContracts(page, searchTerm);
         } catch (err) {
@@ -170,8 +187,8 @@ const Comments = () => {
             'Phone': c.phone || '',
             'Device Model': c.model || '',
             'Serial Number': c.serialNumber || '',
-            'Comment Note': c.notes || '',
-            'Comment Date': formatCommentDate(c.commentDate, c.inputDate || ''),
+            'Comment Note': hasActiveCommentToday(c) ? c.notes : 'No comment provided',
+            'Comment Date': hasActiveCommentToday(c) ? formatCommentDate(c.commentDate, c.inputDate || '') : '—',
             'Status': c.status || 'Comments',
         }));
         exportToExcel(data, 'Comments_Contracts');
@@ -185,8 +202,8 @@ const Comments = () => {
             { header: 'Name KH', accessor: 'customerNameKh' },
             { header: 'Phone', accessor: 'phone' },
             { header: 'Model', accessor: 'model' },
-            { header: 'Comment Note', accessor: 'notes' },
-            { header: 'Comment Date', cell: (contract) => formatCommentDate(contract.commentDate, contract.inputDate || '') },
+            { header: 'Comment Note', cell: (contract) => hasActiveCommentToday(contract) ? contract.notes : 'No comment provided' },
+            { header: 'Comment Date', cell: (contract) => hasActiveCommentToday(contract) ? formatCommentDate(contract.commentDate, contract.inputDate || '') : '—' },
         ];
         exportToPDF('Comments Directory', columns, allData, user?.brand || '', orientation);
     };
@@ -201,7 +218,7 @@ const Comments = () => {
                     comment: selectedHistoryItem.notes,
                     commentedAt: selectedHistoryItem.commentDate,
                     editedBy: selectedHistoryItem.lastModifiedBy,
-                    isCurrent: true
+                    isCurrent: hasActiveCommentToday(selectedHistoryItem)
                 }]
                 : [])
         ]
@@ -280,15 +297,17 @@ const Comments = () => {
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
                                     <td className='px-4 py-1 text-center font-khmer text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx + 1}</td>
                                     <td className='px-4 py-1 font-khmer text-slate-700 font-medium whitespace-nowrap'>
-                                        {formatCommentDate(item.commentDate, formatCommentDate(item.updatedAt, item.inputDate))}
+                                        {hasActiveCommentToday(item)
+                                            ? formatCommentDate(item.commentDate, formatCommentDate(item.updatedAt, item.inputDate))
+                                            : '—'}
                                     </td>
                                     <td className='px-4 py-1'>
                                         <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
                                         {item.customerNameKh && <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs font-semibold' />}
                                     </td>
                                     <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
-                                    <td className='px-4 py-1 text-teal-800 font-khmer max-w-[260px] truncate' title={item.notes}>
-                                        {item.notes || 'No comment provided'}
+                                    <td className='px-4 py-1 text-teal-800 font-khmer max-w-[260px] truncate' title={hasActiveCommentToday(item) ? item.notes : ''}>
+                                        {hasActiveCommentToday(item) ? item.notes : <span className="text-slate-400 italic font-normal">No comment provided</span>}
                                     </td>
                                     <td className='px-4 py-1 text-center'>
                                         <span className='px-3 py-1 bg-teal-50 text-teal-800 border border-teal-300 rounded-full font-bold text-[10px] uppercase'>Comments</span>
@@ -306,12 +325,12 @@ const Comments = () => {
                                                 <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-2 space-y-1 animate-in fade-in duration-150">
                                                     {hasPermission('/contract/comments', 'information') && (
                                                         <button onClick={() => { setSelectedInfo(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2">
-                                                            <MdInfo className="text-indigo-600" /> Details
+                                                             <MdInfo className="text-indigo-600" /> Details
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/comments', 'edit') && (
                                                         <button onClick={() => { openCommentEditor(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2">
-                                                            <MdEdit className="text-amber-600" /> Edit Latest Comment
+                                                            <MdEdit className="text-amber-600" /> {hasActiveCommentToday(item) ? 'Edit Latest Comment' : 'Add Comment'}
                                                         </button>
                                                     )}
                                                     <button onClick={() => { setSelectedHistoryItem(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2">
@@ -440,7 +459,12 @@ const Comments = () => {
                             <textarea
                                 rows={5}
                                 value={commentInput}
-                                onChange={(event) => setCommentInput(event.target.value)}
+                                onChange={(event) => {
+                                    setCommentInput(event.target.value);
+                                    if (!event.target.value.includes('ថ្ងៃទី')) {
+                                        setIsDateAppended(false);
+                                    }
+                                }}
                                 placeholder="Write a comment or leave blank..."
                                 className="mt-2 w-full rounded-[5px] border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none focus:border-teal-500"
                             />
@@ -448,17 +472,28 @@ const Comments = () => {
                         <footer className="flex justify-end gap-2">
                             <button
                                 type="button"
-                                onClick={() => { setSelectedCommentItem(null); setEditingHistoryEntry(null); setIsAddingComment(false); }}
+                                onClick={() => { setSelectedCommentItem(null); setEditingHistoryEntry(null); setIsAddingComment(false); setIsDateAppended(false); }}
                                 className="rounded-[5px] bg-slate-700 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-600"
                             >Cancel</button>
-                            <button
-                                type="submit"
-                                disabled={commentSaving}
-                                className="inline-flex items-center gap-2 rounded-[5px] bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-500 disabled:opacity-60"
-                            >
-                                {commentSaving ? <MdOutlineSync className="animate-spin" /> : <MdEdit />}
-                                Save
-                            </button>
+                            {!isDateAppended ? (
+                                <button
+                                    type="button"
+                                    onClick={handleAppendDate}
+                                    className="inline-flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-500 cursor-pointer shadow-md transition-all"
+                                >
+                                    <MdDateRange className="text-base" />
+                                    Input date
+                                </button>
+                            ) : (
+                                <button
+                                    type="submit"
+                                    disabled={commentSaving}
+                                    className="inline-flex items-center gap-2 rounded-[5px] bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-500 disabled:opacity-60 cursor-pointer shadow-md transition-all"
+                                >
+                                    {commentSaving ? <MdOutlineSync className="animate-spin" /> : <MdEdit />}
+                                    Save
+                                </button>
+                            )}
                         </footer>
                     </form>
                 </div>
@@ -480,7 +515,7 @@ const Comments = () => {
                             <p className="text-gray-400">Serial Number: <span className="text-indigo-300 font-khmer">{selectedInfo.serialNumber}</span></p>
                             <div className="pt-2 border-t border-gray-800">
                                 <span className="text-cyan-400 font-bold block mb-1">Comment Note:</span>
-                                <p className="text-white bg-gray-950 p-2 rounded-[5px] border border-gray-800 font-sans leading-relaxed">{selectedInfo.notes || 'No notes'}</p>
+                                <p className="text-white bg-gray-950 p-2 rounded-[5px] border border-gray-800 font-sans leading-relaxed">{hasActiveCommentToday(selectedInfo) ? selectedInfo.notes : 'No comment provided'}</p>
                             </div>
                         </div>
                         <div className="text-right">

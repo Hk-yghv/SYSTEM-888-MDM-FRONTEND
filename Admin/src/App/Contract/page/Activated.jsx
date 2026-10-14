@@ -5,13 +5,14 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import CopyCell from '../../../components/CopyCell';
 import { AiOutlineMenu } from "react-icons/ai";
-import { MdOutlineSync, MdInfo, MdCheckCircle, MdSwapHoriz, MdComment, MdPictureAsPdf, MdOutlineWallpaper } from "react-icons/md";
+import { MdOutlineSync, MdInfo, MdCheckCircle, MdSwapHoriz, MdComment, MdPictureAsPdf, MdOutlineWallpaper, MdDateRange } from "react-icons/md";
 import { FaLock, FaFileExcel, FaHistory, FaCalendarAlt, FaUsers, FaClock, FaFilter, FaTimes, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import CustomModal from '../../../components/CustomModal';
 import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import ContractActivityHistoryModal from '../components/ContractActivityHistoryModal';
 import ContractSearchInput from '../../../components/ContractSearchInput';
+import { getKhmerCurrentDateString } from '../../../utils/khmerDateUtils';
 
 const Activated = () => {
     const { t } = useLanguage();
@@ -39,6 +40,7 @@ const Activated = () => {
     // Comment Modal State
     const [selectedCommentItem, setSelectedCommentItem] = useState(null);
     const [commentInput, setCommentInput] = useState('');
+    const [isDateAppended, setIsDateAppended] = useState(false);
 
     // UI Custom Modal alert state
     const [uiModal, setUiModal] = useState({ open: false, title: '', message: '', type: 'info' });
@@ -480,6 +482,17 @@ const Activated = () => {
         }
     };
 
+    const handleAppendDate = () => {
+        const dateText = getKhmerCurrentDateString();
+        setCommentInput(prev => {
+            const trimmed = (prev || '').trim();
+            if (!trimmed) return dateText;
+            if (trimmed.endsWith(dateText)) return trimmed;
+            return `${trimmed} ${dateText}`;
+        });
+        setIsDateAppended(true);
+    };
+
     const handleSaveComment = async (e) => {
         e.preventDefault();
         if (!selectedCommentItem) return;
@@ -503,6 +516,7 @@ const Activated = () => {
                 });
                 setSelectedCommentItem(null);
                 setCommentInput('');
+                setIsDateAppended(false);
                 fetchActivatedContracts();
             }
         } catch (err) {
@@ -1068,6 +1082,7 @@ const Activated = () => {
                                                                         } else {
                                                                             setSelectedCommentItem(item);
                                                                             setCommentInput('');
+                                                                            setIsDateAppended(false);
                                                                         }
                                                                         setOpenMenuId(null);
                                                                     }}
@@ -1165,7 +1180,12 @@ const Activated = () => {
                             <textarea
                                 rows={4}
                                 value={commentInput}
-                                onChange={(e) => setCommentInput(e.target.value)}
+                                onChange={(e) => {
+                                    setCommentInput(e.target.value);
+                                    if (!e.target.value.includes('ថ្ងៃទី')) {
+                                        setIsDateAppended(false);
+                                    }
+                                }}
                                 placeholder="Type comment or leave blank..."
                                 className="w-full p-2 bg-gray-900 border border-gray-700 rounded-[5px] text-xs text-gray-100 outline-none focus:border-cyan-500 font-sans"
                             ></textarea>
@@ -1174,17 +1194,28 @@ const Activated = () => {
                         <div className="flex items-center justify-end gap-3 pt-2">
                             <button
                                 type="button"
-                                onClick={() => setSelectedCommentItem(null)}
+                                onClick={() => { setSelectedCommentItem(null); setIsDateAppended(false); }}
                                 className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-[5px] text-xs font-bold"
                             >
                                 Cancel
                             </button>
-                            <button
-                                type="submit"
-                                className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-[5px] text-xs font-bold shadow-lg shadow-cyan-600/30"
-                            >
-                                Submit Comment
-                            </button>
+                            {!isDateAppended ? (
+                                <button
+                                    type="button"
+                                    onClick={handleAppendDate}
+                                    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-[5px] text-xs font-bold shadow-lg shadow-blue-600/30 flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <MdDateRange className="text-sm" />
+                                    Input date
+                                </button>
+                            ) : (
+                                <button
+                                    type="submit"
+                                    className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-[5px] text-xs font-bold shadow-lg shadow-cyan-600/30 flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    Save
+                                </button>
+                            )}
                         </div>
                     </form>
                 </div>
