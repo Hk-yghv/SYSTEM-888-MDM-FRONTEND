@@ -1,4 +1,4 @@
-    import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -325,7 +325,7 @@ const Comments = () => {
                                                 <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-2 space-y-1 animate-in fade-in duration-150">
                                                     {hasPermission('/contract/comments', 'information') && (
                                                         <button onClick={() => { setSelectedInfo(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2">
-                                                             <MdInfo className="text-indigo-600" /> Details
+                                                            <MdInfo className="text-indigo-600" /> Details
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/comments', 'edit') && (
@@ -451,8 +451,8 @@ const Comments = () => {
                             >×</button>
                         </header>
                         <div className="rounded-[5px] border border-slate-700 bg-slate-800/70 p-3 text-xs text-slate-300">
-                            <p>Customer: <span className="font-bold text-white">{selectedCommentItem.customerNameEn}</span></p>
-                            <p className="mt-1">Model: <span className="font-semibold text-white">{selectedCommentItem.model}</span></p>
+                            <p>Customer: <span className="font-bold text-black">{selectedCommentItem.customerNameEn}</span></p>
+                            <p className="mt-1">Model: <span className="font-semibold text-black">{selectedCommentItem.model}</span></p>
                         </div>
                         <label className="block text-xs font-semibold text-slate-300">
                             Comment <span className="font-normal text-slate-500">(optional)</span>
