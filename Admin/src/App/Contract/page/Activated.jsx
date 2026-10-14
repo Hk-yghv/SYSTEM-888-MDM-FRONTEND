@@ -483,7 +483,11 @@ const Activated = () => {
         }
     };
 
-    const handleAppendDate = () => {
+    const handleAppendDate = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         const dateText = getKhmerCurrentDateString();
         setCommentInput(prev => {
             const trimmed = (prev || '').trim();
@@ -1158,7 +1162,7 @@ const Activated = () => {
             {/* Comment Input Modal */}
             {selectedCommentItem && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-2">
-                    <form onSubmit={handleSaveComment} className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4">
+                    <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-base font-bold text-cyan-300 flex items-center gap-2">
                                 <MdComment className="text-lg" /> Add Comment Note
@@ -1197,6 +1201,7 @@ const Activated = () => {
                             </button>
                             {!isDateAppended ? (
                                 <button
+                                    key="btn-input-date"
                                     type="button"
                                     onClick={handleAppendDate}
                                     className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-[5px] text-xs font-bold shadow-lg shadow-blue-600/30 flex items-center gap-1.5 cursor-pointer"
@@ -1206,7 +1211,9 @@ const Activated = () => {
                                 </button>
                             ) : (
                                 <button
-                                    type="submit"
+                                    key="btn-save-comment"
+                                    type="button"
+                                    onClick={handleSaveComment}
                                     disabled={commentSaving}
                                     className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-[5px] text-xs font-bold shadow-lg shadow-cyan-600/30 flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
                                 >
@@ -1215,7 +1222,7 @@ const Activated = () => {
                                 </button>
                             )}
                         </div>
-                    </form>
+                    </div>
                 </div>
             )}
 

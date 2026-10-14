@@ -87,7 +87,11 @@ const Comments = () => {
         return Number.isNaN(date.getTime()) ? String(dateValue) : date.toLocaleString();
     };
 
-    const handleAppendDate = () => {
+    const handleAppendDate = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         const dateText = getKhmerCurrentDateString();
         setCommentInput(prev => {
             const trimmed = (prev || '').trim();
@@ -438,7 +442,7 @@ const Comments = () => {
 
             {selectedCommentItem && (
                 <div className="fixed inset-0 z-[100001] flex items-center justify-center bg-black/75 p-3">
-                    <form onSubmit={handleSaveComment} className="w-full max-w-lg space-y-4 rounded-[5px] border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+                    <div className="w-full max-w-lg space-y-4 rounded-[5px] border border-slate-700 bg-slate-900 p-5 shadow-2xl">
                         <header className="flex items-center justify-between border-b border-slate-700 pb-3">
                             <h2 className="flex items-center gap-2 text-sm font-black text-teal-300">
                                 <MdComment />
@@ -478,6 +482,7 @@ const Comments = () => {
                             >Cancel</button>
                             {!isDateAppended ? (
                                 <button
+                                    key="btn-input-date"
                                     type="button"
                                     onClick={handleAppendDate}
                                     className="inline-flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-500 cursor-pointer shadow-md transition-all"
@@ -487,7 +492,9 @@ const Comments = () => {
                                 </button>
                             ) : (
                                 <button
-                                    type="submit"
+                                    key="btn-save-comment"
+                                    type="button"
+                                    onClick={handleSaveComment}
                                     disabled={commentSaving}
                                     className="inline-flex items-center gap-2 rounded-[5px] bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-500 disabled:opacity-60 cursor-pointer shadow-md transition-all"
                                 >
@@ -496,7 +503,7 @@ const Comments = () => {
                                 </button>
                             )}
                         </footer>
-                    </form>
+                    </div>
                 </div>
             )}
 
