@@ -183,10 +183,65 @@ router.put('/:id', async (req, res) => {
             user.password = await bcrypt.hash(password, 10);
         }
 
+        // If user is updated, mark live syncStatus as Pending until client receives it
+        user.permissionPending = true;
+        user.syncStatus = 'Pending';
+        user.syncComment = 'កំពុងរង់ចាំគណនីទទួលយកសិទ្ធិថ្មី...';
+        if (typeof user.markModified === 'function') {
+            user.markModified('syncStatus');
+            user.markModified('syncComment');
+        }
+
         if (isMongoConnected) {
             await user.save();
         }
+
+        // Also update in MEM_DB
+        const memIdx = MEM_DB.users.findIndex(u => u._id === req.params.id || u.userId === req.params.id);
+        if (memIdx !== -1) {
+            MEM_DB.users[memIdx] = {
+                ...MEM_DB.users[memIdx],
+                ...user.toObject ? user.toObject() : user,
+                syncStatus: 'Pending',
+                permissionPending: true
+            };
+        }
+
         res.json({ message: 'User updated successfully', user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ACK-SYNC — Acknowledge that user client received new permissions
+router.post('/ack-sync', async (req, res) => {
+    try {
+        const { username, userId } = req.body;
+        if (!username && !userId) return res.status(400).json({ error: 'Missing username or userId' });
+
+        let users = [];
+        if (isMongoConnected) {
+            users = await queryAllDBs(User, (M) => M.find(username ? { username } : { userId }));
+        } else {
+            const memoryUser = MEM_DB.users.find(u => u.username === username || u.userId === userId);
+            if (memoryUser) users = [memoryUser];
+        }
+
+        for (const u of users) {
+            u.permissionPending = false;
+            u.syncStatus = 'Success';
+            u.syncComment = 'បានទទួលការកំណត់សិទ្ធិថ្មីជោគជ័យ';
+            if (isMongoConnected) await u.save();
+        }
+
+        const memUser = MEM_DB.users.find(u => u.username === username || u.userId === userId);
+        if (memUser) {
+            memUser.permissionPending = false;
+            memUser.syncStatus = 'Success';
+            memUser.syncComment = 'បានទទួលការកំណត់សិទ្ធិថ្មីជោគជ័យ';
+        }
+
+        res.json({ success: true, message: 'Sync acknowledged successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

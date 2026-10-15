@@ -106,6 +106,17 @@ export const AuthProvider = ({ children }) => {
 
                         if (response.ok) {
                             if (recovering && isActive) setIsBackendRecovering(false);
+                            try {
+                                const hbData = await response.json();
+                                if (hbData.hasUpdatedPermissions && isActive) {
+                                    updateUserState(prev => ({
+                                        ...prev,
+                                        permissions: hbData.permissions !== undefined ? hbData.permissions : prev?.permissions,
+                                        role: hbData.role || prev?.role,
+                                        brand: hbData.brand !== undefined ? hbData.brand : prev?.brand
+                                    }));
+                                }
+                            } catch (e) { /* ignore json parse */ }
                             return;
                         }
                         if (response.status === 423) {

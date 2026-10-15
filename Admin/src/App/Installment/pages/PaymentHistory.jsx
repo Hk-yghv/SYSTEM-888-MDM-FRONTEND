@@ -3,7 +3,7 @@ import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { MdOutlineSync, MdPictureAsPdf } from "react-icons/md";
-import { FaFileExcel, FaImage, FaFilter } from 'react-icons/fa';
+import { FaFileExcel, FaImage, FaFilter, FaEdit, FaTrashAlt, FaTimes, FaSave, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import Pagination from '../../../components/Pagination';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
@@ -15,6 +15,16 @@ const LIMIT = 10;
 const PaymentHistory = () => {
     const { t } = useLanguage();
     const { API_BASE1, user, hasPermission } = useAuth();
+
+    // Check if the logged-in user is Master Admin / Big Admin
+    const isMasterAdmin = Boolean(
+        user?.username === '@hakyonghouv' ||
+        user?.username === 'hakyonghouv' ||
+        user?.isImmutable ||
+        user?.role === 'Administrator' ||
+        user?.role === 'Admin' ||
+        hasPermission('/installment/payment-history', 'edit')
+    );
 
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -31,8 +41,28 @@ const PaymentHistory = () => {
     const [activeDateTo, setActiveDateTo] = useState('');
 
     // Image viewer modal — supports single image or gallery
-    const [viewImages, setViewImages] = useState([]);  // array of image URLs
-    const [viewImageIdx, setViewImageIdx] = useState(0); // current index
+    const [viewImages, setViewImages] = useState([]);
+    const [viewImageIdx, setViewImageIdx] = useState(0);
+
+    // Edit modal states for Master Admin
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editingPayment, setEditingPayment] = useState(null);
+    const [editForm, setEditForm] = useState({
+        paidDate: '',
+        amount: '',
+        customerName: '',
+        contractId: '',
+        model: '',
+        serialNumber: '',
+        brand: '',
+        paidBy: '',
+        description: '',
+        receiptImage: ''
+    });
+    const [savingEdit, setSavingEdit] = useState(false);
+    const [editError, setEditError] = useState('');
+    const [actionMessage, setActionMessage] = useState('');
+    const [deletingId, setDeletingId] = useState(null);
 
     const openImageViewer = (images, startIdx = 0) => {
         const arr = Array.isArray(images) ? images.filter(Boolean) : [images].filter(Boolean);
@@ -155,6 +185,121 @@ const PaymentHistory = () => {
         exportToPDF('Payment History Audit Report', columns, allData, user?.brand || '', orientation);
     };
 
+    // Open Edit Modal for a specific payment
+    const openEditModal = (item) => {
+        setEditingPayment(item);
+        setEditForm({
+            paidDate: item.paidDate || new Date().toISOString().split('T')[0],
+            amount: item.amount !== undefined ? String(item.amount) : '',
+            customerName: item.customerName || '',
+            contractId: item.contractId || '',
+            model: item.model || '',
+            serialNumber: item.serialNumber || '',
+            brand: item.brand || '',
+            paidBy: item.paidBy || '',
+            description: item.description || '',
+            receiptImage: item.receiptImage || item.image || item.photo || (item.paymentImages?.[0] || '')
+        });
+        setEditError('');
+        setEditModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setEditModalOpen(false);
+        setEditingPayment(null);
+        setEditError('');
+    };
+
+    // Submit Edit
+    const handleSaveEdit = async (e) => {
+        e.preventDefault();
+        if (!editingPayment) return;
+        setSavingEdit(true);
+        setEditError('');
+
+        try {
+            const id = editingPayment._id || editingPayment.paymentId;
+            const payload = {
+                ...editForm,
+                amount: Number(editForm.amount) || 0,
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            };
+
+            const res = await fetch(`${API_BASE1}/payments/${encodeURIComponent(id)}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || 'បរាជ័យក្នុងការកែប្រែទិន្នន័យ');
+            }
+
+            const updated = data.payment;
+            setPayments(prev => prev.map(p => (
+                ((p._id && p._id === updated._id) || (p.paymentId && p.paymentId === updated.paymentId)) ? updated : p
+            )));
+
+            if (selectedRecord && ((selectedRecord._id && selectedRecord._id === updated._id) || (selectedRecord.paymentId && selectedRecord.paymentId === updated.paymentId))) {
+                setSelectedRecord(updated);
+            }
+
+            setActionMessage(`បានកែប្រែទិន្នន័យបង់ប្រាក់របស់ ${updated.customerName} ដោយជោគជ័យ!`);
+            setTimeout(() => setActionMessage(''), 4000);
+            closeEditModal();
+        } catch (err) {
+            console.error('Save edit error:', err);
+            setEditError(err.message || 'Error updating payment');
+        } finally {
+            setSavingEdit(false);
+        }
+    };
+
+    // Delete Payment (Master Admin only)
+    const handleDeletePayment = async (item) => {
+        const id = item._id || item.paymentId;
+        if (!id) return;
+        const confirmed = window.confirm(`តើអ្នកប្រាកដជាចង់លុបទិន្នន័យបង់ប្រាក់ចំនួន $${item.amount} របស់អតិថិជន "${item.customerName}" នេះមែនទេ?`);
+        if (!confirmed) return;
+
+        setDeletingId(id);
+        try {
+            const res = await fetch(`${API_BASE1}/payments/${encodeURIComponent(id)}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userRole: user?.role || '',
+                    username: user?.username || '',
+                    isImmutable: user?.isImmutable ? 'true' : 'false'
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || 'បរាជ័យក្នុងការលុបទិន្នន័យ');
+            }
+
+            setPayments(prev => prev.filter(p => p._id !== id && p.paymentId !== id));
+            if (selectedRecord && (selectedRecord._id === id || selectedRecord.paymentId === id)) {
+                setSelectedRecord(null);
+            }
+            setTotal(prev => Math.max(0, prev - 1));
+            setActionMessage(`បានលុបទិន្នន័យបង់ប្រាក់ជោគជ័យ!`);
+            setTimeout(() => setActionMessage(''), 4000);
+        } catch (err) {
+            alert(err.message || 'Error deleting payment');
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
     return (
         <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
             {/* Image Viewer Modal — Gallery Support */}
@@ -167,6 +312,20 @@ const PaymentHistory = () => {
                     title="Payment receipts"
                 />
             )}
+
+            {/* Notification alert banner */}
+            {actionMessage && (
+                <div className="flex items-center justify-between rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 shadow-xs animate-fade-in">
+                    <div className="flex items-center gap-2">
+                        <FaCheckCircle className="text-emerald-600 text-sm" />
+                        <span>{actionMessage}</span>
+                    </div>
+                    <button type="button" onClick={() => setActionMessage('')} className="text-slate-400 hover:text-slate-600">
+                        <FaTimes />
+                    </button>
+                </div>
+            )}
+
             {/* Header */}
             <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col gap-3 shadow-xs'>
                 <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
@@ -179,50 +338,52 @@ const PaymentHistory = () => {
                                         Filter Active
                                     </span>
                                 )}
+                                {isMasterAdmin && (
+                                    <span className='text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-300'>
+                                        Admin Edit Mode Enabled
+                                    </span>
+                                )}
                             </h1>
                         </div>
                     </div>
 
-                <div className='flex items-center gap-3'>
-                    {hasPermission('/installment/payment-history', 'export') && (
-                        <>
+                    <div className='flex items-center gap-3'>
+                        {hasPermission('/installment/payment-history', 'export') && (
                             <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
-                        </>
-                    )}
+                        )}
 
-                    {/* Search */}
-                    <DatabaseSearchInput
-                        apiBase={API_BASE1}
-                        endpoint="payments"
-                        params={{
-                            userBrand: user?.brand || '',
-                            userRole: user?.role || '',
-                            username: user?.username || '',
-                            isImmutable: user?.isImmutable ? 'true' : 'false',
-                            ...(activeDateFrom ? { dateFrom: activeDateFrom } : {}),
-                            ...(activeDateTo ? { dateTo: activeDateTo } : {})
-                        }}
-                        value={searchTerm}
-                        placeholder={t('search')}
-                        className="w-44"
-                        onChange={(value) => {
-                            setSelectedRecord(null);
-                            setSearchTerm(value);
-                            setPage(1);
-                        }}
-                        onSelect={(record) => {
-                            setSelectedRecord(record);
-                            setLoading(false);
-                            setSearchTerm(record.customerName || record.contractId || record.paymentId || record._id || '');
-                            setPayments([record]);
-                            setTotal(1);
-                            setPage(1);
-                        }}
-                        getLabel={(record) => record.customerName || record.contractId || record.paymentId || record._id}
-                        getDescription={(record) => [record.model, record.serialNumber, record.paidDate, record.amount && `$${record.amount}`].filter(Boolean).join(' · ')}
-                    />
-
-                </div>
+                        {/* Search */}
+                        <DatabaseSearchInput
+                            apiBase={API_BASE1}
+                            endpoint="payments"
+                            params={{
+                                userBrand: user?.brand || '',
+                                userRole: user?.role || '',
+                                username: user?.username || '',
+                                isImmutable: user?.isImmutable ? 'true' : 'false',
+                                ...(activeDateFrom ? { dateFrom: activeDateFrom } : {}),
+                                ...(activeDateTo ? { dateTo: activeDateTo } : {})
+                            }}
+                            value={searchTerm}
+                            placeholder={t('search')}
+                            className="w-44"
+                            onChange={(value) => {
+                                setSelectedRecord(null);
+                                setSearchTerm(value);
+                                setPage(1);
+                            }}
+                            onSelect={(record) => {
+                                setSelectedRecord(record);
+                                setLoading(false);
+                                setSearchTerm(record.customerName || record.contractId || record.paymentId || record._id || '');
+                                setPayments([record]);
+                                setTotal(1);
+                                setPage(1);
+                            }}
+                            getLabel={(record) => record.customerName || record.contractId || record.paymentId || record._id}
+                            getDescription={(record) => [record.model, record.serialNumber, record.paidDate, record.amount && `$${record.amount}`].filter(Boolean).join(' · ')}
+                        />
+                    </div>
                 </div>
 
                 {/* Date Range Filter Row */}
@@ -259,30 +420,33 @@ const PaymentHistory = () => {
                             <th className='px-4 py-1 text-right'>{t('amount')}</th>
                             <th className='px-4 py-1 text-center'>រូបភាព</th>
                             <th className='px-4 py-1'>{t('description')}</th>
+                            {isMasterAdmin && <th className='px-4 py-1 text-center'>សកម្មភាព (Actions)</th>}
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
-                            <tr><td colSpan={9} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
+                            <tr>
+                                <td colSpan={isMasterAdmin ? 10 : 9} className="text-center py-10 text-emerald-600 font-semibold">
+                                    Loading...
+                                </td>
+                            </tr>
                         ) : visiblePayments.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={isMasterAdmin ? 10 : 9} className="text-center py-8 text-slate-500 italic font-medium">
                                     No payment history records found.
                                 </td>
                             </tr>
                         ) : (
                             visiblePayments.map((item, idx) => (
-                                <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
+                                <tr key={item._id || item.paymentId || idx} className='hover:bg-emerald-50/50 transition-colors'>
                                     <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
                                     <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'>{item.paidDate}</td>
                                     <td className='px-4 py-1'>
-                                        <div className="flex items-center gap-2.5">
-                                            {/* {item.photo ? (
-                                                <img src={item.photo} alt="avatar" className="w-7 h-7 rounded-full object-cover border border-slate-200" />
-                                            ) : (
-                                                <div className="w-7 h-7 rounded-full bg-emerald-50 border border-emerald-300 flex items-center justify-center text-[10px] font-bold text-emerald-700">PAY</div>
-                                            )} */}
+                                        <div className="flex flex-col">
                                             <span className='font-bold text-slate-900'>{item.customerName}</span>
+                                            {item.contractId && (
+                                                <span className='text-[10px] text-slate-400 font-mono'>#{item.contractId}</span>
+                                            )}
                                         </div>
                                     </td>
                                     <td className='px-4 py-1'>
@@ -296,12 +460,11 @@ const PaymentHistory = () => {
                                     </td>
                                     <td className='px-4 py-1 font-semibold text-slate-700'>{item.paidBy}</td>
                                     <td className='px-4 py-1 text-right font-bold text-emerald-700 font-mono text-sm'>
-                                        ${Number(item.amount).toLocaleString()}
+                                        ${Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
                                     {/* Image Column */}
                                     <td className='px-4 py-1 text-center'>
                                         {(() => {
-                                            // Gather all image sources: paymentImages array + single fields
                                             const imgs = [
                                                 ...(Array.isArray(item.paymentImages) ? item.paymentImages : []),
                                                 item.image,
@@ -323,6 +486,32 @@ const PaymentHistory = () => {
                                         })()}
                                     </td>
                                     <td className='px-4 py-1 text-slate-600 text-[11px] font-medium'>{item.description || '-'}</td>
+
+                                    {/* Master Admin Actions (Edit & Delete) */}
+                                    {isMasterAdmin && (
+                                        <td className='px-4 py-1 text-center'>
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openEditModal(item)}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-md text-[11px] font-bold transition-all shadow-2xs hover:scale-105"
+                                                    title="កែសម្រួលទិន្នន័យបង់ប្រាក់ (Edit Payment)"
+                                                >
+                                                    <FaEdit className="text-amber-600" />
+                                                    <span>កែ</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeletePayment(item)}
+                                                    disabled={deletingId === (item._id || item.paymentId)}
+                                                    className="inline-flex items-center p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-md text-[11px] font-bold transition-all disabled:opacity-50 hover:scale-105"
+                                                    title="លុបទិន្នន័យបង់ប្រាក់នេះ (Delete)"
+                                                >
+                                                    <FaTrashAlt />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    )}
                                 </tr>
                             ))
                         )}
@@ -337,7 +526,7 @@ const PaymentHistory = () => {
                                 <td className='px-4 py-1 text-right font-black text-emerald-800 font-mono text-sm'>
                                     ${totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
-                                <td colSpan={2} className='px-4 py-1'></td>
+                                <td colSpan={isMasterAdmin ? 3 : 2} className='px-4 py-1'></td>
                             </tr>
                         </tfoot>
                     )}
@@ -351,6 +540,239 @@ const PaymentHistory = () => {
                     itemsPerPage={LIMIT}
                     onPageChange={setPage}
                 />
+            )}
+
+            {/* MASTER ADMIN EDIT PAYMENT MODAL */}
+            {editModalOpen && (
+                <div
+                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-xs"
+                    onClick={closeEditModal}
+                >
+                    <div
+                        className="relative w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl border border-slate-200 flex flex-col max-h-[92vh]"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-3.5 text-white">
+                            <div className="flex items-center gap-2">
+                                <span className="rounded-lg bg-amber-500/20 p-2 text-amber-400">
+                                    <FaEdit size={16} />
+                                </span>
+                                <div>
+                                    <h3 className="text-sm font-bold">កែសម្រួលទិន្នន័យបង់ប្រាក់ (Edit Payment)</h3>
+                                    <p className="text-[11px] text-slate-300">
+                                        លេខសម្គាល់: <span className="font-mono text-amber-300">{editingPayment?.paymentId || editingPayment?._id}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closeEditModal}
+                                className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <form onSubmit={handleSaveEdit} className="overflow-y-auto p-5 space-y-4 text-xs">
+                            {editError && (
+                                <div className="flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-3.5 py-2.5 text-rose-700">
+                                    <FaExclamationCircle className="shrink-0" />
+                                    <span>{editError}</span>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                {/* Paid Date */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 mb-1">
+                                        កាលបរិច្ឆេទបង់ (Paid Date) <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={editForm.paidDate}
+                                        onChange={e => setEditForm(prev => ({ ...prev, paidDate: e.target.value }))}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                    />
+                                </div>
+
+                                {/* Amount */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 mb-1">
+                                        ចំនួនទឹកប្រាក់ ($ Amount) <span className="text-rose-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            required
+                                            value={editForm.amount}
+                                            onChange={e => setEditForm(prev => ({ ...prev, amount: e.target.value }))}
+                                            className="w-full rounded-lg border border-slate-300 pl-7 pr-3 py-2 text-xs font-bold text-emerald-700 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Customer Name */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 mb-1">
+                                        ឈ្មោះអតិថិជន (Customer Name) <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={editForm.customerName}
+                                        onChange={e => setEditForm(prev => ({ ...prev, customerName: e.target.value }))}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-semibold"
+                                        placeholder="ឈ្មោះអតិថិជន"
+                                    />
+                                </div>
+
+                                {/* Contract ID */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 mb-1">
+                                        លេខកិច្ចសន្យា (Contract ID)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editForm.contractId}
+                                        onChange={e => setEditForm(prev => ({ ...prev, contractId: e.target.value }))}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
+                                        placeholder="ឧ. CT-2026-001"
+                                    />
+                                </div>
+
+                                {/* Model */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 mb-1">
+                                        ម៉ូឌែលទូរស័ព្ទ (Model)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editForm.model}
+                                        onChange={e => setEditForm(prev => ({ ...prev, model: e.target.value }))}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-semibold"
+                                        placeholder="ឧ. iPhone 15 Pro Max"
+                                    />
+                                </div>
+
+                                {/* Serial Number / IMEI */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 mb-1">
+                                        Serial Number / IMEI
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editForm.serialNumber}
+                                        onChange={e => setEditForm(prev => ({ ...prev, serialNumber: e.target.value }))}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
+                                        placeholder="លេខសម្គាល់ម៉ាស៊ីន"
+                                    />
+                                </div>
+
+                                {/* Brand */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 mb-1">
+                                        Brand (ម៉ាក)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editForm.brand}
+                                        onChange={e => setEditForm(prev => ({ ...prev, brand: e.target.value }))}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                        placeholder="ឧ. Apple, Samsung"
+                                    />
+                                </div>
+
+                                {/* Paid By */}
+                                <div>
+                                    <label className="block font-bold text-slate-700 mb-1">
+                                        បង់តាមរយៈ / អ្នកបង់ (Paid By)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editForm.paidBy}
+                                        onChange={e => setEditForm(prev => ({ ...prev, paidBy: e.target.value }))}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                        placeholder="ឧ. QR Mobile Payment, Cash, ABA..."
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Receipt Image URL */}
+                            <div>
+                                <label className="block font-bold text-slate-700 mb-1">
+                                    រូបភាពបង្កាន់ដៃ (Receipt Image URL)
+                                </label>
+                                <div className="flex gap-2 items-center">
+                                    <input
+                                        type="text"
+                                        value={editForm.receiptImage}
+                                        onChange={e => setEditForm(prev => ({ ...prev, receiptImage: e.target.value }))}
+                                        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
+                                        placeholder="https://..."
+                                    />
+                                    {editForm.receiptImage && (
+                                        <button
+                                            type="button"
+                                            onClick={() => openImageViewer(editForm.receiptImage)}
+                                            className="px-2.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-xs font-bold"
+                                        >
+                                            មើលរូប
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Description / Remarks */}
+                            <div>
+                                <label className="block font-bold text-slate-700 mb-1">
+                                    ការពិពណ៌នា / កំណត់ចំណាំ (Description)
+                                </label>
+                                <textarea
+                                    rows="2"
+                                    value={editForm.description}
+                                    onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                    placeholder="ព័ត៌មានបន្ថែម..."
+                                />
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200">
+                                <button
+                                    type="button"
+                                    onClick={closeEditModal}
+                                    className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                                >
+                                    បោះបង់ (Cancel)
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={savingEdit}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-5 py-2 font-bold text-white shadow-xs hover:bg-emerald-700 disabled:opacity-50 transition-all"
+                                >
+                                    {savingEdit ? (
+                                        <>
+                                            <MdOutlineSync className="animate-spin text-sm" />
+                                            <span>កំពុងរក្សាទុក...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaSave />
+                                            <span>រក្សាទុកការកែប្រែ</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     );

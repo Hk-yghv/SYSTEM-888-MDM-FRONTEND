@@ -2,6 +2,9 @@ import express from 'express';
 import fetch from 'node-fetch';
 import crypto from 'crypto';
 import User from '../models/User.js';
+import Contract from '../models/Contract.js';
+import Salary from '../models/Salary.js';
+import SupportHelp from '../models/SupportHelp.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs } from '../config/multiDB.js';
 
@@ -277,9 +280,14 @@ router.post('/upload', async (req, res) => {
         return res.json({
             success: true,
             raw_url: rawUrl,
+            secure_url: rawUrl,
             proxy_url: proxyUrl,
             public_id: data.public_id,
-            format: data.format
+            format: data.format,
+            width: data.width,
+            height: data.height,
+            bytes: data.bytes,
+            created_at: data.created_at
         });
     } catch (err) {
         console.error('Media upload proxy error:', err);
@@ -360,6 +368,138 @@ router.post('/assets/delete', requireCloudinaryPermission('delete'), async (req,
     } catch (err) {
         console.error('Cloudinary asset deletion error:', err);
         return res.status(502).json({ error: 'Unable to contact Cloudinary to delete images.' });
+    }
+});
+
+/**
+ * GET /api/media/usage
+ * Find where an image is used in the system (Contract, Salary, SupportHelp, etc.), when, and who.
+ */
+router.get('/usage', async (req, res) => {
+    try {
+        const { url, public_id } = req.query;
+        if (!url && !public_id) {
+            return res.status(400).json({ error: 'Missing url or public_id' });
+        }
+
+        const searchTerms = [];
+        if (public_id) searchTerms.push(public_id);
+        if (url) {
+            searchTerms.push(url);
+            const baseName = url.split('/').pop()?.split('.')[0];
+            if (baseName && baseName.length > 4) searchTerms.push(baseName);
+        }
+
+        let foundLocation = null;
+
+        if (isMongoConnected) {
+            // 1. Search in Contracts
+            for (const term of searchTerms) {
+                const regex = new RegExp(term.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'i');
+                const contracts = await queryAllDBs(Contract, (M) =>
+                    M.find({
+                        $or: [
+                            { customerPhoto: regex },
+                            { photos: regex },
+                            { evidencePhotos: regex }
+                        ]
+                    }).limit(1)
+                );
+
+                if (contracts.length > 0) {
+                    const c = contracts[0];
+                    let fieldType = 'រូបភាពកិច្ចសន្យា (Contract Photo)';
+                    if (c.customerPhoto && c.customerPhoto.includes(term)) {
+                        fieldType = 'រូបថតអតិថិជន (Customer Photo)';
+                    } else if (c.evidencePhotos && c.evidencePhotos.some((p) => p && p.includes(term))) {
+                        fieldType = 'រូបភាពភស្តុតាង (Evidence Photo)';
+                    }
+
+                    foundLocation = {
+                        found: true,
+                        category: 'Contract',
+                        location: `កិច្ចសន្យា #${c.contractId || c._id}`,
+                        customer: c.customerNameKh || c.customerNameEn || '—',
+                        phone: c.phone || '—',
+                        page: `/contract/activated?search=${encodeURIComponent(c.contractId || '')}`,
+                        field: fieldType,
+                        usedAt: c.createdAt || c.inputDate,
+                        usedBy: c.createdBy || 'Staff'
+                    };
+                    break;
+                }
+            }
+
+            // 2. Search in Salary
+            if (!foundLocation) {
+                for (const term of searchTerms) {
+                    const regex = new RegExp(term.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'i');
+                    const salaries = await queryAllDBs(Salary, (M) =>
+                        M.find({
+                            $or: [
+                                { receiptEvidence: regex },
+                                { evidence: regex }
+                            ]
+                        }).limit(1)
+                    );
+
+                    if (salaries.length > 0) {
+                        const s = salaries[0];
+                        foundLocation = {
+                            found: true,
+                            category: 'Salary',
+                            location: `ប្រាក់ខែបុគ្គលិក: ${s.staffName || 'Staff'}`,
+                            page: '/salary',
+                            field: 'រូបភាពភស្តុតាងបើកប្រាក់ខែ (Salary Receipt)',
+                            usedAt: s.createdAt,
+                            usedBy: s.createdBy || 'Finance/Admin'
+                        };
+                        break;
+                    }
+                }
+            }
+
+            // 3. Search in SupportHelp
+            if (!foundLocation) {
+                for (const term of searchTerms) {
+                    const regex = new RegExp(term.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'i');
+                    const supports = await queryAllDBs(SupportHelp, (M) =>
+                        M.find({
+                            photos: regex
+                        }).limit(1)
+                    );
+
+                    if (supports.length > 0) {
+                        const sup = supports[0];
+                        foundLocation = {
+                            found: true,
+                            category: 'Support & Help',
+                            location: `ជំនួយ & ការគាំទ្រ: "${sup.title}" (${sup.page || 'General'})`,
+                            page: '/help-support',
+                            field: 'រូបភាពណែនាំប្រើប្រាស់ប្រព័ន្ធ',
+                            usedAt: sup.createdAt,
+                            usedBy: sup.createdBy || 'Administrator'
+                        };
+                        break;
+                    }
+                }
+            }
+        }
+
+        res.json({
+            success: true,
+            usage: foundLocation || {
+                found: false,
+                category: 'Media Library',
+                location: 'ផ្ទុកក្នុង Cloudinary Media Library (ទូទៅ)',
+                field: 'រូបភាពប្រព័ន្ធទូទៅ',
+                usedAt: null,
+                usedBy: 'Administrator'
+            }
+        });
+    } catch (err) {
+        console.error('Media usage lookup error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 

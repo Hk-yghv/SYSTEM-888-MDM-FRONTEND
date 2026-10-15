@@ -29,6 +29,14 @@ const ControlSystem = () => {
     const { t } = useLanguage();
     const { API_BASE, user, hasPermission } = useAuth();
 
+    const isMasterAdmin = Boolean(
+        user?.username === '@hakyonghouv' ||
+        user?.username === 'hakyonghouv' ||
+        user?.isImmutable ||
+        user?.role === 'Administrator' ||
+        user?.role === 'Admin'
+    );
+
     const [selectedBrand, setSelectedBrand] = useState(user?.brand || '');
     const [brandsList, setBrandsList] = useState(['MDM', 'ECloud']);
 
@@ -411,6 +419,11 @@ const ControlSystem = () => {
         if (!newItemInput.trim()) return;
         const selectedCategory = systemDroplists[selectedCategoryIdx];
         if (!selectedCategory) return;
+        // Brand addition is strictly reserved for Master Admin
+        if (selectedCategory.category === 'Brands' && !isMasterAdmin) {
+            alert('ការបន្ថែម Brand ថ្មីត្រូវបានអនុញ្ញាតសម្រាប់តែ Administrator ប៉ុណ្ណោះ!');
+            return;
+        }
         const updated = droplists.map(category => category.category === selectedCategory.category
             ? { ...category, items: [...category.items, newItemInput.trim()] }
             : category);
@@ -423,6 +436,11 @@ const ControlSystem = () => {
         if (!canDeleteSection('dropdowns')) return;
         const selectedCategory = systemDroplists[catIdx];
         if (!selectedCategory) return;
+        // Strict protection: regular users can NEVER delete Brands items
+        if (selectedCategory.category === 'Brands' && !isMasterAdmin) {
+            alert('លោកអ្នកគ្មានសិទ្ធិលុប Brand ទេ! មុខងារនេះសម្រាប់តែ Administrator ប៉ុណ្ណោះ។');
+            return;
+        }
         const updated = droplists.map(category => category.category === selectedCategory.category
             ? { ...category, items: category.items.filter((_, index) => index !== itemIdx) }
             : category);
@@ -1332,26 +1350,47 @@ const ControlSystem = () => {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                            {systemDroplists.map((cat, catIdx) => (
-                                <div key={catIdx} className="p-2 rounded-[5px] bg-gray-950/60 border border-gray-800 space-y-2">
-                                    <h4 className="font-bold text-gray-200 border-b border-gray-800 pb-1.5">{cat.category}</h4>
-                                    <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
-                                        {cat.items.map((item, itemIdx) => (
-                                            <div key={itemIdx} className="flex items-center justify-between p-2 rounded-lg bg-gray-900/60 text-gray-300 text-[11px]">
-                                                <span>{item}</span>
-                                                {canDeleteSection('dropdowns') && (
-                                                    <button
-                                                        onClick={() => handleDeleteItemFromCategory(catIdx, itemIdx)}
-                                                        className="text-red-400 hover:text-red-300 cursor-pointer"
-                                                    >
-                                                        <MdDelete size={14} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
+                            {systemDroplists.map((cat, catIdx) => {
+                                const isBrandCat = cat.category === 'Brands';
+                                // For Brands category, regular users only see their own assigned brand
+                                const itemsToDisplay = (isBrandCat && !isMasterAdmin && user?.brand)
+                                    ? cat.items.filter(item => item.toLowerCase() === user.brand.toLowerCase())
+                                    : cat.items;
+
+                                return (
+                                    <div key={catIdx} className="p-2 rounded-[5px] bg-gray-950/60 border border-gray-800 space-y-2">
+                                        <div className="flex items-center justify-between border-b border-gray-800 pb-1.5">
+                                            <h4 className="font-bold text-gray-200">{cat.category}</h4>
+                                            {isBrandCat && !isMasterAdmin && (
+                                                <span className="text-[10px] text-amber-400 font-semibold">(Your Brand)</span>
+                                            )}
+                                        </div>
+                                        <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
+                                            {itemsToDisplay.map((item, itemIdx) => {
+                                                const originalIndex = cat.items.indexOf(item);
+                                                // Regular users can NEVER delete Brands items
+                                                const canDeleteThis = canDeleteSection('dropdowns') && (!isBrandCat || isMasterAdmin);
+
+                                                return (
+                                                    <div key={itemIdx} className="flex items-center justify-between p-2 rounded-lg bg-gray-900/60 text-gray-300 text-[11px]">
+                                                        <span>{item}</span>
+                                                        {canDeleteThis && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteItemFromCategory(catIdx, originalIndex)}
+                                                                className="text-red-400 hover:text-red-300 cursor-pointer"
+                                                                title="Delete item"
+                                                            >
+                                                                <MdDelete size={14} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

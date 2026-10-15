@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import Payment from '../models/Payment.js';
 import Contract from '../models/Contract.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
-import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { queryAllDBs, getWriteModel, dbInstances } from '../config/multiDB.js';
 
 const router = express.Router();
 
@@ -186,6 +186,170 @@ router.post('/payments', async (req, res) => {
     } catch (err) {
         console.error("===== PAYMENT ERROR =====", err);
         res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Helper: Check if request is from Master Admin / Account admin ធំ
+const checkIsMasterAdmin = (req) => {
+    const u = req.user || {};
+    const bodyUserRole = req.body?.userRole;
+    const bodyUsername = req.body?.username;
+    const bodyIsImmutable = req.body?.isImmutable;
+
+    return Boolean(
+        u.username === '@hakyonghouv' ||
+        u.username === 'hakyonghouv' ||
+        u.isImmutable === true ||
+        u.role === 'Administrator' ||
+        u.role === 'Admin' ||
+        bodyUsername === '@hakyonghouv' ||
+        bodyUsername === 'hakyonghouv' ||
+        bodyIsImmutable === true ||
+        bodyIsImmutable === 'true' ||
+        bodyUserRole === 'Administrator' ||
+        bodyUserRole === 'Admin'
+    );
+};
+
+// PUT /payments/:id — Update a payment record (Master Admin only)
+router.put(['/payments/:id', '/:id'], async (req, res) => {
+    try {
+        if (!checkIsMasterAdmin(req)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Permission denied: Only Administrator can edit payment history records.'
+            });
+        }
+
+        const { id } = req.params;
+        const {
+            amount,
+            paidDate,
+            customerName,
+            model,
+            serialNumber,
+            brand,
+            paidBy,
+            description,
+            contractId,
+            receiptImage,
+            photo,
+            image,
+            paymentImages
+        } = req.body;
+
+        const updateData = {};
+        if (amount !== undefined) updateData.amount = Number(amount) || 0;
+        if (paidDate !== undefined) updateData.paidDate = paidDate;
+        if (customerName !== undefined) updateData.customerName = customerName;
+        if (model !== undefined) updateData.model = model;
+        if (serialNumber !== undefined) updateData.serialNumber = serialNumber;
+        if (brand !== undefined) updateData.brand = brand;
+        if (paidBy !== undefined) updateData.paidBy = paidBy;
+        if (description !== undefined) updateData.description = description;
+        if (contractId !== undefined) updateData.contractId = contractId;
+        if (photo !== undefined) updateData.photo = photo;
+        if (image !== undefined) updateData.image = image;
+        if (receiptImage !== undefined) updateData.receiptImage = receiptImage;
+        if (paymentImages !== undefined) {
+            updateData.paymentImages = Array.isArray(paymentImages) ? paymentImages : [paymentImages].filter(Boolean);
+            if (!updateData.photo && updateData.paymentImages.length > 0) {
+                updateData.photo = updateData.paymentImages[0];
+                updateData.image = updateData.paymentImages[0];
+                updateData.receiptImage = updateData.paymentImages[0];
+            }
+        }
+
+        let updatedDoc = null;
+
+        if (isMongoConnected) {
+            const filter = {
+                $or: [
+                    { paymentId: id },
+                    ...(id && id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: id }] : [])
+                ]
+            };
+
+            for (const instance of dbInstances) {
+                if (instance.status === 'connected' && instance.conn) {
+                    try {
+                        const M = instance.conn.model('Payment');
+                        const doc = await M.findOneAndUpdate(filter, { $set: updateData }, { new: true }).lean();
+                        if (doc && !updatedDoc) updatedDoc = doc;
+                    } catch (e) {
+                        console.warn(`[Payment] Update in ${instance.name} failed:`, e.message);
+                    }
+                }
+            }
+
+            if (!updatedDoc) {
+                const PaymentWrite = getWriteModel(Payment) || Payment;
+                updatedDoc = await PaymentWrite.findOneAndUpdate(filter, { $set: updateData }, { new: true }).lean();
+            }
+        }
+
+        // Also sync in MEM_DB
+        const memIdx = MEM_DB.payments.findIndex(
+            p => p._id?.toString() === id || p.paymentId === id
+        );
+        if (memIdx !== -1) {
+            MEM_DB.payments[memIdx] = {
+                ...MEM_DB.payments[memIdx],
+                ...updateData
+            };
+            if (!updatedDoc) updatedDoc = MEM_DB.payments[memIdx];
+        }
+
+        if (!updatedDoc) {
+            return res.status(404).json({ success: false, error: 'Payment record not found' });
+        }
+
+        return res.json({ success: true, payment: normalizePayment(updatedDoc) });
+    } catch (err) {
+        console.error('Update payment error:', err);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// DELETE /payments/:id — Delete a payment record (Master Admin only)
+router.delete(['/payments/:id', '/:id'], async (req, res) => {
+    try {
+        if (!checkIsMasterAdmin(req)) {
+            return res.status(403).json({
+                success: false,
+                error: 'Permission denied: Only Administrator can delete payment history records.'
+            });
+        }
+
+        const { id } = req.params;
+        const filter = {
+            $or: [
+                { paymentId: id },
+                ...(id && id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: id }] : [])
+            ]
+        };
+
+        if (isMongoConnected) {
+            for (const instance of dbInstances) {
+                if (instance.status === 'connected' && instance.conn) {
+                    try {
+                        const M = instance.conn.model('Payment');
+                        await M.findOneAndDelete(filter);
+                    } catch (e) {
+                        console.warn(`[Payment] Delete in ${instance.name} failed:`, e.message);
+                    }
+                }
+            }
+        }
+
+        MEM_DB.payments = MEM_DB.payments.filter(
+            p => p._id?.toString() !== id && p.paymentId !== id
+        );
+
+        return res.json({ success: true, message: 'Payment record deleted successfully.' });
+    } catch (err) {
+        console.error('Delete payment error:', err);
+        return res.status(500).json({ success: false, error: err.message });
     }
 });
 

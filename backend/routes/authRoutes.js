@@ -640,9 +640,23 @@ export default function createAuthRoutes(bot) {
             }
 
             const now = new Date();
+            let hadPending = false;
+            let updatedPermissions = null;
+            let updatedRole = null;
+            let updatedBrand = null;
+
             for (const user of users) {
                 user.status = 'Online';
                 user.lastSeen = now;
+                if (user.permissionPending || user.syncStatus === 'Pending') {
+                    hadPending = true;
+                    user.permissionPending = false;
+                    user.syncStatus = 'Success';
+                    user.syncComment = 'User បានទទួលសិទ្ធិថ្មីរួចរាល់ (Success)';
+                    updatedPermissions = user.permissions;
+                    updatedRole = user.role;
+                    updatedBrand = user.brand;
+                }
                 if (Array.isArray(user.onlineHistory) && user.onlineHistory.length > 0) {
                     const latest = user.onlineHistory[0];
                     if (!latest.logoutTime) {
@@ -657,9 +671,20 @@ export default function createAuthRoutes(bot) {
             if (memoryUser) {
                 memoryUser.status = 'Online';
                 memoryUser.lastSeen = now;
+                if (hadPending) {
+                    memoryUser.permissionPending = false;
+                    memoryUser.syncStatus = 'Success';
+                    memoryUser.syncComment = 'User បានទទួលសិទ្ធិថ្មីរួចរាល់ (Success)';
+                }
             }
 
-            res.json({ success: true });
+            res.json({
+                success: true,
+                hasUpdatedPermissions: hadPending,
+                permissions: hadPending ? updatedPermissions : undefined,
+                role: hadPending ? updatedRole : undefined,
+                brand: hadPending ? updatedBrand : undefined
+            });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
