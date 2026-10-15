@@ -126,8 +126,14 @@ const MainLayout = ({ children }) => {
 
   const { theme } = useTheme();
 
-  // Popup direction: above button if near bottom, below if near top
-  const popupGoesUp = pos.y > 220;
+  // Smart popup positioning: auto-detect collision so popup never goes off-screen
+  // If not enough room below (pos.y + 260 > window.innerHeight) and has room above, popup goes UP; else DOWN
+  const popupGoesUp = typeof window !== "undefined"
+    ? (window.innerHeight - pos.y < 260 && pos.y >= 210) || (pos.y > window.innerHeight / 2 && pos.y >= 210)
+    : pos.y > 220;
+
+  // If near right edge (pos.x + 230 > window.innerWidth), align popup right: 0; if near left edge, align left: 0
+  const popupGoesLeft = typeof window !== "undefined" ? (pos.x + 230 > window.innerWidth) : true;
 
   return (
     <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden">
@@ -200,108 +206,113 @@ const MainLayout = ({ children }) => {
           className="fixed z-[99999] select-none"
           style={{ left: pos.x, top: pos.y, touchAction: "none" }}
         >
-          {/* Popup — stacks above or below */}
-          <div className={`flex flex-col items-end ${popupGoesUp ? "flex-col-reverse" : "flex-col"}`}>
-            {/* Popup Panel */}
-            {isFloatingUplistOpen && (
-              <div
-                className={`w-[222px] bg-white border border-slate-200 rounded-[14px] p-2 shadow-[0_15px_50px_rgba(0,0,0,0.2)] animate-in fade-in duration-150 ${popupGoesUp ? "mb-2.5" : "mt-2.5"}`}
-              >
-                {/* Title */}
-                <div className="px-2.5 py-1.5 border-b border-slate-100 mb-1 flex items-center justify-between">
-                  <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">ផ្ទាំងបង្ហាញ / Display</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">Controls</span>
-                </div>
-
-                {/* Show All */}
-                <button
-                  type="button"
-                  onClick={() => { handleToggleHeader(true); setIsSidebarOpen(true); setIsFloatingUplistOpen(false); }}
-                  className="w-full h-[36px] flex items-center justify-between px-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[8px] transition-all cursor-pointer text-xs font-semibold group"
-                >
-                  <div className="flex items-center gap-2">
-                    <FaEye className="text-sm text-emerald-600 group-hover:scale-110 transition-transform" />
-                    <span>បង្ហាញទាំង២ (Show All)</span>
-                  </div>
-                  <span className="text-[10px] font-black text-emerald-600">✓</span>
-                </button>
-
-                {/* Hide All */}
-                <button
-                  type="button"
-                  onClick={() => { handleToggleHeader(false); setIsSidebarOpen(false); setIsFloatingUplistOpen(false); }}
-                  className="w-full h-[36px] flex items-center justify-between px-2.5 hover:bg-rose-50 text-slate-700 hover:text-rose-600 rounded-[8px] transition-all cursor-pointer text-xs font-semibold group"
-                >
-                  <div className="flex items-center gap-2">
-                    <FaEyeSlash className="text-sm text-rose-500 group-hover:scale-110 transition-transform" />
-                    <span>លាក់ទាំង២ (Hide Both)</span>
-                  </div>
-                  <span className="text-[10px] font-black text-rose-500">✕</span>
-                </button>
-
-                <div className="my-1 border-t border-slate-100" />
-
-                {/* Toggle Header */}
-                <button
-                  type="button"
-                  onClick={() => handleToggleHeader()}
-                  className="w-full h-[34px] flex items-center justify-between px-2.5 hover:bg-slate-100 text-slate-700 rounded-[8px] transition-all cursor-pointer text-xs font-medium"
-                >
-                  <div className="flex items-center gap-2">
-                    <MdOutlineViewHeadline className="text-base text-slate-500" />
-                    <span>Header</span>
-                  </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isHeaderOpen ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                    {isHeaderOpen ? "បើក" : "បិទ"}
-                  </span>
-                </button>
-
-                {/* Toggle Left Menu */}
-                <button
-                  type="button"
-                  onClick={() => setIsSidebarOpen((prev) => !prev)}
-                  className="w-full h-[34px] flex items-center justify-between px-2.5 hover:bg-slate-100 text-slate-700 rounded-[8px] transition-all cursor-pointer text-xs font-medium"
-                >
-                  <div className="flex items-center gap-2">
-                    <MdOutlineViewSidebar className="text-base text-slate-500" />
-                    <span>Left Menu</span>
-                  </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isSidebarOpen ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                    {isSidebarOpen ? "បើក" : "បិទ"}
-                  </span>
-                </button>
-              </div>
-            )}
-
-            {/* Floating Button */}
+          {/* Floating Button - Static anchor, never shifts when popup toggles */}
+          <div
+            className="flex items-center rounded-full overflow-hidden shadow-xl border border-white/40"
+            style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 4px 20px rgba(16,185,129,0.45)" }}
+          >
+            {/* Drag Handle — grab here to drag */}
             <div
-              className="flex items-center rounded-full overflow-hidden shadow-xl border border-white/40"
-              style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 4px 20px rgba(16,185,129,0.45)" }}
+              id="drag-handle"
+              className="flex items-center justify-center w-8 h-9 cursor-grab active:cursor-grabbing border-r border-white/20 text-white/60 hover:text-white transition-colors"
+              title="ចាប់ទៅដាក់កន្លែងណា"
             >
-              {/* Drag Handle — grab here to drag */}
-              <div
-                id="drag-handle"
-                className="flex items-center justify-center w-8 h-9 cursor-grab active:cursor-grabbing border-r border-white/20 text-white/60 hover:text-white transition-colors"
-                title="ចាប់ទៅដាក់កន្លែងណា"
-              >
-                <MdDragIndicator size={18} />
+              <MdDragIndicator size={18} />
+            </div>
+
+            {/* Click to toggle popup */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!dragMoved.current) setIsFloatingUplistOpen((prev) => !prev);
+                dragMoved.current = false;
+              }}
+              className="flex items-center gap-1.5 px-3.5 h-9 text-white cursor-pointer active:opacity-80 transition-opacity"
+              title="គ្រប់គ្រងផ្ទាំងបង្ហាញ"
+            >
+              <FaEye className="text-[11px] text-emerald-100" />
+              <span className="text-xs font-extrabold tracking-wide">Display</span>
+            </button>
+          </div>
+
+          {/* Absolute Popup Panel - Positioned absolutely so button position is completely frozen */}
+          {isFloatingUplistOpen && (
+            <div
+              className="absolute w-[222px] bg-white border border-slate-200 rounded-[14px] p-2 shadow-[0_15px_50px_rgba(0,0,0,0.22)] animate-in fade-in duration-150 z-50 pointer-events-auto"
+              style={{
+                ...(popupGoesUp
+                  ? { bottom: "calc(100% + 8px)", top: "auto" }
+                  : { top: "calc(100% + 8px)", bottom: "auto" }),
+                ...(popupGoesLeft
+                  ? { right: 0, left: "auto" }
+                  : { left: 0, right: "auto" }),
+              }}
+            >
+              {/* Title */}
+              <div className="px-2.5 py-1.5 border-b border-slate-100 mb-1 flex items-center justify-between">
+                <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">ផ្ទាំងបង្ហាញ / Display</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">Controls</span>
               </div>
 
-              {/* Click to toggle popup */}
+              {/* Show All */}
               <button
                 type="button"
-                onClick={() => {
-                  if (!dragMoved.current) setIsFloatingUplistOpen((prev) => !prev);
-                  dragMoved.current = false;
-                }}
-                className="flex items-center gap-1.5 px-3.5 h-9 text-white cursor-pointer active:opacity-80 transition-opacity"
-                title="គ្រប់គ្រងផ្ទាំងបង្ហាញ"
+                onClick={() => { handleToggleHeader(true); setIsSidebarOpen(true); setIsFloatingUplistOpen(false); }}
+                className="w-full h-[36px] flex items-center justify-between px-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[8px] transition-all cursor-pointer text-xs font-semibold group"
               >
-                <FaEye className="text-[11px] text-emerald-100" />
-                <span className="text-xs font-extrabold tracking-wide">Display</span>
+                <div className="flex items-center gap-2">
+                  <FaEye className="text-sm text-emerald-600 group-hover:scale-110 transition-transform" />
+                  <span>បង្ហាញទាំង២ (Show All)</span>
+                </div>
+                <span className="text-[10px] font-black text-emerald-600">✓</span>
+              </button>
+
+              {/* Hide All */}
+              <button
+                type="button"
+                onClick={() => { handleToggleHeader(false); setIsSidebarOpen(false); setIsFloatingUplistOpen(false); }}
+                className="w-full h-[36px] flex items-center justify-between px-2.5 hover:bg-rose-50 text-slate-700 hover:text-rose-600 rounded-[8px] transition-all cursor-pointer text-xs font-semibold group"
+              >
+                <div className="flex items-center gap-2">
+                  <FaEyeSlash className="text-sm text-rose-500 group-hover:scale-110 transition-transform" />
+                  <span>លាក់ទាំង២ (Hide Both)</span>
+                </div>
+                <span className="text-[10px] font-black text-rose-500">✕</span>
+              </button>
+
+              <div className="my-1 border-t border-slate-100" />
+
+              {/* Toggle Header */}
+              <button
+                type="button"
+                onClick={() => handleToggleHeader()}
+                className="w-full h-[34px] flex items-center justify-between px-2.5 hover:bg-slate-100 text-slate-700 rounded-[8px] transition-all cursor-pointer text-xs font-medium"
+              >
+                <div className="flex items-center gap-2">
+                  <MdOutlineViewHeadline className="text-base text-slate-500" />
+                  <span>Header</span>
+                </div>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isHeaderOpen ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                  {isHeaderOpen ? "បើក" : "បិទ"}
+                </span>
+              </button>
+
+              {/* Toggle Left Menu */}
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen((prev) => !prev)}
+                className="w-full h-[34px] flex items-center justify-between px-2.5 hover:bg-slate-100 text-slate-700 rounded-[8px] transition-all cursor-pointer text-xs font-medium"
+              >
+                <div className="flex items-center gap-2">
+                  <MdOutlineViewSidebar className="text-base text-slate-500" />
+                  <span>Left Menu</span>
+                </div>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isSidebarOpen ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                  {isSidebarOpen ? "បើក" : "បិទ"}
+                </span>
               </button>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
