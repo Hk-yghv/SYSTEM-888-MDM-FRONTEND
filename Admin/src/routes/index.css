@@ -48,13 +48,19 @@
 .custom-scrollbar-dark::-webkit-scrollbar-thumb { background: rgba(52,211,153,0.25); border-radius: 99px; }
 .custom-scrollbar-dark::-webkit-scrollbar-thumb:hover { background: rgba(52,211,153,0.45); }
 
-/* Left Sidebar interactive scroll scaling & hover elevation */
+/* Left Sidebar interactive scroll scaling & hover elevation (Strictly vertical lift - no horizontal scrollbar) */
+.custom-scrollbar {
+    overflow-x: hidden !important;
+}
+
 .sidebar-nav-item {
+    max-width: 100%;
+    box-sizing: border-box;
     transform: scale(var(--scroll-scale, 1)) translateY(0);
     opacity: var(--scroll-opacity, 1);
     transform-origin: center center;
-    transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1),
-                box-shadow 0.22s ease,
+    transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1),
+                box-shadow 0.2s ease,
                 opacity 0.2s ease,
                 background-color 0.15s ease,
                 color 0.15s ease;
@@ -62,8 +68,8 @@
 }
 
 .sidebar-nav-item:hover {
-    transform: scale(calc(var(--scroll-scale, 1) * 1.025)) translateY(-2.5px) !important;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.18), 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+    transform: scale(var(--scroll-scale, 1)) translateY(-3px) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2), 0 2px 6px rgba(0, 0, 0, 0.06) !important;
     opacity: 1 !important;
     z-index: 10;
 }

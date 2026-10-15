@@ -10,7 +10,16 @@ import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCirc
 
 
 const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onToggleHeader }) => {
-    const [openMenu, setOpenMenu] = useState("");
+    const [openMenus, setOpenMenus] = useState(() => {
+        try {
+            const saved = localStorage.getItem('sidebar_open_menus');
+            return saved ? JSON.parse(saved) : {};
+        } catch {
+            return {};
+        }
+    });
+
+    const isMenuOpen = (menu) => !!openMenus[menu];
     const [accountOpen, setAccountOpen] = useState(false);
     const [langSubmenuOpen, setLangSubmenuOpen] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -56,18 +65,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [accountOpen]);
 
-    // Auto open active section on initial route change
-    useEffect(() => {
-        if (location.pathname.startsWith('/report') || location.pathname === '/audit/telegram/report') {
-            setOpenMenu('report');
-        } else if (location.pathname.startsWith('/audit')) {
-            setOpenMenu('audit');
-        } else if (location.pathname.startsWith('/print')) {
-            setOpenMenu('print');
-        } else if (location.pathname.startsWith('/settings')) {
-            setOpenMenu('setting');
-        }
-    }, [location.pathname]);
+    // Note: Automatic menu closing on route change removed per user requirement - menus remain open until toggled by user
 
     const handleLogout = async () => {
         try {
@@ -81,7 +79,11 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
     };
 
     const toggleMenu = (menu) => {
-        setOpenMenu(openMenu === menu ? "" : menu);
+        setOpenMenus((prev) => {
+            const next = { ...prev, [menu]: !prev[menu] };
+            try { localStorage.setItem('sidebar_open_menus', JSON.stringify(next)); } catch {}
+            return next;
+        });
     };
 
     const isActive = (path) => location.pathname === path;
@@ -169,7 +171,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
             window.removeEventListener('resize', updateScrollScales);
             if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
         };
-    }, [updateScrollScales, openMenu, isOpen]);
+    }, [updateScrollScales, openMenus, isOpen]);
 
     // Nav item classes — light sidebar style with .sidebar-nav-item for hover elevation & scroll scale
     const navItemClass = (path) =>
@@ -210,7 +212,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
     const dropdownHeaderClass = () =>
         `sidebar-nav-item group relative w-full h-[42px] flex-shrink-0 flex items-center justify-between px-3 text-slate-700 hover:text-slate-900 rounded-[8px] cursor-pointer text-[13px] font-semibold overflow-hidden active:scale-[0.99]`;
 
-    const dropdownHeaderStyle = (menuName) => openMenu === menuName
+    const dropdownHeaderStyle = (menuName) => openMenus[menuName]
         ? {
             background: '#ecfdf5',
             border: '1px solid #a7f3d0'
@@ -252,7 +254,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
             <div
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-0.5 flex flex-col custom-scrollbar"
+                className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-1 pr-1 flex flex-col custom-scrollbar"
             >
 
                 {/* MAIN NAV */}
@@ -305,9 +307,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <MdOutlineContactPhone size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('contract')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "contract" ? "rotate-180 text-emerald-600" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["contract"] ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
-                            <div className={`overflow-hidden transition-all duration-300 ${openMenu === "contract" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                            <div className={`overflow-hidden transition-all duration-300 ${openMenus["contract"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.contract.application, 'read') && (
                                     <Link to={json.contract.application} className={subItemClass(json.contract.application)} style={subItemStyle(json.contract.application)}>{t('application')}</Link>
                                 )}
@@ -348,9 +350,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <MdCalculate size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('calculate')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "calculate" ? "rotate-180 text-emerald-600" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["calculate"] ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
-                            <div className={`overflow-hidden transition-all duration-300 ${openMenu === "calculate" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                            <div className={`overflow-hidden transition-all duration-300 ${openMenus["calculate"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.calculate?.calculateSchedule1 || '/calculate/schedule-1', 'read') && (
                                     <Link to={json.calculate?.calculateSchedule1 || '/calculate/schedule-1'} className={subItemClass(json.calculate?.calculateSchedule1 || '/calculate/schedule-1')} style={subItemStyle(json.calculate?.calculateSchedule1 || '/calculate/schedule-1')}>
                                         {t('calculateSchedule1')}
@@ -385,9 +387,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <IoMdWallet size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('installment')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "installment" ? "rotate-180 text-emerald-600" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["installment"] ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
-                            <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                            <div className={`overflow-hidden transition-all duration-300 ${openMenus["installment"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.installment.installmentPage, 'read') && (
                                     <Link to={json.installment.installmentPage} className={subItemClass(json.installment.installmentPage)} style={subItemStyle(json.installment.installmentPage)}>{t('installment')}</Link>
                                 )}
@@ -441,9 +443,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <MdOutlinePhoneIphone size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('lostPhone')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "lostphone" ? "rotate-180 text-emerald-600" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["lostphone"] ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
-                            <div className={`overflow-hidden transition-all duration-300 ${openMenu === "lostphone" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                            <div className={`overflow-hidden transition-all duration-300 ${openMenus["lostphone"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.lostphone.actionLockphone, 'read') && (
                                     <Link to={json.lostphone.actionLockphone} className={subItemClass(json.lostphone.actionLockphone)} style={subItemStyle(json.lostphone.actionLockphone)}>{t('actions')}</Link>
                                 )}
@@ -467,9 +469,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <MdOutlineWallpaper size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('wallpaper')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "wallpaper" ? "rotate-180 text-emerald-600" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["wallpaper"] ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
-                            <div className={`overflow-hidden transition-all duration-300 ${openMenu === "wallpaper" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                            <div className={`overflow-hidden transition-all duration-300 ${openMenus["wallpaper"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.wallpaper.actionWallpaper, 'read') && (
                                     <Link to={json.wallpaper.actionWallpaper} className={subItemClass(json.wallpaper.actionWallpaper)} style={subItemStyle(json.wallpaper.actionWallpaper)}>{t('actions')}</Link>
                                 )}
@@ -501,9 +503,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <MdOutlineBarChart size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     <span>{t('report')}</span>
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "report" ? "rotate-180 text-emerald-600" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["report"] ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
-                            <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                            <div className={`overflow-hidden transition-all duration-300 ${openMenus["report"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.report.allCustomers, 'read') && (
                                     <Link to={json.report.allCustomers} className={subItemClass(json.report.allCustomers)} style={subItemStyle(json.report.allCustomers)}>{t('allCustomerReport')}</Link>
                                 )}
@@ -550,9 +552,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <FaHistory size={16} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('history')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "history" ? "rotate-180 text-emerald-600" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["history"] ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
-                            <div className={`overflow-hidden transition-all duration-300 ${openMenu === "history" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                            <div className={`overflow-hidden transition-all duration-300 ${openMenus["history"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.history?.loginHistory || '/history/login-history', 'read') && (
                                     <Link to={json.history?.loginHistory || '/history/login-history'} className={subItemClass(json.history?.loginHistory || '/history/login-history')} style={subItemStyle(json.history?.loginHistory || '/history/login-history')}>{t('loginHistory')}</Link>
                                 )}
@@ -576,9 +578,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <FaClipboardCheck size={16} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     <span>{t('followUp') || 'Follow up'}</span>
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "followUp" ? "rotate-180 text-emerald-600" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["followUp"] ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
-                            <div className={`overflow-hidden transition-all duration-300 ${openMenu === "followUp" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                            <div className={`overflow-hidden transition-all duration-300 ${openMenus["followUp"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.followUp?.followUp1 || '/follow-up/follow-up-1', 'read') && (
                                     <Link to={json.followUp?.followUp1 || '/follow-up/follow-up-1'} className={subItemClass(json.followUp?.followUp1 || '/follow-up/follow-up-1')} style={subItemStyle(json.followUp?.followUp1 || '/follow-up/follow-up-1')}>
                                         {t('followUp1') || 'Follow up 1'}
@@ -639,9 +641,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 <FaTasks size={16} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
                                 {t('audit') || 'Audit'}
                             </span>
-                            <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "audit" ? "rotate-180 text-emerald-400" : ""}`} />
+                            <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenus["audit"] ? "rotate-180 text-emerald-400" : ""}`} />
                         </div>
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "audit" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenus["audit"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.audit?.telegram || '/audit/telegram', 'read') && (
                                 <Link to={json.audit?.telegram || '/audit/telegram'} className={subItemClass(json.audit?.telegram || '/audit/telegram')} style={subItemStyle(json.audit?.telegram || '/audit/telegram')}>
                                     <FaFileAlt size={12} />
@@ -660,9 +662,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 <FaPrint size={15} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
                                 <span>{t('print') || 'Print'}</span>
                             </span>
-                            <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "print" ? "rotate-180 text-emerald-400" : ""}`} />
+                            <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenus["print"] ? "rotate-180 text-emerald-400" : ""}`} />
                         </div>
-                        <div className={`overflow-hidden transition-all duration-300 ${openMenu === "print" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${openMenus["print"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                             {hasPermission(json.print?.idCard || '/print/id-card', 'read') && (
                                 <Link to={json.print?.idCard || '/print/id-card'} className={subItemClass(json.print?.idCard || '/print/id-card')} style={subItemStyle(json.print?.idCard || '/print/id-card')}>
                                     <FaIdCard size={12} />
@@ -693,9 +695,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <IoIosSettings size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('settings')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "setting" ? "rotate-180 text-emerald-600" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["setting"] ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
-                            <div className={`overflow-hidden transition-all duration-300 ${openMenu === "setting" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                            <div className={`overflow-hidden transition-all duration-300 ${openMenus["setting"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission('/settings/all-account', 'read') && (
                                     <Link to="/settings/all-account" className={subItemClass('/settings/all-account')} style={subItemStyle('/settings/all-account')}>{t('allAccount')}</Link>
                                 )}
