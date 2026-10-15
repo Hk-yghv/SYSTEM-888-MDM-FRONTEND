@@ -15,6 +15,8 @@ import {
     FaRegCopy,
     FaSave,
     FaSearch,
+    FaSearchMinus,
+    FaSearchPlus,
     FaSyncAlt,
     FaTimes,
     FaTrashAlt,
@@ -538,7 +540,7 @@ const AllPicture = () => {
                 ) : (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                         {visibleAssets.map(asset => (
-                            <article key={asset.public_id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
+                            <article key={asset.public_id} className="group overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
                                 <div className="relative aspect-square bg-slate-100">
                                     <img
                                         src={asset.secure_url}
@@ -563,6 +565,17 @@ const AllPicture = () => {
                                         className="absolute right-2 top-2 rounded bg-white/90 p-2 text-slate-600 shadow hover:text-emerald-700"
                                     >
                                         <FaInfoCircle />
+                                    </button>
+
+                                    {/* Mini Zoom Bar Overlay */}
+                                    <button
+                                        type="button"
+                                        onClick={() => openPreview(asset)}
+                                        title="ពង្រីកមើលរូបភាព (Zoom & View)"
+                                        className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/85 hover:bg-emerald-600 text-white text-[10px] font-semibold shadow-md backdrop-blur-sm opacity-90 sm:opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                                    >
+                                        <FaSearchPlus size={10} />
+                                        <span>របាពង្រីក</span>
                                     </button>
                                 </div>
                                 <div className="space-y-2 p-3">
@@ -609,10 +622,48 @@ const AllPicture = () => {
                             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-3 py-2 text-white">
                                 <span className="min-w-0 max-w-[200px] truncate text-xs sm:max-w-xs">{activeAsset.public_id}</span>
                                 <div className="flex flex-wrap items-center gap-1.5">
-                                    {/* Zoom controls */}
-                                    <button type="button" onClick={() => setZoom(v => Math.max(0.5, Number((v - 0.25).toFixed(2))))} title="Zoom out" className="rounded p-1.5 hover:bg-white/10"><FaCompress /></button>
-                                    <span className="min-w-10 text-center text-xs">{Math.round(zoom * 100)}%</span>
-                                    <button type="button" onClick={() => setZoom(v => Math.min(3, Number((v + 0.25).toFixed(2))))} title="Zoom in" className="rounded p-1.5 hover:bg-white/10"><FaExpand /></button>
+                                    {/* របាពង្រីកបង្រួម (Interactive Zoom Bar with Slider) */}
+                                    <div className="flex items-center gap-1.5 rounded-full bg-slate-900 px-2.5 py-1 border border-white/15 shadow-inner">
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoom(v => Math.max(0.25, Number((v - 0.25).toFixed(2))))}
+                                            title="បង្រួមតូច (Zoom out)"
+                                            className="rounded p-1 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                                        >
+                                            <FaSearchMinus className="text-xs" />
+                                        </button>
+                                        <input
+                                            type="range"
+                                            min="0.25"
+                                            max="4.0"
+                                            step="0.05"
+                                            value={zoom}
+                                            onChange={e => setZoom(Number(e.target.value))}
+                                            className="h-1.5 w-16 sm:w-28 cursor-pointer accent-emerald-500 bg-white/20 rounded-lg"
+                                            title={`កម្រិតពង្រីក: ${Math.round(zoom * 100)}%`}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoom(v => Math.min(4.0, Number((v + 0.25).toFixed(2))))}
+                                            title="ពង្រីកធំ (Zoom in)"
+                                            className="rounded p-1 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                                        >
+                                            <FaSearchPlus className="text-xs" />
+                                        </button>
+                                        <span className="min-w-9 text-center font-mono text-xs font-bold text-emerald-400 select-none">
+                                            {Math.round(zoom * 100)}%
+                                        </span>
+                                        {zoom !== 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setZoom(1)}
+                                                title="កំណត់ ១០០% ឡើងវិញ (Reset)"
+                                                className="rounded px-1.5 py-0.5 text-[10px] bg-white/10 hover:bg-white/20 text-slate-300 font-mono cursor-pointer"
+                                            >
+                                                100%
+                                            </button>
+                                        )}
+                                    </div>
 
                                     <div className="mx-1 h-4 w-[1px] bg-white/20" />
 

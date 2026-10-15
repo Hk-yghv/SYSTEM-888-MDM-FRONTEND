@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Header from "../App/components/Header";
 import Left from "../App/components/Left";
 import MobileBottomNav from "../components/MobileBottomNav";
 import MobileResponsiveContent from "../components/MobileResponsiveContent";
 import PaymentAlertDrawer from "../components/PaymentAlertDrawer";
+import GlobalImageZoomModal from "../components/GlobalImageZoomModal";
 import { useTheme } from "../context/ThemeContext";
 
-import { FaChevronUp, FaEye, FaEyeSlash } from "react-icons/fa";
-import { MdOutlineViewHeadline, MdOutlineViewSidebar } from "react-icons/md";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { MdOutlineViewHeadline, MdOutlineViewSidebar, MdDragIndicator } from "react-icons/md";
+
+const STORAGE_KEY_POS = "floatingDisplayPos";
+const STORAGE_KEY_HEADER = "isHeaderOpen";
 
 const MainLayout = ({ children }) => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -15,37 +19,106 @@ const MainLayout = ({ children }) => {
   const [isFloatingUplistOpen, setIsFloatingUplistOpen] = useState(false);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.innerWidth >= 1024;
-    }
+    if (typeof window !== "undefined") return window.innerWidth >= 1024;
     return true;
   });
 
   const [isHeaderOpen, setIsHeaderOpen] = useState(() => {
     try {
-      const saved = localStorage.getItem("isHeaderOpen");
+      const saved = localStorage.getItem(STORAGE_KEY_HEADER);
       return saved !== null ? JSON.parse(saved) : true;
-    } catch {
-      return true;
-    }
+    } catch { return true; }
   });
+
+  // Draggable position — default bottom-right
+  const [pos, setPos] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_POS);
+      if (saved) {
+        const p = JSON.parse(saved);
+        return {
+          x: Math.max(0, Math.min(p.x, window.innerWidth - 140)),
+          y: Math.max(0, Math.min(p.y, window.innerHeight - 50)),
+        };
+      }
+    } catch {}
+    return {
+      x: typeof window !== "undefined" ? window.innerWidth - 150 : 900,
+      y: typeof window !== "undefined" ? window.innerHeight - 72 : 600,
+    };
+  });
+
+  const dragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const dragMoved = useRef(false);
+  const floatingRef = useRef(null);
+  const posRef = useRef(pos);
+  posRef.current = pos;
+
+  const onPointerDown = useCallback((e) => {
+    if (!e.target.closest("#drag-handle")) return;
+    e.preventDefault();
+    dragging.current = true;
+    dragMoved.current = false;
+    const rect = floatingRef.current.getBoundingClientRect();
+    dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    document.body.style.userSelect = "none";
+  }, []);
+
+  const onPointerMove = useCallback((e) => {
+    if (!dragging.current) return;
+    dragMoved.current = true;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const el = floatingRef.current;
+    const w = el ? el.offsetWidth : 140;
+    const h = el ? el.offsetHeight : 42;
+    const newX = Math.max(0, Math.min(e.clientX - dragOffset.current.x, vw - w));
+    const newY = Math.max(0, Math.min(e.clientY - dragOffset.current.y, vh - h));
+    setPos({ x: newX, y: newY });
+  }, []);
+
+  const onPointerUp = useCallback(() => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    document.body.style.userSelect = "";
+    try { localStorage.setItem(STORAGE_KEY_POS, JSON.stringify(posRef.current)); } catch {}
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+  }, [onPointerMove, onPointerUp]);
+
+  // Clamp on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setPos((prev) => ({
+        x: Math.max(0, Math.min(prev.x, window.innerWidth - 140)),
+        y: Math.max(0, Math.min(prev.y, window.innerHeight - 50)),
+      }));
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleToggleHeader = (val) => {
     setIsHeaderOpen((prev) => {
       const next = typeof val === "boolean" ? val : !prev;
-      try {
-        localStorage.setItem("isHeaderOpen", JSON.stringify(next));
-      } catch {}
+      try { localStorage.setItem(STORAGE_KEY_HEADER, JSON.stringify(next)); } catch {}
       return next;
     });
   };
 
+  // Close popup on outside click
   useEffect(() => {
     if (!isFloatingUplistOpen) return;
     const handleOutside = (e) => {
-      if (!e.target.closest("#floating-display-uplist")) {
-        setIsFloatingUplistOpen(false);
-      }
+      if (!e.target.closest("#floating-display-uplist")) setIsFloatingUplistOpen(false);
     };
     document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
@@ -53,51 +126,38 @@ const MainLayout = ({ children }) => {
 
   const { theme } = useTheme();
 
+  // Popup direction: above button if near bottom, below if near top
+  const popupGoesUp = pos.y > 220;
+
   return (
     <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden">
-      {/* Background Image Layer (Fixed Fullscreen Backdrop) */}
+      {/* Background Image */}
       {theme?.bgType === "image" && theme?.bgImage && (
         <div
           className="fixed inset-0 w-full h-full bg-cover bg-center z-0 pointer-events-none transition-opacity duration-500"
-          style={{
-            backgroundImage: `url(${theme.bgImage})`,
-            opacity: "var(--app-bg-opacity, 0.75)",
-          }}
+          style={{ backgroundImage: `url(${theme.bgImage})`, opacity: "var(--app-bg-opacity, 0.75)" }}
         />
       )}
 
-      {/* Background Video Player (Capped to 10 Seconds Loop) */}
+      {/* Background Video */}
       {theme?.bgType === "video" && theme?.bgVideo && (
         <video
           src={theme.bgVideo}
-          autoPlay
-          loop
-          muted
-          playsInline
-          onTimeUpdate={(e) => {
-            if (e.target.currentTime >= 10) {
-              e.target.currentTime = 0;
-            }
-          }}
+          autoPlay loop muted playsInline
+          onTimeUpdate={(e) => { if (e.target.currentTime >= 10) e.target.currentTime = 0; }}
           className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none transition-opacity duration-500"
           style={{ opacity: "var(--app-bg-opacity, 0.75)" }}
         />
       )}
 
       <div className="relative z-10 flex flex-col h-full overflow-hidden">
-        {/* Collapsible Header Container */}
-        <div
-          className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
-            isHeaderOpen
-              ? "max-h-[80px] opacity-100 overflow-visible"
-              : "max-h-0 opacity-0 overflow-hidden pointer-events-none"
-          }`}
-        >
+        {/* Collapsible Header */}
+        <div className={`transition-all duration-300 ease-in-out flex-shrink-0 ${isHeaderOpen ? "max-h-[80px] opacity-100 overflow-visible" : "max-h-0 opacity-0 overflow-hidden pointer-events-none"}`}>
           <Header
             onOpenAlerts={() => setIsAlertOpen(true)}
             alertCount={alertCount}
             isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={() => setIsSidebarOpen((isOpen) => !isOpen)}
+            onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
             onHideHeader={() => handleToggleHeader(false)}
           />
         </div>
@@ -129,34 +189,34 @@ const MainLayout = ({ children }) => {
           setAlertCount={setAlertCount}
         />
 
-        {/* Floating Button at Bottom-Right with Uplist (Shown when either Left Menu or Header is hidden) */}
-        {(!isHeaderOpen || !isSidebarOpen) && (
-          <div id="floating-display-uplist" className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[99999] flex flex-col items-end">
-            {/* Uplist Popup Menu (Pops UP above the button) */}
+        {/* Global Zoom Bar Modal for any image in the system */}
+        <GlobalImageZoomModal />
+
+        {/* ── Draggable Floating Display Button (always visible) ── */}
+        <div
+          id="floating-display-uplist"
+          ref={floatingRef}
+          onPointerDown={onPointerDown}
+          className="fixed z-[99999] select-none"
+          style={{ left: pos.x, top: pos.y, touchAction: "none" }}
+        >
+          {/* Popup — stacks above or below */}
+          <div className={`flex flex-col items-end ${popupGoesUp ? "flex-col-reverse" : "flex-col"}`}>
+            {/* Popup Panel */}
             {isFloatingUplistOpen && (
               <div
-                className="mb-2.5 w-[220px] bg-white border border-slate-200 rounded-[14px] p-2 shadow-[0_15px_50px_rgba(0,0,0,0.22)] animate-in fade-in slide-in-from-bottom-2 duration-200 opacity-100 select-none"
-                style={{ backgroundColor: "#ffffff" }}
+                className={`w-[222px] bg-white border border-slate-200 rounded-[14px] p-2 shadow-[0_15px_50px_rgba(0,0,0,0.2)] animate-in fade-in duration-150 ${popupGoesUp ? "mb-2.5" : "mt-2.5"}`}
               >
-                {/* Header Title */}
+                {/* Title */}
                 <div className="px-2.5 py-1.5 border-b border-slate-100 mb-1 flex items-center justify-between">
-                  <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                    ផ្ទាំងបង្ហាញ / Display
-                  </span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">
-                    Menu
-                  </span>
+                  <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">ផ្ទាំងបង្ហាញ / Display</span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">Controls</span>
                 </div>
 
-                {/* Option 1: Show Both (បង្ហាញទាំង២មកវិញ) */}
+                {/* Show All */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsHeaderOpen(true);
-                    setIsSidebarOpen(true);
-                    try { localStorage.setItem("isHeaderOpen", JSON.stringify(true)); } catch {}
-                    setIsFloatingUplistOpen(false);
-                  }}
+                  onClick={() => { handleToggleHeader(true); setIsSidebarOpen(true); setIsFloatingUplistOpen(false); }}
                   className="w-full h-[36px] flex items-center justify-between px-2.5 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-[8px] transition-all cursor-pointer text-xs font-semibold group"
                 >
                   <div className="flex items-center gap-2">
@@ -166,15 +226,10 @@ const MainLayout = ({ children }) => {
                   <span className="text-[10px] font-black text-emerald-600">✓</span>
                 </button>
 
-                {/* Option 2: Hide Both (លាក់ទាំង២) */}
+                {/* Hide All */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsHeaderOpen(false);
-                    setIsSidebarOpen(false);
-                    try { localStorage.setItem("isHeaderOpen", JSON.stringify(false)); } catch {}
-                    setIsFloatingUplistOpen(false);
-                  }}
+                  onClick={() => { handleToggleHeader(false); setIsSidebarOpen(false); setIsFloatingUplistOpen(false); }}
                   className="w-full h-[36px] flex items-center justify-between px-2.5 hover:bg-rose-50 text-slate-700 hover:text-rose-600 rounded-[8px] transition-all cursor-pointer text-xs font-semibold group"
                 >
                   <div className="flex items-center gap-2">
@@ -186,12 +241,10 @@ const MainLayout = ({ children }) => {
 
                 <div className="my-1 border-t border-slate-100" />
 
-                {/* Option 3: Toggle Header */}
+                {/* Toggle Header */}
                 <button
                   type="button"
-                  onClick={() => {
-                    handleToggleHeader();
-                  }}
+                  onClick={() => handleToggleHeader()}
                   className="w-full h-[34px] flex items-center justify-between px-2.5 hover:bg-slate-100 text-slate-700 rounded-[8px] transition-all cursor-pointer text-xs font-medium"
                 >
                   <div className="flex items-center gap-2">
@@ -203,12 +256,10 @@ const MainLayout = ({ children }) => {
                   </span>
                 </button>
 
-                {/* Option 4: Toggle Left Menu */}
+                {/* Toggle Left Menu */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsSidebarOpen((prev) => !prev);
-                  }}
+                  onClick={() => setIsSidebarOpen((prev) => !prev)}
                   className="w-full h-[34px] flex items-center justify-between px-2.5 hover:bg-slate-100 text-slate-700 rounded-[8px] transition-all cursor-pointer text-xs font-medium"
                 >
                   <div className="flex items-center gap-2">
@@ -222,21 +273,36 @@ const MainLayout = ({ children }) => {
               </div>
             )}
 
-            {/* Floating Toggle Button */}
-            <button
-              type="button"
-              onClick={() => setIsFloatingUplistOpen((prev) => !prev)}
-              className="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xl border border-white/40 transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer select-none group"
-              title="គ្រប់គ្រងផ្ទាំងបង្ហាញ (Display Controls)"
-              aria-label="Display Controls"
+            {/* Floating Button */}
+            <div
+              className="flex items-center rounded-full overflow-hidden shadow-xl border border-white/40"
+              style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 4px 20px rgba(16,185,129,0.45)" }}
             >
-              <FaChevronUp className={`text-xs transition-transform duration-300 ${isFloatingUplistOpen ? "rotate-180 text-white" : "rotate-0 text-emerald-200"}`} />
-              <span className="text-xs font-extrabold tracking-wide select-none">
-                Display
-              </span>
-            </button>
+              {/* Drag Handle — grab here to drag */}
+              <div
+                id="drag-handle"
+                className="flex items-center justify-center w-8 h-9 cursor-grab active:cursor-grabbing border-r border-white/20 text-white/60 hover:text-white transition-colors"
+                title="ចាប់ទៅដាក់កន្លែងណា"
+              >
+                <MdDragIndicator size={18} />
+              </div>
+
+              {/* Click to toggle popup */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!dragMoved.current) setIsFloatingUplistOpen((prev) => !prev);
+                  dragMoved.current = false;
+                }}
+                className="flex items-center gap-1.5 px-3.5 h-9 text-white cursor-pointer active:opacity-80 transition-opacity"
+                title="គ្រប់គ្រងផ្ទាំងបង្ហាញ"
+              >
+                <FaEye className="text-[11px] text-emerald-100" />
+                <span className="text-xs font-extrabold tracking-wide">Display</span>
+              </button>
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

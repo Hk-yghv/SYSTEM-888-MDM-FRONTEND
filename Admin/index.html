@@ -3,7 +3,33 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" id="app-viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    (function () {
+      function adjustDesktopViewport() {
+        var minWidth = 1200;
+        var screenW = window.screen.width;
+        var meta = document.getElementById('app-viewport') || document.querySelector('meta[name="viewport"]');
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.name = 'viewport';
+          meta.id = 'app-viewport';
+          document.head.appendChild(meta);
+        }
+        if (screenW < minWidth) {
+          var initialScale = (screenW / minWidth).toFixed(4);
+          meta.setAttribute('content', 'width=' + minWidth + ', initial-scale=' + initialScale + ', minimum-scale=0.2, maximum-scale=4.0, user-scalable=yes');
+        } else {
+          meta.setAttribute('content', 'width=device-width, initial-scale=1.0');
+        }
+      }
+      adjustDesktopViewport();
+      window.addEventListener('resize', adjustDesktopViewport);
+      window.addEventListener('orientationchange', function () {
+        setTimeout(adjustDesktopViewport, 200);
+      });
+    })();
+  </script>
   <meta name="robots" content="noindex">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />

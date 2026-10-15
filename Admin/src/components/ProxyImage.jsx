@@ -1,12 +1,13 @@
 import React from 'react';
+import ZoomableImage from './ZoomableImage';
 
 /**
- * ProxyImage — Pass-through component for standard <img> rendering.
+ * ProxyImage — Renders images with interactive zoom bar (របាពង្រីកបង្រួម)
  */
 const ProxyImage = ({ src, alt = '', className = '', style = {}, ...rest }) => {
     if (!src) return null;
     return (
-        <img
+        <ZoomableImage
             src={src}
             alt={alt}
             className={className}
