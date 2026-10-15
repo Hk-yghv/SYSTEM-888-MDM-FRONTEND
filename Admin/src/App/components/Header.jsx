@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaBell, FaBars, FaTimes, FaTelegramPlane, FaChartLine, FaWallet, FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import { FaBell, FaBars, FaTimes, FaTelegramPlane, FaWallet, FaArrowUp } from 'react-icons/fa';
 import { MdOutlineTrendingUp, MdAttachMoney } from 'react-icons/md';
 import { getFirstAllowedRoute, hasAnyAlertPermission } from '../../utils/permissionUtils';
 
@@ -84,12 +84,11 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
         }
     }, [API_BASE, user, hasPermission]);
 
-    // Pulse animation on alert count change
     useEffect(() => {
         if (alertCount > 0) {
             setPulseAlert(true);
-            const t = setTimeout(() => setPulseAlert(false), 600);
-            return () => clearTimeout(t);
+            const timer = setTimeout(() => setPulseAlert(false), 600);
+            return () => clearTimeout(timer);
         }
     }, [alertCount]);
 
@@ -99,12 +98,8 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
     return (
         <header
-            className='w-full h-[60px] flex items-center justify-between px-3 md:px-5 border-b z-40 select-none'
-            style={{
-                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #134e4a 100%)',
-                borderColor: 'rgba(52,211,153,0.15)',
-                boxShadow: '0 1px 0 rgba(52,211,153,0.08), 0 4px 24px rgba(0,0,0,0.3)'
-            }}
+            className='w-full h-[60px] flex items-center justify-between px-3 md:px-5 border-b z-40 select-none bg-white'
+            style={{ borderColor: '#e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
         >
             {/* LEFT: Toggle + Brand */}
             <div className='flex items-center gap-3 min-w-0'>
@@ -112,48 +107,32 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 <button
                     type='button'
                     onClick={onToggleSidebar}
-                    className='flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-[8px] transition-all duration-200 cursor-pointer active:scale-95 group'
+                    className='flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-[8px] transition-all duration-200 cursor-pointer active:scale-95 hover:bg-emerald-50 border'
                     style={{
-                        background: isSidebarOpen
-                            ? 'rgba(52,211,153,0.18)'
-                            : 'rgba(255,255,255,0.07)',
-                        border: isSidebarOpen
-                            ? '1px solid rgba(52,211,153,0.4)'
-                            : '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: isSidebarOpen ? '0 0 12px rgba(52,211,153,0.2)' : 'none'
+                        background: isSidebarOpen ? '#ecfdf5' : '#f8fafc',
+                        borderColor: isSidebarOpen ? '#6ee7b7' : '#e2e8f0'
                     }}
                     aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
                     title={isSidebarOpen ? 'បិទ Menu' : 'បើក Menu'}
                 >
                     <div className='relative w-5 h-5 flex items-center justify-center'>
-                        <FaBars className={`absolute text-emerald-400 transition-all duration-300 transform ${isSidebarOpen ? 'rotate-90 opacity-0 scale-50' : 'rotate-0 opacity-100 scale-100'}`} />
-                        <FaTimes className={`absolute text-rose-400 transition-all duration-300 transform ${isSidebarOpen ? 'rotate-0 opacity-100 scale-100' : '-rotate-90 opacity-0 scale-50'}`} />
+                        <FaBars className={`absolute text-slate-600 transition-all duration-300 transform ${isSidebarOpen ? 'rotate-90 opacity-0 scale-50' : 'rotate-0 opacity-100 scale-100'}`} />
+                        <FaTimes className={`absolute text-rose-500 transition-all duration-300 transform ${isSidebarOpen ? 'rotate-0 opacity-100 scale-100' : '-rotate-90 opacity-0 scale-50'}`} />
                     </div>
                 </button>
 
                 {/* Brand Logo */}
                 <Link to={getFirstAllowedRoute(user, hasPermission)} className='flex items-center gap-2.5 group flex-shrink-0'>
                     <div
-                        className='w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0'
-                        style={{
-                            background: 'linear-gradient(135deg, #10b981, #059669)',
-                            boxShadow: '0 0 16px rgba(16,185,129,0.35)'
-                        }}
+                        className='w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0 shadow-sm'
+                        style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
                     >
                         <span className='text-white font-black text-xs tracking-tight'>
                             {brandName.charAt(0)}
                         </span>
                     </div>
                     <div className='hidden sm:block'>
-                        <h1
-                            className='text-sm font-black tracking-widest leading-none'
-                            style={{
-                                background: 'linear-gradient(90deg, #34d399, #a7f3d0)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                backgroundClip: 'text'
-                            }}
-                        >
+                        <h1 className='text-sm font-black tracking-widest leading-none text-slate-800 group-hover:text-emerald-700 transition-colors'>
                             {brandName}
                         </h1>
                         <p className='text-[9px] text-slate-400 font-semibold tracking-[0.15em] uppercase leading-none mt-0.5'>Management System</p>
@@ -162,64 +141,60 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
                 {/* Financial Summary Widgets */}
                 {hasPermission('/dashboard', 'read') && (
-                    <div className='hidden xl:flex items-center gap-1.5 pl-4 ml-1 border-l' style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                    <div className='hidden xl:flex items-center gap-1.5 pl-4 ml-1 border-l border-slate-200'>
                         {/* Total Loan */}
                         <div
-                            className='flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] cursor-default'
-                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                            className='flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] cursor-default border border-slate-200 bg-slate-50'
                             title='ឥណទានបញ្ចេញសរុប'
                         >
-                            <div className='w-5 h-5 rounded-md flex items-center justify-center' style={{ background: 'rgba(99,102,241,0.25)' }}>
-                                <MdAttachMoney className='text-indigo-300' size={12} />
+                            <div className='w-5 h-5 rounded-md flex items-center justify-center bg-indigo-100'>
+                                <MdAttachMoney className='text-indigo-600' size={12} />
                             </div>
                             <div>
                                 <p className='text-[8px] text-slate-400 uppercase tracking-wider leading-none'>{t('totalLoanDisbursed') || 'Loan'}</p>
-                                <p className='text-xs font-black text-white leading-tight font-mono'>{formatMoney(balance.totalLoanAmount)}</p>
+                                <p className='text-xs font-black text-slate-800 leading-tight font-mono'>{formatMoney(balance.totalLoanAmount)}</p>
                             </div>
                         </div>
 
                         {/* Total Revenue */}
                         <div
-                            className='flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] cursor-default'
-                            style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
+                            className='flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] cursor-default border border-emerald-200 bg-emerald-50'
                             title='ប្រាក់ប្រមូលបានសរុប'
                         >
-                            <div className='w-5 h-5 rounded-md flex items-center justify-center' style={{ background: 'rgba(16,185,129,0.25)' }}>
-                                <FaArrowUp className='text-emerald-300' size={9} />
+                            <div className='w-5 h-5 rounded-md flex items-center justify-center bg-emerald-200'>
+                                <FaArrowUp className='text-emerald-700' size={9} />
                             </div>
                             <div>
-                                <p className='text-[8px] text-emerald-400 uppercase tracking-wider leading-none'>{t('totalRevenueCollected') || 'Revenue'}</p>
-                                <p className='text-xs font-black text-emerald-300 leading-tight font-mono'>{formatMoney(balance.totalRevenue)}</p>
+                                <p className='text-[8px] text-emerald-600 uppercase tracking-wider leading-none'>{t('totalRevenueCollected') || 'Revenue'}</p>
+                                <p className='text-xs font-black text-emerald-800 leading-tight font-mono'>{formatMoney(balance.totalRevenue)}</p>
                             </div>
                         </div>
 
                         {/* Repayment Expected */}
                         <div
-                            className='flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] cursor-default'
-                            style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}
+                            className='flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] cursor-default border border-violet-200 bg-violet-50'
                             title='ប្រាក់ត្រូវប្រមូលមកវិញ'
                         >
-                            <div className='w-5 h-5 rounded-md flex items-center justify-center' style={{ background: 'rgba(139,92,246,0.25)' }}>
-                                <MdOutlineTrendingUp className='text-violet-300' size={12} />
+                            <div className='w-5 h-5 rounded-md flex items-center justify-center bg-violet-200'>
+                                <MdOutlineTrendingUp className='text-violet-700' size={12} />
                             </div>
                             <div>
-                                <p className='text-[8px] text-violet-400 uppercase tracking-wider leading-none'>{t('totalRepaymentDue') || 'Repayment'}</p>
-                                <p className='text-xs font-black text-violet-300 leading-tight font-mono'>{formatMoney(balance.totalRepaymentExpected)}</p>
+                                <p className='text-[8px] text-violet-600 uppercase tracking-wider leading-none'>{t('totalRepaymentDue') || 'Repayment'}</p>
+                                <p className='text-xs font-black text-violet-800 leading-tight font-mono'>{formatMoney(balance.totalRepaymentExpected)}</p>
                             </div>
                         </div>
 
                         {/* Outstanding */}
                         <div
-                            className='flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] cursor-default'
-                            style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}
+                            className='flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] cursor-default border border-amber-200 bg-amber-50'
                             title='ប្រាក់នៅសល់មិនទាន់ប្រមូល'
                         >
-                            <div className='w-5 h-5 rounded-md flex items-center justify-center' style={{ background: 'rgba(245,158,11,0.25)' }}>
-                                <FaWallet className='text-amber-300' size={9} />
+                            <div className='w-5 h-5 rounded-md flex items-center justify-center bg-amber-200'>
+                                <FaWallet className='text-amber-700' size={9} />
                             </div>
                             <div>
-                                <p className='text-[8px] text-amber-400 uppercase tracking-wider leading-none'>{t('outstandingReceivables') || 'Outstanding'}</p>
-                                <p className='text-xs font-black text-amber-300 leading-tight font-mono'>{formatMoney(balance.outstandingBalance)}</p>
+                                <p className='text-[8px] text-amber-600 uppercase tracking-wider leading-none'>{t('outstandingReceivables') || 'Outstanding'}</p>
+                                <p className='text-xs font-black text-amber-800 leading-tight font-mono'>{formatMoney(balance.outstandingBalance)}</p>
                             </div>
                         </div>
                     </div>
@@ -234,19 +209,16 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     <button
                         type='button'
                         onClick={onOpenAlerts}
-                        className='relative flex items-center justify-center w-9 h-9 rounded-[8px] transition-all duration-200 cursor-pointer active:scale-95'
+                        className='relative flex items-center justify-center w-9 h-9 rounded-[8px] transition-all duration-200 cursor-pointer active:scale-95 border'
                         style={{
-                            background: alertCount > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.07)',
-                            border: alertCount > 0 ? '1px solid rgba(239,68,68,0.35)' : '1px solid rgba(255,255,255,0.1)',
-                            boxShadow: alertCount > 0 ? '0 0 16px rgba(239,68,68,0.2)' : 'none'
+                            background: alertCount > 0 ? '#fff1f2' : '#f8fafc',
+                            borderColor: alertCount > 0 ? '#fca5a5' : '#e2e8f0',
                         }}
                         title={t('paymentDueAlerts')}
                     >
-                        <FaBell
-                            className={`text-sm ${alertCount > 0 ? 'text-rose-400' : 'text-slate-400'} ${pulseAlert ? 'animate-bounce' : ''}`}
-                        />
+                        <FaBell className={`text-sm ${alertCount > 0 ? 'text-rose-500' : 'text-slate-500'} ${pulseAlert ? 'animate-bounce' : ''}`} />
                         {alertCount > 0 && (
-                            <span className='absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black shadow-lg shadow-rose-500/40 border border-[#0f172a] flex items-center justify-center min-w-[17px] h-[17px] animate-pulse'>
+                            <span className='absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black shadow-md border-2 border-white flex items-center justify-center min-w-[17px] h-[17px]'>
                                 {alertCount > 99 ? '99+' : alertCount}
                             </span>
                         )}
@@ -257,29 +229,22 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 {hasPermission('/telegram', 'read') && (
                     <Link
                         to='/telegram'
-                        className='relative flex items-center justify-center w-9 h-9 rounded-[8px] transition-all duration-200 cursor-pointer active:scale-95'
+                        className='relative flex items-center justify-center w-9 h-9 rounded-[8px] transition-all duration-200 cursor-pointer active:scale-95 border'
                         style={{
-                            background: location.pathname === '/telegram'
-                                ? 'rgba(14,165,233,0.2)'
-                                : 'rgba(255,255,255,0.07)',
-                            border: location.pathname === '/telegram'
-                                ? '1px solid rgba(14,165,233,0.4)'
-                                : '1px solid rgba(255,255,255,0.1)',
-                            boxShadow: location.pathname === '/telegram' ? '0 0 16px rgba(14,165,233,0.2)' : 'none'
+                            background: location.pathname === '/telegram' ? '#e0f2fe' : '#f8fafc',
+                            borderColor: location.pathname === '/telegram' ? '#7dd3fc' : '#e2e8f0',
                         }}
                         title={t('telegram') || 'Telegram Web'}
                         aria-label='Telegram Web'
                     >
-                        <FaTelegramPlane className={`text-sm ${location.pathname === '/telegram' ? 'text-sky-400' : 'text-slate-400'}`} />
+                        <FaTelegramPlane className={`text-sm ${location.pathname === '/telegram' ? 'text-sky-500' : 'text-slate-500'}`} />
                     </Link>
                 )}
 
                 {/* Live Status Dot */}
-                <div className='hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px]'
-                    style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}
-                >
-                    <span className='w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]'></span>
-                    <span className='text-[10px] text-emerald-400 font-bold tracking-wide hidden lg:block'>LIVE</span>
+                <div className='hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-emerald-200 bg-emerald-50'>
+                    <span className='w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse'></span>
+                    <span className='text-[10px] text-emerald-700 font-bold tracking-wide hidden lg:block'>LIVE</span>
                 </div>
             </div>
         </header>

@@ -94,18 +94,18 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
     // Check if Help & Support page link should be visible
     const hasHelpSupportPermission = hasPermission(json.helpSupport || '/help-support', 'read');
 
-    // Nav item classes — dark sidebar style
+    // Nav item classes — light sidebar style
     const navItemClass = (path) =>
         `group relative w-full h-[42px] flex-shrink-0 flex items-center gap-3 px-3 rounded-[8px] text-[13px] font-semibold overflow-hidden transition-all duration-200 ease-out active:scale-[0.98] ${isActive(path)
             ? "text-white"
-            : "text-slate-300 hover:text-white"
+            : "text-slate-700 hover:text-slate-900"
         }`;
 
     const navItemStyle = (path) => isActive(path)
         ? {
-            background: 'linear-gradient(135deg, rgba(16,185,129,0.35) 0%, rgba(5,150,105,0.25) 100%)',
-            border: '1px solid rgba(52,211,153,0.3)',
-            boxShadow: '0 2px 12px rgba(16,185,129,0.15), inset 0 1px 0 rgba(255,255,255,0.05)'
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            border: '1px solid #059669',
+            boxShadow: '0 2px 8px rgba(16,185,129,0.25)'
         }
         : {
             background: 'transparent',
@@ -117,30 +117,30 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
     const subItemClass = (path) =>
         `group relative flex items-center gap-2.5 flex-shrink-0 px-3 py-2 ml-2 text-[12px] font-semibold rounded-[7px] overflow-hidden transition-all duration-200 ease-out active:scale-[0.98] ${isActive(path)
             ? "text-white"
-            : "text-slate-400 hover:text-white"
+            : "text-slate-600 hover:text-slate-900"
         }`;
 
     const subItemStyle = (path) => isActive(path)
         ? {
-            background: 'linear-gradient(135deg, rgba(16,185,129,0.3) 0%, rgba(5,150,105,0.2) 100%)',
-            border: '1px solid rgba(52,211,153,0.25)',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            border: '1px solid #059669',
         }
         : {
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.05)'
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0'
         };
 
     const dropdownHeaderClass = () =>
-        `group relative w-full h-[42px] flex-shrink-0 flex items-center justify-between px-3 text-slate-300 hover:text-white rounded-[8px] cursor-pointer text-[13px] font-semibold overflow-hidden transition-all duration-200 ease-out active:scale-[0.99]`;
+        `group relative w-full h-[42px] flex-shrink-0 flex items-center justify-between px-3 text-slate-700 hover:text-slate-900 rounded-[8px] cursor-pointer text-[13px] font-semibold overflow-hidden transition-all duration-200 ease-out active:scale-[0.99]`;
 
     const dropdownHeaderStyle = (menuName) => openMenu === menuName
         ? {
-            background: 'rgba(52,211,153,0.1)',
-            border: '1px solid rgba(52,211,153,0.2)'
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0'
         }
         : {
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.06)'
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0'
         };
 
     // Section label component
@@ -166,19 +166,19 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 : 'w-0 !p-0 !border-r-0 opacity-0 overflow-hidden pointer-events-none'
                 }`}
             style={{
-                background: 'linear-gradient(180deg, #0f172a 0%, #111827 100%)',
-                borderRight: '1px solid rgba(52,211,153,0.1)',
-                boxShadow: '4px 0 24px rgba(0,0,0,0.4)'
+                background: '#ffffff',
+                borderRight: '1px solid #e2e8f0',
+                boxShadow: '2px 0 12px rgba(0,0,0,0.06)'
             }}
         >
             {/* Top Scrollable Navigation Section */}
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-0.5 flex flex-col custom-scrollbar-dark">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-0.5 flex flex-col custom-scrollbar">
 
                 {/* MAIN NAV */}
                 {/* Dashboard */}
                 {hasPermission('/dashboard', 'read') && (
                     <Link to={json.dashboard} className={navItemClass(json.dashboard)} style={navItemStyle(json.dashboard)}>
-                        <MdDashboard size={18} className={isActive(json.dashboard) ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400 transition-colors"} />
+                        <MdDashboard size={18} className={isActive(json.dashboard) ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
                         {t('dashboard')}
                         {isActive(json.dashboard) && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
@@ -187,7 +187,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {/* Cash Flow Trader */}
                 {hasPermission(json.cashFlowTrader || '/cashflow/monitor', 'read') && (
                     <Link to={json.cashFlowTrader || '/cashflow/monitor'} className={navItemClass(json.cashFlowTrader || '/cashflow/monitor')} style={navItemStyle(json.cashFlowTrader || '/cashflow/monitor')}>
-                        <MdOutlineBarChart size={18} className={isActive(json.cashFlowTrader || '/cashflow/monitor') ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400 transition-colors"} />
+                        <MdOutlineBarChart size={18} className={isActive(json.cashFlowTrader || '/cashflow/monitor') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
                         {t('cashFlowTrader') || 'Cash Flow Trader'}
                         {isActive(json.cashFlowTrader || '/cashflow/monitor') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
@@ -196,7 +196,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {/* Customer */}
                 {hasPermission('/customer', 'read') && (
                     <Link to={json.customer} className={navItemClass(json.customer)} style={navItemStyle(json.customer)}>
-                        <IoIosContact size={18} className={isActive(json.customer) ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400 transition-colors"} />
+                        <IoIosContact size={18} className={isActive(json.customer) ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
                         {t('customer')}
                         {isActive(json.customer) && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
@@ -205,7 +205,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {/* Device */}
                 {hasPermission('/device', 'read') && (
                     <Link to={json.device} className={navItemClass(json.device)} style={navItemStyle(json.device)}>
-                        <MdOutlinePhoneIphone size={18} className={isActive(json.device) ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400 transition-colors"} />
+                        <MdOutlinePhoneIphone size={18} className={isActive(json.device) ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
                         {t('device')}
                         {isActive(json.device) && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
@@ -221,10 +221,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div className="flex-shrink-0">
                             <div onClick={() => toggleMenu("contract")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("contract")}>
                                 <span className="flex items-center gap-3">
-                                    <MdOutlineContactPhone size={18} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                                    <MdOutlineContactPhone size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('contract')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "contract" ? "rotate-180 text-emerald-400" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "contract" ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ${openMenu === "contract" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.contract.application, 'read') && (
@@ -252,7 +252,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {/* Calendar */}
                 {hasPermission(json.calendar || '/calendar', 'read') && (
                     <Link to={json.calendar || '/calendar'} className={navItemClass(json.calendar || '/calendar')} style={navItemStyle(json.calendar || '/calendar')}>
-                        <FaCalendarAlt size={16} className={isActive(json.calendar || '/calendar') ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400 transition-colors"} />
+                        <FaCalendarAlt size={16} className={isActive(json.calendar || '/calendar') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
                         {t('khmerCalendar')}
                         {isActive(json.calendar || '/calendar') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
@@ -264,10 +264,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div className="flex-shrink-0">
                             <div onClick={() => toggleMenu("calculate")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("calculate")}>
                                 <span className="flex items-center gap-3">
-                                    <MdCalculate size={18} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                                    <MdCalculate size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('calculate')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "calculate" ? "rotate-180 text-emerald-400" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "calculate" ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ${openMenu === "calculate" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.calculate?.calculateSchedule1 || '/calculate/schedule-1', 'read') && (
@@ -301,10 +301,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div className="flex-shrink-0">
                             <div onClick={() => toggleMenu("installment")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("installment")}>
                                 <span className="flex items-center gap-3">
-                                    <IoMdWallet size={18} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                                    <IoMdWallet size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('installment')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "installment" ? "rotate-180 text-emerald-400" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "installment" ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ${openMenu === "installment" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.installment.installmentPage, 'read') && (
@@ -357,10 +357,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div className="flex-shrink-0">
                             <div onClick={() => toggleMenu("lostphone")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("lostphone")}>
                                 <span className="flex items-center gap-3">
-                                    <MdOutlinePhoneIphone size={18} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                                    <MdOutlinePhoneIphone size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('lostPhone')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "lostphone" ? "rotate-180 text-emerald-400" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "lostphone" ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ${openMenu === "lostphone" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.lostphone.actionLockphone, 'read') && (
@@ -383,10 +383,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div className="flex-shrink-0">
                             <div onClick={() => toggleMenu("wallpaper")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("wallpaper")}>
                                 <span className="flex items-center gap-3">
-                                    <MdOutlineWallpaper size={18} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                                    <MdOutlineWallpaper size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('wallpaper')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "wallpaper" ? "rotate-180 text-emerald-400" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "wallpaper" ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ${openMenu === "wallpaper" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.wallpaper.actionWallpaper, 'read') && (
@@ -417,10 +417,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div className="flex-shrink-0">
                             <div onClick={() => toggleMenu("report")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("report")}>
                                 <span className="flex items-center gap-3">
-                                    <MdOutlineBarChart size={18} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                                    <MdOutlineBarChart size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     <span>{t('report')}</span>
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "report" ? "rotate-180 text-emerald-400" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "report" ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ${openMenu === "report" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.report.allCustomers, 'read') && (
@@ -466,10 +466,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div className="flex-shrink-0">
                             <div onClick={() => toggleMenu("history")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("history")}>
                                 <span className="flex items-center gap-3">
-                                    <FaHistory size={16} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                                    <FaHistory size={16} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('history')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "history" ? "rotate-180 text-emerald-400" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "history" ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ${openMenu === "history" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.history?.loginHistory || '/history/login-history', 'read') && (
@@ -492,10 +492,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div className="flex-shrink-0">
                             <div onClick={() => toggleMenu("followUp")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("followUp")}>
                                 <span className="flex items-center gap-3">
-                                    <FaClipboardCheck size={16} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                                    <FaClipboardCheck size={16} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     <span>{t('followUp') || 'Follow up'}</span>
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "followUp" ? "rotate-180 text-emerald-400" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "followUp" ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ${openMenu === "followUp" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.followUp?.followUp1 || '/follow-up/follow-up-1', 'read') && (
@@ -526,7 +526,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {/* Salary */}
                 {hasPermission(json.salary || '/salary', 'read') && (
                     <Link to={json.salary || '/salary'} className={navItemClass(json.salary || '/salary')} style={navItemStyle(json.salary || '/salary')}>
-                        <FaMoneyBillWave size={16} className={isActive(json.salary || '/salary') ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400 transition-colors"} />
+                        <FaMoneyBillWave size={16} className={isActive(json.salary || '/salary') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
                         {t('salary') || 'Salary'}
                         {isActive(json.salary || '/salary') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
@@ -535,7 +535,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {/* All Picture */}
                 {hasPermission(json.allPicture || '/all-picture', 'read') && (
                     <Link to={json.allPicture || '/all-picture'} className={navItemClass(json.allPicture || '/all-picture')} style={navItemStyle(json.allPicture || '/all-picture')}>
-                        <MdOutlinePhotoLibrary size={18} className={isActive(json.allPicture || '/all-picture') ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400 transition-colors"} />
+                        <MdOutlinePhotoLibrary size={18} className={isActive(json.allPicture || '/all-picture') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
                         All Picture
                         {isActive(json.allPicture || '/all-picture') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
@@ -544,7 +544,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {/* Save URL */}
                 {hasPermission(json.saveUrl || '/save-url', 'read') && (
                     <Link to={json.saveUrl || '/save-url'} className={navItemClass(json.saveUrl || '/save-url')} style={navItemStyle(json.saveUrl || '/save-url')}>
-                        <FaBookmark size={15} className={isActive(json.saveUrl || '/save-url') ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400 transition-colors"} />
+                        <FaBookmark size={15} className={isActive(json.saveUrl || '/save-url') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
                         {t('saveUrl') || 'Save URL'}
                         {isActive(json.saveUrl || '/save-url') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
@@ -595,7 +595,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {/* Help & Support — only show if user has permission */}
                 {hasHelpSupportPermission && (
                     <Link to={json.helpSupport || '/help-support'} className={navItemClass(json.helpSupport || '/help-support')} style={navItemStyle(json.helpSupport || '/help-support')}>
-                        <FaQuestionCircle size={16} className={isActive(json.helpSupport || '/help-support') ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400 transition-colors"} />
+                        <FaQuestionCircle size={16} className={isActive(json.helpSupport || '/help-support') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
                         {t('helpSupport') || 'Help & Support'}
                         {isActive(json.helpSupport || '/help-support') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
@@ -609,10 +609,10 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div className="flex-shrink-0">
                             <div onClick={() => toggleMenu("setting")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("setting")}>
                                 <span className="flex items-center gap-3">
-                                    <IoIosSettings size={18} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                                    <IoIosSettings size={18} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                                     {t('settings')}
                                 </span>
-                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenu === "setting" ? "rotate-180 text-emerald-400" : ""}`} />
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenu === "setting" ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ${openMenu === "setting" ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission('/settings/all-account', 'read') && (
@@ -637,29 +637,29 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
             </div>
 
             {/* Bottom Account User Badge Section */}
-            <div id="account-badge-container" className="pt-2 flex-shrink-0 relative" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <div id="account-badge-container" className="pt-2 flex-shrink-0 relative" style={{ borderTop: '1px solid #e2e8f0' }}>
                 {/* Account Menu Popover */}
                 {accountOpen && (
                     <div
                         className="absolute left-[calc(100%+8px)] bottom-0 w-[248px] rounded-[14px] p-2.5 z-[99999] animate-in fade-in slide-in-from-left-2 duration-200"
                         style={{
-                            background: 'linear-gradient(145deg, #1e293b, #0f172a)',
-                            border: '1px solid rgba(52,211,153,0.15)',
-                            boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)'
+                            background: '#ffffff',
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 12px 40px rgba(0,0,0,0.15)'
                         }}
                     >
                         {/* User Info Card */}
-                        <div className="p-3 mb-2 rounded-[10px]" style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.12)' }}>
+                        <div className="p-3 mb-2 rounded-[10px]" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
                             <div className="flex items-center gap-2.5">
                                 <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                                    style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 0 12px rgba(16,185,129,0.3)' }}>
+                                    style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.3)' }}>
                                     <FaUserCircle className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-xs font-bold text-white truncate">{user?.name || 'HAK YONGHOUV'}</p>
-                                    <p className="text-[10px] text-emerald-400 font-mono mt-0.5 truncate">{user?.email || 'yonghouvh@gmail.com'}</p>
+                                    <p className="text-xs font-bold text-slate-800 truncate">{user?.name || 'HAK YONGHOUV'}</p>
+                                    <p className="text-[10px] text-emerald-600 font-mono mt-0.5 truncate">{user?.email || 'yonghouvh@gmail.com'}</p>
                                     <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-1"
-                                        style={{ background: 'rgba(16,185,129,0.2)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
+                                        style={{ background: '#dcfce7', color: '#16a34a', border: '1px solid #86efac' }}>
                                         {user?.role || 'Administrator'}
                                     </span>
                                 </div>
@@ -671,28 +671,28 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             <Link
                                 to="/profile"
                                 onClick={() => setAccountOpen(false)}
-                                className="w-full h-[36px] flex items-center gap-2.5 px-3 rounded-[8px] transition-all cursor-pointer text-xs font-medium text-slate-300 hover:text-white"
+                                className="w-full h-[36px] flex items-center gap-2.5 px-3 rounded-[8px] transition-all cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900"
                                 style={{ background: 'transparent' }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                             >
-                                <FaUserCog className="text-sm text-emerald-400" />
+                                <FaUserCog className="text-sm text-emerald-600" />
                                 <span>{t('profile')}</span>
                             </Link>
 
                             <button
                                 type="button"
                                 onClick={toggleFullscreen}
-                                className="w-full h-[36px] flex items-center justify-between px-3 rounded-[8px] transition-all cursor-pointer text-xs font-medium text-slate-300 hover:text-white"
+                                className="w-full h-[36px] flex items-center justify-between px-3 rounded-[8px] transition-all cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900"
                                 style={{ background: 'transparent' }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                             >
                                 <div className="flex items-center gap-2.5">
-                                    {isFullscreen ? <FaCompress className="text-sm text-emerald-400" /> : <FaExpand className="text-sm text-emerald-400" />}
+                                    {isFullscreen ? <FaCompress className="text-sm text-emerald-600" /> : <FaExpand className="text-sm text-emerald-600" />}
                                     <span>{isFullscreen ? (t('exitFullscreen') || 'Exit Fullscreen') : (t('fullscreen') || 'Fullscreen')}</span>
                                 </div>
-                                <span className="text-[10px] text-slate-500 font-mono">F11</span>
+                                <span className="text-[10px] text-slate-400 font-mono">F11</span>
                             </button>
 
                             {/* Language Selector */}
@@ -700,31 +700,31 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 <button
                                     type="button"
                                     onClick={() => setLangSubmenuOpen(!langSubmenuOpen)}
-                                    className="w-full h-[36px] flex items-center justify-between px-3 rounded-[8px] transition-all cursor-pointer text-xs font-medium text-slate-300 hover:text-white"
-                                    style={{ background: langSubmenuOpen ? 'rgba(52,211,153,0.08)' : 'transparent' }}
-                                    onMouseEnter={e => { if (!langSubmenuOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                                    className="w-full h-[36px] flex items-center justify-between px-3 rounded-[8px] transition-all cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900"
+                                    style={{ background: langSubmenuOpen ? '#ecfdf5' : 'transparent' }}
+                                    onMouseEnter={e => { if (!langSubmenuOpen) e.currentTarget.style.background = '#f1f5f9' }}
                                     onMouseLeave={e => { if (!langSubmenuOpen) e.currentTarget.style.background = 'transparent' }}
                                 >
                                     <div className="flex items-center gap-2.5">
-                                        <FaGlobe className="text-sm text-emerald-400" />
+                                        <FaGlobe className="text-sm text-emerald-600" />
                                         <span>{t('selectLanguage') || 'ភាសា / Language'}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <span className="text-sm">{currentLangObj.flag}</span>
-                                        <IoMdArrowDropdown className={`text-slate-500 transition-transform duration-200 ${langSubmenuOpen ? 'rotate-90 text-emerald-400' : '-rotate-90'}`} />
+                                        <IoMdArrowDropdown className={`text-slate-400 transition-transform duration-200 ${langSubmenuOpen ? 'rotate-90 text-emerald-600' : '-rotate-90'}`} />
                                     </div>
                                 </button>
 
                                 {langSubmenuOpen && (
                                     <div
-                                        className="absolute left-[calc(100%+8px)] bottom-0 w-[210px] rounded-[14px] p-2 z-[100000] animate-in fade-in slide-in-from-left-2 duration-200 max-h-[280px] overflow-y-auto space-y-0.5 custom-scrollbar-dark"
+                                        className="absolute left-[calc(100%+8px)] bottom-0 w-[210px] rounded-[14px] p-2 z-[100000] animate-in fade-in slide-in-from-left-2 duration-200 max-h-[280px] overflow-y-auto space-y-0.5 custom-scrollbar"
                                         style={{
-                                            background: 'linear-gradient(145deg, #1e293b, #0f172a)',
-                                            border: '1px solid rgba(52,211,153,0.15)',
-                                            boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+                                            background: '#ffffff',
+                                            border: '1px solid #e2e8f0',
+                                            boxShadow: '0 12px 40px rgba(0,0,0,0.12)'
                                         }}
                                     >
-                                        <p className="text-[9px] font-bold text-slate-500 px-2 py-1 uppercase tracking-wider border-b mb-1" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                                        <p className="text-[9px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider border-b border-slate-100 mb-1">
                                             {t('selectLanguage') || 'ជ្រើសរើសភាសា'}
                                         </p>
                                         {LANGUAGES.map((l) => (
@@ -736,16 +736,16 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                                     setLangSubmenuOpen(false);
                                                     setAccountOpen(false);
                                                 }}
-                                                className={`w-full flex items-center justify-between px-3 py-2 rounded-[8px] text-xs transition-all cursor-pointer ${lang === l.code ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-                                                style={{ background: lang === l.code ? 'rgba(52,211,153,0.15)' : 'transparent' }}
-                                                onMouseEnter={e => { if (lang !== l.code) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                                                className={`w-full flex items-center justify-between px-3 py-2 rounded-[8px] text-xs transition-all cursor-pointer ${lang === l.code ? 'text-emerald-800 font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+                                                style={{ background: lang === l.code ? '#dcfce7' : 'transparent' }}
+                                                onMouseEnter={e => { if (lang !== l.code) e.currentTarget.style.background = '#f1f5f9' }}
                                                 onMouseLeave={e => { if (lang !== l.code) e.currentTarget.style.background = 'transparent' }}
                                             >
                                                 <span className="flex items-center gap-2.5 font-medium">
                                                     <span className="text-base">{l.flag}</span>
                                                     <span>{l.label}</span>
                                                 </span>
-                                                {lang === l.code && <span className="text-emerald-400 text-[11px] font-black">✓</span>}
+                                                {lang === l.code && <span className="text-emerald-600 text-[11px] font-black">✓</span>}
                                             </button>
                                         ))}
                                     </div>
@@ -763,22 +763,22 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     }
                                     setAccountOpen(false);
                                 }}
-                                className="w-full h-[36px] flex items-center justify-between px-3 rounded-[8px] transition-all cursor-pointer text-xs font-medium text-slate-300 hover:text-white"
+                                className="w-full h-[36px] flex items-center justify-between px-3 rounded-[8px] transition-all cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900"
                                 style={{ background: 'transparent' }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                             >
                                 <div className="flex items-center gap-2.5">
                                     {isHeaderOpen ? (
-                                        <FaEyeSlash className="text-sm text-emerald-400" />
+                                        <FaEyeSlash className="text-sm text-emerald-600" />
                                     ) : (
-                                        <FaEye className="text-sm text-emerald-400" />
+                                        <FaEye className="text-sm text-emerald-600" />
                                     )}
                                     <span>{isHeaderOpen ? (t('hideHeader') || 'លាក់ Header') : (t('showHeader') || 'បង្ហាញ Header')}</span>
                                 </div>
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{
-                                    background: isHeaderOpen ? 'rgba(255,255,255,0.08)' : 'rgba(52,211,153,0.2)',
-                                    color: isHeaderOpen ? '#94a3b8' : '#34d399'
+                                    background: isHeaderOpen ? '#f1f5f9' : '#dcfce7',
+                                    color: isHeaderOpen ? '#64748b' : '#16a34a'
                                 }}>
                                     {isHeaderOpen ? (t('hide') || 'លាក់') : (t('show') || 'បង្ហាញ')}
                                 </span>
@@ -788,9 +788,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             <button
                                 type="button"
                                 onClick={handleLogout}
-                                className="w-full h-[36px] flex items-center gap-2.5 px-3 rounded-[8px] transition-all cursor-pointer text-xs font-semibold text-rose-400 hover:text-rose-300 mt-1"
-                                style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                                className="w-full h-[36px] flex items-center gap-2.5 px-3 rounded-[8px] transition-all cursor-pointer text-xs font-semibold text-rose-600 hover:text-rose-700 mt-1"
+                                style={{ borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#fff1f2'}
                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                             >
                                 <FaSignOutAlt className="text-sm text-rose-500" />
@@ -805,19 +805,19 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                     onClick={() => setAccountOpen(!accountOpen)}
                     className="w-full flex items-center gap-2.5 p-2 rounded-[12px] transition-all cursor-pointer group"
                     style={{
-                        background: accountOpen ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.04)',
-                        border: accountOpen ? '1px solid rgba(52,211,153,0.25)' : '1px solid rgba(255,255,255,0.07)'
+                        background: accountOpen ? '#ecfdf5' : '#f8fafc',
+                        border: accountOpen ? '1px solid #6ee7b7' : '1px solid #e2e8f0'
                     }}
                     onMouseEnter={e => {
                         if (!accountOpen) {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
-                            e.currentTarget.style.borderColor = 'rgba(52,211,153,0.2)';
+                            e.currentTarget.style.background = '#f0fdf4';
+                            e.currentTarget.style.borderColor = '#a7f3d0';
                         }
                     }}
                     onMouseLeave={e => {
                         if (!accountOpen) {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
+                            e.currentTarget.style.background = '#f8fafc';
+                            e.currentTarget.style.borderColor = '#e2e8f0';
                         }
                     }}
                     title={user?.name || 'User Account'}
@@ -829,14 +829,14 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <FaUserCircle className="w-5 h-5 text-white" />
                     </div>
                     <div className="text-left flex-1 min-w-0">
-                        <p className="text-xs font-bold text-white leading-tight truncate">
+                        <p className="text-xs font-bold text-slate-800 leading-tight truncate">
                             {user?.name || 'HAK YONGHOUV'}{user?.brand ? ` (${user.brand.toUpperCase()})` : ' (888MDM)'}
                         </p>
-                        <p className="text-[10px] text-emerald-400 font-mono leading-none mt-0.5 truncate">
+                        <p className="text-[10px] text-emerald-600 font-mono leading-none mt-0.5 truncate">
                             {user?.username ? (user.username.startsWith('@') ? user.username : `@${user.username}`) : '@houv'}
                         </p>
                     </div>
-                    <FaChevronRight className={`text-[10px] text-slate-500 transition-transform duration-200 flex-shrink-0 ${accountOpen ? 'rotate-180 text-emerald-400' : 'group-hover:text-emerald-400'}`} />
+                    <FaChevronRight className={`text-[10px] text-slate-400 transition-transform duration-200 flex-shrink-0 ${accountOpen ? 'rotate-180 text-emerald-600' : 'group-hover:text-emerald-600'}`} />
                 </div>
             </div>
         </aside>
