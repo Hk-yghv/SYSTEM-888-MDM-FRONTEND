@@ -81,7 +81,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
     const toggleMenu = (menu) => {
         setOpenMenus((prev) => {
             const next = { ...prev, [menu]: !prev[menu] };
-            try { localStorage.setItem('sidebar_open_menus', JSON.stringify(next)); } catch {}
+            try { localStorage.setItem('sidebar_open_menus', JSON.stringify(next)); } catch { }
             return next;
         });
     };
@@ -535,7 +535,6 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 )}
                                 {(hasPermission(json.report?.reportTelegram || '/audit/telegram/report', 'read') || hasPermission(json.audit?.telegram || '/audit/telegram', 'read')) && (
                                     <Link to={json.report?.reportTelegram || json.audit?.reportTelegram || '/audit/telegram/report'} className={subItemClass(json.report?.reportTelegram || '/audit/telegram/report')} style={subItemStyle(json.report?.reportTelegram || '/audit/telegram/report')}>
-                                        <FaChartBar size={12} />
                                         {t('reportAuditTelegram') || 'Report Audit Telegram'}
                                     </Link>
                                 )}
