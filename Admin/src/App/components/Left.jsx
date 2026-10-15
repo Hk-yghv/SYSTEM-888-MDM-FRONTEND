@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate, MdOutlinePhotoLibrary } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar, FaPrint, FaIdCard } from "react-icons/fa";
 
 
 const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onToggleHeader }) => {
@@ -62,6 +62,8 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
             setOpenMenu('report');
         } else if (location.pathname.startsWith('/audit')) {
             setOpenMenu('audit');
+        } else if (location.pathname.startsWith('/print')) {
+            setOpenMenu('print');
         }
     }, [location.pathname]);
 
@@ -512,6 +514,28 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             <Link to={json.audit?.telegram || '/audit/telegram'} className={subItemClass(json.audit?.telegram || '/audit/telegram')}>
                                 <FaFileAlt size={15} />
                                 {t('auditTelegram') || 'Audit Telegram'}
+                            </Link>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Print Droplist */}
+            {hasPermission(json.print?.idCard || '/print/id-card', 'read') && (
+                <div className="flex-shrink-0">
+                    <div onClick={() => toggleMenu("print")} className={dropdownHeaderClass("print")}>
+                        <p className="flex items-center gap-3">
+                            <FaPrint size={18} className="text-emerald-600" />
+                            <span>{t('print') || 'Print'}</span>
+                        </p>
+                        <IoMdArrowDropdown size={20} className={`transition-transform duration-300 text-emerald-600 ${openMenu === "print" ? "rotate-180" : ""}`} />
+                    </div>
+
+                    <div className={`overflow-hidden transition-all duration-300 ${openMenu === "print" ? "max-h-[1000px] mt-1.5 space-y-1" : "max-h-0"}`}>
+                        {hasPermission(json.print?.idCard || '/print/id-card', 'read') && (
+                            <Link to={json.print?.idCard || '/print/id-card'} className={subItemClass(json.print?.idCard || '/print/id-card')}>
+                                <FaIdCard size={15} />
+                                {t('printIdCard') || 'Print id card'}
                             </Link>
                         )}
                     </div>

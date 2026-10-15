@@ -75,6 +75,9 @@
         "telegram": "/audit/telegram",
         "reportTelegram": "/audit/telegram/report"
     },
+    "print": {
+        "idCard": "/print/id-card"
+    },
     "settings": {
         "controlSystem": "/settings/control-system",
         "allAccount": "/settings/all-account",

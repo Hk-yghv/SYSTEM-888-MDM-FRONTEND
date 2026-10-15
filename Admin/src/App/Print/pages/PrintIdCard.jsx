@@ -1,0 +1,852 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLanguage } from '../../../context/LanguageContext';
+import {
+    FaPrint,
+    FaIdCard,
+    FaCloudUploadAlt,
+    FaTrashAlt,
+    FaRedo,
+    FaSlidersH,
+    FaCheck,
+    FaPaste,
+    FaFileImage,
+    FaUndoAlt,
+    FaPlus,
+    FaMinus,
+    FaExclamationTriangle,
+    FaTimes,
+    FaInfoCircle,
+    FaCopy
+} from 'react-icons/fa';
+
+const PrintIdCard = () => {
+    const { t } = useLanguage();
+
+    // Image state
+    const [imageSrc, setImageSrc] = useState(null);
+    const [imageName, setImageName] = useState('');
+    const [imageSize, setImageSize] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    // Layout configuration (Default: 100px from top, 200px from left and right)
+    const [topMargin, setTopMargin] = useState(100);
+    const [sideMargin, setSideMargin] = useState(200);
+    const [rotation, setRotation] = useState(0);
+    const [scalePercent, setScalePercent] = useState(100);
+    const [showBorder, setShowBorder] = useState(false);
+    const [showAdjustments, setShowAdjustments] = useState(false);
+    const [pasteSuccess, setPasteSuccess] = useState(false);
+
+    // Number of print copies (ចំនួនសន្លឹកព្រីន)
+    const [copies, setCopies] = useState(1);
+
+    // Custom UI Alert Modals
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [warningModalMessage, setWarningModalMessage] = useState('');
+    const [showKioskTip, setShowKioskTip] = useState(false);
+
+    const fileInputRef = useRef(null);
+    const dropzoneRef = useRef(null);
+
+    // Process a loaded file
+    const processFile = useCallback((file) => {
+        if (!file || !file.type.startsWith('image/')) {
+            setWarningModalMessage('សូមជ្រើសរើសឯកសារជារូបភាព (PNG, JPG, WEBP...)');
+            return;
+        }
+
+        setImageName(file.name || 'Pasted_ID_Card.png');
+        setImageSize((file.size / 1024).toFixed(1) + ' KB');
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setImageSrc(e.target.result);
+            setPasteSuccess(true);
+            setTimeout(() => setPasteSuccess(false), 2500);
+        };
+        reader.readAsDataURL(file);
+    }, []);
+
+    // Drag & Drop handlers
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+            processFile(files[0]);
+        }
+    };
+
+    // File input change
+    const handleFileInputChange = (e) => {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            processFile(files[0]);
+        }
+    };
+
+    // Paste handler (Ctrl + V) from clipboard
+    useEffect(() => {
+        const handleGlobalPaste = (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    if (file) {
+                        processFile(file);
+                        break;
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('paste', handleGlobalPaste);
+        return () => window.removeEventListener('paste', handleGlobalPaste);
+    }, [processFile]);
+
+    // Complete Reset (សម្អាតរូបចេញ និង កំណត់ឡើងវិញទាំងអស់)
+    const handleResetAll = () => {
+        setImageSrc(null);
+        setImageName('');
+        setImageSize(null);
+        setTopMargin(100);
+        setSideMargin(200);
+        setRotation(0);
+        setScalePercent(100);
+        setCopies(1);
+        setShowBorder(false);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    // When clicking Print button -> Show custom Alert UI confirmation
+    const handleInitiatePrint = () => {
+        if (!imageSrc) {
+            setWarningModalMessage('សូមបញ្ចូល ឬ បិទភ្ជាប់រូបភាពកាតសម្គាល់ខ្លួនជាមុនសិន មុនពេលព្រីន!');
+            return;
+        }
+        setShowConfirmModal(true);
+    };
+
+    // Confirm print action
+    const handleExecutePrint = () => {
+        setShowConfirmModal(false);
+        // Small delay to allow modal close animation before opening print view
+        setTimeout(() => {
+            window.print();
+        }, 120);
+    };
+
+    return (
+        <div className="min-h-full flex flex-col bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] print:p-0">
+            {/* Embedded Print CSS Rules */}
+            <style>
+                {`
+                @media print {
+                    @page {
+                        size: A4 portrait;
+                        margin: 0mm;
+                    }
+                    html, body {
+                        width: 210mm !important;
+                        height: auto !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: #ffffff !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    body * {
+                        visibility: hidden !important;
+                    }
+                    .no-print, header, aside, nav, .mobile-sidebar, .mobile-bottom-nav, #floating-display-uplist {
+                        display: none !important;
+                        visibility: hidden !important;
+                    }
+                    #print-a4-sheet, #print-a4-sheet * {
+                        visibility: visible !important;
+                    }
+                    #print-a4-sheet {
+                        display: block !important;
+                        position: absolute !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 210mm !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        box-shadow: none !important;
+                        border: none !important;
+                        background: #ffffff !important;
+                    }
+                    .printable-page {
+                        display: block !important;
+                        width: 210mm !important;
+                        height: 297mm !important;
+                        min-height: 297mm !important;
+                        max-height: 297mm !important;
+                        page-break-after: always !important;
+                        break-after: page !important;
+                        background: #ffffff !important;
+                        box-sizing: border-box !important;
+                        position: relative !important;
+                        overflow: hidden !important;
+                    }
+                    .printable-page:last-child {
+                        page-break-after: auto !important;
+                        break-after: auto !important;
+                    }
+                    .printable-card-wrapper {
+                        display: flex !important;
+                        justify-content: center !important;
+                        align-items: center !important;
+                        box-sizing: border-box !important;
+                    }
+                }
+                `}
+            </style>
+
+            {/* Top Header & Action Bar (Hidden in Print) */}
+            <div className="no-print bg-white border-b border-slate-200 px-4 py-3 sm:px-6 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200 shadow-2xs">
+                        <FaIdCard size={20} />
+                    </div>
+                    <div>
+                        <h1 className="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <span>{t('printIdCard') || 'Print id card'}</span>
+                            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold border border-emerald-300">
+                                A4 Portrait
+                            </span>
+                        </h1>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            គម្លាតពីលើ {topMargin}px | គម្លាតសងខាង {sideMargin}px | ចំនួន {copies} សន្លឹក
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    {/* Copies Counter (ចំនួនសន្លឹកព្រីន) */}
+                    <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5">
+                        <span className="text-[11px] font-semibold text-slate-600 px-2 select-none">
+                            ចំនួនសន្លឹក:
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setCopies((prev) => Math.max(1, prev - 1))}
+                            className="w-7 h-7 flex items-center justify-center bg-white hover:bg-slate-200 text-slate-700 rounded-md transition-all active:scale-95 cursor-pointer shadow-2xs"
+                            title="បន្ថយ ១ សន្លឹក"
+                        >
+                            <FaMinus size={10} />
+                        </button>
+                        <input
+                            type="number"
+                            min="1"
+                            max="50"
+                            value={copies}
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                setCopies(isNaN(val) || val < 1 ? 1 : Math.min(val, 50));
+                            }}
+                            className="w-10 text-center font-bold text-xs text-emerald-700 bg-transparent outline-none py-1"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setCopies((prev) => Math.min(50, prev + 1))}
+                            className="w-7 h-7 flex items-center justify-center bg-white hover:bg-slate-200 text-slate-700 rounded-md transition-all active:scale-95 cursor-pointer shadow-2xs"
+                            title="បន្ថែម ១ សន្លឹក"
+                        >
+                            <FaPlus size={10} />
+                        </button>
+                    </div>
+
+                    {/* Reset Button (កំណត់ឡើងវិញ / សម្អាតរូបភាព) */}
+                    <button
+                        type="button"
+                        onClick={handleResetAll}
+                        className="h-[38px] px-3.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs"
+                        title="សម្អាតរូបភាព និង កំណត់ឡើងវិញទាំងអស់"
+                    >
+                        <FaUndoAlt size={12} className="text-rose-600" />
+                        <span>កំណត់ឡើងវិញ (Reset)</span>
+                    </button>
+
+                    {/* Adjust Margins Button */}
+                    <button
+                        type="button"
+                        onClick={() => setShowAdjustments(!showAdjustments)}
+                        className={`h-[38px] px-3.5 rounded-lg border text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer active:scale-95 ${
+                            showAdjustments
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-2xs'
+                                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                        }`}
+                        title="កំណត់គម្លាតបន្ថែម"
+                    >
+                        <FaSlidersH size={13} className="text-emerald-600" />
+                        <span>គម្លាត (Margins)</span>
+                    </button>
+
+                    {/* Print Button (Opens Custom Alert UI Confirmation) */}
+                    <button
+                        type="button"
+                        onClick={handleInitiatePrint}
+                        className={`h-[38px] px-5 rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95 ${
+                            imageSrc
+                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/25 border border-emerald-500'
+                                : 'bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed shadow-none'
+                        }`}
+                        title={imageSrc ? `ចុចព្រីនចំនួន ${copies} សន្លឹក` : 'សូមបញ្ចូលរូបភាពជាមុនសិន'}
+                    >
+                        <FaPrint size={14} />
+                        <span>{t('printNow') || 'ចុចព្រីន (Print)'} ({copies})</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Paste Success Flash Toast */}
+            {pasteSuccess && (
+                <div className="no-print bg-emerald-600 text-white px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200 shadow-md">
+                    <FaCheck size={13} />
+                    <span>បានបិទភ្ជាប់រូបភាពដោយជោគជ័យពី Clipboard (Pasted successfully)!</span>
+                </div>
+            )}
+
+            {/* Main Content Area */}
+            <div className="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl mx-auto w-full">
+                {/* 1. Upload & Dropzone Section (Hidden in print) */}
+                <div className="no-print bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <h2 className="text-sm font-bold text-slate-800">
+                                {t('uploadOrPasteIdCard') || 'បញ្ចូល ឬ បិទភ្ជាប់រូបភាពកាត (Drag & Drop / Copy & Paste)'}
+                            </h2>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-medium">
+                                <FaPaste size={11} className="text-amber-600" />
+                                អាចចុច <kbd className="font-mono bg-white px-1 py-0.5 rounded border border-amber-300 font-bold">Ctrl + V</kbd> ដើម្បី Paste
+                            </span>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowKioskTip(!showKioskTip)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-sky-50 text-sky-800 border border-sky-200 text-[11px] font-medium hover:bg-sky-100 cursor-pointer"
+                                title="ព័ត៌មានអំពីការព្រីនស្វ័យប្រវត្តិកុំឱ្យចេញផ្ទាំង Browser"
+                            >
+                                <FaInfoCircle size={11} className="text-sky-600" />
+                                <span>ព្រីនយកម៉ង (Silent Print)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Kiosk Mode Tip Box */}
+                    {showKioskTip && (
+                        <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 text-xs text-sky-900 space-y-1.5 animate-in fade-in duration-200">
+                            <div className="flex items-center justify-between font-bold">
+                                <span>💡 របៀបព្រីនភ្លាមៗដោយមិនចាំបាច់ឆ្លងកាត់ផ្ទាំង Browser (Direct / Silent Printing):</span>
+                                <button type="button" onClick={() => setShowKioskTip(false)} className="text-sky-600 hover:text-sky-800">
+                                    <FaTimes size={12} />
+                                </button>
+                            </div>
+                            <p className="text-[11px] text-sky-800">
+                                Browser ដូចជា Google Chrome និង Microsoft Edge មានមុខងារសុវត្ថិភាពទាមទារផ្ទាំង Print Preview។ ប៉ុន្តែប្រសិនបើអ្នកចង់ឱ្យចុចព្រីនហើយចេញទៅម៉ាស៊ីនព្រីនភ្លាមៗ អ្នកអាចបើក Chrome ដោយបន្ថែម parameter នេះលើ Shortcut របស់ Chrome:
+                            </p>
+                            <code className="block bg-white p-2 rounded border border-sky-300 font-mono text-[11px] select-all font-bold text-sky-700">
+                                chrome.exe --kiosk-printing
+                            </code>
+                            <p className="text-[10px] text-sky-600">
+                                នៅពេលដំណើរការរបៀបនេះ រាល់ពេលចុច "ព្រីនឥឡូវនេះ" វានឹងព្រីនទៅម៉ាស៊ីនព្រីនផ្ទាល់តែម្តង ដោយគ្មានផ្ទាំងរំខានឡើយ!
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Drag and Drop Box */}
+                    <div
+                        ref={dropzoneRef}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`relative rounded-xl border-2 border-dashed p-6 sm:p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center group ${
+                            isDragging
+                                ? 'border-emerald-500 bg-emerald-50/80 scale-[1.008] shadow-md'
+                                : imageSrc
+                                ? 'border-emerald-300 bg-emerald-50/20 hover:bg-emerald-50/40'
+                                : 'border-slate-300 hover:border-emerald-400 bg-slate-50/60 hover:bg-slate-50'
+                        }`}
+                    >
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileInputChange}
+                            className="hidden"
+                        />
+
+                        {imageSrc ? (
+                            <div className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-lg mx-auto bg-white p-3.5 rounded-xl border border-emerald-200 shadow-2xs">
+                                <div className="w-20 h-14 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center">
+                                    <img
+                                        src={imageSrc}
+                                        alt="Thumbnail"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div className="flex-1 text-left min-w-0">
+                                    <p className="text-xs font-bold text-slate-800 truncate" title={imageName}>
+                                        {imageName}
+                                    </p>
+                                    <p className="text-[11px] text-slate-500 mt-0.5">
+                                        ទំហំ: {imageSize || 'N/A'} • ចំនួនព្រីន: <strong className="text-emerald-700">{copies} សន្លឹក</strong>
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                            រួចរាល់សម្រាប់ព្រីន
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            fileInputRef.current?.click();
+                                        }}
+                                        className="px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors"
+                                    >
+                                        ប្តូររូប
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleResetAll();
+                                        }}
+                                        className="px-2.5 py-1.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-medium transition-colors border border-rose-200"
+                                        title="សម្អាតរូបចេញ"
+                                    >
+                                        <FaTrashAlt size={11} />
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-emerald-100 transition-all shadow-2xs border border-emerald-100">
+                                    <FaCloudUploadAlt size={28} />
+                                </div>
+                                <p className="text-sm font-bold text-slate-700">
+                                    {t('dragDropOrPaste') || 'ទាញរូបភាពទម្លាក់ទីនេះ ឬ ចុច Ctrl+V ដើម្បីបិទភ្ជាប់រូប (Paste)'}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    គាំទ្រឯកសារ PNG, JPG, JPEG, WEBP ឬ រូបភាពដែលបាន Copy ពី Snipping Tool
+                                </p>
+                                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold shadow-xs hover:bg-emerald-700 transition-colors">
+                                    <FaFileImage size={13} />
+                                    <span>{t('browseImage') || 'ជ្រើសរើសរូបភាពពីកុំព្យូទ័រ'}</span>
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Expandable Margin & Image Adjustment Controls */}
+                    {showAdjustments && (
+                        <div className="pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50/80 p-4 rounded-xl border border-slate-200 text-xs">
+                            {/* Top Margin Slider */}
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between font-semibold text-slate-700">
+                                    <span>គម្លាតពីលើ (Top Margin):</span>
+                                    <span className="font-mono text-emerald-700 font-bold">{topMargin}px</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="20"
+                                    max="300"
+                                    step="5"
+                                    value={topMargin}
+                                    onChange={(e) => setTopMargin(Number(e.target.value))}
+                                    className="w-full accent-emerald-600 cursor-pointer"
+                                />
+                                <p className="text-[10px] text-slate-400">តាមស្តង់ដារ: 100px</p>
+                            </div>
+
+                            {/* Left/Right Margin Slider */}
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between font-semibold text-slate-700">
+                                    <span>គម្លាតសងខាង (Side Margins):</span>
+                                    <span className="font-mono text-emerald-700 font-bold">{sideMargin}px</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="50"
+                                    max="300"
+                                    step="5"
+                                    value={sideMargin}
+                                    onChange={(e) => setSideMargin(Number(e.target.value))}
+                                    className="w-full accent-emerald-600 cursor-pointer"
+                                />
+                                <p className="text-[10px] text-slate-400">តាមស្តង់ដារ: 200px</p>
+                            </div>
+
+                            {/* Image Scale Slider */}
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between font-semibold text-slate-700">
+                                    <span>ទំហំរូបភាព (Scale):</span>
+                                    <span className="font-mono text-emerald-700 font-bold">{scalePercent}%</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="50"
+                                    max="150"
+                                    step="5"
+                                    value={scalePercent}
+                                    onChange={(e) => setScalePercent(Number(e.target.value))}
+                                    className="w-full accent-emerald-600 cursor-pointer"
+                                />
+                                <p className="text-[10px] text-slate-400">ទំហំដើម: 100%</p>
+                            </div>
+
+                            {/* Quick Action Buttons */}
+                            <div className="flex flex-col justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                                        className="flex-1 h-[32px] px-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                                    >
+                                        <FaRedo size={11} className="text-emerald-600" />
+                                        <span>បង្វិល 90° ({rotation}°)</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowBorder(!showBorder)}
+                                        className={`h-[32px] px-2.5 rounded-lg border font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                            showBorder
+                                                ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                                                : 'bg-white border-slate-200 text-slate-600'
+                                        }`}
+                                        title="បង្ហាញបន្ទាត់គែម"
+                                    >
+                                        <span>បន្ទាត់កាត់</span>
+                                    </button>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setTopMargin(100);
+                                        setSideMargin(200);
+                                        setRotation(0);
+                                        setScalePercent(100);
+                                        setShowBorder(false);
+                                    }}
+                                    className="w-full h-[32px] rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold transition-colors cursor-pointer"
+                                >
+                                    កំណត់តាមលំនាំដើម (100px & 200px)
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* 2. Review Section Below (A4 Preview) */}
+                <div className="space-y-3">
+                    <div className="no-print flex flex-wrap items-center justify-between gap-2 px-1">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                <span>{t('previewA4') || 'ទម្រង់មើលជាមុនលើក្រដាស A4 (A4 Portrait Paper Preview)'}</span>
+                            </h2>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <span className="px-2 py-0.5 rounded bg-emerald-50 font-mono text-[11px] text-emerald-800 font-bold border border-emerald-200">
+                                ចំនួនព្រីន: {copies} សន្លឹក
+                            </span>
+                            <span className="hidden sm:inline text-slate-400">•</span>
+                            <span className="hidden sm:inline">
+                                គម្លាតពីលើ: <strong className="text-slate-700">{topMargin}px</strong>
+                            </span>
+                            <span className="hidden sm:inline text-slate-400">•</span>
+                            <span className="hidden sm:inline">
+                                គម្លាតសងខាង: <strong className="text-slate-700">{sideMargin}px</strong>
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Realistic A4 Canvas Workspace */}
+                    <div className="no-print w-full bg-slate-200/70 rounded-2xl p-4 sm:p-8 flex justify-center items-start overflow-x-auto border border-slate-300/80 shadow-inner min-h-[500px]">
+                        <div
+                            style={{
+                                width: '794px', // 210mm in CSS px at 96 DPI
+                                minHeight: '1123px', // 297mm in CSS px at 96 DPI
+                                height: '1123px',
+                                backgroundColor: '#ffffff',
+                                boxShadow: '0 15px 40px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08)',
+                                position: 'relative',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'stretch',
+                                boxSizing: 'border-box'
+                            }}
+                            className="transition-all duration-300 rounded-[2px]"
+                        >
+                            <div className="absolute top-2 right-3 text-[10px] text-slate-300 font-mono select-none pointer-events-none">
+                                A4 PORTRAIT (210mm × 297mm) • {copies} PAGE(S)
+                            </div>
+
+                            {/* Positioned ID Card Box: Exactly topMargin from top, sideMargin from left & right */}
+                            <div
+                                style={{
+                                    marginTop: `${topMargin}px`,
+                                    marginLeft: `${sideMargin}px`,
+                                    marginRight: `${sideMargin}px`,
+                                    width: `calc(100% - ${sideMargin * 2}px)`,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    boxSizing: 'border-box'
+                                }}
+                            >
+                                {imageSrc ? (
+                                    <div
+                                        style={{
+                                            transform: `rotate(${rotation}deg) scale(${scalePercent / 100})`,
+                                            transition: 'transform 0.2s ease-out',
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            width: '100%'
+                                        }}
+                                    >
+                                        <img
+                                            src={imageSrc}
+                                            alt="ID Card Preview"
+                                            className={`max-w-full h-auto object-contain transition-all ${
+                                                showBorder
+                                                    ? 'border-2 border-dashed border-slate-400 p-0.5'
+                                                    : 'shadow-xs'
+                                            }`}
+                                            style={{
+                                                maxHeight: '400px'
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div
+                                        className="w-full h-[220px] rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/80 flex flex-col items-center justify-center p-6 text-center select-none"
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <div className="w-12 h-12 rounded-xl bg-slate-200/80 text-slate-400 flex items-center justify-center mb-2">
+                                            <FaIdCard size={24} />
+                                        </div>
+                                        <p className="text-xs font-bold text-slate-500">
+                                            ទីតាំងរូបភាពកាតសម្គាល់ខ្លួន (ID Card Position)
+                                        </p>
+                                        <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
+                                            រូបភាពនឹងស្ថិតនៅចំកណ្តាល ដោយមានគម្លាតសងខាង {sideMargin}px និង គម្លាតពីលើ {topMargin}px
+                                        </p>
+                                        <span className="mt-3 px-3 py-1 rounded-md bg-white border border-slate-200 text-slate-600 text-[11px] font-semibold shadow-2xs hover:bg-slate-100 cursor-pointer">
+                                            + បញ្ចូលរូបភាពឥឡូវនេះ
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 3. PHYSICAL PRINT SHEET (Generates exact N pages based on 'copies') */}
+            <div
+                id="print-a4-sheet"
+                style={{
+                    display: 'none',
+                    width: '210mm',
+                    margin: 0,
+                    padding: 0,
+                    backgroundColor: '#ffffff'
+                }}
+            >
+                {imageSrc &&
+                    Array.from({ length: copies }).map((_, pageIndex) => (
+                        <div
+                            key={pageIndex}
+                            className="printable-page"
+                            style={{
+                                width: '210mm',
+                                height: '297mm',
+                                minHeight: '297mm',
+                                maxHeight: '297mm',
+                                backgroundColor: '#ffffff',
+                                boxSizing: 'border-box',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
+                        >
+                            <div
+                                className="printable-card-wrapper"
+                                style={{
+                                    marginTop: `${topMargin}px`,
+                                    marginLeft: `${sideMargin}px`,
+                                    marginRight: `${sideMargin}px`,
+                                    width: `calc(100% - ${sideMargin * 2}px)`,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    boxSizing: 'border-box'
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        transform: `rotate(${rotation}deg) scale(${scalePercent / 100})`,
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        width: '100%'
+                                    }}
+                                >
+                                    <img
+                                        src={imageSrc}
+                                        alt={`Print ID Card Page ${pageIndex + 1}`}
+                                        className={`max-w-full h-auto object-contain ${
+                                            showBorder ? 'border border-dashed border-gray-400 p-0.5' : ''
+                                        }`}
+                                        style={{
+                                            maxHeight: '400px'
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+            </div>
+
+            {/* 4. CUSTOM ALERT UI - CONFIRM PRINT MODAL (ជំនួសឱ្យ Alert ធម្មតា) */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[999999] p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
+                                    <FaPrint size={18} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-bold text-slate-800">
+                                        បញ្ជាក់ការព្រីន (Confirm Print)
+                                    </h3>
+                                    <p className="text-[11px] text-slate-500">
+                                        សូមពិនិត្យព័ត៌មានមុនពេលដំណើរការព្រីន
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmModal(false)}
+                                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                            >
+                                <FaTimes size={14} />
+                            </button>
+                        </div>
+
+                        {/* Content summary */}
+                        <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+                            <div className="flex items-center gap-3">
+                                {imageSrc && (
+                                    <div className="w-16 h-12 rounded-lg overflow-hidden border border-slate-300 bg-white flex-shrink-0 flex items-center justify-center">
+                                        <img src={imageSrc} alt="Preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-bold text-slate-800 truncate">{imageName || 'ID_Card.png'}</p>
+                                    <p className="text-[11px] text-slate-500">ទំហំឯកសារ: {imageSize || 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            <div className="border-t border-slate-200/80 pt-2.5 space-y-1.5 font-medium text-slate-600 text-[11px]">
+                                <div className="flex justify-between items-center">
+                                    <span>ចំនួនសន្លឹកព្រីនចេញ:</span>
+                                    <span className="font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded border border-emerald-200">
+                                        {copies} សន្លឹក (Pages)
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span>ទម្រង់ក្រដាស:</span>
+                                    <span className="font-semibold text-slate-800">A4 Portrait (បញ្ឈរ)</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span>គម្លាតកំណត់:</span>
+                                    <span className="font-mono text-slate-700">ពីលើ {topMargin}px | សងខាង {sideMargin}px</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-end gap-2.5 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmModal(false)}
+                                className="h-[38px] px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer"
+                            >
+                                បោះបង់ (Cancel)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleExecutePrint}
+                                className="h-[38px] px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20 border border-emerald-500 flex items-center gap-2 cursor-pointer active:scale-95"
+                            >
+                                <FaPrint size={13} />
+                                <span>ព្រីនឥឡូវនេះ (Print Now)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 5. CUSTOM ALERT UI - WARNING / NOTICE MODAL */}
+            {warningModalMessage && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[999999] p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl border border-amber-200 max-w-sm w-full p-5 shadow-2xl text-center space-y-3.5 animate-in zoom-in-95 duration-200">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200 shadow-2xs">
+                            <FaExclamationTriangle size={22} />
+                        </div>
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-bold text-slate-800">
+                                សូមបញ្ជាក់ព័ត៌មាន
+                            </h3>
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                                {warningModalMessage}
+                            </p>
+                        </div>
+                        <div className="pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setWarningModalMessage('')}
+                                className="w-full h-[36px] rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-md shadow-amber-600/20 cursor-pointer"
+                            >
+                                យល់ព្រម (OK)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default PrintIdCard;

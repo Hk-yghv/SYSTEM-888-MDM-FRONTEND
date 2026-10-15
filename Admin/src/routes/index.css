@@ -113,6 +113,7 @@
 }
 
 @media screen and (max-width: 767px) {
+
     html,
     body,
     #root {
@@ -128,7 +129,7 @@
     }
 
     .mobile-content-area,
-    .mobile-content-area > * {
+    .mobile-content-area>* {
         min-width: 0;
         max-width: 100%;
     }
@@ -185,16 +186,16 @@
         border: 0;
     }
 
-    .mobile-content-area table > thead {
+    .mobile-content-area table>thead {
         display: none;
     }
 
-    .mobile-content-area table > tbody {
+    .mobile-content-area table>tbody {
         display: grid;
         gap: 0.7rem;
     }
 
-    .mobile-content-area table > tbody > tr {
+    .mobile-content-area table>tbody>tr {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.55rem 0.75rem;
@@ -205,7 +206,7 @@
         box-shadow: 0 3px 12px rgba(15, 23, 42, 0.07);
     }
 
-    .mobile-content-area table > tbody > tr > td {
+    .mobile-content-area table>tbody>tr>td {
         display: flex;
         min-width: 0;
         max-width: none;
@@ -219,7 +220,7 @@
         word-break: break-word;
     }
 
-    .mobile-content-area table > tbody > tr > td::before {
+    .mobile-content-area table>tbody>tr>td::before {
         content: attr(data-label);
         color: #64748b;
         font-size: 0.58rem;
@@ -228,7 +229,7 @@
         text-transform: uppercase;
     }
 
-    .mobile-content-area table > tbody > tr > td[colspan] {
+    .mobile-content-area table>tbody>tr>td[colspan] {
         grid-column: 1 / -1;
     }
 
@@ -663,6 +664,7 @@ table tbody tr:hover {
    GLOBAL PRINT STYLES - HIDE APP SHELL & PRINT ONLY ACTIVE CONTENT
    ========================================================================== */
 @media print {
+
     /* Hide layout shell: Top Header, Left Sidebar, Bottom Nav, Popovers, Drawers, Fixed Elements */
     header,
     aside,
@@ -701,8 +703,9 @@ table tbody tr:hover {
         print-color-adjust: exact !important;
     }
 
+
     #root,
-    #root > div,
+    #root>div,
     .h-screen,
     .h-full,
     .overflow-hidden,
@@ -723,4 +726,4 @@ table tbody tr:hover {
         margin: 0 !important;
         padding: 0 !important;
     }
-}
+}

@@ -522,5 +522,13 @@
   "overdueTag": "លើសកំណត់",
   "dueTodayTag": "ដល់ថ្ងៃបង់",
   "pdfPortrait": "PDF (បញ្ឈរ)",
-  "pdfLandscape": "PDF (ផ្តេក)"
+  "pdfLandscape": "PDF (ផ្តេក)",
+  "print": "Print",
+  "printIdCard": "Print id card",
+  "uploadOrPasteIdCard": "បញ្ចូល ឬ បិទភ្ជាប់រូបភាពកាត",
+  "dragDropOrPaste": "ទាញរូបភាពទម្លាក់ទីនេះ ឬ ចុច Ctrl+V ដើម្បីបិទភ្ជាប់រូប (Paste)",
+  "browseImage": "ជ្រើសរើសរូបភាព",
+  "previewA4": "ទម្រង់មើលជាមុនលើក្រដាស A4 (បញ្ឈរ)",
+  "printNow": "ចុចព្រីន (Print)",
+  "clearImage": "សម្អាតរូបភាព"
 }
