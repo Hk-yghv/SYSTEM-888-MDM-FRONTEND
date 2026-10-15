@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import json from "../../routes/Routes.json";
 import { useLanguage } from "../../context/LanguageContext";
@@ -94,9 +94,86 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
     // Check if Help & Support page link should be visible
     const hasHelpSupportPermission = hasPermission(json.helpSupport || '/help-support', 'read');
 
-    // Nav item classes — light sidebar style
+    // Scroll-driven edge scaling ref & logic
+    const scrollContainerRef = useRef(null);
+    const rafIdRef = useRef(null);
+
+    const updateScrollScales = useCallback(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const scrollTop = container.scrollTop;
+        const clientHeight = container.clientHeight;
+        const scrollHeight = container.scrollHeight;
+        const maxScroll = Math.max(0, scrollHeight - clientHeight);
+
+        const items = container.querySelectorAll('.sidebar-nav-item');
+        if (items.length === 0) return;
+
+        // If cannot scroll or content fully fits, all items remain normal 1.0
+        if (maxScroll <= 4) {
+            items.forEach((item) => {
+                item.style.setProperty('--scroll-scale', '1');
+                item.style.setProperty('--scroll-opacity', '1');
+            });
+            return;
+        }
+
+        // Top progress: 0 when at very top (scrollTop === 0), ramps to 1 as user scrolls down by 70px
+        // When at the very top, top items DO NOT shrink!
+        const topProgress = Math.min(1, Math.max(0, scrollTop / 70));
+
+        // Bottom progress: 0 when at very bottom, ramps to 1 when scrolled 70px above bottom
+        // When at the very bottom, bottom items DO NOT shrink!
+        const remainingScroll = Math.max(0, maxScroll - scrollTop);
+        const bottomProgress = Math.min(1, Math.max(0, remainingScroll / 70));
+
+        const containerRect = container.getBoundingClientRect();
+        const edgeThreshold = 85; // px boundary from top/bottom where shrinking occurs
+
+        items.forEach((item) => {
+            const rect = item.getBoundingClientRect();
+            const itemCenter = rect.top + rect.height / 2 - containerRect.top;
+
+            let shrink = 0;
+
+            // Near top edge (only shrinks if user has scrolled away from top)
+            if (itemCenter < edgeThreshold && topProgress > 0) {
+                const factor = Math.max(0, itemCenter / edgeThreshold); // 0 at top, 1 at boundary
+                shrink = (1 - factor) * topProgress * 0.16; // up to 16% shrink
+            }
+            // Near bottom edge (only shrinks if there is more content to scroll below)
+            else if (itemCenter > clientHeight - edgeThreshold && bottomProgress > 0) {
+                const distFromBottom = clientHeight - itemCenter;
+                const factor = Math.max(0, distFromBottom / edgeThreshold); // 0 at bottom, 1 at boundary
+                shrink = (1 - factor) * bottomProgress * 0.16; // up to 16% shrink
+            }
+
+            const scale = (1 - shrink).toFixed(3);
+            const opacity = (1 - shrink * 1.4).toFixed(3);
+
+            item.style.setProperty('--scroll-scale', scale);
+            item.style.setProperty('--scroll-opacity', opacity);
+        });
+    }, []);
+
+    const handleScroll = useCallback(() => {
+        if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = requestAnimationFrame(updateScrollScales);
+    }, [updateScrollScales]);
+
+    useEffect(() => {
+        updateScrollScales();
+        window.addEventListener('resize', updateScrollScales);
+        return () => {
+            window.removeEventListener('resize', updateScrollScales);
+            if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+        };
+    }, [updateScrollScales, openMenu, isOpen]);
+
+    // Nav item classes — light sidebar style with .sidebar-nav-item for hover elevation & scroll scale
     const navItemClass = (path) =>
-        `group relative w-full h-[42px] flex-shrink-0 flex items-center gap-3 px-3 rounded-[8px] text-[13px] font-semibold overflow-hidden transition-all duration-200 ease-out active:scale-[0.98] ${isActive(path)
+        `sidebar-nav-item group relative w-full h-[42px] flex-shrink-0 flex items-center gap-3 px-3 rounded-[8px] text-[13px] font-semibold overflow-hidden active:scale-[0.98] ${isActive(path)
             ? "text-white"
             : "text-slate-700 hover:text-slate-900"
         }`;
@@ -115,7 +192,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
     const navItemHoverStyle = {};
 
     const subItemClass = (path) =>
-        `group relative flex items-center gap-2.5 flex-shrink-0 px-3 py-2 ml-2 text-[12px] font-semibold rounded-[7px] overflow-hidden transition-all duration-200 ease-out active:scale-[0.98] ${isActive(path)
+        `sidebar-nav-item group relative flex items-center gap-2.5 flex-shrink-0 px-3 py-2 ml-2 text-[12px] font-semibold rounded-[7px] overflow-hidden active:scale-[0.98] ${isActive(path)
             ? "text-white"
             : "text-slate-600 hover:text-slate-900"
         }`;
@@ -131,7 +208,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
         };
 
     const dropdownHeaderClass = () =>
-        `group relative w-full h-[42px] flex-shrink-0 flex items-center justify-between px-3 text-slate-700 hover:text-slate-900 rounded-[8px] cursor-pointer text-[13px] font-semibold overflow-hidden transition-all duration-200 ease-out active:scale-[0.99]`;
+        `sidebar-nav-item group relative w-full h-[42px] flex-shrink-0 flex items-center justify-between px-3 text-slate-700 hover:text-slate-900 rounded-[8px] cursor-pointer text-[13px] font-semibold overflow-hidden active:scale-[0.99]`;
 
     const dropdownHeaderStyle = (menuName) => openMenu === menuName
         ? {
@@ -172,7 +249,11 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
             }}
         >
             {/* Top Scrollable Navigation Section */}
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-0.5 flex flex-col custom-scrollbar">
+            <div
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-0.5 flex flex-col custom-scrollbar"
+            >
 
                 {/* MAIN NAV */}
                 {/* Dashboard */}
