@@ -78,8 +78,10 @@
     "print": {
         "idCard": "/print/id-card"
     },
+    "helpSupport": "/help-support",
     "settings": {
         "controlSystem": "/settings/control-system",
+        "controlSupportHelp": "/settings/control-support-help",
         "allAccount": "/settings/all-account",
         "phoneApp": "/settings/phone-app",
         "profile": "/profile"

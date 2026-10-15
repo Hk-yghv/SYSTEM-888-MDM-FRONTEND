@@ -530,5 +530,11 @@
   "browseImage": "ជ្រើសរើសរូបភាព",
   "previewA4": "ទម្រង់មើលជាមុនលើក្រដាស A4 (បញ្ឈរ)",
   "printNow": "ចុចព្រីន (Print)",
-  "clearImage": "សម្អាតរូបភាព"
+  "clearImage": "សម្អាតរូបភាព",
+  "helpSupport": "Help & Support",
+  "controlSupportHelp": "Control Support & Help",
+  "supportCenter": "មជ្ឈមណ្ឌលជំនួយ និងការគាំទ្រ (Help & Support)",
+  "manageSupportHelp": "គ្រប់គ្រងអត្ថបទណែនាំ និងជំនួយ",
+  "addSupportHelp": "បន្ថែមការណែនាំថ្មី",
+  "editSupportHelp": "កែសម្រួលការណែនាំ"
 }

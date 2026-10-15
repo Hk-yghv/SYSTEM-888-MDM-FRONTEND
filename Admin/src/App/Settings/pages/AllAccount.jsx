@@ -69,6 +69,9 @@ const ALL_SYSTEM_PAGES = [
 
     { category: 'Print System', path: '/print/id-card', label: 'Print ID Card (A4 ព្រីនកាតសម្គាល់ខ្លួន)', actions: ['read', 'print'] },
 
+    { category: 'Support & Help', path: '/help-support', label: 'Help & Support (មជ្ឈមណ្ឌលជំនួយ)', actions: ['read'] },
+    { category: 'Support & Help', path: '/settings/control-support-help', label: 'Control Support & Help (គ្រប់គ្រងជំនួយ)', actions: ['read', 'create', 'edit', 'delete'] },
+
     { category: 'Media Management', path: '/all-picture', label: 'All Picture (Cloudinary)', actions: ['read', 'delete'] },
 
     { category: 'Settings & Profile', path: '/profile', label: 'User Profile', actions: ['read', 'edit'] },

@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate, MdOutlinePhotoLibrary } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar, FaPrint, FaIdCard } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronUp, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar, FaPrint, FaIdCard, FaQuestionCircle, FaHandsHelping } from "react-icons/fa";
 
 
 const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onToggleHeader }) => {
@@ -64,6 +64,8 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
             setOpenMenu('audit');
         } else if (location.pathname.startsWith('/print')) {
             setOpenMenu('print');
+        } else if (location.pathname.startsWith('/settings')) {
+            setOpenMenu('setting');
         }
     }, [location.pathname]);
 
@@ -542,9 +544,18 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 </div>
             )}
 
+            {/* Help & Support (នៅពីលើ Droplist setting) */}
+            {hasPermission(json.helpSupport || '/help-support', 'read') && (
+                <Link to={json.helpSupport || '/help-support'} className={navItemClass(json.helpSupport || '/help-support')}>
+                    <FaQuestionCircle size={18} className={isActive(json.helpSupport || '/help-support') ? "text-white" : "text-emerald-600"} />
+                    {t('helpSupport') || 'Help & Support'}
+                </Link>
+            )}
+
             {/* Setting */}
             {(hasPermission('/settings/all-account', 'read') ||
                 hasPermission(json.settings.controlSystem, 'read') ||
+                hasPermission(json.settings?.controlSupportHelp || '/settings/control-support-help', 'read') ||
                 hasPermission(json.settings.systemLogs, 'read')) && (
                     <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("setting")} className={dropdownHeaderClass("setting")}>
@@ -561,6 +572,11 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             )}
                             {hasPermission(json.settings.controlSystem, 'read') && (
                                 <Link to={json.settings.controlSystem} className={subItemClass(json.settings.controlSystem)}>{t('controlSystem')}</Link>
+                            )}
+                            {(hasPermission(json.settings?.controlSupportHelp || '/settings/control-support-help', 'read') || hasPermission(json.settings?.controlSystem, 'read')) && (
+                                <Link to={json.settings?.controlSupportHelp || '/settings/control-support-help'} className={subItemClass(json.settings?.controlSupportHelp || '/settings/control-support-help')}>
+                                    {t('controlSupportHelp') || 'Control Support & Help'}
+                                </Link>
                             )}
                             {hasPermission(json.settings.systemLogs, 'read') && (
                                 <Link to={json.settings.systemLogs} className={subItemClass(json.settings.systemLogs)}>{t('systemLogs')}</Link>

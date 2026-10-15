@@ -86,6 +86,8 @@ import SaveUrlPage from "../App/SaveUrl/pages/SaveUrlPage";
 import AuditTelegram from "../App/Audit/pages/AuditTelegram";
 import ReportAuditTelegram from "../App/Audit/pages/ReportAuditTelegram";
 import PrintIdCard from "../App/Print/pages/PrintIdCard";
+import HelpSupport from "../App/Support/pages/HelpSupport";
+import ControlSupportHelp from "../App/Settings/pages/ControlSupportHelp";
 
 /**
  * Redirect root or unauthenticated users to their first permitted page
@@ -208,9 +210,13 @@ const AppRoutes = () => {
       {/* Print */}
       <Route path={json.print?.idCard || "/print/id-card"} element={renderProtected(json.print?.idCard || "/print/id-card", PrintIdCard)} />
 
+      {/* Help & Support */}
+      <Route path={json.helpSupport || "/help-support"} element={renderProtected(json.helpSupport || "/help-support", HelpSupport)} />
+
       {/* Settings & Profile */}
       <Route path={json.settings.allAccount} element={renderProtected(json.settings.allAccount, AllAccount)} />
       <Route path={json.settings.controlSystem} element={renderProtected(json.settings.controlSystem, ControlSystem)} />
+      <Route path={json.settings?.controlSupportHelp || "/settings/control-support-help"} element={renderProtected(json.settings?.controlSupportHelp || "/settings/control-support-help", ControlSupportHelp)} />
       <Route path={json.settings.profile} element={renderProtected(json.settings.profile, Profile)} />
 
       {/* Wildcard Fallback */}

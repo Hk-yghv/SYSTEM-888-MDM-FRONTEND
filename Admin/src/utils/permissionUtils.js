@@ -53,6 +53,8 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/audit/telegram',
     '/audit/telegram/report',
     '/print/id-card',
+    '/help-support',
+    '/settings/control-support-help',
     '/settings/all-account',
     '/settings/control-system',
     '/profile'

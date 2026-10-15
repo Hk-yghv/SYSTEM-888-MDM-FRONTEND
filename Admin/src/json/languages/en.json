@@ -530,5 +530,11 @@
   "browseImage": "Browse Image",
   "previewA4": "A4 Portrait Paper Preview",
   "printNow": "Print Now",
-  "clearImage": "Clear Image"
+  "clearImage": "Clear Image",
+  "helpSupport": "Help & Support",
+  "controlSupportHelp": "Control Support & Help",
+  "supportCenter": "Help & Support Center",
+  "manageSupportHelp": "Manage Support & Help Guides",
+  "addSupportHelp": "Add Support Guide",
+  "editSupportHelp": "Edit Support Guide"
 }
