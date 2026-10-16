@@ -13,7 +13,7 @@ import Pagination from '../../../components/Pagination';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import LineChart from '../../../components/LineChart';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
-import { getProxyImageUrl } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, fileToBase64, ensureBase64List } from '../../../utils/mediaUtils';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 
 const LIMIT = 10;
@@ -68,35 +68,16 @@ const PenaltyPage = () => {
         if (!file) return;
         setUploadingImage(true);
         try {
-            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-            const bodyData = new FormData();
-            bodyData.append('file', file);
-            bodyData.append('upload_preset', CLOUDINARY_PRESET);
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                method: 'POST',
-                body: bodyData
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                const rawUrl = data.secure_url || data.url;
-                setFormData(prev => ({ ...prev, photoUrls: [...new Set([...prev.photoUrls, rawUrl])], photoUrl: prev.photoUrls[0] || rawUrl }));
-            } else {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setFormData(prev => ({ ...prev, photoUrls: [...new Set([...prev.photoUrls, reader.result])], photoUrl: prev.photoUrls[0] || reader.result }));
-                };
-                reader.readAsDataURL(file);
+            const base64 = await fileToBase64(file);
+            if (base64) {
+                setFormData(prev => ({
+                    ...prev,
+                    photoUrls: [...new Set([...prev.photoUrls, base64])],
+                    photoUrl: prev.photoUrls[0] || base64
+                }));
             }
         } catch (err) {
-            console.error('Cloudinary upload error:', err);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, photoUrls: [...new Set([...prev.photoUrls, reader.result])], photoUrl: prev.photoUrls[0] || reader.result }));
-            };
-            reader.readAsDataURL(file);
+            console.error('Image upload error:', err);
         } finally {
             setUploadingImage(false);
         }
@@ -205,6 +186,7 @@ const PenaltyPage = () => {
 
     const handleEdit = (item) => {
         setEditingItem(item);
+        const existingPhotos = getPhotoUrls(item);
         setFormData({
             date: item.date || new Date().toISOString().split('T')[0],
             amount: item.amount || '',
@@ -213,9 +195,22 @@ const PenaltyPage = () => {
             category: item.category || 'General Penalty',
             description: item.description || '',
             photoUrl: item.photoUrl || '',
-            photoUrls: getPhotoUrls(item)
+            photoUrls: existingPhotos
         });
         setIsFormOpen(true);
+
+        // Auto-convert existing Cloudinary URLs to Base64
+        if (existingPhotos.some(p => typeof p === 'string' && (p.includes('cloudinary') || p.startsWith('http')))) {
+            ensureBase64List(existingPhotos).then(converted => {
+                if (converted && converted.length) {
+                    setFormData(prev => ({
+                        ...prev,
+                        photoUrls: converted,
+                        photoUrl: converted[0] || prev.photoUrl
+                    }));
+                }
+            }).catch(() => {});
+        }
     };
 
     const handleDelete = async (item) => {
@@ -608,7 +603,7 @@ const PenaltyPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">រូបភាព/វិក្កយបត្រ (Choose Image File &amp; Upload Cloudinary)</label>
+                                <label className="block text-slate-700 font-bold mb-1">រូបភាព/វិក្កយបត្រ (Choose Image File)</label>
                                 <div className="space-y-2">
                                     <input
                                         type="file"
@@ -616,10 +611,10 @@ const PenaltyPage = () => {
                                         onChange={handleFileUpload}
                                         className="w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-[5px] file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
                                     />
-                                    {uploadingImage && <p className="text-[11px] text-amber-600 font-bold animate-pulse">☁️ កំពុង Upload រូបភាពទៅ Cloudinary...</p>}
+                                    {uploadingImage && <p className="text-[11px] text-amber-600 font-bold animate-pulse">🔄 កំពុងបំលែងរូបភាពទៅជា Base64...</p>}
                                     <textarea
                                         rows="2"
-                                        placeholder="ឬបិទភ្ជាប់ URL: https://res.cloudinary.com/..."
+                                        placeholder="ឬបិទភ្ជាប់ URL រូបភាព (មួយក្នុងមួយបន្ទាត់)"
                                         value={formData.photoUrls.join('\n')}
                                         onChange={(e) => {
                                             const photoUrls = [...new Set(e.target.value.split(/\r?\n/).map(url => url.trim()).filter(Boolean))];

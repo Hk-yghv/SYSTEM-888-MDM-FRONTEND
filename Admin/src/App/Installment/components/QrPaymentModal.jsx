@@ -5,6 +5,7 @@ import { FaMobileAlt, FaCheck, FaCloudUploadAlt, FaTrashAlt, FaExpand, FaImage }
 import { MdClose } from "react-icons/md";
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
+import { fileToBase64 } from '../../../utils/mediaUtils';
 
 const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
     const { t } = useLanguage();
@@ -121,36 +122,15 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
         return () => window.removeEventListener('paste', handlePaste);
     }, [handlePaste]);
 
-    // Upload receipt to Cloudinary or base64 fallback
+    // Convert receipt image to base64
     const uploadReceiptImage = async (file) => {
         if (!file) return '';
-        const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-        const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('upload_preset', CLOUDINARY_PRESET);
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                return data.secure_url || data.url || '';
-            }
+            return await fileToBase64(file);
         } catch (err) {
-            console.warn('Cloudinary upload failed, falling back to base64:', err);
+            console.error('Base64 conversion failed:', err);
+            return '';
         }
-
-        // Base64 fallback
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result || '');
-            reader.readAsDataURL(file);
-        });
     };
 
     if (!open || !contract) return null;

@@ -88,6 +88,7 @@ const ControlSupportHelp = () => {
     const [formData, setFormData] = useState(initialForm);
     const [photoUrlInput, setPhotoUrlInput] = useState('');
     const [showPhotoInputModal, setShowPhotoInputModal] = useState(false);
+    const [uploadingPhotos, setUploadingPhotos] = useState(false);
     const fileInputRef = useRef(null);
 
     // ─────────────────────────────────────────────────────────────────────────

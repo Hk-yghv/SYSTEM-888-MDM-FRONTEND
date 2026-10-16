@@ -14,6 +14,7 @@ import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import LineChart from '../../../components/LineChart';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
+import { filesToBase64, ensureBase64List } from '../../../utils/mediaUtils';
 
 const LIMIT = 10;
 const getPhotoUrls = (item) => [...new Set([
@@ -65,34 +66,7 @@ const CashOutPage = () => {
         if (!files.length) return;
         setUploadingImage(true);
         try {
-            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-            const uploadedUrls = await Promise.all(files.map(async (file) => {
-                try {
-                    const bodyData = new FormData();
-                    bodyData.append('file', file);
-                    bodyData.append('upload_preset', CLOUDINARY_PRESET);
-                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                        method: 'POST',
-                        body: bodyData
-                    });
-                    if (!res.ok) throw new Error(`Cloudinary upload failed (${res.status})`);
-                    const data = await res.json();
-                    const url = data.secure_url || data.url;
-                    if (!url) throw new Error('Cloudinary response did not include an image URL');
-                    return url;
-                } catch (err) {
-                    console.warn('Cloudinary upload failed; using local image fallback:', err);
-                    return await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => typeof reader.result === 'string'
-                            ? resolve(reader.result)
-                            : reject(new Error(`Could not read ${file.name}`));
-                        reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
-                        reader.readAsDataURL(file);
-                    });
-                }
-            }));
+            const uploadedUrls = await filesToBase64(files);
             setFormData(prev => ({ ...prev, photoUrls: [...prev.photoUrls, ...uploadedUrls] }));
         } catch (err) {
             console.error('Image upload error:', err);
@@ -203,15 +177,25 @@ const CashOutPage = () => {
 
     const handleEdit = (item) => {
         setEditingItem(item);
+        const existingPhotos = getPhotoUrls(item);
         setFormData({
             date: item.date || new Date().toISOString().split('T')[0],
             amount: item.amount || '',
             currency: item.currency || 'USD',
             category: item.category || 'General Expense',
             description: item.description || '',
-            photoUrls: getPhotoUrls(item)
+            photoUrls: existingPhotos
         });
         setIsFormOpen(true);
+
+        // Auto-convert any existing Cloudinary URLs to Base64
+        if (existingPhotos.some(p => typeof p === 'string' && (p.includes('cloudinary') || p.startsWith('http')))) {
+            ensureBase64List(existingPhotos).then(converted => {
+                if (converted && converted.length) {
+                    setFormData(prev => ({ ...prev, photoUrls: converted }));
+                }
+            }).catch(() => {});
+        }
     };
 
     const handleDelete = async (item) => {
@@ -593,7 +577,7 @@ const CashOutPage = () => {
                                         onChange={handleFileUpload}
                                         className="w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-[5px] file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100 cursor-pointer"
                                     />
-                                    {uploadingImage && <p className="text-[11px] text-rose-600 font-bold animate-pulse">☁️ កំពុង Upload រូបភាពទៅ Cloudinary...</p>}
+                                    {uploadingImage && <p className="text-[11px] text-rose-600 font-bold animate-pulse">🔄 កំពុងបំលែងរូបភាពទៅជា Base64...</p>}
                                     <textarea
                                         rows="2"
                                         placeholder="ឬបិទភ្ជាប់ URL រូបភាព (មួយក្នុងមួយបន្ទាត់)"

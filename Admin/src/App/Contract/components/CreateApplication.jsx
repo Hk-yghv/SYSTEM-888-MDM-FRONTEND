@@ -5,7 +5,7 @@ import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
 import { formatIMEI } from '../../../utils/imeiFormatter';
-import { getProxyImageUrl } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, filesToBase64, ensureBase64List } from '../../../utils/mediaUtils';
 
 
 /* ── Shared style tokens ── */
@@ -261,6 +261,21 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     version: editData.version || '',
                     meid: editData.meid || '',
                 });
+
+                // Auto-convert existing Cloudinary photos to Base64
+                const rawPhotos = Array.isArray(editData.photos) ? editData.photos : (editData.customerPhoto ? [editData.customerPhoto] : []);
+                if (rawPhotos.some(p => typeof p === 'string' && (p.includes('cloudinary') || p.startsWith('http')))) {
+                    ensureBase64List(rawPhotos).then(converted => {
+                        if (converted && converted.length) {
+                            setForm(prev => ({
+                                ...prev,
+                                photos: converted,
+                                customerPhoto: converted[0] || prev.customerPhoto,
+                                googleDrivePhotoUrl: converted[0] || prev.googleDrivePhotoUrl
+                            }));
+                        }
+                    }).catch(() => {});
+                }
             } else {
                 const initialBrand = form.brand || user?.brand || (brandsList.length > 0 ? brandsList[0] : 'M8');
                 const autoSuffix = computeNextSuffixForBrand(initialBrand, allCustomers);
@@ -325,44 +340,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         if (files.length === 0) return;
         setPhotoUploading(true);
         try {
-            const uploadedUrls = [];
-
-            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-
-            for (const file of files) {
-                try {
-                    const bodyData = new FormData();
-                    bodyData.append('file', file);
-                    bodyData.append('upload_preset', CLOUDINARY_PRESET);
-
-                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                        method: 'POST',
-                        body: bodyData
-                    });
-
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.secure_url || data.url) {
-                            uploadedUrls.push(data.secure_url || data.url);
-                        }
-                    } else {
-                        const base64 = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(file);
-                        });
-                        if (base64) uploadedUrls.push(base64);
-                    }
-                } catch (err) {
-                    const base64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(file);
-                    });
-                    if (base64) uploadedUrls.push(base64);
-                }
-            }
+            const uploadedUrls = await filesToBase64(files);
 
             if (uploadedUrls.length > 0) {
                 setForm(prev => {
@@ -377,7 +355,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 });
             }
         } catch (err) {
-            console.error('Backend multi-upload error:', err);
+            console.error('File to base64 upload error:', err);
         } finally {
             setPhotoUploading(false);
             if (photoFileRef.current) photoFileRef.current.value = '';

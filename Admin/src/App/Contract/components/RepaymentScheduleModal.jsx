@@ -7,6 +7,7 @@ import { MdClose, MdSwapHoriz, MdMoneyOff } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
+import { fileToBase64, ensureBase64List } from '../../../utils/mediaUtils';
 
 const round2 = roundMoney;
 
@@ -483,37 +484,13 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     };
 
     const uploadImagesToCloudinary = async (imageItems) => {
-        const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-        const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
         const urls = [];
         for (const item of imageItems) {
             try {
-                const fd = new FormData();
-                fd.append('file', item.file);
-                fd.append('upload_preset', CLOUDINARY_PRESET);
-                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                    method: 'POST',
-                    body: fd
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    urls.push(data.secure_url || data.url);
-                } else {
-                    // fallback: base64
-                    const b64 = await new Promise(resolve => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(item.file);
-                    });
-                    urls.push(b64);
-                }
-            } catch {
-                const b64 = await new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.readAsDataURL(item.file);
-                });
-                urls.push(b64);
+                const b64 = await fileToBase64(item.file);
+                if (b64) urls.push(b64);
+            } catch (err) {
+                console.error('Failed to convert image to base64:', err);
             }
         }
         return urls;
@@ -526,11 +503,14 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             const { idx, mode, amount, paidBy, description, imageItems, imageUrls } = payConfirm;
             const todayStr = new Date().toISOString().split('T')[0];
 
-            // Upload images to Cloudinary first
+            // Upload local images and ensure existing URLs are converted to Base64
             const uploadedUrls = imageItems.length > 0
                 ? await uploadImagesToCloudinary(imageItems)
                 : [];
-            const allImageUrls = [...new Set([...uploadedUrls, ...(imageUrls || [])])];
+            const convertedExisting = (imageUrls && imageUrls.length > 0)
+                ? await ensureBase64List(imageUrls)
+                : [];
+            const allImageUrls = [...new Set([...uploadedUrls, ...convertedExisting])];
 
             let updated;
             const paidRow = rows[idx];
@@ -1352,7 +1332,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             {/* Upload note */}
                             {payConfirm.imageItems?.length > 0 && (
                                 <p className="text-[10px] text-slate-400 flex items-center gap-1">
-                                    ☁️ រូបភាពនឹង Upload ទៅ Cloudinary នៅពេល Submit
+                                    🔄 រូបភាពនឹងត្រូវបំលែងទៅជា Base64 នៅពេល Submit
                                 </p>
                             )}
                         </div>

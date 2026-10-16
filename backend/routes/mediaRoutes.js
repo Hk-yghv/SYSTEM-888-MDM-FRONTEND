@@ -5,6 +5,10 @@ import User from '../models/User.js';
 import Contract from '../models/Contract.js';
 import Salary from '../models/Salary.js';
 import SupportHelp from '../models/SupportHelp.js';
+import CashTransaction from '../models/CashTransaction.js';
+import FollowUp2 from '../models/FollowUp2.js';
+import FollowUp from '../models/FollowUp.js';
+import SupportComment from '../models/SupportComment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs } from '../config/multiDB.js';
 
@@ -500,6 +504,260 @@ router.get('/usage', async (req, res) => {
     } catch (err) {
         console.error('Media usage lookup error:', err);
         res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * GET / POST /api/media/to-base64
+ * Fetches an image from external URL (especially Cloudinary) and returns it as a base64 data URL.
+ * Solves browser CORS restrictions and enables seamless auto-conversion of existing images.
+ */
+router.all('/to-base64', async (req, res) => {
+    try {
+        const targetUrl = req.query.url || req.body?.url;
+        if (!targetUrl || typeof targetUrl !== 'string') {
+            return res.status(400).json({ success: false, error: 'Missing url parameter' });
+        }
+
+        if (targetUrl.startsWith('data:')) {
+            return res.json({ success: true, base64: targetUrl });
+        }
+
+        const imageRes = await fetch(targetUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (SystemMDM MediaConverter/1.0)'
+            }
+        });
+
+        if (!imageRes.ok) {
+            console.warn(`to-base64 fetch failed (${imageRes.status}):`, targetUrl);
+            return res.status(imageRes.status).json({ success: false, error: `Failed to fetch image: status ${imageRes.status}` });
+        }
+
+        const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
+        const arrayBuffer = await imageRes.arrayBuffer();
+        const base64Data = Buffer.from(arrayBuffer).toString('base64');
+        const dataUrl = `data:${contentType};base64,${base64Data}`;
+
+        return res.json({ success: true, base64: dataUrl });
+    } catch (err) {
+        console.error('to-base64 error:', err.message);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * POST /api/media/migrate-cloudinary
+ * Bulk migration endpoint: Scans MongoDB collections (Contract, CashTransaction, Salary, FollowUp2, FollowUp, SupportHelp)
+ * finds existing Cloudinary URLs, downloads the images, converts them to Base64, and updates the documents.
+ */
+router.post('/migrate-cloudinary', async (req, res) => {
+    try {
+        const stats = {
+            contractsUpdated: 0,
+            transactionsUpdated: 0,
+            salariesUpdated: 0,
+            followUpsUpdated: 0,
+            supportHelpsUpdated: 0,
+            totalImagesConverted: 0
+        };
+
+        const convertUrl = async (url) => {
+            if (!url || typeof url !== 'string') return url;
+            if (url.startsWith('data:')) return url;
+            if (!url.includes('cloudinary.com') && !url.includes('res.cloudinary.com')) return url;
+            try {
+                const imgRes = await fetch(url, {
+                    headers: { 'User-Agent': 'Mozilla/5.0 (SystemMDM Migrator/1.0)' }
+                });
+                if (!imgRes.ok) return url;
+                const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+                const buffer = Buffer.from(await imgRes.arrayBuffer());
+                stats.totalImagesConverted++;
+                return `data:${contentType};base64,${buffer.toString('base64')}`;
+            } catch (e) {
+                console.warn('Migration convert error for URL:', url, e.message);
+                return url;
+            }
+        };
+
+        const convertArray = async (arr) => {
+            if (!Array.isArray(arr)) return arr;
+            const updated = [];
+            for (const item of arr) {
+                updated.push(await convertUrl(item));
+            }
+            return updated;
+        };
+
+        // 1. Contracts
+        const contracts = await queryAllDBs(Contract, (M) =>
+            M.find({
+                $or: [
+                    { photos: { $regex: 'cloudinary', $options: 'i' } },
+                    { evidencePhotos: { $regex: 'cloudinary', $options: 'i' } },
+                    { customerPhoto: { $regex: 'cloudinary', $options: 'i' } },
+                    { googleDrivePhotoUrl: { $regex: 'cloudinary', $options: 'i' } },
+                    { 'repaymentSchedule.imageUrls': { $regex: 'cloudinary', $options: 'i' } }
+                ]
+            })
+        );
+
+        for (const doc of contracts) {
+            let changed = false;
+            if (doc.photos?.length) {
+                const newPhotos = await convertArray(doc.photos);
+                if (JSON.stringify(newPhotos) !== JSON.stringify(doc.photos)) {
+                    doc.photos = newPhotos;
+                    changed = true;
+                }
+            }
+            if (doc.evidencePhotos?.length) {
+                const newEv = await convertArray(doc.evidencePhotos);
+                if (JSON.stringify(newEv) !== JSON.stringify(doc.evidencePhotos)) {
+                    doc.evidencePhotos = newEv;
+                    changed = true;
+                }
+            }
+            if (doc.customerPhoto && doc.customerPhoto.includes('cloudinary')) {
+                doc.customerPhoto = await convertUrl(doc.customerPhoto);
+                changed = true;
+            }
+            if (doc.googleDrivePhotoUrl && doc.googleDrivePhotoUrl.includes('cloudinary')) {
+                doc.googleDrivePhotoUrl = await convertUrl(doc.googleDrivePhotoUrl);
+                changed = true;
+            }
+            if (Array.isArray(doc.repaymentSchedule)) {
+                for (const row of doc.repaymentSchedule) {
+                    if (row && Array.isArray(row.imageUrls)) {
+                        const newImgs = await convertArray(row.imageUrls);
+                        if (JSON.stringify(newImgs) !== JSON.stringify(row.imageUrls)) {
+                            row.imageUrls = newImgs;
+                            changed = true;
+                        }
+                    }
+                }
+            }
+            if (changed) {
+                await doc.save();
+                stats.contractsUpdated++;
+            }
+        }
+
+        // 2. CashTransaction
+        const transactions = await queryAllDBs(CashTransaction, (M) =>
+            M.find({
+                $or: [
+                    { photoUrls: { $regex: 'cloudinary', $options: 'i' } },
+                    { photoUrl: { $regex: 'cloudinary', $options: 'i' } }
+                ]
+            })
+        );
+
+        for (const tx of transactions) {
+            let changed = false;
+            if (tx.photoUrls?.length) {
+                const newPhotos = await convertArray(tx.photoUrls);
+                if (JSON.stringify(newPhotos) !== JSON.stringify(tx.photoUrls)) {
+                    tx.photoUrls = newPhotos;
+                    changed = true;
+                }
+            }
+            if (tx.photoUrl && tx.photoUrl.includes('cloudinary')) {
+                tx.photoUrl = await convertUrl(tx.photoUrl);
+                changed = true;
+            }
+            if (changed) {
+                await tx.save();
+                stats.transactionsUpdated++;
+            }
+        }
+
+        // 3. Salary
+        const salaries = await queryAllDBs(Salary, (M) =>
+            M.find({
+                $or: [
+                    { proofPhotos: { $regex: 'cloudinary', $options: 'i' } },
+                    { proofPhoto: { $regex: 'cloudinary', $options: 'i' } },
+                    { qrCodePhoto: { $regex: 'cloudinary', $options: 'i' } }
+                ]
+            })
+        );
+
+        for (const sal of salaries) {
+            let changed = false;
+            if (sal.proofPhotos?.length) {
+                const newProof = await convertArray(sal.proofPhotos);
+                if (JSON.stringify(newProof) !== JSON.stringify(sal.proofPhotos)) {
+                    sal.proofPhotos = newProof;
+                    changed = true;
+                }
+            }
+            if (sal.proofPhoto && sal.proofPhoto.includes('cloudinary')) {
+                sal.proofPhoto = await convertUrl(sal.proofPhoto);
+                changed = true;
+            }
+            if (sal.qrCodePhoto && sal.qrCodePhoto.includes('cloudinary')) {
+                sal.qrCodePhoto = await convertUrl(sal.qrCodePhoto);
+                changed = true;
+            }
+            if (changed) {
+                await sal.save();
+                stats.salariesUpdated++;
+            }
+        }
+
+        // 4. FollowUp2
+        const followups = await queryAllDBs(FollowUp2, (M) =>
+            M.find({
+                images: { $regex: 'cloudinary', $options: 'i' }
+            })
+        );
+
+        for (const fu of followups) {
+            let changed = false;
+            if (fu.images?.length) {
+                const newImgs = await convertArray(fu.images);
+                if (JSON.stringify(newImgs) !== JSON.stringify(fu.images)) {
+                    fu.images = newImgs;
+                    changed = true;
+                }
+            }
+            if (changed) {
+                await fu.save();
+                stats.followUpsUpdated++;
+            }
+        }
+
+        // 5. SupportHelp
+        const supports = await queryAllDBs(SupportHelp, (M) =>
+            M.find({
+                photos: { $regex: 'cloudinary', $options: 'i' }
+            })
+        );
+        for (const sup of supports) {
+            let changed = false;
+            if (sup.photos?.length) {
+                const newPhotos = await convertArray(sup.photos);
+                if (JSON.stringify(newPhotos) !== JSON.stringify(sup.photos)) {
+                    sup.photos = newPhotos;
+                    changed = true;
+                }
+            }
+            if (changed) {
+                await sup.save();
+                stats.supportHelpsUpdated++;
+            }
+        }
+
+        return res.json({
+            success: true,
+            message: `Migration completed: Converted ${stats.totalImagesConverted} Cloudinary images to Base64.`,
+            stats
+        });
+    } catch (err) {
+        console.error('migrate-cloudinary error:', err);
+        return res.status(500).json({ success: false, error: err.message });
     }
 });
 

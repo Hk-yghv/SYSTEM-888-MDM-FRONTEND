@@ -33,7 +33,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import SalaryBarChart from '../../../components/SalaryBarChart';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
-import { getProxyImageUrl } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, fileToBase64, ensureBase64List } from '../../../utils/mediaUtils';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
@@ -482,6 +482,7 @@ const SalaryPage = () => {
     // Open Edit Modal
     const handleOpenEdit = (item) => {
         setEditingItem(item);
+        const existingPhotos = getProofPhotos(item);
         setFormData({
             staffNameKh: item.staffNameKh || '',
             staffNameEn: item.staffNameEn || item.staffName || '',
@@ -491,11 +492,24 @@ const SalaryPage = () => {
             category: item.category || 'Basic Salary',
             paymentMethod: item.paymentMethod || 'ABA Bank',
             proofPhoto: item.proofPhoto || '',
-            proofPhotos: getProofPhotos(item),
+            proofPhotos: existingPhotos,
             note: item.note || '',
             brand: item.brand || user?.brand || ''
         });
         setOpenModal(true);
+
+        // Auto-convert existing Cloudinary photos to Base64
+        if (existingPhotos.some(p => typeof p === 'string' && (p.includes('cloudinary') || p.startsWith('http')))) {
+            ensureBase64List(existingPhotos).then(converted => {
+                if (converted && converted.length) {
+                    setFormData(prev => ({
+                        ...prev,
+                        proofPhotos: converted,
+                        proofPhoto: converted[0] || prev.proofPhoto
+                    }));
+                }
+            }).catch(() => {});
+        }
     };
 
     // Delete Record
@@ -523,44 +537,15 @@ const SalaryPage = () => {
         if (!file) return;
         setPhotoUploading(true);
         try {
-            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-            const bodyData = new FormData();
-            bodyData.append('file', file);
-            bodyData.append('upload_preset', CLOUDINARY_PRESET);
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                method: 'POST',
-                body: bodyData
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                const rawUrl = data.secure_url || data.url;
+            const base64 = await fileToBase64(file);
+            if (base64) {
                 setFormData(prev => {
-                    const proofPhotos = [...new Set([...getProofPhotos(prev), rawUrl])];
+                    const proofPhotos = [...new Set([...getProofPhotos(prev), base64])];
                     return { ...prev, proofPhoto: proofPhotos[0] || '', proofPhotos };
                 });
-            } else {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setFormData(prev => {
-                        const proofPhotos = [...new Set([...getProofPhotos(prev), reader.result])];
-                        return { ...prev, proofPhoto: proofPhotos[0] || '', proofPhotos };
-                    });
-                };
-                reader.readAsDataURL(file);
             }
         } catch (err) {
-            console.error('Cloudinary upload error:', err);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => {
-                    const proofPhotos = [...new Set([...getProofPhotos(prev), reader.result])];
-                    return { ...prev, proofPhoto: proofPhotos[0] || '', proofPhotos };
-                });
-            };
-            reader.readAsDataURL(file);
+            console.error('Photo upload error:', err);
         } finally {
             setPhotoUploading(false);
             if (photoFileRef.current) photoFileRef.current.value = '';
@@ -572,38 +557,13 @@ const SalaryPage = () => {
         if (!file) return;
         setQrPhotoUploading(true);
         try {
-            const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-            const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-            const bodyData = new FormData();
-            bodyData.append('file', file);
-            bodyData.append('upload_preset', CLOUDINARY_PRESET);
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                method: 'POST',
-                body: bodyData
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                const rawUrl = data.secure_url || data.url;
-                setTempQrCodePhoto(rawUrl);
-                setFormData(prev => ({ ...prev, qrCodePhoto: rawUrl }));
-            } else {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setTempQrCodePhoto(reader.result);
-                    setFormData(prev => ({ ...prev, qrCodePhoto: reader.result }));
-                };
-                reader.readAsDataURL(file);
+            const base64 = await fileToBase64(file);
+            if (base64) {
+                setTempQrCodePhoto(base64);
+                setFormData(prev => ({ ...prev, qrCodePhoto: base64 }));
             }
         } catch (err) {
-            console.error('Cloudinary QR upload error:', err);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setTempQrCodePhoto(reader.result);
-                setFormData(prev => ({ ...prev, qrCodePhoto: reader.result }));
-            };
-            reader.readAsDataURL(file);
+            console.error('QR upload error:', err);
         } finally {
             setQrPhotoUploading(false);
             if (qrFileRef.current) qrFileRef.current.value = '';

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { FaSearchPlus, FaSearchMinus, FaExpand, FaRedo, FaUndo, FaTimes, FaDownload, FaSyncAlt } from 'react-icons/fa';
+import { ensureBase64 } from '../utils/mediaUtils';
 
 /**
  * ZoomableImage - Universal image component with interactive zoom bar (របាពង្រីកបង្រួម)
@@ -16,6 +17,7 @@ const ZoomableImage = ({
     onClick,
     ...rest
 }) => {
+    const [resolvedSrc, setResolvedSrc] = useState(src || '');
     const [inlineZoom, setInlineZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
@@ -26,12 +28,27 @@ const ZoomableImage = ({
     const [isModalDragging, setIsModalDragging] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
 
+    // Auto-convert existing Cloudinary URLs to Base64 data URLs
+    useEffect(() => {
+        let active = true;
+        if (src && typeof src === 'string' && (src.includes('cloudinary.com') || src.includes('res.cloudinary.com'))) {
+            ensureBase64(src).then((b64) => {
+                if (active && b64) setResolvedSrc(b64);
+            }).catch(() => {
+                if (active) setResolvedSrc(src);
+            });
+        } else {
+            setResolvedSrc(src || '');
+        }
+        return () => { active = false; };
+    }, [src]);
+
     const dragStart = useRef({ x: 0, y: 0 });
     const panStart = useRef({ x: 0, y: 0 });
     const modalDragStart = useRef({ x: 0, y: 0 });
     const modalPanStart = useRef({ x: 0, y: 0 });
 
-    if (!src) return null;
+    if (!resolvedSrc && !src) return null;
 
     // Reset inline pan when zoom resets to 1
     const handleInlineZoomChange = (newZoom) => {
@@ -108,7 +125,7 @@ const ZoomableImage = ({
                 }}
             >
                 <img
-                    src={src}
+                    src={resolvedSrc || src}
                     alt={alt}
                     className={`${className} select-none transition-transform duration-100 ease-out`}
                     style={{
@@ -301,7 +318,7 @@ const ZoomableImage = ({
                                 <FaRedo />
                             </button>
                             <a
-                                href={src}
+                                href={resolvedSrc || src}
                                 download
                                 target="_blank"
                                 rel="noreferrer"
@@ -330,7 +347,7 @@ const ZoomableImage = ({
                         onWheel={handleModalWheel}
                     >
                         <img
-                            src={src}
+                            src={resolvedSrc || src}
                             alt={alt}
                             className="max-h-[85vh] max-w-[90vw] object-contain transition-transform duration-100 ease-out shadow-2xl pointer-events-none"
                             style={{

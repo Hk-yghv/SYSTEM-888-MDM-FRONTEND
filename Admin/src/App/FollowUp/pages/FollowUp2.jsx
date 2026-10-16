@@ -21,7 +21,7 @@ import ExportDropdown from '../../../components/ExportDropdown';
 import Pagination from '../../../components/Pagination';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import CopyCell from '../../../components/CopyCell';
-import { getProxyImageUrl } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, fileToBase64, ensureBase64, ensureBase64List } from '../../../utils/mediaUtils';
 
 const LIMIT = 15;
 
@@ -354,52 +354,43 @@ const FollowUp2 = () => {
             notes: item.notes || ''
         });
         setIsFormOpen(true);
+
+        // Auto-convert existing Cloudinary images to Base64
+        if (existingImgs.some(p => typeof p === 'string' && (p.includes('cloudinary') || p.startsWith('http')))) {
+            ensureBase64List(existingImgs).then(converted => {
+                if (converted && converted.length) {
+                    setSelectedImages(converted.map(url => ({
+                        id: url,
+                        type: 'url',
+                        preview: url,
+                        url
+                    })));
+                    setFormData(prev => ({ ...prev, images: converted }));
+                }
+            }).catch(() => {});
+        }
     };
 
-    // Upload pending local files directly to Cloudinary on Submit
+    // Convert pending local files and any Cloudinary links to Base64 on Submit
     const uploadImagesToCloudinary = async (items) => {
-        const CLOUDINARY_CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || import.meta.env.VITE_CLOUDINARY_CLOUD || 'demo';
-        const CLOUDINARY_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || import.meta.env.VITE_CLOUDINARY_PRESET || 'ml_default';
-
         const finalUrls = [];
-
         for (const item of items) {
             if (item.type === 'url' && item.url) {
-                finalUrls.push(item.url);
+                if (typeof item.url === 'string' && (item.url.includes('cloudinary') || item.url.startsWith('http'))) {
+                    const b64 = await ensureBase64(item.url);
+                    finalUrls.push(b64 || item.url);
+                } else {
+                    finalUrls.push(item.url);
+                }
             } else if (item.type === 'file' && item.file) {
                 try {
-                    const formData = new FormData();
-                    formData.append('file', item.file);
-                    formData.append('upload_preset', CLOUDINARY_PRESET);
-
-                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (res.ok) {
-                        const data = await res.json();
-                        finalUrls.push(data.secure_url || data.url);
-                    } else {
-                        const base64 = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(item.file);
-                        });
-                        finalUrls.push(base64);
-                    }
+                    const base64 = await fileToBase64(item.file);
+                    if (base64) finalUrls.push(base64);
                 } catch (err) {
-                    console.warn('Cloudinary upload error, using base64 fallback:', err);
-                    const b64 = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(item.file);
-                    });
-                    finalUrls.push(b64);
+                    console.error('Base64 conversion error:', err);
                 }
             }
         }
-
         return finalUrls;
     };
 
