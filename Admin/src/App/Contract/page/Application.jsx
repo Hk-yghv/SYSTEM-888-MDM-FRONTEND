@@ -89,12 +89,16 @@ const Application = () => {
         if (!window.confirm('Are you sure you want to delete this application contract?')) return;
         try {
             const res = await fetch(`${API_BASE1}/contracts/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                fetchApplications();
-                setOpenMenuId(null);
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                await fetchApplications();
+                throw new Error(data.error || `Delete failed (${res.status})`);
             }
+            await fetchApplications();
+            setOpenMenuId(null);
         } catch (err) {
             console.error('Delete error:', err);
+            window.alert(err.message || 'Unable to delete this application contract.');
         }
     };
 

@@ -4,7 +4,7 @@ import QRCode from 'qrcode';
 import Contract from '../models/Contract.js';
 import Payment from '../models/Payment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
-import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { queryAllDBs, getWriteModel, dbInstances } from '../config/multiDB.js';
 import { generateCustomerPdf } from '../utils/customerPdfGenerator.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
 
@@ -782,29 +782,59 @@ router.put('/:id', async (req, res) => {
 // DELETE contract (Permanent in MongoDB, but archived/never deleted in Firebase)
 router.delete('/:id', async (req, res) => {
     try {
-        let deletedContractId = req.params.id;
+        const deletedContractId = req.params.id;
+        const isObjectId = /^[0-9a-fA-F]{24}$/.test(deletedContractId);
+        const filter = {
+            $or: [
+                { contractId: deletedContractId },
+                ...(isObjectId ? [{ _id: deletedContractId }] : [])
+            ]
+        };
         let targetContract = null;
+        let deletedCount = 0;
+        const failedDatabases = [];
 
         if (isMongoConnected) {
-            const results = await queryAllDBs(Contract, (M) =>
-                M.findOne({ $or: [{ _id: req.params.id }, { contractId: req.params.id }] })
-            );
-            targetContract = results.find(r => r != null) || null;
+            for (const instance of dbInstances) {
+                if (instance.status !== 'connected' || !instance.conn) continue;
 
-            await Promise.allSettled(
-                [Contract].map(async (M) => {
-                    await queryAllDBs(M, async (BoundM) => {
-                        try { await BoundM.findByIdAndDelete(req.params.id); } catch {}
-                        try { await BoundM.deleteMany({ contractId: req.params.id }); } catch {}
-                        return [];
-                    });
-                })
-            );
-        } else {
-            targetContract = MEM_DB.contracts.find(c => c._id === req.params.id || c.contractId === req.params.id) || null;
+                try {
+                    let BoundContract;
+                    try {
+                        BoundContract = instance.conn.model('Contract');
+                    } catch {
+                        BoundContract = instance.conn.model('Contract', Contract.schema);
+                    }
+
+                    const existing = await BoundContract.findOne(filter).lean();
+                    if (existing && !targetContract) targetContract = existing;
+                    const result = await BoundContract.deleteMany(filter);
+                    deletedCount += result.deletedCount;
+                } catch (err) {
+                    console.error(`Delete contract from ${instance.name} error:`, err);
+                    failedDatabases.push(instance.name);
+                }
+            }
         }
 
-        MEM_DB.contracts = MEM_DB.contracts.filter(c => c._id !== req.params.id && c.contractId !== req.params.id);
+        const memoryContract = MEM_DB.contracts.find(c =>
+            String(c._id) === deletedContractId || c.contractId === deletedContractId
+        );
+        if (memoryContract && !targetContract) targetContract = memoryContract;
+        const memoryCountBefore = MEM_DB.contracts.length;
+        MEM_DB.contracts = MEM_DB.contracts.filter(c =>
+            String(c._id) !== deletedContractId && c.contractId !== deletedContractId
+        );
+        deletedCount += memoryCountBefore - MEM_DB.contracts.length;
+
+        if (failedDatabases.length > 0) {
+            return res.status(500).json({
+                error: `Failed to delete contract from database(s): ${failedDatabases.join(', ')}`
+            });
+        }
+        if (deletedCount === 0) {
+            return res.status(404).json({ error: 'Contract not found' });
+        }
 
         const customerName = targetContract?.customerName || targetContract?.name || targetContract?.customerInfo?.name || 'N/A';
         const phone = targetContract?.phoneNumber || targetContract?.phone || targetContract?.customerInfo?.phone || 'N/A';
