@@ -5,7 +5,8 @@ import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
 import { formatIMEI } from '../../../utils/imeiFormatter';
-import { getProxyImageUrl, filesToBase64, ensureBase64List } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, storeImageFiles, ensureBase64List } from '../../../utils/mediaUtils';
+import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 
 /* ── Shared style tokens ── */
@@ -109,6 +110,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const [autoFilled, setAutoFilled] = useState(false);
     const [activeTab, setActiveTab] = useState('customer');
     const [photoUploading, setPhotoUploading] = useState(false);
+    const [imageStorageType, setImageStorageType] = useState('cloudinary');
     const photoFileRef = useRef(null);
 
     const computeNextSuffixForBrand = (targetBrand, customersList) => {
@@ -340,7 +342,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         if (files.length === 0) return;
         setPhotoUploading(true);
         try {
-            const uploadedUrls = await filesToBase64(files);
+            const uploadedUrls = await storeImageFiles(files, imageStorageType, API_BASE);
 
             if (uploadedUrls.length > 0) {
                 setForm(prev => {
@@ -356,6 +358,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             }
         } catch (err) {
             console.error('File to base64 upload error:', err);
+            alert(`Image upload failed: ${err.message}`);
         } finally {
             setPhotoUploading(false);
             if (photoFileRef.current) photoFileRef.current.value = '';
@@ -569,6 +572,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 <div className="flex flex-col gap-2">
                                     <div className="flex flex-col gap-2">
                                         <ImageUrlListInput onAddUrls={handleAddDirectPhotoUrls} />
+                                        <ImageStorageSelect value={imageStorageType} onChange={setImageStorageType} disabled={photoUploading} />
                                         <button
                                             type="button"
                                             onClick={() => photoFileRef.current?.click()}

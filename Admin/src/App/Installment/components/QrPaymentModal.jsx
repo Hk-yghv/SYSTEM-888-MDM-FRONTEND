@@ -5,7 +5,8 @@ import { FaMobileAlt, FaCheck, FaCloudUploadAlt, FaTrashAlt, FaExpand, FaImage }
 import { MdClose } from "react-icons/md";
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
-import { fileToBase64 } from '../../../utils/mediaUtils';
+import { storeImageFile } from '../../../utils/mediaUtils';
+import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
     const { t } = useLanguage();
@@ -22,6 +23,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
     const [receiptPreview, setReceiptPreview] = useState('');
     const [receiptUrls, setReceiptUrls] = useState([]);
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+    const [imageStorageType, setImageStorageType] = useState('cloudinary');
     const [paymentSubmitting, setPaymentSubmitting] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [qrPayments, setQrPayments] = useState([]);
@@ -123,14 +125,9 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
     }, [handlePaste]);
 
     // Convert receipt image to base64
-    const uploadReceiptImage = async (file) => {
+    const storeReceiptImage = async (file) => {
         if (!file) return '';
-        try {
-            return await fileToBase64(file);
-        } catch (err) {
-            console.error('Base64 conversion failed:', err);
-            return '';
-        }
+        return await storeImageFile(file, imageStorageType, API_BASE1);
     };
 
     if (!open || !contract) return null;
@@ -143,7 +140,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
         try {
             let photoUrl = '';
             if (receiptFile) {
-                photoUrl = await uploadReceiptImage(receiptFile);
+                photoUrl = await storeReceiptImage(receiptFile);
             }
             const paymentImages = [...new Set([...(photoUrl ? [photoUrl] : []), ...receiptUrls])];
             const primaryPhoto = paymentImages[0] || '';
@@ -191,6 +188,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
             }
         } catch (err) {
             console.error('Submit payment error:', err);
+            alert(`Submit payment failed: ${err.message}`);
         } finally {
             setPaymentSubmitting(false);
             setIsUploadingPhoto(false);
@@ -331,6 +329,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                         )}
                                     </div>
 
+                                    <ImageStorageSelect value={imageStorageType} onChange={setImageStorageType} disabled={isUploadingPhoto} />
                                     <input
                                         type="file"
                                         ref={fileInputRef}

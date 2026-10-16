@@ -14,7 +14,8 @@ import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import LineChart from '../../../components/LineChart';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
-import { filesToBase64, ensureBase64List } from '../../../utils/mediaUtils';
+import { storeImageFiles, ensureBase64List } from '../../../utils/mediaUtils';
+import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 const LIMIT = 10;
 const getPhotoUrls = (item) => [...new Set([
@@ -56,6 +57,7 @@ const CashOutPage = () => {
     });
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [imageStorageType, setImageStorageType] = useState('cloudinary');
     const [selectedImages, setSelectedImages] = useState([]);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
@@ -66,7 +68,7 @@ const CashOutPage = () => {
         if (!files.length) return;
         setUploadingImage(true);
         try {
-            const uploadedUrls = await filesToBase64(files);
+            const uploadedUrls = await storeImageFiles(files, imageStorageType, API_BASE);
             setFormData(prev => ({ ...prev, photoUrls: [...prev.photoUrls, ...uploadedUrls] }));
         } catch (err) {
             console.error('Image upload error:', err);
@@ -570,6 +572,7 @@ const CashOutPage = () => {
                             <div>
                                 <label className="block text-slate-700 font-bold mb-1">{t('receiptPhoto')}</label>
                                 <div className="space-y-2">
+                                    <ImageStorageSelect value={imageStorageType} onChange={setImageStorageType} disabled={uploadingImage} />
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -577,7 +580,7 @@ const CashOutPage = () => {
                                         onChange={handleFileUpload}
                                         className="w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-[5px] file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100 cursor-pointer"
                                     />
-                                    {uploadingImage && <p className="text-[11px] text-rose-600 font-bold animate-pulse">🔄 កំពុងបំលែងរូបភាពទៅជា Base64...</p>}
+                                    {uploadingImage && <p className="text-[11px] text-rose-600 font-bold animate-pulse">🔄 {t('uploadingImage')}</p>}
                                     <textarea
                                         rows="2"
                                         placeholder="ឬបិទភ្ជាប់ URL រូបភាព (មួយក្នុងមួយបន្ទាត់)"

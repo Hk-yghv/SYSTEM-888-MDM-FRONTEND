@@ -13,8 +13,9 @@ import Pagination from '../../../components/Pagination';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import LineChart from '../../../components/LineChart';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
-import { getProxyImageUrl, fileToBase64, ensureBase64List } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, storeImageFile, ensureBase64List } from '../../../utils/mediaUtils';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
+import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 const LIMIT = 10;
 const getPhotoUrls = item => [...new Set([
@@ -58,6 +59,7 @@ const PenaltyPage = () => {
     });
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [imageStorageType, setImageStorageType] = useState('cloudinary');
     const [selectedImages, setSelectedImages] = useState([]);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
@@ -68,17 +70,19 @@ const PenaltyPage = () => {
         if (!file) return;
         setUploadingImage(true);
         try {
-            const base64 = await fileToBase64(file);
-            if (base64) {
+            const imageUrl = await storeImageFile(file, imageStorageType, API_BASE);
+            if (imageUrl) {
                 setFormData(prev => ({
                     ...prev,
-                    photoUrls: [...new Set([...prev.photoUrls, base64])],
-                    photoUrl: prev.photoUrls[0] || base64
+                    photoUrls: [...new Set([...prev.photoUrls, imageUrl])],
+                    photoUrl: prev.photoUrls[0] || imageUrl
                 }));
             }
         } catch (err) {
             console.error('Image upload error:', err);
+            alert(`Image upload failed: ${err.message}`);
         } finally {
+            e.target.value = '';
             setUploadingImage(false);
         }
     };
@@ -605,13 +609,14 @@ const PenaltyPage = () => {
                             <div>
                                 <label className="block text-slate-700 font-bold mb-1">រូបភាព/វិក្កយបត្រ (Choose Image File)</label>
                                 <div className="space-y-2">
+                                    <ImageStorageSelect value={imageStorageType} onChange={setImageStorageType} disabled={uploadingImage} />
                                     <input
                                         type="file"
                                         accept="image/*"
                                         onChange={handleFileUpload}
                                         className="w-full text-xs text-slate-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-[5px] file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
                                     />
-                                    {uploadingImage && <p className="text-[11px] text-amber-600 font-bold animate-pulse">🔄 កំពុងបំលែងរូបភាពទៅជា Base64...</p>}
+                                    {uploadingImage && <p className="text-[11px] text-amber-600 font-bold animate-pulse">🔄 {t('uploadingImage')}</p>}
                                     <textarea
                                         rows="2"
                                         placeholder="ឬបិទភ្ជាប់ URL រូបភាព (មួយក្នុងមួយបន្ទាត់)"

@@ -7,7 +7,8 @@ import { MdClose, MdSwapHoriz, MdMoneyOff } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
-import { fileToBase64, ensureBase64List } from '../../../utils/mediaUtils';
+import { storeImageFile, ensureBase64 } from '../../../utils/mediaUtils';
+import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 const round2 = roundMoney;
 
@@ -45,6 +46,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     // ── Payment Confirmation Modal State ──────────────────────────────────────
     const [payConfirm, setPayConfirm] = useState(null);
     const [payConfirmSubmitting, setPayConfirmSubmitting] = useState(false);
+    const [imageStorageType, setImageStorageType] = useState('cloudinary');
     // payConfirm = { idx, mode: 'Paid' | 'PayOff', amount, paidBy, description, imageItems: [{file, preview}] }
 
     // ── Wave Penalty Modal State ──────────────────────────────────────────────
@@ -483,15 +485,11 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         });
     };
 
-    const uploadImagesToCloudinary = async (imageItems) => {
+    const storePaymentImages = async (imageItems) => {
         const urls = [];
         for (const item of imageItems) {
-            try {
-                const b64 = await fileToBase64(item.file);
-                if (b64) urls.push(b64);
-            } catch (err) {
-                console.error('Failed to convert image to base64:', err);
-            }
+            const url = await storeImageFile(item.file, imageStorageType, API_BASE1);
+            if (url) urls.push(url);
         }
         return urls;
     };
@@ -503,12 +501,11 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             const { idx, mode, amount, paidBy, description, imageItems, imageUrls } = payConfirm;
             const todayStr = new Date().toISOString().split('T')[0];
 
-            // Upload local images and ensure existing URLs are converted to Base64
             const uploadedUrls = imageItems.length > 0
-                ? await uploadImagesToCloudinary(imageItems)
+                ? await storePaymentImages(imageItems)
                 : [];
             const convertedExisting = (imageUrls && imageUrls.length > 0)
-                ? await ensureBase64List(imageUrls)
+                ? await Promise.all(imageUrls.map(url => imageStorageType === 'base64' ? ensureBase64(url) : url))
                 : [];
             const allImageUrls = [...new Set([...uploadedUrls, ...convertedExisting])];
 
@@ -1283,6 +1280,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
                             {/* Multi-Image Upload */}
                             <div>
+                                <ImageStorageSelect value={imageStorageType} onChange={setImageStorageType} disabled={payConfirmSubmitting} />
                                 <div className="flex items-center justify-between mb-1.5">
                                     <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">{t('receiptImages')}</label>
                                     <span className="text-[10px] text-slate-400">{payConfirm.imageItems?.length || 0} files</span>

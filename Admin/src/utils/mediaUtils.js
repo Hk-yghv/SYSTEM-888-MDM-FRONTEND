@@ -80,6 +80,28 @@ export const filesToBase64 = async (files, maxWidth = 1600, maxHeight = 1600, qu
     return results.filter(Boolean);
 };
 
+export const storeImageFile = async (file, storageType = 'cloudinary', apiBase = '/api') => {
+    const base64 = await fileToBase64(file);
+    if (storageType === 'base64') return base64;
+    if (storageType !== 'cloudinary') throw new Error('Unsupported image storage type.');
+
+    const response = await fetch(`${apiBase}/media/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: base64 })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success || !result.secure_url) {
+        throw new Error(result.message || 'Cloudinary image upload failed.');
+    }
+    return result.secure_url;
+};
+
+export const storeImageFiles = async (files, storageType = 'cloudinary', apiBase = '/api') => {
+    const list = Array.from(files || []);
+    return Promise.all(list.map(file => storeImageFile(file, storageType, apiBase)));
+};
+
 /**
  * Automatically fetch and convert any image URL (especially from Cloudinary) to a Base64 data URL.
  * If already a Base64 string, returns it immediately.
@@ -119,5 +141,4 @@ export const ensureBase64List = async (urls) => {
     if (!Array.isArray(urls)) return [];
     return Promise.all(urls.map(u => ensureBase64(u)));
 };
-
 

@@ -21,7 +21,8 @@ import ExportDropdown from '../../../components/ExportDropdown';
 import Pagination from '../../../components/Pagination';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import CopyCell from '../../../components/CopyCell';
-import { getProxyImageUrl, fileToBase64, ensureBase64, ensureBase64List } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, storeImageFile, ensureBase64 } from '../../../utils/mediaUtils';
+import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 const LIMIT = 15;
 
@@ -102,6 +103,7 @@ const FollowUp2 = () => {
     // Selected images state (Pending upload until Submit)
     // Structure: [{ id, type: 'url' | 'file', preview: string, file?: File, url?: string }]
     const [selectedImages, setSelectedImages] = useState([]);
+    const [imageStorageType, setImageStorageType] = useState('cloudinary');
 
     // Export Modal State
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -355,40 +357,17 @@ const FollowUp2 = () => {
         });
         setIsFormOpen(true);
 
-        // Auto-convert existing Cloudinary images to Base64
-        if (existingImgs.some(p => typeof p === 'string' && (p.includes('cloudinary') || p.startsWith('http')))) {
-            ensureBase64List(existingImgs).then(converted => {
-                if (converted && converted.length) {
-                    setSelectedImages(converted.map(url => ({
-                        id: url,
-                        type: 'url',
-                        preview: url,
-                        url
-                    })));
-                    setFormData(prev => ({ ...prev, images: converted }));
-                }
-            }).catch(() => {});
-        }
     };
 
-    // Convert pending local files and any Cloudinary links to Base64 on Submit
-    const uploadImagesToCloudinary = async (items) => {
+    const storeSelectedImages = async (items) => {
         const finalUrls = [];
         for (const item of items) {
             if (item.type === 'url' && item.url) {
-                if (typeof item.url === 'string' && (item.url.includes('cloudinary') || item.url.startsWith('http'))) {
-                    const b64 = await ensureBase64(item.url);
-                    finalUrls.push(b64 || item.url);
-                } else {
-                    finalUrls.push(item.url);
-                }
+                const storedUrl = imageStorageType === 'base64' ? await ensureBase64(item.url) : item.url;
+                finalUrls.push(storedUrl || item.url);
             } else if (item.type === 'file' && item.file) {
-                try {
-                    const base64 = await fileToBase64(item.file);
-                    if (base64) finalUrls.push(base64);
-                } catch (err) {
-                    console.error('Base64 conversion error:', err);
-                }
+                const storedUrl = await storeImageFile(item.file, imageStorageType, API_BASE);
+                if (storedUrl) finalUrls.push(storedUrl);
             }
         }
         return finalUrls;
@@ -488,8 +467,7 @@ const FollowUp2 = () => {
         setSubmitting(true);
         setUploadingImages(true);
         try {
-            // Upload local images to Cloudinary now on submit
-            const uploadedUrls = await uploadImagesToCloudinary(selectedImages);
+            const uploadedUrls = await storeSelectedImages(selectedImages);
 
             const url = editingItem
                 ? `${API_BASE}/follow-up-2/${editingItem._id}`
@@ -1494,7 +1472,8 @@ const FollowUp2 = () => {
                                 </div>
 
                                 {/* Custom Upload Button */}
-                                <div>
+                                <div className="space-y-2">
+                                    <ImageStorageSelect value={imageStorageType} onChange={setImageStorageType} disabled={submitting} />
                                     <label className="flex items-center justify-center gap-2 p-2 bg-[var(--app-card,#ffffff)] hover:bg-indigo-500/10 border border-indigo-300 dark:border-indigo-700 rounded-[5px] cursor-pointer transition-all text-xs font-semibold text-indigo-600 dark:text-indigo-400 shadow-2xs">
                                         <MdCloudUpload size={18} />
                                         <span>ចុចទីនេះដើម្បីជ្រើសរើសរូបភាព (អាចជ្រើសរើសបានច្រើនសន្លឹក)</span>

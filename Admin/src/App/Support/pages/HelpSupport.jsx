@@ -39,6 +39,8 @@ import {
     MdOutlineFeedback
 } from 'react-icons/md';
 import { IoIosContact, IoIosSettings, IoMdWallet } from 'react-icons/io';
+import { storeImageFile } from '../../../utils/mediaUtils';
+import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 // Helper to get matching icon for page names
 const getPageIcon = (pageName) => {
@@ -95,6 +97,8 @@ const HelpSupport = () => {
     const [commentPageContext, setCommentPageContext] = useState('ទូទៅ (General)');
     const [commentMessage, setCommentMessage] = useState('');
     const [commentPhoto, setCommentPhoto] = useState('');
+    const [commentPhotoStorageType, setCommentPhotoStorageType] = useState('cloudinary');
+    const [commentPhotoUploading, setCommentPhotoUploading] = useState(false);
     const [commentSending, setCommentSending] = useState(false);
     const [commentSuccess, setCommentSuccess] = useState(false);
     const [userComments, setUserComments] = useState([]);
@@ -193,14 +197,18 @@ const HelpSupport = () => {
     };
 
     // Handle Comment Image Upload
-    const handleCommentFileUpload = (e) => {
+    const handleCommentFileUpload = async (e) => {
         const file = e.target.files?.[0];
         if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                setCommentPhoto(event.target.result);
-            };
-            reader.readAsDataURL(file);
+            setCommentPhotoUploading(true);
+            try {
+                setCommentPhoto(await storeImageFile(file, commentPhotoStorageType, API_BASE));
+            } catch (err) {
+                console.error('Comment image upload failed:', err);
+                alert(`Image upload failed: ${err.message}`);
+            } finally {
+                setCommentPhotoUploading(false);
+            }
         }
         if (commentFileRef.current) commentFileRef.current.value = '';
     };
@@ -445,6 +453,7 @@ const HelpSupport = () => {
 
                                     {/* Photo attachment */}
                                     <div className="space-y-2">
+                                        <ImageStorageSelect value={commentPhotoStorageType} onChange={setCommentPhotoStorageType} disabled={commentPhotoUploading} />
                                         <input
                                             ref={commentFileRef}
                                             type="file"
@@ -456,6 +465,7 @@ const HelpSupport = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => commentFileRef.current?.click()}
+                                                disabled={commentPhotoUploading}
                                                 className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                                             >
                                                 <FaImage className="text-amber-600" />

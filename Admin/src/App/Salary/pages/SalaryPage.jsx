@@ -33,10 +33,11 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import SalaryBarChart from '../../../components/SalaryBarChart';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
-import { getProxyImageUrl, fileToBase64, ensureBase64List } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, storeImageFile, ensureBase64List } from '../../../utils/mediaUtils';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
+import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 const getProofPhotos = item => [...new Set([
     ...(Array.isArray(item?.proofPhotos) ? item.proofPhotos : []),
@@ -116,6 +117,8 @@ const SalaryPage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [photoUploading, setPhotoUploading] = useState(false);
     const [qrPhotoUploading, setQrPhotoUploading] = useState(false);
+    const [proofImageStorageType, setProofImageStorageType] = useState('cloudinary');
+    const [qrImageStorageType, setQrImageStorageType] = useState('cloudinary');
     const [previewImage, setPreviewImage] = useState(null); // { url, title, filename }
     const [proofGalleryImages, setProofGalleryImages] = useState([]);
     const [proofGalleryIndex, setProofGalleryIndex] = useState(0);
@@ -537,15 +540,16 @@ const SalaryPage = () => {
         if (!file) return;
         setPhotoUploading(true);
         try {
-            const base64 = await fileToBase64(file);
-            if (base64) {
+            const imageUrl = await storeImageFile(file, proofImageStorageType, API_BASE);
+            if (imageUrl) {
                 setFormData(prev => {
-                    const proofPhotos = [...new Set([...getProofPhotos(prev), base64])];
+                    const proofPhotos = [...new Set([...getProofPhotos(prev), imageUrl])];
                     return { ...prev, proofPhoto: proofPhotos[0] || '', proofPhotos };
                 });
             }
         } catch (err) {
             console.error('Photo upload error:', err);
+            alert(`Photo upload failed: ${err.message}`);
         } finally {
             setPhotoUploading(false);
             if (photoFileRef.current) photoFileRef.current.value = '';
@@ -557,13 +561,14 @@ const SalaryPage = () => {
         if (!file) return;
         setQrPhotoUploading(true);
         try {
-            const base64 = await fileToBase64(file);
-            if (base64) {
-                setTempQrCodePhoto(base64);
-                setFormData(prev => ({ ...prev, qrCodePhoto: base64 }));
+            const imageUrl = await storeImageFile(file, qrImageStorageType, API_BASE);
+            if (imageUrl) {
+                setTempQrCodePhoto(imageUrl);
+                setFormData(prev => ({ ...prev, qrCodePhoto: imageUrl }));
             }
         } catch (err) {
             console.error('QR upload error:', err);
+            alert(`QR image upload failed: ${err.message}`);
         } finally {
             setQrPhotoUploading(false);
             if (qrFileRef.current) qrFileRef.current.value = '';
@@ -1247,6 +1252,7 @@ const SalaryPage = () => {
                             <FaCloudUploadAlt />
                             <span>{qrPhotoUploading ? 'Uploading...' : 'Upload QR'}</span>
                         </button>
+                        <ImageStorageSelect value={qrImageStorageType} onChange={setQrImageStorageType} disabled={qrPhotoUploading} />
                         <input
                             ref={qrFileRef}
                             type="file"
@@ -1280,6 +1286,7 @@ const SalaryPage = () => {
 
                     {/* Action Buttons Row */}
                     <div className="flex items-center gap-2">
+                        <ImageStorageSelect value={proofImageStorageType} onChange={setProofImageStorageType} disabled={photoUploading} />
                         <button
                             type="button"
                             onClick={handleSaveDate}

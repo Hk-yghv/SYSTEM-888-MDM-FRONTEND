@@ -30,6 +30,8 @@ import {
     FaExclamationCircle
 } from 'react-icons/fa';
 import { MdSupportAgent, MdOutlineMenuBook, MdOutlineAddPhotoAlternate, MdOutlineFeedback } from 'react-icons/md';
+import { storeImageFiles } from '../../../utils/mediaUtils';
+import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 const PRESET_PAGES = [
     'General',
@@ -89,6 +91,7 @@ const ControlSupportHelp = () => {
     const [photoUrlInput, setPhotoUrlInput] = useState('');
     const [showPhotoInputModal, setShowPhotoInputModal] = useState(false);
     const [uploadingPhotos, setUploadingPhotos] = useState(false);
+    const [imageStorageType, setImageStorageType] = useState('cloudinary');
     const fileInputRef = useRef(null);
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -214,20 +217,23 @@ const ControlSupportHelp = () => {
         setShowPhotoInputModal(false);
     };
 
-    const handleFileUpload = (e) => {
+    const handleFileUpload = async (e) => {
         const files = Array.from(e.target.files || []);
-        files.forEach((file) => {
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    setFormData((prev) => ({
-                        ...prev,
-                        photos: [...prev.photos, event.target.result]
-                    }));
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+        if (!imageFiles.length) {
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+        setUploadingPhotos(true);
+        try {
+            const imageUrls = await storeImageFiles(imageFiles, imageStorageType, API_BASE);
+            setFormData(prev => ({ ...prev, photos: [...prev.photos, ...imageUrls] }));
+        } catch (err) {
+            console.error('Support guide image upload failed:', err);
+            alert(`Image upload failed: ${err.message}`);
+        } finally {
+            setUploadingPhotos(false);
+        }
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -1002,6 +1008,7 @@ const ControlSupportHelp = () => {
                                         </span>
                                     </label>
                                     <div className="flex items-center gap-2">
+                                        <ImageStorageSelect value={imageStorageType} onChange={setImageStorageType} disabled={uploadingPhotos} />
                                         <input
                                             ref={fileInputRef}
                                             type="file"
@@ -1013,10 +1020,11 @@ const ControlSupportHelp = () => {
                                         <button
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
+                                            disabled={uploadingPhotos}
                                             className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-semibold hover:bg-emerald-700 flex items-center gap-1 cursor-pointer"
                                         >
                                             <MdOutlineAddPhotoAlternate size={13} />
-                                            <span>Upload រូបភាព</span>
+                                            <span>{uploadingPhotos ? t('uploadingImage') : 'Upload រូបភាព'}</span>
                                         </button>
                                         <button
                                             type="button"
