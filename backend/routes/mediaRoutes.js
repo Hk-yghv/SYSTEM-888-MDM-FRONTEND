@@ -508,6 +508,186 @@ router.get('/usage', async (req, res) => {
 });
 
 /**
+ * GET /api/media/all-images
+ * Returns BOTH Cloudinary library images AND MongoDB Base64 images merged together.
+ * storageType: 'cloudinary' | 'base64'
+ */
+router.get('/all-images', requireCloudinaryPermission('read'), async (req, res) => {
+    try {
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 48));
+        const category = req.query.category || 'All';
+
+        const images = [];
+
+        // ── A. Cloudinary Library Images ──────────────────────────────────────
+        if (category === 'All' || category === 'Cloudinary') {
+            const config = getCloudinaryAdminConfig();
+            if (config) {
+                try {
+                    let nextCursor = '';
+                    let fetched = 0;
+                    do {
+                        const params = new URLSearchParams({ max_results: '100' });
+                        if (nextCursor) params.set('next_cursor', nextCursor);
+                        const cloudRes = await fetch(
+                            `https://api.cloudinary.com/v1_1/${encodeURIComponent(config.cloudName)}/resources/image/upload?${params}`,
+                            { headers: { Authorization: config.authorization } }
+                        );
+                        if (!cloudRes.ok) break;
+                        const cloudData = await cloudRes.json();
+                        const resources = Array.isArray(cloudData.resources) ? cloudData.resources : [];
+                        resources.forEach(r => {
+                            images.push({
+                                src: r.secure_url || r.url || '',
+                                storageType: 'cloudinary',
+                                category: 'Cloudinary',
+                                entityId: r.public_id,
+                                entityName: r.display_name || r.public_id,
+                                field: r.asset_folder || r.folder || 'Cloudinary Library',
+                                usedBy: 'Administrator',
+                                usedAt: r.created_at,
+                                publicId: r.public_id,
+                                format: r.format,
+                                width: r.width,
+                                height: r.height,
+                                bytes: r.bytes,
+                            });
+                        });
+                        nextCursor = cloudData.next_cursor || '';
+                        fetched += resources.length;
+                    } while (nextCursor && fetched < 500);
+                } catch (cloudErr) {
+                    console.warn('Cloudinary fetch in all-images failed:', cloudErr.message);
+                }
+            }
+        }
+
+        // ── B. MongoDB Base64 Images ──────────────────────────────────────────
+        if (isMongoConnected) {
+            const pushImages = (srcs, meta) => {
+                const arr = Array.isArray(srcs) ? srcs : (srcs ? [srcs] : []);
+                arr.forEach(src => {
+                    if (src && typeof src === 'string' && src.startsWith('data:image')) {
+                        images.push({ src, storageType: 'base64', ...meta });
+                    }
+                });
+            };
+
+        // 1. Contracts
+        if (category === 'All' || category === 'Contract') {
+            const contracts = await queryAllDBs(Contract, (M) =>
+                M.find({
+                    $or: [
+                        { photos: { $regex: '^data:image', $options: '' } },
+                        { evidencePhotos: { $regex: '^data:image', $options: '' } },
+                        { customerPhoto: { $regex: '^data:image', $options: '' } },
+                        { 'repaymentSchedule.imageUrls': { $regex: '^data:image', $options: '' } }
+                    ]
+                }).select('contractId customerNameKh customerNameEn photos evidencePhotos customerPhoto repaymentSchedule createdBy createdAt').lean()
+            );
+            for (const c of contracts) {
+                const name = c.customerNameKh || c.customerNameEn || c.contractId || '—';
+                const meta = { category: 'Contract', entityId: c.contractId || c._id, entityName: name, usedBy: c.createdBy || 'Staff', usedAt: c.createdAt };
+                pushImages(c.photos, { ...meta, field: 'Contract Photos' });
+                pushImages(c.evidencePhotos, { ...meta, field: 'Evidence Photos' });
+                pushImages(c.customerPhoto, { ...meta, field: 'Customer Photo' });
+                if (Array.isArray(c.repaymentSchedule)) {
+                    for (const row of c.repaymentSchedule) {
+                        pushImages(row?.imageUrls, { ...meta, field: 'Repayment Receipt' });
+                    }
+                }
+            }
+        }
+
+        // 2. CashTransaction
+        if (category === 'All' || category === 'CashTransaction') {
+            const CashTransaction = (await import('../models/CashTransaction.js')).default;
+            const txs = await queryAllDBs(CashTransaction, (M) =>
+                M.find({
+                    $or: [
+                        { photoUrls: { $regex: '^data:image', $options: '' } },
+                        { photoUrl: { $regex: '^data:image', $options: '' } }
+                    ]
+                }).select('contractId type photoUrls photoUrl createdBy createdAt').lean()
+            );
+            for (const tx of txs) {
+                const meta = { category: 'CashTransaction', entityId: tx.contractId || tx._id, entityName: `${tx.type || 'Cash'} - ${tx.contractId || ''}`, usedBy: tx.createdBy || 'Staff', usedAt: tx.createdAt };
+                pushImages(tx.photoUrls, { ...meta, field: 'Receipt Photo' });
+                pushImages(tx.photoUrl, { ...meta, field: 'Receipt Photo' });
+            }
+        }
+
+        // 3. Salary
+        if (category === 'All' || category === 'Salary') {
+            const salaries = await queryAllDBs(Salary, (M) =>
+                M.find({
+                    $or: [
+                        { proofPhotos: { $regex: '^data:image', $options: '' } },
+                        { proofPhoto: { $regex: '^data:image', $options: '' } },
+                        { qrCodePhoto: { $regex: '^data:image', $options: '' } }
+                    ]
+                }).select('staffName proofPhotos proofPhoto qrCodePhoto createdBy createdAt').lean()
+            );
+            for (const s of salaries) {
+                const meta = { category: 'Salary', entityId: s._id, entityName: s.staffName || 'Staff', usedBy: s.createdBy || 'Finance', usedAt: s.createdAt };
+                pushImages(s.proofPhotos, { ...meta, field: 'Salary Proof' });
+                pushImages(s.proofPhoto, { ...meta, field: 'Salary Proof' });
+                pushImages(s.qrCodePhoto, { ...meta, field: 'QR Code' });
+            }
+        }
+
+        // 4. FollowUp2
+        if (category === 'All' || category === 'FollowUp') {
+            const followups = await queryAllDBs(FollowUp2, (M) =>
+                M.find({ images: { $regex: '^data:image', $options: '' } })
+                  .select('contractId customerName images createdBy createdAt').lean()
+            );
+            for (const fu of followups) {
+                const meta = { category: 'FollowUp', entityId: fu.contractId || fu._id, entityName: fu.customerName || fu.contractId || '—', usedBy: fu.createdBy || 'Staff', usedAt: fu.createdAt };
+                pushImages(fu.images, { ...meta, field: 'Follow-Up Photo' });
+            }
+        }
+
+        // 5. SupportHelp
+        if (category === 'All' || category === 'SupportHelp') {
+            const supports = await queryAllDBs(SupportHelp, (M) =>
+                M.find({ photos: { $regex: '^data:image', $options: '' } })
+                  .select('title page photos createdBy createdAt').lean()
+            );
+            for (const sup of supports) {
+                const meta = { category: 'SupportHelp', entityId: sup._id, entityName: `${sup.title} (${sup.page || 'General'})`, usedBy: sup.createdBy || 'Admin', usedAt: sup.createdAt };
+                pushImages(sup.photos, { ...meta, field: 'Guide Photo' });
+            }
+        }
+
+        // 6. SupportComment attachments
+        if (category === 'All' || category === 'SupportComment') {
+            const comments = await queryAllDBs(SupportComment, (M) =>
+                M.find({ photoUrl: { $regex: '^data:image', $options: '' } })
+                  .select('senderName subject photoUrl createdAt').lean()
+            );
+            for (const c of comments) {
+                pushImages(c.photoUrl, { category: 'SupportComment', entityId: c._id, entityName: c.senderName || 'Staff', usedBy: c.senderName || 'Staff', usedAt: c.createdAt, field: `Comment: ${c.subject || ''}` });
+            }
+            }
+        }
+
+        // Sort newest first
+        images.sort((a, b) => new Date(b.usedAt || 0) - new Date(a.usedAt || 0));
+
+        const total = images.length;
+        const start = (page - 1) * limit;
+        const paginated = images.slice(start, start + limit);
+
+        return res.json({ success: true, images: paginated, total, page, limit, pages: Math.ceil(total / limit) });
+    } catch (err) {
+        console.error('all-images error:', err);
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
  * GET / POST /api/media/to-base64
  * Fetches an image from external URL (especially Cloudinary) and returns it as a base64 data URL.
  * Solves browser CORS restrictions and enables seamless auto-conversion of existing images.
