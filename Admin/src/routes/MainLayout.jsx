@@ -10,13 +10,14 @@ import { useTheme } from "../context/ThemeContext";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { MdOutlineViewHeadline, MdOutlineViewSidebar, MdDragIndicator } from "react-icons/md";
 
-const STORAGE_KEY_POS = "floatingDisplayPos";
+const STORAGE_KEY_POS = "floatingDisplayDockPos";
 const STORAGE_KEY_HEADER = "isHeaderOpen";
 
 const MainLayout = ({ children }) => {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
   const [isFloatingUplistOpen, setIsFloatingUplistOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     if (typeof window !== "undefined") return window.innerWidth >= 1024;
@@ -30,59 +31,80 @@ const MainLayout = ({ children }) => {
     } catch { return true; }
   });
 
-  // Draggable position — default bottom-right
-  const [pos, setPos] = useState(() => {
+  // Docked position — defaults to left edge, strictly docks to left or right browser edges
+  const [dockPos, setDockPos] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_POS);
       if (saved) {
         const p = JSON.parse(saved);
         return {
-          x: Math.max(0, Math.min(p.x, window.innerWidth - 140)),
-          y: Math.max(0, Math.min(p.y, window.innerHeight - 50)),
+          side: p.side === "right" ? "right" : "left",
+          y: typeof p.y === "number" ? Math.max(20, Math.min(p.y, window.innerHeight - 70)) : 350,
         };
       }
     } catch {}
     return {
-      x: typeof window !== "undefined" ? window.innerWidth - 150 : 900,
-      y: typeof window !== "undefined" ? window.innerHeight - 72 : 600,
+      side: "left",
+      y: typeof window !== "undefined" ? Math.round(window.innerHeight * 0.65) : 350,
     };
   });
 
+  // Both header & leftMenu are visible
+  const isBothVisible = isHeaderOpen && isSidebarOpen;
+
+  // If header and leftMenu are both visible (not hidden), ensure attached to left edge per user requirement
+  useEffect(() => {
+    if (isBothVisible) {
+      setDockPos((prev) => (prev.side !== "left" ? { ...prev, side: "left" } : prev));
+    }
+  }, [isBothVisible]);
+
   const dragging = useRef(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
+  const dragOffsetY = useRef(0);
   const dragMoved = useRef(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
   const floatingRef = useRef(null);
-  const posRef = useRef(pos);
-  posRef.current = pos;
+  const dockPosRef = useRef(dockPos);
+  dockPosRef.current = dockPos;
 
   const onPointerDown = useCallback((e) => {
-    if (!e.target.closest("#drag-handle")) return;
-    e.preventDefault();
+    if (e.button !== 0) return;
     dragging.current = true;
     dragMoved.current = false;
-    const rect = floatingRef.current.getBoundingClientRect();
-    dragOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    startX.current = e.clientX;
+    startY.current = e.clientY;
+    const rect = floatingRef.current?.getBoundingClientRect();
+    dragOffsetY.current = rect ? e.clientY - rect.top : 18;
     document.body.style.userSelect = "none";
   }, []);
 
   const onPointerMove = useCallback((e) => {
     if (!dragging.current) return;
-    dragMoved.current = true;
+    const dx = Math.abs(e.clientX - startX.current);
+    const dy = Math.abs(e.clientY - startY.current);
+    if (dx > 4 || dy > 4) {
+      dragMoved.current = true;
+    }
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const el = floatingRef.current;
-    const w = el ? el.offsetWidth : 140;
-    const h = el ? el.offsetHeight : 42;
-    const newX = Math.max(0, Math.min(e.clientX - dragOffset.current.x, vw - w));
-    const newY = Math.max(0, Math.min(e.clientY - dragOffset.current.y, vh - h));
-    setPos({ x: newX, y: newY });
+    const h = el ? el.offsetHeight : 38;
+
+    // Up/down tracking along edge
+    const newY = Math.max(20, Math.min(e.clientY - dragOffsetY.current, vh - h - 20));
+
+    // Left/right edge snap: strictly snaps to browser side (left or right), never floats in middle
+    const newSide = e.clientX < vw / 2 ? "left" : "right";
+
+    setDockPos({ side: newSide, y: newY });
   }, []);
 
   const onPointerUp = useCallback(() => {
     if (!dragging.current) return;
     dragging.current = false;
     document.body.style.userSelect = "";
-    try { localStorage.setItem(STORAGE_KEY_POS, JSON.stringify(posRef.current)); } catch {}
+    try { localStorage.setItem(STORAGE_KEY_POS, JSON.stringify(dockPosRef.current)); } catch {}
   }, []);
 
   useEffect(() => {
@@ -97,9 +119,9 @@ const MainLayout = ({ children }) => {
   // Clamp on resize
   useEffect(() => {
     const handleResize = () => {
-      setPos((prev) => ({
-        x: Math.max(0, Math.min(prev.x, window.innerWidth - 140)),
-        y: Math.max(0, Math.min(prev.y, window.innerHeight - 50)),
+      setDockPos((prev) => ({
+        ...prev,
+        y: Math.max(20, Math.min(prev.y, window.innerHeight - 60)),
       }));
     };
     window.addEventListener("resize", handleResize);
@@ -127,13 +149,13 @@ const MainLayout = ({ children }) => {
   const { theme } = useTheme();
 
   // Smart popup positioning: auto-detect collision so popup never goes off-screen
-  // If not enough room below (pos.y + 260 > window.innerHeight) and has room above, popup goes UP; else DOWN
   const popupGoesUp = typeof window !== "undefined"
-    ? (window.innerHeight - pos.y < 260 && pos.y >= 210) || (pos.y > window.innerHeight / 2 && pos.y >= 210)
-    : pos.y > 220;
+    ? dockPos.y + 260 > window.innerHeight && dockPos.y >= 210
+    : dockPos.y > 220;
 
-  // If near right edge (pos.x + 230 > window.innerWidth), align popup right: 0; if near left edge, align left: 0
-  const popupGoesLeft = typeof window !== "undefined" ? (pos.x + 230 > window.innerWidth) : true;
+  const isLeftSide = dockPos.side === "left";
+  // Auto-hide eye icon and "Display" text when header & leftMenu are both visible (unless hovered or popup open)
+  const shouldHideContent = isBothVisible && !isHovered && !isFloatingUplistOpen;
 
   return (
     <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden">
@@ -198,44 +220,62 @@ const MainLayout = ({ children }) => {
         {/* Global Zoom Bar Modal for any image in the system */}
         <GlobalImageZoomModal />
 
-        {/* ── Draggable Floating Display Button (always visible) ── */}
+        {/* ── Draggable Floating Display Button (docked to browser edge) ── */}
         <div
           id="floating-display-uplist"
           ref={floatingRef}
           onPointerDown={onPointerDown}
-          className="fixed z-[99999] select-none"
-          style={{ left: pos.x, top: pos.y, touchAction: "none" }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className="fixed z-[99999] select-none flex items-center transition-[top] duration-75 ease-out"
+          style={{
+            top: dockPos.y,
+            ...(isLeftSide ? { left: 0, right: "auto" } : { right: 0, left: "auto" }),
+            touchAction: "none",
+          }}
         >
-          {/* Floating Button - Static anchor, never shifts when popup toggles */}
+          {/* Floating Button Pill - Docked flush to the browser edge */}
           <div
-            className="flex items-center rounded-full overflow-hidden shadow-xl border border-white/40"
-            style={{ background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 4px 20px rgba(16,185,129,0.45)" }}
+            onClick={() => {
+              if (!dragMoved.current) setIsFloatingUplistOpen((prev) => !prev);
+              dragMoved.current = false;
+            }}
+            className={`flex items-center overflow-hidden shadow-xl cursor-pointer active:scale-[0.98] transition-all duration-200 ${
+              isLeftSide
+                ? "rounded-r-2xl rounded-l-none border-y border-r border-white/40"
+                : "rounded-l-2xl rounded-r-none border-y border-l border-white/40 flex-row-reverse"
+            }`}
+            style={{
+              background: "linear-gradient(135deg,#10b981,#059669)",
+              boxShadow: "0 4px 20px rgba(16,185,129,0.45)",
+            }}
+            title={shouldHideContent ? "Display" : "គ្រប់គ្រងផ្ទាំងបង្ហាញ"}
           >
-            {/* Drag Handle — grab here to drag */}
+            {/* Drag Handle */}
             <div
               id="drag-handle"
-              className="flex items-center justify-center w-8 h-9 cursor-grab active:cursor-grabbing border-r border-white/20 text-white/60 hover:text-white transition-colors"
-              title="ចាប់ទៅដាក់កន្លែងណា"
+              className="flex items-center justify-center w-7 h-9 cursor-grab active:cursor-grabbing text-white/70 hover:text-white transition-colors flex-shrink-0"
+              title="អូសឡើងចុះ ឬឆ្វេងស្តាំ"
             >
               <MdDragIndicator size={18} />
             </div>
 
-            {/* Click to toggle popup */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!dragMoved.current) setIsFloatingUplistOpen((prev) => !prev);
-                dragMoved.current = false;
-              }}
-              className="flex items-center gap-1.5 px-3.5 h-9 text-white cursor-pointer active:opacity-80 transition-opacity"
-              title="គ្រប់គ្រងផ្ទាំងបង្ហាញ"
+            {/* Eye icon + "Display" text — auto-hidden when header and leftMenu are visible */}
+            <div
+              className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ease-in-out ${
+                shouldHideContent
+                  ? "max-w-0 opacity-0 px-0 pointer-events-none"
+                  : isLeftSide
+                  ? "max-w-[130px] opacity-100 pr-3.5 pl-0.5"
+                  : "max-w-[130px] opacity-100 pl-3.5 pr-0.5"
+              }`}
             >
-              <FaEye className="text-[11px] text-emerald-100" />
-              <span className="text-xs font-extrabold tracking-wide">Display</span>
-            </button>
+              <FaEye className="text-[11px] text-emerald-100 flex-shrink-0" />
+              <span className="text-xs font-extrabold tracking-wide text-white whitespace-nowrap">Display</span>
+            </div>
           </div>
 
-          {/* Absolute Popup Panel - Positioned absolutely so button position is completely frozen */}
+          {/* Absolute Popup Panel */}
           {isFloatingUplistOpen && (
             <div
               className="absolute w-[222px] bg-white border border-slate-200 rounded-[14px] p-2 shadow-[0_15px_50px_rgba(0,0,0,0.22)] animate-in fade-in duration-150 z-50 pointer-events-auto"
@@ -243,9 +283,9 @@ const MainLayout = ({ children }) => {
                 ...(popupGoesUp
                   ? { bottom: "calc(100% + 8px)", top: "auto" }
                   : { top: "calc(100% + 8px)", bottom: "auto" }),
-                ...(popupGoesLeft
-                  ? { right: 0, left: "auto" }
-                  : { left: 0, right: "auto" }),
+                ...(isLeftSide
+                  ? { left: 8, right: "auto" }
+                  : { right: 8, left: "auto" }),
               }}
             >
               {/* Title */}

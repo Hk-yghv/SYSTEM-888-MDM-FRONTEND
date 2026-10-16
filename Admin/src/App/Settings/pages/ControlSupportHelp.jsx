@@ -105,7 +105,12 @@ const ControlSupportHelp = () => {
     const [replyText, setReplyText] = useState('');
     const [replySubmitting, setReplySubmitting] = useState(false);
     const [deleteCommentModal, setDeleteCommentModal] = useState(null);
-    const [lightboxImage, setLightboxImage] = useState(null);
+
+    // Open Image in Global Zoom Modal with zoom bar
+    const handleOpenImageZoom = (src, alt = '') => {
+        if (!src) return;
+        window.dispatchEvent(new CustomEvent('openGlobalImageZoom', { detail: { src, alt } }));
+    };
 
     // ─────────────────────────────────────────────────────────────────────────
     // Fetch Guides
@@ -579,7 +584,11 @@ const ControlSupportHelp = () => {
                                                 </td>
                                                 <td className="py-3 px-4">
                                                     {item.photos && item.photos.length > 0 ? (
-                                                        <div className="relative w-12 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+                                                        <div
+                                                            onClick={() => handleOpenImageZoom(item.photos[0], item.title)}
+                                                            className="relative w-12 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                                                            title="ចុចដើម្បីពង្រីកបង្រួមរូបភាព"
+                                                        >
                                                             <img
                                                                 src={item.photos[0]}
                                                                 alt="Thumbnail"
@@ -824,8 +833,9 @@ const ControlSupportHelp = () => {
                                     {/* Photo preview */}
                                     {c.photoUrl && (
                                         <div
-                                            onClick={() => setLightboxImage(c.photoUrl)}
+                                            onClick={() => handleOpenImageZoom(c.photoUrl, `Screenshot by ${c.senderName || c.senderUsername}`)}
                                             className="w-28 h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer hover:shadow-md transition-shadow flex items-center justify-center"
+                                            title="ចុចដើម្បីពង្រីកបង្រួមរូបភាព"
                                         >
                                             <img src={c.photoUrl} alt="Screenshot" className="w-full h-full object-cover" />
                                         </div>
@@ -1279,27 +1289,7 @@ const ControlSupportHelp = () => {
                 </div>
             )}
 
-            {/* Lightbox Enlarged Photo */}
-            {lightboxImage && (
-                <div
-                    onClick={() => setLightboxImage(null)}
-                    className="fixed inset-0 z-[100000] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out"
-                >
-                    <button
-                        type="button"
-                        onClick={() => setLightboxImage(null)}
-                        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center"
-                    >
-                        <FaTimes size={18} />
-                    </button>
-                    <img
-                        src={lightboxImage}
-                        alt="Enlarged"
-                        className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                </div>
-            )}
+
         </div>
     );
 };

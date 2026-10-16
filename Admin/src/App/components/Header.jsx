@@ -23,8 +23,6 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
     const formatMoney = (val) => {
         const num = Number(val) || 0;
-        if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(1)}M`;
-        if (num >= 1_000) return `$${(num / 1_000).toFixed(1)}K`;
         return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
@@ -240,12 +238,6 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                         <FaTelegramPlane className={`text-sm ${location.pathname === '/telegram' ? 'text-sky-500' : 'text-slate-500'}`} />
                     </Link>
                 )}
-
-                {/* Live Status Dot */}
-                <div className='hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-emerald-200 bg-emerald-50'>
-                    <span className='w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse'></span>
-                    <span className='text-[10px] text-emerald-700 font-bold tracking-wide hidden lg:block'>LIVE</span>
-                </div>
             </div>
         </header>
     );

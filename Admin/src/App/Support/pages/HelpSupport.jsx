@@ -81,8 +81,11 @@ const HelpSupport = () => {
     const [search, setSearch] = useState('');
     const [activePage, setActivePage] = useState('All');
 
-    // Lightbox modal for enlarged image
-    const [lightboxImage, setLightboxImage] = useState(null);
+    // Open Image in Global Zoom Modal with zoom bar
+    const handleOpenImageZoom = (src, alt = '') => {
+        if (!src) return;
+        window.dispatchEvent(new CustomEvent('openGlobalImageZoom', { detail: { src, alt } }));
+    };
     const [copiedId, setCopiedId] = useState(null);
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -552,10 +555,11 @@ const HelpSupport = () => {
 
                                                 {comment.photoUrl && (
                                                     <div
-                                                        onClick={() => setLightboxImage(comment.photoUrl)}
-                                                        className="w-24 h-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer hover:shadow-md transition-shadow flex items-center justify-center"
+                                                        onClick={() => handleOpenImageZoom(comment.photoUrl, `Comment Attachment - ${comment.subject}`)}
+                                                        className="w-24 h-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer hover:shadow-md transition-shadow flex items-center justify-center group"
+                                                        title="ចុចដើម្បីពង្រីកបង្រួមរូបភាព"
                                                     >
-                                                        <img src={comment.photoUrl} alt="Attachment" className="w-full h-full object-cover" />
+                                                        <img src={comment.photoUrl} alt="Attachment" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                                     </div>
                                                 )}
 
@@ -653,8 +657,9 @@ const HelpSupport = () => {
                                                         {item.photos.map((photo, pIdx) => (
                                                             <div
                                                                 key={pIdx}
-                                                                onClick={() => setLightboxImage(photo)}
+                                                                onClick={() => handleOpenImageZoom(photo, `${item.title} - Photo ${pIdx + 1}`)}
                                                                 className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-video cursor-pointer hover:shadow-md transition-all flex items-center justify-center"
+                                                                title="ចុចដើម្បីពង្រីកបង្រួមរូបភាព"
                                                             >
                                                                 <img
                                                                     src={photo}
@@ -905,27 +910,7 @@ const HelpSupport = () => {
                 </div>
             </div>
 
-            {/* Photo Fullscreen Lightbox Modal */}
-            {lightboxImage && (
-                <div
-                    onClick={() => setLightboxImage(null)}
-                    className="fixed inset-0 z-[100000] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200 cursor-zoom-out"
-                >
-                    <button
-                        type="button"
-                        onClick={() => setLightboxImage(null)}
-                        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center transition-colors cursor-pointer"
-                    >
-                        <FaTimes size={18} />
-                    </button>
-                    <img
-                        src={lightboxImage}
-                        alt="Enlarged"
-                        className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl animate-in zoom-in-95 duration-200"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                </div>
-            )}
+
         </div>
     );
 };

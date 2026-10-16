@@ -90,8 +90,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
 
     // Check if Control Support & Help has ANY configured permissions
     const hasControlSupportHelpPermission =
-        hasPermission(json.settings?.controlSupportHelp || '/settings/control-support-help', 'read') ||
-        hasPermission(json.settings?.controlSystem, 'read');
+        hasPermission(json.settings?.controlSupportHelp || '/settings/control-support-help', 'read');
 
     // Check if Help & Support page link should be visible
     const hasHelpSupportPermission = hasPermission(json.helpSupport || '/help-support', 'read');
