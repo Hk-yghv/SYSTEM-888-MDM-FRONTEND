@@ -30,6 +30,21 @@ const getVerticalScrollContainer = (element) => {
     return window;
 };
 
+const getHorizontalScrollContainer = (element) => {
+    let ancestor = element.parentElement;
+    while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
+        const style = window.getComputedStyle(ancestor);
+        if (
+            /(auto|scroll|overlay)/.test(style.overflowX) &&
+            ancestor.scrollWidth - ancestor.clientWidth > 4
+        ) {
+            return ancestor;
+        }
+        ancestor = ancestor.parentElement;
+    }
+    return window;
+};
+
 const updateRowScale = (row, scrollContainer) => {
     const rowRect = row.getBoundingClientRect();
     const containerRect = scrollContainer === window
@@ -57,6 +72,43 @@ const updateRowScale = (row, scrollContainer) => {
 
     row.style.setProperty('--table-scroll-scale', (1 - shrink).toFixed(3));
     row.style.setProperty('--table-scroll-opacity', (1 - shrink * 1.4).toFixed(3));
+};
+
+const updateCellScale = (cell, scrollContainer) => {
+    if (cell.classList.contains('table-action-cell')) {
+        cell.style.setProperty('--table-scroll-scale-x', '1');
+        return;
+    }
+
+    const cellRect = cell.getBoundingClientRect();
+    const containerRect = scrollContainer === window
+        ? { left: 0, width: window.innerWidth }
+        : scrollContainer.getBoundingClientRect();
+    const scrollLeft = scrollContainer === window
+        ? window.scrollX
+        : scrollContainer.scrollLeft;
+    const scrollWidth = scrollContainer === window
+        ? document.documentElement.scrollWidth
+        : scrollContainer.scrollWidth;
+    const clientWidth = containerRect.width;
+    const maxScroll = Math.max(0, scrollWidth - clientWidth);
+    const leftProgress = Math.min(1, Math.max(0, scrollLeft / 70));
+    const rightProgress = Math.min(1, Math.max(0, (maxScroll - scrollLeft) / 70));
+    const cellCenter = cellRect.left + cellRect.width / 2 - containerRect.left;
+
+    let shrink = 0;
+    if (cellCenter < EDGE_THRESHOLD && leftProgress > 0) {
+        shrink = (1 - Math.max(0, cellCenter / EDGE_THRESHOLD)) * leftProgress * MAX_EDGE_SHRINK;
+        cell.style.transformOrigin = 'left center';
+    } else if (cellCenter > clientWidth - EDGE_THRESHOLD && rightProgress > 0) {
+        const distanceFromRight = clientWidth - cellCenter;
+        shrink = (1 - Math.max(0, distanceFromRight / EDGE_THRESHOLD)) * rightProgress * MAX_EDGE_SHRINK;
+        cell.style.transformOrigin = 'right center';
+    } else {
+        cell.style.transformOrigin = '';
+    }
+
+    cell.style.setProperty('--table-scroll-scale-x', (1 - shrink).toFixed(3));
 };
 
 export const installTableInteractions = () => {
@@ -107,6 +159,10 @@ export const installTableInteractions = () => {
         document.querySelectorAll('table tbody tr').forEach(row => {
             row.classList.add('table-scroll-row');
             updateRowScale(row, getVerticalScrollContainer(row));
+            row.querySelectorAll(':scope > th, :scope > td').forEach(cell => {
+                cell.classList.add('table-scroll-cell');
+                updateCellScale(cell, getHorizontalScrollContainer(cell));
+            });
         });
     };
 
@@ -136,6 +192,11 @@ export const installTableInteractions = () => {
             row.classList.remove('table-scroll-row');
             row.style.removeProperty('--table-scroll-scale');
             row.style.removeProperty('--table-scroll-opacity');
+        });
+        document.querySelectorAll('.table-scroll-cell').forEach(cell => {
+            cell.classList.remove('table-scroll-cell');
+            cell.style.removeProperty('--table-scroll-scale-x');
+            cell.style.removeProperty('transform-origin');
         });
         document.querySelectorAll('.table-with-sticky-actions').forEach(table => {
             table.classList.remove('table-with-sticky-actions');
