@@ -213,6 +213,16 @@ table tbody tr.table-scroll-row:hover > .table-action-cell {
     overscroll-behavior: contain;
 }
 
+/* Modals inside main content area fill full available height (no bottom gaps, never overlap header/leftmenu) */
+.mobile-content-area .fixed.inset-0:not(:has(.cursor-grab)):not(:has(input[type="range"])) {
+    padding: 0.5rem;
+}
+
+.mobile-content-area .fixed.inset-0:not(:has(.cursor-grab)):not(:has(input[type="range"])) > div:is(.max-w-2xl, .max-w-3xl, .max-w-4xl, .max-w-5xl, .max-w-6xl, .max-w-7xl) {
+    height: 100% !important;
+    max-height: 100% !important;
+}
+
 @media (max-height: 850px) {
     .popup-panel-enter:not(:has(.cursor-grab)):not(:has(input[type="range"])) {
         max-height: calc(100dvh - 1.5rem);

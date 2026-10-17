@@ -470,11 +470,11 @@ const Customer = () => {
 
             {/* Full Customer Detail Modal */}
             {selectedCustomer && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[99999] p-2">
-                    <div className="bg-white border border-gray-200 rounded-[26px] w-full max-w-4xl shadow-[0_18px_45px_rgba(0,0,0,0.20)] max-h-[92vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[99999] p-2">
+                    <div className="bg-white border border-gray-200 rounded-[20px] w-full max-w-5xl h-full max-h-full shadow-2xl overflow-y-auto flex flex-col">
 
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between p-5 border-b border-gray-200 sticky top-0 bg-white rounded-t-[26px] z-10">
+                        <div className="flex items-center justify-between p-5 border-b border-gray-200 sticky top-0 bg-white rounded-t-[20px] z-10 flex-shrink-0">
 
                             <div>
                                 <h3 className="text-base font-black text-gray-900 tracking-wide flex items-center gap-2">
