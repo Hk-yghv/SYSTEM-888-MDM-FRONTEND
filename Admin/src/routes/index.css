@@ -223,6 +223,82 @@ table tbody tr.table-scroll-row:hover > .table-action-cell {
     max-height: 100% !important;
 }
 
+/* ==========================================================================
+   Zero Whole-Page Scroll for Table Pages
+   Lock page scroll and make ONLY the Table container scrollable,
+   keeping Page Header, Filters, and Pagination cleanly pinned.
+   ========================================================================== */
+
+/* 1. Prevent entire page from scrolling when a table is present */
+.mobile-content-area:has(table) {
+    overflow: hidden !important;
+}
+
+/* 2. Direct page component fills full available height in a flex-column layout */
+.mobile-content-area > *:has(table) {
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* 3. Header, search bars, filter cards stay fixed at top */
+.mobile-content-area > *:has(table) > header,
+.mobile-content-area > *:has(table) > .page-header,
+.mobile-content-area > *:has(table) > form,
+.mobile-content-area > *:has(table) > div:not(:has(table)):not([data-pagination]):not(.pagination-bar):not(.fixed) {
+    flex-shrink: 0 !important;
+}
+
+/* 4. If table is wrapped in a card/container, make that card flex-column filling remaining height */
+.mobile-content-area > *:has(table) > div:has(table):not(.fixed) {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+/* 5. Any top action/summary row inside the table card stays fixed */
+.mobile-content-area > *:has(table) > div:has(table):not(.fixed) > div:not(:has(table)):not([data-pagination]):not(.pagination-bar) {
+    flex-shrink: 0 !important;
+}
+
+/* 6. The scrollable container directly holding the table scrolls both Y and X */
+.mobile-content-area .table-container,
+.mobile-content-area div:has(> table):not(.fixed),
+.mobile-content-area .overflow-x-auto:has(> table):not(.fixed),
+.mobile-content-area .overflow-auto:has(> table):not(.fixed) {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    padding-bottom: 0.5rem !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 7. Pin the table head to the top of the table while scrolling */
+.mobile-content-area table thead {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+}
+
+/* 8. Pagination bar pinned cleanly at the bottom without shifting */
+.mobile-content-area [data-pagination],
+.mobile-content-area .pagination-bar,
+.mobile-content-area > *:has(table) > nav,
+.mobile-content-area > *:has(table) div:has(> [data-pagination]),
+.mobile-content-area > *:has(table) div:has(> .pagination-bar) {
+    flex-shrink: 0 !important;
+    margin-top: auto !important;
+}
+
 @media (max-height: 850px) {
     .popup-panel-enter:not(:has(.cursor-grab)):not(:has(input[type="range"])) {
         max-height: calc(100dvh - 1.5rem);
