@@ -303,20 +303,60 @@ export const verifySecurityAuth = (req, res, next) => {
     }
 
     // ── BROWSER NAVIGATION DETECTION ──
-    // Browsers send: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,...
-    // Programmatic tools (curl, Python, Node, PHP) send: Accept: application/json OR */* OR nothing
-    const looksLikeBrowserNavigation = (
-        acceptHeader.includes('text/html') &&
-        acceptHeader.includes('application/xhtml+xml') &&
-        !token &&
-        !partnerKey &&
-        !systemKey
+    // Detect top-level address bar navigation from any browser
+    const secFetchDest = (req.headers['sec-fetch-dest'] || '').toLowerCase();
+    const secFetchMode = (req.headers['sec-fetch-mode'] || '').toLowerCase();
+    const isDocOrNavigate = secFetchDest === 'document' || secFetchMode === 'navigate';
+    const isHtmlNavigation = acceptHeader.includes('text/html') && !acceptHeader.includes('application/json');
+    const isDirectBrowserNavigation = isDocOrNavigate || isHtmlNavigation;
+
+    const isExemptBrowserPath = (
+        path === '/docs' ||
+        path === '/api-docs' ||
+        path === '/api/docs' ||
+        originalUrl.startsWith('/docs') ||
+        originalUrl.startsWith('/api-docs') ||
+        originalUrl.startsWith('/api/docs') ||
+        originalUrl.endsWith('/pdf') ||
+        path.endsWith('/pdf')
     );
 
-    if (looksLikeBrowserNavigation) {
+    if (isDirectBrowserNavigation && !isExemptBrowserPath && !systemKey) {
         const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || '127.0.0.1';
         notifySecurityAlert(`🌐 <b>BROWSER DIRECT ACCESS BLOCKED</b>\nIP: <code>${clientIp}</code>\nPath: <code>${originalUrl}</code>\nUser-Agent: <code>${req.headers['user-agent']?.substring(0, 80)}</code>`);
-        return res.status(401).json({
+
+        if (acceptHeader.includes('text/html')) {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.status(403).send(`<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Forbidden - Direct Access Prohibited | SYSTEM MDM</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; background: #0b0f19; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .box { background: #111827; border: 1px solid #1f2937; border-radius: 18px; padding: 36px 32px; max-width: 500px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); }
+        .icon { width: 64px; height: 64px; margin: 0 auto 16px; background: rgba(239, 68, 68, 0.12); color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; border: 1px solid rgba(239, 68, 68, 0.25); }
+        .badge { display: inline-block; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-size: 18px; font-weight: 800; color: #fff; margin: 0 0 10px; }
+        p { font-size: 13.5px; color: #9ca3af; line-height: 1.6; margin: 0 0 18px; }
+        .footer-note { font-size: 11.5px; color: #6b7280; border-top: 1px solid #1f2937; padding-top: 14px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="icon">🛡️</div>
+        <div class="badge">Security Protection Active</div>
+        <h1>ការចូលមើលទិន្នន័យផ្ទាល់ត្រូវបានហាមឃាត់</h1>
+        <p>ប្រព័ន្ធ SYSTEM MDM មិនអនុញ្ញាតឱ្យបើកមើលទិន្នន័យ API ផ្ទាល់នៅលើ Browser URL Bar ឡើយ ដើម្បីការពារសុវត្ថិភាពទិន្នន័យ។ សូមចូលប្រើប្រាស់តាមរយៈផ្ទាំងកម្មវិធី SYSTEM MDM ដោយផ្ទាល់។</p>
+        <div class="footer-note">403 Forbidden • Direct Browser Navigation Blocked</div>
+    </div>
+</body>
+</html>`);
+        }
+
+        return res.status(403).json({
             error: 'Security Protection: Direct browser access to this API is not permitted. Use the SYSTEM MDM application to access this data.'
         });
     }
