@@ -8,6 +8,7 @@ import QrPaymentModal from '../components/QrPaymentModal';
 import { FaDollarSign, FaImage } from 'react-icons/fa';
 import { MdOutlineSync, MdQrCode2 } from 'react-icons/md';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
+import { getRowInterest } from '../../../utils/repaymentUtils';
 
 const PAGE_SIZE = 25;
 const FETCH_LIMIT = 100000;
@@ -219,6 +220,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
             if (selectedBrand && contract.brand !== selectedBrand) return [];
 
             const penalty = getPenalty(row, contract, penaltyRules, today);
+            const interest = Number(getRowInterest(row, contract) || 0);
             const scheduledAmount = Number(row.scheduledAmount || 0);
             const paidAmount = Number(row.paidAmount || 0);
             const totalDue = scheduledAmount + penalty;
@@ -259,6 +261,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 serialNumber: contract.serialNumber || '',
                 loanDate: contract.inputDate || '',
                 paidDate: row.paidDate || '',
+                interest,
                 penalty,
                 scheduledAmount,
                 paidAmount,
@@ -296,7 +299,9 @@ const InstallmentHistory = ({ mode = 'history' }) => {
     useEffect(() => { setPage(1); }, [search, period, customFrom, customTo, selectedBrand, paymentTypeFilter]);
 
     const customerCount = new Set(filteredRows.map(row => row.contractId)).size;
+    const totalDueSum = filteredRows.reduce((sum, row) => sum + (Number(row.totalDue) || 0), 0);
     const paidTotal = filteredRows.reduce((sum, row) => sum + row.paidAmount, 0);
+    const interestTotal = filteredRows.reduce((sum, row) => sum + (Number(row.interest) || 0), 0);
     const penaltyTotal = filteredRows.reduce((sum, row) => sum + row.penalty, 0);
     const unpaidTotal = filteredRows.reduce((sum, row) => sum + row.unpaidAmount, 0);
     const unpaidCount = filteredRows.filter(row => row.unpaidAmount > 0).length;
@@ -316,6 +321,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
         'Due Date': row.dueDate,
         'Days Until Due': row.isPaid ? 'Paid' : row.daysUntilDue,
         'Scheduled Amount': row.scheduledAmount,
+        Interest: row.interest,
         Penalty: row.penalty,
         'Paid Amount': row.paidAmount,
         'Unpaid Amount': row.unpaidAmount,
@@ -330,6 +336,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
         { header: 'Brand', accessor: 'Brand' },
         { header: 'Installment', accessor: 'Installment' },
         { header: 'Due', cell: row => `$${Number(row['Scheduled Amount'] || 0).toLocaleString()}` },
+        { header: 'Interest', cell: row => `$${Number(row.Interest || 0).toLocaleString()}` },
         { header: 'Penalty', cell: row => `$${Number(row.Penalty || 0).toLocaleString()}` },
         { header: 'Paid', cell: row => `$${Number(row['Paid Amount'] || 0).toLocaleString()}` },
         { header: 'Unpaid', cell: row => `$${Number(row['Unpaid Amount'] || 0).toLocaleString()}` },
@@ -391,10 +398,14 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
                     <div className="border-l-4 border-emerald-500 bg-emerald-50 px-3 py-2">
                         <div className="text-[10px] font-bold uppercase text-emerald-800">ភ្ញៀវសរុប</div>
                         <div className="text-lg font-black text-slate-900">{customerCount.toLocaleString()}</div>
+                    </div>
+                    <div className="border-l-4 border-indigo-500 bg-indigo-50 px-3 py-2">
+                        <div className="text-[10px] font-bold uppercase text-indigo-800">ការប្រាក់សរុប</div>
+                        <div className="text-lg font-black text-slate-900">${interestTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                     <div className="border-l-4 border-sky-500 bg-sky-50 px-3 py-2">
                         <div className="text-[10px] font-bold uppercase text-sky-800">បានបង់សរុប</div>
@@ -453,7 +464,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
             </header>
 
             <div className="max-h-[calc(100vh-390px)] min-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-xs">
-                <table className="w-full min-w-[1550px] border-collapse text-left text-xs">
+                <table className="w-full min-w-[1650px] border-collapse text-left text-xs">
                     <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-slate-700">
                         <tr>
                             <th className="px-3 py-1 text-center">No.</th>
@@ -466,6 +477,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                             <th className="px-3 py-1">Paid date</th>
                             <th className="px-3 py-1">Due status</th>
                             <th className="px-3 py-1 text-right">Amount due</th>
+                            <th className="px-3 py-1 text-right font-mono text-indigo-700">ការប្រាក់</th>
                             <th className="px-3 py-1 text-right">Penalty</th>
                             <th className="px-3 py-1 text-right">Paid</th>
                             <th className="px-3 py-1 text-right">Unpaid</th>
@@ -475,8 +487,8 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {loading ? <tr><td colSpan={isHistoryPage ? 15 : 16} className="py-12 text-center font-semibold text-emerald-700">Loading installment schedule...</td></tr>
-                            : visibleRows.length === 0 ? <tr><td colSpan={isHistoryPage ? 15 : 16} className="py-12 text-center italic text-slate-500">{isHistoryPage ? 'No paid installments in this period.' : 'No installments due in this period.'}</td></tr>
+                        {loading ? <tr><td colSpan={isHistoryPage ? 16 : 17} className="py-12 text-center font-semibold text-emerald-700">Loading installment schedule...</td></tr>
+                            : visibleRows.length === 0 ? <tr><td colSpan={isHistoryPage ? 16 : 17} className="py-12 text-center italic text-slate-500">{isHistoryPage ? 'No paid installments in this period.' : 'No installments due in this period.'}</td></tr>
                                 : visibleRows.map((row, index) => {
                                     const images = getImages(row);
                                     const statusText = row.isPaid ? 'បានបង់រួច'
@@ -501,6 +513,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                         <td className="whitespace-nowrap px-3 py-1 font-mono font-semibold text-purple-700">{row.paidDate || '—'}</td>
                                         <td className="px-3 py-1"><span className={`whitespace-nowrap rounded-[4px] border px-2 py-1 font-bold ${statusClass}`}>{statusText}</span></td>
                                         <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-semibold text-slate-700">${row.totalDue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-bold text-indigo-700">${(row.interest || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-semibold text-amber-700">${row.penalty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-bold text-emerald-700">${row.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-bold text-rose-700">${row.unpaidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -537,6 +550,31 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                     </tr>;
                                 })}
                     </tbody>
+                    <tfoot className="sticky bottom-0 z-10 border-t-2 border-slate-300 bg-slate-100 font-extrabold text-slate-900 shadow-md">
+                        <tr>
+                            <td colSpan={9} className="px-3 py-2 text-right uppercase tracking-wider text-slate-800">
+                                សរុប (Total)
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-right font-mono font-extrabold text-slate-900">
+                                ${totalDueSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-right font-mono font-black text-indigo-700">
+                                ${interestTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-right font-mono font-extrabold text-amber-700">
+                                ${penaltyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-right font-mono font-black text-emerald-700">
+                                ${paidTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-2 text-right font-mono font-black text-rose-700">
+                                ${unpaidTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-3 py-2 text-center text-slate-400">—</td>
+                            <td className="px-3 py-2 text-center text-slate-400">—</td>
+                            {!isHistoryPage && <td className="px-3 py-2 text-center text-slate-400">—</td>}
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 
