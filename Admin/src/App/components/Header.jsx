@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
+import CustomModal from '../../components/CustomModal';
 
 import { FaBell, FaBars, FaTimes, FaTelegramPlane, FaWallet, FaArrowUp, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
 import { MdOutlineTrendingUp, MdAttachMoney } from 'react-icons/md';
@@ -31,6 +32,8 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
     const [isStandalone, setIsStandalone] = useState(() => (
         typeof window !== 'undefined' && Boolean(isStandaloneApp())
     ));
+    const [showInstallConfirmation, setShowInstallConfirmation] = useState(false);
+    const [installInfo, setInstallInfo] = useState('');
     const [isAppInstalled, setIsAppInstalled] = useState(() => {
         if (typeof window === 'undefined') return false;
         try {
@@ -86,17 +89,24 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
         };
     }, []);
 
-    const handleInstallApp = async () => {
+    const handleInstallApp = () => {
+        setInstallInfo('');
+        setShowInstallConfirmation(true);
+    };
+
+    const handleConfirmInstall = async () => {
+        setShowInstallConfirmation(false);
+
         if (isAppInstalled) {
-            window.alert('SYSTEM MDM បានដំឡើងរួចហើយ។ សូមបើក App តាមរូបតំណាង SYSTEM MDM នៅលើ Desktop ឬ Start Menu។');
+            setInstallInfo('SYSTEM MDM បានដំឡើងរួចហើយ។ សូមបើក App តាមរូបតំណាង SYSTEM MDM នៅលើ Desktop ឬ Start Menu។');
             return;
         }
 
         if (!installPrompt) {
             const instructions = isIosInstall
-                ? 'ដើម្បីដំឡើងលើ iPhone/iPad សូមចុច Share ក្នុង Safari រួចជ្រើស “Add to Home Screen”។'
-                : 'ដើម្បីដំឡើង SYSTEM MDM សូមបើកម៉ឺនុយ browser រួចជ្រើស “Install app” ឬ “Add to Home screen”។ ប្រសិនបើជម្រើសនេះមិនមាន សូមពិនិត្យថាអ្នកបានបើកគេហទំព័រតាម HTTPS។';
-            window.alert(instructions);
+                ? 'Safari មិនអនុញ្ញាតឱ្យគេហទំព័រដំឡើងដោយស្វ័យប្រវត្តិទេ។ សូមចុច Share ក្នុង Safari រួចជ្រើស “Add to Home Screen”។'
+                : 'Browser នេះមិនទាន់អាចបើកការដំឡើងដោយស្វ័យប្រវត្តិបានទេ។ សូមបើកម៉ឺនុយ browser ហើយជ្រើស “Install app” ឬ “Add to Home screen”។';
+            setInstallInfo(instructions);
             return;
         }
 
@@ -352,6 +362,25 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     </button>
                 )}
             </div>
+            <CustomModal
+                open={showInstallConfirmation}
+                title='ដំឡើង SYSTEM MDM'
+                message='តើអ្នកយល់ព្រមដំឡើង SYSTEM MDM ជា App លើឧបករណ៍នេះដែរឬទេ?'
+                type='info'
+                isConfirm
+                confirmText='យល់ព្រម ដំឡើង'
+                cancelText='បោះបង់'
+                onConfirm={handleConfirmInstall}
+                onCancel={() => setShowInstallConfirmation(false)}
+            />
+            <CustomModal
+                open={Boolean(installInfo)}
+                title='ព័ត៌មានការដំឡើង'
+                message={installInfo}
+                type='info'
+                confirmText='យល់ព្រម'
+                onConfirm={() => setInstallInfo('')}
+            />
         </header>
     );
 };
