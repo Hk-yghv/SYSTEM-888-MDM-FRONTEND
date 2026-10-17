@@ -3,6 +3,7 @@ import FollowUp2 from '../models/FollowUp2.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
 
 const router = express.Router();
 
@@ -29,23 +30,14 @@ router.get('/', async (req, res) => {
             fetchAll = 'false'
         } = req.query;
 
-        const isMasterAdmin = (
-            username === '@hakyonghouv' ||
-            username === 'hakyonghouv' ||
-            isImmutable === 'true' ||
-            userRole === 'Administrator' ||
-            userRole === 'Admin'
-        );
-
+        const isolation = await resolveUserIsolation(req);
         let filter = {};
-        if (isMasterAdmin) {
+        if (isolation.isMasterAdmin) {
             if (brand && brand !== 'ALL' && brand !== 'All') {
                 filter.brand = { $in: [brand, new RegExp(`^${brand.trim()}$`, 'i')] };
             }
         } else {
-            if (userBrand && userBrand !== 'ALL' && userBrand !== 'All') {
-                filter.brand = { $in: [userBrand, '', null, new RegExp(`^${userBrand.trim()}$`, 'i')] };
-            }
+            applyIsolationFilter(filter, isolation);
         }
 
         if (date) {
@@ -217,6 +209,10 @@ router.post('/', async (req, res) => {
         const currentYear = new Date().getFullYear();
         const autoId = `FU2-${currentYear}-${Math.floor(1000 + Math.random() * 9000)}`;
 
+        const isolation = await resolveUserIsolation(req);
+        const effectiveBrand = (!isolation.isMasterAdmin && isolation.brand) ? isolation.brand : (brand || '');
+        const effectiveSubBrand = req.body.subBrand || (isolation.allowedSubBrands[0] || '');
+
         const newDoc = {
             followUpId: autoId,
             customerName,
@@ -231,7 +227,8 @@ router.post('/', async (req, res) => {
             status: status || 'ជោគជ័យ',
             reason: reason || '',
             images: Array.isArray(images) ? images : (images ? [images] : []),
-            brand: brand || '',
+            brand: effectiveBrand,
+            subBrand: effectiveSubBrand,
             notes: notes || '',
             createdBy
         };

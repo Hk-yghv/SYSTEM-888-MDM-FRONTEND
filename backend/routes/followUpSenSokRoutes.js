@@ -3,6 +3,7 @@ import FollowUpSenSok from '../models/FollowUpSenSok.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
 
 const router = express.Router();
 
@@ -29,19 +30,12 @@ router.get('/', async (req, res) => {
             fetchAll = 'false'
         } = req.query;
 
-        const isMasterAdmin = (
-            username === '@hakyonghouv' ||
-            username === 'hakyonghouv' ||
-            isImmutable === 'true' ||
-            userRole === 'Administrator' ||
-            userRole === 'Admin'
-        );
-
+        const isolation = await resolveUserIsolation(req);
         let filter = {};
-        if (isMasterAdmin) {
+        if (isolation.isMasterAdmin) {
             if (brand) filter.brand = brand;
         } else {
-            if (userBrand) filter.brand = userBrand;
+            applyIsolationFilter(filter, isolation);
         }
 
         if (date) {
@@ -233,6 +227,10 @@ router.post('/', async (req, res) => {
         const currentYear = new Date().getFullYear();
         const autoId = `FUSS-${currentYear}-${Math.floor(1000 + Math.random() * 9000)}`;
 
+        const isolation = await resolveUserIsolation(req);
+        const effectiveBrand = (!isolation.isMasterAdmin && isolation.brand) ? isolation.brand : (brand || '');
+        const effectiveSubBrand = req.body.subBrand || (isolation.allowedSubBrands[0] || '');
+
         const newDoc = {
             followUpId: autoId,
             date: date || new Date().toISOString().split('T')[0],
@@ -246,7 +244,8 @@ router.post('/', async (req, res) => {
             link: link ? link.trim() : '',
             username: username ? username.trim() : '',
             responder: responder ? responder.trim() : '',
-            brand: brand || '',
+            brand: effectiveBrand,
+            subBrand: effectiveSubBrand,
             status: status || '',
             images: Array.isArray(images) ? images : (images ? [images] : []),
             notes: notes || ''

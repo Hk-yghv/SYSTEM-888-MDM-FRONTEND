@@ -8,7 +8,8 @@ const telegramAuditContactSchema = new mongoose.Schema({
     contactName: { type: String, default: '' },
     username: { type: String, default: '' },
     phoneNumber: { type: String, default: '' },
-    brand: { type: String, default: '' }
+    brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' }
 }, { timestamps: true });
 
 // 2. Daily Audit Log per Contract per Date
@@ -22,7 +23,8 @@ const telegramAuditLogSchema = new mongoose.Schema({
     accountActivity: { type: String, default: '' },
     noteAudit: { type: String, default: '' },
     auditedBy: { type: String, default: 'Staff' },
-    brand: { type: String, default: '' }
+    brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' }
 }, { timestamps: true });
 
 // 3. Daily Submission Tracker
@@ -31,7 +33,8 @@ const telegramAuditSubmissionSchema = new mongoose.Schema({
     isSubmitted: { type: Boolean, default: false },
     submittedAt: { type: Date, default: null },
     submittedBy: { type: String, default: '' },
-    brand: { type: String, default: '' }
+    brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' }
 }, { timestamps: true });
 
 export const TelegramAuditContact = mongoose.model('TelegramAuditContact', telegramAuditContactSchema);

@@ -8,6 +8,7 @@ import {
 import { isMongoConnected } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
 
 const router = express.Router();
 
@@ -46,17 +47,14 @@ router.get('/submit', async (req, res) => {
             search = ''
         } = req.query;
 
-        const isMaster = checkMasterAdmin(username, userRole, isImmutable);
-
+        const isolation = await resolveUserIsolation(req);
         let filter = {};
-        if (isMaster) {
+        if (isolation.isMasterAdmin) {
             if (brand && brand !== 'ALL' && brand !== 'All') {
                 filter.brand = { $in: [brand, new RegExp(`^${brand.trim()}$`, 'i')] };
             }
         } else {
-            if (userBrand && userBrand !== 'ALL' && userBrand !== 'All') {
-                filter.brand = { $in: [userBrand, '', null, new RegExp(`^${userBrand.trim()}$`, 'i')] };
-            }
+            applyIsolationFilter(filter, isolation);
         }
 
         if (date) {
@@ -119,7 +117,11 @@ router.post('/submit', async (req, res) => {
             createdBy = ''
         } = req.body;
 
-        if (!brand || !date) {
+        const isolation = await resolveUserIsolation(req);
+        const effectiveBrand = (!isolation.isMasterAdmin && isolation.brand) ? isolation.brand : brand;
+        const effectiveSubBrand = req.body.subBrand || (isolation.allowedSubBrands[0] || '');
+
+        if (!effectiveBrand || !date) {
             return res.status(400).json({ success: false, message: 'Date and Brand are required' });
         }
 
@@ -139,8 +141,9 @@ router.post('/submit', async (req, res) => {
             model,
             status,
             description,
-            brand,
-            createdBy
+            brand: effectiveBrand,
+            subBrand: effectiveSubBrand,
+            createdBy: createdBy || isolation.username || ''
         };
 
         if (isMongoConnected) {

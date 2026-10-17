@@ -974,11 +974,16 @@ router.post('/', async (req, res) => {
             targetContractId = await generateUniqueContractId(currentYear);
         }
 
+        const allowedSubBrands = await resolveAllowedSubBrands(req, false, req.user?.username || req.body.lastModifiedBy || req.body.username);
         let targetSubBrand = (req.body.subBrand || '').trim();
-        if (!targetSubBrand && req.body.brand) {
-            const list = MEM_DB.controlSystem?.brand_subbrands?.[req.body.brand];
-            if (Array.isArray(list) && list.length > 0) {
-                targetSubBrand = list[0];
+        if (!targetSubBrand) {
+            if (allowedSubBrands && allowedSubBrands.length > 0) {
+                targetSubBrand = allowedSubBrands[0];
+            } else if (req.body.brand) {
+                const list = MEM_DB.controlSystem?.brand_subbrands?.[req.body.brand];
+                if (Array.isArray(list) && list.length > 0) {
+                    targetSubBrand = list[0];
+                }
             }
         }
 
@@ -1403,6 +1408,7 @@ router.get('/payment-alerts', async (req, res) => {
     try {
         const { userBrand, username, isImmutable } = req.query;
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true);
+        const allowedSubBrands = await resolveAllowedSubBrands(req, isMasterAdmin, username);
 
         let contractQuery = { status: { $ne: 'Redeem' } };
         if (userBrand && !isMasterAdmin) {
@@ -1412,6 +1418,9 @@ router.get('/payment-alerts', async (req, res) => {
                 { brand: { $regex: escaped, $options: 'i' } },
                 { brand: { $regex: cleanBrand, $options: 'i' } }
             ];
+        }
+        if (allowedSubBrands && allowedSubBrands.length > 0) {
+            contractQuery.subBrand = { $in: allowedSubBrands };
         }
 
         let contracts = [];
@@ -1425,6 +1434,9 @@ router.get('/payment-alerts', async (req, res) => {
             if (userBrand && !isMasterAdmin) {
                 const bLower = userBrand.toLowerCase();
                 contracts = contracts.filter(c => (c.brand || '').toLowerCase().includes(bLower));
+            }
+            if (allowedSubBrands && allowedSubBrands.length > 0) {
+                contracts = contracts.filter(c => allowedSubBrands.includes(c.subBrand));
             }
             payments = MEM_DB.payments;
         }

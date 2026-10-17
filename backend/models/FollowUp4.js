@@ -18,6 +18,7 @@ const followUp4SubmitSchema = new mongoose.Schema({
     status: { type: String, default: 'PENDING' }, // STATUS (Droplist)
     description: { type: String, default: '' }, // បរិយាយ
     brand: { type: String, required: true }, // Brand Isolation
+    subBrand: { type: String, default: '' },
     createdBy: { type: String, default: '' }
 }, { timestamps: true });
 

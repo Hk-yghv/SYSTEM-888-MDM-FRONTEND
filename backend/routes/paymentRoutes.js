@@ -4,6 +4,7 @@ import Payment from '../models/Payment.js';
 import Contract from '../models/Contract.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel, dbInstances } from '../config/multiDB.js';
+import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
 
 const router = express.Router();
 
@@ -52,10 +53,8 @@ router.get(['/payments/contract/:contractId', '/contract/:contractId'], async (r
 // GET payments
 router.get(['/payments', '/'], async (req, res) => {
     try {
-        const { userBrand, userRole, username, isImmutable, brand = '', page = 1, limit = 10, search = '', dateFrom = '', dateTo = '' } = req.query;
-        const isPartner = Boolean(req.isPartnerAccess || req.user?.isPartner);
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin' || isPartner);
-        const requestedBrand = isMasterAdmin ? brand : userBrand;
+        const isolation = await resolveUserIsolation(req);
+        const requestedBrand = isolation.isMasterAdmin ? (brand || isolation.brand) : isolation.brand;
         const isGetAll = limit === 'all' || req.query.all === 'true';
         const parsedLimit = isGetAll ? 999999 : (parseInt(limit) || 10);
         const parsedPage = parseInt(page) || 1;
@@ -63,8 +62,13 @@ router.get(['/payments', '/'], async (req, res) => {
 
         if (isMongoConnected) {
             let matchedContractIds = null;
-            if (requestedBrand) {
-                const matchedContracts = await queryAllDBs(Contract, (M) => M.find({ brand: requestedBrand }).select('contractId'));
+            if (requestedBrand || isolation.hasSubBrandRestriction) {
+                let contractQuery = {};
+                if (requestedBrand) contractQuery.brand = requestedBrand;
+                if (isolation.hasSubBrandRestriction) {
+                    contractQuery.subBrand = { $in: isolation.allowedSubBrands };
+                }
+                const matchedContracts = await queryAllDBs(Contract, (M) => M.find(contractQuery).select('contractId'));
                 matchedContractIds = matchedContracts.map(c => c.contractId);
             }
             let allPayments = await queryAllDBs(Payment, (M) => {
@@ -188,6 +192,7 @@ router.post(['/payments', '/'], async (req, res) => {
             amount: Number(amount) || 0,
             description: description || '',
             brand: contract?.brand || '',
+            subBrand: contract?.subBrand || '',
             paymentType: paymentType || '',
             monthLabel: monthLabel || '',
             monthIndex: Number(monthIndex) || 0,

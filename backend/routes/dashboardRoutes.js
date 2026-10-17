@@ -4,14 +4,14 @@ import Payment from '../models/Payment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs } from '../config/multiDB.js';
 import { calculateContractFinancials } from './contractRoutes.js';
+import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
 
 const router = express.Router();
 
 // DASHBOARD STATS API
 router.get('/stats', async (req, res) => {
     try {
-        const { userBrand, userRole, username, isImmutable } = req.query;
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true);
+        const isolation = await resolveUserIsolation(req);
 
         let totalContracts, activatedContracts, applicationContracts, checkContracts,
             redeemContracts, blacklistContracts, commentsContracts,
@@ -19,8 +19,8 @@ router.get('/stats', async (req, res) => {
             totalRevenue, paymentCount, totalLoanAmount, totalCustomerReceived, totalBorrowers;
 
         let query = {};
-        if (userBrand && !isMasterAdmin) {
-            query.brand = userBrand;
+        if (!isolation.isMasterAdmin) {
+            applyIsolationFilter(query, isolation);
         }
 
         if (isMongoConnected) {
@@ -61,11 +61,8 @@ router.get('/stats', async (req, res) => {
             var totalPenaltyRepayment = repaymentMetrics.totalPenaltyRepayment;
             var totalInterest = repaymentMetrics.totalInterest;
         } else {
-            // MEM_DB fallback
-            const contracts = MEM_DB.contracts.filter(c => {
-                if (userBrand && !isMasterAdmin) return c.brand === userBrand;
-                return true;
-            });
+            // MEM_DB fallback with brand & subBrand isolation
+            const contracts = filterInMemoryRecords([...MEM_DB.contracts], isolation);
             totalContracts = contracts.length;
             activatedContracts = contracts.filter(c => c.status === 'Activated').length;
             applicationContracts = contracts.filter(c => c.status === 'Application').length;

@@ -97,9 +97,10 @@ const CalculateSchedule2 = () => {
             const username = user?.username || '';
             const role = user?.role || '';
             const isImmutable = user?.isImmutable ? 'true' : 'false';
+            const userSubBrands = (user?.subBrands || []).join(',');
 
             const res = await fetch(
-                `${API_BASE}/calculate-schedules?userBrand=${encodeURIComponent(brand)}&username=${encodeURIComponent(username)}&userRole=${encodeURIComponent(role)}&isImmutable=${isImmutable}&_t=${Date.now()}`
+                `${API_BASE}/calculate-schedules?userBrand=${encodeURIComponent(brand)}&username=${encodeURIComponent(username)}&userRole=${encodeURIComponent(role)}&isImmutable=${isImmutable}&userSubBrands=${encodeURIComponent(userSubBrands)}&_t=${Date.now()}`
             );
             if (res.ok) {
                 const data = await res.json();
@@ -344,6 +345,7 @@ const CalculateSchedule2 = () => {
                 totalInterest: calcData.totalInterest,
                 schedule: calcData.schedule,
                 brand: user?.brand || '',
+                subBrand: user?.subBrands?.[0] || '',
                 createdBy: user?.username || user?.name || 'Staff',
                 notes: notes.trim()
             };

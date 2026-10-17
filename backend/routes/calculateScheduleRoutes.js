@@ -3,6 +3,7 @@ import CalculateSchedule from '../models/CalculateSchedule.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
 
 const router = express.Router();
 
@@ -62,16 +63,8 @@ router.get('/', async (req, res) => {
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
 
-        const { userBrand = '', userRole = '', username = '', isImmutable = 'false', search = '' } = req.query;
-        const isMasterAdmin = (
-            username === '@hakyonghouv' ||
-            username === 'hakyonghouv' ||
-            isImmutable === 'true' ||
-            userRole === 'Administrator' ||
-            userRole === 'Admin' ||
-            userRole === 'SuperAdmin' ||
-            userRole === 'Manager'
-        );
+        const { search = '' } = req.query;
+        const isolation = await resolveUserIsolation(req);
 
         let records = [];
         if (isMongoConnected) {
@@ -85,10 +78,12 @@ router.get('/', async (req, res) => {
                         { assetName: { $regex: s, $options: 'i' } }
                     ];
                 }
+                // Enforce Brand and Sub-Brand isolation in MongoDB query
+                applyIsolationFilter(query, isolation);
                 return await M.find(query).sort({ createdAt: -1 }).lean();
             });
         } else {
-            let list = [...MEM_DB.calculateSchedules];
+            let list = filterInMemoryRecords([...MEM_DB.calculateSchedules], isolation);
             if (search && search.trim()) {
                 const s = search.trim().toLowerCase();
                 list = list.filter(item =>
@@ -104,10 +99,9 @@ router.get('/', async (req, res) => {
             records = [];
         }
 
-        // Branch filtering if applicable (case-insensitive, includes unbranded records)
-        if (userBrand && !isMasterAdmin && records.length > 0) {
-            const b = userBrand.trim().toLowerCase();
-            records = records.filter(r => !r.brand || r.brand.trim().toLowerCase() === b || r.brand.trim() === '');
+        // Secondary safety in-memory filter
+        if (!isolation.isMasterAdmin && records.length > 0) {
+            records = filterInMemoryRecords(records, isolation);
         }
 
         res.json({ success: true, count: records.length, data: records });
@@ -120,6 +114,7 @@ router.get('/', async (req, res) => {
 // POST /api/calculate-schedules
 router.post('/', async (req, res) => {
     try {
+        const isolation = await resolveUserIsolation(req);
         const {
             contractNumber = '',
             customerName = '',
@@ -132,14 +127,20 @@ router.post('/', async (req, res) => {
             monthlyInterest = 0,
             totalInterest = 0,
             schedule = [],
-            brand = '',
-            createdBy = '',
+            brand = isolation.brand || '',
+            subBrand = req.body.subBrand || (isolation.allowedSubBrands[0] || ''),
+            createdBy = isolation.username || '',
             notes = ''
         } = req.body;
 
         if (!startDate || principal <= 0) {
             return res.status(400).json({ success: false, error: 'Start date and principal amount are required.' });
         }
+
+        const effectiveBrand = (!isolation.isMasterAdmin && isolation.brand) ? isolation.brand : brand;
+        const effectiveSubBrand = (!isolation.isMasterAdmin && isolation.hasSubBrandRestriction && !subBrand)
+            ? (isolation.allowedSubBrands[0] || '')
+            : subBrand;
 
         const newDoc = {
             contractNumber,
@@ -153,7 +154,8 @@ router.post('/', async (req, res) => {
             monthlyInterest: Number(monthlyInterest),
             totalInterest: Number(totalInterest),
             schedule,
-            brand,
+            brand: effectiveBrand,
+            subBrand: effectiveSubBrand,
             createdBy,
             notes,
             createdAt: new Date(),

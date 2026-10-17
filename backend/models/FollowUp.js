@@ -12,6 +12,7 @@ const followUpSchema = new mongoose.Schema({
     success: { type: Number, default: 0 },
     reason: { type: String, default: '' },
     brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' },
     createdBy: { type: String, default: 'Staff' },
     notes: { type: String, default: '' }
 }, { timestamps: true });

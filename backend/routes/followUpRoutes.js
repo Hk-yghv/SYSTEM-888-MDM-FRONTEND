@@ -3,6 +3,7 @@ import FollowUp from '../models/FollowUp.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
 
 const router = express.Router();
 
@@ -27,19 +28,12 @@ router.get('/', async (req, res) => {
             fetchAll = 'false'
         } = req.query;
 
-        const isMasterAdmin = (
-            username === '@hakyonghouv' ||
-            username === 'hakyonghouv' ||
-            isImmutable === 'true' ||
-            userRole === 'Administrator' ||
-            userRole === 'Admin'
-        );
-
+        const isolation = await resolveUserIsolation(req);
         let filter = {};
-        if (isMasterAdmin) {
+        if (isolation.isMasterAdmin) {
             if (brand) filter.brand = brand;
         } else {
-            if (userBrand) filter.brand = userBrand;
+            applyIsolationFilter(filter, isolation);
         }
 
         if (startDate || endDate) {
@@ -164,6 +158,10 @@ router.post('/', async (req, res) => {
         const autoId = `FU-${currentYear}-${Math.floor(1000 + Math.random() * 9000)}`;
         const userActor = username || createdBy || '';
 
+        const isolation = await resolveUserIsolation(req);
+        const effectiveBrand = (!isolation.isMasterAdmin && isolation.brand) ? isolation.brand : (brand || '');
+        const effectiveSubBrand = req.body.subBrand || (isolation.allowedSubBrands[0] || '');
+
         const newDoc = {
             followUpId: autoId,
             date,
@@ -176,7 +174,8 @@ router.post('/', async (req, res) => {
             success: Number(success) || 0,
             contractCreated: Number(contractCreated) || 0,
             reason: reason || '',
-            brand: brand || '',
+            brand: effectiveBrand,
+            subBrand: effectiveSubBrand,
             notes: notes || '',
             createdBy: userActor
         };

@@ -14,6 +14,7 @@ const followUpSenSokSchema = new mongoose.Schema({
     username: { type: String, default: '' }, // username
     responder: { type: String, default: '' }, // អ្នកឆ្លើយតប
     brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' },
     status: { type: String, default: '' }, // ស្ថានភាព
     images: { type: [String], default: [] },
     notes: { type: String, default: '' }

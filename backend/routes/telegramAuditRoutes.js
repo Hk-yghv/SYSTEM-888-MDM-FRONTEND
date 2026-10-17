@@ -3,6 +3,7 @@ import { TelegramAuditContact, TelegramAuditLog, TelegramAuditSubmission } from 
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel, dbInstances } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
 
 const router = express.Router();
 
@@ -206,11 +207,22 @@ router.get('/', async (req, res) => {
                 }
             }
 
-            // Fetch all contacts
-            contacts = await queryAllDBs(TelegramAuditContact, (M) => M.find({}).lean());
+            const isolation = await resolveUserIsolation(req);
+            let contactFilter = {};
+            let auditFilter = { auditDate: targetDate };
+            if (!isolation.isMasterAdmin) {
+                applyIsolationFilter(contactFilter, isolation);
+                applyIsolationFilter(auditFilter, isolation);
+            } else if (brand) {
+                contactFilter.brand = brand;
+                auditFilter.brand = brand;
+            }
 
-            // Fetch logs for this targetDate
-            audits = await queryAllDBs(TelegramAuditLog, (M) => M.find({ auditDate: targetDate }).lean());
+            // Fetch contacts respecting Brand & Sub-Brand isolation
+            contacts = await queryAllDBs(TelegramAuditContact, (M) => M.find(contactFilter).lean());
+
+            // Fetch logs for this targetDate respecting Brand & Sub-Brand isolation
+            audits = await queryAllDBs(TelegramAuditLog, (M) => M.find(auditFilter).lean());
 
             // Get distinct statusAccount options from all past audits across all connected DBs
             const statusSet = new Set();

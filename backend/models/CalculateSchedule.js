@@ -13,6 +13,7 @@ const calculateScheduleSchema = new mongoose.Schema({
     totalInterest: { type: Number, default: 0 },
     schedule: { type: Array, default: [] },
     brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' },
     createdBy: { type: String, default: '' },
     notes: { type: String, default: '' }
 }, { timestamps: true });

@@ -15,6 +15,7 @@ const paymentSchema = new mongoose.Schema({
     amount: { type: Number, required: true, default: 0 },
     description: { type: String, default: '' },
     brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' },
     paymentType: { type: String, default: '' },
     monthLabel: { type: String, default: '' },
     monthIndex: { type: Number, default: 0 },
