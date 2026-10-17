@@ -1,4 +1,4 @@
-import React, { lazy } from "react";
+import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import json from "./Routes.json";
 import ProtectRoute from "../services/ProtectRoute";
@@ -88,7 +88,16 @@ export const RootRedirect = () => {
 const renderProtected = (pagePath, Component, props = {}) => (
   <ProtectRoute pagePath={pagePath}>
     <MainLayout>
-      <Component {...props} />
+      <Suspense
+        fallback={
+          <div className="flex min-h-[40vh] items-center justify-center gap-2 text-sm text-slate-500" role="status">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" />
+            <span>Loading page...</span>
+          </div>
+        }
+      >
+        <Component {...props} />
+      </Suspense>
     </MainLayout>
   </ProtectRoute>
 );
