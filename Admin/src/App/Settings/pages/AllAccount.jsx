@@ -603,9 +603,9 @@ const AllAccount = () => {
                 </div>
             ) : (
                 /* Account Detail Panel — Structured, categorized permissions view */
-                <div className='w-full bg-white border border-slate-200 rounded-[5px] shadow-md overflow-hidden'>
+                <div className='w-full bg-white border border-slate-200 rounded-[5px] shadow-md overflow-hidden flex flex-col h-[calc(100vh-140px)]'>
                     {/* Detail Header */}
-                    <div className='flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50'>
+                    <div className='flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-slate-100 bg-slate-50 shrink-0'>
                         <div className='flex items-center gap-3'>
                             <button
                                 type="button"
@@ -614,13 +614,13 @@ const AllAccount = () => {
                             >
                                 ← ត្រឡប់ (Back)
                             </button>
-                            <div className={`w-11 h-11 rounded-[5px] flex items-center justify-center text-xl font-black text-white shadow-md
+                            <div className={`w-10 h-10 rounded-[5px] flex items-center justify-center text-lg font-black text-white shadow-md
                                 ${selectedAccount.isImmutable ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : selectedAccount.role?.toLowerCase() === 'salary' ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-500 to-slate-700'}`}>
                                 {(selectedAccount.name || selectedAccount.username || '?')[0].toUpperCase()}
                             </div>
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <p className='text-base font-black text-slate-900'>{selectedAccount.name}</p>
+                                    <p className='text-sm font-black text-slate-900'>{selectedAccount.name}</p>
                                     {(selectedAccount.syncStatus === 'Pending' || selectedAccount.permissionPending) ? (
                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 flex items-center gap-1">
                                             ⏳ Pending Live Sync
@@ -686,9 +686,9 @@ const AllAccount = () => {
                         </div>
                     </div>
 
-                    {/* Permissions Summary — Structured by System Categories */}
-                    <div className='p-5 space-y-4 text-xs'>
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    {/* Permissions Summary — Structured by System Categories, Internal Scrollable */}
+                    <div className='p-4 text-xs flex-1 flex flex-col overflow-hidden min-h-0'>
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-3 shrink-0">
                             <h3 className='text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2'>
                                 <FaShieldAlt className="text-emerald-600" />
                                 <span>Page & Action Permissions (សិទ្ធិប្រើប្រាស់តាមផ្នែក)</span>
@@ -701,45 +701,47 @@ const AllAccount = () => {
                         {(!selectedAccount.permissions || Object.keys(selectedAccount.permissions).length === 0) ? (
                             <p className="text-slate-400 italic py-4">ពុំមានការកំណត់សិទ្ធិជាក់លាក់ (Disabled all pages)</p>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                                {Object.entries(
-                                    ALL_SYSTEM_PAGES.reduce((acc, pg) => {
-                                        const pPerms = selectedAccount.permissions?.[pg.path];
-                                        const granted = pPerms ? Object.entries(pPerms).filter(([, v]) => v).map(([k]) => k) : [];
-                                        if (granted.length > 0) {
-                                            const cat = pg.category || 'Other';
-                                            if (!acc[cat]) acc[cat] = [];
-                                            acc[cat].push({ ...pg, granted });
-                                        }
-                                        return acc;
-                                    }, {})
-                                ).map(([category, pages]) => (
-                                    <div key={category} className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 space-y-2">
-                                        <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
-                                            <span className="font-bold text-slate-800 text-xs">{category}</span>
-                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                                                {pages.length} Pages
-                                            </span>
-                                        </div>
-                                        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                                            {pages.map((pg) => (
-                                                <div key={pg.path} className="p-1.5 rounded bg-white border border-slate-200/80 space-y-1">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="font-semibold text-slate-800 text-[11px] truncate">{pg.label}</span>
-                                                        <span className="text-[9px] font-mono text-slate-400">{pg.path}</span>
+                            <div className="flex-1 overflow-y-auto pr-1.5 space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                                    {Object.entries(
+                                        ALL_SYSTEM_PAGES.reduce((acc, pg) => {
+                                            const pPerms = selectedAccount.permissions?.[pg.path];
+                                            const granted = pPerms ? Object.entries(pPerms).filter(([, v]) => v).map(([k]) => k) : [];
+                                            if (granted.length > 0) {
+                                                const cat = pg.category || 'Other';
+                                                if (!acc[cat]) acc[cat] = [];
+                                                acc[cat].push({ ...pg, granted });
+                                            }
+                                            return acc;
+                                        }, {})
+                                    ).map(([category, pages]) => (
+                                        <div key={category} className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 space-y-2">
+                                            <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                                                <span className="font-bold text-slate-800 text-xs">{category}</span>
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                                                    {pages.length} Pages
+                                                </span>
+                                            </div>
+                                            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                                                {pages.map((pg) => (
+                                                    <div key={pg.path} className="p-1.5 rounded bg-white border border-slate-200/80 space-y-1">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-semibold text-slate-800 text-[11px] truncate">{pg.label}</span>
+                                                            <span className="text-[9px] font-mono text-slate-400">{pg.path}</span>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {pg.granted.map((act) => (
+                                                                <span key={act} className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-bold">
+                                                                    ✓ {act}
+                                                                </span>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {pg.granted.map((act) => (
-                                                            <span key={act} className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-bold">
-                                                                ✓ {act}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>

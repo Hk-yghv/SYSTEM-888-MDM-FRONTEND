@@ -353,18 +353,27 @@ router.post('/subbrands', async (req, res) => {
         if (!brand) return res.status(400).json({ error: 'Brand name required' });
         if (!subBrand) return res.status(400).json({ error: 'Sub Brand name required' });
 
-        // Retrieve existing brand_subbrands map
+        // Retrieve existing brand_subbrands map correctly
         let brand_subbrands = {};
         if (isMongoConnected) {
-            const globalDoc = await queryAllDBs(ControlSystem, (M) => M.findOne({ key: 'brand_subbrands', brand: '' }));
-            if (globalDoc && globalDoc[0]?.value) {
-                brand_subbrands = globalDoc[0].value;
+            try {
+                const globalDoc = await queryAllDBs(ControlSystem, (M) =>
+                    M.findOne({ key: 'brand_subbrands', $or: [{ brand: '' }, { brand: 'Global' }, { brand: { $exists: false } }, { brand: null }] })
+                );
+                const raw = Array.isArray(globalDoc) ? globalDoc[0] : globalDoc;
+                if (raw && raw.value) {
+                    const val = (raw.value instanceof Map) ? Object.fromEntries(raw.value) : raw.value;
+                    brand_subbrands = JSON.parse(JSON.stringify(val || {}));
+                }
+            } catch (readErr) {
+                console.warn('[SubBrands] Warning reading brand_subbrands from DB:', readErr.message);
             }
-        } else {
-            brand_subbrands = MEM_DB.controlSystem?.brand_subbrands || {};
+        }
+        if (!brand_subbrands || Object.keys(brand_subbrands).length === 0) {
+            brand_subbrands = JSON.parse(JSON.stringify(MEM_DB.controlSystem?.brand_subbrands || {}));
         }
 
-        if (!brand_subbrands[brand]) {
+        if (!Array.isArray(brand_subbrands[brand])) {
             brand_subbrands[brand] = [];
         }
 
@@ -373,14 +382,52 @@ router.post('/subbrands', async (req, res) => {
             brand_subbrands[brand].push(subBrand);
         }
 
-        // Save brand_subbrands in DB
+        // Save brand_subbrands in DB robustly
         if (isMongoConnected) {
+            const ControlSystemWrite = getWriteModel(ControlSystem) || ControlSystem;
+            try {
+                let doc = await ControlSystemWrite.findOne({ key: 'brand_subbrands', brand: '' });
+                if (!doc) {
+                    doc = await ControlSystemWrite.findOne({
+                        key: 'brand_subbrands',
+                        $or: [{ brand: { $exists: false } }, { brand: null }, { brand: 'Global' }]
+                    });
+                }
+                if (doc) {
+                    doc.value = brand_subbrands;
+                    doc.brand = '';
+                    doc.markModified('value');
+                    await doc.save();
+                } else {
+                    await ControlSystemWrite.findOneAndUpdate(
+                        { key: 'brand_subbrands', brand: '' },
+                        { $set: { key: 'brand_subbrands', brand: '', value: brand_subbrands } },
+                        { upsert: true, new: true, setDefaultsOnInsert: true }
+                    );
+                }
+            } catch (saveErr) {
+                console.warn('[SubBrands] Primary DB save warning:', saveErr.message);
+                if (saveErr.code === 11000 || (saveErr.message && saveErr.message.includes('E11000'))) {
+                    try { await ControlSystem.collection.dropIndex('key_1'); } catch (e) {}
+                    await ControlSystemWrite.findOneAndUpdate(
+                        { key: 'brand_subbrands', brand: '' },
+                        { $set: { key: 'brand_subbrands', brand: '', value: brand_subbrands } },
+                        { upsert: true, new: true, setDefaultsOnInsert: true }
+                    );
+                } else {
+                    throw saveErr;
+                }
+            }
+
+            // Sync across secondary DBs
             await queryAllDBs(ControlSystem, async (BoundM) => {
-                await BoundM.findOneAndUpdate(
-                    { key: 'brand_subbrands', brand: '' },
-                    { value: brand_subbrands },
-                    { upsert: true }
-                );
+                try {
+                    await BoundM.findOneAndUpdate(
+                        { key: 'brand_subbrands', brand: '' },
+                        { $set: { key: 'brand_subbrands', brand: '', value: brand_subbrands } },
+                        { upsert: true, setDefaultsOnInsert: true }
+                    );
+                } catch (e) {}
                 return [];
             });
         }
@@ -396,34 +443,46 @@ router.post('/subbrands', async (req, res) => {
         if (defaultSubBrand) {
             if (isMongoConnected) {
                 // Update Contracts
-                await queryAllDBs(Contract, async (BoundM) => {
-                    const resC = await BoundM.updateMany(
-                        { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
-                        { $set: { subBrand: defaultSubBrand } }
-                    );
-                    backfilledContracts += (resC.modifiedCount || 0);
-                    return [];
-                });
+                try {
+                    await queryAllDBs(Contract, async (BoundM) => {
+                        const resC = await BoundM.updateMany(
+                            { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
+                            { $set: { subBrand: defaultSubBrand } }
+                        );
+                        backfilledContracts += (resC.modifiedCount || 0);
+                        return [];
+                    });
+                } catch (e) {
+                    console.warn('[SubBrands] Backfill contracts warning:', e.message);
+                }
 
                 // Update SavedUrl
-                await queryAllDBs(SavedUrl, async (BoundM) => {
-                    const resU = await BoundM.updateMany(
-                        { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
-                        { $set: { subBrand: defaultSubBrand } }
-                    );
-                    backfilledUrls += (resU.modifiedCount || 0);
-                    return [];
-                });
+                try {
+                    await queryAllDBs(SavedUrl, async (BoundM) => {
+                        const resU = await BoundM.updateMany(
+                            { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
+                            { $set: { subBrand: defaultSubBrand } }
+                        );
+                        backfilledUrls += (resU.modifiedCount || 0);
+                        return [];
+                    });
+                } catch (e) {
+                    console.warn('[SubBrands] Backfill savedUrls warning:', e.message);
+                }
 
                 // Update PhoneLog
-                await queryAllDBs(PhoneLog, async (BoundM) => {
-                    const resP = await BoundM.updateMany(
-                        { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
-                        { $set: { subBrand: defaultSubBrand } }
-                    );
-                    backfilledLogs += (resP.modifiedCount || 0);
-                    return [];
-                });
+                try {
+                    await queryAllDBs(PhoneLog, async (BoundM) => {
+                        const resP = await BoundM.updateMany(
+                            { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
+                            { $set: { subBrand: defaultSubBrand } }
+                        );
+                        backfilledLogs += (resP.modifiedCount || 0);
+                        return [];
+                    });
+                } catch (e) {
+                    console.warn('[SubBrands] Backfill phoneLogs warning:', e.message);
+                }
             }
 
             // MEM_DB updates
@@ -477,25 +536,61 @@ router.delete('/subbrands', async (req, res) => {
 
         let brand_subbrands = {};
         if (isMongoConnected) {
-            const globalDoc = await queryAllDBs(ControlSystem, (M) => M.findOne({ key: 'brand_subbrands', brand: '' }));
-            if (globalDoc && globalDoc[0]?.value) {
-                brand_subbrands = globalDoc[0].value;
+            try {
+                const globalDoc = await queryAllDBs(ControlSystem, (M) =>
+                    M.findOne({ key: 'brand_subbrands', $or: [{ brand: '' }, { brand: 'Global' }, { brand: { $exists: false } }, { brand: null }] })
+                );
+                const raw = Array.isArray(globalDoc) ? globalDoc[0] : globalDoc;
+                if (raw && raw.value) {
+                    const val = (raw.value instanceof Map) ? Object.fromEntries(raw.value) : raw.value;
+                    brand_subbrands = JSON.parse(JSON.stringify(val || {}));
+                }
+            } catch (readErr) {
+                console.warn('[SubBrands] Warning reading brand_subbrands for delete:', readErr.message);
             }
-        } else {
-            brand_subbrands = MEM_DB.controlSystem?.brand_subbrands || {};
+        }
+        if (!brand_subbrands || Object.keys(brand_subbrands).length === 0) {
+            brand_subbrands = JSON.parse(JSON.stringify(MEM_DB.controlSystem?.brand_subbrands || {}));
         }
 
-        if (brand_subbrands[brand]) {
+        if (Array.isArray(brand_subbrands[brand])) {
             brand_subbrands[brand] = brand_subbrands[brand].filter(s => s.toLowerCase() !== subBrand.toLowerCase());
         }
 
         if (isMongoConnected) {
+            const ControlSystemWrite = getWriteModel(ControlSystem) || ControlSystem;
+            try {
+                let doc = await ControlSystemWrite.findOne({ key: 'brand_subbrands', brand: '' });
+                if (!doc) {
+                    doc = await ControlSystemWrite.findOne({
+                        key: 'brand_subbrands',
+                        $or: [{ brand: { $exists: false } }, { brand: null }, { brand: 'Global' }]
+                    });
+                }
+                if (doc) {
+                    doc.value = brand_subbrands;
+                    doc.brand = '';
+                    doc.markModified('value');
+                    await doc.save();
+                } else {
+                    await ControlSystemWrite.findOneAndUpdate(
+                        { key: 'brand_subbrands', brand: '' },
+                        { $set: { key: 'brand_subbrands', brand: '', value: brand_subbrands } },
+                        { upsert: true, new: true, setDefaultsOnInsert: true }
+                    );
+                }
+            } catch (saveErr) {
+                console.warn('[SubBrands] Error saving brand_subbrands on delete:', saveErr.message);
+            }
+
             await queryAllDBs(ControlSystem, async (BoundM) => {
-                await BoundM.findOneAndUpdate(
-                    { key: 'brand_subbrands', brand: '' },
-                    { value: brand_subbrands },
-                    { upsert: true }
-                );
+                try {
+                    await BoundM.findOneAndUpdate(
+                        { key: 'brand_subbrands', brand: '' },
+                        { $set: { key: 'brand_subbrands', brand: '', value: brand_subbrands } },
+                        { upsert: true, setDefaultsOnInsert: true }
+                    );
+                } catch (e) {}
                 return [];
             });
         }

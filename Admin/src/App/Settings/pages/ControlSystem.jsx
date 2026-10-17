@@ -240,6 +240,9 @@ const ControlSystem = () => {
                 const res = await fetch(`${API_BASE}/controlsystem?brand=${selectedBrand}`);
                 if (res.ok) {
                     const data = await res.json();
+                    if (data.brand_subbrands) {
+                        setBrandSubbrands(data.brand_subbrands);
+                    }
 
                     // Smart auto-inherit droplists: If any category in the brand is empty or missing, auto-fill from Global!
                     if (data.droplists && Array.isArray(data.droplists)) {
