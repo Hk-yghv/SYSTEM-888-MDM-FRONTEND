@@ -510,7 +510,7 @@ const CalculateSchedule2 = () => {
             <style>{`
                 @page {
                     size: A4 ${printOrientation};
-                    margin: ${printOrientation === 'landscape' ? '8mm 10mm' : '10mm 12mm'};
+                    margin: ${printOrientation === 'landscape' ? '8mm 0mm' : '10mm 0mm'};
                 }
                 @media print {
                     html, body {
@@ -568,7 +568,7 @@ const CalculateSchedule2 = () => {
                         display: block !important;
                         position: relative !important;
                         width: 100% !important;
-                        max-width: ${printOrientation === 'landscape' ? '280mm' : '190mm'} !important;
+                        max-width: ${printOrientation === 'landscape' ? '297mm' : '210mm'} !important;
                         margin: 0 auto !important;
                         padding: 0 !important;
                         box-shadow: none !important;
@@ -616,8 +616,8 @@ const CalculateSchedule2 = () => {
                         width: 100% !important;
                     }
                     #cs2-print-area .cs2-page-margin {
-                        padding-left: ${printOrientation === 'landscape' ? '8mm' : '2mm'} !important;
-                        padding-right: ${printOrientation === 'landscape' ? '8mm' : '2mm'} !important;
+                        padding-left: 150px !important;
+                        padding-right: 150px !important;
                     }
                     #cs2-print-area .cs2-signature-grid {
                         display: grid !important;
