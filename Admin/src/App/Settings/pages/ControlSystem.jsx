@@ -81,6 +81,8 @@ const ControlSystem = () => {
     const [newItemInput, setNewItemInput] = useState('');
     const [selectedCategoryIdx, setSelectedCategoryIdx] = useState(0);
     const [newBrandInput, setNewBrandInput] = useState('');
+    const [brandSubbrands, setBrandSubbrands] = useState({});
+    const [newSubBrandInputs, setNewSubBrandInputs] = useState({});
 
     // Dedicated Follow Up 4 inputs
     const [newRejectSubmitInput, setNewRejectSubmitInput] = useState('');
@@ -227,6 +229,9 @@ const ControlSystem = () => {
                 const brandCat = globalDroplists.find(d => d.category === 'Brands');
                 if (brandCat && Array.isArray(brandCat.items)) {
                     setBrandsList(brandCat.items);
+                }
+                if (globalData.brand_subbrands) {
+                    setBrandSubbrands(globalData.brand_subbrands);
                 }
             }
 
@@ -529,6 +534,63 @@ const ControlSystem = () => {
         } catch (err) {
             setSaving(false);
             console.error('Add brand error:', err);
+        }
+    };
+
+    const handleAddSubBrand = async (brandName) => {
+        if (!canEditSection('brands')) {
+            alert('You do not have edit permission for Organization settings.');
+            return;
+        }
+        const subName = (newSubBrandInputs[brandName] || '').trim();
+        if (!subName) return;
+        setSaving(true);
+        setMessage('');
+        try {
+            const res = await fetch(`${API_BASE}/controlsystem/subbrands`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brand: brandName, subBrand: subName })
+            });
+            const data = await res.json();
+            setSaving(false);
+            if (res.ok) {
+                setBrandSubbrands(data.brand_subbrands || {});
+                setNewSubBrandInputs(prev => ({ ...prev, [brandName]: '' }));
+                setMessage(`បានបន្ថែម Sub Brand '${subName}' សម្រាប់ Brand '${brandName}' និងភ្ជាប់ទិន្នន័យចាស់ដោយស្វ័យប្រវត្តិ!`);
+                setTimeout(() => setMessage(''), 4500);
+            } else {
+                alert(data.error || 'Failed to add sub brand');
+            }
+        } catch (err) {
+            setSaving(false);
+            console.error('Add subbrand error:', err);
+        }
+    };
+
+    const handleDeleteSubBrand = async (brandName, subName) => {
+        if (!canDeleteSection('brands')) {
+            alert('You do not have delete permission for Organization settings.');
+            return;
+        }
+        if (!window.confirm(`តើអ្នកពិតជាចង់លុប Sub Brand '${subName}' ពី Brand '${brandName}' ដែរឬទេ?`)) return;
+        setSaving(true);
+        try {
+            const res = await fetch(`${API_BASE}/controlsystem/subbrands`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brand: brandName, subBrand: subName })
+            });
+            const data = await res.json();
+            setSaving(false);
+            if (res.ok) {
+                setBrandSubbrands(data.brand_subbrands || {});
+                setMessage(`បានលុប Sub Brand '${subName}' ដោយជោគជ័យ។`);
+                setTimeout(() => setMessage(''), 3000);
+            }
+        } catch (err) {
+            setSaving(false);
+            console.error('Delete subbrand error:', err);
         }
     };
 
@@ -1398,17 +1460,18 @@ const ControlSystem = () => {
 
             </div>
 
-            {/* Section 5: Brand Management — Administrator + Global Config only */}
+            {/* Section 5: Brand & Sub Brand Management — Administrator + Global Config only */}
             {activeExplorerFile.id === 'brands' && user?.role === 'Administrator' && selectedBrand === '' && (
-                <div className="p-6 rounded-3xl glass-card border border-amber-500/30 space-y-4 shadow-xl">
+                <div className="p-6 rounded-3xl glass-card border border-amber-500/30 space-y-6 shadow-xl">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-amber-300 text-xs font-bold uppercase">
-                        <FaLayerGroup /> {t('brandTenant')}
+                        <FaLayerGroup /> {t('brandTenant')} &amp; Sub Brand Management
                     </div>
 
                     <p className="text-[11px] text-gray-400">
-                        Brands listed here will appear in the <span className="text-amber-300 font-semibold">brand selector</span> above and in all dropdowns across the system. Only <span className="text-white font-bold">Administrator</span> editing Global Config can manage this list.
+                        គ្រប់គ្រង Brand និង <strong className="text-amber-300">Sub Brands (អនុម៉ាក)</strong> របស់ប្រព័ន្ធ។ នៅក្នុង Brand មួយអាចបង្កើត Sub Brand បានលើសពីពីរ។ ពេលបង្កើត Sub Brand ដំបូង រាល់ទិន្នន័យដែលមានស្រាប់ក្នុង Brand នោះ នឹងត្រូវរត់ចូល Sub Brand ដំបូងដោយស្វ័យប្រវត្តិ។
                     </p>
 
+                    {/* Create Brand Input */}
                     <div className="flex items-center gap-2 text-xs">
                         <input
                             type="text"
@@ -1428,29 +1491,110 @@ const ControlSystem = () => {
                         </button>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 pt-1">
+                    {/* Brands with Sub Brands Cards */}
+                    <div className="space-y-4 pt-1">
                         {brandsList.length === 0 && (
                             <p className="text-gray-500 text-xs italic">No brands defined yet.</p>
                         )}
-                        {brandsList.map((br, brIdx) => (
-                            <div
-                                key={brIdx}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-amber-950/40 border border-amber-600/40 rounded-[5px] text-amber-200 text-xs font-semibold"
-                            >
-                                <FaLayerGroup size={11} className="text-amber-400" />
-                                <span>{br}</span>
-                                {canDeleteSection('brands') && (
-                                    <button
-                                        onClick={() => handleDeleteBrandClick(br)}
-                                        disabled={saving}
-                                        className="text-red-400 hover:text-red-300 cursor-pointer disabled:opacity-50 transition-colors"
-                                        title={`Remove brand '${br}'`}
-                                    >
-                                        <MdDelete size={14} />
-                                    </button>
-                                )}
-                            </div>
-                        ))}
+                        {brandsList.map((br, brIdx) => {
+                            const currentSubBrands = brandSubbrands[br] || [];
+                            return (
+                                <div
+                                    key={brIdx}
+                                    className="p-4 bg-gray-900/80 border border-amber-600/30 rounded-xl space-y-3 shadow-md"
+                                >
+                                    <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">
+                                                <FaLayerGroup size={13} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-amber-300 text-sm">{br}</h4>
+                                                <span className="text-[10px] text-gray-400 font-mono">
+                                                    {currentSubBrands.length} Sub Brands
+                                                </span>
+                                            </div>
+                                        </div>
+                                        {canDeleteSection('brands') && (
+                                            <button
+                                                onClick={() => handleDeleteBrandClick(br)}
+                                                disabled={saving}
+                                                className="px-2.5 py-1 text-red-400 hover:text-red-300 hover:bg-red-950/50 rounded-lg text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors flex items-center gap-1"
+                                                title={`Remove brand '${br}'`}
+                                            >
+                                                <MdDelete size={14} />
+                                                <span>Delete Brand</span>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Sub Brands Section */}
+                                    <div className="space-y-2 pl-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[11px] font-bold text-gray-300">
+                                                Sub Brands (អនុម៉ាក) — អាចបង្កើតលើសពី ២ បាន:
+                                            </span>
+                                            <span className="text-[10px] text-amber-400/80 italic">
+                                                💡 ទិន្នន័យចាស់រត់ចូល Sub Brand ដំបូងបង្អស់
+                                            </span>
+                                        </div>
+
+                                        {/* Sub Brands Chips */}
+                                        <div className="flex flex-wrap gap-2 min-h-[30px] items-center">
+                                            {currentSubBrands.length === 0 ? (
+                                                <span className="text-gray-500 text-xs italic">
+                                                    មិនទាន់មាន Sub Brand នៅឡើយ (សូមបង្កើតខាងក្រោម)
+                                                </span>
+                                            ) : (
+                                                currentSubBrands.map((sb, sbIdx) => (
+                                                    <div
+                                                        key={sbIdx}
+                                                        className="flex items-center gap-1.5 px-3 py-1 bg-sky-950/70 border border-sky-600/40 rounded-full text-sky-200 text-xs font-semibold"
+                                                    >
+                                                        <span>{sb}</span>
+                                                        {canDeleteSection('brands') && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteSubBrand(br, sb)}
+                                                                disabled={saving}
+                                                                className="text-red-400 hover:text-red-300 ml-1 text-xs cursor-pointer"
+                                                                title={`Remove sub brand '${sb}'`}
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+
+                                        {/* Add Sub Brand inline */}
+                                        <div className="flex items-center gap-2 pt-1 max-w-md">
+                                            <input
+                                                type="text"
+                                                value={newSubBrandInputs[br] || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setNewSubBrandInputs(prev => ({ ...prev, [br]: val }));
+                                                }}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleAddSubBrand(br)}
+                                                disabled={!canEditSection('brands')}
+                                                placeholder={`បញ្ចូល Sub Brand ថ្មីសម្រាប់ ${br}...`}
+                                                className="flex-1 h-8 px-3 bg-gray-950 border border-gray-700 rounded-[5px] text-gray-200 text-xs focus:border-sky-500 outline-none"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAddSubBrand(br)}
+                                                disabled={saving || !canEditSection('brands') || !(newSubBrandInputs[br] || '').trim()}
+                                                className="px-3 h-8 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white rounded-[5px] text-xs font-bold flex items-center gap-1 cursor-pointer transition-all"
+                                            >
+                                                <MdAddCircle size={14} /> Add Sub Brand
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}

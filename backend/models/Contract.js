@@ -26,6 +26,7 @@ const contractSchema = new mongoose.Schema({
     // Device Information
     model: { type: String, required: true },
     brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' },
     serialNumber: { type: String, required: true },
     imei1: { type: String, default: '' },
     imei2: { type: String, default: '' },

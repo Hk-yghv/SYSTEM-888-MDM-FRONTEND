@@ -635,6 +635,20 @@ const Profile = () => {
                                     Brand: <span className="font-bold text-indigo-400">{user.brand}</span>
                                 </span>
                             )}
+                            {Array.isArray(user?.subBrands) && user.subBrands.length > 0 && (
+                                <div className="mt-2 text-left bg-gray-900/80 p-2.5 rounded-xl border border-gray-800">
+                                    <span className="block text-[10px] text-gray-400 font-bold uppercase mb-1">
+                                        Sub Brands ({user.subBrands.length}):
+                                    </span>
+                                    <div className="flex flex-wrap gap-1">
+                                        {user.subBrands.map((sb, idx) => (
+                                            <span key={idx} className="px-2 py-0.5 bg-indigo-950/80 border border-indigo-700/60 text-indigo-300 rounded-[4px] text-[10px] font-bold">
+                                                {sb}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="pt-3 border-t border-gray-800/80 text-left text-xs space-y-2.5">

@@ -8,6 +8,7 @@ const savedUrlSchema = new mongoose.Schema({
     description: { type: String, default: '', trim: true },
     tags: { type: [String], default: [] },
     brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' },
     createdBy: { type: String, default: 'Administrator' },
     clicks: { type: Number, default: 0 }
 }, { timestamps: true });

@@ -516,6 +516,16 @@ router.get('/', async (req, res) => {
             query.brand = brandFilter;
         }
 
+        const subBrandFilter = req.query.subBrand;
+        if (subBrandFilter && subBrandFilter !== 'All') {
+            query.subBrand = subBrandFilter;
+        } else if (req.query.userSubBrands && !isMasterAdmin) {
+            const allowed = String(req.query.userSubBrands).split(',').map(s => s.trim()).filter(Boolean);
+            if (allowed.length > 0) {
+                query.subBrand = { $in: allowed };
+            }
+        }
+
         if (dateFrom || dateTo) {
             const dueDateFilter = {};
             if (dateFrom) dueDateFilter.$gte = dateFrom;
@@ -911,8 +921,17 @@ router.post('/', async (req, res) => {
             targetContractId = await generateUniqueContractId(currentYear);
         }
 
+        let targetSubBrand = (req.body.subBrand || '').trim();
+        if (!targetSubBrand && req.body.brand) {
+            const list = MEM_DB.controlSystem?.brand_subbrands?.[req.body.brand];
+            if (Array.isArray(list) && list.length > 0) {
+                targetSubBrand = list[0];
+            }
+        }
+
         const newContract = {
             ...req.body,
+            subBrand: targetSubBrand,
             contractId: targetContractId,
             contractIid: req.body.contractIid || '',
             status: req.body.status || 'Application',

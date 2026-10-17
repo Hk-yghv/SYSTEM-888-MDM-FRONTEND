@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import PhoneLog from '../models/PhoneLog.js';
 import WallpaperLog from '../models/WallpaperLog.js';
 import DeviceActionLog from '../models/DeviceActionLog.js';
+import SavedUrl from '../models/SavedUrl.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 
@@ -93,6 +94,9 @@ router.get('/', async (req, res) => {
     try {
         const brand = (req.query.brand || '').trim();
         const globalConfigs = await getGlobalConfigs();
+        const brandSubbrandsMap = globalConfigs.brand_subbrands || MEM_DB.controlSystem?.brand_subbrands || {};
+        globalConfigs.brand_subbrands = brandSubbrandsMap;
+        globalConfigs.subbrands = (brand && brandSubbrandsMap[brand]) ? brandSubbrandsMap[brand] : [];
 
         if (isMongoConnected) {
             if (!brand || brand === 'Global') {
@@ -109,8 +113,9 @@ router.get('/', async (req, res) => {
             });
 
             // Deep merge with Global configurations so any missing key or empty droplist category inherits from Global
-            // NOTE: We do NOT persist/clone this merge to DB — Private brand stays empty until admin explicitly saves.
             const merged = { ...globalConfigs, ...brandMapped };
+            merged.brand_subbrands = brandSubbrandsMap;
+            merged.subbrands = brandSubbrandsMap[brand] || [];
 
             if (globalConfigs.droplists && Array.isArray(globalConfigs.droplists)) {
                 let brandDroplists = Array.isArray(brandMapped.droplists) ? brandMapped.droplists : [];
@@ -131,7 +136,6 @@ router.get('/', async (req, res) => {
             }
 
             return res.json(merged);
-
         }
 
         if (!MEM_DB.controlSystems) {
@@ -142,6 +146,8 @@ router.get('/', async (req, res) => {
             memConfig = { brand, ...(MEM_DB.controlSystems.find(c => c.brand === '') || MEM_DB.controlSystem) };
             MEM_DB.controlSystems.push(memConfig);
         }
+        memConfig.brand_subbrands = brandSubbrandsMap;
+        memConfig.subbrands = brandSubbrandsMap[brand] || [];
         res.json(memConfig);
     } catch (err) {
         console.error('Error fetching control system config:', err);
@@ -335,6 +341,170 @@ router.post('/delete-brand', async (req, res) => {
         res.json({ success: true, message: `Brand '${brand}' and all associated data purged successfully.` });
     } catch (err) {
         console.error('Delete brand error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /subbrands — Add a Sub Brand to a Brand and auto-backfill existing data without subbrand to the first subbrand
+router.post('/subbrands', async (req, res) => {
+    try {
+        const brand = (req.body.brand || '').trim();
+        const subBrand = (req.body.subBrand || '').trim();
+        if (!brand) return res.status(400).json({ error: 'Brand name required' });
+        if (!subBrand) return res.status(400).json({ error: 'Sub Brand name required' });
+
+        // Retrieve existing brand_subbrands map
+        let brand_subbrands = {};
+        if (isMongoConnected) {
+            const globalDoc = await queryAllDBs(ControlSystem, (M) => M.findOne({ key: 'brand_subbrands', brand: '' }));
+            if (globalDoc && globalDoc[0]?.value) {
+                brand_subbrands = globalDoc[0].value;
+            }
+        } else {
+            brand_subbrands = MEM_DB.controlSystem?.brand_subbrands || {};
+        }
+
+        if (!brand_subbrands[brand]) {
+            brand_subbrands[brand] = [];
+        }
+
+        const isAlreadyPresent = brand_subbrands[brand].some(s => s.toLowerCase() === subBrand.toLowerCase());
+        if (!isAlreadyPresent) {
+            brand_subbrands[brand].push(subBrand);
+        }
+
+        // Save brand_subbrands in DB
+        if (isMongoConnected) {
+            await queryAllDBs(ControlSystem, async (BoundM) => {
+                await BoundM.findOneAndUpdate(
+                    { key: 'brand_subbrands', brand: '' },
+                    { value: brand_subbrands },
+                    { upsert: true }
+                );
+                return [];
+            });
+        }
+        if (!MEM_DB.controlSystem) MEM_DB.controlSystem = {};
+        MEM_DB.controlSystem.brand_subbrands = brand_subbrands;
+
+        // Auto backfill: All existing records in this brand that have empty subBrand get assigned to the FIRST subBrand
+        const defaultSubBrand = brand_subbrands[brand][0];
+        let backfilledContracts = 0;
+        let backfilledUrls = 0;
+        let backfilledLogs = 0;
+
+        if (defaultSubBrand) {
+            if (isMongoConnected) {
+                // Update Contracts
+                await queryAllDBs(Contract, async (BoundM) => {
+                    const resC = await BoundM.updateMany(
+                        { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
+                        { $set: { subBrand: defaultSubBrand } }
+                    );
+                    backfilledContracts += (resC.modifiedCount || 0);
+                    return [];
+                });
+
+                // Update SavedUrl
+                await queryAllDBs(SavedUrl, async (BoundM) => {
+                    const resU = await BoundM.updateMany(
+                        { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
+                        { $set: { subBrand: defaultSubBrand } }
+                    );
+                    backfilledUrls += (resU.modifiedCount || 0);
+                    return [];
+                });
+
+                // Update PhoneLog
+                await queryAllDBs(PhoneLog, async (BoundM) => {
+                    const resP = await BoundM.updateMany(
+                        { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
+                        { $set: { subBrand: defaultSubBrand } }
+                    );
+                    backfilledLogs += (resP.modifiedCount || 0);
+                    return [];
+                });
+            }
+
+            // MEM_DB updates
+            if (MEM_DB.contracts) {
+                MEM_DB.contracts.forEach(c => {
+                    if (c.brand === brand && (!c.subBrand || c.subBrand === '')) {
+                        c.subBrand = defaultSubBrand;
+                        backfilledContracts++;
+                    }
+                });
+            }
+            if (MEM_DB.savedUrls) {
+                MEM_DB.savedUrls.forEach(u => {
+                    if (u.brand === brand && (!u.subBrand || u.subBrand === '')) {
+                        u.subBrand = defaultSubBrand;
+                        backfilledUrls++;
+                    }
+                });
+            }
+            if (MEM_DB.phoneLogs) {
+                MEM_DB.phoneLogs.forEach(l => {
+                    if (l.brand === brand && (!l.subBrand || l.subBrand === '')) {
+                        l.subBrand = defaultSubBrand;
+                        backfilledLogs++;
+                    }
+                });
+            }
+        }
+
+        res.json({
+            success: true,
+            brand,
+            subBrand,
+            subbrands: brand_subbrands[brand],
+            brand_subbrands,
+            message: `Sub Brand '${subBrand}' added. Existing data assigned to '${defaultSubBrand}'.`,
+            backfillCount: backfilledContracts + backfilledUrls + backfilledLogs
+        });
+    } catch (err) {
+        console.error('Add subbrand error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE /subbrands — Remove a Sub Brand from a Brand
+router.delete('/subbrands', async (req, res) => {
+    try {
+        const brand = (req.body.brand || req.query.brand || '').trim();
+        const subBrand = (req.body.subBrand || req.query.subBrand || '').trim();
+        if (!brand || !subBrand) return res.status(400).json({ error: 'Brand and Sub Brand required' });
+
+        let brand_subbrands = {};
+        if (isMongoConnected) {
+            const globalDoc = await queryAllDBs(ControlSystem, (M) => M.findOne({ key: 'brand_subbrands', brand: '' }));
+            if (globalDoc && globalDoc[0]?.value) {
+                brand_subbrands = globalDoc[0].value;
+            }
+        } else {
+            brand_subbrands = MEM_DB.controlSystem?.brand_subbrands || {};
+        }
+
+        if (brand_subbrands[brand]) {
+            brand_subbrands[brand] = brand_subbrands[brand].filter(s => s.toLowerCase() !== subBrand.toLowerCase());
+        }
+
+        if (isMongoConnected) {
+            await queryAllDBs(ControlSystem, async (BoundM) => {
+                await BoundM.findOneAndUpdate(
+                    { key: 'brand_subbrands', brand: '' },
+                    { value: brand_subbrands },
+                    { upsert: true }
+                );
+                return [];
+            });
+        }
+        if (!MEM_DB.controlSystem) MEM_DB.controlSystem = {};
+        MEM_DB.controlSystem.brand_subbrands = brand_subbrands;
+
+        res.json({ success: true, brand, subbrands: brand_subbrands[brand] || [], brand_subbrands });
+    } catch (err) {
+        console.error('Delete subbrand error:', err);
         res.status(500).json({ error: err.message });
     }
 });

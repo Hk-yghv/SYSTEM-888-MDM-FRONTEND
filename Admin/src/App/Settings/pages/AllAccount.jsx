@@ -110,6 +110,7 @@ const AllAccount = () => {
     const [users, setUsers] = useState([]);
     const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer', 'Salary']);
     const [brandsList, setBrandsList] = useState(['MDM', 'ECloud']);
+    const [brandSubbrandsMap, setBrandSubbrandsMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
 
@@ -193,6 +194,7 @@ const AllAccount = () => {
         password: '',
         role: 'Staff',
         brand: '',
+        subBrands: [],
         permissions: {}
     });
 
@@ -203,6 +205,7 @@ const AllAccount = () => {
                 ...prev,
                 role: newRole,
                 brand: '',
+                subBrands: [],
                 permissions: getSalaryPermissions()
             }));
         } else {
@@ -223,6 +226,7 @@ const AllAccount = () => {
             password: '',
             role: 'Staff',
             brand: '',
+            subBrands: [],
             permissions: {}
         });
         setOpenCreateModal(true);
@@ -243,6 +247,7 @@ const AllAccount = () => {
             password: '',
             role: userObj.role || 'Staff',
             brand: isSalary ? '' : (userObj.brand || ''),
+            subBrands: isSalary ? [] : (userObj.subBrands || []),
             permissions: isSalary
                 ? (userObj.permissions && Object.keys(userObj.permissions).length > 0 ? userObj.permissions : getSalaryPermissions())
                 : (userObj.permissions || {})
@@ -271,6 +276,7 @@ const AllAccount = () => {
                 }
                 const brandCat = cData.droplists?.find(d => d.category === 'Brands');
                 if (brandCat && Array.isArray(brandCat.items)) setBrandsList(brandCat.items);
+                if (cData.brand_subbrands) setBrandSubbrandsMap(cData.brand_subbrands);
             }
         } catch (err) {
             console.error('Fetch users error:', err);
@@ -574,6 +580,11 @@ const AllAccount = () => {
                                                 ${isSalary ? 'bg-purple-50 text-purple-700 border-purple-200' : item.brand ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                                 {isSalary ? 'No Brand' : item.brand || 'All Brands'}
                                             </span>
+                                            {item.subBrands && item.subBrands.length > 0 && (
+                                                <span className="px-2 py-0.5 rounded-full font-bold text-[10px] bg-sky-50 text-sky-700 border border-sky-200">
+                                                    {item.subBrands.length} Sub Brands
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Status */}
@@ -620,7 +631,14 @@ const AllAccount = () => {
                                         </span>
                                     )}
                                 </div>
-                                <p className='text-[11px] text-emerald-600 font-mono'>{selectedAccount.username} &bull; {selectedAccount.role} &bull; {selectedAccount.brand || 'No Brand'}</p>
+                                <p className='text-[11px] text-emerald-600 font-mono'>
+                                    {selectedAccount.username} &bull; {selectedAccount.role} &bull; {selectedAccount.brand || 'No Brand'}
+                                    {selectedAccount.subBrands && selectedAccount.subBrands.length > 0 && (
+                                        <span className="ml-2 text-sky-600 font-semibold font-sans">
+                                            &bull; Sub Brands: [{selectedAccount.subBrands.join(', ')}]
+                                        </span>
+                                    )}
+                                </p>
                             </div>
                         </div>
 
@@ -989,6 +1007,68 @@ const AllAccount = () => {
                                             )}
                                         </select>
                                     </div>
+
+                                    {/* Sub Brands multi-select for the selected Brand */}
+                                    {formData.brand && (brandSubbrandsMap[formData.brand] || []).length > 0 && (
+                                        <div className="sm:col-span-2 p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl space-y-2.5">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-slate-200 font-bold flex items-center gap-1.5 text-xs">
+                                                    <span>🏷️</span> អនុម៉ាកដែលអនុញ្ញាត (Assigned Sub Brands) — អាចជ្រើសរើសលើសពី ២ បាន:
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const allForBrand = brandSubbrandsMap[formData.brand] || [];
+                                                        const allSelected = allForBrand.every(sb => (formData.subBrands || []).includes(sb));
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            subBrands: allSelected ? [] : [...allForBrand]
+                                                        }));
+                                                    }}
+                                                    className="text-[11px] text-sky-400 hover:text-sky-300 font-semibold cursor-pointer underline"
+                                                >
+                                                    {(brandSubbrandsMap[formData.brand] || []).every(sb => (formData.subBrands || []).includes(sb))
+                                                        ? 'ដកការជ្រើសរើសទាំងអស់ (Deselect All)'
+                                                        : 'ជ្រើសរើសទាំងអស់ (Select All)'}
+                                                </button>
+                                            </div>
+                                            <p className="text-[10px] text-slate-400">
+                                                ជ្រើសរើស Sub Brands ដែលគណនីនេះត្រូវបានអនុញ្ញាតឱ្យមើល និងគ្រប់គ្រងទិន្នន័យ (គណនីមួយអាចប្រើប្រាស់ និងបង្ហាញទិន្នន័យ Sub Brand ច្រើនជាង ២ បាន)។
+                                            </p>
+                                            <div className="flex flex-wrap gap-2 pt-1">
+                                                {(brandSubbrandsMap[formData.brand] || []).map((sb, sbIdx) => {
+                                                    const isChecked = (formData.subBrands || []).includes(sb);
+                                                    return (
+                                                        <label
+                                                            key={sbIdx}
+                                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
+                                                                isChecked
+                                                                    ? 'bg-sky-600/30 border-sky-500 text-sky-200 shadow-sm'
+                                                                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                                                            }`}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isChecked}
+                                                                onChange={(e) => {
+                                                                    const checked = e.target.checked;
+                                                                    setFormData(prev => {
+                                                                        const current = prev.subBrands || [];
+                                                                        const updated = checked
+                                                                            ? [...current, sb]
+                                                                            : current.filter(item => item !== sb);
+                                                                        return { ...prev, subBrands: updated };
+                                                                    });
+                                                                }}
+                                                                className="rounded text-sky-600 focus:ring-0"
+                                                            />
+                                                            <span>{sb}</span>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

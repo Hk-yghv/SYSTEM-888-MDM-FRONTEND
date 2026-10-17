@@ -224,6 +224,7 @@ const Application = () => {
                             <th className='px-4 py-1 text-center'>Contract</th>
                             <th className='px-4 py-1'>{t('model')}</th>
                             <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1'>Sub Brand</th>
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
                             <th className='px-4 py-1 text-center'>Actions</th>
                         </tr>
@@ -231,7 +232,7 @@ const Application = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {visibleContracts.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={10} className="text-center py-8 text-slate-500 italic font-medium">
                                     No pending applications found. Click "Create" to add a new application.
                                 </td>
                             </tr>
@@ -269,6 +270,11 @@ const Application = () => {
                                     <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
                                     <td className='px-4 py-1'>
                                         {item.brand || '—'}
+                                    </td>
+                                    <td className='px-4 py-1'>
+                                        {item.subBrand ? (
+                                            <span className='px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded text-[10px] font-bold'>{item.subBrand}</span>
+                                        ) : <span className='text-slate-400'>—</span>}
                                     </td>
                                     <td className='px-4 py-1 font-mono text-slate-600 font-medium'><CopyCell text={item.serialNumber || 'Pending'} className='font-mono text-slate-600 font-medium' /></td>
                                     <td className="px-4 py-1 text-center relative">

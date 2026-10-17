@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     secondPassword: { type: String, default: '' },
     brand: { type: String, default: '' },
+    subBrands: { type: [String], default: [] },
     role: { type: String, default: 'User' },
     isImmutable: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },

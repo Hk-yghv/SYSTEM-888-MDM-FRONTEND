@@ -74,6 +74,7 @@ router.post('/lostphone/toggle-lock', async (req, res) => {
             model: contract.model,
             serialNumber: contract.serialNumber,
             brand: contract.brand || '',
+            subBrand: contract.subBrand || '',
             action: newStatus,
             performedBy: performedBy || 'SYSTEM',
             userName: userName || performedBy || 'SYSTEM',
@@ -164,7 +165,7 @@ router.get('/phonelogs', async (req, res) => {
         const searchFields = [
             'logId', 'contractId', 'customerName', 'model', 'serialNumber',
             'action', 'performedBy', 'userName', 'date', 'time', 'reason',
-            'displayText', 'phoneNumber', 'brand'
+            'displayText', 'phoneNumber', 'brand', 'subBrand'
         ];
         let filter = {};
         if (action) filter.action = action;

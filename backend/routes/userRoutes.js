@@ -84,13 +84,14 @@ router.get('/status-check', async (req, res) => {
 // CREATE user — write to active DB
 router.post('/', async (req, res) => {
     try {
-        const { name, username, email, password, role, permissions, brand } = req.body;
+        const { name, username, email, password, role, permissions, brand, subBrands } = req.body;
         const isSalary = role && role.toLowerCase() === 'salary';
         const hashedPassword = await bcrypt.hash(password || '123456', 10);
         const memId = 'u-' + Date.now();
         const userId = 'USR-' + Math.floor(100000 + Math.random() * 900000);
 
         let finalBrand = isSalary ? '' : (brand || '');
+        let finalSubBrands = isSalary ? [] : (Array.isArray(subBrands) ? subBrands : []);
         let finalPermissions = permissions || {};
         if (isSalary && (!permissions || Object.keys(permissions).length === 0)) {
             finalPermissions = {
@@ -108,6 +109,7 @@ router.post('/', async (req, res) => {
                 password: hashedPassword,
                 secondPassword: '',
                 brand: finalBrand,
+                subBrands: finalSubBrands,
                 role: role || 'Staff',
                 status: 'Offline',
                 permissions: finalPermissions
@@ -127,6 +129,7 @@ router.post('/', async (req, res) => {
             password: hashedPassword,
             secondPassword: '',
             brand: finalBrand,
+            subBrands: finalSubBrands,
             role: role || 'Staff',
             status: 'Offline',
             permissions: finalPermissions
@@ -141,7 +144,7 @@ router.post('/', async (req, res) => {
 // UPDATE user — search all DBs, write to the DB that has it
 router.put('/:id', async (req, res) => {
     try {
-        const { name, username, email, password, role, brand, permissions } = req.body;
+        const { name, username, email, password, role, brand, subBrands, permissions } = req.body;
         let user = null;
         if (isMongoConnected) {
             const results = await queryAllDBs(User, (M) => {
@@ -170,8 +173,10 @@ router.put('/:id', async (req, res) => {
         if (role) user.role = role;
         if (isSalary) {
             user.brand = '';
-        } else if (brand !== undefined) {
-            user.brand = brand;
+            user.subBrands = [];
+        } else {
+            if (brand !== undefined) user.brand = brand;
+            if (subBrands !== undefined) user.subBrands = Array.isArray(subBrands) ? subBrands : [];
         }
         if (permissions !== undefined) {
             user.permissions = permissions;

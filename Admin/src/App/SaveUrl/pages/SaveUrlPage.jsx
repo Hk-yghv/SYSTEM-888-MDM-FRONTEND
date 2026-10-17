@@ -121,9 +121,11 @@ const SaveUrlPage = () => {
         customCategory: '',
         visibility: 'Public',
         description: '',
-        brand: user?.brand || ''
+        brand: user?.brand || '',
+        subBrand: ''
     };
     const [formData, setFormData] = useState(initialForm);
+    const [brandSubbrandsMap, setBrandSubbrandsMap] = useState({});
 
     // ─────────────────────────────────────────────────────────────────────────
     // Fetch Main Table Saved URLs
@@ -190,6 +192,20 @@ const SaveUrlPage = () => {
         fetchPublicUrls();
     }, [fetchPublicUrls]);
 
+    // Fetch brand subbrands map
+    useEffect(() => {
+        const go = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/controlsystem?brand=`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.brand_subbrands) setBrandSubbrandsMap(data.brand_subbrands);
+                }
+            } catch { }
+        };
+        go();
+    }, [API_BASE]);
+
     // Handle Copy URL
     const handleCopy = (urlStr, id) => {
         if (!urlStr) return;
@@ -247,9 +263,13 @@ const SaveUrlPage = () => {
     // Open Create Modal
     const handleOpenCreate = () => {
         setEditingItem(null);
+        const availSubs = user?.role === 'Administrator'
+            ? (brandSubbrandsMap[user?.brand] || [])
+            : (Array.isArray(user?.subBrands) ? user.subBrands : []);
         setFormData({
             ...initialForm,
-            brand: user?.brand || ''
+            brand: user?.brand || '',
+            subBrand: availSubs.length === 1 ? availSubs[0] : ''
         });
         setOpenModal(true);
     };
@@ -265,7 +285,8 @@ const SaveUrlPage = () => {
             customCategory: isPreset ? '' : (item.category || ''),
             visibility: item.visibility || 'Public',
             description: item.description || '',
-            brand: item.brand || user?.brand || ''
+            brand: item.brand || user?.brand || '',
+            subBrand: item.subBrand || ''
         });
         setOpenModal(true);
     };
@@ -295,6 +316,7 @@ const SaveUrlPage = () => {
                 visibility: formData.visibility,
                 description: formData.description.trim(),
                 brand: formData.brand,
+                subBrand: formData.subBrand || '',
                 createdBy: editingItem ? editingItem.createdBy : (user?.username || user?.name || 'Administrator'),
                 updatedBy: user?.username || user?.name || 'Administrator',
                 // Auth info so backend can verify ownership on PUT
@@ -672,6 +694,7 @@ const SaveUrlPage = () => {
                             <th className="px-4 py-1.5">ចំណងជើង URL (Title)</th>
                             <th className="px-4 py-1.5">តំណភ្ជាប់ (URL Link)</th>
                             <th className="px-4 py-1.5">ប្រភេទ (Category)</th>
+                            <th className="px-4 py-1.5">Sub Brand</th>
                             <th className="px-4 py-1.5 text-center">ភាពមើលឃើញ (Visibility)</th>
                             <th className="px-4 py-1.5">កំណត់ចំណាំ (Description)</th>
                             <th className="px-4 py-1.5">បង្កើតដោយ (By)</th>
@@ -682,13 +705,13 @@ const SaveUrlPage = () => {
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-800 whitespace-nowrap">
                         {loading ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-10 text-slate-400 italic">
+                                <td colSpan={10} className="text-center py-10 text-slate-400 italic">
                                     កំពុងទាញយកទិន្នន័យ URLs...
                                 </td>
                             </tr>
                         ) : urls.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-12 text-slate-400 italic">
+                                <td colSpan={10} className="text-center py-12 text-slate-400 italic">
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <FaLink className="text-3xl opacity-30 text-slate-400" />
                                         <span>មិនមានទិន្នន័យ URL ត្រូវបានរក្សាទុកនៅឡើយទេ។ សូមចុចប៊ូតុង "បញ្ចូល URL ថ្មី" ដើម្បីបង្កើត!</span>
@@ -749,6 +772,15 @@ const SaveUrlPage = () => {
                                             <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold border ${getCategoryColor(item.category)}`}>
                                                 {item.category || 'General'}
                                             </span>
+                                        </td>
+
+                                        {/* Sub Brand */}
+                                        <td className="px-4 py-1.5">
+                                            {item.subBrand ? (
+                                                <span className="px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded text-[10px] font-bold">
+                                                    {item.subBrand}
+                                                </span>
+                                            ) : <span className="text-slate-400">—</span>}
                                         </td>
 
                                         {/* Visibility Badge */}
@@ -1130,6 +1162,35 @@ const SaveUrlPage = () => {
                                     />
                                 )}
                             </div>
+
+                            {/* Sub Brand */}
+                            {(() => {
+                                const availSubs = user?.role === 'Administrator'
+                                    ? (brandSubbrandsMap[formData.brand || user?.brand] || [])
+                                    : (Array.isArray(user?.subBrands) ? user.subBrands : []);
+                                if (availSubs.length === 0) return null;
+                                return (
+                                    <div>
+                                        <label className="block font-bold text-slate-700 mb-1">Sub Brand</label>
+                                        {availSubs.length === 1 ? (
+                                            <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
+                                                <span className="px-2 py-0.5 bg-indigo-100 border border-indigo-300 text-indigo-700 rounded text-[10px] font-bold">{availSubs[0]}</span>
+                                            </div>
+                                        ) : (
+                                            <select
+                                                value={formData.subBrand || ''}
+                                                onChange={(e) => setFormData({ ...formData, subBrand: e.target.value })}
+                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs outline-none focus:border-emerald-500 text-slate-800 font-bold cursor-pointer"
+                                            >
+                                                <option value="">Select Sub Brand</option>
+                                                {availSubs.map((sb, idx) => (
+                                                    <option key={idx} value={sb}>{sb}</option>
+                                                ))}
+                                            </select>
+                                        )}
+                                    </div>
+                                );
+                            })()}
 
                             {/* Description / Note */}
                             <div>

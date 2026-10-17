@@ -89,6 +89,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const emptyForm = {
         inputDate: new Date().toISOString().split('T')[0],
         brand: user?.brand || '',
+        subBrand: '',
         contractSuffix: '000000001',
         customerNameEn: '', customerNameKh: '',
         idCardNumber: '', dob: '', gender: 'male',
@@ -104,6 +105,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
     const [form, setForm] = useState(emptyForm);
     const [brandsList, setBrandsList] = useState([]);
+    const [brandSubbrands, setBrandSubbrands] = useState({});
     const [modelsList, setModelsList] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const [allCustomers, setAllCustomers] = useState([]);
@@ -137,6 +139,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     const data = await res.json();
                     const cat = data.droplists?.find(d => d.category === 'Brands');
                     if (cat) setBrandsList(cat.items || []);
+                    if (data.brand_subbrands) setBrandSubbrands(data.brand_subbrands);
                 }
             } catch { }
         };
@@ -201,6 +204,16 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         };
         go();
     }, [form.brand, user?.brand, API_BASE]);
+
+    // Auto-set subBrand when only 1 option available
+    useEffect(() => {
+        const availSubs = user?.role === 'Administrator'
+            ? (brandSubbrands[form.brand] || [])
+            : (Array.isArray(user?.subBrands) ? user.subBrands : []);
+        if (availSubs.length === 1 && form.subBrand !== availSubs[0]) {
+            setForm(prev => ({ ...prev, subBrand: availSubs[0] }));
+        }
+    }, [form.brand, brandSubbrands, user?.subBrands, user?.role]);
 
 
     useEffect(() => {
@@ -282,9 +295,15 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 const initialBrand = form.brand || user?.brand || (brandsList.length > 0 ? brandsList[0] : 'M8');
                 const autoSuffix = computeNextSuffixForBrand(initialBrand, allCustomers);
                 const autoContractId = `CT-${currentYear}-${Math.floor(100000 + Math.random() * 900000)}`;
+                // Auto-select subBrand
+                const availSubs = user?.role === 'Administrator'
+                    ? (brandSubbrands[initialBrand] || [])
+                    : (Array.isArray(user?.subBrands) ? user.subBrands : []);
+                const autoSubBrand = availSubs.length === 1 ? availSubs[0] : '';
                 setForm({
                     ...emptyForm,
                     brand: initialBrand,
+                    subBrand: autoSubBrand,
                     contractId: autoContractId,
                     contractSuffix: autoSuffix
                 });
@@ -298,7 +317,12 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         const { id, value } = e.target;
         if (id === 'brand' && !editData) {
             const nextSuffix = computeNextSuffixForBrand(value, allCustomers);
-            setForm(prev => ({ ...prev, [id]: value, contractSuffix: nextSuffix }));
+            // Auto-pick subBrand if only 1 available for this brand
+            const availSubs = user?.role === 'Administrator'
+                ? (brandSubbrands[value] || [])
+                : (Array.isArray(user?.subBrands) ? user.subBrands : []);
+            const autoSubBrand = availSubs.length === 1 ? availSubs[0] : '';
+            setForm(prev => ({ ...prev, [id]: value, contractSuffix: nextSuffix, subBrand: autoSubBrand }));
             return;
         }
         setForm(prev => ({ ...prev, [id]: value }));
@@ -557,6 +581,27 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                     {brandsList.map((b, idx) => <option key={idx} value={b}>{b}</option>)}
                                 </select>
                             </Field>
+                            {(() => {
+                                const availSubs = user?.role === 'Administrator'
+                                    ? (brandSubbrands[form.brand] || [])
+                                    : (Array.isArray(user?.subBrands) ? user.subBrands : []);
+                                if (availSubs.length === 0) return null;
+                                return (
+                                    <Field label="Sub Brand">
+                                        {availSubs.length === 1 ? (
+                                            <div className={`${inp} font-semibold text-indigo-300 flex items-center gap-1.5`}>
+                                                <span className="px-2 py-0.5 bg-indigo-900/60 border border-indigo-700 rounded-[4px] text-indigo-300 text-[10px] font-bold">{availSubs[0]}</span>
+                                                <input type="hidden" id="subBrand" value={availSubs[0]} />
+                                            </div>
+                                        ) : (
+                                            <select id="subBrand" value={form.subBrand || ''} onChange={handleChange} className={`${sel} font-semibold`}>
+                                                <option value="">Select Sub Brand</option>
+                                                {availSubs.map((sb, idx) => <option key={idx} value={sb}>{sb}</option>)}
+                                            </select>
+                                        )}
+                                    </Field>
+                                );
+                            })()}
                             <Field label="Relative Phone"><input className={`${inp} font-mono`} type="text" id="relativePhone" value={form.relativePhone || ''} onChange={handleChange} placeholder="Relative phone" /></Field>
                         </div>
                         <div className="grid grid-cols-4 gap-3">

@@ -74,6 +74,7 @@ const formatAuthUser = (user) => ({
     email: user.email,
     role: user.role,
     brand: user.brand || '',
+    subBrands: Array.isArray(user.subBrands) ? user.subBrands : [],
     isImmutable: user.isImmutable,
     telegramId: user.telegramId,
     twoFactorEnabled: user.twoFactorEnabled,

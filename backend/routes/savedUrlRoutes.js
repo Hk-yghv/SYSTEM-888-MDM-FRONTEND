@@ -207,6 +207,7 @@ router.post('/', async (req, res) => {
             description = '',
             tags = [],
             brand = '',
+            subBrand = '',
             createdBy = 'Administrator'
         } = req.body;
 
@@ -223,6 +224,14 @@ router.post('/', async (req, res) => {
             cleanUrl = 'https://' + cleanUrl;
         }
 
+        let finalSubBrand = (subBrand || '').trim();
+        if (!finalSubBrand && brand) {
+            const list = MEM_DB.controlSystem?.brand_subbrands?.[brand];
+            if (Array.isArray(list) && list.length > 0) {
+                finalSubBrand = list[0];
+            }
+        }
+
         const docData = {
             title: title.trim(),
             url: cleanUrl,
@@ -231,6 +240,7 @@ router.post('/', async (req, res) => {
             description: (description || '').trim(),
             tags: Array.isArray(tags) ? tags : [],
             brand: brand || '',
+            subBrand: finalSubBrand,
             createdBy: createdBy || 'Administrator',
             clicks: 0,
             createdAt: new Date(),
@@ -323,6 +333,7 @@ router.put('/:id', async (req, res) => {
             ...(description !== undefined ? { description: description.trim() } : {}),
             ...(Array.isArray(tags) ? { tags } : {}),
             ...(brand !== undefined ? { brand } : {}),
+            ...(req.body.subBrand !== undefined ? { subBrand: req.body.subBrand } : {}),
             updatedAt: new Date()
         };
 

@@ -229,6 +229,7 @@ const Device = () => {
                             <th className='px-4 py-1'>{t('model')}</th>
                             <th className='px-4 py-1'>Version / OS</th>
                             <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1'>Sub Brand</th>
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
                             <th className='px-4 py-1'>IMEI 1</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
@@ -239,7 +240,7 @@ const Device = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredDevices.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={10} className="text-center py-8 text-slate-500 italic font-medium">
                                     No devices linked to activated contracts.
                                 </td>
                             </tr>
@@ -256,6 +257,9 @@ const Device = () => {
                                     </td>
                                     <td className='px-4 py-1'>
                                         {item.brand || '—'}
+                                    </td>
+                                    <td className='px-4 py-1'>
+                                        {item.subBrand ? <span className='px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded font-bold text-[10px]'>{item.subBrand}</span> : <span className='text-slate-400'>—</span>}
                                     </td>
                                     <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>
                                     <td className='px-4 py-1 font-mono text-slate-700 font-bold whitespace-nowrap'><CopyCell text={item.imei1} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" /></td>

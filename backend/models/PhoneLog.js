@@ -24,7 +24,8 @@ const phoneLogSchema = new mongoose.Schema({
     displayText: { type: String, default: '' },   // បន្ថែម
     phoneNumber: { type: String, default: '' },   // បន្ថែម
 
-    brand: { type: String, default: '' }
+    brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' }
 
 }, { timestamps: true });
 
