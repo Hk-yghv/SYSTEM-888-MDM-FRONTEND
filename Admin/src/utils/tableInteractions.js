@@ -1,6 +1,4 @@
 const ACTION_HEADER_PATTERN = /^(actions?(?:\s*\([^)]*\))?|សកម្មភាព(?:\s*\(actions?\))?)$/i;
-const EDGE_THRESHOLD = 85;
-const MAX_EDGE_SHRINK = 0.16;
 
 const getOpaqueBackground = (element) => {
     let current = element;
@@ -15,193 +13,189 @@ const getOpaqueBackground = (element) => {
     return '#fff';
 };
 
-const getVerticalScrollContainer = (element) => {
-    let ancestor = element.parentElement;
-    while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
-        const style = window.getComputedStyle(ancestor);
+const findVerticalScrollContainer = (table) => {
+    let current = table.parentElement;
+    while (current && current !== document.body && current !== document.documentElement) {
+        const style = window.getComputedStyle(current);
+        const overflowY = style.overflowY || style.overflow;
         if (
-            /(auto|scroll|overlay)/.test(style.overflowY) &&
-            ancestor.scrollHeight - ancestor.clientHeight > 4
+            /(auto|scroll|overlay)/.test(overflowY) &&
+            current.scrollHeight > current.clientHeight + 4
         ) {
-            return ancestor;
+            return current;
         }
-        ancestor = ancestor.parentElement;
+        current = current.parentElement;
     }
+
+    const mobileContent = document.querySelector('.mobile-content-area');
+    if (mobileContent && mobileContent.scrollHeight > mobileContent.clientHeight + 4) {
+        return mobileContent;
+    }
+
     return window;
 };
 
-const getHorizontalScrollContainer = (element) => {
-    let ancestor = element.parentElement;
-    while (ancestor && ancestor !== document.body && ancestor !== document.documentElement) {
-        const style = window.getComputedStyle(ancestor);
-        if (
-            /(auto|scroll|overlay)/.test(style.overflowX) &&
-            ancestor.scrollWidth - ancestor.clientWidth > 4
-        ) {
-            return ancestor;
-        }
-        ancestor = ancestor.parentElement;
+const prepareStickyActions = (table) => {
+    const headers = Array.from(table.querySelectorAll(':scope > thead > tr > th'));
+    const actionIndex = headers.reduce((lastIndex, header, index) => (
+        ACTION_HEADER_PATTERN.test(header.textContent.replace(/\s+/g, ' ').trim()) ? index : lastIndex
+    ), -1);
+
+    if (actionIndex < 0) {
+        table.classList.remove('table-with-sticky-actions');
+        table.querySelectorAll(':scope > thead tr > .table-action-cell, :scope > tbody tr > .table-action-cell, :scope > tfoot tr > .table-action-cell')
+            .forEach(cell => {
+                cell.classList.remove('table-action-cell');
+                cell.style.removeProperty('--table-action-background');
+            });
+        return;
     }
-    return window;
+
+    table.classList.add('table-with-sticky-actions');
+    const currentActionCells = new Set();
+    table.querySelectorAll(':scope > thead tr, :scope > tbody tr, :scope > tfoot tr').forEach(row => {
+        const cell = row.children[actionIndex];
+        if (cell?.matches('th, td')) {
+            const background = getOpaqueBackground(cell.tagName === 'TH' ? cell : cell.parentElement);
+            if (cell.style.getPropertyValue('--table-action-background') !== background) {
+                cell.style.setProperty('--table-action-background', background);
+            }
+            cell.classList.add('table-action-cell');
+            currentActionCells.add(cell);
+        }
+    });
+
+    table.querySelectorAll(':scope > thead tr > .table-action-cell, :scope > tbody tr > .table-action-cell, :scope > tfoot tr > .table-action-cell')
+        .forEach(cell => {
+            if (!currentActionCells.has(cell)) {
+                cell.classList.remove('table-action-cell');
+                cell.style.removeProperty('--table-action-background');
+            }
+        });
 };
 
-const updateRowScale = (row, scrollContainer) => {
-    const rowRect = row.getBoundingClientRect();
-    const containerRect = scrollContainer === window
+const updateTableAnimation = (table) => {
+    const allRows = table.querySelectorAll(':scope > tbody > tr');
+    if (!allRows.length) return;
+
+    prepareStickyActions(table);
+
+    // Filter out rows that are placeholders (loading spinner, "no data" with colspan >= 3)
+    const validRows = [];
+    for (let i = 0; i < allRows.length; i++) {
+        const row = allRows[i];
+        const firstCell = row.firstElementChild;
+        if (firstCell && Number(firstCell.getAttribute('colspan')) >= 3) {
+            row.classList.remove('table-scroll-row');
+            row.style.removeProperty('--table-scroll-scale');
+            row.style.removeProperty('--table-scroll-opacity');
+            continue;
+        }
+        validRows.push(row);
+    }
+
+    if (!validRows.length) return;
+
+    const scrollContainer = findVerticalScrollContainer(table);
+    const isWin = scrollContainer === window;
+    const containerRect = isWin
         ? { top: 0, height: window.innerHeight }
         : scrollContainer.getBoundingClientRect();
-    const scrollTop = scrollContainer === window
-        ? window.scrollY
-        : scrollContainer.scrollTop;
-    const scrollHeight = scrollContainer === window
-        ? document.documentElement.scrollHeight
-        : scrollContainer.scrollHeight;
+
+    const scrollTop = isWin ? window.scrollY : scrollContainer.scrollTop;
+    const scrollHeight = isWin ? document.documentElement.scrollHeight : scrollContainer.scrollHeight;
     const clientHeight = containerRect.height;
     const maxScroll = Math.max(0, scrollHeight - clientHeight);
-    const rowCenter = rowRect.top + rowRect.height / 2 - containerRect.top;
+
+    // If container cannot scroll or content fully fits, all items remain normal 1.0
+    if (maxScroll <= 4) {
+        for (let i = 0; i < validRows.length; i++) {
+            const row = validRows[i];
+            row.classList.add('table-scroll-row');
+            row.style.setProperty('--table-scroll-scale', '1');
+            row.style.setProperty('--table-scroll-opacity', '1');
+        }
+        return;
+    }
+
+    // Top progress: 0 when at very top (scrollTop === 0), ramps to 1 as user scrolls down by 70px
+    // When at the very top, top items DO NOT shrink!
     const topProgress = Math.min(1, Math.max(0, scrollTop / 70));
-    const bottomProgress = Math.min(1, Math.max(0, (maxScroll - scrollTop) / 70));
 
-    let shrink = 0;
-    if (maxScroll > 4 && rowCenter < EDGE_THRESHOLD && topProgress > 0) {
-        shrink = (1 - Math.max(0, rowCenter / EDGE_THRESHOLD)) * topProgress * MAX_EDGE_SHRINK;
-    } else if (maxScroll > 4 && rowCenter > clientHeight - EDGE_THRESHOLD && bottomProgress > 0) {
-        const distanceFromBottom = clientHeight - rowCenter;
-        shrink = (1 - Math.max(0, distanceFromBottom / EDGE_THRESHOLD)) * bottomProgress * MAX_EDGE_SHRINK;
+    // Bottom progress: 0 when at very bottom, ramps to 1 when scrolled 70px above bottom
+    // When at the very bottom, bottom items DO NOT shrink!
+    const remainingScroll = Math.max(0, maxScroll - scrollTop);
+    const bottomProgress = Math.min(1, Math.max(0, remainingScroll / 70));
+
+    // Boundary threshold from top/bottom where shrinking occurs (smooth curve matching LeftMenu)
+    const edgeThreshold = Math.min(140, Math.max(90, Math.round(clientHeight * 0.22)));
+    const maxShrink = 0.14; // up to 14% shrink (scale 0.86 to 1.00)
+
+    for (let i = 0; i < validRows.length; i++) {
+        const row = validRows[i];
+        row.classList.add('table-scroll-row');
+        const rowRect = row.getBoundingClientRect();
+        const rowCenter = rowRect.top + rowRect.height / 2 - containerRect.top;
+
+        let shrink = 0;
+
+        // Near top edge (only shrinks if user has scrolled away from top)
+        if (rowCenter < edgeThreshold && topProgress > 0) {
+            const factor = Math.max(0, rowCenter / edgeThreshold); // 0 at top, 1 at boundary
+            shrink = (1 - factor) * topProgress * maxShrink;
+        }
+        // Near bottom edge (only shrinks if there is more content to scroll below)
+        else if (rowCenter > clientHeight - edgeThreshold && bottomProgress > 0) {
+            const distFromBottom = clientHeight - rowCenter;
+            const factor = Math.max(0, distFromBottom / edgeThreshold); // 0 at bottom, 1 at boundary
+            shrink = (1 - factor) * bottomProgress * maxShrink;
+        }
+
+        const scale = (1 - shrink).toFixed(3);
+        const opacity = (1 - shrink * 1.5).toFixed(3);
+
+        row.style.setProperty('--table-scroll-scale', scale);
+        row.style.setProperty('--table-scroll-opacity', opacity);
     }
-
-    row.style.setProperty('--table-scroll-scale-y', (1 - shrink).toFixed(3));
-    row.style.setProperty('--table-scroll-opacity', (1 - shrink * 1.4).toFixed(3));
-};
-
-const updateCellScale = (cell, scrollContainer) => {
-    const cellRect = cell.getBoundingClientRect();
-    const containerRect = scrollContainer === window
-        ? { left: 0, width: window.innerWidth }
-        : scrollContainer.getBoundingClientRect();
-    const scrollLeft = scrollContainer === window
-        ? window.scrollX
-        : scrollContainer.scrollLeft;
-    const scrollWidth = scrollContainer === window
-        ? document.documentElement.scrollWidth
-        : scrollContainer.scrollWidth;
-    const clientWidth = containerRect.width;
-    const maxScroll = Math.max(0, scrollWidth - clientWidth);
-    const leftProgress = Math.min(1, Math.max(0, scrollLeft / 70));
-    const rightProgress = Math.min(1, Math.max(0, (maxScroll - scrollLeft) / 70));
-    const cellCenter = cellRect.left + cellRect.width / 2 - containerRect.left;
-
-    let horizontalShrink = 0;
-    if (!cell.classList.contains('table-action-cell') && cellCenter < EDGE_THRESHOLD && leftProgress > 0) {
-        horizontalShrink = (1 - Math.max(0, cellCenter / EDGE_THRESHOLD)) * leftProgress * MAX_EDGE_SHRINK;
-        cell.style.setProperty('--table-scroll-origin-x', 'left');
-    } else if (!cell.classList.contains('table-action-cell') && cellCenter > clientWidth - EDGE_THRESHOLD && rightProgress > 0) {
-        const distanceFromRight = clientWidth - cellCenter;
-        horizontalShrink = (1 - Math.max(0, distanceFromRight / EDGE_THRESHOLD)) * rightProgress * MAX_EDGE_SHRINK;
-        cell.style.setProperty('--table-scroll-origin-x', 'right');
-    } else {
-        cell.style.setProperty('--table-scroll-origin-x', 'center');
-    }
-
-    cell.style.setProperty('--table-scroll-scale-x', (1 - horizontalShrink).toFixed(3));
-    cell.style.setProperty(
-        '--table-scroll-scale-y',
-        cell.parentElement?.style.getPropertyValue('--table-scroll-scale-y') || '1',
-    );
-    cell.style.setProperty(
-        'transform-origin',
-        `${cell.style.getPropertyValue('--table-scroll-origin-x')} center`,
-    );
 };
 
 export const installTableInteractions = () => {
     let frameId = 0;
 
-    const prepareTables = () => {
-        document.querySelectorAll('table').forEach(table => {
-            const headers = Array.from(table.querySelectorAll(':scope > thead > tr > th'));
-            const actionIndex = headers.reduce((lastIndex, header, index) => (
-                ACTION_HEADER_PATTERN.test(header.textContent.replace(/\s+/g, ' ').trim()) ? index : lastIndex
-            ), -1);
-            if (actionIndex < 0) {
-                table.classList.remove('table-with-sticky-actions');
-                table.querySelectorAll(':scope > thead tr > .table-action-cell, :scope > tbody tr > .table-action-cell, :scope > tfoot tr > .table-action-cell')
-                    .forEach(cell => {
-                        cell.classList.remove('table-action-cell');
-                        cell.style.removeProperty('--table-action-background');
-                    });
-                return;
-            }
-
-            table.classList.add('table-with-sticky-actions');
-            const currentActionCells = new Set();
-            table.querySelectorAll(':scope > thead tr, :scope > tbody tr, :scope > tfoot tr').forEach(row => {
-                const cell = row.children[actionIndex];
-                if (cell?.matches('th, td')) {
-                    const background = getOpaqueBackground(cell.tagName === 'TH' ? cell : cell.parentElement);
-                    if (cell.style.getPropertyValue('--table-action-background') !== background) {
-                        cell.style.setProperty('--table-action-background', background);
-                    }
-                    cell.classList.add('table-action-cell');
-                    currentActionCells.add(cell);
-                }
-            });
-            table.querySelectorAll(':scope > thead tr > .table-action-cell, :scope > tbody tr > .table-action-cell, :scope > tfoot tr > .table-action-cell')
-                .forEach(cell => {
-                    if (!currentActionCells.has(cell)) {
-                        cell.classList.remove('table-action-cell');
-                        cell.style.removeProperty('--table-action-background');
-                    }
-                });
-        });
-    };
-
-    const updateRows = () => {
+    const updateAllTables = () => {
         frameId = 0;
-        prepareTables();
-        document.querySelectorAll('table tbody tr').forEach(row => {
-            row.classList.add('table-scroll-row');
-            updateRowScale(row, getVerticalScrollContainer(row));
-            row.querySelectorAll(':scope > th, :scope > td').forEach(cell => {
-                cell.classList.add('table-scroll-cell');
-                updateCellScale(cell, getHorizontalScrollContainer(cell));
-            });
+        const tables = document.querySelectorAll('table');
+        tables.forEach(table => {
+            updateTableAnimation(table);
         });
     };
 
     const scheduleUpdate = () => {
         if (frameId) cancelAnimationFrame(frameId);
-        frameId = requestAnimationFrame(updateRows);
+        frameId = requestAnimationFrame(updateAllTables);
     };
 
     const observer = new MutationObserver(scheduleUpdate);
     observer.observe(document.body, { childList: true, subtree: true });
+
+    // Listen to scroll globally in capture phase to detect any scrolling container
     document.addEventListener('scroll', scheduleUpdate, true);
-    document.addEventListener('pointerover', scheduleUpdate, true);
-    document.addEventListener('pointerout', scheduleUpdate, true);
     window.addEventListener('scroll', scheduleUpdate, { passive: true });
     window.addEventListener('resize', scheduleUpdate);
+
     scheduleUpdate();
 
     return () => {
         observer.disconnect();
         document.removeEventListener('scroll', scheduleUpdate, true);
-        document.removeEventListener('pointerover', scheduleUpdate, true);
-        document.removeEventListener('pointerout', scheduleUpdate, true);
         window.removeEventListener('scroll', scheduleUpdate);
         window.removeEventListener('resize', scheduleUpdate);
         if (frameId) cancelAnimationFrame(frameId);
+
         document.querySelectorAll('.table-scroll-row').forEach(row => {
             row.classList.remove('table-scroll-row');
-            row.style.removeProperty('--table-scroll-scale-y');
+            row.style.removeProperty('--table-scroll-scale');
             row.style.removeProperty('--table-scroll-opacity');
-        });
-        document.querySelectorAll('.table-scroll-cell').forEach(cell => {
-            cell.classList.remove('table-scroll-cell');
-            cell.style.removeProperty('--table-scroll-scale-x');
-            cell.style.removeProperty('--table-scroll-scale-y');
-            cell.style.removeProperty('--table-scroll-origin-x');
-            cell.style.removeProperty('transform-origin');
         });
         document.querySelectorAll('.table-with-sticky-actions').forEach(table => {
             table.classList.remove('table-with-sticky-actions');
