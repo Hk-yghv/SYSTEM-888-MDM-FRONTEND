@@ -3,9 +3,15 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaBell, FaBars, FaTimes, FaTelegramPlane, FaWallet, FaArrowUp, FaDownload } from 'react-icons/fa';
+import { FaBell, FaBars, FaTimes, FaTelegramPlane, FaWallet, FaArrowUp, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
 import { MdOutlineTrendingUp, MdAttachMoney } from 'react-icons/md';
 import { getFirstAllowedRoute, hasAnyAlertPermission } from '../../utils/permissionUtils';
+
+const PWA_INSTALLED_KEY = 'system-mdm-pwa-installed';
+
+const isStandaloneApp = () => (
+    window.matchMedia('(display-mode: standalone)').matches || navigator.standalone
+);
 
 const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleSidebar, onHideHeader }) => {
     const { t } = useLanguage();
@@ -22,12 +28,39 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
     const [pulseAlert, setPulseAlert] = useState(false);
     const [installPrompt, setInstallPrompt] = useState(null);
     const [isIosInstall, setIsIosInstall] = useState(false);
+    const [isStandalone, setIsStandalone] = useState(() => (
+        typeof window !== 'undefined' && Boolean(isStandaloneApp())
+    ));
+    const [isAppInstalled, setIsAppInstalled] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return Boolean(isStandaloneApp() || localStorage.getItem(PWA_INSTALLED_KEY) === 'true');
+        } catch {
+            return Boolean(isStandaloneApp());
+        }
+    });
 
     useEffect(() => {
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+        const standalone = Boolean(isStandaloneApp());
+        setIsStandalone(standalone);
+        setIsAppInstalled(standalone);
+        if (standalone) {
+            try {
+                localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+            } catch (error) {
+                console.error('Unable to save PWA installation state:', error);
+            }
+        } else {
+            try {
+                setIsAppInstalled(localStorage.getItem(PWA_INSTALLED_KEY) === 'true');
+            } catch (error) {
+                console.error('Unable to read PWA installation state:', error);
+            }
+        }
+
         const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        setIsIosInstall(Boolean(isIos && !isStandalone));
+        setIsIosInstall(Boolean(isIos && !standalone));
 
         const handleBeforeInstallPrompt = (event) => {
             event.preventDefault();
@@ -36,6 +69,13 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
         const handleAppInstalled = () => {
             setInstallPrompt(null);
             setIsIosInstall(false);
+            setIsAppInstalled(true);
+            setIsStandalone(Boolean(isStandaloneApp()));
+            try {
+                localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+            } catch (error) {
+                console.error('Unable to save PWA installation state:', error);
+            }
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -47,14 +87,35 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
     }, []);
 
     const handleInstallApp = async () => {
-        if (!installPrompt) {
-            window.alert('ដើម្បីដំឡើងលើ iPhone/iPad សូមចុច Share ក្នុង Safari រួចជ្រើស “Add to Home Screen”។');
+        if (isAppInstalled) {
+            window.alert('SYSTEM MDM បានដំឡើងរួចហើយ។ សូមបើក App តាមរូបតំណាង SYSTEM MDM នៅលើ Desktop ឬ Start Menu។');
             return;
         }
 
-        await installPrompt.prompt();
-        await installPrompt.userChoice;
-        setInstallPrompt(null);
+        if (!installPrompt) {
+            const instructions = isIosInstall
+                ? 'ដើម្បីដំឡើងលើ iPhone/iPad សូមចុច Share ក្នុង Safari រួចជ្រើស “Add to Home Screen”។'
+                : 'ដើម្បីដំឡើង SYSTEM MDM សូមបើកម៉ឺនុយ browser រួចជ្រើស “Install app” ឬ “Add to Home screen”។ ប្រសិនបើជម្រើសនេះមិនមាន សូមពិនិត្យថាអ្នកបានបើកគេហទំព័រតាម HTTPS។';
+            window.alert(instructions);
+            return;
+        }
+
+        try {
+            await installPrompt.prompt();
+            const choice = await installPrompt.userChoice;
+            if (choice.outcome === 'accepted') {
+                setIsAppInstalled(true);
+                try {
+                    localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+                } catch (error) {
+                    console.error('Unable to save PWA installation state:', error);
+                }
+            }
+        } catch (error) {
+            console.error('Install app prompt failed:', error);
+        } finally {
+            setInstallPrompt(null);
+        }
     };
 
     const formatMoney = (val) => {
@@ -275,15 +336,19 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     </Link>
                 )}
 
-                {(installPrompt || isIosInstall) && (
+                {!isStandalone && (
                     <button
                         type='button'
                         onClick={handleInstallApp}
-                        className='flex items-center gap-1.5 h-9 px-2.5 rounded-[8px] border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer text-xs font-bold'
-                        title='Install SYSTEM MDM'
+                        className={`flex items-center gap-1.5 h-9 px-2.5 rounded-[8px] border transition-colors cursor-pointer text-xs font-bold ${
+                            isAppInstalled
+                                ? 'border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100'
+                                : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                        }`}
+                        title={isAppInstalled ? 'Open installed SYSTEM MDM app' : 'Install SYSTEM MDM'}
                     >
-                        <FaDownload size={12} />
-                        <span className='hidden sm:inline'>Install App</span>
+                        {isAppInstalled ? <FaExternalLinkAlt size={12} /> : <FaDownload size={12} />}
+                        <span className='hidden sm:inline'>{isAppInstalled ? 'Open App' : 'Install App'}</span>
                     </button>
                 )}
             </div>
