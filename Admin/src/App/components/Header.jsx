@@ -238,18 +238,6 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
             {/* RIGHT: Action Buttons */}
             <div className='flex items-center gap-2 flex-shrink-0'>
 
-                {(installPrompt || isIosInstall) && (
-                    <button
-                        type='button'
-                        onClick={handleInstallApp}
-                        className='flex items-center gap-1.5 h-9 px-2.5 rounded-[8px] border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer text-xs font-bold'
-                        title='Install SYSTEM MDM'
-                    >
-                        <FaDownload size={12} />
-                        <span className='hidden sm:inline'>Install App</span>
-                    </button>
-                )}
-
                 {/* Alert Button */}
                 {hasAnyAlertPermission(user, hasPermission) && (
                     <button
@@ -285,6 +273,18 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     >
                         <FaTelegramPlane className={`text-sm ${location.pathname === '/telegram' ? 'text-sky-500' : 'text-slate-500'}`} />
                     </Link>
+                )}
+
+                {(installPrompt || isIosInstall) && (
+                    <button
+                        type='button'
+                        onClick={handleInstallApp}
+                        className='flex items-center gap-1.5 h-9 px-2.5 rounded-[8px] border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer text-xs font-bold'
+                        title='Install SYSTEM MDM'
+                    >
+                        <FaDownload size={12} />
+                        <span className='hidden sm:inline'>Install App</span>
+                    </button>
                 )}
             </div>
         </header>
