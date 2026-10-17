@@ -7,8 +7,11 @@ import { LanguageProvider } from "../context/LanguageContext";
 import { AuthProvider } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import AppRoutes from "./AppRoutes";
+import { installTableInteractions } from "../utils/tableInteractions";
 
 const App = () => {
+  useEffect(() => installTableInteractions(), []);
+
   useEffect(() => {
     const copyVisibleValue = (event) => {
       if (!(event.target instanceof Element)) return;
