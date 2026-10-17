@@ -17,7 +17,8 @@ if ("serviceWorker" in navigator) {
             version: __WEBSITE_VERSION__,
           });
         });
-      });
+      })
+      .catch((error) => console.error("Service worker registration failed:", error));
   });
 }
 

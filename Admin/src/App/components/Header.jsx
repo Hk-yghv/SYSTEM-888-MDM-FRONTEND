@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaBell, FaBars, FaTimes, FaTelegramPlane, FaWallet, FaArrowUp } from 'react-icons/fa';
+import { FaBell, FaBars, FaTimes, FaTelegramPlane, FaWallet, FaArrowUp, FaDownload } from 'react-icons/fa';
 import { MdOutlineTrendingUp, MdAttachMoney } from 'react-icons/md';
 import { getFirstAllowedRoute, hasAnyAlertPermission } from '../../utils/permissionUtils';
 
@@ -20,6 +20,42 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
         outstandingBalance: 0
     });
     const [pulseAlert, setPulseAlert] = useState(false);
+    const [installPrompt, setInstallPrompt] = useState(null);
+    const [isIosInstall, setIsIosInstall] = useState(false);
+
+    useEffect(() => {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+        const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        setIsIosInstall(Boolean(isIos && !isStandalone));
+
+        const handleBeforeInstallPrompt = (event) => {
+            event.preventDefault();
+            setInstallPrompt(event);
+        };
+        const handleAppInstalled = () => {
+            setInstallPrompt(null);
+            setIsIosInstall(false);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.addEventListener('appinstalled', handleAppInstalled);
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            window.removeEventListener('appinstalled', handleAppInstalled);
+        };
+    }, []);
+
+    const handleInstallApp = async () => {
+        if (!installPrompt) {
+            window.alert('ដើម្បីដំឡើងលើ iPhone/iPad សូមចុច Share ក្នុង Safari រួចជ្រើស “Add to Home Screen”។');
+            return;
+        }
+
+        await installPrompt.prompt();
+        await installPrompt.userChoice;
+        setInstallPrompt(null);
+    };
 
     const formatMoney = (val) => {
         const num = Number(val) || 0;
@@ -201,6 +237,18 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
             {/* RIGHT: Action Buttons */}
             <div className='flex items-center gap-2 flex-shrink-0'>
+
+                {(installPrompt || isIosInstall) && (
+                    <button
+                        type='button'
+                        onClick={handleInstallApp}
+                        className='flex items-center gap-1.5 h-9 px-2.5 rounded-[8px] border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer text-xs font-bold'
+                        title='Install SYSTEM MDM'
+                    >
+                        <FaDownload size={12} />
+                        <span className='hidden sm:inline'>Install App</span>
+                    </button>
+                )}
 
                 {/* Alert Button */}
                 {hasAnyAlertPermission(user, hasPermission) && (

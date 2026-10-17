@@ -7,6 +7,16 @@
 =>  ` npm run bulid `   finish project use this code and push ` dist folder ` to github
 =>  ` npm install react-router-dom ` install route-dom
 
+## Install SYSTEM MDM as an app
+
+SYSTEM MDM is an installable Progressive Web App (PWA). Open the deployed site over HTTPS:
+
+- On desktop Chrome or Edge, select **Install App** in the header (or use the browser's install icon).
+- On Android, open the site in Chrome and select **Install app** or **Add to Home screen**.
+- On iPhone or iPad, open the site in Safari, tap **Share**, then **Add to Home Screen**.
+
+After installation, launch SYSTEM MDM from its desktop shortcut or home-screen icon to use it in a standalone app window. The app shell can load from cache, but account data and API features still require an internet connection.
+
 ## Code Encrypt File (` NOTED.houv `)
 
 # Website Open File ( NOTED.houv can open only this website ): https://houvencrypt.vercel.app
