@@ -50,24 +50,28 @@ const updateRowScale = (row, scrollContainer) => {
     const containerRect = scrollContainer === window
         ? { top: 0, height: window.innerHeight }
         : scrollContainer.getBoundingClientRect();
+    const scrollTop = scrollContainer === window
+        ? window.scrollY
+        : scrollContainer.scrollTop;
+    const scrollHeight = scrollContainer === window
+        ? document.documentElement.scrollHeight
+        : scrollContainer.scrollHeight;
     const clientHeight = containerRect.height;
+    const maxScroll = Math.max(0, scrollHeight - clientHeight);
     const rowCenter = rowRect.top + rowRect.height / 2 - containerRect.top;
+    const topProgress = Math.min(1, Math.max(0, scrollTop / 70));
+    const bottomProgress = Math.min(1, Math.max(0, (maxScroll - scrollTop) / 70));
 
     let shrink = 0;
-    if (rowCenter < EDGE_THRESHOLD) {
-        shrink = (1 - Math.max(0, rowCenter / EDGE_THRESHOLD)) * MAX_EDGE_SHRINK;
-    } else if (rowCenter > clientHeight - EDGE_THRESHOLD) {
+    if (maxScroll > 4 && rowCenter < EDGE_THRESHOLD && topProgress > 0) {
+        shrink = (1 - Math.max(0, rowCenter / EDGE_THRESHOLD)) * topProgress * MAX_EDGE_SHRINK;
+    } else if (maxScroll > 4 && rowCenter > clientHeight - EDGE_THRESHOLD && bottomProgress > 0) {
         const distanceFromBottom = clientHeight - rowCenter;
-        shrink = (1 - Math.max(0, distanceFromBottom / EDGE_THRESHOLD)) * MAX_EDGE_SHRINK;
+        shrink = (1 - Math.max(0, distanceFromBottom / EDGE_THRESHOLD)) * bottomProgress * MAX_EDGE_SHRINK;
     }
 
     row.style.setProperty('--table-scroll-scale-y', (1 - shrink).toFixed(3));
     row.style.setProperty('--table-scroll-opacity', (1 - shrink * 1.4).toFixed(3));
-    row.style.setProperty(
-        '--table-scroll-origin-y',
-        shrink > 0 && rowCenter < EDGE_THRESHOLD ? 'top' :
-            shrink > 0 && rowCenter > clientHeight - EDGE_THRESHOLD ? 'bottom' : 'center',
-    );
 };
 
 const updateCellScale = (cell, scrollContainer) => {
@@ -99,7 +103,6 @@ const updateCellScale = (cell, scrollContainer) => {
         cell.style.setProperty('--table-scroll-origin-x', 'center');
     }
 
-    const verticalOrigin = cell.parentElement?.style.getPropertyValue('--table-scroll-origin-y') || 'center';
     cell.style.setProperty('--table-scroll-scale-x', (1 - horizontalShrink).toFixed(3));
     cell.style.setProperty(
         '--table-scroll-scale-y',
@@ -107,7 +110,7 @@ const updateCellScale = (cell, scrollContainer) => {
     );
     cell.style.setProperty(
         'transform-origin',
-        `${cell.style.getPropertyValue('--table-scroll-origin-x')} ${verticalOrigin}`,
+        `${cell.style.getPropertyValue('--table-scroll-origin-x')} center`,
     );
 };
 
@@ -192,7 +195,6 @@ export const installTableInteractions = () => {
             row.classList.remove('table-scroll-row');
             row.style.removeProperty('--table-scroll-scale-y');
             row.style.removeProperty('--table-scroll-opacity');
-            row.style.removeProperty('--table-scroll-origin-y');
         });
         document.querySelectorAll('.table-scroll-cell').forEach(cell => {
             cell.classList.remove('table-scroll-cell');
