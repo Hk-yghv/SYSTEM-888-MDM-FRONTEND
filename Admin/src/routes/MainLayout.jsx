@@ -149,7 +149,7 @@ const MainLayout = ({ children }) => {
     : dockPos.y > 220;
 
   const isLeftSide = dockPos.side === "left";
-  const shouldHideContent = (!isHeaderOpen || !isSidebarOpen) && !isHovered && !isFloatingUplistOpen;
+  const shouldHideContent = !isHovered;
 
   return (
     <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden">
