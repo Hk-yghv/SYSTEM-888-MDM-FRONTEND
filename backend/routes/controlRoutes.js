@@ -536,12 +536,13 @@ router.post('/subbrands', async (req, res) => {
             }
         }
 
+        const normalized = normalizeBrandSubbrands(brand_subbrands);
         res.json({
             success: true,
             brand,
             subBrand,
-            subbrands: brand_subbrands[brand],
-            brand_subbrands,
+            subbrands: normalized[brand] || [],
+            brand_subbrands: normalized,
             message: `Sub Brand '${subBrand}' added. Existing data assigned to '${defaultSubBrand}'.`,
             backfillCount: backfilledContracts + backfilledUrls + backfilledLogs
         });
@@ -621,7 +622,8 @@ router.delete('/subbrands', async (req, res) => {
         if (!MEM_DB.controlSystem) MEM_DB.controlSystem = {};
         MEM_DB.controlSystem.brand_subbrands = brand_subbrands;
 
-        res.json({ success: true, brand, subbrands: brand_subbrands[brand] || [], brand_subbrands });
+        const normalized = normalizeBrandSubbrands(brand_subbrands);
+        res.json({ success: true, brand, subbrands: normalized[brand] || [], brand_subbrands: normalized });
     } catch (err) {
         console.error('Delete subbrand error:', err);
         res.status(500).json({ error: err.message });

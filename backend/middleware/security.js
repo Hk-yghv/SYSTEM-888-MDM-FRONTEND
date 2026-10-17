@@ -464,22 +464,24 @@ const SENSITIVE_FIELDS = [
     'secondPassword', 'telegramToken', 'botToken', 'secretKey'
 ];
 
-const maskSensitiveData = (data, _seen = new WeakSet()) => {
+const maskSensitiveData = (data, _ancestors = new Set()) => {
     try {
         if (!data || typeof data !== 'object') return data;
 
-        // Circular reference guard — break cycle
-        if (_seen.has(data)) return '[Circular]';
-        _seen.add(data);
+        // Circular reference guard — only trigger if data is in the active ancestor stack (real cycle)
+        if (_ancestors.has(data)) return '[Circular]';
 
-        if (Array.isArray(data)) return data.map(item => maskSensitiveData(item, _seen));
+        const nextAncestors = new Set(_ancestors);
+        nextAncestors.add(data);
+
+        if (Array.isArray(data)) return data.map(item => maskSensitiveData(item, nextAncestors));
 
         // Convert Map or MongooseMap to plain object
         if (data instanceof Map) {
             const cleanedMap = {};
             for (const [key, value] of data.entries()) {
                 if (!SENSITIVE_FIELDS.includes(key)) {
-                    cleanedMap[key] = maskSensitiveData(value, _seen);
+                    cleanedMap[key] = maskSensitiveData(value, nextAncestors);
                 }
             }
             return cleanedMap;
@@ -489,7 +491,7 @@ const maskSensitiveData = (data, _seen = new WeakSet()) => {
             const cleanedMap = {};
             for (const [key, value] of data.entries()) {
                 if (!SENSITIVE_FIELDS.includes(key)) {
-                    cleanedMap[key] = maskSensitiveData(value, _seen);
+                    cleanedMap[key] = maskSensitiveData(value, nextAncestors);
                 }
             }
             return cleanedMap;
@@ -503,7 +505,7 @@ const maskSensitiveData = (data, _seen = new WeakSet()) => {
         const cleaned = {};
         for (const key of Object.keys(data)) {
             if (!SENSITIVE_FIELDS.includes(key)) {
-                cleaned[key] = maskSensitiveData(data[key], _seen);
+                cleaned[key] = maskSensitiveData(data[key], nextAncestors);
             }
         }
         return cleaned;

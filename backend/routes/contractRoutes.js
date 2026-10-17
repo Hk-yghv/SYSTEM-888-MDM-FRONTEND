@@ -4,10 +4,44 @@ import QRCode from 'qrcode';
 import Contract from '../models/Contract.js';
 import ActivatedDescriptionStatus from '../models/ActivatedDescriptionStatus.js';
 import Payment from '../models/Payment.js';
+import User from '../models/User.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel, dbInstances } from '../config/multiDB.js';
 import { generateCustomerPdf } from '../utils/customerPdfGenerator.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+
+// Resolve the allowed sub-brands for a non-master-admin user.
+// Priority: 1) query.userSubBrands param  2) req.user.subBrands  3) DB lookup by username
+const resolveAllowedSubBrands = async (req, isMasterAdmin, username) => {
+    if (isMasterAdmin) return null; // null = unrestricted
+    // From query param
+    if (req.query.userSubBrands) {
+        const arr = String(req.query.userSubBrands).split(',').map(s => s.trim()).filter(Boolean);
+        if (arr.length > 0) return arr;
+    }
+    // From JWT/session user
+    if (Array.isArray(req.user?.subBrands) && req.user.subBrands.length > 0) {
+        return req.user.subBrands;
+    }
+    // DB lookup
+    if (username && isMongoConnected) {
+        try {
+            const results = await queryAllDBs(User, M => M.findOne({ username }).select('subBrands'));
+            const dbUser = Array.isArray(results) ? results[0] : results;
+            if (dbUser && Array.isArray(dbUser.subBrands) && dbUser.subBrands.length > 0) {
+                return dbUser.subBrands;
+            }
+        } catch { /* ignore */ }
+    }
+    // fallback: MEM_DB
+    if (username) {
+        const memUser = (MEM_DB.users || []).find(u => u.username === username);
+        if (memUser && Array.isArray(memUser.subBrands) && memUser.subBrands.length > 0) {
+            return memUser.subBrands;
+        }
+    }
+    return null; // no restriction
+};
 
 const router = express.Router();
 
@@ -517,13 +551,18 @@ router.get('/', async (req, res) => {
         }
 
         const subBrandFilter = req.query.subBrand;
+        // Resolve allowed sub-brands for this user (auto-lookup from DB if not supplied)
+        const allowedSubBrands = await resolveAllowedSubBrands(req, isMasterAdmin, username);
         if (subBrandFilter && subBrandFilter !== 'All') {
-            query.subBrand = subBrandFilter;
-        } else if (req.query.userSubBrands && !isMasterAdmin) {
-            const allowed = String(req.query.userSubBrands).split(',').map(s => s.trim()).filter(Boolean);
-            if (allowed.length > 0) {
-                query.subBrand = { $in: allowed };
+            // Explicit filter from UI — if user has restrictions, clamp to intersection
+            if (allowedSubBrands && !allowedSubBrands.includes(subBrandFilter)) {
+                // User tried to access a subBrand they are not assigned to — return nothing
+                query.subBrand = '__UNAUTHORIZED__';
+            } else {
+                query.subBrand = subBrandFilter;
             }
+        } else if (allowedSubBrands && allowedSubBrands.length > 0) {
+            query.subBrand = { $in: allowedSubBrands };
         }
 
         if (dateFrom || dateTo) {
@@ -596,6 +635,20 @@ router.get('/', async (req, res) => {
         }
         await rotateExpiredComments(filtered);
         if (brandFilter && (!isMasterAdmin || req.query.brand)) filtered = filtered.filter(c => c.brand === brandFilter);
+        // Apply sub-brand restriction for in-memory DB path
+        if (allowedSubBrands && allowedSubBrands.length > 0) {
+            if (subBrandFilter && subBrandFilter !== 'All') {
+                if (!allowedSubBrands.includes(subBrandFilter)) {
+                    filtered = []; // unauthorised
+                } else {
+                    filtered = filtered.filter(c => c.subBrand === subBrandFilter);
+                }
+            } else {
+                filtered = filtered.filter(c => allowedSubBrands.includes(c.subBrand));
+            }
+        } else if (!isMasterAdmin && subBrandFilter && subBrandFilter !== 'All') {
+            filtered = filtered.filter(c => c.subBrand === subBrandFilter);
+        }
         if (contractId) filtered = filtered.filter(c => c.contractId === contractId);
         if (dateFrom || dateTo) {
             filtered = filtered.filter(c => {
