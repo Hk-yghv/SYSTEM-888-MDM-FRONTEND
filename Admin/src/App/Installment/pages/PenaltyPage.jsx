@@ -239,9 +239,13 @@ const PenaltyPage = () => {
                 method: 'DELETE'
             });
             if (res.ok) {
+                if (selectedRecord?._id === item._id || selectedRecord?.transactionId === item.transactionId) {
+                    setSelectedRecord(null);
+                }
                 fetchData(page, searchTerm, startDate, endDate);
             } else {
-                alert('Failed to delete record.');
+                const errorData = await res.json().catch(() => ({}));
+                alert(errorData.error || `Failed to delete record (HTTP ${res.status}).`);
             }
         } catch (err) {
             alert('Delete error: ' + err.message);

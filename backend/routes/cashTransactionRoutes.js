@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import CashTransaction from '../models/CashTransaction.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
@@ -215,14 +216,24 @@ router.delete('/cash-transactions/:id', async (req, res) => {
         let targetItem = null;
 
         if (isMongoConnected) {
-            const results = await queryAllDBs(CashTransaction, (M) => M.findOne({ $or: [{ _id: id }, { transactionId: id }] }));
-            targetItem = results.find(r => r != null) || null;
-            const Model = getWriteModel(CashTransaction);
-            await Model.findByIdAndDelete(id);
+            const filter = {
+                $or: [
+                    { transactionId: id },
+                    ...(mongoose.Types.ObjectId.isValid(id) ? [{ _id: id }] : [])
+                ]
+            };
+            const deletedResults = await queryAllDBs(CashTransaction, async M => {
+                const deleted = await M.findOneAndDelete(filter);
+                return deleted ? [deleted] : [];
+            });
+            targetItem = deletedResults[0] || null;
         } else {
             targetItem = MEM_DB.cashTransactions.find(item => item.transactionId === id || item._id === id) || null;
+            if (!targetItem) return res.status(404).json({ error: 'Transaction record not found.' });
             MEM_DB.cashTransactions = MEM_DB.cashTransactions.filter(item => item.transactionId !== id && item._id !== id);
         }
+
+        if (!targetItem) return res.status(404).json({ error: 'Transaction record not found.' });
 
         // Record audit log
         recordSystemAudit({
