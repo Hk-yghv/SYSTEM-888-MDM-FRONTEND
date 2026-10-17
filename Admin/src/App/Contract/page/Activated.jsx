@@ -1329,7 +1329,7 @@ const Activated = () => {
                                     {selectedDescriptionContract.customerNameEn || selectedDescriptionContract.customerNameKh} · {selectedDescriptionContract.contractId}
                                 </p>
                             </div>
-                            <button type="button" onClick={() => setSelectedDescriptionContract(null)} className="text-2xl leading-none hover:text-indigo-200" aria-label="Close">&times;</button>
+                            <button type="button" onClick={() => setSelectedDescriptionContract(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-2xl leading-none text-black hover:bg-slate-100" aria-label="Close">&times;</button>
                         </div>
                         <div className="max-h-[75vh] space-y-4 overflow-y-auto p-4 text-sm">
                             <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3">
@@ -1385,7 +1385,7 @@ const Activated = () => {
                     <div className="w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
                         <div className="flex items-center justify-between bg-indigo-700 px-4 py-3 text-white">
                             <h3 className="font-bold">{editingDescriptionEntry ? 'Edit Description History' : 'Set Description'}</h3>
-                            <button type="button" onClick={() => { setIsDescriptionFormOpen(false); setEditingDescriptionEntry(null); }} className="text-2xl leading-none hover:text-indigo-200" aria-label="Close">&times;</button>
+                            <button type="button" onClick={() => { setIsDescriptionFormOpen(false); setEditingDescriptionEntry(null); }} className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-2xl leading-none text-black hover:bg-slate-100" aria-label="Close">&times;</button>
                         </div>
                         <form onSubmit={handleSaveActivatedDescription} className="space-y-4 p-4 text-sm">
                             <div>
