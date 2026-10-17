@@ -17,6 +17,12 @@ SYSTEM MDM is an installable Progressive Web App (PWA). Open the deployed site o
 
 After installation, launch SYSTEM MDM from its desktop shortcut or home-screen icon to use it in a standalone app window. The app shell can load from cache, but account data and API features still require an internet connection.
 
+## API proxy authentication
+
+Configure a strong, randomly generated `JWT_SECRET` as an environment variable on both the Vercel deployment serving `Admin/api` and every backend deployment. Use the same secret for all of them, and do not commit it to source control. Configure `SYSTEM_API_KEY` on the backend only if trusted internal services require it. The API proxy rejects protected requests if `JWT_SECRET` is missing and forwards the user's session credentials without injecting a privileged system API key.
+
+Sensitive API reads require a valid user session. External partner integrations must provide a strong, randomly generated `EXTERNAL_PARTNER_API_KEY` configured on the backend and send it as `X-Partner-API-Key`; anonymous GET requests to contracts, payments, and other partner endpoints are not allowed.
+
 ## Code Encrypt File (` NOTED.houv `)
 
 # Website Open File ( NOTED.houv can open only this website ): https://houvencrypt.vercel.app

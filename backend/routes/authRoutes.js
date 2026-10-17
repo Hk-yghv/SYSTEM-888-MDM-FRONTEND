@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -10,8 +11,10 @@ import { parseUserAgent } from '../middleware/security.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
-const QR_ENCRYPTION_KEY = createHash('sha256').update(process.env.ENCRYPTION_KEY || JWT_SECRET).digest();
+const JWT_SECRET = process.env.JWT_SECRET;
+const QR_ENCRYPTION_KEY = createHash('sha256')
+    .update(process.env.ENCRYPTION_KEY || JWT_SECRET || randomBytes(32))
+    .digest();
 const AUTH_COOKIE_NAME = 'mdm_session';
 const AUTH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const AUTH_COOKIE_OPTIONS = {

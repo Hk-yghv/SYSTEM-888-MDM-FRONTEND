@@ -1,5 +1,5 @@
 // Vercel Serverless API Multi-Backend Failover Gateway for SYSTEM MDM
-// React Frontend -> Vercel Serverless API Proxy -> Auto Failover (3 APIs) with x-system-api-key -> 888 MDM API
+// React Frontend -> Vercel Serverless API Proxy -> Auto Failover -> 888 MDM API
 
 export const config = {
     api: {
@@ -8,6 +8,43 @@ export const config = {
         },
     },
 };
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+const verifySessionToken = async (token) => {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+
+    try {
+        const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+        if (header.alg !== 'HS256' || !payload.username || !payload.userId) return false;
+        const now = Math.floor(Date.now() / 1000);
+        if (typeof payload.exp !== 'number' || payload.exp <= now) return false;
+        if (typeof payload.nbf === 'number' && payload.nbf > now) return false;
+
+        const key = await crypto.subtle.importKey(
+            'raw',
+            new TextEncoder().encode(JWT_SECRET),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['verify']
+        );
+        return await crypto.subtle.verify(
+            'HMAC',
+            key,
+            Buffer.from(parts[2], 'base64url'),
+            new TextEncoder().encode(`${parts[0]}.${parts[1]}`)
+        );
+    } catch {
+        return false;
+    }
+};
+
+const isPublicRequest = (method, path) => (
+    (method === 'POST' && ['auth/login', 'auth/verify-otp', 'auth/qr-login'].includes(path)) ||
+    (method === 'GET' && path === 'health')
+);
 
 export default async function handler(req, res) {
     // 1. CORS Configuration
@@ -26,7 +63,7 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',
-        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-system-api-key'
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, X-Partner-API-Key, x-partner-api-key'
     );
 
     if (req.method === 'OPTIONS') {
@@ -59,9 +96,6 @@ export default async function handler(req, res) {
         'https://system-mdm-2.onrender.com/api'
     ];
 
-    // 3. Secret SYSTEM_API_KEY (Stored safely on Server - Never exposed to Client Browser)
-    const SYSTEM_API_KEY = process.env.SYSTEM_API_KEY || process.env.MDM_API_KEY || 'sys-mdm@hkayonghouv-fdasdlfjri98chbLI*Y0&*T(';
-
     // 4. Extract Path & Query accurately from req.url
     let rawUrl = req.url || '';
     if (rawUrl.startsWith('/api')) {
@@ -75,9 +109,34 @@ export default async function handler(req, res) {
         return res.status(410).json({ error: 'System log endpoints have been retired.' });
     }
 
-    // 5. Prepare Forward Headers with Secret x-system-api-key
+    // 5. Require a valid user session or a backend-validated partner key before proxying.
+    const normalizedPath = cleanPath.replace(/\/+$/, '');
+    const authHeader = req.headers['authorization'];
+    const bearerToken = typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7)
+        : null;
+    const token = bearerToken || sessionCookieToken;
+    const partnerKey = req.headers['x-partner-api-key'];
+
+    if (req.headers['x-system-api-key']) {
+        return res.status(403).json({ error: 'System API keys cannot be used through the public proxy.' });
+    }
+
+    if (!isPublicRequest(req.method, normalizedPath) && !partnerKey) {
+        if (!token) {
+            return res.status(401).json({ error: 'Authentication required. Please sign in to access this API.' });
+        }
+        if (!JWT_SECRET) {
+            console.error('JWT_SECRET is not configured for the API proxy.');
+            return res.status(503).json({ error: 'API authentication is not configured securely.' });
+        }
+        if (!(await verifySessionToken(token))) {
+            return res.status(401).json({ error: 'Invalid or expired session. Please sign in again.' });
+        }
+    }
+
+    // 6. Forward caller credentials without granting the proxy's privileged system identity.
     const forwardHeaders = {
-        'x-system-api-key': SYSTEM_API_KEY,
         'x-forwarded-for': req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1'
     };
 
@@ -86,6 +145,9 @@ export default async function handler(req, res) {
     }
     if (sessionCookie) {
         forwardHeaders['cookie'] = sessionCookie;
+    }
+    if (partnerKey) {
+        forwardHeaders['x-partner-api-key'] = partnerKey;
     }
     if (req.headers['content-type']) {
         forwardHeaders['content-type'] = req.headers['content-type'];

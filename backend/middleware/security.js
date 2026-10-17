@@ -1,9 +1,10 @@
+import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'mdm_super_secret_jwt_key_2026_boyboy';
-const SYSTEM_API_KEY = process.env.SYSTEM_API_KEY || 'SYSTEM_MDM_SECURE_AUTH_HEADER_TOKEN_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+const SYSTEM_API_KEY = process.env.SYSTEM_API_KEY;
 // External Partner API Key — for third-party integrations (read-only access to specific endpoints)
-const EXTERNAL_PARTNER_API_KEY = process.env.EXTERNAL_PARTNER_API_KEY || 'MDM-PARTNER-2026-EXT-KEY-X9mK3pQrV7wZ';
+const EXTERNAL_PARTNER_API_KEY = process.env.EXTERNAL_PARTNER_API_KEY;
 
 // Endpoints accessible to external partners with X-Partner-API-Key (GET only)
 const PARTNER_ALLOWED_PATH_PREFIXES = [
@@ -277,7 +278,7 @@ export const verifySecurityAuth = (req, res, next) => {
     const userAgent = (req.headers['user-agent'] || '').toLowerCase();
 
     // Internal system key — full access
-    if (systemKey === SYSTEM_API_KEY) {
+    if (SYSTEM_API_KEY && systemKey === SYSTEM_API_KEY) {
         if (token) {
             try {
                 const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
@@ -309,7 +310,7 @@ export const verifySecurityAuth = (req, res, next) => {
     }
 
     // External Partner API Key — read-only GET access to whitelisted endpoints only
-    if (partnerKey === EXTERNAL_PARTNER_API_KEY) {
+    if (EXTERNAL_PARTNER_API_KEY && partnerKey === EXTERNAL_PARTNER_API_KEY) {
         const isPartnerAllowedPath = PARTNER_ALLOWED_PATH_PREFIXES.some(p =>
             path.startsWith(p) || originalUrl.startsWith(p)
         );
@@ -338,28 +339,10 @@ export const verifySecurityAuth = (req, res, next) => {
     }
 
     // Wrong partner key provided
-    if (partnerKey && partnerKey !== EXTERNAL_PARTNER_API_KEY) {
+    if (partnerKey && (!EXTERNAL_PARTNER_API_KEY || partnerKey !== EXTERNAL_PARTNER_API_KEY)) {
         return res.status(403).json({
             error: 'Partner Access Denied: Invalid partner API key.'
         });
-    }
-
-    // ── OPEN PARTNER ENDPOINTS (No auth required for programmatic GET) ──
-    // External systems (curl, Python, PHP, Android, Node.js) can access partner endpoints freely.
-    // Only browser navigation is blocked above. Programmatic requests pass through here.
-    if (req.method === 'GET' && !token) {
-        const isPartnerOpenPath = PARTNER_ALLOWED_PATH_PREFIXES.some(p =>
-            path.startsWith(p) || originalUrl.startsWith(p)
-        );
-        if (isPartnerOpenPath) {
-            if (path === '/api/cash-transactions' && !isPenaltyReadPath(req)) {
-                return res.status(403).json({
-                    error: 'Partner Access Denied: External partner access to cash transactions is limited to penalty records.'
-                });
-            }
-            req.isPartnerAccess = true;
-            return next();
-        }
     }
 
     if (token) {
@@ -368,6 +351,9 @@ export const verifySecurityAuth = (req, res, next) => {
         }
 
         try {
+            if (!JWT_SECRET) {
+                return res.status(503).json({ error: 'API authentication is not configured securely.' });
+            }
             const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
             req.user = decoded;
             return next();
@@ -388,7 +374,7 @@ export const verifySecurityAuth = (req, res, next) => {
 // Administrator Authorization Check
 export const requireAdminRole = (req, res, next) => {
     const systemKey = req.headers['x-system-api-key'];
-    if (systemKey === SYSTEM_API_KEY) {
+    if (SYSTEM_API_KEY && systemKey === SYSTEM_API_KEY) {
         return next();
     }
     if (req.user && (req.user.role === 'Administrator' || req.user.role === 'Admin')) {

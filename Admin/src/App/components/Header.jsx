@@ -120,9 +120,12 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 } catch (error) {
                     console.error('Unable to save PWA installation state:', error);
                 }
+            } else {
+                setInstallInfo('ការដំឡើងត្រូវបានបោះបង់។ អ្នកអាចចុច Install App ម្ដងទៀត ឬបើកម៉ឺនុយ browser ហើយជ្រើស “Install app”។');
             }
         } catch (error) {
             console.error('Install app prompt failed:', error);
+            setInstallInfo('Browser មិនអាចបើកផ្ទាំង Install ដោយស្វ័យប្រវត្តិបានទេ។ សូមបើកម៉ឺនុយ browser ហើយជ្រើស “Install app” ឬ “Add to Home screen”។');
         } finally {
             setInstallPrompt(null);
         }
