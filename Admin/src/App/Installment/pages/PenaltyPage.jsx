@@ -62,8 +62,34 @@ const PenaltyPage = () => {
     const [imageStorageType, setImageStorageType] = useState('cloudinary');
     const [selectedImages, setSelectedImages] = useState([]);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [penaltyStatuses, setPenaltyStatuses] = useState([]);
+    const [descriptionItem, setDescriptionItem] = useState(null);
+    const [isDescriptionFormOpen, setIsDescriptionFormOpen] = useState(false);
+    const [descriptionStatus, setDescriptionStatus] = useState('');
+    const [customDescriptionStatus, setCustomDescriptionStatus] = useState('');
+    const [descriptionText, setDescriptionText] = useState('');
+    const [editingHistoryEntry, setEditingHistoryEntry] = useState(null);
+    const [savingDescription, setSavingDescription] = useState(false);
+    const isMasterAdmin = user?.username === '@hakyonghouv' ||
+        user?.username === 'hakyonghouv' || user?.isImmutable === true || user?.role === 'SuperAdmin';
 
     const visibleDataList = selectedRecord ? [selectedRecord] : dataList;
+    const getCurrentStatus = item => item.descriptionStatus ||
+        item.descriptionHistory?.[item.descriptionHistory.length - 1]?.status || '';
+    const openCreateForm = () => {
+        setEditingItem(null);
+        setFormData({
+            date: new Date().toISOString().split('T')[0],
+            amount: '',
+            currency: 'USD',
+            paymentMethod: 'Cash',
+            category: 'General Penalty',
+            description: '',
+            photoUrl: '',
+            photoUrls: []
+        });
+        setIsFormOpen(true);
+    };
 
     const handleFileUpload = async (e) => {
         const file = e.target.files?.[0];
@@ -129,6 +155,18 @@ const PenaltyPage = () => {
         fetchData(page, searchTerm, startDate, endDate);
     }, [page, fetchData, searchTerm, startDate, endDate, selectedRecord]);
 
+    useEffect(() => {
+        let cancelled = false;
+        fetch(`${API_BASE}/cash-transactions/penalty-statuses`)
+            .then(async response => {
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Unable to load penalty statuses.');
+                if (!cancelled) setPenaltyStatuses(Array.isArray(result.data) ? result.data : []);
+            })
+            .catch(error => console.error('Fetch penalty statuses error:', error))
+        return () => { cancelled = true; };
+    }, [API_BASE]);
+
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (!formData.amount || Number(formData.amount) <= 0) {
@@ -185,6 +223,50 @@ const PenaltyPage = () => {
             alert('Error saving record: ' + err.message);
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const openDescriptionForm = (item, historyEntry = null) => {
+        setDescriptionItem(item);
+        setEditingHistoryEntry(historyEntry);
+        setDescriptionStatus(historyEntry?.status || getCurrentStatus(item));
+        setCustomDescriptionStatus('');
+        setDescriptionText(historyEntry?.description || '');
+        setIsDescriptionFormOpen(true);
+    };
+
+    const handleDescriptionSubmit = async (e) => {
+        e.preventDefault();
+        const status = descriptionStatus === '__other__' ? customDescriptionStatus.trim() : descriptionStatus.trim();
+        const description = descriptionText.trim();
+        if (!status || !description || !descriptionItem) {
+            alert('សូមជ្រើសរើស Status និងបញ្ចូល Description។');
+            return;
+        }
+
+        setSavingDescription(true);
+        try {
+            const itemId = descriptionItem._id || descriptionItem.transactionId;
+            const endpoint = editingHistoryEntry
+                ? `${API_BASE}/cash-transactions/${itemId}/description-history/${editingHistoryEntry._id || editingHistoryEntry.id}`
+                : `${API_BASE}/cash-transactions/${itemId}/description-history`;
+            const response = await fetch(endpoint, {
+                method: editingHistoryEntry ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, description })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to save description.');
+
+            setPenaltyStatuses(previous => previous.includes(status) ? previous : [...previous, status].sort((a, b) => a.localeCompare(b)));
+            setDescriptionItem(result.data);
+            setIsDescriptionFormOpen(false);
+            setEditingHistoryEntry(null);
+            await fetchData(page, searchTerm, startDate, endDate);
+        } catch (error) {
+            alert(`Save description error: ${error.message}`);
+        } finally {
+            setSavingDescription(false);
         }
     };
 
@@ -318,7 +400,7 @@ const PenaltyPage = () => {
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
-                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', paymentMethod: 'Cash', category: 'General Penalty', description: '', photoUrl: '' }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-amber-600/20'>
+                    <button onClick={openCreateForm} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-amber-600/20'>
                         <FaPlus className="text-xs" /><span>{t('create')} (បង្កើតពិន័យ)</span>
                     </button>
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
@@ -450,7 +532,7 @@ const PenaltyPage = () => {
                             />
                         </div>
 
-                        <button onClick={() => setIsFormOpen(true)} className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
+                        <button onClick={openCreateForm} className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
                             <FaPlus /> <span>បន្ថែមពិន័យ</span>
                         </button>
                     </div>
@@ -465,7 +547,8 @@ const PenaltyPage = () => {
                                     <th className='px-4 py-1'>Payment Type</th>
                                     <th className='px-4 py-1'>Category</th>
                                     <th className='px-4 py-1 text-right'>Amount</th>
-                                    <th className='px-4 py-1'>Description</th>
+                                    <th className='px-4 py-1'>Record Description</th>
+                                    <th className='px-4 py-1'>Status</th>
                                     <th className='px-4 py-1 text-center'>Receipt Image</th>
                                     <th className='px-4 py-1'>Performed By</th>
                                     <th className='px-4 py-1 text-center'>Actions</th>
@@ -473,9 +556,9 @@ const PenaltyPage = () => {
                             </thead>
                             <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                                 {loading ? (
-                                    <tr><td colSpan={9} className="text-center py-10 text-amber-600 font-semibold">Loading...</td></tr>
+                                    <tr><td colSpan={10} className="text-center py-10 text-amber-600 font-semibold">Loading...</td></tr>
                                 ) : visibleDataList.length === 0 ? (
-                                    <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic">មិនមានទិន្នន័យពិន័យទេ។ (No penalty records found.)</td></tr>
+                                    <tr><td colSpan={10} className="text-center py-8 text-slate-500 italic">មិនមានទិន្នន័យពិន័យទេ។ (No penalty records found.)</td></tr>
                                 ) : (
                                     visibleDataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-amber-50/40 transition-colors'>
@@ -495,6 +578,16 @@ const PenaltyPage = () => {
                                                 {item.currency === 'KHR' ? `${(item.amount || 0).toLocaleString()} ៛` : `$${(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
                                             </td>
                                             <td className='px-4 py-1 font-medium text-slate-700 max-w-xs truncate'>{item.description || '-'}</td>
+                                            <td className='px-4 py-1'>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setDescriptionItem(item); setIsDescriptionFormOpen(false); }}
+                                                    className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-100"
+                                                    title="View status and description history"
+                                                >
+                                                    {getCurrentStatus(item) || 'Set status'}
+                                                </button>
+                                            </td>
                                             <td className='px-4 py-1 text-center'>
                                                 {getPhotoUrls(item).length ? (
                                                     <button onClick={() => { setSelectedImages(getPhotoUrls(item)); setSelectedImageIndex(0); }} className="text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center justify-center gap-1 mx-auto">
@@ -505,6 +598,9 @@ const PenaltyPage = () => {
                                             <td className='px-4 py-1 font-bold text-slate-800'>{item.performedBy || '-'}</td>
                                             <td className='px-4 py-1 text-center'>
                                                 <div className="flex items-center justify-center gap-2">
+                                                    <button onClick={() => openDescriptionForm(item)} title="Set Description" className="px-2 py-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md">
+                                                        Set Description
+                                                    </button>
                                                     <button onClick={() => handleEdit(item)} title="Edit" className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                                         <FaEdit />
                                                     </button>
@@ -652,6 +748,128 @@ const PenaltyPage = () => {
                                 </button>
                                 <button type="submit" disabled={submitting} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-[5px] cursor-pointer shadow-md shadow-amber-600/20">
                                     {submitting ? 'Saving...' : t('submit')}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {descriptionItem && !isDescriptionFormOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3">
+                    <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl">
+                        <div className="flex items-center justify-between bg-indigo-700 px-4 py-3 text-white">
+                            <div>
+                                <h3 className="font-bold">Status Description History</h3>
+                                <p className="text-xs text-indigo-100">{descriptionItem.transactionId || descriptionItem.category}</p>
+                            </div>
+                            <button type="button" onClick={() => setDescriptionItem(null)} className="text-2xl leading-none hover:text-indigo-200" aria-label="Close">&times;</button>
+                        </div>
+                        <div className="max-h-[75vh] space-y-4 overflow-y-auto p-4 text-sm">
+                            <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3">
+                                <p className="text-xs font-bold uppercase text-indigo-500">Current status</p>
+                                <p className="mt-1 font-bold text-indigo-900">{getCurrentStatus(descriptionItem) || 'No status set'}</p>
+                                <p className="mt-2 text-xs font-bold uppercase text-indigo-500">Status Description</p>
+                                <p className="mt-1 whitespace-pre-wrap text-slate-700">
+                                    {descriptionItem.descriptionHistory?.[descriptionItem.descriptionHistory.length - 1]?.description || 'No description yet.'}
+                                </p>
+                            </div>
+                            <div>
+                                <h4 className="mb-2 font-bold text-slate-800">History</h4>
+                                {descriptionItem.descriptionHistory?.length ? (
+                                    <ol className="space-y-3">
+                                        {[...descriptionItem.descriptionHistory].reverse().map((entry, index) => (
+                                            <li key={entry._id || entry.id || index} className="rounded-lg border border-slate-200 p-3">
+                                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                                    <div>
+                                                        <p className="font-bold text-indigo-700">{entry.status}</p>
+                                                        <p className="text-[11px] text-slate-500">
+                                                            {entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '-'}
+                                                            {entry.createdBy ? ` · ${entry.createdBy}` : ''}
+                                                        </p>
+                                                    </div>
+                                                    {isMasterAdmin && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openDescriptionForm(descriptionItem, entry)}
+                                                            className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100"
+                                                        >
+                                                            Edit history
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <p className="mt-2 whitespace-pre-wrap text-slate-700">{entry.description}</p>
+                                            </li>
+                                        ))}
+                                    </ol>
+                                ) : <p className="text-slate-500">No description history yet.</p>}
+                            </div>
+                            <div className="flex justify-end">
+                                <button type="button" onClick={() => openDescriptionForm(descriptionItem)} className="rounded-md bg-indigo-700 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-800">
+                                    Set Description
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDescriptionFormOpen && descriptionItem && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3">
+                    <div className="w-full max-w-lg overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl">
+                        <div className="flex items-center justify-between bg-indigo-700 px-4 py-3 text-white">
+                            <h3 className="font-bold">{editingHistoryEntry ? 'Edit Status Description History' : 'Set Description'}</h3>
+                            <button type="button" onClick={() => { setIsDescriptionFormOpen(false); setEditingHistoryEntry(null); }} className="text-2xl leading-none hover:text-indigo-200" aria-label="Close">&times;</button>
+                        </div>
+                        <form onSubmit={handleDescriptionSubmit} className="space-y-4 p-4 text-sm">
+                            <div>
+                                <label className="mb-1 block font-bold text-slate-700">Status</label>
+                                <select
+                                    required
+                                    value={descriptionStatus}
+                                    onChange={event => setDescriptionStatus(event.target.value)}
+                                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                                >
+                                    <option value="" disabled>Select status</option>
+                                    {[...new Set([...penaltyStatuses, getCurrentStatus(descriptionItem)].filter(Boolean))].map(status => (
+                                        <option key={status} value={status}>{status}</option>
+                                    ))}
+                                    <option value="__other__">Other (create new status)</option>
+                                </select>
+                                {descriptionStatus === '__other__' && (
+                                    <input
+                                        type="text"
+                                        required
+                                        maxLength={80}
+                                        value={customDescriptionStatus}
+                                        onChange={event => setCustomDescriptionStatus(event.target.value)}
+                                        placeholder="Enter a new status"
+                                        className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                                    />
+                                )}
+                            </div>
+                            <div>
+                                <label className="mb-1 block font-bold text-slate-700">Status Description</label>
+                                <textarea
+                                    required
+                                    rows={4}
+                                    maxLength={3000}
+                                    value={descriptionText}
+                                    onChange={event => setDescriptionText(event.target.value)}
+                                    placeholder="Write a description..."
+                                    className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => { setIsDescriptionFormOpen(false); setEditingHistoryEntry(null); }}
+                                    className="rounded-md bg-slate-100 px-4 py-2 font-bold text-slate-700 hover:bg-slate-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={savingDescription} className="rounded-md bg-indigo-700 px-4 py-2 font-bold text-white hover:bg-indigo-800 disabled:opacity-60">
+                                    {savingDescription ? 'Saving...' : 'Save'}
                                 </button>
                             </div>
                         </form>

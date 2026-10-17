@@ -93,17 +93,18 @@ export const pathAndCommandGuardMiddleware = (req, res, next) => {
         return res.status(400).json({ error: 'Security Protection: Directory path traversal attack detected and blocked.' });
     }
 
-    const checkValue = (val) => {
+    const isCashTransactionRoute = /^\/(?:api\/)?cash-transactions(?:\/|$)/.test(req.originalUrl?.split('?')[0] || req.path);
+    const checkValue = (val, key = '') => {
         if (typeof val === 'string') {
             if (val.startsWith('data:image/') || val.startsWith('data:application/') || val.startsWith('data:')) {
                 return false;
             }
-            if (COMMAND_INJECTION_REGEX.test(val)) {
+            if (COMMAND_INJECTION_REGEX.test(val) && !(isCashTransactionRoute && ['description', 'status'].includes(key))) {
                 return true;
             }
         }
         if (val && typeof val === 'object') {
-            return Object.values(val).some(checkValue);
+            return Object.entries(val).some(([childKey, child]) => checkValue(child, childKey));
         }
         return false;
     };

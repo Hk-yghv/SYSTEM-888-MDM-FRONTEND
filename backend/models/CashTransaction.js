@@ -10,6 +10,16 @@ const cashTransactionSchema = new mongoose.Schema({
     amountUSD: { type: Number, required: true, default: 0 },
     category: { type: String, default: 'General' },
     description: { type: String, default: '' },
+    descriptionStatus: { type: String, default: '' },
+    descriptionHistory: {
+        type: [{
+            status: { type: String, required: true },
+            description: { type: String, required: true },
+            createdAt: { type: Date, default: Date.now },
+            createdBy: { type: String, default: '' }
+        }],
+        default: []
+    },
     photoUrl: { type: String, default: '' },
     photoUrls: { type: [String], default: [] },
     performedBy: { type: String, default: '' },

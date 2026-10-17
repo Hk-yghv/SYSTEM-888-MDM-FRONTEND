@@ -37,6 +37,8 @@ export const MEM_DB = {
     followUps2: [],
     followUpsSenSok: [],
     calendarEvents: [],
+    cashTransactions: [],
+    penaltyStatuses: [],
     controlSystem: {
         droplists: [
             { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
