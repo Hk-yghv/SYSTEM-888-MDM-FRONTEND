@@ -75,17 +75,34 @@
 }
 
 .table-scroll-row {
-    transform: scaleY(var(--table-scroll-scale, 1));
-    transform-origin: center center;
     opacity: var(--table-scroll-opacity, 1);
-    transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1), opacity 0.2s ease;
-    will-change: transform, opacity;
+    transition: opacity 0.2s ease;
+}
+
+.table-scroll-row > th,
+.table-scroll-row > td {
+    transform: scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1));
+    transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    will-change: transform;
 }
 
 .table-scroll-cell {
-    transform: scaleX(var(--table-scroll-scale-x, 1));
-    transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-    will-change: transform;
+    transform: scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1));
+}
+
+.table-scroll-cell.table-scroll-settle {
+    animation: table-scroll-settle 0.38s cubic-bezier(0.2, 0.75, 0.35, 1);
+}
+
+@keyframes table-scroll-settle {
+    from {
+        transform:
+            translate3d(var(--table-scroll-settle-x, 0), var(--table-scroll-settle-y, 0), 0)
+            scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1));
+    }
+    to {
+        transform: scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1));
+    }
 }
 
 .table-with-sticky-actions .table-action-cell {
@@ -101,19 +118,62 @@
     background-color: var(--table-action-background, #f8fafc);
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .table-scroll-row,
-    .table-scroll-cell {
-        transform: none;
-    }
+@keyframes popup-backdrop-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 
+@keyframes popup-panel-enter {
+    0% {
+        opacity: 0;
+        transform: scale(0.94) translateY(14px);
+        filter: blur(2px);
+    }
+    68% {
+        opacity: 1;
+        transform: scale(1.015) translateY(-2px);
+        filter: blur(0);
+    }
+    86% {
+        transform: scale(0.997) translateY(1px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0);
+    }
+}
+
+.popup-backdrop-enter {
+    animation: popup-backdrop-enter 0.22s ease-out both;
+}
+
+.popup-panel-enter {
+    animation: popup-panel-enter 0.48s cubic-bezier(0.2, 0.9, 0.35, 1.15) both;
+    will-change: transform, opacity, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
     .table-scroll-row {
         opacity: 1;
         transition: none;
     }
 
+    .table-scroll-row > th,
+    .table-scroll-row > td,
     .table-scroll-cell {
+        transform: none;
         transition: none;
+    }
+
+    .table-scroll-cell.table-scroll-settle {
+        animation: none;
+    }
+
+    .popup-backdrop-enter,
+    .popup-panel-enter {
+        animation: none;
+        will-change: auto;
     }
 }
 

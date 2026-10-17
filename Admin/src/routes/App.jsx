@@ -8,9 +8,11 @@ import { AuthProvider } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import AppRoutes from "./AppRoutes";
 import { installTableInteractions } from "../utils/tableInteractions";
+import { installModalAnimations } from "../utils/modalAnimations";
 
 const App = () => {
   useEffect(() => installTableInteractions(), []);
+  useEffect(() => installModalAnimations(), []);
 
   useEffect(() => {
     const copyVisibleValue = (event) => {
