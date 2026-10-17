@@ -12,6 +12,20 @@ const router = express.Router();
 
 const round2 = (val) => Math.round((Number(val || 0) + Number.EPSILON) * 100) / 100;
 
+export const getRowFinancialInterest = (row, c, monthlyInterest, totalInterest, months = 1, isDays = false) => {
+    if (row) {
+        if (row.interest !== undefined && row.interest !== null && row.interest !== '' && !isNaN(Number(row.interest))) {
+            return Number(row.interest);
+        }
+        if (row.interestAmount !== undefined && row.interestAmount !== null && row.interestAmount !== '' && !isNaN(Number(row.interestAmount))) {
+            return Number(row.interestAmount);
+        }
+    }
+    if (monthlyInterest > 0) return monthlyInterest;
+    if (totalInterest > 0) return totalInterest / (isDays ? 1 : Math.max(1, months));
+    return 0;
+};
+
 export const calculateContractFinancials = (c) => {
     if (!c) {
         return {
@@ -39,37 +53,8 @@ export const calculateContractFinancials = (c) => {
     let totalInterest = 0;
     let interestRate = 0;
 
-    // Check repayment schedule if available
-    let schedInterestSum = 0;
-    let schedPaidAmountSum = 0;
-    let schedPaidInterestSum = 0;
-    const hasSchedule = Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0;
-
-    if (hasSchedule) {
-        for (const row of c.repaymentSchedule) {
-            const rowInterest = Number(row.interest || row.interestAmount || 0);
-            const rowScheduled = Number(row.scheduledAmount || row.amount || 0);
-            const rowPaid = Number(row.paidAmount || 0);
-            const isRowPaid = ['Paid', 'PayOff', 'Settled'].includes(row.status);
-
-            schedInterestSum += rowInterest;
-            schedPaidAmountSum += rowPaid;
-            if (isRowPaid) {
-                schedPaidInterestSum += rowInterest;
-            } else if (rowPaid > 0 && rowScheduled > 0) {
-                const ratio = Math.min(1, rowPaid / rowScheduled);
-                schedPaidInterestSum += rowInterest * ratio;
-            }
-        }
-    }
-
-    if (schedInterestSum > 0) {
-        totalInterest = schedInterestSum;
-        monthlyInterest = totalInterest / (isDays ? 1 : months);
-    } else if (c.totalInterest && !isNaN(Number(c.totalInterest)) && Number(c.totalInterest) > 0) {
-        totalInterest = Number(c.totalInterest);
-        monthlyInterest = Number(c.monthlyInterest) || (totalInterest / (isDays ? 1 : months));
-    } else if (c.monthlyInterest && !isNaN(Number(c.monthlyInterest)) && Number(c.monthlyInterest) > 0) {
+    // 1. Resolve Contract-level Monthly Interest & Total Interest
+    if (c.monthlyInterest && !isNaN(Number(c.monthlyInterest)) && Number(c.monthlyInterest) > 0) {
         monthlyInterest = Number(c.monthlyInterest);
         totalInterest = monthlyInterest * (isDays ? 1 : count);
     } else {
@@ -85,6 +70,9 @@ export const calculateContractFinancials = (c) => {
             if (!isNaN(numericInterest) && numericInterest > 0) {
                 monthlyInterest = numericInterest;
                 totalInterest = isDays ? numericInterest : (numericInterest * months);
+            } else if (c.totalInterest && !isNaN(Number(c.totalInterest)) && Number(c.totalInterest) > 0) {
+                totalInterest = Number(c.totalInterest);
+                monthlyInterest = totalInterest / (isDays ? 1 : months);
             } else {
                 const monthly = Number(c.monthlyPayment || 0);
                 if (monthly > 0 && principal > 0) {
@@ -102,6 +90,34 @@ export const calculateContractFinancials = (c) => {
         interestRate = (monthlyInterest / principal) * 100;
     }
 
+    // 2. Compute Schedule-level sums with row-level interest fallback
+    let schedInterestSum = 0;
+    let schedPaidAmountSum = 0;
+    let schedPaidInterestSum = 0;
+    const hasSchedule = Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0;
+
+    if (hasSchedule) {
+        for (const row of c.repaymentSchedule) {
+            const rowInterest = getRowFinancialInterest(row, c, monthlyInterest, totalInterest, months, isDays);
+            const rowScheduled = Number(row.scheduledAmount || row.amount || 0);
+            const rowPaid = Number(row.paidAmount || row.paid || 0);
+            const isRowPaid = ['Paid', 'PayOff', 'Settled'].includes(row.status) || (rowPaid >= rowScheduled && rowScheduled > 0);
+
+            schedInterestSum += rowInterest;
+            schedPaidAmountSum += rowPaid;
+            if (isRowPaid) {
+                schedPaidInterestSum += rowInterest;
+            } else if (rowPaid > 0 && rowScheduled > 0) {
+                const ratio = Math.min(1, rowPaid / rowScheduled);
+                schedPaidInterestSum += rowInterest * ratio;
+            }
+        }
+        if (schedInterestSum > 0) {
+            totalInterest = schedInterestSum;
+            monthlyInterest = totalInterest / (isDays ? 1 : months);
+        }
+    }
+
     const totalReceivable = principal + totalInterest;
 
     let totalPaid = 0;
@@ -109,6 +125,8 @@ export const calculateContractFinancials = (c) => {
         totalPaid = schedPaidAmountSum;
     } else if (c.totalPaid && !isNaN(Number(c.totalPaid))) {
         totalPaid = Number(c.totalPaid);
+    } else if (c.paidAmount && !isNaN(Number(c.paidAmount))) {
+        totalPaid = Number(c.paidAmount);
     } else if (['PayOff', 'Settled', 'Redeem'].includes(c.status)) {
         totalPaid = totalReceivable;
     }
@@ -136,6 +154,96 @@ export const calculateContractFinancials = (c) => {
         unpaidInterest: round2(unpaidInterest),
         interestRate: round2(interestRate),
         durationMonths: months
+    };
+};
+
+export const buildFinancialSummary = (contractsList) => {
+    let sumPrincipal = 0;
+    let sumInterest = 0;
+    let sumReceivable = 0;
+    let sumPaid = 0;
+    let sumOutstanding = 0;
+    let sumPaidInterest = 0;
+    let sumUnpaidInterest = 0;
+
+    const now = new Date();
+    const curY = now.getFullYear();
+    const curM = String(now.getMonth() + 1).padStart(2, '0');
+    const curMonthPrefix = `${curY}-${curM}`;
+
+    let monthPaidInterest = 0;
+    let monthScheduledInterest = 0;
+    let monthUnpaidInterest = 0;
+    let monthCollected = 0;
+    let monthScheduled = 0;
+
+    for (const c of contractsList) {
+        const fin = calculateContractFinancials(c);
+        sumPrincipal += fin.principal;
+        sumInterest += fin.totalInterest;
+        sumReceivable += fin.totalReceivable;
+        sumPaid += fin.totalPaid;
+        sumOutstanding += fin.remainingBalance;
+        sumPaidInterest += fin.paidInterest;
+        sumUnpaidInterest += fin.unpaidInterest;
+
+        const schedule = Array.isArray(c.repaymentSchedule) ? c.repaymentSchedule : [];
+        if (schedule.length > 0) {
+            for (const row of schedule) {
+                const rowInterest = getRowFinancialInterest(row, c, fin.monthlyInterest, fin.totalInterest, fin.durationMonths);
+                const rowScheduled = Number(row.scheduledAmount || row.amount || 0);
+                const rowPaid = Number(row.paidAmount || row.paid || 0);
+                const dueStr = row.dueDate ? String(row.dueDate).split('T')[0] : '';
+                const paidStr = row.paidDate ? String(row.paidDate).split('T')[0] : '';
+
+                const isDueThisMonth = dueStr.startsWith(curMonthPrefix);
+                const isPaidThisMonth = paidStr ? paidStr.startsWith(curMonthPrefix) : isDueThisMonth;
+
+                const isRowPaid = ['Paid', 'PayOff', 'Settled'].includes(row.status) || (rowPaid >= rowScheduled && rowScheduled > 0);
+                const paidInterest = isRowPaid
+                    ? rowInterest
+                    : (rowScheduled > 0 ? (rowInterest * Math.min(rowPaid, rowScheduled)) / rowScheduled : 0);
+                const unpaidInterest = Math.max(0, rowInterest - paidInterest);
+
+                if (isDueThisMonth) {
+                    monthScheduled += rowScheduled;
+                    monthScheduledInterest += rowInterest;
+                    monthUnpaidInterest += unpaidInterest;
+                }
+                if (isPaidThisMonth) {
+                    monthCollected += rowPaid;
+                    monthPaidInterest += paidInterest;
+                }
+            }
+        } else {
+            const cDate = String(c.inputDate || c.date || c.createdAt || '').split('T')[0];
+            if (cDate.startsWith(curMonthPrefix)) {
+                monthScheduled += fin.totalReceivable;
+                monthScheduledInterest += fin.totalInterest;
+                monthCollected += fin.totalPaid;
+                monthPaidInterest += fin.paidInterest;
+                monthUnpaidInterest += fin.unpaidInterest;
+            }
+        }
+    }
+
+    return {
+        totalContracts: contractsList.length,
+        totalPrincipal: round2(sumPrincipal),
+        totalInterest: round2(sumInterest),
+        totalReceivable: round2(sumReceivable),
+        totalPaid: round2(sumPaid),
+        totalOutstanding: round2(sumOutstanding),
+        totalPaidInterest: round2(sumPaidInterest),
+        totalUnpaidInterest: round2(sumUnpaidInterest),
+        currentMonth: {
+            month: `${curY}-${curM}`,
+            totalPaidInterest: round2(monthPaidInterest),
+            totalScheduledInterest: round2(monthScheduledInterest),
+            totalOutstandingInterest: round2(monthUnpaidInterest),
+            totalCollected: round2(monthCollected),
+            totalScheduled: round2(monthScheduled)
+        }
     };
 };
 
@@ -285,36 +393,7 @@ router.get('/', async (req, res) => {
             await rotateExpiredComments(allContracts);
             const total = allContracts.length;
 
-            // Calculate grand financial summary across ALL matched contracts (all customers)
-            let sumPrincipal = 0;
-            let sumInterest = 0;
-            let sumReceivable = 0;
-            let sumPaid = 0;
-            let sumOutstanding = 0;
-            let sumPaidInterest = 0;
-            let sumUnpaidInterest = 0;
-
-            for (const c of allContracts) {
-                const fin = calculateContractFinancials(c);
-                sumPrincipal += fin.principal;
-                sumInterest += fin.totalInterest;
-                sumReceivable += fin.totalReceivable;
-                sumPaid += fin.totalPaid;
-                sumOutstanding += fin.remainingBalance;
-                sumPaidInterest += fin.paidInterest;
-                sumUnpaidInterest += fin.unpaidInterest;
-            }
-
-            const summary = {
-                totalContracts: total,
-                totalPrincipal: round2(sumPrincipal),
-                totalInterest: round2(sumInterest),
-                totalReceivable: round2(sumReceivable),
-                totalPaid: round2(sumPaid),
-                totalOutstanding: round2(sumOutstanding),
-                totalPaidInterest: round2(sumPaidInterest),
-                totalUnpaidInterest: round2(sumUnpaidInterest)
-            };
+            const summary = buildFinancialSummary(allContracts);
 
             let actualSkip = skip;
             let actualPage = parsedPage;
@@ -381,36 +460,7 @@ router.get('/', async (req, res) => {
         }
         const total = filtered.length;
 
-        // Calculate grand financial summary across ALL filtered contracts (all customers)
-        let sumPrincipal = 0;
-        let sumInterest = 0;
-        let sumReceivable = 0;
-        let sumPaid = 0;
-        let sumOutstanding = 0;
-        let sumPaidInterest = 0;
-        let sumUnpaidInterest = 0;
-
-        for (const c of filtered) {
-            const fin = calculateContractFinancials(c);
-            sumPrincipal += fin.principal;
-            sumInterest += fin.totalInterest;
-            sumReceivable += fin.totalReceivable;
-            sumPaid += fin.totalPaid;
-            sumOutstanding += fin.remainingBalance;
-            sumPaidInterest += fin.paidInterest;
-            sumUnpaidInterest += fin.unpaidInterest;
-        }
-
-        const summary = {
-            totalContracts: total,
-            totalPrincipal: round2(sumPrincipal),
-            totalInterest: round2(sumInterest),
-            totalReceivable: round2(sumReceivable),
-            totalPaid: round2(sumPaid),
-            totalOutstanding: round2(sumOutstanding),
-            totalPaidInterest: round2(sumPaidInterest),
-            totalUnpaidInterest: round2(sumUnpaidInterest)
-        };
+        const summary = buildFinancialSummary(filtered);
 
         let actualSkip = skip;
         let actualPage = parsedPage;
@@ -1354,38 +1404,12 @@ router.get(['/summary', '/financial-summary'], async (req, res) => {
             });
         }
 
-        let sumPrincipal = 0;
-        let sumInterest = 0;
-        let sumReceivable = 0;
-        let sumPaid = 0;
-        let sumOutstanding = 0;
-        let sumPaidInterest = 0;
-        let sumUnpaidInterest = 0;
-
-        for (const c of contractsList) {
-            const fin = calculateContractFinancials(c);
-            sumPrincipal += fin.principal;
-            sumInterest += fin.totalInterest;
-            sumReceivable += fin.totalReceivable;
-            sumPaid += fin.totalPaid;
-            sumOutstanding += fin.remainingBalance;
-            sumPaidInterest += fin.paidInterest;
-            sumUnpaidInterest += fin.unpaidInterest;
-        }
+        const summary = buildFinancialSummary(contractsList);
 
         res.json({
             success: true,
             totalContracts: contractsList.length,
-            summary: {
-                totalContracts: contractsList.length,
-                totalPrincipal: round2(sumPrincipal),
-                totalInterest: round2(sumInterest),
-                totalReceivable: round2(sumReceivable),
-                totalPaid: round2(sumPaid),
-                totalOutstanding: round2(sumOutstanding),
-                totalPaidInterest: round2(sumPaidInterest),
-                totalUnpaidInterest: round2(sumUnpaidInterest)
-            }
+            summary
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

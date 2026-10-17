@@ -3,6 +3,7 @@ import Contract from '../models/Contract.js';
 import Payment from '../models/Payment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs } from '../config/multiDB.js';
+import { calculateContractFinancials } from './contractRoutes.js';
 
 const router = express.Router();
 
@@ -53,7 +54,7 @@ router.get('/stats', async (req, res) => {
             totalCustomerReceived = activatedList.reduce((sum, c) => sum + (Number(c.monthlyPayment) || 0), 0);
             totalBorrowers = activatedList.length;
 
-            // Repayment metrics across active contracts
+            // Repayment metrics across active contracts — using same calculateContractFinancials as /api/contracts
             const repaymentMetrics = calculateRepayments(allContracts.filter(c => c.status === 'Activated' || c.status === 'Application' || c.status === 'Check'));
             var totalRepaymentExpected = repaymentMetrics.totalRepaymentExpected;
             var totalScheduledRepayment = repaymentMetrics.totalScheduledRepayment;
@@ -91,7 +92,7 @@ router.get('/stats', async (req, res) => {
             totalCustomerReceived = activatedList.reduce((sum, c) => sum + (Number(c.monthlyPayment) || 0), 0);
             totalBorrowers = activatedList.length;
 
-            // Repayment metrics across active contracts
+            // Repayment metrics across active contracts — using same calculateContractFinancials as /api/contracts
             const repaymentMetrics = calculateRepayments(contracts.filter(c => c.status === 'Activated' || c.status === 'Application' || c.status === 'Check'));
             var totalRepaymentExpected = repaymentMetrics.totalRepaymentExpected;
             var totalScheduledRepayment = repaymentMetrics.totalScheduledRepayment;
@@ -120,50 +121,11 @@ router.get('/stats', async (req, res) => {
     }
 });
 
-function calculateContractInterest(c) {
-    if (c.totalInterest && !isNaN(Number(c.totalInterest)) && Number(c.totalInterest) > 0) {
-        return Number(c.totalInterest);
-    }
-    const durationStr = String(c.duration || '').toLowerCase();
-    const matched = durationStr.match(/\d+/);
-    const count = matched ? parseInt(matched[0], 10) : 1;
-    const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ');
-    const months = isDays ? Math.max(1, Math.ceil(count / 30)) : Math.max(1, count);
-
-    if (c.monthlyInterest && !isNaN(Number(c.monthlyInterest)) && Number(c.monthlyInterest) > 0) {
-        return Number(c.monthlyInterest) * months;
-    }
-
-    const interestStr = String(c.interest || c.interestType || '').trim();
-    const principal = Number(c.amount || c.loanAmount || 0);
-
-    if (interestStr.includes('%')) {
-        const rate = parseFloat(interestStr.replace(/[^0-9.]/g, '')) || 0;
-        const monthlyInterestUSD = principal * (rate / 100);
-        return monthlyInterestUSD * months;
-    }
-
-    const numericInterest = parseFloat(interestStr.replace(/[^0-9.]/g, ''));
-    if (!isNaN(numericInterest) && numericInterest > 0) {
-        return numericInterest * months;
-    }
-
-    if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
-        const sumSchedInterest = c.repaymentSchedule.reduce((s, row) => s + (Number(row.interest || row.interestAmount || 0)), 0);
-        if (sumSchedInterest > 0) return sumSchedInterest;
-    }
-
-    const monthly = Number(c.monthlyPayment) || 0;
-    if (monthly > 0 && principal > 0) {
-        const totalPay = isDays ? monthly : (monthly * months);
-        if (totalPay > principal) {
-            return totalPay - principal;
-        }
-    }
-
-    return 0;
-}
-
+/**
+ * calculateRepayments — aligned with calculateContractFinancials from contractRoutes.js
+ * Uses the same row-interest fallback logic so totalInterest always matches the Partner API
+ * Scope: status IN ['Activated', 'Application', 'Check'] only (same as dashboard frontend)
+ */
 function calculateRepayments(contractsList) {
     let totalRepaymentExpected = 0;
     let totalScheduledRepayment = 0;
@@ -171,7 +133,9 @@ function calculateRepayments(contractsList) {
     let totalInterest = 0;
 
     contractsList.forEach(c => {
-        totalInterest += calculateContractInterest(c);
+        // Use calculateContractFinancials for interest — identical to /api/contracts summary
+        const fin = calculateContractFinancials(c);
+        totalInterest += fin.totalInterest;
 
         if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
             c.repaymentSchedule.forEach(row => {
@@ -199,4 +163,3 @@ function calculateRepayments(contractsList) {
 }
 
 export default router;
-
