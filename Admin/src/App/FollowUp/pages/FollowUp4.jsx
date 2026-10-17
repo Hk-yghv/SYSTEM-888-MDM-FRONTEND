@@ -528,17 +528,24 @@ const FollowUp4 = () => {
         return Object.values(groups).sort((a, b) => b.date.localeCompare(a.date));
     }, [rejectSubmitHistoryList]);
 
+    const rejectSubmitDisplayReasons = useMemo(() => (
+        [...new Set([
+            ...(droplists.rejectSubmitReasons || []),
+            ...rejectSubmitHistoryList.map(item => item.reason).filter(Boolean)
+        ])]
+    ), [droplists.rejectSubmitReasons, rejectSubmitHistoryList]);
+
     // Calculate Grand Totals across all filtered rows in Reject Submit
     const grandRejectSubmitTotals = useMemo(() => {
         let grandTotal = 0;
         const reasonTotals = {};
-        (droplists.rejectSubmitReasons || []).forEach(r => {
+        rejectSubmitDisplayReasons.forEach(r => {
             reasonTotals[r] = 0;
         });
 
         groupedRejectSubmit.forEach(group => {
             grandTotal += (Number(group.total) || 0);
-            (droplists.rejectSubmitReasons || []).forEach(r => {
+            rejectSubmitDisplayReasons.forEach(r => {
                 reasonTotals[r] = (reasonTotals[r] || 0) + (Number(group.reasons[r]) || 0);
             });
         });
@@ -547,7 +554,7 @@ const FollowUp4 = () => {
             grandTotal,
             reasonTotals
         };
-    }, [groupedRejectSubmit, droplists.rejectSubmitReasons]);
+    }, [groupedRejectSubmit, rejectSubmitDisplayReasons]);
 
     // =========================================================
     // TAB 3: REJECT CS STATE & LOGIC (Default: 1 Week)
@@ -664,17 +671,24 @@ const FollowUp4 = () => {
         return Object.values(groups).sort((a, b) => b.date.localeCompare(a.date));
     }, [rejectCsHistoryList]);
 
+    const rejectCsDisplayReasons = useMemo(() => (
+        [...new Set([
+            ...(droplists.rejectCsReasons || []),
+            ...rejectCsHistoryList.map(item => item.reason).filter(Boolean)
+        ])]
+    ), [droplists.rejectCsReasons, rejectCsHistoryList]);
+
     // Calculate Grand Totals across all filtered rows in Reject CS
     const grandRejectCsTotals = useMemo(() => {
         let grandTotal = 0;
         const reasonTotals = {};
-        (droplists.rejectCsReasons || []).forEach(r => {
+        rejectCsDisplayReasons.forEach(r => {
             reasonTotals[r] = 0;
         });
 
         groupedRejectCs.forEach(group => {
             grandTotal += (Number(group.total) || 0);
-            (droplists.rejectCsReasons || []).forEach(r => {
+            rejectCsDisplayReasons.forEach(r => {
                 reasonTotals[r] = (reasonTotals[r] || 0) + (Number(group.reasons[r]) || 0);
             });
         });
@@ -683,7 +697,7 @@ const FollowUp4 = () => {
             grandTotal,
             reasonTotals
         };
-    }, [groupedRejectCs, droplists.rejectCsReasons]);
+    }, [groupedRejectCs, rejectCsDisplayReasons]);
 
     // =========================================================
     // TAB 4: DETAIL STATE & AUTOMATED FORMULAS LOGIC (Default: 1 Week)
@@ -976,7 +990,7 @@ const FollowUp4 = () => {
         } else if (activeTab === 'rejectSubmit') {
             const exportData = groupedRejectSubmit.map((item, idx) => {
                 const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, [t('total')]: item.total };
-                droplists.rejectSubmitReasons.forEach(r => {
+                rejectSubmitDisplayReasons.forEach(r => {
                     row[r] = item.reasons[r] || 0;
                 });
                 return row;
@@ -988,7 +1002,7 @@ const FollowUp4 = () => {
                     'BRAND': selectedBrand || user?.brand || '888MDM',
                     [t('total')]: grandRejectSubmitTotals.grandTotal
                 };
-                droplists.rejectSubmitReasons.forEach(r => {
+                rejectSubmitDisplayReasons.forEach(r => {
                     totalRow[r] = grandRejectSubmitTotals.reasonTotals[r] || 0;
                 });
                 exportData.push(totalRow);
@@ -997,7 +1011,7 @@ const FollowUp4 = () => {
         } else if (activeTab === 'rejectCs') {
             const exportData = groupedRejectCs.map((item, idx) => {
                 const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, [t('total')]: item.total };
-                droplists.rejectCsReasons.forEach(r => {
+                rejectCsDisplayReasons.forEach(r => {
                     row[r] = item.reasons[r] || 0;
                 });
                 return row;
@@ -1009,7 +1023,7 @@ const FollowUp4 = () => {
                     'BRAND': selectedBrand || user?.brand || '888MDM',
                     [t('total')]: grandRejectCsTotals.grandTotal
                 };
-                droplists.rejectCsReasons.forEach(r => {
+                rejectCsDisplayReasons.forEach(r => {
                     totalRow[r] = grandRejectCsTotals.reasonTotals[r] || 0;
                 });
                 exportData.push(totalRow);
@@ -1402,7 +1416,7 @@ const FollowUp4 = () => {
                                         <th className="py-1 px-3 text-center w-10">#</th>
                                         <th className="py-1 px-3">កាលបរិច្ឆេទ</th>
                                         <th className="py-1 px-3 text-center font-bold text-rose-400">{t('total')}</th>
-                                        {droplists.rejectSubmitReasons.map((reason, rIdx) => (
+                                        {rejectSubmitDisplayReasons.map((reason, rIdx) => (
                                             <th key={rIdx} className="py-1 px-3 text-center">{reason}</th>
                                         ))}
                                         <th className="py-1 px-3 text-center">សកម្មភាព</th>
@@ -1411,14 +1425,14 @@ const FollowUp4 = () => {
                                 <tbody className="divide-y text-white divide-slate-700/50">
                                     {rejectSubmitLoading ? (
                                         <tr>
-                                            <td colSpan={4 + droplists.rejectSubmitReasons.length} className="text-center py-8 text-slate-400">
+                                            <td colSpan={4 + rejectSubmitDisplayReasons.length} className="text-center py-8 text-slate-400">
                                                 <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-rose-400" />
                                                 <p>កំពុងទាញយកទិន្នន័យ...</p>
                                             </td>
                                         </tr>
                                     ) : groupedRejectSubmit.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4 + droplists.rejectSubmitReasons.length} className="text-center py-8 text-slate-500 font-medium">
+                                            <td colSpan={4 + rejectSubmitDisplayReasons.length} className="text-center py-8 text-slate-500 font-medium">
                                                 មិនទាន់មានកំណត់ត្រា Reject Submit នៅឡើយទេ សូមចុច &quot;{t('addRejectSubmit')}&quot; ដើម្បីបញ្ចូល
                                             </td>
                                         </tr>
@@ -1430,7 +1444,7 @@ const FollowUp4 = () => {
                                                 <td className="py-2.5 px-3 text-center font-mono font-extrabold text-rose-400 bg-rose-950/30">
                                                     {group.total}
                                                 </td>
-                                                {droplists.rejectSubmitReasons.map((reason, rIdx) => (
+                                                {rejectSubmitDisplayReasons.map((reason, rIdx) => (
                                                     <td key={rIdx} className="py-2.5 px-3 text-center font-mono text-slate-300">
                                                         {group.reasons[reason] || 0}
                                                     </td>
@@ -1462,7 +1476,7 @@ const FollowUp4 = () => {
                                             <td className="py-3.5 px-3 text-center font-mono font-black text-rose-400 bg-rose-950/40 text-sm">
                                                 {grandRejectSubmitTotals.grandTotal}
                                             </td>
-                                            {droplists.rejectSubmitReasons.map((reason, rIdx) => (
+                                            {rejectSubmitDisplayReasons.map((reason, rIdx) => (
                                                 <td key={rIdx} className="py-3.5 px-3 text-center font-mono font-bold text-slate-200">
                                                     {grandRejectSubmitTotals.reasonTotals[reason] || 0}
                                                 </td>
@@ -1531,7 +1545,7 @@ const FollowUp4 = () => {
                                         <th className="py-1 px-3 text-center w-10">#</th>
                                         <th className="py-1 px-3">កាលបរិច្ឆេទ</th>
                                         <th className="py-1 px-3 text-center font-bold text-amber-400">{t('total')}</th>
-                                        {droplists.rejectCsReasons.map((reason, rIdx) => (
+                                        {rejectCsDisplayReasons.map((reason, rIdx) => (
                                             <th key={rIdx} className="py-1 px-3 text-center">{reason}</th>
                                         ))}
                                         <th className="py-1 px-3 text-center">សកម្មភាព</th>
@@ -1540,14 +1554,14 @@ const FollowUp4 = () => {
                                 <tbody className="divide-y divide-slate-700/50">
                                     {rejectCsLoading ? (
                                         <tr>
-                                            <td colSpan={4 + droplists.rejectCsReasons.length} className="text-center py-8 text-slate-400">
+                                            <td colSpan={4 + rejectCsDisplayReasons.length} className="text-center py-8 text-slate-400">
                                                 <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-amber-400" />
                                                 <p>កំពុងទាញយកទិន្នន័យ...</p>
                                             </td>
                                         </tr>
                                     ) : groupedRejectCs.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4 + droplists.rejectCsReasons.length} className="text-center py-8 text-slate-500 font-medium">
+                                            <td colSpan={4 + rejectCsDisplayReasons.length} className="text-center py-8 text-slate-500 font-medium">
                                                 មិនទាន់មានកំណត់ត្រា Reject CS នៅឡើយទេ សូមចុច &quot;{t('addRejectCs')}&quot; ដើម្បីបញ្ចូល
                                             </td>
                                         </tr>
@@ -1559,7 +1573,7 @@ const FollowUp4 = () => {
                                                 <td className="py-2.5 px-3 text-center font-mono font-extrabold text-amber-400 bg-amber-950/30">
                                                     {group.total}
                                                 </td>
-                                                {droplists.rejectCsReasons.map((reason, rIdx) => (
+                                                {rejectCsDisplayReasons.map((reason, rIdx) => (
                                                     <td key={rIdx} className="py-2.5 px-3 text-center font-mono text-slate-300">
                                                         {group.reasons[reason] || 0}
                                                     </td>
@@ -1591,7 +1605,7 @@ const FollowUp4 = () => {
                                             <td className="py-3.5 px-3 text-center font-mono font-black text-amber-400 bg-amber-950/40 text-sm">
                                                 {grandRejectCsTotals.grandTotal}
                                             </td>
-                                            {droplists.rejectCsReasons.map((reason, rIdx) => (
+                                            {rejectCsDisplayReasons.map((reason, rIdx) => (
                                                 <td key={rIdx} className="py-3.5 px-3 text-center font-mono font-bold text-slate-200">
                                                     {grandRejectCsTotals.reasonTotals[reason] || 0}
                                                 </td>

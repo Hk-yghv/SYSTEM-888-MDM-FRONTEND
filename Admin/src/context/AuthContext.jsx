@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
                     }, 4000);
                 }
             } catch (error) {
-                console.error('Unable to restore authenticated session:', error);
+                
             } finally {
                 if (isActive) setAuthInitialized(true);
             }
