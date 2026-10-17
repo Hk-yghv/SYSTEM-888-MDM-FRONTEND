@@ -47,7 +47,8 @@ const Comments = () => {
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
             });
             if (search.trim()) params.set('search', search.trim());
             const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
@@ -169,7 +170,8 @@ const Comments = () => {
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
             });
             if (searchTerm.trim()) params.set('search', searchTerm.trim());
             const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
@@ -249,7 +251,8 @@ const Comments = () => {
                             userBrand: user?.brand || '',
                             userRole: user?.role || '',
                             username: user?.username || '',
-                            isImmutable: user?.isImmutable ? 'true' : 'false'
+                            isImmutable: user?.isImmutable ? 'true' : 'false',
+                            userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
                         }}
                         value={searchTerm}
                         placeholder="Search customer..."

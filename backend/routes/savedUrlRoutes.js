@@ -1,5 +1,6 @@
 import express from 'express';
 import SavedUrl from '../models/SavedUrl.js';
+import User from '../models/User.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
@@ -12,16 +13,47 @@ if (!MEM_DB.savedUrls) {
 
 const norm = (str) => (str || '').toString().trim().toLowerCase();
 
+// Resolve allowed sub-brands for a user (same logic as contractRoutes)
+const resolveUserSubBrands = async (req, isMasterAdmin, username) => {
+    if (isMasterAdmin) return null;
+    if (req.query.userSubBrands) {
+        const arr = String(req.query.userSubBrands).split(',').map(s => s.trim()).filter(Boolean);
+        if (arr.length > 0) return arr;
+    }
+    if (Array.isArray(req.user?.subBrands) && req.user.subBrands.length > 0) return req.user.subBrands;
+    if (username && isMongoConnected) {
+        try {
+            const results = await queryAllDBs(User, M => M.findOne({ username }).select('subBrands'));
+            const dbUser = Array.isArray(results) ? results[0] : results;
+            if (dbUser && Array.isArray(dbUser.subBrands) && dbUser.subBrands.length > 0) return dbUser.subBrands;
+        } catch { /* ignore */ }
+    }
+    if (username) {
+        const memUser = (MEM_DB.users || []).find(u => u.username === username);
+        if (memUser && Array.isArray(memUser.subBrands) && memUser.subBrands.length > 0) return memUser.subBrands;
+    }
+    return null;
+};
+
 /**
  * GET /api/saved-urls/public
  * Fast endpoint to get public URLs with pagination / chunking
  */
 router.get('/public', async (req, res) => {
     try {
-        const { page = 1, limit = 15, search = '', category = '', brand = '' } = req.query;
+        const {
+            page = 1, limit = 15, search = '', category = '',
+            brand = '', username = '', isImmutable = 'false', userRole = ''
+        } = req.query;
         const pageNum = Math.max(1, parseInt(page, 10) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 15));
         const skip = (pageNum - 1) * limitNum;
+
+        const isMasterAdmin = (
+            username === '@hakyonghouv' || username === 'hakyonghouv' ||
+            isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin'
+        );
+        const allowedSubBrands = await resolveUserSubBrands(req, isMasterAdmin, username);
 
         let allPublic = [];
         if (isMongoConnected) {
@@ -42,12 +74,17 @@ router.get('/public', async (req, res) => {
                     { category: regex }
                 ];
             }
+            // SubBrand isolation for public showcase
+            if (allowedSubBrands && allowedSubBrands.length > 0) {
+                filter.subBrand = { $in: allowedSubBrands };
+            }
             allPublic = await queryAllDBs(SavedUrl, (M) => M.find(filter).sort({ createdAt: -1 }));
         } else {
             allPublic = (MEM_DB.savedUrls || []).filter(item => {
                 if (item.visibility !== 'Public') return false;
                 if (brand && item.brand && item.brand !== brand) return false;
                 if (category && category !== 'All' && item.category !== category) return false;
+                if (allowedSubBrands && allowedSubBrands.length > 0 && !allowedSubBrands.includes(item.subBrand)) return false;
                 if (search && search.trim()) {
                     const s = search.trim().toLowerCase();
                     const match = (item.title && item.title.toLowerCase().includes(s)) ||
@@ -104,6 +141,8 @@ router.get('/', async (req, res) => {
             userRole === 'Admin'
         );
 
+        const allowedSubBrands = await resolveUserSubBrands(req, isMasterAdmin, username);
+
         const pageNum = Math.max(1, parseInt(page, 10) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
         const skip = (pageNum - 1) * limitNum;
@@ -131,6 +170,11 @@ router.get('/', async (req, res) => {
         // Brand filter for non-admin
         if (userBrand && !isMasterAdmin) {
             filtered = filtered.filter(item => !item.brand || item.brand === userBrand);
+        }
+
+        // SubBrand isolation — only show records from assigned sub-brands
+        if (allowedSubBrands && allowedSubBrands.length > 0) {
+            filtered = filtered.filter(item => !item.subBrand || allowedSubBrands.includes(item.subBrand));
         }
 
         // Visibility filter dropdown

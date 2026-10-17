@@ -450,13 +450,7 @@ const CalculateSchedule2 = () => {
     };
 
     const handlePrint = () => {
-        const previewEl = document.getElementById('cs2-print-area');
-        if (previewEl) {
-            previewEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        setTimeout(() => {
-            window.print();
-        }, 350);
+        window.print();
     };
 
     const filteredHistory = savedHistory.filter(item => {
@@ -516,23 +510,30 @@ const CalculateSchedule2 = () => {
             <style>{`
                 @page {
                     size: A4 ${printOrientation};
-                    margin: ${printOrientation === 'landscape' ? '8mm' : '10mm 15mm'};
+                    margin: ${printOrientation === 'landscape' ? '8mm 10mm' : '10mm 12mm'};
                 }
                 @media print {
                     html, body {
                         width: 100% !important;
-                        height: 100% !important;
-                        max-height: 100% !important;
+                        height: auto !important;
+                        min-height: 100% !important;
+                        max-height: none !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         background: #ffffff !important;
                         color: #000000 !important;
-                        overflow: hidden !important;
+                        overflow: visible !important;
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                     }
                     .no-print,
-                    .no-print * {
+                    .no-print *,
+                    header,
+                    aside,
+                    nav,
+                    .mobile-sidebar,
+                    .mobile-bottom-nav,
+                    #floating-display-uplist {
                         display: none !important;
                         height: 0 !important;
                         min-height: 0 !important;
@@ -542,60 +543,71 @@ const CalculateSchedule2 = () => {
                         visibility: hidden !important;
                         overflow: hidden !important;
                     }
-                    #root, main, .max-w-7xl, .space-y-6 {
+                    #root,
+                    #root > div,
+                    main,
+                    .mobile-content-area,
+                    .calculate-schedule-root,
+                    .max-w-7xl,
+                    .space-y-6 {
                         margin: 0 !important;
                         padding: 0 !important;
                         height: auto !important;
+                        max-height: none !important;
                         min-height: 0 !important;
-                    }
-                    body * {
-                        visibility: hidden;
-                    }
-                    #cs2-print-area, #cs2-print-area * {
-                        visibility: visible !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        display: block !important;
+                        position: static !important;
+                        overflow: visible !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                        border: none !important;
                     }
                     #cs2-print-area {
-                        position: absolute !important;
-                        left: 0 !important;
-                        right: 0 !important;
-                        top: 0 !important;
-                        margin: 0 auto !important;
+                        display: block !important;
+                        position: relative !important;
                         width: 100% !important;
-                        max-width: ${printOrientation === 'landscape' ? '273mm' : '170mm'} !important;
+                        max-width: ${printOrientation === 'landscape' ? '280mm' : '190mm'} !important;
+                        margin: 0 auto !important;
                         padding: 0 !important;
                         box-shadow: none !important;
                         border: none !important;
                         background: #ffffff !important;
                         overflow: visible !important;
-                        min-height: auto !important;
-                        page-break-before: avoid !important;
-                        page-break-after: avoid !important;
-                        page-break-inside: avoid !important;
-                        break-before: avoid !important;
-                        break-after: avoid !important;
-                        break-inside: avoid !important;
+                        page-break-inside: auto !important;
+                        break-inside: auto !important;
                     }
                     #cs2-print-area div.overflow-x-auto,
                     #cs2-print-area div[class*="overflow-x-auto"] {
                         min-height: auto !important;
                         padding-bottom: 0 !important;
                         overflow: visible !important;
+                        display: block !important;
                     }
                     #cs2-print-area table {
                         width: 100% !important;
                         border-collapse: collapse !important;
                         margin: 0 auto !important;
+                        page-break-inside: auto !important;
+                        break-inside: auto !important;
+                    }
+                    #cs2-print-area tr {
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
                     }
                     #cs2-print-area table th,
                     #cs2-print-area table td {
-                        border-color: #000000 !important;
+                        border: 1px solid #000000 !important;
                         color: #000000 !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
                     }
                     #cs2-print-area .cs2-meta-grid {
                         display: grid !important;
                         grid-template-columns: 1fr 1fr !important;
                         width: 100% !important;
-                        column-gap: 48px !important;
+                        column-gap: 32px !important;
                     }
                     #cs2-print-area .cs2-meta-row {
                         display: flex !important;
@@ -604,15 +616,17 @@ const CalculateSchedule2 = () => {
                         width: 100% !important;
                     }
                     #cs2-print-area .cs2-page-margin {
-                        padding-left: 150px !important;
-                        padding-right: 150px !important;
+                        padding-left: ${printOrientation === 'landscape' ? '8mm' : '2mm'} !important;
+                        padding-right: ${printOrientation === 'landscape' ? '8mm' : '2mm'} !important;
                     }
                     #cs2-print-area .cs2-signature-grid {
                         display: grid !important;
                         grid-template-columns: 1fr 1fr !important;
                         width: 100% !important;
-                        column-gap: 48px !important;
+                        column-gap: 32px !important;
                         text-align: center !important;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
                     }
                     #cs2-print-area .cs2-signature-col {
                         display: flex !important;
@@ -624,8 +638,12 @@ const CalculateSchedule2 = () => {
                     }
                     #cs2-print-area .cs2-signature-line {
                         width: 180px !important;
-                        margin: 64px auto 0 auto !important;
+                        margin: 48px auto 0 auto !important;
                         border-bottom: 1px dotted #94a3b8 !important;
+                    }
+                    #cs2-print-area .cs2-address-footer {
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
                     }
                 }
                 #cs2-print-area .cs2-page-margin {

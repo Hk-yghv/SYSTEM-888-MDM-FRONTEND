@@ -140,6 +140,7 @@ const SaveUrlPage = () => {
                 userRole: user?.role || '',
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : '',
                 ...(search.trim() ? { search: search.trim() } : {}),
                 ...(selectedCategory && selectedCategory !== 'All' ? { category: selectedCategory } : {}),
                 ...(selectedVisibility && selectedVisibility !== 'All' ? { visibility: selectedVisibility } : {})
@@ -169,7 +170,11 @@ const SaveUrlPage = () => {
             const params = new URLSearchParams({
                 page: 1,
                 limit: 100,
-                brand: user?.brand || ''
+                brand: user?.brand || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userRole: user?.role || '',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
             });
             const res = await fetch(`${API_BASE}/saved-urls/public?${params.toString()}`);
             if (res.ok) {
@@ -218,8 +223,8 @@ const SaveUrlPage = () => {
     const handleOpenLink = (item) => {
         if (!item?.url) return;
         try {
-            fetch(`${API_BASE}/saved-urls/${item._id || item.id}/click`, { method: 'PATCH' }).catch(() => {});
-        } catch {}
+            fetch(`${API_BASE}/saved-urls/${item._id || item.id}/click`, { method: 'PATCH' }).catch(() => { });
+        } catch { }
         window.open(item.url, '_blank', 'noopener,noreferrer');
     };
 
@@ -410,7 +415,7 @@ const SaveUrlPage = () => {
     const displayedSeeAllList = filteredSeeAllList.slice(0, seeAllVisibleCount);
 
     return (
-        <div className="w-full bg-[#f4f6f8] p-2 select-none space-y-4 min-h-screen">
+        <div className="w-full bg-[#f4f6f8] p-2 select-none space-y-2">
             {/* Top Header Bar */}
             <header className="p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                 <div className="flex items-center gap-3">
@@ -496,12 +501,12 @@ const SaveUrlPage = () => {
 
                 {/* Horizontal Scroll Area */}
                 {loadingPublic ? (
-                    <div className="py-4 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+                    <div className="py-2 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
                         <FaSpinner className="animate-spin text-emerald-600" />
                         <span>កំពុងទាញយក Public URLs...</span>
                     </div>
                 ) : publicUrls.length === 0 ? (
-                    <div className="py-4 text-center text-slate-400 text-xs italic border border-dashed border-slate-200 rounded-[5px]">
+                    <div className="py-2 text-center text-slate-400 text-xs italic border border-dashed border-slate-200 rounded-[5px]">
                         មិនទាន់មាន Public URL ត្រូវបានរក្សាទុកនៅឡើយទេ។ សូមចុច "បញ្ចូល URL ថ្មី" ហើយកំណត់ Visibility ជា Public!
                     </div>
                 ) : (
@@ -517,7 +522,7 @@ const SaveUrlPage = () => {
                             return (
                                 <div
                                     key={item._id || item.id || idx}
-                                    className="min-w-[195px] max-w-[215px] h-[98px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-1.5 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
+                                    className="min-w-[185px] max-w-[205px] h-[82px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-1.5 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
                                 >
                                     <div className="space-y-0.5 min-w-0">
                                         {/* Category & Visibility Header */}
@@ -584,7 +589,7 @@ const SaveUrlPage = () => {
                             <button
                                 type="button"
                                 onClick={() => setVisiblePublicCount(prev => Math.min(prev + PUBLIC_CHUNK_SIZE, publicUrls.length))}
-                                className="min-w-[100px] h-[98px] bg-slate-50 hover:bg-emerald-50 border border-dashed border-slate-300 hover:border-emerald-400 rounded-[5px] flex flex-col items-center justify-center p-2 text-[10px] font-bold text-slate-600 hover:text-emerald-700 cursor-pointer transition-all shrink-0"
+                                className="min-w-[100px] h-[82px] bg-slate-50 hover:bg-emerald-50 border border-dashed border-slate-300 hover:border-emerald-400 rounded-[5px] flex flex-col items-center justify-center p-2 text-[10px] font-bold text-slate-600 hover:text-emerald-700 cursor-pointer transition-all shrink-0"
                             >
                                 <span>+ {Math.min(PUBLIC_CHUNK_SIZE, publicUrls.length - visiblePublicCount)} More</span>
                                 <span className="text-[9px] text-slate-400 mt-0.5">អូសបន្ត</span>
@@ -785,11 +790,10 @@ const SaveUrlPage = () => {
 
                                         {/* Visibility Badge */}
                                         <td className="px-4 py-1.5 text-center">
-                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 border ${
-                                                isPublic
+                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 border ${isPublic
                                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                                     : 'bg-amber-50 text-amber-700 border-amber-200'
-                                            }`}>
+                                                }`}>
                                                 {isPublic ? <FaGlobe size={10} /> : <FaLock size={10} />}
                                                 <span>{item.visibility || 'Public'}</span>
                                             </span>
@@ -1088,11 +1092,10 @@ const SaveUrlPage = () => {
                                 </label>
                                 <div className="grid grid-cols-2 gap-3">
                                     <label
-                                        className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
-                                            formData.visibility === 'Public'
+                                        className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${formData.visibility === 'Public'
                                                 ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
                                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                                        }`}
+                                            }`}
                                     >
                                         <input
                                             type="radio"
@@ -1112,11 +1115,10 @@ const SaveUrlPage = () => {
                                     </label>
 
                                     <label
-                                        className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
-                                            formData.visibility === 'Private'
+                                        className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${formData.visibility === 'Private'
                                                 ? 'bg-amber-50 border-amber-500 text-amber-800 shadow-xs'
                                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                                        }`}
+                                            }`}
                                     >
                                         <input
                                             type="radio"
