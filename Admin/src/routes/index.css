@@ -82,7 +82,8 @@
 .table-scroll-row > th,
 .table-scroll-row > td {
     transform: scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1));
-    transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    transform-origin: center center;
+    transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1), box-shadow 0.22s ease;
     will-change: transform;
 }
 
@@ -90,19 +91,11 @@
     transform: scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1));
 }
 
-.table-scroll-cell.table-scroll-settle {
-    animation: table-scroll-settle 0.38s cubic-bezier(0.2, 0.75, 0.35, 1);
-}
-
-@keyframes table-scroll-settle {
-    from {
-        transform:
-            translate3d(var(--table-scroll-settle-x, 0), var(--table-scroll-settle-y, 0), 0)
-            scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1));
-    }
-    to {
-        transform: scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1));
-    }
+.table-scroll-row:hover > th,
+.table-scroll-row:hover > td {
+    transform:
+        scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1))
+        translateY(-2px);
 }
 
 .table-with-sticky-actions .table-action-cell {
@@ -116,6 +109,21 @@
 .table-with-sticky-actions thead .table-action-cell {
     z-index: 15;
     background-color: var(--table-action-background, #f8fafc);
+}
+
+@keyframes page-enter-from-bottom {
+    from {
+        opacity: 0;
+        translate: 0 20px;
+    }
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
+
+.mobile-content-area > * {
+    animation: page-enter-from-bottom 0.42s cubic-bezier(0.2, 0.75, 0.35, 1) both;
 }
 
 @keyframes popup-backdrop-enter {
@@ -166,14 +174,14 @@
         transition: none;
     }
 
-    .table-scroll-cell.table-scroll-settle {
-        animation: none;
-    }
-
     .popup-backdrop-enter,
     .popup-panel-enter {
         animation: none;
         will-change: auto;
+    }
+
+    .mobile-content-area > * {
+        animation: none;
     }
 }
 

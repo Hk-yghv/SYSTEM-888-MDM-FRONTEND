@@ -50,24 +50,15 @@ const updateRowScale = (row, scrollContainer) => {
     const containerRect = scrollContainer === window
         ? { top: 0, height: window.innerHeight }
         : scrollContainer.getBoundingClientRect();
-    const scrollTop = scrollContainer === window
-        ? window.scrollY
-        : scrollContainer.scrollTop;
-    const scrollHeight = scrollContainer === window
-        ? document.documentElement.scrollHeight
-        : scrollContainer.scrollHeight;
     const clientHeight = containerRect.height;
-    const maxScroll = Math.max(0, scrollHeight - clientHeight);
-    const topProgress = Math.min(1, Math.max(0, scrollTop / 70));
-    const bottomProgress = Math.min(1, Math.max(0, (maxScroll - scrollTop) / 70));
     const rowCenter = rowRect.top + rowRect.height / 2 - containerRect.top;
 
     let shrink = 0;
-    if (rowCenter < EDGE_THRESHOLD && topProgress > 0) {
-        shrink = (1 - Math.max(0, rowCenter / EDGE_THRESHOLD)) * topProgress * MAX_EDGE_SHRINK;
-    } else if (rowCenter > clientHeight - EDGE_THRESHOLD && bottomProgress > 0) {
+    if (rowCenter < EDGE_THRESHOLD) {
+        shrink = (1 - Math.max(0, rowCenter / EDGE_THRESHOLD)) * MAX_EDGE_SHRINK;
+    } else if (rowCenter > clientHeight - EDGE_THRESHOLD) {
         const distanceFromBottom = clientHeight - rowCenter;
-        shrink = (1 - Math.max(0, distanceFromBottom / EDGE_THRESHOLD)) * bottomProgress * MAX_EDGE_SHRINK;
+        shrink = (1 - Math.max(0, distanceFromBottom / EDGE_THRESHOLD)) * MAX_EDGE_SHRINK;
     }
 
     row.style.setProperty('--table-scroll-scale-y', (1 - shrink).toFixed(3));
@@ -122,105 +113,6 @@ const updateCellScale = (cell, scrollContainer) => {
 
 export const installTableInteractions = () => {
     let frameId = 0;
-    const scrollStates = new Map();
-    const handledScrollEvents = new WeakSet();
-
-    const getScrollPosition = (container) => container === window
-        ? { left: window.scrollX, top: window.scrollY }
-        : { left: container.scrollLeft, top: container.scrollTop };
-
-    const getScrollContainer = (target) => (
-        target === document || target === document.documentElement || target === document.body
-            ? window
-            : target
-    );
-
-    const seedScrollDirection = (container, axis, direction) => {
-        if (container !== window && !(container instanceof Element)) return;
-        let state = scrollStates.get(container);
-        if (!state) {
-            state = { ...getScrollPosition(container), directionX: 0, directionY: 0, timer: 0 };
-            scrollStates.set(container, state);
-        }
-        if (axis === 'x') state.directionX = direction;
-        else state.directionY = direction;
-    };
-
-    const handleWheelDirection = (event) => {
-        if (!(event.target instanceof Element)) return;
-        if (event.deltaX) {
-            seedScrollDirection(
-                getHorizontalScrollContainer(event.target),
-                'x',
-                Math.sign(event.deltaX),
-            );
-        } else if (event.shiftKey && event.deltaY) {
-            seedScrollDirection(
-                getHorizontalScrollContainer(event.target),
-                'x',
-                Math.sign(event.deltaY),
-            );
-        }
-        if (event.deltaY && !event.shiftKey) {
-            seedScrollDirection(
-                getVerticalScrollContainer(event.target),
-                'y',
-                Math.sign(event.deltaY),
-            );
-        }
-    };
-
-    const playSettleAnimation = (container, axis, direction) => {
-        const cells = Array.from(document.querySelectorAll('.table-scroll-cell')).filter(cell => {
-            const cellContainer = axis === 'x'
-                ? getHorizontalScrollContainer(cell)
-                : getVerticalScrollContainer(cell);
-            return cellContainer === container;
-        });
-        if (!cells.length) return;
-
-        cells.forEach(cell => {
-            cell.style.setProperty(
-                axis === 'x' ? '--table-scroll-settle-x' : '--table-scroll-settle-y',
-                axis === 'x' && cell.classList.contains('table-action-cell')
-                    ? '0px'
-                    : `${-direction * 4}px`,
-            );
-            cell.classList.remove('table-scroll-settle');
-        });
-        requestAnimationFrame(() => {
-            cells.forEach(cell => cell.classList.add('table-scroll-settle'));
-        });
-    };
-
-    const handleScrollSettle = (event) => {
-        if (handledScrollEvents.has(event)) return;
-        handledScrollEvents.add(event);
-
-        const container = getScrollContainer(event.target);
-        if (!(container === window || container instanceof Element)) return;
-        const position = getScrollPosition(container);
-        let state = scrollStates.get(container);
-        if (!state) {
-            state = { ...position, directionX: 0, directionY: 0, timer: 0 };
-            scrollStates.set(container, state);
-            return;
-        }
-
-        const deltaX = position.left - state.left;
-        const deltaY = position.top - state.top;
-        if (Math.abs(deltaX) > 0) state.directionX = Math.sign(deltaX);
-        if (Math.abs(deltaY) > 0) state.directionY = Math.sign(deltaY);
-        state.left = position.left;
-        state.top = position.top;
-        window.clearTimeout(state.timer);
-        state.timer = window.setTimeout(() => {
-            if (state.directionX) playSettleAnimation(container, 'x', state.directionX);
-            if (state.directionY) playSettleAnimation(container, 'y', state.directionY);
-            state.directionX = 0;
-            state.directionY = 0;
-        }, 85);
-    };
 
     const prepareTables = () => {
         document.querySelectorAll('table').forEach(table => {
@@ -282,28 +174,20 @@ export const installTableInteractions = () => {
     const observer = new MutationObserver(scheduleUpdate);
     observer.observe(document.body, { childList: true, subtree: true });
     document.addEventListener('scroll', scheduleUpdate, true);
-    document.addEventListener('scroll', handleScrollSettle, true);
-    document.addEventListener('wheel', handleWheelDirection, { capture: true, passive: true });
     document.addEventListener('pointerover', scheduleUpdate, true);
     document.addEventListener('pointerout', scheduleUpdate, true);
     window.addEventListener('scroll', scheduleUpdate, { passive: true });
-    window.addEventListener('scroll', handleScrollSettle, { passive: true });
     window.addEventListener('resize', scheduleUpdate);
     scheduleUpdate();
 
     return () => {
         observer.disconnect();
         document.removeEventListener('scroll', scheduleUpdate, true);
-        document.removeEventListener('scroll', handleScrollSettle, true);
-        document.removeEventListener('wheel', handleWheelDirection, true);
         document.removeEventListener('pointerover', scheduleUpdate, true);
         document.removeEventListener('pointerout', scheduleUpdate, true);
         window.removeEventListener('scroll', scheduleUpdate);
-        window.removeEventListener('scroll', handleScrollSettle);
         window.removeEventListener('resize', scheduleUpdate);
         if (frameId) cancelAnimationFrame(frameId);
-        scrollStates.forEach(state => window.clearTimeout(state.timer));
-        scrollStates.clear();
         document.querySelectorAll('.table-scroll-row').forEach(row => {
             row.classList.remove('table-scroll-row');
             row.style.removeProperty('--table-scroll-scale-y');
@@ -315,10 +199,7 @@ export const installTableInteractions = () => {
             cell.style.removeProperty('--table-scroll-scale-x');
             cell.style.removeProperty('--table-scroll-scale-y');
             cell.style.removeProperty('--table-scroll-origin-x');
-            cell.style.removeProperty('--table-scroll-settle-x');
-            cell.style.removeProperty('--table-scroll-settle-y');
             cell.style.removeProperty('transform-origin');
-            cell.classList.remove('table-scroll-settle');
         });
         document.querySelectorAll('.table-with-sticky-actions').forEach(table => {
             table.classList.remove('table-with-sticky-actions');
