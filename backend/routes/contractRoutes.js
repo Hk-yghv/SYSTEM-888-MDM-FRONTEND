@@ -10,11 +10,154 @@ import { recordSystemAudit } from '../utils/auditLogger.js';
 
 const router = express.Router();
 
+const round2 = (val) => Math.round((Number(val || 0) + Number.EPSILON) * 100) / 100;
+
+export const calculateContractFinancials = (c) => {
+    if (!c) {
+        return {
+            principal: 0,
+            monthlyInterest: 0,
+            totalInterest: 0,
+            totalReceivable: 0,
+            totalPaid: 0,
+            remainingBalance: 0,
+            paidInterest: 0,
+            unpaidInterest: 0,
+            interestRate: 0,
+            durationMonths: 1
+        };
+    }
+
+    const principal = Number(c.amount || c.loanAmount || c.totalAmount || 0);
+    const durationStr = String(c.duration || '12 Months').toLowerCase();
+    const matched = durationStr.match(/\d+/);
+    const count = matched ? parseInt(matched[0], 10) : 12;
+    const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ') || durationStr.includes('d');
+    const months = isDays ? Math.max(1, Math.ceil(count / 30)) : Math.max(1, count);
+
+    let monthlyInterest = 0;
+    let totalInterest = 0;
+    let interestRate = 0;
+
+    // Check repayment schedule if available
+    let schedInterestSum = 0;
+    let schedPaidAmountSum = 0;
+    let schedPaidInterestSum = 0;
+    const hasSchedule = Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0;
+
+    if (hasSchedule) {
+        for (const row of c.repaymentSchedule) {
+            const rowInterest = Number(row.interest || row.interestAmount || 0);
+            const rowScheduled = Number(row.scheduledAmount || row.amount || 0);
+            const rowPaid = Number(row.paidAmount || 0);
+            const isRowPaid = ['Paid', 'PayOff', 'Settled'].includes(row.status);
+
+            schedInterestSum += rowInterest;
+            schedPaidAmountSum += rowPaid;
+            if (isRowPaid) {
+                schedPaidInterestSum += rowInterest;
+            } else if (rowPaid > 0 && rowScheduled > 0) {
+                const ratio = Math.min(1, rowPaid / rowScheduled);
+                schedPaidInterestSum += rowInterest * ratio;
+            }
+        }
+    }
+
+    if (schedInterestSum > 0) {
+        totalInterest = schedInterestSum;
+        monthlyInterest = totalInterest / (isDays ? 1 : months);
+    } else if (c.totalInterest && !isNaN(Number(c.totalInterest)) && Number(c.totalInterest) > 0) {
+        totalInterest = Number(c.totalInterest);
+        monthlyInterest = Number(c.monthlyInterest) || (totalInterest / (isDays ? 1 : months));
+    } else if (c.monthlyInterest && !isNaN(Number(c.monthlyInterest)) && Number(c.monthlyInterest) > 0) {
+        monthlyInterest = Number(c.monthlyInterest);
+        totalInterest = monthlyInterest * (isDays ? 1 : count);
+    } else {
+        const interestStr = String(c.interest || c.interestType || '').trim();
+        if (interestStr.includes('%')) {
+            const rate = parseFloat(interestStr.replace(/[^0-9.]/g, '')) || 0;
+            interestRate = rate;
+            const monthlyUSD = principal * (rate / 100);
+            monthlyInterest = monthlyUSD;
+            totalInterest = isDays ? (monthlyUSD * (count / 30)) : (monthlyUSD * months);
+        } else {
+            const numericInterest = parseFloat(interestStr.replace(/[^0-9.]/g, ''));
+            if (!isNaN(numericInterest) && numericInterest > 0) {
+                monthlyInterest = numericInterest;
+                totalInterest = isDays ? numericInterest : (numericInterest * months);
+            } else {
+                const monthly = Number(c.monthlyPayment || 0);
+                if (monthly > 0 && principal > 0) {
+                    const totalPay = isDays ? monthly : (monthly * months);
+                    if (totalPay > principal) {
+                        totalInterest = totalPay - principal;
+                        monthlyInterest = totalInterest / (isDays ? 1 : months);
+                    }
+                }
+            }
+        }
+    }
+
+    if (!interestRate && principal > 0 && monthlyInterest > 0) {
+        interestRate = (monthlyInterest / principal) * 100;
+    }
+
+    const totalReceivable = principal + totalInterest;
+
+    let totalPaid = 0;
+    if (schedPaidAmountSum > 0) {
+        totalPaid = schedPaidAmountSum;
+    } else if (c.totalPaid && !isNaN(Number(c.totalPaid))) {
+        totalPaid = Number(c.totalPaid);
+    } else if (['PayOff', 'Settled', 'Redeem'].includes(c.status)) {
+        totalPaid = totalReceivable;
+    }
+
+    const remainingBalance = Math.max(0, totalReceivable - totalPaid);
+
+    let paidInterest = 0;
+    if (schedPaidInterestSum > 0) {
+        paidInterest = Math.min(totalInterest, schedPaidInterestSum);
+    } else if (totalPaid >= totalReceivable && totalReceivable > 0) {
+        paidInterest = totalInterest;
+    } else if (totalReceivable > 0 && totalInterest > 0) {
+        paidInterest = Math.min(totalInterest, totalPaid * (totalInterest / totalReceivable));
+    }
+    const unpaidInterest = Math.max(0, totalInterest - paidInterest);
+
+    return {
+        principal: round2(principal),
+        monthlyInterest: round2(monthlyInterest),
+        totalInterest: round2(totalInterest),
+        totalReceivable: round2(totalReceivable),
+        totalPaid: round2(totalPaid),
+        remainingBalance: round2(remainingBalance),
+        paidInterest: round2(paidInterest),
+        unpaidInterest: round2(unpaidInterest),
+        interestRate: round2(interestRate),
+        durationMonths: months
+    };
+};
+
 const sanitizeAndDecryptContract = (c) => {
     if (!c) return c;
     const obj = c.toObject ? c.toObject() : { ...c };
     obj.urlFb = obj.urlFb || obj.url_fb || '';
     obj.mosyleUrl = obj.mosyleUrl || obj.mosyle_url || obj.mosyleURL || obj.urlMosyle || '';
+
+    // Calculate and attach financial metrics
+    const fin = calculateContractFinancials(obj);
+    obj.principal = fin.principal;
+    obj.totalInterest = fin.totalInterest;
+    obj.monthlyInterest = fin.monthlyInterest;
+    obj.totalReceivable = fin.totalReceivable;
+    obj.totalPaid = fin.totalPaid;
+    obj.remainingBalance = fin.remainingBalance;
+    obj.paidInterest = fin.paidInterest;
+    obj.unpaidInterest = fin.unpaidInterest;
+    obj.interestRate = fin.interestRate;
+    obj.durationMonths = fin.durationMonths;
+
     return obj;
 };
 
@@ -85,7 +228,10 @@ const rotateExpiredComments = async (contractsList) => {
 router.get('/', async (req, res) => {
     try {
         const { status, userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '', contractId = '', locateId = '', dateFrom = '', dateTo = '', requireSchedule = false } = req.query;
-        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const isGetAll = limit === 'all' || req.query.all === 'true';
+        const parsedLimit = isGetAll ? 999999 : (parseInt(limit) || 10);
+        const parsedPage = parseInt(page) || 1;
+        const skip = (parsedPage - 1) * parsedLimit;
         const isPartner = Boolean(req.isPartnerAccess || req.user?.isPartner);
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true || isPartner);
         const needsSchedule = requireSchedule === 'true' || requireSchedule === true;
@@ -138,23 +284,62 @@ router.get('/', async (req, res) => {
             const allContracts = await queryAllDBs(Contract, (M) => M.find(query).sort({ createdAt: -1 }));
             await rotateExpiredComments(allContracts);
             const total = allContracts.length;
+
+            // Calculate grand financial summary across ALL matched contracts (all customers)
+            let sumPrincipal = 0;
+            let sumInterest = 0;
+            let sumReceivable = 0;
+            let sumPaid = 0;
+            let sumOutstanding = 0;
+            let sumPaidInterest = 0;
+            let sumUnpaidInterest = 0;
+
+            for (const c of allContracts) {
+                const fin = calculateContractFinancials(c);
+                sumPrincipal += fin.principal;
+                sumInterest += fin.totalInterest;
+                sumReceivable += fin.totalReceivable;
+                sumPaid += fin.totalPaid;
+                sumOutstanding += fin.remainingBalance;
+                sumPaidInterest += fin.paidInterest;
+                sumUnpaidInterest += fin.unpaidInterest;
+            }
+
+            const summary = {
+                totalContracts: total,
+                totalPrincipal: round2(sumPrincipal),
+                totalInterest: round2(sumInterest),
+                totalReceivable: round2(sumReceivable),
+                totalPaid: round2(sumPaid),
+                totalOutstanding: round2(sumOutstanding),
+                totalPaidInterest: round2(sumPaidInterest),
+                totalUnpaidInterest: round2(sumUnpaidInterest)
+            };
+
             let actualSkip = skip;
-            let actualPage = parseInt(page) || 1;
+            let actualPage = parsedPage;
             let locateIndex = -1;
             if (locateId) {
                 locateIndex = allContracts.findIndex(c => String(c._id) === locateId || c.contractId === locateId);
                 if (locateIndex >= 0) {
-                    actualSkip = Math.floor(locateIndex / parseInt(limit)) * parseInt(limit);
-                    actualPage = Math.floor(locateIndex / parseInt(limit)) + 1;
+                    actualSkip = Math.floor(locateIndex / parsedLimit) * parsedLimit;
+                    actualPage = Math.floor(locateIndex / parsedLimit) + 1;
                 }
             }
             if (actualSkip >= total && total > 0) {
                 actualSkip = 0;
                 actualPage = 1;
             }
-            const contracts = allContracts.slice(actualSkip, actualSkip + parseInt(limit));
+            const contracts = allContracts.slice(actualSkip, actualSkip + parsedLimit);
             const data = contracts.map(sanitizeAndDecryptContract);
-            return res.json({ data, total, page: actualPage, totalPages: Math.ceil(total / parseInt(limit)), locateIndex });
+            return res.json({
+                data,
+                total,
+                page: actualPage,
+                totalPages: Math.ceil(total / parsedLimit),
+                locateIndex,
+                summary
+            });
         }
 
         let filtered = MEM_DB.contracts;
@@ -195,22 +380,61 @@ router.get('/', async (req, res) => {
             filtered = filtered.filter(c => Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0);
         }
         const total = filtered.length;
+
+        // Calculate grand financial summary across ALL filtered contracts (all customers)
+        let sumPrincipal = 0;
+        let sumInterest = 0;
+        let sumReceivable = 0;
+        let sumPaid = 0;
+        let sumOutstanding = 0;
+        let sumPaidInterest = 0;
+        let sumUnpaidInterest = 0;
+
+        for (const c of filtered) {
+            const fin = calculateContractFinancials(c);
+            sumPrincipal += fin.principal;
+            sumInterest += fin.totalInterest;
+            sumReceivable += fin.totalReceivable;
+            sumPaid += fin.totalPaid;
+            sumOutstanding += fin.remainingBalance;
+            sumPaidInterest += fin.paidInterest;
+            sumUnpaidInterest += fin.unpaidInterest;
+        }
+
+        const summary = {
+            totalContracts: total,
+            totalPrincipal: round2(sumPrincipal),
+            totalInterest: round2(sumInterest),
+            totalReceivable: round2(sumReceivable),
+            totalPaid: round2(sumPaid),
+            totalOutstanding: round2(sumOutstanding),
+            totalPaidInterest: round2(sumPaidInterest),
+            totalUnpaidInterest: round2(sumUnpaidInterest)
+        };
+
         let actualSkip = skip;
-        let actualPage = parseInt(page) || 1;
+        let actualPage = parsedPage;
         let locateIndex = -1;
         if (locateId) {
             locateIndex = filtered.findIndex(c => String(c._id) === locateId || c.contractId === locateId);
             if (locateIndex >= 0) {
-                actualSkip = Math.floor(locateIndex / parseInt(limit)) * parseInt(limit);
-                actualPage = Math.floor(locateIndex / parseInt(limit)) + 1;
+                actualSkip = Math.floor(locateIndex / parsedLimit) * parsedLimit;
+                actualPage = Math.floor(locateIndex / parsedLimit) + 1;
             }
         }
         if (actualSkip >= total && total > 0) {
             actualSkip = 0;
             actualPage = 1;
         }
-        const data = filtered.slice(actualSkip, actualSkip + parseInt(limit)).map(sanitizeAndDecryptContract);
-        res.json({ data, total, page: actualPage, totalPages: Math.ceil(total / parseInt(limit)), locateIndex });
+        const data = filtered.slice(actualSkip, actualSkip + parsedLimit).map(sanitizeAndDecryptContract);
+        res.json({
+            data,
+            total,
+            page: actualPage,
+            totalPages: Math.ceil(total / parsedLimit),
+            locateIndex,
+            summary
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -1034,6 +1258,7 @@ router.get('/payment-alerts', async (req, res) => {
                 }
             }
 
+            const fin = calculateContractFinancials(sanitized);
             const alertItem = {
                 contractId: cid,
                 customerNameEn: sanitized.customerNameEn || '',
@@ -1044,6 +1269,9 @@ router.get('/payment-alerts', async (req, res) => {
                 serialNumber: sanitized.serialNumber || '',
                 monthlyPayment,
                 totalAmount,
+                totalInterest: fin.totalInterest,
+                monthlyInterest: fin.monthlyInterest,
+                totalReceivable: fin.totalReceivable,
                 totalPaid,
                 remainingBalance,
                 dueDate: formattedDueDate,
@@ -1102,6 +1330,94 @@ router.get('/payment-alerts', async (req, res) => {
         });
     } catch (err) {
         console.error('Payment alerts calculation error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /summary or /financial-summary — Grand totals across all contracts for partners
+router.get(['/summary', '/financial-summary'], async (req, res) => {
+    try {
+        const { status, brand, userBrand } = req.query;
+        let query = {};
+        if (status) query.status = status;
+        const brandFilter = brand || userBrand;
+        if (brandFilter) query.brand = brandFilter;
+
+        let contractsList = [];
+        if (isMongoConnected) {
+            contractsList = await queryAllDBs(Contract, (M) => M.find(query).lean());
+        } else {
+            contractsList = MEM_DB.contracts.filter(c => {
+                if (status && c.status !== status) return false;
+                if (brandFilter && c.brand !== brandFilter) return false;
+                return true;
+            });
+        }
+
+        let sumPrincipal = 0;
+        let sumInterest = 0;
+        let sumReceivable = 0;
+        let sumPaid = 0;
+        let sumOutstanding = 0;
+        let sumPaidInterest = 0;
+        let sumUnpaidInterest = 0;
+
+        for (const c of contractsList) {
+            const fin = calculateContractFinancials(c);
+            sumPrincipal += fin.principal;
+            sumInterest += fin.totalInterest;
+            sumReceivable += fin.totalReceivable;
+            sumPaid += fin.totalPaid;
+            sumOutstanding += fin.remainingBalance;
+            sumPaidInterest += fin.paidInterest;
+            sumUnpaidInterest += fin.unpaidInterest;
+        }
+
+        res.json({
+            success: true,
+            totalContracts: contractsList.length,
+            summary: {
+                totalContracts: contractsList.length,
+                totalPrincipal: round2(sumPrincipal),
+                totalInterest: round2(sumInterest),
+                totalReceivable: round2(sumReceivable),
+                totalPaid: round2(sumPaid),
+                totalOutstanding: round2(sumOutstanding),
+                totalPaidInterest: round2(sumPaidInterest),
+                totalUnpaidInterest: round2(sumUnpaidInterest)
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET single contract by ID / contractId / contractIid (for partners & client apps)
+router.get('/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        let contract = null;
+        if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, (M) => M.find({
+                $or: [
+                    { contractId: id },
+                    { contractIid: id },
+                    ...(mongoose.Types.ObjectId.isValid(id) ? [{ _id: id }] : [])
+                ]
+            }));
+            contract = results[0] || null;
+        } else {
+            contract = MEM_DB.contracts.find(c =>
+                c.contractId === id || c.contractIid === id || String(c._id) === id
+            );
+        }
+
+        if (!contract) {
+            return res.status(404).json({ error: 'Contract not found' });
+        }
+
+        res.json(sanitizeAndDecryptContract(contract));
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });

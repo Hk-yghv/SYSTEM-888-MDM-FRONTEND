@@ -56,7 +56,10 @@ router.get(['/payments', '/'], async (req, res) => {
         const isPartner = Boolean(req.isPartnerAccess || req.user?.isPartner);
         const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin' || isPartner);
         const requestedBrand = isMasterAdmin ? brand : userBrand;
-        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const isGetAll = limit === 'all' || req.query.all === 'true';
+        const parsedLimit = isGetAll ? 999999 : (parseInt(limit) || 10);
+        const parsedPage = parseInt(page) || 1;
+        const skip = (parsedPage - 1) * parsedLimit;
 
         if (isMongoConnected) {
             let matchedContractIds = null;
@@ -88,8 +91,18 @@ router.get(['/payments', '/'], async (req, res) => {
                 );
             }
             const total = allPayments.length;
-            const data = allPayments.slice(skip, skip + parseInt(limit));
-            return res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+            const totalAmountPaid = allPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+            const data = allPayments.slice(skip, skip + parsedLimit);
+            return res.json({
+                data,
+                total,
+                page: parsedPage,
+                totalPages: Math.ceil(total / parsedLimit),
+                summary: {
+                    totalPayments: total,
+                    totalAmountPaid: Math.round((totalAmountPaid + Number.EPSILON) * 100) / 100
+                }
+            });
         }
 
         // MEM_DB path
@@ -110,8 +123,18 @@ router.get(['/payments', '/'], async (req, res) => {
         if (dateFrom) filtered = filtered.filter(p => (p.paidDate || '') >= dateFrom);
         if (dateTo) filtered = filtered.filter(p => (p.paidDate || '') <= dateTo);
         const total = filtered.length;
-        const data = filtered.slice(skip, skip + parseInt(limit));
-        res.json({ data, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+        const totalAmountPaid = filtered.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+        const data = filtered.slice(skip, skip + parsedLimit);
+        res.json({
+            data,
+            total,
+            page: parsedPage,
+            totalPages: Math.ceil(total / parsedLimit),
+            summary: {
+                totalPayments: total,
+                totalAmountPaid: Math.round((totalAmountPaid + Number.EPSILON) * 100) / 100
+            }
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
