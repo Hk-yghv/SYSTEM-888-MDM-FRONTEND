@@ -1011,66 +1011,73 @@ const AllAccount = () => {
                                     </div>
 
                                     {/* Sub Brands multi-select for the selected Brand */}
-                                    {formData.brand && (brandSubbrandsMap[formData.brand] || []).length > 0 && (
-                                        <div className="sm:col-span-2 p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl space-y-2.5">
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-slate-200 font-bold flex items-center gap-1.5 text-xs">
-                                                    <span>🏷️</span> អនុម៉ាកដែលអនុញ្ញាត (Assigned Sub Brands) — អាចជ្រើសរើសលើសពី ២ បាន:
-                                                </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const allForBrand = brandSubbrandsMap[formData.brand] || [];
-                                                        const allSelected = allForBrand.every(sb => (formData.subBrands || []).includes(sb));
-                                                        setFormData(prev => ({
-                                                            ...prev,
-                                                            subBrands: allSelected ? [] : [...allForBrand]
-                                                        }));
-                                                    }}
-                                                    className="text-[11px] text-sky-400 hover:text-sky-300 font-semibold cursor-pointer underline"
-                                                >
-                                                    {(brandSubbrandsMap[formData.brand] || []).every(sb => (formData.subBrands || []).includes(sb))
-                                                        ? 'ដកការជ្រើសរើសទាំងអស់ (Deselect All)'
-                                                        : 'ជ្រើសរើសទាំងអស់ (Select All)'}
-                                                </button>
+                                    {(() => {
+                                        const rawSubs = brandSubbrandsMap[formData.brand];
+                                        const availableSubBrands = Array.isArray(rawSubs)
+                                            ? rawSubs
+                                            : (typeof rawSubs === 'string' && rawSubs.trim() ? [rawSubs.trim()] : []);
+                                        if (!formData.brand || availableSubBrands.length === 0) return null;
+
+                                        return (
+                                            <div className="sm:col-span-2 p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl space-y-2.5">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-slate-200 font-bold flex items-center gap-1.5 text-xs">
+                                                        <span>🏷️</span> អនុម៉ាកដែលអនុញ្ញាត (Assigned Sub Brands) — អាចជ្រើសរើសលើសពី ២ បាន:
+                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const allSelected = availableSubBrands.every(sb => (formData.subBrands || []).includes(sb));
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                subBrands: allSelected ? [] : [...availableSubBrands]
+                                                            }));
+                                                        }}
+                                                        className="text-[11px] text-sky-400 hover:text-sky-300 font-semibold cursor-pointer underline"
+                                                    >
+                                                        {availableSubBrands.every(sb => (formData.subBrands || []).includes(sb))
+                                                            ? 'ដកការជ្រើសរើសទាំងអស់ (Deselect All)'
+                                                            : 'ជ្រើសរើសទាំងអស់ (Select All)'}
+                                                    </button>
+                                                </div>
+                                                <p className="text-[10px] text-slate-400">
+                                                    ជ្រើសរើស Sub Brands ដែលគណនីនេះត្រូវបានអនុញ្ញាតឱ្យមើល និងគ្រប់គ្រងទិន្នន័យ (គណនីមួយអាចប្រើប្រាស់ និងបង្ហាញទិន្នន័យ Sub Brand ច្រើនជាង ២ បាន)។
+                                                </p>
+                                                <div className="flex flex-wrap gap-2 pt-1">
+                                                    {availableSubBrands.map((sb, sbIdx) => {
+                                                        const isChecked = (formData.subBrands || []).includes(sb);
+                                                        return (
+                                                            <label
+                                                                key={sbIdx}
+                                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
+                                                                    isChecked
+                                                                        ? 'bg-sky-600/30 border-sky-500 text-sky-200 shadow-sm'
+                                                                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                                                                }`}
+                                                            >
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isChecked}
+                                                                    onChange={(e) => {
+                                                                        const checked = e.target.checked;
+                                                                        setFormData(prev => {
+                                                                            const current = prev.subBrands || [];
+                                                                            const updated = checked
+                                                                                ? [...current, sb]
+                                                                                : current.filter(item => item !== sb);
+                                                                            return { ...prev, subBrands: updated };
+                                                                        });
+                                                                    }}
+                                                                    className="rounded text-sky-600 focus:ring-0"
+                                                                />
+                                                                <span>{sb}</span>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                            <p className="text-[10px] text-slate-400">
-                                                ជ្រើសរើស Sub Brands ដែលគណនីនេះត្រូវបានអនុញ្ញាតឱ្យមើល និងគ្រប់គ្រងទិន្នន័យ (គណនីមួយអាចប្រើប្រាស់ និងបង្ហាញទិន្នន័យ Sub Brand ច្រើនជាង ២ បាន)។
-                                            </p>
-                                            <div className="flex flex-wrap gap-2 pt-1">
-                                                {(brandSubbrandsMap[formData.brand] || []).map((sb, sbIdx) => {
-                                                    const isChecked = (formData.subBrands || []).includes(sb);
-                                                    return (
-                                                        <label
-                                                            key={sbIdx}
-                                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
-                                                                isChecked
-                                                                    ? 'bg-sky-600/30 border-sky-500 text-sky-200 shadow-sm'
-                                                                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                                                            }`}
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={isChecked}
-                                                                onChange={(e) => {
-                                                                    const checked = e.target.checked;
-                                                                    setFormData(prev => {
-                                                                        const current = prev.subBrands || [];
-                                                                        const updated = checked
-                                                                            ? [...current, sb]
-                                                                            : current.filter(item => item !== sb);
-                                                                        return { ...prev, subBrands: updated };
-                                                                    });
-                                                                }}
-                                                                className="rounded text-sky-600 focus:ring-0"
-                                                            />
-                                                            <span>{sb}</span>
-                                                        </label>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         )}

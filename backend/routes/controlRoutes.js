@@ -76,16 +76,38 @@ router.get('/all-brands', async (req, res) => {
     }
 });
 
+// Helper to sanitize and normalize brand_subbrands map so values are ALWAYS Arrays of strings
+function normalizeBrandSubbrands(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return {};
+    const normalized = {};
+    for (const [bKey, val] of Object.entries(input)) {
+        if (!bKey) continue;
+        if (Array.isArray(val)) {
+            normalized[bKey] = val.filter(item => item && typeof item === 'string').map(item => item.trim());
+        } else if (typeof val === 'string' && val.trim()) {
+            normalized[bKey] = [val.trim()];
+        } else if (val && typeof val === 'object') {
+            const arr = Object.values(val).filter(item => item && typeof item === 'string').map(item => item.trim());
+            normalized[bKey] = arr;
+        } else {
+            normalized[bKey] = [];
+        }
+    }
+    return normalized;
+}
+
 // Helper to retrieve Global configurations across DBs
 async function getGlobalConfigs() {
     if (!isMongoConnected) return MEM_DB.controlSystem || {};
     const globalDocs = await queryAllDBs(ControlSystem, (M) => M.find({ $or: [{ brand: '' }, { brand: 'Global' }, { brand: { $exists: false } }, { brand: null }] }));
     const mapped = {};
-    globalDocs.forEach(c => {
-        if (c.key && mapped[c.key] === undefined) {
-            mapped[c.key] = c.value;
-        }
-    });
+    if (Array.isArray(globalDocs)) {
+        globalDocs.forEach(c => {
+            if (c.key && mapped[c.key] === undefined) {
+                mapped[c.key] = c.value;
+            }
+        });
+    }
     return mapped;
 }
 
@@ -94,9 +116,9 @@ router.get('/', async (req, res) => {
     try {
         const brand = (req.query.brand || '').trim();
         const globalConfigs = await getGlobalConfigs();
-        const brandSubbrandsMap = globalConfigs.brand_subbrands || MEM_DB.controlSystem?.brand_subbrands || {};
+        const brandSubbrandsMap = normalizeBrandSubbrands(globalConfigs.brand_subbrands || MEM_DB.controlSystem?.brand_subbrands);
         globalConfigs.brand_subbrands = brandSubbrandsMap;
-        globalConfigs.subbrands = (brand && brandSubbrandsMap[brand]) ? brandSubbrandsMap[brand] : [];
+        globalConfigs.subbrands = (brand && Array.isArray(brandSubbrandsMap[brand])) ? brandSubbrandsMap[brand] : [];
 
         if (isMongoConnected) {
             if (!brand || brand === 'Global') {
@@ -106,16 +128,18 @@ router.get('/', async (req, res) => {
             // Fetch brand specific configs
             const brandDocs = await queryAllDBs(ControlSystem, (M) => M.find({ brand }));
             const brandMapped = {};
-            brandDocs.forEach(c => {
-                if (c.key && brandMapped[c.key] === undefined) {
-                    brandMapped[c.key] = c.value;
-                }
-            });
+            if (Array.isArray(brandDocs)) {
+                brandDocs.forEach(c => {
+                    if (c.key && brandMapped[c.key] === undefined) {
+                        brandMapped[c.key] = c.value;
+                    }
+                });
+            }
 
             // Deep merge with Global configurations so any missing key or empty droplist category inherits from Global
             const merged = { ...globalConfigs, ...brandMapped };
             merged.brand_subbrands = brandSubbrandsMap;
-            merged.subbrands = brandSubbrandsMap[brand] || [];
+            merged.subbrands = (brand && Array.isArray(brandSubbrandsMap[brand])) ? brandSubbrandsMap[brand] : [];
 
             if (globalConfigs.droplists && Array.isArray(globalConfigs.droplists)) {
                 let brandDroplists = Array.isArray(brandMapped.droplists) ? brandMapped.droplists : [];

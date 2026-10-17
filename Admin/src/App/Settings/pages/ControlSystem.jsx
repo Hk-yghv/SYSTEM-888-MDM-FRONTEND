@@ -1417,10 +1417,11 @@ const ControlSystem = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                             {systemDroplists.map((cat, catIdx) => {
                                 const isBrandCat = cat.category === 'Brands';
+                                const catItems = Array.isArray(cat?.items) ? cat.items : [];
                                 // For Brands category, regular users only see their own assigned brand
                                 const itemsToDisplay = (isBrandCat && !isMasterAdmin && user?.brand)
-                                    ? cat.items.filter(item => item.toLowerCase() === user.brand.toLowerCase())
-                                    : cat.items;
+                                    ? catItems.filter(item => item && typeof item === 'string' && item.toLowerCase() === user.brand.toLowerCase())
+                                    : catItems;
 
                                 return (
                                     <div key={catIdx} className="p-2 rounded-[5px] bg-gray-950/60 border border-gray-800 space-y-2">
@@ -1432,7 +1433,7 @@ const ControlSystem = () => {
                                         </div>
                                         <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
                                             {itemsToDisplay.map((item, itemIdx) => {
-                                                const originalIndex = cat.items.indexOf(item);
+                                                const originalIndex = catItems.indexOf(item);
                                                 // Regular users can NEVER delete Brands items
                                                 const canDeleteThis = canDeleteSection('dropdowns') && (!isBrandCat || isMasterAdmin);
 
@@ -1496,11 +1497,14 @@ const ControlSystem = () => {
 
                     {/* Brands with Sub Brands Cards */}
                     <div className="space-y-4 pt-1">
-                        {brandsList.length === 0 && (
+                        {(!Array.isArray(brandsList) || brandsList.length === 0) && (
                             <p className="text-gray-500 text-xs italic">No brands defined yet.</p>
                         )}
-                        {brandsList.map((br, brIdx) => {
-                            const currentSubBrands = brandSubbrands[br] || [];
+                        {(Array.isArray(brandsList) ? brandsList : []).map((br, brIdx) => {
+                            const rawSubs = brandSubbrands?.[br];
+                            const currentSubBrands = Array.isArray(rawSubs)
+                                ? rawSubs
+                                : (typeof rawSubs === 'string' && rawSubs.trim() ? [rawSubs.trim()] : []);
                             return (
                                 <div
                                     key={brIdx}
