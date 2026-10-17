@@ -42,6 +42,31 @@ const Activated = () => {
     const [commentInput, setCommentInput] = useState('');
     const [isDateAppended, setIsDateAppended] = useState(false);
     const [commentSaving, setCommentSaving] = useState(false);
+    const [activatedDescriptionStatuses, setActivatedDescriptionStatuses] = useState([]);
+    const [selectedDescriptionContract, setSelectedDescriptionContract] = useState(null);
+    const [isDescriptionFormOpen, setIsDescriptionFormOpen] = useState(false);
+    const [descriptionStatus, setDescriptionStatus] = useState('');
+    const [customDescriptionStatus, setCustomDescriptionStatus] = useState('');
+    const [descriptionInput, setDescriptionInput] = useState('');
+    const [editingDescriptionEntry, setEditingDescriptionEntry] = useState(null);
+    const [descriptionSaving, setDescriptionSaving] = useState(false);
+    const isMasterDescriptionAdmin = user?.username === '@hakyonghouv' ||
+        user?.username === 'hakyonghouv' || user?.isImmutable === true || user?.role === 'SuperAdmin';
+
+    const getActivatedDescriptionStatus = (contract) => contract.activatedDescriptionStatus ||
+        contract.activatedDescriptionHistory?.[contract.activatedDescriptionHistory.length - 1]?.status || '';
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch(`${API_BASE1}/contracts/activated-description-statuses`)
+            .then(async response => {
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Unable to load description statuses.');
+                if (!cancelled) setActivatedDescriptionStatuses(Array.isArray(result.data) ? result.data : []);
+            })
+            .catch(error => console.error('Fetch activated description statuses error:', error));
+        return () => { cancelled = true; };
+    }, [API_BASE1]);
 
     // UI Custom Modal alert state
     const [uiModal, setUiModal] = useState({ open: false, title: '', message: '', type: 'info' });
@@ -533,6 +558,53 @@ const Activated = () => {
         }
     };
 
+    const openActivatedDescriptionForm = (contract, historyEntry = null) => {
+        setSelectedDescriptionContract(contract);
+        setEditingDescriptionEntry(historyEntry);
+        setDescriptionStatus(historyEntry?.status || getActivatedDescriptionStatus(contract));
+        setCustomDescriptionStatus('');
+        setDescriptionInput(historyEntry?.description || '');
+        setIsDescriptionFormOpen(true);
+        setOpenMenuId(null);
+    };
+
+    const handleSaveActivatedDescription = async (e) => {
+        e.preventDefault();
+        const status = descriptionStatus === '__other__' ? customDescriptionStatus.trim() : descriptionStatus.trim();
+        const description = descriptionInput.trim();
+        if (!selectedDescriptionContract || !status || !description) {
+            setUiModal({ open: true, title: 'Required fields', message: 'Please select a status and enter a description.', type: 'warning' });
+            return;
+        }
+
+        setDescriptionSaving(true);
+        try {
+            const contractId = selectedDescriptionContract._id || selectedDescriptionContract.contractId;
+            const url = editingDescriptionEntry
+                ? `${API_BASE1}/contracts/${contractId}/activated-description-history/${editingDescriptionEntry._id}`
+                : `${API_BASE1}/contracts/${contractId}/activated-description-history`;
+            const response = await fetch(url, {
+                method: editingDescriptionEntry ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, description })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to save activated description.');
+
+            setActivatedDescriptionStatuses(previous =>
+                previous.includes(status) ? previous : [...previous, status].sort((a, b) => a.localeCompare(b))
+            );
+            setSelectedDescriptionContract(result);
+            setIsDescriptionFormOpen(false);
+            setEditingDescriptionEntry(null);
+            await fetchActivatedContracts();
+        } catch (error) {
+            setUiModal({ open: true, title: 'Save failed', message: error.message, type: 'error' });
+        } finally {
+            setDescriptionSaving(false);
+        }
+    };
+
     const fetchAllForExport = async () => {
         if (isSummaryFilterActive) {
             return activeFilteredContracts;
@@ -930,13 +1002,14 @@ const Activated = () => {
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
                             <th className='px-4 py-1 text-center'>Monthly</th>
                             <th className='px-4 py-1 text-center'>Device Status</th>
+                            <th className='px-4 py-1 text-center'>Description</th>
                             <th className='px-4 py-1 text-center'>Actions</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {displayedContracts.length === 0 ? (
                             <tr>
-                                <td colSpan={11} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={12} className="text-center py-8 text-slate-500 italic font-medium">
                                     {searchTerm || selectedContractId ? `No results found for "${searchInput}"` : isSummaryFilterActive ? 'រកមិនឃើញទិន្នន័យដែលត្រូវនឹងតម្រងដែលបានជ្រើសរើសឡើយ' : 'No activated contracts yet. Activate contracts in Application page first.'}
                                 </td>
                             </tr>
@@ -950,6 +1023,7 @@ const Activated = () => {
                                 const canWallpaper = hasPermission('/contract/activated', 'setWallpaper');
                                 const canCheck = hasPermission('/contract/activated', 'check');
                                 const canBlacklist = hasPermission('/contract/activated', 'blacklist');
+                                const canSetDescription = true;
                                 const matchingCalcSchedule = calcSchedules.find(s => {
                                     // 1. Match Customer Name (Khmer or English)
                                     const sName = normalizeStr(s.customerName);
@@ -978,7 +1052,7 @@ const Activated = () => {
 
                                     return true;
                                 });
-                                const hasAnyAction = canOpenMosyle || canOpenFb || canHistory || canComment || canLock || canWallpaper || canCheck || canBlacklist || !!matchingCalcSchedule;
+                                const hasAnyAction = canSetDescription || canOpenMosyle || canOpenFb || canHistory || canComment || canLock || canWallpaper || canCheck || canBlacklist || !!matchingCalcSchedule;
 
                                 return (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
@@ -1023,6 +1097,16 @@ const Activated = () => {
                                                 Wallpaper {item.lockWallpaperStatus || 'Unlocked'}
                                             </span>
                                         </td>
+                                        <td className='px-4 py-1 text-center'>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedDescriptionContract(item)}
+                                                className="max-w-48 truncate rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[10px] font-bold text-indigo-700 hover:bg-indigo-100"
+                                                title="View status description history"
+                                            >
+                                                {getActivatedDescriptionStatus(item) || 'Set status'}
+                                            </button>
+                                        </td>
                                         <td className="px-4 py-1 text-center relative">
                                             <div className="flex items-center justify-center gap-2">
                                                 {hasAnyAction ? (
@@ -1036,6 +1120,15 @@ const Activated = () => {
 
                                                         {openMenuId === item._id && (
                                                             <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-2 space-y-1 animate-in fade-in duration-150">
+                                                                {canSetDescription && (
+                                                                    <button
+                                                                        onClick={() => openActivatedDescriptionForm(item)}
+                                                                        className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 rounded-[5px] flex items-center gap-2 cursor-pointer"
+                                                                    >
+                                                                        <MdInfo className="text-indigo-600 text-sm" />
+                                                                        <span>Set Description</span>
+                                                                    </button>
+                                                                )}
                                                                 {matchingCalcSchedule && (
                                                                     <button
                                                                         onClick={() => {
@@ -1222,6 +1315,130 @@ const Activated = () => {
                                 </button>
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {selectedDescriptionContract && !isDescriptionFormOpen && (
+                <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm">
+                    <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+                        <div className="flex items-center justify-between bg-indigo-700 px-4 py-3 text-white">
+                            <div>
+                                <h3 className="font-bold">Activated Description History</h3>
+                                <p className="text-xs text-indigo-100">
+                                    {selectedDescriptionContract.customerNameEn || selectedDescriptionContract.customerNameKh} · {selectedDescriptionContract.contractId}
+                                </p>
+                            </div>
+                            <button type="button" onClick={() => setSelectedDescriptionContract(null)} className="text-2xl leading-none hover:text-indigo-200" aria-label="Close">&times;</button>
+                        </div>
+                        <div className="max-h-[75vh] space-y-4 overflow-y-auto p-4 text-sm">
+                            <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3">
+                                <p className="text-xs font-bold uppercase text-indigo-500">Current status</p>
+                                <p className="mt-1 font-bold text-indigo-900">{getActivatedDescriptionStatus(selectedDescriptionContract) || 'No status set'}</p>
+                                <p className="mt-2 text-xs font-bold uppercase text-indigo-500">Description</p>
+                                <p className="mt-1 whitespace-pre-wrap text-slate-700">
+                                    {selectedDescriptionContract.activatedDescriptionHistory?.at(-1)?.description || 'No description yet.'}
+                                </p>
+                            </div>
+                            <div>
+                                <h4 className="mb-2 font-bold text-slate-800">History</h4>
+                                {selectedDescriptionContract.activatedDescriptionHistory?.length ? (
+                                    <ol className="space-y-3">
+                                        {[...selectedDescriptionContract.activatedDescriptionHistory].reverse().map((entry, index) => (
+                                            <li key={entry._id || index} className="rounded-lg border border-slate-200 p-3">
+                                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                                    <div>
+                                                        <p className="font-bold text-indigo-700">{entry.status}</p>
+                                                        <p className="text-[11px] text-slate-500">
+                                                            {entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '-'}
+                                                            {entry.createdBy ? ` · ${entry.createdBy}` : ''}
+                                                        </p>
+                                                    </div>
+                                                    {isMasterDescriptionAdmin && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openActivatedDescriptionForm(selectedDescriptionContract, entry)}
+                                                            className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100"
+                                                        >
+                                                            Edit history
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <p className="mt-2 whitespace-pre-wrap text-slate-700">{entry.description}</p>
+                                            </li>
+                                        ))}
+                                    </ol>
+                                ) : <p className="text-slate-500">No description history yet.</p>}
+                            </div>
+                            <div className="flex justify-end">
+                                <button type="button" onClick={() => openActivatedDescriptionForm(selectedDescriptionContract)} className="rounded-md bg-indigo-700 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-800">
+                                    Set Description
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDescriptionFormOpen && selectedDescriptionContract && (
+                <div className="fixed inset-0 z-[100001] flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm">
+                    <div className="w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+                        <div className="flex items-center justify-between bg-indigo-700 px-4 py-3 text-white">
+                            <h3 className="font-bold">{editingDescriptionEntry ? 'Edit Description History' : 'Set Description'}</h3>
+                            <button type="button" onClick={() => { setIsDescriptionFormOpen(false); setEditingDescriptionEntry(null); }} className="text-2xl leading-none hover:text-indigo-200" aria-label="Close">&times;</button>
+                        </div>
+                        <form onSubmit={handleSaveActivatedDescription} className="space-y-4 p-4 text-sm">
+                            <div>
+                                <label className="mb-1 block font-bold text-slate-700">Status</label>
+                                <select
+                                    required
+                                    value={descriptionStatus}
+                                    onChange={event => setDescriptionStatus(event.target.value)}
+                                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                                >
+                                    <option value="" disabled>Select status</option>
+                                    {[...new Set([...activatedDescriptionStatuses, getActivatedDescriptionStatus(selectedDescriptionContract), editingDescriptionEntry?.status].filter(Boolean))].map(status => (
+                                        <option key={status} value={status}>{status}</option>
+                                    ))}
+                                    <option value="__other__">Other (create new status)</option>
+                                </select>
+                                {descriptionStatus === '__other__' && (
+                                    <input
+                                        type="text"
+                                        required
+                                        maxLength={80}
+                                        value={customDescriptionStatus}
+                                        onChange={event => setCustomDescriptionStatus(event.target.value)}
+                                        placeholder="Enter a new status"
+                                        className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                                    />
+                                )}
+                            </div>
+                            <div>
+                                <label className="mb-1 block font-bold text-slate-700">Description</label>
+                                <textarea
+                                    required
+                                    rows={4}
+                                    maxLength={3000}
+                                    value={descriptionInput}
+                                    onChange={event => setDescriptionInput(event.target.value)}
+                                    placeholder="Write a description..."
+                                    className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => { setIsDescriptionFormOpen(false); setEditingDescriptionEntry(null); }}
+                                    className="rounded-md bg-slate-100 px-4 py-2 font-bold text-slate-700 hover:bg-slate-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={descriptionSaving} className="rounded-md bg-indigo-700 px-4 py-2 font-bold text-white hover:bg-indigo-800 disabled:opacity-60">
+                                    {descriptionSaving ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

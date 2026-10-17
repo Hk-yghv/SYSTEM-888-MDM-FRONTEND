@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import QRCode from 'qrcode';
 import Contract from '../models/Contract.js';
+import ActivatedDescriptionStatus from '../models/ActivatedDescriptionStatus.js';
 import Payment from '../models/Payment.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel, dbInstances } from '../config/multiDB.js';
@@ -276,6 +277,158 @@ const isMasterAdminUser = (user) => (
     user?.role === 'Administrator' ||
     user?.role === 'Admin'
 );
+
+const isMasterDescriptionAdmin = (user) => (
+    user?.username === '@hakyonghouv' ||
+    user?.username === 'hakyonghouv' ||
+    user?.isImmutable === true ||
+    user?.role === 'SuperAdmin'
+);
+
+const getContractFilter = (id) => ({
+    $or: [
+        { contractId: id },
+        ...(mongoose.Types.ObjectId.isValid(id) ? [{ _id: id }] : [])
+    ]
+});
+
+const getActivatedContract = async (id) => {
+    if (isMongoConnected) {
+        const result = await queryAllDBs(Contract, M => M.findOne(getContractFilter(id)));
+        return (Array.isArray(result) ? result[0] : result) || null;
+    }
+    return MEM_DB.contracts.find(contract => contract._id === id || contract.contractId === id) || null;
+};
+
+const saveActivatedDescriptionStatus = async (status, createdBy) => {
+    if (isMongoConnected) {
+        const Model = getWriteModel(ActivatedDescriptionStatus);
+        if (!Model) throw new Error('No database is available to save activated description statuses.');
+        const escapedStatus = status.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        await Model.updateOne(
+            { status: { $regex: `^${escapedStatus}$`, $options: 'i' } },
+            { $setOnInsert: { status, createdBy } },
+            { upsert: true }
+        );
+        return;
+    }
+
+    const exists = MEM_DB.activatedDescriptionStatuses.some(item => item.status.toLowerCase() === status.toLowerCase());
+    if (!exists) MEM_DB.activatedDescriptionStatuses.push({ status, createdBy, createdAt: new Date().toISOString() });
+};
+
+router.get('/activated-description-statuses', async (_req, res) => {
+    try {
+        const statuses = isMongoConnected
+            ? await queryAllDBs(ActivatedDescriptionStatus, M => M.find({}).sort({ status: 1 }))
+            : MEM_DB.activatedDescriptionStatuses;
+        return res.json({
+            data: [...new Set(statuses.map(item => item.status).filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b))
+        });
+    } catch (err) {
+        console.error('Fetch activated description statuses error:', err);
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/:id/activated-description-history', async (req, res) => {
+    try {
+        const status = typeof req.body.status === 'string' ? req.body.status.trim() : '';
+        const description = typeof req.body.description === 'string' ? req.body.description.trim() : '';
+        if (!status || status.length > 80 || !description || description.length > 3000) {
+            return res.status(400).json({ error: 'A status and description (up to 3000 characters) are required.' });
+        }
+
+        const existing = await getActivatedContract(req.params.id);
+        if (!existing || existing.status !== 'Activated') {
+            return res.status(404).json({ error: 'Activated contract not found.' });
+        }
+
+        const entry = {
+            status,
+            description,
+            createdAt: new Date(),
+            createdBy: req.user?.name || req.user?.username || 'Staff'
+        };
+        if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, async M => {
+                const updated = await M.findOneAndUpdate(
+                    getContractFilter(req.params.id),
+                    { $set: { activatedDescriptionStatus: status }, $push: { activatedDescriptionHistory: entry } },
+                    { new: true, runValidators: true }
+                );
+                return updated ? [updated] : [];
+            });
+            const updated = results[0];
+            if (!updated) return res.status(404).json({ error: 'Activated contract not found on the database.' });
+            await saveActivatedDescriptionStatus(status, entry.createdBy);
+            return res.json(sanitizeAndDecryptContract(updated));
+        }
+
+        const contract = MEM_DB.contracts.find(item => item._id === req.params.id || item.contractId === req.params.id);
+        if (!contract || contract.status !== 'Activated') {
+            return res.status(404).json({ error: 'Activated contract not found.' });
+        }
+        entry._id = `description-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        contract.activatedDescriptionStatus = status;
+        contract.activatedDescriptionHistory = [...(contract.activatedDescriptionHistory || []), entry];
+        await saveActivatedDescriptionStatus(status, entry.createdBy);
+        return res.json(sanitizeAndDecryptContract(contract));
+    } catch (err) {
+        console.error('Save activated description error:', err);
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+router.put('/:id/activated-description-history/:historyId', async (req, res) => {
+    if (!isMasterDescriptionAdmin(req.user)) {
+        return res.status(403).json({ error: 'Only the master administrator can edit activated description history.' });
+    }
+    const status = typeof req.body.status === 'string' ? req.body.status.trim() : '';
+    const description = typeof req.body.description === 'string' ? req.body.description.trim() : '';
+    if (!status || status.length > 80 || !description || description.length > 3000) {
+        return res.status(400).json({ error: 'A status and description (up to 3000 characters) are required.' });
+    }
+
+    try {
+        if (isMongoConnected) {
+            const results = await queryAllDBs(Contract, async M => {
+                const contract = await M.findOne(getContractFilter(req.params.id));
+                if (!contract || contract.status !== 'Activated') return [];
+                const entry = contract.activatedDescriptionHistory.id(req.params.historyId);
+                if (!entry) return [];
+                entry.status = status;
+                entry.description = description;
+                if (contract.activatedDescriptionHistory.at(-1) === entry) {
+                    contract.activatedDescriptionStatus = status;
+                }
+                await contract.save();
+                return [contract];
+            });
+            const updated = results[0];
+            if (!updated) return res.status(404).json({ error: 'Activated contract or description history entry not found.' });
+            await saveActivatedDescriptionStatus(status, req.user?.username || 'Master Administrator');
+            return res.json(sanitizeAndDecryptContract(updated));
+        }
+
+        const contract = MEM_DB.contracts.find(item => item._id === req.params.id || item.contractId === req.params.id);
+        if (!contract || contract.status !== 'Activated') {
+            return res.status(404).json({ error: 'Activated contract not found.' });
+        }
+        const history = contract.activatedDescriptionHistory || [];
+        const entryIndex = history.findIndex(entry => String(entry._id) === req.params.historyId);
+        if (entryIndex < 0) return res.status(404).json({ error: 'Description history entry not found.' });
+        history[entryIndex] = { ...history[entryIndex], status, description };
+        if (entryIndex === history.length - 1) contract.activatedDescriptionStatus = status;
+        contract.activatedDescriptionHistory = history;
+        await saveActivatedDescriptionStatus(status, req.user?.username || 'Master Administrator');
+        return res.json(sanitizeAndDecryptContract(contract));
+    } catch (err) {
+        console.error('Edit activated description history error:', err);
+        return res.status(500).json({ error: err.message });
+    }
+});
 
 const rotateExpiredComments = async (contractsList) => {
     if (!Array.isArray(contractsList) || contractsList.length === 0) return;

@@ -61,6 +61,13 @@ const contractSchema = new mongoose.Schema({
         commentedAt: { type: Date, default: Date.now },
         editedBy: { type: String, default: '' }
     }],
+    activatedDescriptionStatus: { type: String, default: '' },
+    activatedDescriptionHistory: [{
+        status: { type: String, required: true },
+        description: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+        createdBy: { type: String, default: '' }
+    }],
     // Admin tracking & Edit History
     modifiedByAdmin: { type: Boolean, default: false },
     lastModifiedBy: { type: String, default: '' },
