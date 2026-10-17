@@ -97,8 +97,8 @@ table tbody tr.table-scroll-row {
     opacity: var(--table-scroll-opacity, 1);
     transform-origin: center center;
     transition:
-        transform 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1),
-        opacity 0.2s ease,
+        transform 0.26s cubic-bezier(0.2, 0.9, 0.4, 1.1),
+        opacity 0.24s ease,
         filter 0.2s ease,
         box-shadow 0.2s ease;
     will-change: transform, opacity;
@@ -205,6 +205,68 @@ table tbody tr.table-scroll-row:hover > .table-action-cell {
 .popup-panel-enter {
     animation: popup-panel-enter 0.48s cubic-bezier(0.2, 0.9, 0.35, 1.15) both;
     will-change: transform, opacity, filter;
+}
+
+/* Universal Responsive Modal & Popup System (Auto-fit Screen & Internal/Backdrop Scrolling) */
+.fixed.inset-0:has(> div),
+.popup-backdrop-enter,
+.popup-backdrop-responsive,
+[role="dialog"] {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: clamp(0.375rem, 1.5vw, 1.25rem) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important; /* Prevents top clipping on small screens */
+}
+
+/* Modal Inner Panel Auto-sizing & Scrolling */
+.popup-panel-enter,
+.popup-panel-responsive,
+.fixed.inset-0 > div:not([class*="backdrop"]):not([class*="overlay"]):not(.fixed):not(.absolute) {
+    max-width: min(calc(100vw - 1.25rem), 100%) !important;
+    max-height: min(calc(100dvh - 1.25rem), calc(100vh - 1.25rem)) !important;
+    margin: auto !important; /* Perfectly centers when fits, enables top-down scroll when tall */
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
+    overflow: hidden;
+}
+
+/* Modal internal scrollable body */
+.popup-panel-enter > div:not(:first-child):not(:last-child),
+.popup-panel-responsive > div:not(:first-child):not(:last-child),
+.fixed.inset-0 > div:not([class*="backdrop"]):not([class*="overlay"]):not(.fixed):not(.absolute) > div:not(:first-child):not(:last-child) {
+    min-height: 0;
+}
+
+/* Laptops / Screens with small vertical height (<= 850px) */
+@media (max-height: 850px) {
+    .popup-panel-enter,
+    .popup-panel-responsive,
+    .fixed.inset-0 > div:not([class*="backdrop"]):not([class*="overlay"]):not(.fixed):not(.absolute) {
+        max-height: calc(100dvh - 0.85rem) !important;
+    }
+}
+
+/* Tablets and Mobile devices */
+@media (max-width: 768px) {
+    .fixed.inset-0:has(> div),
+    .popup-backdrop-enter,
+    .popup-backdrop-responsive,
+    [role="dialog"] {
+        padding: 0.375rem !important;
+    }
+
+    .popup-panel-enter,
+    .popup-panel-responsive,
+    .fixed.inset-0 > div:not([class*="backdrop"]):not([class*="overlay"]):not(.fixed):not(.absolute) {
+        width: 100% !important;
+        max-width: calc(100vw - 0.75rem) !important;
+        max-height: calc(100dvh - 0.75rem) !important;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

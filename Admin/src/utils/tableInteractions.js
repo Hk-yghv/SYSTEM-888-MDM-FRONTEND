@@ -74,7 +74,7 @@ const prepareStickyActions = (table) => {
         });
 };
 
-const updateTableAnimation = (table) => {
+const updateTableAnimation = (table, isScrolling) => {
     const allRows = table.querySelectorAll(':scope > tbody > tr');
     if (!allRows.length) return;
 
@@ -95,6 +95,17 @@ const updateTableAnimation = (table) => {
     }
 
     if (!validRows.length) return;
+
+    // When scrolling stops or when idle, all rows return to full normal size (scale: 1, opacity: 1)
+    if (!isScrolling) {
+        for (let i = 0; i < validRows.length; i++) {
+            const row = validRows[i];
+            row.classList.add('table-scroll-row');
+            row.style.setProperty('--table-scroll-scale', '1');
+            row.style.setProperty('--table-scroll-opacity', '1');
+        }
+        return;
+    }
 
     const scrollContainer = findVerticalScrollContainer(table);
     const isWin = scrollContainer === window;
@@ -119,15 +130,13 @@ const updateTableAnimation = (table) => {
     }
 
     // Top progress: 0 when at very top (scrollTop === 0), ramps to 1 as user scrolls down by 70px
-    // When at the very top, top items DO NOT shrink!
     const topProgress = Math.min(1, Math.max(0, scrollTop / 70));
 
     // Bottom progress: 0 when at very bottom, ramps to 1 when scrolled 70px above bottom
-    // When at the very bottom, bottom items DO NOT shrink!
     const remainingScroll = Math.max(0, maxScroll - scrollTop);
     const bottomProgress = Math.min(1, Math.max(0, remainingScroll / 70));
 
-    // Boundary threshold from top/bottom where shrinking occurs (smooth curve matching LeftMenu)
+    // Boundary threshold from top/bottom where shrinking occurs
     const edgeThreshold = Math.min(140, Math.max(90, Math.round(clientHeight * 0.22)));
     const maxShrink = 0.14; // up to 14% shrink (scale 0.86 to 1.00)
 
@@ -161,12 +170,14 @@ const updateTableAnimation = (table) => {
 
 export const installTableInteractions = () => {
     let frameId = 0;
+    let isScrolling = false;
+    let scrollStopTimer = null;
 
     const updateAllTables = () => {
         frameId = 0;
         const tables = document.querySelectorAll('table');
         tables.forEach(table => {
-            updateTableAnimation(table);
+            updateTableAnimation(table, isScrolling);
         });
     };
 
@@ -175,22 +186,47 @@ export const installTableInteractions = () => {
         frameId = requestAnimationFrame(updateAllTables);
     };
 
-    const observer = new MutationObserver(scheduleUpdate);
+    const onScrollStart = () => {
+        isScrolling = true;
+        scheduleUpdate();
+
+        if (scrollStopTimer) clearTimeout(scrollStopTimer);
+        // Debounce to detect when scrolling stops
+        scrollStopTimer = setTimeout(() => {
+            isScrolling = false;
+            scheduleUpdate();
+        }, 350);
+    };
+
+    const onScrollEnd = () => {
+        if (scrollStopTimer) clearTimeout(scrollStopTimer);
+        isScrolling = false;
+        scheduleUpdate();
+    };
+
+    const observer = new MutationObserver(() => {
+        // When DOM changes (pagination, filtering, modal opens), ensure rows are styled properly
+        scheduleUpdate();
+    });
     observer.observe(document.body, { childList: true, subtree: true });
 
     // Listen to scroll globally in capture phase to detect any scrolling container
-    document.addEventListener('scroll', scheduleUpdate, true);
-    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    document.addEventListener('scroll', onScrollStart, true);
+    document.addEventListener('scrollend', onScrollEnd, true);
+    window.addEventListener('scroll', onScrollStart, { passive: true });
     window.addEventListener('resize', scheduleUpdate);
 
+    // Initial render: isScrolling is false, so all tables show normally at full 1.0 scale
     scheduleUpdate();
 
     return () => {
         observer.disconnect();
-        document.removeEventListener('scroll', scheduleUpdate, true);
-        window.removeEventListener('scroll', scheduleUpdate);
+        document.removeEventListener('scroll', onScrollStart, true);
+        document.removeEventListener('scrollend', onScrollEnd, true);
+        window.removeEventListener('scroll', onScrollStart);
         window.removeEventListener('resize', scheduleUpdate);
         if (frameId) cancelAnimationFrame(frameId);
+        if (scrollStopTimer) clearTimeout(scrollStopTimer);
 
         document.querySelectorAll('.table-scroll-row').forEach(row => {
             row.classList.remove('table-scroll-row');
