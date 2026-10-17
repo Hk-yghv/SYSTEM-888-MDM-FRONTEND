@@ -82,29 +82,30 @@
 .table-scroll-row > th,
 .table-scroll-row > td {
     transform: scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1));
+    position: relative;
+    z-index: 0;
     transition:
-        transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1),
+        transform 0.24s cubic-bezier(0.2, 0.9, 0.4, 1.1),
         box-shadow 0.2s ease,
+        filter 0.2s ease,
         opacity 0.2s ease;
     will-change: transform;
-}
-
-.table-scroll-cell {
-    transform: scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1));
 }
 
 .table-scroll-row:hover > th,
 .table-scroll-row:hover > td {
     transform:
         scale(var(--table-scroll-scale-x, 1), var(--table-scroll-scale-y, 1))
-        translateY(-3px);
+        scale(1.025)
+        translateY(-3px) !important;
     opacity: 1;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
-    z-index: 6;
+    box-shadow: 0 5px 14px rgba(16, 185, 129, 0.2), 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+    filter: drop-shadow(0 3px 4px rgba(15, 23, 42, 0.12));
+    z-index: 6 !important;
 }
 
 .table-scroll-row:hover > .table-action-cell {
-    z-index: 7;
+    z-index: 7 !important;
 }
 
 .table-with-sticky-actions .table-action-cell {
@@ -177,9 +178,7 @@
     }
 
     .table-scroll-row > th,
-    .table-scroll-row > td,
-    .table-scroll-cell {
-        transform: none;
+    .table-scroll-row > td {
         transition: none;
     }
 
