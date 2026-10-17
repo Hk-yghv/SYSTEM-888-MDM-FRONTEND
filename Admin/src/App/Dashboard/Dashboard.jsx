@@ -22,7 +22,7 @@ import {
     FaCalendarDays
 } from 'react-icons/fa6';
 import './Dashboard.css';
-import { getAutomaticPenalty, getRowWithDueDate } from '../../utils/repaymentUtils';
+import { getAutomaticPenalty, getRowWithDueDate, getRowInterest, getContractTotalInterest } from '../../utils/repaymentUtils';
 
 const Dashboard = () => {
     const { t } = useLanguage();
@@ -376,6 +376,9 @@ const Dashboard = () => {
         let totalScheduledFromInstallment = 0;
         let totalPenaltyFromInstallment = 0;
         let totalPaidInstallmentsCount = 0;
+        let totalScheduledInterest = 0;
+        let totalCollectedInterest = 0;
+        let totalOutstandingInterest = 0;
 
         filteredContracts.forEach(contract => {
             const cDate = String(contract.inputDate || contract.date || contract.createdAt || '').split('T')[0];
@@ -395,6 +398,7 @@ const Dashboard = () => {
                     const penalty = getAutomaticPenalty(rowData, contract, rules);
                     const schedAmt = Number(rowData.scheduledAmount || rowData.amount || 0);
                     const paidAmt = Number(rowData.paidAmount || rowData.paid || 0);
+                    const rowInterest = getRowInterest(rowData, contract);
 
                     const dueStr = rowData.dueDate ? String(rowData.dueDate).split('T')[0] : '';
                     const paidStr = rowData.paidDate ? String(rowData.paidDate).split('T')[0] : '';
@@ -402,13 +406,22 @@ const Dashboard = () => {
                     const isDueInRange = isDateInRange(dueStr, dateRange);
                     const isPaidInRange = paidStr ? isDateInRange(paidStr, dateRange) : isDueInRange;
 
+                    const isRowPaid = ['Paid', 'PayOff', 'Settled'].includes(rowData.status) || (paidAmt >= schedAmt && schedAmt > 0);
+                    const paidInterest = isRowPaid
+                        ? rowInterest
+                        : (schedAmt > 0 ? (rowInterest * Math.min(paidAmt, schedAmt)) / schedAmt : 0);
+                    const unpaidInterest = Math.max(0, rowInterest - paidInterest);
+
                     if (dateRange.isAll || isDueInRange) {
                         totalScheduledFromInstallment += schedAmt;
                         totalPenaltyFromInstallment += Number(penalty || 0);
+                        totalScheduledInterest += rowInterest;
+                        totalOutstandingInterest += unpaidInterest;
                     }
 
                     if (dateRange.isAll || isPaidInRange) {
                         totalCollectedFromInstallment += paidAmt;
+                        totalCollectedInterest += paidInterest;
                         if (paidAmt > 0) {
                             totalPaidInstallmentsCount += 1;
                         }
@@ -419,7 +432,22 @@ const Dashboard = () => {
                     const monthlyPayment = Number(contract.monthlyPayment || 0);
                     const durationMatch = String(contract.duration || '').match(/\d+/);
                     const months = durationMatch ? Math.max(1, Number(durationMatch[0])) : 1;
-                    totalScheduledFromInstallment += monthlyPayment > 0 ? (monthlyPayment * months) : Number(contract.amount || 0);
+                    const contractInterest = getContractTotalInterest(contract);
+                    const schedAmt = monthlyPayment > 0 ? (monthlyPayment * months) : (Number(contract.amount || 0) + contractInterest);
+                    const paidAmt = Number(contract.paidAmount || 0);
+
+                    totalScheduledFromInstallment += schedAmt;
+                    totalScheduledInterest += contractInterest;
+
+                    const paidInterest = schedAmt > 0 ? (contractInterest * Math.min(paidAmt, schedAmt)) / schedAmt : 0;
+                    const unpaidInterest = Math.max(0, contractInterest - paidInterest);
+
+                    totalCollectedFromInstallment += paidAmt;
+                    totalCollectedInterest += paidInterest;
+                    totalOutstandingInterest += unpaidInterest;
+                    if (paidAmt > 0) {
+                        totalPaidInstallmentsCount += 1;
+                    }
                 }
             }
         });
@@ -434,7 +462,10 @@ const Dashboard = () => {
             totalPenaltyFromInstallment,
             totalPayableScheduled,
             totalOutstanding,
-            totalPaidInstallmentsCount
+            totalPaidInstallmentsCount,
+            totalScheduledInterest,
+            totalCollectedInterest,
+            totalOutstandingInterest
         };
     }, [filteredContracts, penaltyRulesByBrand, dateRange]);
 
@@ -524,6 +555,7 @@ const Dashboard = () => {
                     penaltyAmount: calculatedPenalty,
                     paidPenaltyAmount: paidPenalty,
                     unpaidPenaltyAmount: unpaidPenalty,
+                    interestAmount: getRowInterest(rowData, contract),
                     isPaid,
                     daysUntilDue: diffDays,
                     lateDays,
@@ -603,6 +635,7 @@ const Dashboard = () => {
                         penaltyAmount: calculatedPenalty,
                         paidPenaltyAmount: paidPenalty,
                         unpaidPenaltyAmount: unpaidPenalty,
+                        interestAmount: getRowInterest(rowData, contract),
                         isPaid,
                         daysUntilDue: diffDays,
                         lateDays,
@@ -669,6 +702,9 @@ const Dashboard = () => {
     const totalObligation = totalScheduledAmount;
     const totalOutstandingAmount = installmentStats.totalOutstanding;
     const totalPaidInstallmentsCount = installmentStats.totalPaidInstallmentsCount;
+    const totalScheduledInterest = installmentStats.totalScheduledInterest;
+    const totalCollectedInterest = installmentStats.totalCollectedInterest;
+    const totalOutstandingInterest = installmentStats.totalOutstandingInterest;
 
     // Section Summary Totals
     const dueTotalPaid = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.paidAmount, 0), [dueCustomerRows]);
@@ -676,6 +712,7 @@ const Dashboard = () => {
     const dueTotalPenalty = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.penaltyAmount, 0), [dueCustomerRows]);
     const dueTotalPaidPenalty = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.paidPenaltyAmount, 0), [dueCustomerRows]);
     const dueTotalUnpaidPenalty = useMemo(() => dueCustomerRows.reduce((s, r) => s + r.unpaidPenaltyAmount, 0), [dueCustomerRows]);
+    const dueTotalInterest = useMemo(() => dueCustomerRows.reduce((s, r) => s + (r.interestAmount || 0), 0), [dueCustomerRows]);
 
     const lateTotalPenalty = useMemo(() => overdueCustomerRows.reduce((s, r) => s + r.unpaidPenaltyAmount, 0), [overdueCustomerRows]);
     const penaltyTotalAmount = useMemo(() => penaltyPaymentRows.reduce((s, r) => s + r.penaltyAmount, 0), [penaltyPaymentRows]);
@@ -1134,6 +1171,7 @@ const Dashboard = () => {
                     <div className="exec-card-footer">
                         <div className="stacked-stat">
                             <span>បានបង់: <strong>{formatNumber(totalPaidInstallmentsCount)} លើក</strong></span>
+                            <span>ការប្រាក់ប្រមូលបាន: <strong className="color-green">{formatMoney(totalCollectedInterest)}</strong></span>
                             <span>ប្រមូលបាន: <strong>{totalDisbursedAmount > 0 ? ((totalCollectedRevenue / totalDisbursedAmount) * 100).toFixed(2) : '0.00'}%</strong></span>
                         </div>
                         <span className="badge-pill" style={{ background: '#d1fae5', color: '#059669' }}>COLLECTED</span>
@@ -1151,6 +1189,7 @@ const Dashboard = () => {
                     <div className="card-value color-purple">{formatMoney(totalScheduledAmount)}</div>
                     <div className="exec-card-footer split-footer">
                         <div className="stacked-stat">
+                            <span>ការប្រាក់ត្រូវប្រមូល: <strong className="color-purple">{formatMoney(totalScheduledInterest)}</strong></span>
                             <span>ពិន័យសរុប: <strong>{formatMoney(totalPenaltyAll)}</strong></span>
                             <span>ពិន័យបានបង់: <strong>{formatMoney(totalPaidPenalty)}</strong></span>
                             <span>ពិន័យមិនទាន់បង់: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
@@ -1171,6 +1210,7 @@ const Dashboard = () => {
                     <div className="card-value color-orange">{formatMoney(totalOutstandingAmount)}</div>
                     <div className="exec-card-footer">
                         <div className="stacked-stat">
+                            <span>ការប្រាក់នៅសល់: <strong className="color-orange">{formatMoney(totalOutstandingInterest)}</strong></span>
                             <span>ពិន័យមិនទាន់ប្រមូល: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
                             <span>អត្រាមិនទាន់ប្រមូល: <strong>{totalObligation > 0 ? ((totalOutstandingAmount / totalObligation) * 100).toFixed(2) : '0.00'}%</strong></span>
                         </div>
@@ -1482,6 +1522,9 @@ const Dashboard = () => {
                             </span>
                             <span className="payment-total">
                                 នៅសល់ <strong>{formatMoney(dueTotalRemaining)}</strong>
+                            </span>
+                            <span className="payment-total">
+                                ការប្រាក់សរុប <strong>{formatMoney(dueTotalInterest)}</strong>
                             </span>
                             <span className="payment-total">
                                 ពិន័យសរុប <strong>{formatMoney(dueTotalPenalty)}</strong>

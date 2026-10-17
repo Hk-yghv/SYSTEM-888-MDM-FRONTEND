@@ -9,6 +9,12 @@ export default defineConfig({
   build: {
     minify: "oxc",
     sourcemap: false,
+    rolldownOptions: {
+      output: {
+        entryFileNames: "assets/js/[hash].js",
+        chunkFileNames: "assets/chunks/[hash].js",
+      },
+    },
   },
 
   define: {

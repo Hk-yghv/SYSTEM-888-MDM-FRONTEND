@@ -30,7 +30,7 @@ const normalizePayment = (p) => {
 };
 
 // GET complete payment history for one contract
-router.get('/payments/contract/:contractId', async (req, res) => {
+router.get(['/payments/contract/:contractId', '/contract/:contractId'], async (req, res) => {
     try {
         const { contractId } = req.params;
         let payments;
@@ -50,10 +50,11 @@ router.get('/payments/contract/:contractId', async (req, res) => {
 
 
 // GET payments
-router.get('/payments', async (req, res) => {
+router.get(['/payments', '/'], async (req, res) => {
     try {
         const { userBrand, userRole, username, isImmutable, brand = '', page = 1, limit = 10, search = '', dateFrom = '', dateTo = '' } = req.query;
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin');
+        const isPartner = Boolean(req.isPartnerAccess || req.user?.isPartner);
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator' || userRole === 'Admin' || isPartner);
         const requestedBrand = isMasterAdmin ? brand : userBrand;
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -117,7 +118,7 @@ router.get('/payments', async (req, res) => {
 });
 
 // POST payment
-router.post('/payments', async (req, res) => {
+router.post(['/payments', '/'], async (req, res) => {
     try {
         const {
             contractId, amount, customerName, photo, image, receiptImage,

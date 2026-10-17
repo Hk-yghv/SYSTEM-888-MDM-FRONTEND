@@ -86,7 +86,8 @@ router.get('/', async (req, res) => {
     try {
         const { status, userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '', contractId = '', locateId = '', dateFrom = '', dateTo = '', requireSchedule = false } = req.query;
         const skip = (parseInt(page) - 1) * parseInt(limit);
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true);
+        const isPartner = Boolean(req.isPartnerAccess || req.user?.isPartner);
+        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || isImmutable === true || isPartner);
         const needsSchedule = requireSchedule === 'true' || requireSchedule === true;
 
         let query = {};

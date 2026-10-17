@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import json from "./Routes.json";
 import ProtectRoute from "../services/ProtectRoute";
@@ -7,87 +7,64 @@ import MainLayout from "./MainLayout";
 import { useAuth } from "../context/AuthContext";
 import { getFirstAllowedRoute } from "../utils/permissionUtils";
 
-// Dashboard & Calendar
-import Dashboard from "../App/Dashboard/Dashboard";
-import CashFlowTrader from "../App/CashFlow/pages/CashFlowTrader";
-import KhmerCalendarPage from "../App/Calendar/KhmerCalendarPage";
-import TelegramPage from "../App/Telegram/TelegramPage";
-
-// Customer & Device
-import Customer from "../App/Customer/pages/Customer";
-import Device from "../App/Device/pages/Device";
-
-// Contract
-import Application from "../App/Contract/page/Application";
-import Activated from "../App/Contract/page/Activated";
-import Check from "../App/Contract/page/Check";
-import Redeem from "../App/Contract/page/Redeem";
-import Comments from "../App/Contract/page/Comments";
-import BlackList from "../App/Contract/page/BlackList";
-
-// Installment
-import InstallmentPage from "../App/Installment/pages/InstallmentPage";
-import InstallmentHistory from "../App/Installment/pages/InstallmentHistory";
-import PaymentHistory from "../App/Installment/pages/PaymentHistory";
-import CashOutPage from "../App/Installment/pages/CashOutPage";
-import CashInPage from "../App/Installment/pages/CashInPage";
-import PenaltyPage from "../App/Installment/pages/PenaltyPage";
-import OverduePage from "../App/Installment/pages/OverduePage";
-import DueTodayPage from "../App/Installment/pages/DueTodayPage";
-import DueIn3DaysPage from "../App/Installment/pages/DueIn3DaysPage";
-import Overdue3DaysPage from "../App/Installment/pages/Overdue3DaysPage";
-import UnpaidYesterdayPage from "../App/Installment/pages/UnpaidYesterdayPage";
-import Overdue7DaysPage from "../App/Installment/pages/Overdue7DaysPage";
-
-// Report Pages
-import AllCustomersReport from "../App/Report/pages/AllCustomersReport";
-import ReportAll from "../App/Report/pages/ReportAll";
-import ActivatedReport from "../App/Report/pages/ActivatedReport";
-import RedeemReport from "../App/Report/pages/RedeemReport";
-import LockPhoneReport from "../App/Report/pages/LockPhoneReport";
-import SetWallpaperReport from "../App/Report/pages/SetWallpaperReport";
-import InstallmentReport from "../App/Report/pages/InstallmentReport";
-import FollowUpReport from "../App/Report/pages/FollowUpReport";
-import FollowUp4Report from "../App/Report/pages/FollowUp4Report";
-
-// Wallpaper
-import ActionWallpaper from "../App/Wallpaper/pages/Actions";
-import LockWallpaper from "../App/Wallpaper/pages/LockWallpaper";
-import UnlockWallpaper from "../App/Wallpaper/pages/UnlockWallpaper";
-
-// Lost Phone
-import ActionLockphone from "../App/Lostphone/pages/Actions";
-import LockPhone from "../App/Lostphone/pages/LockPhone";
-import UnlockPhone from "../App/Lostphone/pages/UnlockPhone";
-
-// History
-import LoginHistory from "../App/History/pages/LoginHistory";
-import DeviceActionHistory from "../App/History/pages/DeviceActionHistory";
-
-// Calculate
-import CalculateSchedule1 from "../App/Calculate/pages/CalculateSchedule1";
-import CalculateSchedule2 from "../App/Calculate/pages/CalculateSchedule2";
-
-// Follow Up
-import FollowUp1 from "../App/FollowUp/pages/FollowUp1";
-import FollowUp2 from "../App/FollowUp/pages/FollowUp2";
-import FollowUp3 from "../App/FollowUp/pages/FollowUp3";
-import FollowUp4 from "../App/FollowUp/pages/FollowUp4";
-
-// Salary
-import SalaryPage from "../App/Salary/pages/SalaryPage";
-
-// Settings & Profile
-import ControlSystem from "../App/Settings/pages/ControlSystem";
-import AllAccount from "../App/Settings/pages/AllAccount";
-import Profile from "../App/Profile/Profile";
-import AllPicture from "../App/Media/AllPicture";
-import SaveUrlPage from "../App/SaveUrl/pages/SaveUrlPage";
-import AuditTelegram from "../App/Audit/pages/AuditTelegram";
-import ReportAuditTelegram from "../App/Audit/pages/ReportAuditTelegram";
-import PrintIdCard from "../App/Print/pages/PrintIdCard";
-import HelpSupport from "../App/Support/pages/HelpSupport";
-import ControlSupportHelp from "../App/Settings/pages/ControlSupportHelp";
+const Dashboard = lazy(() => import("../App/Dashboard/Dashboard"));
+const CashFlowTrader = lazy(() => import("../App/CashFlow/pages/CashFlowTrader"));
+const KhmerCalendarPage = lazy(() => import("../App/Calendar/KhmerCalendarPage"));
+const TelegramPage = lazy(() => import("../App/Telegram/TelegramPage"));
+const Customer = lazy(() => import("../App/Customer/pages/Customer"));
+const Device = lazy(() => import("../App/Device/pages/Device"));
+const Application = lazy(() => import("../App/Contract/page/Application"));
+const Activated = lazy(() => import("../App/Contract/page/Activated"));
+const Check = lazy(() => import("../App/Contract/page/Check"));
+const Redeem = lazy(() => import("../App/Contract/page/Redeem"));
+const Comments = lazy(() => import("../App/Contract/page/Comments"));
+const BlackList = lazy(() => import("../App/Contract/page/BlackList"));
+const InstallmentPage = lazy(() => import("../App/Installment/pages/InstallmentPage"));
+const InstallmentHistory = lazy(() => import("../App/Installment/pages/InstallmentHistory"));
+const PaymentHistory = lazy(() => import("../App/Installment/pages/PaymentHistory"));
+const CashOutPage = lazy(() => import("../App/Installment/pages/CashOutPage"));
+const CashInPage = lazy(() => import("../App/Installment/pages/CashInPage"));
+const PenaltyPage = lazy(() => import("../App/Installment/pages/PenaltyPage"));
+const OverduePage = lazy(() => import("../App/Installment/pages/OverduePage"));
+const DueTodayPage = lazy(() => import("../App/Installment/pages/DueTodayPage"));
+const DueIn3DaysPage = lazy(() => import("../App/Installment/pages/DueIn3DaysPage"));
+const Overdue3DaysPage = lazy(() => import("../App/Installment/pages/Overdue3DaysPage"));
+const UnpaidYesterdayPage = lazy(() => import("../App/Installment/pages/UnpaidYesterdayPage"));
+const Overdue7DaysPage = lazy(() => import("../App/Installment/pages/Overdue7DaysPage"));
+const AllCustomersReport = lazy(() => import("../App/Report/pages/AllCustomersReport"));
+const ReportAll = lazy(() => import("../App/Report/pages/ReportAll"));
+const ActivatedReport = lazy(() => import("../App/Report/pages/ActivatedReport"));
+const RedeemReport = lazy(() => import("../App/Report/pages/RedeemReport"));
+const LockPhoneReport = lazy(() => import("../App/Report/pages/LockPhoneReport"));
+const SetWallpaperReport = lazy(() => import("../App/Report/pages/SetWallpaperReport"));
+const InstallmentReport = lazy(() => import("../App/Report/pages/InstallmentReport"));
+const FollowUpReport = lazy(() => import("../App/Report/pages/FollowUpReport"));
+const FollowUp4Report = lazy(() => import("../App/Report/pages/FollowUp4Report"));
+const ActionWallpaper = lazy(() => import("../App/Wallpaper/pages/Actions"));
+const LockWallpaper = lazy(() => import("../App/Wallpaper/pages/LockWallpaper"));
+const UnlockWallpaper = lazy(() => import("../App/Wallpaper/pages/UnlockWallpaper"));
+const ActionLockphone = lazy(() => import("../App/Lostphone/pages/Actions"));
+const LockPhone = lazy(() => import("../App/Lostphone/pages/LockPhone"));
+const UnlockPhone = lazy(() => import("../App/Lostphone/pages/UnlockPhone"));
+const LoginHistory = lazy(() => import("../App/History/pages/LoginHistory"));
+const DeviceActionHistory = lazy(() => import("../App/History/pages/DeviceActionHistory"));
+const CalculateSchedule1 = lazy(() => import("../App/Calculate/pages/CalculateSchedule1"));
+const CalculateSchedule2 = lazy(() => import("../App/Calculate/pages/CalculateSchedule2"));
+const FollowUp1 = lazy(() => import("../App/FollowUp/pages/FollowUp1"));
+const FollowUp2 = lazy(() => import("../App/FollowUp/pages/FollowUp2"));
+const FollowUp3 = lazy(() => import("../App/FollowUp/pages/FollowUp3"));
+const FollowUp4 = lazy(() => import("../App/FollowUp/pages/FollowUp4"));
+const SalaryPage = lazy(() => import("../App/Salary/pages/SalaryPage"));
+const ControlSystem = lazy(() => import("../App/Settings/pages/ControlSystem"));
+const AllAccount = lazy(() => import("../App/Settings/pages/AllAccount"));
+const Profile = lazy(() => import("../App/Profile/Profile"));
+const AllPicture = lazy(() => import("../App/Media/AllPicture"));
+const SaveUrlPage = lazy(() => import("../App/SaveUrl/pages/SaveUrlPage"));
+const AuditTelegram = lazy(() => import("../App/Audit/pages/AuditTelegram"));
+const ReportAuditTelegram = lazy(() => import("../App/Audit/pages/ReportAuditTelegram"));
+const PrintIdCard = lazy(() => import("../App/Print/pages/PrintIdCard"));
+const HelpSupport = lazy(() => import("../App/Support/pages/HelpSupport"));
+const ControlSupportHelp = lazy(() => import("../App/Settings/pages/ControlSupportHelp"));
 
 /**
  * Redirect root or unauthenticated users to their first permitted page
