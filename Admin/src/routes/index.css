@@ -253,8 +253,8 @@ table tbody tr.table-scroll-row:hover > .table-action-cell {
     flex-shrink: 0 !important;
 }
 
-/* 4. If table is wrapped in a card/container, make that card flex-column filling remaining height */
-.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > div:has(table):not(.fixed) {
+/* 4. If table is wrapped in an outer card (which contains the table-container), make that outer card flex-column filling remaining height */
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > div:has(table):not(:has(> table)):not(.table-container):not([class*="table-container"]):not(.overflow-x-auto):not(.overflow-auto):not(.fixed) {
     flex: 1 1 0% !important;
     min-height: 0 !important;
     max-height: 100% !important;
@@ -270,9 +270,13 @@ table tbody tr.table-scroll-row:hover > .table-action-cell {
 
 /* 6. The scrollable container directly holding the table scrolls both Y and X on listing pages */
 .mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) .table-container,
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) [class*="table-container"],
 .mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) div:has(> table):not(.fixed),
 .mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) .overflow-x-auto:has(> table):not(.fixed),
-.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) .overflow-auto:has(> table):not(.fixed) {
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) .overflow-auto:has(> table):not(.fixed),
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > div:has(> table):not(.fixed),
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > .table-container,
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > div.table-container {
     flex: 1 1 0% !important;
     min-height: 0 !important;
     height: auto !important;
@@ -280,7 +284,8 @@ table tbody tr.table-scroll-row:hover > .table-action-cell {
     overflow-y: auto !important;
     overflow-x: auto !important;
     padding-bottom: 0.5rem !important;
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
 }
 
 /* 7. Pin the table head to the top of the table while scrolling on listing pages */
