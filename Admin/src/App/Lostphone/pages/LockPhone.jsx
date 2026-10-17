@@ -180,11 +180,11 @@ const LockPhone = () => {
                                         {item.brand ? <span className="px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]">{item.brand}</span> : <span className="text-slate-400">-</span>}
                                     </td>
                                     <td className='px-4 py-1 text-purple-700 font-semibold'><CopyCell text={item.userName || item.performedBy || ''} className='text-purple-700 font-semibold' /></td>
-                                    <td className='px-4 py-1 text-slate-600 text-[11px] font-medium'><CopyCell text={item.reason} className='text-slate-600 text-[11px] font-medium' /></td>
-                                    <td className='px-4 py-1 text-amber-700 font-khmer text-[11px] max-w-[250px] truncate' title={item.displayText || defaultDisplayText.replace(/\{\{customerName\}\}/g, item.customerName || '')}>
-                                        <CopyCell text={item.displayText || defaultDisplayText.replace(/\{\{customerName\}\}/g, item.customerName || '')} className='text-amber-700 font-khmer text-[11px]' />
+                                    <td className='px-4 py-1 text-slate-600 text-[11px] font-medium whitespace-nowrap'><CopyCell text={item.reason} className='text-slate-600 text-[11px] font-medium whitespace-nowrap' /></td>
+                                    <td className='px-4 py-1 text-amber-700 font-khmer text-[11px] whitespace-nowrap' title={item.displayText || defaultDisplayText.replace(/\{\{customerName\}\}/g, item.customerName || '')}>
+                                        <CopyCell text={item.displayText || defaultDisplayText.replace(/\{\{customerName\}\}/g, item.customerName || '')} className='text-amber-700 font-khmer text-[11px] whitespace-nowrap' />
                                     </td>
-                                    <td className='px-4 py-1 font-mono text-emerald-700 font-bold'><CopyCell text={item.phoneNumber || ''} className='font-mono text-emerald-700 font-bold' /></td>
+                                    <td className='px-4 py-1 font-mono text-emerald-700 font-bold whitespace-nowrap'><CopyCell text={item.phoneNumber || ''} className='font-mono text-emerald-700 font-bold whitespace-nowrap' /></td>
                                 </tr>
                             ))
                         )}

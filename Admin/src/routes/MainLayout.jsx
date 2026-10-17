@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import Header from "../App/components/Header";
 import Left from "../App/components/Left";
 import MobileBottomNav from "../components/MobileBottomNav";
@@ -14,6 +15,11 @@ const STORAGE_KEY_POS = "floatingDisplayDockPos";
 const STORAGE_KEY_HEADER = "isHeaderOpen";
 
 const MainLayout = ({ children }) => {
+  const location = useLocation();
+  const isScrollableRoute = ['/dashboard', '/calculate/schedule-1', '/calculate/schedule-2'].some(
+    (route) => location.pathname === route || location.pathname.startsWith(route)
+  );
+
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
   const [isFloatingUplistOpen, setIsFloatingUplistOpen] = useState(false);
@@ -197,7 +203,10 @@ const MainLayout = ({ children }) => {
             isHeaderOpen={isHeaderOpen}
             onToggleHeader={() => handleToggleHeader()}
           />
-          <MobileResponsiveContent className="flex-1 min-w-0 overflow-auto mobile-content-area">
+          <MobileResponsiveContent
+            className="flex-1 min-w-0 overflow-auto mobile-content-area"
+            data-scrollable-route={isScrollableRoute ? "true" : undefined}
+          >
             {children}
           </MobileResponsiveContent>
         </div>

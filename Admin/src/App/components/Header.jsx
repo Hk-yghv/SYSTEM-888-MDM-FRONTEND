@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
-import CustomModal from '../../components/CustomModal';
 
 import { FaBell, FaBars, FaTimes, FaTelegramPlane, FaWallet, FaArrowUp, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
 import { MdOutlineTrendingUp, MdAttachMoney } from 'react-icons/md';
@@ -27,13 +26,14 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
         outstandingBalance: 0
     });
     const [pulseAlert, setPulseAlert] = useState(false);
-    const [installPrompt, setInstallPrompt] = useState(null);
+    const [installPrompt, setInstallPrompt] = useState(() => (
+        typeof window !== 'undefined' ? (window.deferredPwaPrompt || null) : null
+    ));
     const [isIosInstall, setIsIosInstall] = useState(false);
     const [isStandalone, setIsStandalone] = useState(() => (
         typeof window !== 'undefined' && Boolean(isStandaloneApp())
     ));
-    const [showInstallConfirmation, setShowInstallConfirmation] = useState(false);
-    const [installInfo, setInstallInfo] = useState('');
+    const [showInstallGuide, setShowInstallGuide] = useState(false);
     const [isAppInstalled, setIsAppInstalled] = useState(() => {
         if (typeof window === 'undefined') return false;
         try {
@@ -46,19 +46,26 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
     useEffect(() => {
         const standalone = Boolean(isStandaloneApp());
         setIsStandalone(standalone);
-        setIsAppInstalled(standalone);
-        if (standalone) {
-            try {
-                localStorage.setItem(PWA_INSTALLED_KEY, 'true');
-            } catch (error) {
-                console.error('Unable to save PWA installation state:', error);
-            }
-        } else {
-            try {
-                setIsAppInstalled(localStorage.getItem(PWA_INSTALLED_KEY) === 'true');
-            } catch (error) {
-                console.error('Unable to read PWA installation state:', error);
-            }
+
+        // Check if pre-captured prompt is in window
+        if (window.deferredPwaPrompt && !installPrompt) {
+            setInstallPrompt(window.deferredPwaPrompt);
+        }
+
+        // Verify if actually installed via getInstalledRelatedApps
+        if (typeof navigator !== 'undefined' && 'getInstalledRelatedApps' in navigator) {
+            navigator.getInstalledRelatedApps().then((apps) => {
+                if (apps && apps.length > 0) {
+                    setIsAppInstalled(true);
+                    try { localStorage.setItem(PWA_INSTALLED_KEY, 'true'); } catch {}
+                } else if (!standalone) {
+                    setIsAppInstalled(false);
+                    try { localStorage.removeItem(PWA_INSTALLED_KEY); } catch {}
+                }
+            }).catch(() => {});
+        } else if (standalone) {
+            setIsAppInstalled(true);
+            try { localStorage.setItem(PWA_INSTALLED_KEY, 'true'); } catch {}
         }
 
         const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
@@ -67,10 +74,13 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
         const handleBeforeInstallPrompt = (event) => {
             event.preventDefault();
+            window.deferredPwaPrompt = event;
             setInstallPrompt(event);
         };
+
         const handleAppInstalled = () => {
             setInstallPrompt(null);
+            window.deferredPwaPrompt = null;
             setIsIosInstall(false);
             setIsAppInstalled(true);
             setIsStandalone(Boolean(isStandaloneApp()));
@@ -87,48 +97,60 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
             window.removeEventListener('appinstalled', handleAppInstalled);
         };
-    }, []);
+    }, [installPrompt]);
 
-    const handleInstallApp = () => {
-        setInstallInfo('');
-        setShowInstallConfirmation(true);
+    // Open App in a clean, standalone desktop window without browser bars
+    const handleOpenStandaloneWindow = () => {
+        setShowInstallGuide(false);
+        const winWidth = Math.min(1440, window.screen?.availWidth || 1280);
+        const winHeight = Math.min(900, window.screen?.availHeight || 800);
+        const left = Math.max(0, Math.round(((window.screen?.availWidth || 1280) - winWidth) / 2));
+        const top = Math.max(0, Math.round(((window.screen?.availHeight || 800) - winHeight) / 2));
+        window.open(
+            window.location.origin,
+            'SYSTEM_MDM_PWA_WINDOW',
+            `width=${winWidth},height=${winHeight},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`
+        );
     };
 
-    const handleConfirmInstall = async () => {
-        setShowInstallConfirmation(false);
+    const handleInstallApp = async () => {
+        const activePrompt = installPrompt || (typeof window !== 'undefined' ? window.deferredPwaPrompt : null);
 
-        if (isAppInstalled) {
-            setInstallInfo('SYSTEM MDM បានដំឡើងរួចហើយ។ សូមបើក App តាមរូបតំណាង SYSTEM MDM នៅលើ Desktop ឬ Start Menu។');
-            return;
-        }
-
-        if (!installPrompt) {
-            const instructions = isIosInstall
-                ? 'Safari មិនអនុញ្ញាតឱ្យគេហទំព័រដំឡើងដោយស្វ័យប្រវត្តិទេ។ សូមចុច Share ក្នុង Safari រួចជ្រើស “Add to Home Screen”។'
-                : 'Browser នេះមិនទាន់អាចបើកការដំឡើងដោយស្វ័យប្រវត្តិបានទេ។ សូមបើកម៉ឺនុយ browser ហើយជ្រើស “Install app” ឬ “Add to Home screen”។';
-            setInstallInfo(instructions);
-            return;
-        }
-
-        try {
-            await installPrompt.prompt();
-            const choice = await installPrompt.userChoice;
-            if (choice.outcome === 'accepted') {
-                setIsAppInstalled(true);
-                try {
-                    localStorage.setItem(PWA_INSTALLED_KEY, 'true');
-                } catch (error) {
-                    console.error('Unable to save PWA installation state:', error);
+        // Case 1: If browser has 1-click install prompt ready, show native dialog directly!
+        if (activePrompt) {
+            try {
+                await activePrompt.prompt();
+                const choice = await activePrompt.userChoice;
+                if (choice?.outcome === 'accepted') {
+                    setIsAppInstalled(true);
+                    try { localStorage.setItem(PWA_INSTALLED_KEY, 'true'); } catch {}
+                    setInstallPrompt(null);
+                    if (typeof window !== 'undefined') window.deferredPwaPrompt = null;
                 }
-            } else {
-                setInstallInfo('ការដំឡើងត្រូវបានបោះបង់។ អ្នកអាចចុច Install App ម្ដងទៀត ឬបើកម៉ឺនុយ browser ហើយជ្រើស “Install app”។');
+            } catch (err) {
+                console.error('PWA install prompt error:', err);
+                setShowInstallGuide(true);
             }
-        } catch (error) {
-            console.error('Install app prompt failed:', error);
-            setInstallInfo('Browser មិនអាចបើកផ្ទាំង Install ដោយស្វ័យប្រវត្តិបានទេ។ សូមបើកម៉ឺនុយ browser ហើយជ្រើស “Install app” ឬ “Add to Home screen”។');
-        } finally {
-            setInstallPrompt(null);
+            return;
         }
+
+        // Case 2: If already marked as installed, launching it or showing options
+        if (isAppInstalled) {
+            handleOpenStandaloneWindow();
+            return;
+        }
+
+        // Case 3: Browser does not support 1-click prompt (Safari, Firefox, or Chrome URL bar)
+        // Show clean Guide Modal with "Open in Window" and browser install instructions!
+        setShowInstallGuide(true);
+    };
+
+    const handleResetInstallState = () => {
+        try {
+            localStorage.removeItem(PWA_INSTALLED_KEY);
+        } catch {}
+        setIsAppInstalled(false);
+        setShowInstallGuide(false);
     };
 
     const formatMoney = (val) => {
@@ -365,25 +387,106 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     </button>
                 )}
             </div>
-            <CustomModal
-                open={showInstallConfirmation}
-                title='ដំឡើង SYSTEM MDM'
-                message='តើអ្នកយល់ព្រមដំឡើង SYSTEM MDM ជា App លើឧបករណ៍នេះដែរឬទេ?'
-                type='info'
-                isConfirm
-                confirmText='យល់ព្រម ដំឡើង'
-                cancelText='បោះបង់'
-                onConfirm={handleConfirmInstall}
-                onCancel={() => setShowInstallConfirmation(false)}
-            />
-            <CustomModal
-                open={Boolean(installInfo)}
-                title='ព័ត៌មានការដំឡើង'
-                message={installInfo}
-                type='info'
-                confirmText='យល់ព្រម'
-                onConfirm={() => setInstallInfo('')}
-            />
+            {/* Modern, interactive PWA Install & App Launcher Guide Dialog */}
+            {showInstallGuide && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[999999] p-3 animate-in fade-in duration-200">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 w-full max-w-lg shadow-2xl space-y-4 text-left">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg shadow-inner">
+                                    <FaDownload />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-slate-900">កម្មវិធី SYSTEM MDM (App)</h3>
+                                    <p className="text-[11px] text-slate-500">ដំឡើង ឬដំណើរការជាផ្ទាំង App ផ្ទាល់</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowInstallGuide(false)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                            >
+                                <FaTimes size={16} />
+                            </button>
+                        </div>
+
+                        {/* Quick 1-Click Action: Open in Dedicated App Window */}
+                        <div className="p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 rounded-xl flex items-center justify-between gap-3 shadow-xs">
+                            <div className="space-y-0.5">
+                                <div className="text-xs font-bold text-emerald-950">បើកដំណើរការជាផ្ទាំង App ផ្ទាល់</div>
+                                <div className="text-[11px] text-emerald-800 leading-tight">បើកក្នុងផ្ទាំងដាច់ដោយឡែកភ្លាមៗ ដោយគ្មានរបារ Browser</div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleOpenStandaloneWindow}
+                                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer whitespace-nowrap active:scale-95"
+                            >
+                                <FaExternalLinkAlt size={11} />
+                                <span>បើកជា App</span>
+                            </button>
+                        </div>
+
+                        {/* Step by step browser guides */}
+                        <div className="space-y-2 text-xs text-slate-700">
+                            <div className="font-bold text-slate-900 text-xs">របៀបដំឡើង (Install App) តាម Browser ៖</div>
+
+                            {/* Desktop Chrome / Edge */}
+                            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                                <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                                    លើកុំព្យូទ័រ (Google Chrome / Microsoft Edge) ៖
+                                </div>
+                                <p className="text-[11px] text-slate-600 pl-3.5 leading-relaxed">
+                                    • ក្រឡេកមើលទៅខាងស្តាំនៃរបារអាសយដ្ឋាន (URL Bar) ចុចលើរូបតំណាង <strong>[ 💻 Install ]</strong> ឬ <strong>[ ⊕ ]</strong> រួចចុច <strong>Install</strong>។<br />
+                                    • ឬចុច <strong>Menu (⋮)</strong> នៅជ្រុងលើស្តាំ &gt; <strong>Save and share</strong> &gt; <strong>Install SYSTEM MDM...</strong>
+                                </p>
+                            </div>
+
+                            {/* iOS Safari */}
+                            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                                <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>
+                                    លើទូរស័ព្ទ iPhone / iPad (Safari) ៖
+                                </div>
+                                <p className="text-[11px] text-slate-600 pl-3.5 leading-relaxed">
+                                    • ចុចប៊ូតុង <strong>Share (⎋)</strong> នៅរបារខាងក្រោមអេក្រង់ Safari &gt; អូសចុះក្រោមហើយជ្រើសរើស <strong>"Add to Home Screen" (➕)</strong>។
+                                </p>
+                            </div>
+
+                            {/* Android Chrome */}
+                            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                                <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+                                    លើទូរស័ព្ទ Android (Chrome) ៖
+                                </div>
+                                <p className="text-[11px] text-slate-600 pl-3.5 leading-relaxed">
+                                    • ចុច <strong>Menu (⋮)</strong> នៅជ្រុងខាងលើស្តាំ &gt; ជ្រើសរើស <strong>"Install app"</strong> ឬ <strong>"Add to Home screen"</strong>។
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Footer Controls */}
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                            <button
+                                type="button"
+                                onClick={handleResetInstallState}
+                                className="text-[11px] text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                                title="កំណត់ស្ថានភាពដំឡើងឡើងវិញ"
+                            >
+                                កំណត់ឡើងវិញ (Reset Status)
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowInstallGuide(false)}
+                                className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs cursor-pointer transition-all"
+                            >
+                                យល់ព្រម
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </header>
     );
 };

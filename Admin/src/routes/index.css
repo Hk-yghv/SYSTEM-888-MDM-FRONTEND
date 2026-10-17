@@ -224,18 +224,19 @@ table tbody tr.table-scroll-row:hover > .table-action-cell {
 }
 
 /* ==========================================================================
-   Zero Whole-Page Scroll for Table Pages
+   Zero Whole-Page Scroll for Listing Table Pages
    Lock page scroll and make ONLY the Table container scrollable,
    keeping Page Header, Filters, and Pagination cleanly pinned.
+   (Excludes full-page flows: /dashboard, /calculate/schedule-1, /calculate/schedule-2)
    ========================================================================== */
 
-/* 1. Prevent entire page from scrolling when a table is present */
-.mobile-content-area:has(table) {
+/* 1. Prevent entire page from scrolling when a listing table is present, EXCLUDING scrollable pages */
+.mobile-content-area:has(table):not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) {
     overflow: hidden !important;
 }
 
 /* 2. Direct page component fills full available height in a flex-column layout */
-.mobile-content-area > *:has(table) {
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) {
     height: 100% !important;
     max-height: 100% !important;
     display: flex !important;
@@ -245,15 +246,15 @@ table tbody tr.table-scroll-row:hover > .table-action-cell {
 }
 
 /* 3. Header, search bars, filter cards stay fixed at top */
-.mobile-content-area > *:has(table) > header,
-.mobile-content-area > *:has(table) > .page-header,
-.mobile-content-area > *:has(table) > form,
-.mobile-content-area > *:has(table) > div:not(:has(table)):not([data-pagination]):not(.pagination-bar):not(.fixed) {
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > header,
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > .page-header,
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > form,
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > div:not(:has(table)):not([data-pagination]):not(.pagination-bar):not(.fixed) {
     flex-shrink: 0 !important;
 }
 
 /* 4. If table is wrapped in a card/container, make that card flex-column filling remaining height */
-.mobile-content-area > *:has(table) > div:has(table):not(.fixed) {
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > div:has(table):not(.fixed) {
     flex: 1 1 0% !important;
     min-height: 0 !important;
     max-height: 100% !important;
@@ -263,15 +264,15 @@ table tbody tr.table-scroll-row:hover > .table-action-cell {
 }
 
 /* 5. Any top action/summary row inside the table card stays fixed */
-.mobile-content-area > *:has(table) > div:has(table):not(.fixed) > div:not(:has(table)):not([data-pagination]):not(.pagination-bar) {
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table):not(.dashboard-root):not(.calculate-schedule-root):not([data-allow-scroll="true"]) > div:has(table):not(.fixed) > div:not(:has(table)):not([data-pagination]):not(.pagination-bar) {
     flex-shrink: 0 !important;
 }
 
-/* 6. The scrollable container directly holding the table scrolls both Y and X */
-.mobile-content-area .table-container,
-.mobile-content-area div:has(> table):not(.fixed),
-.mobile-content-area .overflow-x-auto:has(> table):not(.fixed),
-.mobile-content-area .overflow-auto:has(> table):not(.fixed) {
+/* 6. The scrollable container directly holding the table scrolls both Y and X on listing pages */
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) .table-container,
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) div:has(> table):not(.fixed),
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) .overflow-x-auto:has(> table):not(.fixed),
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) .overflow-auto:has(> table):not(.fixed) {
     flex: 1 1 0% !important;
     min-height: 0 !important;
     height: auto !important;
@@ -282,21 +283,44 @@ table tbody tr.table-scroll-row:hover > .table-action-cell {
     -webkit-overflow-scrolling: touch;
 }
 
-/* 7. Pin the table head to the top of the table while scrolling */
-.mobile-content-area table thead {
+/* 7. Pin the table head to the top of the table while scrolling on listing pages */
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) table thead {
     position: sticky !important;
     top: 0 !important;
     z-index: 20 !important;
 }
 
 /* 8. Pagination bar pinned cleanly at the bottom without shifting */
-.mobile-content-area [data-pagination],
-.mobile-content-area .pagination-bar,
-.mobile-content-area > *:has(table) > nav,
-.mobile-content-area > *:has(table) div:has(> [data-pagination]),
-.mobile-content-area > *:has(table) div:has(> .pagination-bar) {
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) [data-pagination],
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) .pagination-bar,
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table) > nav,
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table) div:has(> [data-pagination]),
+.mobile-content-area:not([data-scrollable-route="true"]):not(:has(.dashboard-root)):not(:has(.calculate-schedule-root)):not(:has([data-allow-scroll="true"])) > *:has(table) div:has(> .pagination-bar) {
     flex-shrink: 0 !important;
     margin-top: auto !important;
+}
+
+/* ==========================================================================
+   Full Page Scrolling for /dashboard, /calculate/schedule-1, /calculate/schedule-2
+   ========================================================================== */
+.mobile-content-area[data-scrollable-route="true"],
+.mobile-content-area:has(.dashboard-root),
+.mobile-content-area:has(.calculate-schedule-root),
+.mobile-content-area:has([data-allow-scroll="true"]) {
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.mobile-content-area[data-scrollable-route="true"] > *,
+.mobile-content-area > .dashboard-root,
+.mobile-content-area > .calculate-schedule-root,
+.mobile-content-area > [data-allow-scroll="true"] {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 100% !important;
+    display: block !important;
+    overflow: visible !important;
 }
 
 @media (max-height: 850px) {

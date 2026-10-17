@@ -420,21 +420,21 @@ const SaveUrlPage = () => {
             {/* ───────────────────────────────────────────────────────────────── */}
             {/* TOP PUBLIC URL SHOWCASE SECTION (Horizontal 5-Item Scroll)       */}
             {/* ───────────────────────────────────────────────────────────────── */}
-            <div className="bg-white border border-slate-200 rounded-[5px] p-3 shadow-sm space-y-3">
+            <div className="bg-white border border-slate-200 rounded-[5px] p-2 shadow-xs space-y-1.5">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[11px]">
                             <FaGlobe />
                         </div>
-                        <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <h2 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                             <span>Public URLs (តំណភ្ជាប់សាធារណៈ)</span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
                                 {publicTotal}
                             </span>
                         </h2>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         {/* See All Button */}
                         <button
                             type="button"
@@ -444,10 +444,10 @@ const SaveUrlPage = () => {
                                 setSeeAllVisibleCount(SEE_ALL_CHUNK_SIZE);
                                 setSeeAllOpen(true);
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-bold rounded-[5px] text-xs transition-all cursor-pointer border border-slate-200"
+                            className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-bold rounded-[5px] text-[11px] transition-all cursor-pointer border border-slate-200"
                         >
-                            <FaThLarge className="text-[10px]" />
-                            <span>See All (មើលទាំងអស់)</span>
+                            <FaThLarge className="text-[9px]" />
+                            <span>See All ({publicTotal})</span>
                         </button>
 
                         {/* Left / Right Nav buttons */}
@@ -455,7 +455,7 @@ const SaveUrlPage = () => {
                             <button
                                 type="button"
                                 onClick={scrollLeft}
-                                className="w-7 h-7 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs transition-colors cursor-pointer border border-slate-200"
+                                className="w-6 h-6 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] transition-colors cursor-pointer border border-slate-200"
                                 title="Scroll Left"
                             >
                                 <FaChevronLeft />
@@ -463,7 +463,7 @@ const SaveUrlPage = () => {
                             <button
                                 type="button"
                                 onClick={scrollRight}
-                                className="w-7 h-7 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs transition-colors cursor-pointer border border-slate-200"
+                                className="w-6 h-6 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] transition-colors cursor-pointer border border-slate-200"
                                 title="Scroll Right"
                             >
                                 <FaChevronRight />
@@ -495,23 +495,23 @@ const SaveUrlPage = () => {
                             return (
                                 <div
                                     key={item._id || item.id || idx}
-                                    className="min-w-[240px] max-w-[260px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-md rounded-[5px] p-3 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
+                                    className="min-w-[210px] max-w-[230px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-md rounded-[5px] p-2 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
                                 >
-                                    <div className="space-y-2">
+                                    <div className="space-y-1">
                                         {/* Category & Visibility Header */}
                                         <div className="flex items-center justify-between gap-1">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border truncate max-w-[140px] ${getCategoryColor(item.category)}`}>
+                                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border truncate max-w-[120px] ${getCategoryColor(item.category)}`}>
                                                 {item.category || 'General'}
                                             </span>
-                                            <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
-                                                <FaGlobe className="text-emerald-500" />
+                                            <span className="text-[9px] font-mono text-slate-400 flex items-center gap-1">
+                                                <FaGlobe className="text-emerald-500 text-[9px]" />
                                                 <span>Public</span>
                                             </span>
                                         </div>
 
                                         {/* Title */}
                                         <h4
-                                            className="font-bold text-slate-900 text-xs leading-snug line-clamp-2 hover:text-emerald-600 cursor-pointer transition-colors"
+                                            className="font-bold text-slate-900 text-xs leading-snug line-clamp-1 hover:text-emerald-600 cursor-pointer transition-colors"
                                             onClick={() => handleOpenLink(item)}
                                             title={item.title}
                                         >
@@ -519,38 +519,38 @@ const SaveUrlPage = () => {
                                         </h4>
 
                                         {/* URL Domain Badge */}
-                                        <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-mono bg-emerald-50/70 border border-emerald-200/60 px-2 py-1 rounded truncate">
-                                            <FaLink className="text-[9px] shrink-0" />
+                                        <div className="flex items-center gap-1 text-[10px] text-emerald-700 font-mono bg-emerald-50/70 border border-emerald-200/60 px-1.5 py-0.5 rounded truncate">
+                                            <FaLink className="text-[8px] shrink-0" />
                                             <span className="truncate" title={item.url}>{domain}</span>
                                         </div>
 
-                                        {/* Description */}
+                                        {/* Description: at most 3 lines with ellipsis */}
                                         {item.description && (
-                                            <p className="text-[11px] text-slate-500 line-clamp-2" title={item.description}>
+                                            <p className="text-[10px] text-slate-500 line-clamp-3 leading-tight" title={item.description}>
                                                 {item.description}
                                             </p>
                                         )}
                                     </div>
 
                                     {/* Action Bar */}
-                                    <div className="pt-2.5 mt-2 border-t border-slate-100 flex items-center justify-between gap-1">
+                                    <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between gap-1">
                                         <button
                                             type="button"
                                             onClick={() => handleCopy(item.url, item._id || item.id)}
-                                            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
+                                            className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
                                             title="ចម្លង URL"
                                         >
-                                            {isCopied ? <FaCheck className="text-emerald-600" /> : <FaCopy />}
+                                            {isCopied ? <FaCheck className="text-emerald-600 text-[9px]" /> : <FaCopy className="text-[9px]" />}
                                             <span>{isCopied ? 'Copied' : 'Copy'}</span>
                                         </button>
 
                                         <button
                                             type="button"
                                             onClick={() => handleOpenLink(item)}
-                                            className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[11px] cursor-pointer shadow-xs transition-all active:scale-95"
+                                            className="flex items-center gap-1 px-2.5 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[10px] cursor-pointer shadow-xs transition-all active:scale-95"
                                         >
                                             <span>Open</span>
-                                            <FaExternalLinkAlt className="text-[9px]" />
+                                            <FaExternalLinkAlt className="text-[8px]" />
                                         </button>
                                     </div>
                                 </div>
@@ -764,8 +764,10 @@ const SaveUrlPage = () => {
                                         </td>
 
                                         {/* Note / Description */}
-                                        <td className="px-4 py-1.5 max-w-[200px] truncate text-slate-600" title={item.description || ''}>
-                                            {item.description || '—'}
+                                        <td className="px-4 py-1.5 max-w-[280px] text-slate-600 whitespace-normal" title={item.description || ''}>
+                                            <p className="line-clamp-3 text-xs leading-snug" title={item.description || ''}>
+                                                {item.description || '—'}
+                                            </p>
                                         </td>
 
                                         {/* Created By */}
@@ -937,7 +939,7 @@ const SaveUrlPage = () => {
                                                     </div>
 
                                                     {item.description && (
-                                                        <p className="text-[11px] text-slate-500 line-clamp-2" title={item.description}>
+                                                        <p className="text-[11px] text-slate-500 line-clamp-3 leading-snug" title={item.description}>
                                                             {item.description}
                                                         </p>
                                                     )}

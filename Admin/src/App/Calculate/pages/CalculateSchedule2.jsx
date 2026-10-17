@@ -643,7 +643,7 @@ const CalculateSchedule2 = () => {
                 }
             `}</style>
 
-            <div className="p-2 sm:p-2 max-w-7xl mx-auto space-y-6 bg-[#fff]">
+            <div data-allow-scroll="true" className="calculate-schedule-root p-2 sm:p-2 max-w-7xl mx-auto space-y-6 bg-[#fff]">
 
                 {/* ── Header ────────────────────────────────────────── */}
                 <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#fff] p-5 rounded-[5px] border border-slate-200 shadow-xs">

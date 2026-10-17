@@ -229,7 +229,7 @@ const CalculateSchedule1 = () => {
     };
 
     return (
-        <div className="p-2 sm:p-2 space-y-6 max-w-7xl mx-auto">
+        <div data-allow-scroll="true" className="calculate-schedule-root p-2 sm:p-2 space-y-6 max-w-7xl mx-auto">
             {/* Top Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--app-card,rgba(255,255,255,0.7))] border border-[var(--app-border,rgba(226,232,240,0.8))] p-5 rounded-[5px] shadow-xs backdrop-blur-md">
                 <div>

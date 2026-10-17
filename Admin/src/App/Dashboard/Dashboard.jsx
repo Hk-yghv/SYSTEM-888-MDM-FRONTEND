@@ -1045,7 +1045,7 @@ const Dashboard = () => {
     };
 
     return (
-        <main className="dashboard-root select-none">
+        <main className="dashboard-root select-none" data-allow-scroll="true">
             {/* ── Executive Header ── */}
             <header className="executive-header">
                 {/* Top Ticker Row */}
