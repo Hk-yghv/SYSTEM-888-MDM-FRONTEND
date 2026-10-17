@@ -11,6 +11,7 @@ import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 
 const LIMIT = 10;
+const DEFAULT_PAYMENT_METHODS = ['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer'];
 
 const PaymentHistory = () => {
     const { t } = useLanguage();
@@ -47,6 +48,7 @@ const PaymentHistory = () => {
     // Edit modal states for Master Admin
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingPayment, setEditingPayment] = useState(null);
+    const [paymentMethods, setPaymentMethods] = useState(DEFAULT_PAYMENT_METHODS);
     const [editForm, setEditForm] = useState({
         paidDate: '',
         amount: '',
@@ -63,6 +65,25 @@ const PaymentHistory = () => {
     const [editError, setEditError] = useState('');
     const [actionMessage, setActionMessage] = useState('');
     const [deletingId, setDeletingId] = useState(null);
+
+    useEffect(() => {
+        if (!editModalOpen) return;
+
+        const brand = editingPayment?.brand || user?.brand || '';
+        setPaymentMethods(DEFAULT_PAYMENT_METHODS);
+        fetch(`${API_BASE1}/controlsystem?brand=${encodeURIComponent(brand)}`)
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to load payment methods');
+                return res.json();
+            })
+            .then(data => {
+                const methods = data?.droplists?.find(item => item.category === 'Payment Methods')?.items;
+                if (!Array.isArray(methods)) return;
+                const validMethods = methods.filter(method => typeof method === 'string' && method.trim());
+                if (validMethods.length > 0) setPaymentMethods(validMethods);
+            })
+            .catch(err => console.error('Fetch payment methods error:', err));
+    }, [API_BASE1, editModalOpen, editingPayment?.brand, user?.brand]);
 
     const openImageViewer = (images, startIdx = 0) => {
         const arr = Array.isArray(images) ? images.filter(Boolean) : [images].filter(Boolean);
@@ -694,13 +715,18 @@ const PaymentHistory = () => {
                                     <label className="block font-bold text-slate-700 mb-1">
                                         បង់តាមរយៈ / អ្នកបង់ (Paid By)
                                     </label>
-                                    <input
-                                        type="text"
+                                    <select
                                         value={editForm.paidBy}
                                         onChange={e => setEditForm(prev => ({ ...prev, paidBy: e.target.value }))}
                                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                                        placeholder="ឧ. QR Mobile Payment, Cash, ABA..."
-                                    />
+                                    >
+                                        {!paymentMethods.includes(editForm.paidBy) && editForm.paidBy && (
+                                            <option value={editForm.paidBy}>{editForm.paidBy}</option>
+                                        )}
+                                        {paymentMethods.map((method, index) => (
+                                            <option key={`${method}-${index}`} value={method}>{method}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 

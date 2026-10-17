@@ -44,20 +44,10 @@ const MainLayout = ({ children }) => {
       }
     } catch {}
     return {
-      side: "left",
+      side: isHeaderOpen ? "left" : "right",
       y: typeof window !== "undefined" ? Math.round(window.innerHeight * 0.65) : 350,
     };
   });
-
-  // Both header & leftMenu are visible
-  const isBothVisible = isHeaderOpen && isSidebarOpen;
-
-  // If header and leftMenu are both visible (not hidden), ensure attached to left edge per user requirement
-  useEffect(() => {
-    if (isBothVisible) {
-      setDockPos((prev) => (prev.side !== "left" ? { ...prev, side: "left" } : prev));
-    }
-  }, [isBothVisible]);
 
   const dragging = useRef(false);
   const dragOffsetY = useRef(0);
@@ -129,11 +119,16 @@ const MainLayout = ({ children }) => {
   }, []);
 
   const handleToggleHeader = (val) => {
-    setIsHeaderOpen((prev) => {
-      const next = typeof val === "boolean" ? val : !prev;
-      try { localStorage.setItem(STORAGE_KEY_HEADER, JSON.stringify(next)); } catch {}
-      return next;
-    });
+    const next = typeof val === "boolean" ? val : !isHeaderOpen;
+    setIsHeaderOpen(next);
+    try { localStorage.setItem(STORAGE_KEY_HEADER, JSON.stringify(next)); } catch {}
+    if (isHeaderOpen && !next) {
+      setDockPos((current) => {
+        const nextPos = { ...current, side: "right" };
+        try { localStorage.setItem(STORAGE_KEY_POS, JSON.stringify(nextPos)); } catch {}
+        return nextPos;
+      });
+    }
   };
 
   // Close popup on outside click
@@ -154,8 +149,7 @@ const MainLayout = ({ children }) => {
     : dockPos.y > 220;
 
   const isLeftSide = dockPos.side === "left";
-  // Auto-hide eye icon and "Display" text when header & leftMenu are both visible (unless hovered or popup open)
-  const shouldHideContent = isBothVisible && !isHovered && !isFloatingUplistOpen;
+  const shouldHideContent = (!isHeaderOpen || !isSidebarOpen) && !isHovered && !isFloatingUplistOpen;
 
   return (
     <div className="flex flex-col h-screen bg-[var(--app-bg,#f4f6f8)] text-[var(--app-text,#0f172a)] relative transition-colors duration-300 overflow-hidden">

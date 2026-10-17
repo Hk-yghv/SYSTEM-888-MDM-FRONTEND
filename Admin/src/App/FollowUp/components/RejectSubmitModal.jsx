@@ -54,7 +54,11 @@ const RejectSubmitModal = ({
         const targetDate = (date || '').trim();
         if (!targetDate) return [];
 
-        return (submitList || []).filter(item => item && item.date === targetDate);
+        return (submitList || []).filter(item =>
+            item &&
+            item.date === targetDate &&
+            (item.status || '').trim().toUpperCase() === 'REJECT'
+        );
     }, [submitList, date]);
 
     if (!isOpen) return null;
@@ -122,9 +126,9 @@ const RejectSubmitModal = ({
                         </div>
 
                         {showFollowUpTable && (
-                            <div className="bg-slate-900/90 border border-slate-700 rounded-[5px] overflow-hidden shadow-xl">
-                                <div className="flex items-center justify-between p-2 border-b border-slate-700 bg-slate-800/80">
-                                    <span className="text-[11px] font-bold text-emerald-400">FOLLOW UP SUBMIT - {date}</span>
+                            <div className="sticky top-0 z-20 bg-slate-900/95 border border-slate-700 rounded-[5px] overflow-hidden shadow-xl">
+                                <div className="flex items-center justify-between p-2 border-b border-slate-700 bg-slate-800/95">
+                                    <span className="text-[11px] font-bold text-emerald-400">FOLLOW UP SUBMIT - REJECT - {date}</span>
                                     <button
                                         type="button"
                                         onClick={() => setShowFollowUpTable(false)}
@@ -140,7 +144,7 @@ const RejectSubmitModal = ({
                                         <div className="text-center py-6 text-xs text-rose-300">{submitError}</div>
                                     ) : followUpRows.length === 0 ? (
                                         <div className="text-center py-6 text-xs text-slate-400 px-3">
-                                            គ្មាន FOLLOW UP SUBMIT សម្រាប់ {date}
+                                            គ្មាន FOLLOW UP SUBMIT ស្ថានភាព REJECT សម្រាប់ {date}
                                         </div>
                                     ) : (
                                         <table className="w-max min-w-full text-left text-[11px] text-slate-200">
