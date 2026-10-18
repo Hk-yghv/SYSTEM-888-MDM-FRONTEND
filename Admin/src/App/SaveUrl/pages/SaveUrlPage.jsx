@@ -779,13 +779,31 @@ const SaveUrlPage = () => {
 
 
             <div
-                className="w-full overflow-auto rounded-[5px] border border-slate-200 bg-white shadow-md table-container"
+                className="w-full overflow-x-auto overflow-y-auto rounded-[5px] border border-slate-200 bg-white shadow-md table-container"
                 style={{
+                    height: "auto",
+                    minHeight: 0,
                     maxHeight: "220px",
-                    height: "fit-content"
                 }}
             >
+                <style>
+                    {`
+                    .table-container {
+    height: fit-content !important;
+    min-height: 0 !important;
+    max-height: 220px;
+    overflow: auto;
+}
 
+.table-container table {
+    height: auto !important;
+}
+
+.table-container tbody tr {
+    height: 34px;
+}
+                    `}
+                </style>
 
                 <table className="w-full text-left text-xs whitespace-nowrap">
 
