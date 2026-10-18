@@ -805,7 +805,7 @@ const SaveUrlPage = () => {
                     `}
                 </style>
 
-                <table className="w-full text-left text-xs whitespace-nowrap">
+                <table className="w-full max-h-20 text-left text-xs whitespace-nowrap">
 
                     <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
 
