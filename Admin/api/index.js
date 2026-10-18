@@ -43,7 +43,10 @@ const verifySessionToken = async (token) => {
 
 const isPublicRequest = (method, path) => (
     (method === 'POST' && ['auth/login', 'auth/verify-otp', 'auth/qr-login'].includes(path)) ||
-    (method === 'GET' && path === 'health')
+    (method === 'GET' && (
+        path === 'health' ||
+        /^contracts\/customer-info\/[^/]+$/.test(path)
+    ))
 );
 
 export default async function handler(req, res) {
@@ -145,7 +148,9 @@ export default async function handler(req, res) {
 
     // 6. Forward only caller credentials; never grant the proxy's privileged system identity.
     const forwardHeaders = {
-        'x-forwarded-for': req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1'
+        'x-forwarded-for': req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '127.0.0.1',
+        'x-forwarded-host': req.headers.host,
+        'x-forwarded-proto': req.headers['x-forwarded-proto'] || 'https'
     };
 
     if (req.headers['authorization']) {

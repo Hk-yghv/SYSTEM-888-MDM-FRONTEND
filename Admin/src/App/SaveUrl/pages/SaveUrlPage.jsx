@@ -72,6 +72,25 @@ const formatDomain = (urlStr) => {
     }
 };
 
+const ToggleSwitch = ({ checked, onChange, label }) => (
+    <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={onChange}
+        className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${checked
+            ? 'border-blue-700 bg-blue-600 focus:ring-blue-500'
+            : 'border-rose-700 bg-rose-600 focus:ring-rose-500'
+            }`}
+    >
+        <span className={`absolute text-[8px] font-black text-white ${checked ? 'left-1.5' : 'right-1.5'}`}>
+            {checked ? 'ON' : 'OFF'}
+        </span>
+        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-7' : 'translate-x-0.5'}`} />
+    </button>
+);
+
 const SaveUrlPage = () => {
     const { t } = useLanguage();
     const { API_BASE, user, hasPermission } = useAuth();
@@ -108,6 +127,11 @@ const SaveUrlPage = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [copiedId, setCopiedId] = useState(null);
+    const [unlockedUrls, setUnlockedUrls] = useState({});
+    const [unlockTarget, setUnlockTarget] = useState(null);
+    const [unlockPassword, setUnlockPassword] = useState('');
+    const [unlockError, setUnlockError] = useState('');
+    const [unlocking, setUnlocking] = useState(false);
 
     // Delete confirm modal
     const [deleteModalItem, setDeleteModalItem] = useState(null);
@@ -120,6 +144,9 @@ const SaveUrlPage = () => {
         category: 'General',
         customCategory: '',
         visibility: 'Public',
+        brandWide: false,
+        passwordProtected: false,
+        password: '',
         description: '',
         brand: user?.brand || '',
         subBrand: ''
@@ -212,20 +239,35 @@ const SaveUrlPage = () => {
     }, [API_BASE]);
 
     // Handle Copy URL
-    const handleCopy = (urlStr, id) => {
-        if (!urlStr) return;
-        navigator.clipboard.writeText(urlStr);
+    const handleCopy = (urlStr, id, item) => {
+        const resolvedUrl = item?.passwordProtected ? unlockedUrls[id] : urlStr;
+        if (!resolvedUrl && item?.passwordProtected) {
+            setUnlockTarget({ item, action: 'copy' });
+            setUnlockPassword('');
+            setUnlockError('');
+            return;
+        }
+        if (!resolvedUrl) return;
+        navigator.clipboard.writeText(resolvedUrl);
         setCopiedId(id);
         setTimeout(() => setCopiedId(null), 2000);
     };
 
     // Handle Track Click
     const handleOpenLink = (item) => {
-        if (!item?.url) return;
+        const id = item?._id || item?.id;
+        const url = item?.passwordProtected ? unlockedUrls[id] : item?.url;
+        if (!url && item?.passwordProtected) {
+            setUnlockTarget({ item, action: 'open' });
+            setUnlockPassword('');
+            setUnlockError('');
+            return;
+        }
+        if (!url) return;
         try {
-            fetch(`${API_BASE}/saved-urls/${item._id || item.id}/click`, { method: 'PATCH' }).catch(() => { });
+            fetch(`${API_BASE}/saved-urls/${id}/click`, { method: 'PATCH' }).catch(() => { });
         } catch { }
-        window.open(item.url, '_blank', 'noopener,noreferrer');
+        window.open(url, '_blank', 'noopener,noreferrer');
     };
 
     // Horizontal Scroll Handler (Top Showcase)
@@ -279,21 +321,79 @@ const SaveUrlPage = () => {
         setOpenModal(true);
     };
 
-    // Open Edit Modal
-    const handleOpenEdit = (item) => {
+    const openEditForm = (item, url = item.url || '') => {
         setEditingItem(item);
         const isPreset = PRESET_CATEGORIES.includes(item.category);
         setFormData({
+            ...initialForm,
             title: item.title || '',
-            url: item.url || '',
+            url,
             category: isPreset ? item.category : 'Other',
             customCategory: isPreset ? '' : (item.category || ''),
             visibility: item.visibility || 'Public',
+            brandWide: Boolean(item.brandWide),
+            passwordProtected: Boolean(item.passwordProtected),
             description: item.description || '',
             brand: item.brand || user?.brand || '',
             subBrand: item.subBrand || ''
         });
         setOpenModal(true);
+    };
+
+    // Open Edit Modal
+    const handleOpenEdit = (item) => {
+        const id = item._id || item.id;
+        if (item.passwordProtected && !unlockedUrls[id]) {
+            setUnlockTarget({ item, action: 'edit' });
+            setUnlockPassword('');
+            setUnlockError('');
+            return;
+        }
+        openEditForm(item, unlockedUrls[id] || item.url || '');
+    };
+
+    const handleUnlockSubmit = async (event) => {
+        event.preventDefault();
+        if (!unlockTarget) return;
+        const { item, action } = unlockTarget;
+        const id = item._id || item.id;
+        const openedWindow = action === 'open' ? window.open('about:blank', '_blank') : null;
+        if (openedWindow) openedWindow.opener = null;
+        setUnlocking(true);
+        setUnlockError('');
+        try {
+            const res = await fetch(`${API_BASE}/saved-urls/${id}/unlock`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: unlockPassword })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                if (openedWindow) openedWindow.close();
+                setUnlockError(data.error || 'មិនអាចដោះសោ URL បានទេ។');
+                return;
+            }
+            setUnlockedUrls(current => ({ ...current, [id]: data.url }));
+            setUnlockTarget(null);
+            setUnlockPassword('');
+            if (action === 'open') {
+                if (openedWindow) openedWindow.location.href = data.url;
+                else window.open(data.url, '_blank', 'noopener,noreferrer');
+                fetch(`${API_BASE}/saved-urls/${id}/click`, { method: 'PATCH' }).catch(() => {});
+            } else if (action === 'copy') {
+                await navigator.clipboard.writeText(data.url);
+                setCopiedId(id);
+                setTimeout(() => setCopiedId(null), 2000);
+            } else if (action === 'edit') {
+                openEditForm(item, data.url);
+            }
+        } catch (err) {
+            if (openedWindow) openedWindow.close();
+            console.error('Unlock saved URL error:', err);
+            setUnlockError('មានបញ្ហាក្នុងការភ្ជាប់ទៅម៉ាស៊ីនមេ។ សូមព្យាយាមម្ដងទៀត។');
+        } finally {
+            setUnlocking(false);
+        }
     };
 
     // Form Submit
@@ -303,8 +403,16 @@ const SaveUrlPage = () => {
             alert('សូមបញ្ចូលចំណងជើង URL (Title is required)');
             return;
         }
-        if (!formData.url.trim()) {
+        if (!formData.url.trim() && !editingItem) {
             alert('សូមបញ្ចូលតំណភ្ជាប់ URL (URL is required)');
+            return;
+        }
+        if (formData.visibility === 'Private' && !formData.brandWide && !formData.subBrand) {
+            alert('សូមជ្រើសរើស Sub Brand ឬបើកការចែករំលែកគ្រប់ Sub Brand ក្នុង Brand នេះ។');
+            return;
+        }
+        if (formData.passwordProtected && !editingItem?.passwordProtected && formData.password.length < 4) {
+            alert('លេខសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៤ តួអក្សរ។');
             return;
         }
 
@@ -319,6 +427,9 @@ const SaveUrlPage = () => {
                 url: formData.url.trim(),
                 category: finalCategory,
                 visibility: formData.visibility,
+                brandWide: formData.visibility === 'Private' && formData.brandWide,
+                passwordProtected: formData.passwordProtected,
+                password: formData.password,
                 description: formData.description.trim(),
                 brand: formData.brand,
                 subBrand: formData.subBrand || '',
@@ -460,7 +571,7 @@ const SaveUrlPage = () => {
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h2 className="text-sm font-bold text-slate-800">
-                                    Public URLs
+                                    Shared URLs
                                 </h2>
 
                                 <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold font-mono">
@@ -521,13 +632,13 @@ const SaveUrlPage = () => {
                     {loadingPublic ? (
                         <div className="py-6 flex items-center justify-center gap-2 text-slate-400 text-xs">
                             <FaSpinner className="animate-spin text-emerald-600" />
-                            <span>កំពុងទាញយក Public URLs...</span>
+                            <span>កំពុងទាញយក URLs ដែលបានចែករំលែក...</span>
                         </div>
                     ) : publicUrls.length === 0 ? (
                         <div className="py-8 text-center border border-dashed border-slate-200 rounded-lg">
                             <FaGlobe className="mx-auto mb-2 text-2xl text-slate-300" />
                             <p className="text-xs text-slate-500">
-                                មិនទាន់មាន Public URL នៅឡើយទេ។
+                                មិនទាន់មាន URL ដែលបានចែករំលែកនៅឡើយទេ។
                             </p>
                         </div>
                     ) : (
@@ -561,8 +672,10 @@ const SaveUrlPage = () => {
                                 {/* Table Body */}
                                 <tbody className="divide-y divide-slate-100 bg-white">
                                     {publicUrls.slice(0, visiblePublicCount).map((item, idx) => {
-                                        const domain = formatDomain(item.url);
-                                        const isCopied = copiedId === (item._id || item.id);
+                                        const itemId = item._id || item.id;
+                                        const isCopied = copiedId === itemId;
+                                        const displayUrl = item.passwordProtected ? unlockedUrls[itemId] : item.url;
+                                        const domain = formatDomain(displayUrl || '');
 
                                         return (
                                             <tr
@@ -608,18 +721,20 @@ const SaveUrlPage = () => {
                                                 <td className="px-3 py-2.5 max-w-[180px]">
                                                     <div
                                                         className="flex items-center gap-1.5 text-[11px] text-slate-600 font-mono"
-                                                        title={item.url}
+                                                        title={item.passwordProtected && !displayUrl ? 'Password protected' : displayUrl}
                                                     >
                                                         <FaLink className="text-emerald-500 text-[10px] shrink-0" />
-                                                        <span className="truncate">{domain}</span>
+                                                        <span className="truncate">
+                                                            {item.passwordProtected && !displayUrl ? '🔒 Password protected' : domain}
+                                                        </span>
                                                     </div>
                                                 </td>
 
                                                 {/* Visibility */}
                                                 <td className="px-3 py-2.5 text-center">
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                        Public
+                                                    <span className={`inline-flex items-center gap-1 text-[10px] font-medium ${item.visibility === 'Public' ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                                        <span className={`h-1.5 w-1.5 rounded-full ${item.visibility === 'Public' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                                        {item.visibility || 'Public'}
                                                     </span>
                                                 </td>
 
@@ -629,7 +744,7 @@ const SaveUrlPage = () => {
 
                                                         <button
                                                             type="button"
-                                                            onClick={() => handleCopy(item.url, item._id || item.id)}
+                                                            onClick={() => handleCopy(item.url, itemId, item)}
                                                             className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-md border text-[10px] font-semibold transition-colors cursor-pointer ${isCopied
                                                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                                                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
@@ -719,6 +834,7 @@ const SaveUrlPage = () => {
                             <option value="All">All ({stats.totalAll || 0})</option>
                             <option value="Public">Public ({stats.publicCount || 0})</option>
                             <option value="Private">Private ({stats.privateCount || 0})</option>
+                            <option value="Personal">Personal ({stats.personalCount || 0})</option>
                         </select>
                     </div>
 
@@ -764,14 +880,14 @@ const SaveUrlPage = () => {
                         <FaLock />
                     </div>
                     <span className="text-[11px] font-bold text-slate-700">
-                        URL របស់ខ្ញុំ
+                        URL ដែលអ្នកអាចមើលបាន
                     </span>
                     <span className="text-[10px] text-slate-400 font-normal">
-                        — បង្ហាញតែ URL ដែលអ្នកបង្កើតផ្ទាល់ប៉ុណ្ណោះ
+                        — រួមមាន Public, Private ក្នុង Sub Brand/Brand និង Personal របស់អ្នក
                     </span>
                 </div>
                 <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                    Public URLs របស់អ្នកដទៃ → ឃើញខាងលើ
+                    Shared URLs → ឃើញខាងលើ
                 </span>
             </div>
 
@@ -852,7 +968,9 @@ const SaveUrlPage = () => {
                             urls.map((item, idx) => {
                                 const isPublic = item.visibility === 'Public';
                                 const createdDateStr = item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : '—';
-                                const isCopied = copiedId === (item._id || item.id);
+                                const itemId = item._id || item.id;
+                                const isCopied = copiedId === itemId;
+                                const displayUrl = item.passwordProtected ? unlockedUrls[itemId] : item.url;
                                 // Only the creator or master admin can edit/delete
                                 const isOwner = isMasterAdmin ||
                                     (item.createdBy || '').trim().toLowerCase() === (user?.username || '').trim().toLowerCase();
@@ -879,21 +997,20 @@ const SaveUrlPage = () => {
                                             <div className="flex items-center gap-1.5">
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleCopy(item.url, item._id || item.id)}
+                                                    onClick={() => handleCopy(item.url, itemId, item)}
                                                     className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-emerald-600 cursor-pointer"
                                                     title="ចម្លង URL"
                                                 >
                                                     {isCopied ? <FaCheck className="text-emerald-600 text-xs" /> : <FaCopy className="text-xs" />}
                                                 </button>
-                                                <a
-                                                    href={item.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-emerald-700 hover:underline truncate"
-                                                    title={item.url}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleOpenLink(item)}
+                                                    className="text-emerald-700 hover:underline truncate text-left"
+                                                    title={item.passwordProtected && !displayUrl ? 'Password protected' : displayUrl}
                                                 >
-                                                    {item.url}
-                                                </a>
+                                                    {item.passwordProtected && !displayUrl ? '🔒 URL protected by password' : displayUrl}
+                                                </button>
                                             </div>
                                         </td>
 
@@ -906,7 +1023,11 @@ const SaveUrlPage = () => {
 
                                         {/* Sub Brand */}
                                         <td className="px-4 py-1.5">
-                                            {item.subBrand ? (
+                                            {item.brandWide ? (
+                                                <span className="px-2 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 rounded text-[10px] font-bold">
+                                                    All Sub Brands
+                                                </span>
+                                            ) : item.subBrand ? (
                                                 <span className="px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded text-[10px] font-bold">
                                                     {item.subBrand}
                                                 </span>
@@ -917,7 +1038,9 @@ const SaveUrlPage = () => {
                                         <td className="px-4 py-1.5 text-center">
                                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 border ${isPublic
                                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                                                : item.visibility === 'Personal'
+                                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                                    : 'bg-amber-50 text-amber-700 border-amber-200'
                                                 }`}>
                                                 {isPublic ? <FaGlobe size={10} /> : <FaLock size={10} />}
                                                 <span>{item.visibility || 'Public'}</span>
@@ -1013,7 +1136,7 @@ const SaveUrlPage = () => {
                             <div className="flex items-center gap-2.5">
                                 <FaGlobe className="text-xl" />
                                 <div>
-                                    <h3 className="text-sm font-bold">Public URLs Directory (បញ្ជីតំណភ្ជាប់សាធារណៈទាំងអស់)</h3>
+                                    <h3 className="text-sm font-bold">Shared URLs Directory (បញ្ជីតំណភ្ជាប់ដែលបានចែករំលែក)</h3>
                                     <p className="text-[11px] text-white/80">បង្ហាញទិន្នន័យម្ដង ១៥ ទៅ ១០០+ ដោយ Scroll ចុះក្រោម</p>
                                 </div>
                             </div>
@@ -1034,7 +1157,7 @@ const SaveUrlPage = () => {
                                     type="text"
                                     value={seeAllSearch}
                                     onChange={(e) => setSeeAllSearch(e.target.value)}
-                                    placeholder="ស្វែងរកក្នុង Public URLs..."
+                                    placeholder="ស្វែងរកក្នុង URLs ដែលបានចែករំលែក..."
                                     className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-emerald-500 font-medium text-slate-800"
                                 />
                             </div>
@@ -1062,13 +1185,15 @@ const SaveUrlPage = () => {
                         >
                             {displayedSeeAllList.length === 0 ? (
                                 <div className="py-16 text-center text-slate-400 text-xs italic">
-                                    មិនមាន Public URL ត្រូវនឹងការស្វែងរកឡើយ
+                                    មិនមាន URL ត្រូវនឹងការស្វែងរកឡើយ
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                                     {displayedSeeAllList.map((item, idx) => {
-                                        const domain = formatDomain(item.url);
-                                        const isCopied = copiedId === (item._id || item.id);
+                                        const itemId = item._id || item.id;
+                                        const displayUrl = item.passwordProtected ? unlockedUrls[itemId] : item.url;
+                                        const domain = formatDomain(displayUrl || '');
+                                        const isCopied = copiedId === itemId;
 
                                         return (
                                             <div
@@ -1082,7 +1207,7 @@ const SaveUrlPage = () => {
                                                         </span>
                                                         <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
                                                             <FaGlobe className="text-emerald-500" />
-                                                            <span>Public</span>
+                                                            <span>{item.visibility || 'Public'}</span>
                                                         </span>
                                                     </div>
 
@@ -1096,7 +1221,9 @@ const SaveUrlPage = () => {
 
                                                     <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-mono bg-emerald-50/70 border border-emerald-200/60 px-2 py-1 rounded truncate">
                                                         <FaLink className="text-[9px] shrink-0" />
-                                                        <span className="truncate" title={item.url}>{domain}</span>
+                                                        <span className="truncate" title={item.passwordProtected && !displayUrl ? 'Password protected' : domain}>
+                                                            {item.passwordProtected && !displayUrl ? '🔒 Password protected' : domain}
+                                                        </span>
                                                     </div>
 
                                                     {item.description && (
@@ -1109,7 +1236,7 @@ const SaveUrlPage = () => {
                                                 <div className="pt-2.5 mt-2 border-t border-slate-100 flex items-center justify-between gap-1">
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleCopy(item.url, item._id || item.id)}
+                                                        onClick={() => handleCopy(item.url, itemId, item)}
                                                         className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
                                                     >
                                                         {isCopied ? <FaCheck className="text-emerald-600" /> : <FaCopy />}
@@ -1201,21 +1328,21 @@ const SaveUrlPage = () => {
                                     <FaLink className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                     <input
                                         type="text"
-                                        required
+                                        required={!editingItem}
                                         value={formData.url}
                                         onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                                        placeholder="https://example.com/..."
+                                        placeholder={editingItem?.passwordProtected ? 'Unlocked URL (blank keeps existing URL)' : 'https://example.com/...'}
                                         className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs outline-none focus:border-emerald-500 font-mono text-emerald-700 font-bold"
                                     />
                                 </div>
                             </div>
 
-                            {/* Visibility (Public vs Private) */}
+                            {/* Visibility */}
                             <div>
                                 <label className="block font-bold text-slate-700 mb-1.5">
                                     ភាពមើលឃើញ (Visibility) <span className="text-rose-500">*</span>
                                 </label>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <label
                                         className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${formData.visibility === 'Public'
                                             ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
@@ -1235,7 +1362,7 @@ const SaveUrlPage = () => {
                                                 <FaGlobe className="text-emerald-600" />
                                                 <span>Public (សាធារណៈ)</span>
                                             </p>
-                                            <p className="text-[10px] text-slate-500 mt-0.5">បង្ហាញក្នុងតារាង និងផ្នែកខាងលើ (Showcase)</p>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">Account ទាំងអស់ គ្រប់ Brand និង Sub Brand អាចមើលបាន</p>
                                         </div>
                                     </label>
 
@@ -1256,11 +1383,80 @@ const SaveUrlPage = () => {
                                         <div>
                                             <p className="font-bold flex items-center gap-1.5">
                                                 <FaLock className="text-amber-600" />
-                                                <span>Private (ផ្ទាល់ខ្លួន)</span>
+                                                <span>Private (តាម Sub Brand)</span>
                                             </p>
-                                            <p className="text-[10px] text-slate-500 mt-0.5">ឃើញតែអ្នកបង្កើត និង Admin ប៉ុណ្ណោះ</p>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">Account ក្នុង Sub Brand ដូចគ្នាអាចមើលបាន</p>
                                         </div>
                                     </label>
+
+                                    <label
+                                        className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${formData.visibility === 'Personal'
+                                            ? 'bg-indigo-50 border-indigo-500 text-indigo-800 shadow-xs'
+                                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                            }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="visibility"
+                                            value="Personal"
+                                            checked={formData.visibility === 'Personal'}
+                                            onChange={() => setFormData({ ...formData, visibility: 'Personal', brandWide: false })}
+                                            className="accent-indigo-600"
+                                        />
+                                        <div>
+                                            <p className="font-bold flex items-center gap-1.5">
+                                                <FaLock className="text-indigo-600" />
+                                                <span>Personal (គណនីផ្ទាល់ខ្លួន)</span>
+                                            </p>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">មានតែ Account ដែលបានបង្កើតប៉ុណ្ណោះដែលឃើញ</p>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                {formData.visibility === 'Private' && (
+                                    <div className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-800">ចែករំលែកគ្រប់ Sub Brand ក្នុង Brand នេះ</p>
+                                            <p className="mt-0.5 text-[10px] text-slate-500">នៅតែជា Private ហើយអាចមើលបានតែ Account ក្នុង Brand ដូចគ្នា</p>
+                                        </div>
+                                        <ToggleSwitch
+                                            checked={formData.brandWide}
+                                            onChange={() => setFormData({ ...formData, brandWide: !formData.brandWide })}
+                                            label="Share with all sub-brands in this brand"
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-800">តម្រូវឱ្យបញ្ចូល Password មុនបើក URL</p>
+                                            <p className="mt-0.5 text-[10px] text-slate-500">URL នឹងត្រូវលាក់លើប្រព័ន្ធ រហូតដល់បញ្ចូល Password ត្រឹមត្រូវ</p>
+                                        </div>
+                                        <ToggleSwitch
+                                            checked={formData.passwordProtected}
+                                            onChange={() => setFormData({ ...formData, passwordProtected: !formData.passwordProtected })}
+                                            label="Require a password to reveal the URL"
+                                        />
+                                    </div>
+                                    {formData.passwordProtected && (
+                                        <div className="mt-3">
+                                            <label className="mb-1 block font-bold text-slate-700">
+                                                {editingItem?.passwordProtected ? 'Password ថ្មី (ទុកទទេ ដើម្បីរក្សា Password បច្ចុប្បន្ន)' : 'Password'}
+                                            </label>
+                                            <input
+                                                type="password"
+                                                autoComplete="new-password"
+                                                minLength={editingItem?.passwordProtected ? undefined : 4}
+                                                maxLength={128}
+                                                required={!editingItem?.passwordProtected}
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                placeholder={editingItem?.passwordProtected ? 'បញ្ចូលតែពេលចង់ប្តូរ Password' : 'យ៉ាងហោចណាស់ ៤ តួអក្សរ'}
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none focus:border-blue-500"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1355,6 +1551,70 @@ const SaveUrlPage = () => {
                 </div>
             )}
 
+            {unlockTarget && (
+                <div
+                    className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+                    onClick={() => {
+                        if (!unlocking) {
+                            setUnlockTarget(null);
+                            setUnlockError('');
+                        }
+                    }}
+                >
+                    <form
+                        onSubmit={handleUnlockSubmit}
+                        onClick={(event) => event.stopPropagation()}
+                        className="w-full max-w-sm space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                                <FaLock />
+                            </div>
+                            <div className="min-w-0">
+                                <h3 className="text-sm font-bold text-slate-900">បញ្ចូល Password ដើម្បីបើក URL</h3>
+                                <p className="truncate text-[11px] text-slate-500">{unlockTarget.item.title}</p>
+                            </div>
+                        </div>
+                        <input
+                            type="password"
+                            autoFocus
+                            autoComplete="current-password"
+                            required
+                            value={unlockPassword}
+                            onChange={(event) => setUnlockPassword(event.target.value)}
+                            placeholder="Password"
+                            className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
+                        />
+                        {unlockError && (
+                            <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                                {unlockError}
+                            </p>
+                        )}
+                        <div className="flex justify-end gap-2">
+                            <button
+                                type="button"
+                                disabled={unlocking}
+                                onClick={() => {
+                                    setUnlockTarget(null);
+                                    setUnlockError('');
+                                }}
+                                className="rounded-lg bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+                            >
+                                បោះបង់
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={unlocking}
+                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                {unlocking && <FaSpinner className="animate-spin" />}
+                                {unlocking ? 'កំពុងពិនិត្យ...' : 'ដោះសោ'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
             {/* ───────────────────────────────────────────────────────────────── */}
             {/* DELETE CONFIRMATION MODAL                                        */}
             {/* ───────────────────────────────────────────────────────────────── */}
@@ -1384,7 +1644,9 @@ const SaveUrlPage = () => {
 
                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-left space-y-1 font-medium">
                             <p className="text-slate-800 font-bold truncate">📌 {deleteModalItem.title}</p>
-                            <p className="text-emerald-700 font-mono text-[11px] truncate">🔗 {deleteModalItem.url}</p>
+                            <p className="text-emerald-700 font-mono text-[11px] truncate">
+                                🔗 {deleteModalItem.passwordProtected ? 'Password protected URL' : deleteModalItem.url}
+                            </p>
                         </div>
 
                         <div className="flex items-center justify-end gap-2 pt-2">

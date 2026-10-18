@@ -526,7 +526,6 @@
   "dueTodayTag": "Due Today",
   "pdfPortrait": "PDF (Portrait)",
   "pdfLandscape": "PDF (Landscape)",
-  "print": "Print",
   "printIdCard": "Print ID Card",
   "uploadOrPasteIdCard": "Upload or Paste ID Card",
   "dragDropOrPaste": "Drag & drop image here, or paste directly with Ctrl+V",

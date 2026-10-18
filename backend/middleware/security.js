@@ -254,6 +254,7 @@ export const verifySecurityAuth = (req, res, next) => {
 
     const path = req.path;
     const originalUrl = req.originalUrl?.split('?')[0] || path;
+    const isCustomerInfoPath = /^\/(?:api\/)?contracts\/customer-info\/[^/]+$/.test(path);
 
     // Allow only explicitly whitelisted public paths
     const isPublicPath = publicPaths.some(p =>
@@ -266,7 +267,8 @@ export const verifySecurityAuth = (req, res, next) => {
         path.startsWith('/api-docs') ||
         originalUrl.startsWith('/api-docs') ||
         path.endsWith('/calculate-schedules/stream') ||
-        originalUrl.endsWith('/calculate-schedules/stream')
+        originalUrl.endsWith('/calculate-schedules/stream') ||
+        isCustomerInfoPath
     );
 
     if (isPublicPath) {
@@ -319,7 +321,8 @@ export const verifySecurityAuth = (req, res, next) => {
         originalUrl.startsWith('/api-docs') ||
         originalUrl.startsWith('/api/docs') ||
         originalUrl.endsWith('/pdf') ||
-        path.endsWith('/pdf')
+        path.endsWith('/pdf') ||
+        isCustomerInfoPath
     );
 
     if (isDirectBrowserNavigation && !isExemptBrowserPath && !systemKey) {

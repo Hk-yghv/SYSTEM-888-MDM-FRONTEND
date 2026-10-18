@@ -719,7 +719,9 @@ router.get('/customer-qr-payload/:contractId', async (req, res) => {
 
         if (!contract) return res.status(404).json({ error: 'Customer contract not found' });
 
-        const infoPageUrl = `${req.protocol}://${req.get('host')}/contracts/customer-info/${encodeURIComponent(contract.contractId)}`;
+        const protocol = req.get('x-forwarded-proto')?.split(',')[0] || req.protocol;
+        const host = req.get('x-forwarded-host') || req.get('host');
+        const infoPageUrl = `${protocol}://${host}${req.baseUrl}/customer-info/${encodeURIComponent(contract.contractId)}`;
         const qrDataUrl = await QRCode.toDataURL(infoPageUrl);
 
         res.json({ contract, qrDataUrl, infoPageUrl });

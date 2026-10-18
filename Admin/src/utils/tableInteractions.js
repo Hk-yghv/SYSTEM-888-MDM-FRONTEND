@@ -1,18 +1,3 @@
-const ACTION_HEADER_PATTERN = /^(actions?(?:\s*\([^)]*\))?|សកម្មភាព(?:\s*\(actions?\))?)$/i;
-
-const getOpaqueBackground = (element) => {
-    let current = element;
-    while (current && current !== document.documentElement) {
-        const color = window.getComputedStyle(current).backgroundColor;
-        const isTransparent = color === 'transparent' ||
-            /^rgba\([^)]*,\s*0(?:\.0+)?\)$/i.test(color) ||
-            /^rgb\([^)]*\/\s*0(?:%|\.0+)?\)$/i.test(color);
-        if (!isTransparent) return color;
-        current = current.parentElement;
-    }
-    return '#fff';
-};
-
 const findVerticalScrollContainer = (table) => {
     let current = table.parentElement;
     while (current && current !== document.body && current !== document.documentElement) {
@@ -35,50 +20,9 @@ const findVerticalScrollContainer = (table) => {
     return window;
 };
 
-const prepareStickyActions = (table) => {
-    const headers = Array.from(table.querySelectorAll(':scope > thead > tr > th'));
-    const actionIndex = headers.reduce((lastIndex, header, index) => (
-        ACTION_HEADER_PATTERN.test(header.textContent.replace(/\s+/g, ' ').trim()) ? index : lastIndex
-    ), -1);
-
-    if (actionIndex < 0) {
-        table.classList.remove('table-with-sticky-actions');
-        table.querySelectorAll(':scope > thead tr > .table-action-cell, :scope > tbody tr > .table-action-cell, :scope > tfoot tr > .table-action-cell')
-            .forEach(cell => {
-                cell.classList.remove('table-action-cell');
-                cell.style.removeProperty('--table-action-background');
-            });
-        return;
-    }
-
-    table.classList.add('table-with-sticky-actions');
-    const currentActionCells = new Set();
-    table.querySelectorAll(':scope > thead tr, :scope > tbody tr, :scope > tfoot tr').forEach(row => {
-        const cell = row.children[actionIndex];
-        if (cell?.matches('th, td')) {
-            const background = getOpaqueBackground(cell.tagName === 'TH' ? cell : cell.parentElement);
-            if (cell.style.getPropertyValue('--table-action-background') !== background) {
-                cell.style.setProperty('--table-action-background', background);
-            }
-            cell.classList.add('table-action-cell');
-            currentActionCells.add(cell);
-        }
-    });
-
-    table.querySelectorAll(':scope > thead tr > .table-action-cell, :scope > tbody tr > .table-action-cell, :scope > tfoot tr > .table-action-cell')
-        .forEach(cell => {
-            if (!currentActionCells.has(cell)) {
-                cell.classList.remove('table-action-cell');
-                cell.style.removeProperty('--table-action-background');
-            }
-        });
-};
-
 const updateTableAnimation = (table, isScrolling) => {
     const allRows = table.querySelectorAll(':scope > tbody > tr');
     if (!allRows.length) return;
-
-    prepareStickyActions(table);
 
     // Filter out rows that are placeholders (loading spinner, "no data" with colspan >= 3)
     const validRows = [];
@@ -232,13 +176,6 @@ export const installTableInteractions = () => {
             row.classList.remove('table-scroll-row');
             row.style.removeProperty('--table-scroll-scale');
             row.style.removeProperty('--table-scroll-opacity');
-        });
-        document.querySelectorAll('.table-with-sticky-actions').forEach(table => {
-            table.classList.remove('table-with-sticky-actions');
-        });
-        document.querySelectorAll('.table-action-cell').forEach(cell => {
-            cell.classList.remove('table-action-cell');
-            cell.style.removeProperty('--table-action-background');
         });
     };
 };

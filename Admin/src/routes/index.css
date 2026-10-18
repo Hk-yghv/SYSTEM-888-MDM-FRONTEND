@@ -140,23 +140,6 @@ table tbody tr.table-scroll-row:hover > th:last-child {
     box-shadow: inset -1px 1px 0 rgba(16, 185, 129, 0.25), inset 0 -1px 0 rgba(16, 185, 129, 0.25) !important;
 }
 
-table tbody tr.table-scroll-row:hover > .table-action-cell {
-    z-index: 22 !important;
-}
-
-.table-with-sticky-actions .table-action-cell {
-    position: sticky;
-    right: 0;
-    z-index: 5;
-    background-color: var(--table-action-background, #fff);
-    box-shadow: -5px 0 8px -7px rgba(15, 23, 42, 0.6);
-}
-
-.table-with-sticky-actions thead .table-action-cell {
-    z-index: 35 !important;
-    background-color: var(--table-action-background, #f8fafc);
-}
-
 @keyframes page-enter-from-bottom {
     from {
         opacity: 0;
