@@ -447,22 +447,34 @@ const SaveUrlPage = () => {
             {/* ───────────────────────────────────────────────────────────────── */}
             {/* TOP PUBLIC URL SHOWCASE SECTION (Horizontal 5-Item Scroll)       */}
             {/* ───────────────────────────────────────────────────────────────── */}
-            <div className="bg-white border border-slate-200 rounded-[5px] p-2 shadow-xs space-y-1.5">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[11px]">
-                            <FaGlobe />
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+
+                {/* Header */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50/70 via-white to-white">
+
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 shrink-0 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                            <FaGlobe className="text-lg" />
                         </div>
-                        <h2 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                            <span>Public URLs (តំណភ្ជាប់សាធារណៈ)</span>
-                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
-                                {publicTotal}
-                            </span>
-                        </h2>
+
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h2 className="text-sm font-bold text-slate-800">
+                                    Public URLs
+                                </h2>
+
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold font-mono">
+                                    {publicTotal}
+                                </span>
+                            </div>
+
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                                តំណភ្ជាប់សាធារណៈដែលបានរក្សាទុក
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                        {/* See All Button */}
+                    <div className="flex items-center gap-2 ml-auto">
                         <button
                             type="button"
                             onClick={() => {
@@ -471,131 +483,195 @@ const SaveUrlPage = () => {
                                 setSeeAllVisibleCount(SEE_ALL_CHUNK_SIZE);
                                 setSeeAllOpen(true);
                             }}
-                            className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-bold rounded-[5px] text-[11px] transition-all cursor-pointer border border-slate-200"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all cursor-pointer"
                         >
-                            <FaThLarge className="text-[9px]" />
-                            <span>See All ({publicTotal})</span>
+                            <FaThLarge />
+                            <span>See All</span>
+                            <span className="text-slate-400">({publicTotal})</span>
                         </button>
 
-                        {/* Left / Right Nav buttons */}
                         <div className="flex items-center gap-1">
                             <button
                                 type="button"
                                 onClick={scrollLeft}
-                                className="w-6 h-6 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] transition-colors cursor-pointer border border-slate-200"
+                                className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer"
                                 title="Scroll Left"
+                                aria-label="Scroll Left"
                             >
-                                <FaChevronLeft />
+                                <FaChevronLeft className="text-xs" />
                             </button>
+
                             <button
                                 type="button"
                                 onClick={scrollRight}
-                                className="w-6 h-6 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] transition-colors cursor-pointer border border-slate-200"
+                                className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer"
                                 title="Scroll Right"
+                                aria-label="Scroll Right"
                             >
-                                <FaChevronRight />
+                                <FaChevronRight className="text-xs" />
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Horizontal Scroll Area */}
-                {loadingPublic ? (
-                    <div className="py-2 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                        <FaSpinner className="animate-spin text-emerald-600" />
-                        <span>កំពុងទាញយក Public URLs...</span>
-                    </div>
-                ) : publicUrls.length === 0 ? (
-                    <div className="py-2 text-center text-slate-400 text-xs italic border border-dashed border-slate-200 rounded-[5px]">
-                        មិនទាន់មាន Public URL ត្រូវបានរក្សាទុកនៅឡើយទេ។ សូមចុច "បញ្ចូល URL ថ្មី" ហើយកំណត់ Visibility ជា Public!
-                    </div>
-                ) : (
-                    <div
-                        ref={horizontalScrollRef}
-                        onScroll={handleHorizontalScroll}
-                        onWheel={(e) => {
-                            if (e.deltaY !== 0) {
-                                e.currentTarget.scrollLeft += e.deltaY;
-                            }
-                        }}
-                        className="flex items-center gap-2 overflow-x-auto pb-1 scroll-smooth"
-                    >
-                        {publicUrls.slice(0, visiblePublicCount).map((item, idx) => {
-                            const domain = formatDomain(item.url);
-                            const isCopied = copiedId === (item._id || item.id);
+                {/* Content */}
+                <div className="p-3 sm:p-4">
 
-                            return (
-                                <div
-                                    key={item._id || item.id || idx}
-                                    className="min-w-[210px] max-w-[230px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-2 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
-                                >
-                                    <div className="space-y-1 min-w-0">
-                                        {/* Category & Visibility Header */}
-                                        <div className="flex items-center justify-between gap-1">
-                                            <span className={`px-1.5 py-0.2 rounded text-[8px] font-bold border truncate max-w-[110px] ${getCategoryColor(item.category)}`}>
-                                                {item.category || 'General'}
-                                            </span>
-                                            <span className="text-[8px] font-mono text-slate-400 flex items-center gap-0.5 shrink-0">
-                                                <FaGlobe className="text-emerald-500 text-[8px]" />
-                                                <span>Public</span>
-                                            </span>
+                    {loadingPublic ? (
+                        <div className="min-h-28 flex flex-col items-center justify-center gap-2 text-slate-400">
+                            <FaSpinner className="animate-spin text-2xl text-emerald-500" />
+                            <span className="text-xs">
+                                កំពុងទាញយក Public URLs...
+                            </span>
+                        </div>
+                    ) : publicUrls.length === 0 ? (
+                        <div className="min-h-32 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-6 text-center">
+                            <div className="w-11 h-11 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+                                <FaGlobe className="text-lg" />
+                            </div>
+
+                            <p className="text-sm font-semibold text-slate-600">
+                                មិនទាន់មាន Public URL
+                            </p>
+
+                            <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+                                សូមចុច "បញ្ចូល URL ថ្មី" ហើយកំណត់ Visibility ជា Public។
+                            </p>
+                        </div>
+                    ) : (
+                        <div
+                            ref={horizontalScrollRef}
+                            onScroll={handleHorizontalScroll}
+                            onWheel={(e) => {
+                                if (e.deltaY !== 0) {
+                                    e.currentTarget.scrollLeft += e.deltaY;
+                                }
+                            }}
+                            className="flex items-stretch gap-3 overflow-x-auto pb-3 scroll-smooth snap-x snap-mandatory [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]"
+                        >
+                            {publicUrls.slice(0, visiblePublicCount).map((item, idx) => {
+                                const domain = formatDomain(item.url);
+                                const isCopied = copiedId === (item._id || item.id);
+
+                                return (
+                                    <div
+                                        key={item._id || item.id || idx}
+                                        className="w-[240px] min-w-[240px] sm:w-[260px] sm:min-w-[260px] snap-start rounded-xl border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-md transition-all duration-200 flex flex-col group"
+                                    >
+                                        {/* Card Header */}
+                                        <div className="p-3 flex-1 space-y-3">
+
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span
+                                                    className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-semibold border truncate max-w-[145px] ${getCategoryColor(item.category)}`}
+                                                    title={item.category || 'General'}
+                                                >
+                                                    {item.category || 'General'}
+                                                </span>
+
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 shrink-0">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                    Public
+                                                </span>
+                                            </div>
+
+                                            <div className="min-w-0">
+                                                <h4
+                                                    className="text-sm font-bold text-slate-800 leading-snug line-clamp-2 break-words cursor-pointer group-hover:text-emerald-700 transition-colors"
+                                                    onClick={() => handleOpenLink(item)}
+                                                    title={item.description
+                                                        ? `${item.title} — ${item.description}`
+                                                        : item.title}
+                                                >
+                                                    {item.title}
+                                                </h4>
+
+                                                {item.description && (
+                                                    <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed line-clamp-2 break-words">
+                                                        {item.description}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* URL */}
+                                            <div
+                                                className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2 min-w-0"
+                                                title={item.url}
+                                            >
+                                                <FaLink className="text-emerald-600 text-xs shrink-0" />
+
+                                                <span className="text-[11px] text-slate-600 font-mono truncate">
+                                                    {domain}
+                                                </span>
+                                            </div>
                                         </div>
 
-                                        {/* Title */}
-                                        <h4
-                                            className="font-bold text-slate-900 text-[11px] leading-tight truncate hover:text-emerald-600 cursor-pointer transition-colors"
-                                            onClick={() => handleOpenLink(item)}
-                                            title={item.description ? `${item.title} — ${item.description}` : item.title}
-                                        >
-                                            {item.title}
-                                        </h4>
-                                    </div>
-
-                                    {/* URL Domain Badge & Quick Actions */}
-                                    <div className="pt-1 border-t border-slate-100 flex items-center justify-between gap-1 shrink-0">
-                                        <div className="flex items-center gap-1 text-[9px] text-emerald-700 font-mono bg-emerald-50/70 border border-emerald-200/60 px-1 py-0.2 rounded truncate max-w-[95px]" title={item.url}>
-                                            <FaLink className="text-[7px] shrink-0" />
-                                            <span className="truncate">{domain}</span>
-                                        </div>
-
-                                        <div className="flex items-center gap-1 shrink-0">
+                                        {/* Actions */}
+                                        <div className="flex items-center gap-2 p-3 pt-0">
                                             <button
                                                 type="button"
                                                 onClick={() => handleCopy(item.url, item._id || item.id)}
-                                                className="flex items-center gap-0.5 px-1 py-0.5 text-[8px] font-semibold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
+                                                className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${isCopied
+                                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                                    }`}
                                                 title="ចម្លង URL"
                                             >
-                                                {isCopied ? <FaCheck className="text-emerald-600 text-[7px]" /> : <FaCopy className="text-[7px]" />}
+                                                {isCopied
+                                                    ? <FaCheck className="text-emerald-600" />
+                                                    : <FaCopy />}
+
                                                 <span>{isCopied ? 'Copied' : 'Copy'}</span>
                                             </button>
 
                                             <button
                                                 type="button"
                                                 onClick={() => handleOpenLink(item)}
-                                                className="flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[8px] cursor-pointer shadow-xs transition-all active:scale-95"
+                                                className="flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all active:scale-[0.98] cursor-pointer"
                                             >
                                                 <span>Open</span>
-                                                <FaExternalLinkAlt className="text-[6px]" />
+                                                <FaExternalLinkAlt className="text-[10px]" />
                                             </button>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
 
-                        {/* If more items available, show load more prompt */}
-                        {visiblePublicCount < publicUrls.length && (
-                            <button
-                                type="button"
-                                onClick={() => setVisiblePublicCount(prev => Math.min(prev + PUBLIC_CHUNK_SIZE, publicUrls.length))}
-                                className="min-w-[90px] h-[78px] bg-slate-50 hover:bg-emerald-50 border border-dashed border-slate-300 hover:border-emerald-400 rounded-[5px] flex flex-col items-center justify-center p-2 text-[10px] font-bold text-slate-600 hover:text-emerald-700 cursor-pointer transition-all shrink-0"
-                            >
-                                <span>+ {Math.min(PUBLIC_CHUNK_SIZE, publicUrls.length - visiblePublicCount)} More</span>
-                                <span className="text-[9px] text-slate-400 mt-0.5">អូសបន្ត</span>
-                            </button>
-                        )}
-                    </div>
-                )}
+                            {/* Load More */}
+                            {visiblePublicCount < publicUrls.length && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setVisiblePublicCount(prev =>
+                                            Math.min(
+                                                prev + PUBLIC_CHUNK_SIZE,
+                                                publicUrls.length
+                                            )
+                                        )
+                                    }
+                                    className="w-[130px] min-w-[130px] min-h-[170px] snap-start rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-slate-500 hover:text-emerald-700 flex flex-col items-center justify-center gap-3 transition-all cursor-pointer"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center">
+                                        <FaChevronRight />
+                                    </div>
+
+                                    <div className="text-center">
+                                        <p className="text-xs font-bold">
+                                            + {Math.min(
+                                                PUBLIC_CHUNK_SIZE,
+                                                publicUrls.length - visiblePublicCount
+                                            )} More
+                                        </p>
+
+                                        <p className="text-[10px] mt-1 text-slate-400">
+                                            អូសដើម្បីមើលបន្ត
+                                        </p>
+                                    </div>
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* ───────────────────────────────────────────────────────────────── */}
