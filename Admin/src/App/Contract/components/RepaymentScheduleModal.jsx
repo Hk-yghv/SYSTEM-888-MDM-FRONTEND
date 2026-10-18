@@ -296,7 +296,30 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     const generateDefaultRows = (ctr) => {
         const { isDays, count } = parseDuration(ctr?.duration);
         const totalLoan = Number(ctr?.amount) || Number(ctr?.totalAmount) || 0;
-        const startDate = ctr?.inputDate ? new Date(ctr.inputDate) : new Date();
+        const inputDate = String(ctr?.inputDate || '').trim();
+        const isoDate = inputDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+        const dayFirstDate = inputDate.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+        let startDate = new Date();
+
+        if (isoDate || dayFirstDate) {
+            const [, first, second, third] = (isoDate || dayFirstDate);
+            const year = Number(isoDate ? first : third);
+            const month = Number(second);
+            const day = Number(isoDate ? third : first);
+            const parsedDate = new Date(year, month - 1, day);
+            if (parsedDate.getFullYear() === year && parsedDate.getMonth() === month - 1 && parsedDate.getDate() === day) {
+                startDate = parsedDate;
+            } else {
+                console.error('Invalid contract input date while generating repayment schedule:', ctr?.inputDate);
+            }
+        } else if (inputDate) {
+            const parsedDate = new Date(inputDate);
+            if (!Number.isNaN(parsedDate.getTime())) {
+                startDate = parsedDate;
+            } else {
+                console.error('Invalid contract input date while generating repayment schedule:', ctr?.inputDate);
+            }
+        }
         const rateStr = String(ctr?.interest || ctr?.interestType || '14%');
         const ratePercent = parseFloat(rateStr.replace(/[^0-9.]/g, '')) || 0;
         const defaultInterest = round2(totalLoan * (ratePercent / 100));
@@ -361,12 +384,18 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         const ratePercent = parseFloat(rateStr.replace(/[^0-9.]/g, '')) || 0;
         const totalLoan = Number(contract?.amount || contract?.totalAmount || 0);
 
+        const generatedRows = generateDefaultRows(contract);
         const baseRows = Array.isArray(contract.repaymentSchedule) && contract.repaymentSchedule.length > 0
             ? contract.repaymentSchedule
-            : generateDefaultRows(contract);
-
-        const generatedRows = generateDefaultRows(contract);
-        const normalizedRows = baseRows.map((row, index) => {
+            : generatedRows;
+        const invalidRows = baseRows.filter(row => !row || typeof row !== 'object' || Array.isArray(row));
+        if (invalidRows.length > 0) {
+            console.error('Invalid repayment schedule rows were skipped:', {
+                contractId: contract._id || contract.contractId,
+                invalidRowCount: invalidRows.length
+            });
+        }
+        const normalizedRows = baseRows.filter(row => row && typeof row === 'object' && !Array.isArray(row)).map((row, index) => {
             const rowWithDueDate = row.dueDate
                 ? row
                 : { ...row, dueDate: generatedRows[index]?.dueDate || '' };
@@ -407,8 +436,8 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     const isSetupActivate = mode === 'setup_activate';
 
     // Find the first unpaid/non-payoff row index (active row for Dollar dropdown)
-    const payOffTriggeredIdx = rows.findIndex(r => r.status === 'PayOff');
-    const firstPendingIdx = rows.findIndex(r => r.status === 'Pending' || r.status === 'Saved');
+    const payOffTriggeredIdx = rows.findIndex(r => r?.status === 'PayOff');
+    const firstPendingIdx = rows.findIndex(r => r?.status === 'Pending' || r?.status === 'Saved');
     const activeRowIdx = payOffTriggeredIdx !== -1 ? -1 : (firstPendingIdx !== -1 ? firstPendingIdx : -1);
 
     const handleRowChange = (idx, field, val) => {

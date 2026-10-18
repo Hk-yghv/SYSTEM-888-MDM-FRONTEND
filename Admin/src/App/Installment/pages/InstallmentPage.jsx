@@ -20,9 +20,10 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200, 500, 1000];
 
 /** Return the index of the first Pending/Saved row (= the "auto" month). */
 const getActiveRowIdx = (schedule = []) => {
-    const payOffIdx = schedule.findIndex(r => r.status === 'PayOff');
+    if (!Array.isArray(schedule)) return -1;
+    const payOffIdx = schedule.findIndex(r => r?.status === 'PayOff');
     if (payOffIdx !== -1) return -1;
-    const firstPending = schedule.findIndex(r => r.status === 'Pending' || r.status === 'Saved');
+    const firstPending = schedule.findIndex(r => r?.status === 'Pending' || r?.status === 'Saved');
     return firstPending;
 };
 
@@ -265,7 +266,9 @@ const getRowUrgency = (displayRow, isAllDone, t) => {
 // Portal dropdown — renders outside DOM tree to escape overflow clipping
 // ──────────────────────────────────────────────────────────────────────────────
 const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMonth, onOpenQrModal, t }) => {
-    const schedule = item?.repaymentSchedule || [];
+    const schedule = Array.isArray(item?.repaymentSchedule)
+        ? item.repaymentSchedule.filter(row => row && typeof row === 'object' && !Array.isArray(row))
+        : [];
     const activeIdx = getActiveRowIdx(schedule);
     const menuRef = useRef(null);
     const [top, setTop] = useState(pos.bottom + 4);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -91,7 +91,7 @@ const CalculateSchedule2 = () => {
     }, [API_BASE, user?.brand]);
 
     // ─── Load Saved History from DB (with silent realtime refresh support) ──────
-    const fetchHistory = async (isSilent = false) => {
+    const fetchHistory = useCallback(async (isSilent = false) => {
         try {
             if (!isSilent) setHistoryLoading(true);
             const brand = user?.brand || '';
@@ -119,7 +119,7 @@ const CalculateSchedule2 = () => {
         } finally {
             if (!isSilent) setHistoryLoading(false);
         }
-    };
+    }, [API_BASE, user?.brand, user?.username, user?.role, user?.isImmutable, user?.subBrands]);
 
     const [searchParams] = useSearchParams();
 
@@ -190,7 +190,7 @@ const CalculateSchedule2 = () => {
             document.removeEventListener('visibilitychange', handleSync);
             window.removeEventListener('storage', handleStorage);
         };
-    }, [API_BASE, user?.brand, user?.username, user?.role, user?.isImmutable]);
+    }, [API_BASE, fetchHistory]);
 
     // ─── Auto load record from Query Parameters ─────────────────────
     useEffect(() => {
@@ -987,6 +987,16 @@ const CalculateSchedule2 = () => {
                             <span className="px-2 py-0.5 rounded-full text-xs bg-violet-100 text-violet-700 font-bold">
                                 {displayedHistory.length > 0 ? `${displayedHistory.length}/${filteredHistory.length}` : filteredHistory.length}
                             </span>
+                            <button
+                                type="button"
+                                onClick={() => fetchHistory(false)}
+                                aria-label={t('reload')}
+                                title={t('reload')}
+                                disabled={historyLoading}
+                                className="ml-2 p-1.5 rounded text-slate-500 hover:bg-violet-50 hover:text-violet-700 disabled:opacity-50"
+                            >
+                                <FaUndo className={historyLoading ? 'animate-spin' : ''} />
+                            </button>
                         </div>
 
                         {/* Search in History */}
