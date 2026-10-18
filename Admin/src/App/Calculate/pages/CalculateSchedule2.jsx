@@ -489,10 +489,9 @@ const CalculateSchedule2 = () => {
 
         const [y, m, d] = dateStr.split('-');
         const date = new Date(`${y}-${m}-${d}T00:00:00`);
-
-        const weekday = new Intl.DateTimeFormat('km-KH', {
-            weekday: 'long'
-        }).format(date);
+        if (Number.isNaN(date.getTime())) return '';
+        const weekdays = ['អាទិត្យ', 'ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
+        const weekday = weekdays[date.getDay()];
 
         return `${d}-${m}-${y} ${weekday}`;
     };
