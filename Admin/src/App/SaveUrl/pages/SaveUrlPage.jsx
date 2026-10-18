@@ -447,7 +447,7 @@ const SaveUrlPage = () => {
             {/* ───────────────────────────────────────────────────────────────── */}
             {/* TOP PUBLIC URL SHOWCASE SECTION (Horizontal 5-Item Scroll)       */}
             {/* ───────────────────────────────────────────────────────────────── */}
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden h-[80%]">
 
                 {/* Header */}
                 <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50/70 via-white to-white">
@@ -612,8 +612,8 @@ const SaveUrlPage = () => {
                                                 type="button"
                                                 onClick={() => handleCopy(item.url, item._id || item.id)}
                                                 className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${isCopied
-                                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                                     }`}
                                                 title="ចម្លង URL"
                                             >
