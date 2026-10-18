@@ -20,8 +20,9 @@ const LockWallpaper = () => {
     const [reloading, setReloading] = useState(false);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
+    const [subBrandFilter, setSubBrandFilter] = useState('');
 
-    const fetchLogs = useCallback(async (pg = page) => {
+    const fetchLogs = useCallback(async (pg = page, sb = subBrandFilter) => {
         setReloading(true);
         try {
             const params = new URLSearchParams({
@@ -31,8 +32,12 @@ const LockWallpaper = () => {
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
             });
+            if (sb && sb !== 'All') {
+                params.append('subBrand', sb);
+            }
             const res = await fetch(`${API_BASE2}/wallpaperlogs?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
@@ -45,9 +50,9 @@ const LockWallpaper = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE2, user, page]);
+    }, [API_BASE2, user, page, subBrandFilter]);
 
-    useEffect(() => { fetchLogs(page); }, [page]);
+    useEffect(() => { fetchLogs(page, subBrandFilter); }, [page, subBrandFilter]);
 
     const fetchAllForExport = async () => {
         try {
@@ -58,8 +63,12 @@ const LockWallpaper = () => {
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
             });
+            if (subBrandFilter && subBrandFilter !== 'All') {
+                params.append('subBrand', subBrandFilter);
+            }
             const res = await fetch(`${API_BASE2}/wallpaperlogs?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();

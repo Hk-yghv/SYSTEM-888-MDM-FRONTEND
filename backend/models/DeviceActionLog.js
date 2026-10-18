@@ -23,7 +23,8 @@ const deviceActionLogSchema = new mongoose.Schema({
     date: { type: String, required: true },
     time: { type: String, required: true },
     reason: { type: String, default: '' },
-    brand: { type: String, default: '' }
+    brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' }
 }, { timestamps: true });
 
 export default mongoose.model('DeviceActionLog', deviceActionLogSchema);

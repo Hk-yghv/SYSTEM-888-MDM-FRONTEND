@@ -42,7 +42,8 @@ const DeviceActionHistory = () => {
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
             });
             if (search) params.append('search', search);
             if (st) params.append('status', st);
@@ -122,7 +123,8 @@ const DeviceActionHistory = () => {
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
             });
             if (searchTerm) params.append('search', searchTerm);
             if (statusFilter) params.append('status', statusFilter);

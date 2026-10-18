@@ -21,7 +21,9 @@ const UnlockPhone = () => {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
 
-    const fetchUnlockLogs = useCallback(async (pg = page) => {
+    const [subBrandFilter, setSubBrandFilter] = useState('');
+
+    const fetchUnlockLogs = useCallback(async (pg = page, sb = subBrandFilter) => {
         setReloading(true);
         try {
             const params = new URLSearchParams({
@@ -31,8 +33,12 @@ const UnlockPhone = () => {
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
             });
+            if (sb && sb !== 'All') {
+                params.append('subBrand', sb);
+            }
             const res = await fetch(`${API_BASE2}/phonelogs?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
@@ -45,9 +51,9 @@ const UnlockPhone = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE2, user, page]);
+    }, [API_BASE2, user, page, subBrandFilter]);
 
-    useEffect(() => { fetchUnlockLogs(page); }, [page]);
+    useEffect(() => { fetchUnlockLogs(page, subBrandFilter); }, [page, subBrandFilter]);
 
     const fetchAllForExport = async () => {
         try {
@@ -58,8 +64,12 @@ const UnlockPhone = () => {
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
             });
+            if (subBrandFilter && subBrandFilter !== 'All') {
+                params.append('subBrand', subBrandFilter);
+            }
             const res = await fetch(`${API_BASE2}/phonelogs?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
@@ -109,6 +119,23 @@ const UnlockPhone = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    {/* Sub-Brand Filter Dropdown */}
+                    {Array.isArray(user?.subBrands) && user.subBrands.length > 1 && (
+                        <select
+                            value={subBrandFilter}
+                            onChange={(e) => {
+                                setPage(1);
+                                setSubBrandFilter(e.target.value);
+                            }}
+                            className="px-3 py-1.5 bg-white border border-indigo-300 rounded-[5px] text-xs text-indigo-900 font-semibold focus:border-indigo-500 outline-none shadow-xs cursor-pointer"
+                        >
+                            <option value="">All Sub Brands</option>
+                            {user.subBrands.map((sb, i) => (
+                                <option key={i} value={sb}>🏢 {sb}</option>
+                            ))}
+                        </select>
+                    )}
+
                     {hasPermission('/lost-phone/unlock-phone', 'export') && (
                         <>
                             <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />

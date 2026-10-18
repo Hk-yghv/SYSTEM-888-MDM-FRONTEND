@@ -6,6 +6,7 @@ import ControlSystem from '../models/ControlSystem.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { sendTelegramMessage } from '../services/telegramBotService.js';
+import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
 
 const router = express.Router();
 
@@ -158,8 +159,9 @@ router.post('/lostphone/toggle-lock', async (req, res) => {
 // GET Phone Logs
 router.get('/phonelogs', async (req, res) => {
     try {
-        const { action, userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '' } = req.query;
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
+        const { action, page = 1, limit = 10, search = '' } = req.query;
+        const isolation = await resolveUserIsolation(req);
+        const { isMasterAdmin, brand, effectiveSubBrands, hasSubBrandRestriction } = isolation;
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const searchTerm = String(search).trim();
         const searchFields = [
@@ -169,10 +171,19 @@ router.get('/phonelogs', async (req, res) => {
         ];
         let filter = {};
         if (action) filter.action = action;
-        if (userBrand && !isMasterAdmin) {
+        if (!isMasterAdmin && (brand || hasSubBrandRestriction)) {
+            const contractQuery = {};
+            if (brand) contractQuery.brand = brand;
+            if (hasSubBrandRestriction && effectiveSubBrands.length > 0) {
+                contractQuery.subBrand = { $in: effectiveSubBrands };
+            }
             const matchedContracts = isMongoConnected
-                ? await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'))
-                : MEM_DB.contracts.filter(c => c.brand === userBrand);
+                ? await queryAllDBs(Contract, (M) => M.find(contractQuery).select('contractId'))
+                : MEM_DB.contracts.filter(c => {
+                    if (brand && c.brand !== brand) return false;
+                    if (hasSubBrandRestriction && effectiveSubBrands.length > 0 && !effectiveSubBrands.includes(c.subBrand)) return false;
+                    return true;
+                });
             filter.contractId = { $in: matchedContracts.map(c => c.contractId) };
         }
         if (searchTerm) {
@@ -189,8 +200,12 @@ router.get('/phonelogs', async (req, res) => {
 
         let filtered = MEM_DB.phoneLogs;
         if (action) filtered = filtered.filter(l => l.action === action);
-        if (userBrand && !isMasterAdmin) {
-            const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
+        if (!isMasterAdmin && (brand || hasSubBrandRestriction)) {
+            const contractIds = MEM_DB.contracts.filter(c => {
+                if (brand && c.brand !== brand) return false;
+                if (hasSubBrandRestriction && effectiveSubBrands.length > 0 && !effectiveSubBrands.includes(c.subBrand)) return false;
+                return true;
+            }).map(c => c.contractId);
             filtered = filtered.filter(l => contractIds.includes(l.contractId));
         }
         if (searchTerm) {
@@ -243,15 +258,25 @@ router.get('/history/device-actions', async (req, res) => {
         // Auto purge old rejected alerts older than 7 days
         await cleanupOldRejectedLogs();
 
-        const { userBrand, userRole, username, isImmutable, page = 1, limit = 10, status, actionType, search } = req.query;
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true');
+        const { page = 1, limit = 10, status, actionType, search } = req.query;
+        const isolation = await resolveUserIsolation(req);
+        const { isMasterAdmin, brand, effectiveSubBrands, hasSubBrandRestriction } = isolation;
         const skip = (parseInt(page) - 1) * parseInt(limit);
         let filter = {};
 
-        if (userBrand && !isMasterAdmin) {
+        if (!isMasterAdmin && (brand || hasSubBrandRestriction)) {
+            const contractQuery = {};
+            if (brand) contractQuery.brand = brand;
+            if (hasSubBrandRestriction && effectiveSubBrands.length > 0) {
+                contractQuery.subBrand = { $in: effectiveSubBrands };
+            }
             const matchedContracts = isMongoConnected
-                ? await queryAllDBs(Contract, (M) => M.find({ brand: userBrand }).select('contractId'))
-                : MEM_DB.contracts.filter(c => c.brand === userBrand);
+                ? await queryAllDBs(Contract, (M) => M.find(contractQuery).select('contractId'))
+                : MEM_DB.contracts.filter(c => {
+                    if (brand && c.brand !== brand) return false;
+                    if (hasSubBrandRestriction && effectiveSubBrands.length > 0 && !effectiveSubBrands.includes(c.subBrand)) return false;
+                    return true;
+                });
             filter.contractId = { $in: matchedContracts.map(c => c.contractId) };
         }
 
@@ -282,8 +307,12 @@ router.get('/history/device-actions', async (req, res) => {
 
         // MEM_DB fallback with filters
         let filtered = MEM_DB.deviceActionLogs || [];
-        if (userBrand && !isMasterAdmin) {
-            const contractIds = MEM_DB.contracts.filter(c => c.brand === userBrand).map(c => c.contractId);
+        if (!isMasterAdmin && (brand || hasSubBrandRestriction)) {
+            const contractIds = MEM_DB.contracts.filter(c => {
+                if (brand && c.brand !== brand) return false;
+                if (hasSubBrandRestriction && effectiveSubBrands.length > 0 && !effectiveSubBrands.includes(c.subBrand)) return false;
+                return true;
+            }).map(c => c.contractId);
             filtered = filtered.filter(l => contractIds.includes(l.contractId));
         }
         if (status) filtered = filtered.filter(l => l.status === status);
@@ -332,6 +361,7 @@ router.post('/history/device-actions', async (req, res) => {
             model: contract.model,
             serialNumber: contract.serialNumber,
             brand: contract.brand || '',
+            subBrand: contract.subBrand || '',
             actionType,
             status: reqStatus || 'Pending',
             performedBy: performedBy || 'Administrator',

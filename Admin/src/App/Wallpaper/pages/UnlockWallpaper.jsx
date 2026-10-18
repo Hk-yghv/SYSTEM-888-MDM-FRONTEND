@@ -28,7 +28,8 @@ const UnlockWallpaper = () => {
                 userBrand: user?.brand || '',
                 userRole: user?.role || '',
                 username: user?.username || '',
-                isImmutable: user?.isImmutable ? 'true' : 'false'
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
             });
             const res = await fetch(`${API_BASE2}/wallpaperlogs?${params.toString()}`);
             if (res.ok) {

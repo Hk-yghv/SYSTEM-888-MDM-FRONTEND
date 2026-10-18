@@ -33,13 +33,12 @@ export const isMasterAdminUser = (reqOrUser = {}) => {
         reqOrUser.user?.isImmutable === true
     );
 
+    // Only master admins (@hakyonghouv or isImmutable: true) have global, unrestricted access.
+    // Regular Administrators/Admins assigned to specific brands or sub-brands MUST adhere to their isolated scope.
     return (
         username === '@hakyonghouv' ||
         username === 'hakyonghouv' ||
-        isImmutable === true ||
-        role === 'Administrator' ||
-        role === 'Admin' ||
-        role === 'SuperAdmin'
+        isImmutable === true
     );
 };
 
@@ -109,13 +108,29 @@ export const resolveUserIsolation = async (req) => {
     }
 
     const hasSubBrandRestriction = !isMaster && subBrands.length > 0;
+    const requestedSubBrand = (req.query?.subBrand || req.body?.subBrand || '').trim();
+
+    let effectiveSubBrands = subBrands;
+    if (requestedSubBrand && requestedSubBrand !== 'All') {
+        if (hasSubBrandRestriction) {
+            if (subBrands.includes(requestedSubBrand)) {
+                effectiveSubBrands = [requestedSubBrand];
+            } else {
+                effectiveSubBrands = ['__UNAUTHORIZED__'];
+            }
+        } else {
+            effectiveSubBrands = [requestedSubBrand];
+        }
+    }
 
     return {
         isMasterAdmin: isMaster,
         username,
         brand,
         allowedSubBrands: subBrands,
-        hasSubBrandRestriction
+        requestedSubBrand,
+        effectiveSubBrands,
+        hasSubBrandRestriction: hasSubBrandRestriction || (!isMaster && effectiveSubBrands.length > 0)
     };
 };
 
@@ -123,14 +138,14 @@ export const resolveUserIsolation = async (req) => {
  * Applies brand and subBrand constraints directly to a MongoDB query filter object.
  */
 export const applyIsolationFilter = (filter = {}, isolation = {}) => {
-    const { isMasterAdmin, brand, allowedSubBrands, hasSubBrandRestriction } = isolation;
+    const { isMasterAdmin, brand, effectiveSubBrands, hasSubBrandRestriction } = isolation;
 
     if (!isMasterAdmin) {
         if (brand) {
             filter.brand = { $regex: new RegExp(`^${brand.trim()}$`, 'i') };
         }
-        if (hasSubBrandRestriction && allowedSubBrands.length > 0) {
-            filter.subBrand = { $in: allowedSubBrands };
+        if (hasSubBrandRestriction && effectiveSubBrands && effectiveSubBrands.length > 0) {
+            filter.subBrand = { $in: effectiveSubBrands };
         }
     }
 
@@ -141,7 +156,7 @@ export const applyIsolationFilter = (filter = {}, isolation = {}) => {
  * Filters an array of in-memory objects according to isolation rules.
  */
 export const filterInMemoryRecords = (records = [], isolation = {}) => {
-    const { isMasterAdmin, brand, allowedSubBrands, hasSubBrandRestriction } = isolation;
+    const { isMasterAdmin, brand, effectiveSubBrands, hasSubBrandRestriction } = isolation;
     if (isMasterAdmin) return records;
 
     const brandLower = (brand || '').trim().toLowerCase();
@@ -154,9 +169,9 @@ export const filterInMemoryRecords = (records = [], isolation = {}) => {
         }
 
         // 2. Sub-brand match
-        if (hasSubBrandRestriction && allowedSubBrands.length > 0) {
+        if (hasSubBrandRestriction && effectiveSubBrands && effectiveSubBrands.length > 0) {
             const itemSub = (item.subBrand || '').trim();
-            if (!itemSub || !allowedSubBrands.includes(itemSub)) return false;
+            if (!itemSub || !effectiveSubBrands.includes(itemSub)) return false;
         }
 
         return true;

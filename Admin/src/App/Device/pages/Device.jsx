@@ -30,6 +30,8 @@ const Device = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
     const [selectedDevice, setSelectedDevice] = useState(null);
+    const isMasterAdmin = (user?.username === '@hakyonghouv' || user?.username === 'hakyonghouv' || user?.isImmutable === true);
+    const [subBrandFilter, setSubBrandFilter] = useState('');
     const [brandFilter, setBrandFilter] = useState(''); // Admin only brand filter
     const [brandsList, setBrandsList] = useState([]);
 
@@ -45,22 +47,31 @@ const Device = () => {
         } catch { }
     };
 
-    const fetchDevices = async (p = 1, search = '', brand = brandFilter) => {
+    const fetchDevices = async (p = 1, search = '', brand = brandFilter, sub = subBrandFilter) => {
         setReloading(true);
         try {
             const queryParams = new URLSearchParams({
                 status: 'Activated',
                 page: p,
                 limit: LIMIT,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : '',
                 ...(search && { search })
             });
 
-            if (user?.role === 'Administrator') {
-                // Admin can filter by selected brand or see all
+            if (isMasterAdmin) {
+                // Master admin can filter by selected brand or see all
                 if (brand) queryParams.append('brand', brand);
             } else if (user?.brand) {
-                // Non-admin: always filter by own brand
+                // Non-master: always filter by own brand
                 queryParams.append('brand', user.brand);
+            }
+
+            if (sub && sub !== 'All') {
+                queryParams.append('subBrand', sub);
             }
 
             const res = await fetch(`${API_BASE1}/contracts?${queryParams.toString()}`);
@@ -78,13 +89,14 @@ const Device = () => {
         }
     };
 
-    useEffect(() => { fetchDevices(page, searchTerm, brandFilter); }, [page]);
-    useEffect(() => { fetchDevices(1, searchTerm, brandFilter); setPage(1); }, [searchTerm]);
-    useEffect(() => { fetchDevices(1, searchTerm, brandFilter); setPage(1); }, [brandFilter]);
+    useEffect(() => { fetchDevices(page, searchTerm, brandFilter, subBrandFilter); }, [page]);
+    useEffect(() => { fetchDevices(1, searchTerm, brandFilter, subBrandFilter); setPage(1); }, [searchTerm]);
+    useEffect(() => { fetchDevices(1, searchTerm, brandFilter, subBrandFilter); setPage(1); }, [brandFilter]);
+    useEffect(() => { fetchDevices(1, searchTerm, brandFilter, subBrandFilter); setPage(1); }, [subBrandFilter]);
 
-    // Fetch brands list from ControlSystem for admin brand filter
+    // Fetch brands list from ControlSystem for master admin brand filter
     useEffect(() => {
-        if (user?.role !== 'Administrator') return;
+        if (!isMasterAdmin) return;
         const go = async () => {
             try {
                 const res = await fetch(`${API_BASE}/controlsystem?brand=`);
@@ -96,15 +108,21 @@ const Device = () => {
             } catch { }
         };
         go();
-    }, [user?.role, API_BASE]);
+    }, [isMasterAdmin, API_BASE]);
 
     const filteredDevices = selectedSearchRecord ? [selectedSearchRecord] : devices;
     const searchParams = {
         status: 'Activated',
-        ...(user?.role === 'Administrator'
+        userBrand: user?.brand || '',
+        userRole: user?.role || '',
+        username: user?.username || '',
+        isImmutable: user?.isImmutable ? 'true' : 'false',
+        userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : '',
+        ...(isMasterAdmin
             ? (brandFilter ? { brand: brandFilter } : {})
             : (user?.brand ? { brand: user.brand } : {})
-        )
+        ),
+        ...(subBrandFilter && subBrandFilter !== 'All' ? { subBrand: subBrandFilter } : {})
     };
 
     const fetchAllForExport = async () => {
@@ -113,12 +131,20 @@ const Device = () => {
                 status: 'Activated',
                 page: 1,
                 limit: 999999,
+                userBrand: user?.brand || '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : '',
                 ...(searchTerm && { search: searchTerm })
             });
-            if (user?.role === 'Administrator') {
+            if (isMasterAdmin) {
                 if (brandFilter) queryParams.append('brand', brandFilter);
             } else if (user?.brand) {
                 queryParams.append('brand', user.brand);
+            }
+            if (subBrandFilter && subBrandFilter !== 'All') {
+                queryParams.append('subBrand', subBrandFilter);
             }
             const res = await fetch(`${API_BASE1}/contracts?${queryParams.toString()}`);
             if (res.ok) {
@@ -183,8 +209,8 @@ const Device = () => {
                         </>
                     )}
 
-                    {/* Brand Filter Dropdown — Administrator only */}
-                    {user?.role === 'Administrator' && (
+                    {/* Brand Filter Dropdown — Master Admin only */}
+                    {isMasterAdmin && (
                         <select
                             value={brandFilter}
                             onChange={(e) => {
@@ -196,6 +222,23 @@ const Device = () => {
                             <option value="">All Brands</option>
                             {brandsList.map((b, i) => (
                                 <option key={i} value={b}>🏷️ {b}</option>
+                            ))}
+                        </select>
+                    )}
+
+                    {/* Sub-Brand Filter Dropdown */}
+                    {Array.isArray(user?.subBrands) && user.subBrands.length > 1 && (
+                        <select
+                            value={subBrandFilter}
+                            onChange={(e) => {
+                                setSelectedSearchRecord(null);
+                                setSubBrandFilter(e.target.value);
+                            }}
+                            className="px-3 py-2 bg-white border border-indigo-300 rounded-[5px] text-xs text-indigo-900 font-semibold focus:border-indigo-500 outline-none shadow-xs cursor-pointer"
+                        >
+                            <option value="">All Sub Brands</option>
+                            {user.subBrands.map((sb, i) => (
+                                <option key={i} value={sb}>🏢 {sb}</option>
                             ))}
                         </select>
                     )}

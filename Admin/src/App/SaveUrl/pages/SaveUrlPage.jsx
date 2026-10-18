@@ -522,7 +522,7 @@ const SaveUrlPage = () => {
                             return (
                                 <div
                                     key={item._id || item.id || idx}
-                                    className="min-w-[185px] max-w-[205px] h-[82px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-1.5 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
+                                    className="min-w-[185px] max-w-[205px] h-[52px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-1.5 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
                                 >
                                     <div className="space-y-0.5 min-w-0">
                                         {/* Category & Visibility Header */}
@@ -791,8 +791,8 @@ const SaveUrlPage = () => {
                                         {/* Visibility Badge */}
                                         <td className="px-4 py-1.5 text-center">
                                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 border ${isPublic
-                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                : 'bg-amber-50 text-amber-700 border-amber-200'
                                                 }`}>
                                                 {isPublic ? <FaGlobe size={10} /> : <FaLock size={10} />}
                                                 <span>{item.visibility || 'Public'}</span>
@@ -1093,8 +1093,8 @@ const SaveUrlPage = () => {
                                 <div className="grid grid-cols-2 gap-3">
                                     <label
                                         className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${formData.visibility === 'Public'
-                                                ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
-                                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                            ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs'
+                                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                                             }`}
                                     >
                                         <input
@@ -1116,8 +1116,8 @@ const SaveUrlPage = () => {
 
                                     <label
                                         className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${formData.visibility === 'Private'
-                                                ? 'bg-amber-50 border-amber-500 text-amber-800 shadow-xs'
-                                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                            ? 'bg-amber-50 border-amber-500 text-amber-800 shadow-xs'
+                                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                                             }`}
                                     >
                                         <input
