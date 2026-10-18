@@ -424,10 +424,10 @@ const SaveUrlPage = () => {
                     </div>
                     <div>
                         <h1 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                            <span>Save URL (រក្សាទុក URL)</span>
+                            <span>Save URL</span>
                         </h1>
                         <p className="text-[11px] text-slate-500">
-                            រក្សាទុក និងគ្រប់គ្រងតំណភ្ជាប់ URL សំខាន់ៗ (Public & Private Link Vault)
+                            រក្សាទុក និងគ្រប់គ្រងតំណភ្ជាប់ URL សំខាន់ៗ
                         </p>
                     </div>
                 </div>
@@ -764,7 +764,7 @@ const SaveUrlPage = () => {
                         <FaLock />
                     </div>
                     <span className="text-[11px] font-bold text-slate-700">
-                        URL របស់ខ្ញុំ (My Saved URLs)
+                        URL របស់ខ្ញុំ
                     </span>
                     <span className="text-[10px] text-slate-400 font-normal">
                         — បង្ហាញតែ URL ដែលអ្នកបង្កើតផ្ទាល់ប៉ុណ្ណោះ

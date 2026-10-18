@@ -800,13 +800,13 @@ const Activated = () => {
                         </div>
                         <div>
                             <h2 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                                <span>ស្ថិតិសរុបភ្ញៀវដាក់ស្នើ (Applications Breakdown)</span>
+                                <span>ស្ថិតិសរុបភ្ញៀវដាក់ស្នើ</span>
                                 {summaryLoading && (
                                     <MdOutlineSync className="animate-spin text-emerald-600 text-sm" />
                                 )}
                             </h2>
                             <p className="text-[11px] text-slate-500 font-medium">
-                                សរុបភ្ញៀវតាមរយៈពេលកម្ចីប៉ុន្មានខែ (Duration) និងតាមខែប្រតិទិនដែលបានដាក់ស្នើ
+                                សរុបភ្ញៀវតាមរយៈពេលកម្ចីប៉ុន្មានខែ និងតាមខែប្រតិទិនដែលបានដាក់ស្នើ
                             </p>
                         </div>
                     </div>
@@ -847,7 +847,7 @@ const Activated = () => {
                                     <div className="flex items-center gap-1.5">
                                         <FaClock className="text-indigo-600 text-xs" />
                                         <span className="text-xs font-bold text-slate-800">
-                                            ១. សរុបតាមរយៈពេលកម្ចី (By Loan Duration)
+                                            ១. សរុបតាមរយៈពេលកម្ចី
                                         </span>
                                     </div>
                                     <span className="text-[10px] font-mono text-slate-500 font-medium">
@@ -870,8 +870,8 @@ const Activated = () => {
                                                     type="button"
                                                     onClick={() => handleToggleDurationFilter(d.key)}
                                                     className={`flex items-center gap-2 px-2.5 py-1.5 rounded-[5px] border text-xs transition-all cursor-pointer shadow-2xs ${isSelected
-                                                            ? 'bg-indigo-600 border-indigo-700 text-white font-bold ring-2 ring-indigo-300'
-                                                            : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50'
+                                                        ? 'bg-indigo-600 border-indigo-700 text-white font-bold ring-2 ring-indigo-300'
+                                                        : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50'
                                                         }`}
                                                     title={`ចុចដើម្បីច្រោះមើលភ្ញៀវដាក់ស្នើ ${d.labelKh}`}
                                                 >
@@ -883,8 +883,8 @@ const Activated = () => {
                                                     </span>
                                                     <div className="flex items-center gap-1">
                                                         <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-mono font-black ${isSelected
-                                                                ? 'bg-indigo-800 text-white'
-                                                                : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                                            ? 'bg-indigo-800 text-white'
+                                                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                                                             }`}>
                                                             {d.count} នាក់
                                                         </span>
@@ -905,7 +905,7 @@ const Activated = () => {
                                     <div className="flex items-center gap-1.5">
                                         <FaCalendarAlt className="text-emerald-600 text-xs" />
                                         <span className="text-xs font-bold text-slate-800">
-                                            ២. សរុបតាមខែដាក់ស្នើ (By Submission Month)
+                                            ២. សរុបតាមខែដាក់ស្នើ
                                         </span>
                                     </div>
                                     <span className="text-[10px] font-mono text-slate-500 font-medium">
@@ -928,8 +928,8 @@ const Activated = () => {
                                                     type="button"
                                                     onClick={() => handleToggleMonthFilter(m.key)}
                                                     className={`flex items-center gap-2 px-2.5 py-1.5 rounded-[5px] border text-xs transition-all cursor-pointer shadow-2xs ${isSelected
-                                                            ? 'bg-emerald-600 border-emerald-700 text-white font-bold ring-2 ring-emerald-300'
-                                                            : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50'
+                                                        ? 'bg-emerald-600 border-emerald-700 text-white font-bold ring-2 ring-emerald-300'
+                                                        : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50'
                                                         }`}
                                                     title={`ចុចដើម្បីច្រោះមើលភ្ញៀវដាក់ស្នើក្នុង ${m.labelKh}`}
                                                 >
@@ -938,8 +938,8 @@ const Activated = () => {
                                                     </span>
                                                     <div className="flex items-center gap-1">
                                                         <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-mono font-black ${isSelected
-                                                                ? 'bg-emerald-800 text-white'
-                                                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                            ? 'bg-emerald-800 text-white'
+                                                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                                             }`}>
                                                             {m.count} នាក់
                                                         </span>

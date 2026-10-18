@@ -1109,9 +1109,6 @@ const Dashboard = () => {
                             </div>
                             <div className="title-text-group">
                                 <h2>Dashboard</h2>
-                                <span className="live-badge">
-                                    <span className="pulse-dot"></span> LIVE MDM ANALYTICS
-                                </span>
                             </div>
                         </div>
                         <div className="header-desc-row">
@@ -1139,497 +1136,492 @@ const Dashboard = () => {
             {/* ── Printable Content Area (Starts at Page 1, No Blank Headers) ── */}
             <div id="dashboard-print-area" className="dashboard-content-body">
                 {/* ── Executive KPI Grid ── */}
-            <div className="executive-kpi-grid">
-                {/* Card 1: Disbursed */}
-                <div className="exec-card card-disbursed">
-                    <div className="exec-card-header">
-                        <span className="card-label">ឥណទានបញ្ចេញសរុប</span>
-                        <div className="exec-card-icon icon-blue">
-                            <FaCreditCard />
-                        </div>
-                    </div>
-                    <div className="card-value">{formatMoney(totalDisbursedAmount)}</div>
-                    <div className="exec-card-footer">
-                        <div className="stacked-stat">
-                            <span>អតិថិជន: <strong>{formatNumber(activatedCount)} នាក់</strong></span>
-                            <span>អតិថិជនសរុប: <strong>{formatNumber(totalCount)} នាក់</strong></span>
-                            <span>ឥណទានសរុប: <strong>{formatMoney(totalDisbursedAmount)}</strong></span>
-                        </div>
-                        <span className="badge-pill badge-disbursed">DISBURSED</span>
-                    </div>
-                </div>
-
-                {/* Card 2: Collected */}
-                <div className="exec-card card-collected">
-                    <div className="exec-card-header">
-                        <span className="card-label">ប្រាក់ប្រមូលបានសរុប</span>
-                        <div className="exec-card-icon icon-green">
-                            <FaArrowTrendUp />
-                        </div>
-                    </div>
-                    <div className="card-value color-green">{formatMoney(totalCollectedRevenue)}</div>
-                    <div className="exec-card-footer">
-                        <div className="stacked-stat">
-                            <span>បានបង់: <strong>{formatNumber(totalPaidInstallmentsCount)} លើក</strong></span>
-                            <span>ការប្រាក់ប្រមូលបាន: <strong className="color-green">{formatMoney(totalCollectedInterest)}</strong></span>
-                            <span>ប្រមូលបាន: <strong>{totalDisbursedAmount > 0 ? ((totalCollectedRevenue / totalDisbursedAmount) * 100).toFixed(2) : '0.00'}%</strong></span>
-                        </div>
-                        <span className="badge-pill" style={{ background: '#d1fae5', color: '#059669' }}>COLLECTED</span>
-                    </div>
-                </div>
-
-                {/* Card 3: Scheduled */}
-                <div className="exec-card card-scheduled">
-                    <div className="exec-card-header">
-                        <span className="card-label">ប្រាក់ត្រូវប្រមូលសរុប</span>
-                        <div className="exec-card-icon icon-purple">
-                            <FaReceipt />
-                        </div>
-                    </div>
-                    <div className="card-value color-purple">{formatMoney(totalScheduledAmount)}</div>
-                    <div className="exec-card-footer split-footer">
-                        <div className="stacked-stat">
-                            <span>ការប្រាក់ត្រូវប្រមូល: <strong className="color-purple">{formatMoney(totalScheduledInterest)}</strong></span>
-                            <span>ពិន័យសរុប: <strong>{formatMoney(totalPenaltyAll)}</strong></span>
-                            <span>ពិន័យបានបង់: <strong>{formatMoney(totalPaidPenalty)}</strong></span>
-                            <span>ពិន័យមិនទាន់បង់: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
-                            <span>កាតព្វកិច្ចសរុប: <strong>{formatMoney(totalObligation)}</strong></span>
-                        </div>
-                        <span className="badge-pill badge-scheduled">SCHEDULED</span>
-                    </div>
-                </div>
-
-                {/* Card 4: Outstanding */}
-                <div className="exec-card card-outstanding">
-                    <div className="exec-card-header">
-                        <span className="card-label">ប្រាក់នៅសល់មិនទាន់ប្រមូល</span>
-                        <div className="exec-card-icon icon-orange">
-                            <FaLock />
-                        </div>
-                    </div>
-                    <div className="card-value color-orange">{formatMoney(totalOutstandingAmount)}</div>
-                    <div className="exec-card-footer">
-                        <div className="stacked-stat">
-                            <span>ការប្រាក់នៅសល់: <strong className="color-orange">{formatMoney(totalOutstandingInterest)}</strong></span>
-                            <span>ពិន័យមិនទាន់ប្រមូល: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
-                            <span>អត្រាមិនទាន់ប្រមូល: <strong>{totalObligation > 0 ? ((totalOutstandingAmount / totalObligation) * 100).toFixed(2) : '0.00'}%</strong></span>
-                        </div>
-                        <span className="badge-pill badge-outstanding">OUTSTANDING</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Middle Dashboard Row ── */}
-            <div className="middle-dashboard-row">
-                {/* Left: Interactive Line & Area Chart Card */}
-                <div className="chart-card flow-trend-card">
-                    <div className="c-head-row">
-                        <div className="c-title-box">
-                            <div className="title-icon-line">
-                                <div className="mini-icon green-icon">
-                                    <FaChartArea />
-                                </div>
-                                <h3>ក្រាហ្វិកប្រាក់ប្រមូល & អតិថិជន</h3>
+                <div className="executive-kpi-grid">
+                    {/* Card 1: Disbursed */}
+                    <div className="exec-card card-disbursed">
+                        <div className="exec-card-header">
+                            <span className="card-label">ឥណទានបញ្ចេញសរុប</span>
+                            <div className="exec-card-icon icon-blue">
+                                <FaCreditCard />
                             </div>
-                            <span className="c-subtitle">បង្ហាញពីលំហូរទឹកប្រាក់ប្រមូលបាន ឥណទានបញ្ចេញ និងចំនួនអតិថិជន Activated</span>
                         </div>
-
-                        <div className="chart-controls">
-                            <div className="custom-legend">
-                                <span className="legend-badge">
-                                    <span className="legend-dot dot-green"></span>
-                                    <span className="legend-text-full desktop-only">ប្រាក់ប្រមូលបាន</span>
-                                    <span className="legend-text-short mobile-only">ប្រមូល</span>
-                                </span>
-                                <span className="legend-badge">
-                                    <span className="legend-dot dot-blue"></span>
-                                    <span className="legend-text-full desktop-only">ឥណទានបញ្ចេញ</span>
-                                    <span className="legend-text-short mobile-only">ឥណទាន</span>
-                                </span>
-                                <span className="legend-badge">
-                                    <span className="legend-dot dot-purple"></span>
-                                    <span className="legend-text-full desktop-only">ចំនួនអតិថិជន</span>
-                                    <span className="legend-text-short mobile-only">អតិថិជន</span>
-                                </span>
+                        <div className="card-value">{formatMoney(totalDisbursedAmount)}</div>
+                        <div className="exec-card-footer">
+                            <div className="stacked-stat">
+                                <span>អតិថិជន: <strong>{formatNumber(activatedCount)} នាក់</strong></span>
+                                <span>អតិថិជនសរុប: <strong>{formatNumber(totalCount)} នាក់</strong></span>
+                                <span>ឥណទានសរុប: <strong>{formatMoney(totalDisbursedAmount)}</strong></span>
                             </div>
+                        </div>
+                    </div>
 
-                            <div className="timeframe-container" ref={popoverRef}>
-                                <div className="timeframe-switch">
-                                    {[
-                                        { key: 'today', label: 'ថ្ងៃនេះ' },
-                                        { key: '7d', label: '៧ ថ្ងៃ' },
-                                        { key: '30d', label: '៣០ ថ្ងៃ' },
-                                        { key: 'monthly', label: 'ខែនេះ' },
-                                        { key: 'all', label: 'ទាំងអស់' },
-                                        { key: 'custom', label: '📅 កំណត់ថ្ងៃ' }
-                                    ].map(item => {
-                                        const isCustom = item.key === 'custom';
-                                        const isActive = selectedTimeframe === item.key;
-                                        return (
-                                            <button
-                                                key={item.key}
-                                                type="button"
-                                                className={`btn-timeframe ${isActive ? 'active' : ''} ${isCustom ? 'btn-custom-trigger' : ''}`}
-                                                onClick={() => {
-                                                    if (isCustom) {
-                                                        setIsCustomPopoverOpen(prev => !prev);
-                                                    } else {
-                                                        setIsCustomPopoverOpen(false);
-                                                        setSelectedTimeframe(item.key);
-                                                    }
-                                                }}
-                                            >
-                                                {isCustom ? (
-                                                    selectedTimeframe === 'custom' && customStartDate && customEndDate ? (
-                                                        `📅 ${customStartDate.slice(5)} - ${customEndDate.slice(5)}`
-                                                    ) : '📅 កំណត់ថ្ងៃ'
-                                                ) : item.label}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                    {/* Card 2: Collected */}
+                    <div className="exec-card card-collected">
+                        <div className="exec-card-header">
+                            <span className="card-label">ប្រាក់ប្រមូលបានសរុប</span>
+                            <div className="exec-card-icon icon-green">
+                                <FaArrowTrendUp />
+                            </div>
+                        </div>
+                        <div className="card-value color-green">{formatMoney(totalCollectedRevenue)}</div>
+                        <div className="exec-card-footer">
+                            <div className="stacked-stat">
+                                <span>បានបង់: <strong>{formatNumber(totalPaidInstallmentsCount)} លើក</strong></span>
+                                <span>ការប្រាក់ប្រមូលបាន: <strong className="color-green">{formatMoney(totalCollectedInterest)}</strong></span>
+                                <span>ប្រមូលបាន: <strong>{totalDisbursedAmount > 0 ? ((totalCollectedRevenue / totalDisbursedAmount) * 100).toFixed(2) : '0.00'}%</strong></span>
+                            </div>
+                        </div>
+                    </div>
 
-                                {/* Custom Date Popover */}
-                                {isCustomPopoverOpen && (
-                                    <div className="custom-date-popover">
-                                        <div className="popover-header">
-                                            <div className="popover-title">
-                                                <FaCalendarDays />
-                                                <span>កំណត់ចន្លោះកាលបរិច្ឆេទ</span>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="btn-close-popover"
-                                                onClick={() => setIsCustomPopoverOpen(false)}
-                                                aria-label="បិទ"
-                                            >
-                                                <FaXmark />
-                                            </button>
-                                        </div>
+                    {/* Card 3: Scheduled */}
+                    <div className="exec-card card-scheduled">
+                        <div className="exec-card-header">
+                            <span className="card-label">ប្រាក់ត្រូវប្រមូលសរុប</span>
+                            <div className="exec-card-icon icon-purple">
+                                <FaReceipt />
+                            </div>
+                        </div>
+                        <div className="card-value color-purple">{formatMoney(totalScheduledAmount)}</div>
+                        <div className="exec-card-footer split-footer">
+                            <div className="stacked-stat">
+                                <span>ការប្រាក់ត្រូវប្រមូល: <strong className="color-purple">{formatMoney(totalScheduledInterest)}</strong></span>
+                                <span>ពិន័យសរុប: <strong>{formatMoney(totalPenaltyAll)}</strong></span>
+                                <span>ពិន័យបានបង់: <strong>{formatMoney(totalPaidPenalty)}</strong></span>
+                                <span>ពិន័យមិនទាន់បង់: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
+                                <span>កាតព្វកិច្ចសរុប: <strong>{formatMoney(totalObligation)}</strong></span>
+                            </div>
+                        </div>
+                    </div>
 
-                                        <div className="popover-shortcuts">
-                                            <button type="button" onClick={() => handleApplyDatePreset(7)}>៧ ថ្ងៃ</button>
-                                            <button type="button" onClick={() => handleApplyDatePreset(14)}>១៤ ថ្ងៃ</button>
-                                            <button type="button" onClick={() => handleApplyDatePreset(30)}>៣០ ថ្ងៃ</button>
-                                            <button type="button" onClick={() => {
-                                                const d = new Date();
-                                                d.setMonth(d.getMonth() - 1);
-                                                handleApplyMonthPreset(d.getMonth() + 1, d.getFullYear());
-                                            }}>ខែមុន</button>
-                                        </div>
+                    {/* Card 4: Outstanding */}
+                    <div className="exec-card card-outstanding">
+                        <div className="exec-card-header">
+                            <span className="card-label">ប្រាក់នៅសល់មិនទាន់ប្រមូល</span>
+                            <div className="exec-card-icon icon-orange">
+                                <FaLock />
+                            </div>
+                        </div>
+                        <div className="card-value color-orange">{formatMoney(totalOutstandingAmount)}</div>
+                        <div className="exec-card-footer">
+                            <div className="stacked-stat">
+                                <span>ការប្រាក់នៅសល់: <strong className="color-orange">{formatMoney(totalOutstandingInterest)}</strong></span>
+                                <span>ពិន័យមិនទាន់ប្រមូល: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
+                                <span>អត្រាមិនទាន់ប្រមូល: <strong>{totalObligation > 0 ? ((totalOutstandingAmount / totalObligation) * 100).toFixed(2) : '0.00'}%</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                                        {/* Month & Year Select Section */}
-                                        <div style={{ marginBottom: 10, padding: '8px 0', borderTop: '1px dashed var(--dash-line)', borderBottom: '1px dashed var(--dash-line)' }}>
-                                            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--dash-ink)', marginBottom: 6 }}>
-                                                📅 ជ្រើសរើសខែ និងឆ្នាំជាក់លាក់
-                                            </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 6, marginBottom: 6 }}>
-                                                <select
-                                                    value={selectedMonth}
-                                                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                                                    style={{ padding: '4px 6px', fontSize: '11.5px', borderRadius: 5, border: '1px solid var(--dash-line)', background: 'var(--dash-bg)', color: 'var(--dash-ink)' }}
-                                                >
-                                                    {khmerMonths.map((mName, idx) => (
-                                                        <option key={idx + 1} value={idx + 1}>ខែ {mName}</option>
-                                                    ))}
-                                                </select>
-                                                <select
-                                                    value={selectedYear}
-                                                    onChange={(e) => setSelectedYear(Number(e.target.value))}
-                                                    style={{ padding: '4px 6px', fontSize: '11.5px', borderRadius: 5, border: '1px solid var(--dash-line)', background: 'var(--dash-bg)', color: 'var(--dash-ink)' }}
-                                                >
-                                                    {[2024, 2025, 2026, 2027, 2028].map(y => (
-                                                        <option key={y} value={y}>{y}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleApplyMonthPreset(selectedMonth, selectedYear)}
-                                                style={{ width: '100%', padding: '4px', fontSize: '11px', fontWeight: 600, background: '#059669', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer' }}
-                                            >
-                                                ត្រងតាមខែដែលបានជ្រើស
-                                            </button>
-                                        </div>
-
-                                        <div className="popover-inputs">
-                                            <label className="date-input-group">
-                                                <span className="input-label">ចាប់ពី</span>
-                                                <input
-                                                    type="date"
-                                                    value={customStartDate}
-                                                    onChange={(e) => {
-                                                        setCustomStartDate(e.target.value);
-                                                        setCustomDateError(null);
-                                                    }}
-                                                />
-                                            </label>
-                                            <label className="date-input-group">
-                                                <span className="input-label">ដល់</span>
-                                                <input
-                                                    type="date"
-                                                    value={customEndDate}
-                                                    onChange={(e) => {
-                                                        setCustomEndDate(e.target.value);
-                                                        setCustomDateError(null);
-                                                    }}
-                                                />
-                                            </label>
-                                        </div>
-
-                                        {customDateError && (
-                                            <div className="date-popover-error">{customDateError}</div>
-                                        )}
-
-                                        <div className="popover-actions">
-                                            <button
-                                                type="button"
-                                                className="btn-popover-cancel"
-                                                onClick={() => setIsCustomPopoverOpen(false)}
-                                            >
-                                                បោះបង់
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn-popover-apply"
-                                                onClick={handleApplyCustomDateRange}
-                                            >
-                                                ត្រងចន្លោះថ្ងៃ
-                                            </button>
-                                        </div>
+                {/* ── Middle Dashboard Row ── */}
+                <div className="middle-dashboard-row">
+                    {/* Left: Interactive Line & Area Chart Card */}
+                    <div className="chart-card flow-trend-card">
+                        <div className="c-head-row">
+                            <div className="c-title-box">
+                                <div className="title-icon-line">
+                                    <div className="mini-icon green-icon">
+                                        <FaChartArea />
                                     </div>
-                                )}
+                                    <h3>ក្រាហ្វិកប្រាក់ប្រមូល & អតិថិជន</h3>
+                                </div>
+                                <span className="c-subtitle">បង្ហាញពីលំហូរទឹកប្រាក់ប្រមូលបាន ឥណទានបញ្ចេញ និងចំនួនអតិថិជន Activated</span>
                             </div>
+
+                            <div className="chart-controls">
+                                <div className="custom-legend">
+                                    <span className="legend-badge">
+                                        <span className="legend-dot dot-green"></span>
+                                        <span className="legend-text-full desktop-only">ប្រាក់ប្រមូលបាន</span>
+                                        <span className="legend-text-short mobile-only">ប្រមូល</span>
+                                    </span>
+                                    <span className="legend-badge">
+                                        <span className="legend-dot dot-blue"></span>
+                                        <span className="legend-text-full desktop-only">ឥណទានបញ្ចេញ</span>
+                                        <span className="legend-text-short mobile-only">ឥណទាន</span>
+                                    </span>
+                                    <span className="legend-badge">
+                                        <span className="legend-dot dot-purple"></span>
+                                        <span className="legend-text-full desktop-only">ចំនួនអតិថិជន</span>
+                                        <span className="legend-text-short mobile-only">អតិថិជន</span>
+                                    </span>
+                                </div>
+
+                                <div className="timeframe-container" ref={popoverRef}>
+                                    <div className="timeframe-switch">
+                                        {[
+                                            { key: 'today', label: 'ថ្ងៃនេះ' },
+                                            { key: '7d', label: '៧ ថ្ងៃ' },
+                                            { key: '30d', label: '៣០ ថ្ងៃ' },
+                                            { key: 'monthly', label: 'ខែនេះ' },
+                                            { key: 'all', label: 'ទាំងអស់' },
+                                            { key: 'custom', label: '📅 កំណត់ថ្ងៃ' }
+                                        ].map(item => {
+                                            const isCustom = item.key === 'custom';
+                                            const isActive = selectedTimeframe === item.key;
+                                            return (
+                                                <button
+                                                    key={item.key}
+                                                    type="button"
+                                                    className={`btn-timeframe ${isActive ? 'active' : ''} ${isCustom ? 'btn-custom-trigger' : ''}`}
+                                                    onClick={() => {
+                                                        if (isCustom) {
+                                                            setIsCustomPopoverOpen(prev => !prev);
+                                                        } else {
+                                                            setIsCustomPopoverOpen(false);
+                                                            setSelectedTimeframe(item.key);
+                                                        }
+                                                    }}
+                                                >
+                                                    {isCustom ? (
+                                                        selectedTimeframe === 'custom' && customStartDate && customEndDate ? (
+                                                            `📅 ${customStartDate.slice(5)} - ${customEndDate.slice(5)}`
+                                                        ) : '📅 កំណត់ថ្ងៃ'
+                                                    ) : item.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Custom Date Popover */}
+                                    {isCustomPopoverOpen && (
+                                        <div className="custom-date-popover">
+                                            <div className="popover-header">
+                                                <div className="popover-title">
+                                                    <FaCalendarDays />
+                                                    <span>កំណត់ចន្លោះកាលបរិច្ឆេទ</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    className="btn-close-popover"
+                                                    onClick={() => setIsCustomPopoverOpen(false)}
+                                                    aria-label="បិទ"
+                                                >
+                                                    <FaXmark />
+                                                </button>
+                                            </div>
+
+                                            <div className="popover-shortcuts">
+                                                <button type="button" onClick={() => handleApplyDatePreset(7)}>៧ ថ្ងៃ</button>
+                                                <button type="button" onClick={() => handleApplyDatePreset(14)}>១៤ ថ្ងៃ</button>
+                                                <button type="button" onClick={() => handleApplyDatePreset(30)}>៣០ ថ្ងៃ</button>
+                                                <button type="button" onClick={() => {
+                                                    const d = new Date();
+                                                    d.setMonth(d.getMonth() - 1);
+                                                    handleApplyMonthPreset(d.getMonth() + 1, d.getFullYear());
+                                                }}>ខែមុន</button>
+                                            </div>
+
+                                            {/* Month & Year Select Section */}
+                                            <div style={{ marginBottom: 10, padding: '8px 0', borderTop: '1px dashed var(--dash-line)', borderBottom: '1px dashed var(--dash-line)' }}>
+                                                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--dash-ink)', marginBottom: 6 }}>
+                                                    📅 ជ្រើសរើសខែ និងឆ្នាំជាក់លាក់
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 6, marginBottom: 6 }}>
+                                                    <select
+                                                        value={selectedMonth}
+                                                        onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                                                        style={{ padding: '4px 6px', fontSize: '11.5px', borderRadius: 5, border: '1px solid var(--dash-line)', background: 'var(--dash-bg)', color: 'var(--dash-ink)' }}
+                                                    >
+                                                        {khmerMonths.map((mName, idx) => (
+                                                            <option key={idx + 1} value={idx + 1}>ខែ {mName}</option>
+                                                        ))}
+                                                    </select>
+                                                    <select
+                                                        value={selectedYear}
+                                                        onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                                        style={{ padding: '4px 6px', fontSize: '11.5px', borderRadius: 5, border: '1px solid var(--dash-line)', background: 'var(--dash-bg)', color: 'var(--dash-ink)' }}
+                                                    >
+                                                        {[2024, 2025, 2026, 2027, 2028].map(y => (
+                                                            <option key={y} value={y}>{y}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleApplyMonthPreset(selectedMonth, selectedYear)}
+                                                    style={{ width: '100%', padding: '4px', fontSize: '11px', fontWeight: 600, background: '#059669', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer' }}
+                                                >
+                                                    ត្រងតាមខែដែលបានជ្រើស
+                                                </button>
+                                            </div>
+
+                                            <div className="popover-inputs">
+                                                <label className="date-input-group">
+                                                    <span className="input-label">ចាប់ពី</span>
+                                                    <input
+                                                        type="date"
+                                                        value={customStartDate}
+                                                        onChange={(e) => {
+                                                            setCustomStartDate(e.target.value);
+                                                            setCustomDateError(null);
+                                                        }}
+                                                    />
+                                                </label>
+                                                <label className="date-input-group">
+                                                    <span className="input-label">ដល់</span>
+                                                    <input
+                                                        type="date"
+                                                        value={customEndDate}
+                                                        onChange={(e) => {
+                                                            setCustomEndDate(e.target.value);
+                                                            setCustomDateError(null);
+                                                        }}
+                                                    />
+                                                </label>
+                                            </div>
+
+                                            {customDateError && (
+                                                <div className="date-popover-error">{customDateError}</div>
+                                            )}
+
+                                            <div className="popover-actions">
+                                                <button
+                                                    type="button"
+                                                    className="btn-popover-cancel"
+                                                    onClick={() => setIsCustomPopoverOpen(false)}
+                                                >
+                                                    បោះបង់
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn-popover-apply"
+                                                    onClick={handleApplyCustomDateRange}
+                                                >
+                                                    ត្រងចន្លោះថ្ងៃ
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* SVG Interactive Trend Chart */}
+                        <div className="line-canvas-box">
+                            <LineChartCanvas points={chartPoints} />
                         </div>
                     </div>
 
-                    {/* SVG Interactive Trend Chart */}
-                    <div className="line-canvas-box">
-                        <LineChartCanvas points={chartPoints} />
+                    {/* Right: Contract Pipeline & Lock Ratio Card */}
+                    <div className="chart-card contract-status-card">
+                        <div className="c-head-row">
+                            <div className="c-title-box">
+                                <div className="title-icon-line">
+                                    <div className="mini-icon purple-icon">
+                                        <FaFileContract />
+                                    </div>
+                                    <h3>ស្ថានភាពកិច្ចសន្យា & MDM</h3>
+                                </div>
+                                <span className="c-subtitle">សរុបកិច្ចសន្យា: <strong>{formatNumber(totalCount)} ករណី</strong></span>
+                            </div>
+                        </div>
+
+                        <div className="pipeline-list">
+                            <PipelineItem
+                                label="Activated"
+                                khmerLabel="ដំណើរការ"
+                                count={activatedCount}
+                                percent={Number(activatedPct)}
+                                colorClass="fill-green"
+                                trackColor="rgba(16, 185, 129, 0.12)"
+                            />
+                            <PipelineItem
+                                label="Application"
+                                khmerLabel="ពាក្យស្នើសុំ"
+                                count={applicationCount}
+                                percent={Number(applicationPct)}
+                                colorClass="fill-blue"
+                                trackColor="rgba(59, 130, 246, 0.12)"
+                            />
+                            <PipelineItem
+                                label="Check"
+                                khmerLabel="កំពុងត្រួតពិនិត្យ"
+                                count={checkCount}
+                                percent={Number(checkPct)}
+                                colorClass="fill-cyan"
+                                trackColor="rgba(6, 182, 212, 0.12)"
+                            />
+                            <PipelineItem
+                                label="Redeem"
+                                khmerLabel="បញ្ចាំ/ដោះដូរ"
+                                count={redeemCount}
+                                percent={Number(redeemPct)}
+                                colorClass="fill-purple"
+                                trackColor="rgba(139, 92, 246, 0.12)"
+                            />
+                            <PipelineItem
+                                label="Blacklist"
+                                khmerLabel="បញ្ជីខ្មៅ"
+                                count={blacklistCount}
+                                percent={Number(blacklistPct)}
+                                colorClass="fill-red"
+                                trackColor="rgba(239, 68, 68, 0.12)"
+                            />
+                        </div>
+
+                        {/* Phone Remote Lock Ratio Panel */}
+                        <div className="remote-lock-panel">
+                            <div className="lock-header">
+                                <span>Phone Remote Lock Ratio</span>
+                                <span className="lock-stat-badge">{formatNumber(lockedPhones)} Locked</span>
+                            </div>
+                            <div className="lock-ratio-bar">
+                                <div className="ratio-locked" style={{ width: `${lockedRatio}%` }}></div>
+                                <div className="ratio-unlocked" style={{ width: `${unlockedRatio}%` }}></div>
+                            </div>
+                            <div className="lock-footer">
+                                <span className="lock-text locked">
+                                    <FaLock /> {lockedRatio}% Locked
+                                </span>
+                                <span className="lock-text unlocked">
+                                    <FaLockOpen /> {unlockedRatio}% Unlocked
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Right: Contract Pipeline & Lock Ratio Card */}
-                <div className="chart-card contract-status-card">
+                {/* ── Customer Payment Detail Section ── */}
+                <div className="chart-card customer-payment-card">
                     <div className="c-head-row">
                         <div className="c-title-box">
                             <div className="title-icon-line">
-                                <div className="mini-icon purple-icon">
-                                    <FaFileContract />
+                                <div className="mini-icon orange-icon">
+                                    <FaUsers />
                                 </div>
-                                <h3>ស្ថានភាពកិច្ចសន្យា & MDM</h3>
+                                <h3>
+                                    លម្អិតភ្ញៀវត្រូវបង់ និងពិន័យ
+                                </h3>
                             </div>
-                            <span className="c-subtitle">សរុបកិច្ចសន្យា: <strong>{formatNumber(totalCount)} ករណី</strong></span>
+                            <span className="c-subtitle">បញ្ជីភ្ញៀវក្នុង {timeframeLabel} និងស្ថានភាពការបង់ប្រាក់</span>
                         </div>
                     </div>
 
-                    <div className="pipeline-list">
-                        <PipelineItem
-                            label="Activated"
-                            khmerLabel="ដំណើរការ"
-                            count={activatedCount}
-                            percent={Number(activatedPct)}
-                            colorClass="fill-green"
-                            trackColor="rgba(16, 185, 129, 0.12)"
-                        />
-                        <PipelineItem
-                            label="Application"
-                            khmerLabel="ពាក្យស្នើសុំ"
-                            count={applicationCount}
-                            percent={Number(applicationPct)}
-                            colorClass="fill-blue"
-                            trackColor="rgba(59, 130, 246, 0.12)"
-                        />
-                        <PipelineItem
-                            label="Check"
-                            khmerLabel="កំពុងត្រួតពិនិត្យ"
-                            count={checkCount}
-                            percent={Number(checkPct)}
-                            colorClass="fill-cyan"
-                            trackColor="rgba(6, 182, 212, 0.12)"
-                        />
-                        <PipelineItem
-                            label="Redeem"
-                            khmerLabel="បញ្ចាំ/ដោះដូរ"
-                            count={redeemCount}
-                            percent={Number(redeemPct)}
-                            colorClass="fill-purple"
-                            trackColor="rgba(139, 92, 246, 0.12)"
-                        />
-                        <PipelineItem
-                            label="Blacklist"
-                            khmerLabel="បញ្ជីខ្មៅ"
-                            count={blacklistCount}
-                            percent={Number(blacklistPct)}
-                            colorClass="fill-red"
-                            trackColor="rgba(239, 68, 68, 0.12)"
-                        />
+                    <div className="mobile-table-hint mobile-only">
+                        <FaTableCellsLarge />
+                        <span>បង្ហាញជាកាតសម្រាប់មើលងាយលើទូរស័ព្ទ</span>
                     </div>
 
-                    {/* Phone Remote Lock Ratio Panel */}
-                    <div className="remote-lock-panel">
-                        <div className="lock-header">
-                            <span>Phone Remote Lock Ratio</span>
-                            <span className="lock-stat-badge">{formatNumber(lockedPhones)} Locked</span>
-                        </div>
-                        <div className="lock-ratio-bar">
-                            <div className="ratio-locked" style={{ width: `${lockedRatio}%` }}></div>
-                            <div className="ratio-unlocked" style={{ width: `${unlockedRatio}%` }}></div>
-                        </div>
-                        <div className="lock-footer">
-                            <span className="lock-text locked">
-                                <FaLock /> {lockedRatio}% Locked
-                            </span>
-                            <span className="lock-text unlocked">
-                                <FaLockOpen /> {unlockedRatio}% Unlocked
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Customer Payment Detail Section ── */}
-            <div className="chart-card customer-payment-card">
-                <div className="c-head-row">
-                    <div className="c-title-box">
-                        <div className="title-icon-line">
-                            <div className="mini-icon orange-icon">
-                                <FaUsers />
+                    {/* Sub-section 1: ភ្ញៀវត្រូវបង់ (Due) */}
+                    <div className="payment-section payment-section-due">
+                        <div className="payment-section-heading">
+                            <h4>
+                                <FaReceipt /> ភ្ញៀវត្រូវបង់
+                            </h4>
+                            <div className="payment-section-summary">
+                                <span className="payment-total">
+                                    បានបង់ <strong>{formatMoney(dueTotalPaid)}</strong>
+                                </span>
+                                <span className="payment-total">
+                                    នៅសល់ <strong>{formatMoney(dueTotalRemaining)}</strong>
+                                </span>
+                                <span className="payment-total">
+                                    ការប្រាក់សរុប <strong>{formatMoney(dueTotalInterest)}</strong>
+                                </span>
+                                <span className="payment-total">
+                                    ពិន័យសរុប <strong>{formatMoney(dueTotalPenalty)}</strong>
+                                </span>
+                                <span className="payment-count">{dueCustomerRows.length} នាក់</span>
                             </div>
-                            <h3>
-                                លម្អិតភ្ញៀវត្រូវបង់ និងពិន័យ
-                                <span className="brand-en-badge">CUSTOMER PAYMENT DETAIL</span>
-                            </h3>
                         </div>
-                        <span className="c-subtitle">បញ្ជីភ្ញៀវក្នុង {timeframeLabel} និងស្ថានភាពការបង់ប្រាក់</span>
-                    </div>
-                </div>
-
-                <div className="mobile-table-hint mobile-only">
-                    <FaTableCellsLarge />
-                    <span>បង្ហាញជាកាតសម្រាប់មើលងាយលើទូរស័ព្ទ</span>
-                </div>
-
-                {/* Sub-section 1: ភ្ញៀវត្រូវបង់ (Due) */}
-                <div className="payment-section payment-section-due">
-                    <div className="payment-section-heading">
-                        <h4>
-                            <FaReceipt /> ភ្ញៀវត្រូវបង់
-                        </h4>
-                        <div className="payment-section-summary">
-                            <span className="payment-total">
-                                បានបង់ <strong>{formatMoney(dueTotalPaid)}</strong>
-                            </span>
-                            <span className="payment-total">
-                                នៅសល់ <strong>{formatMoney(dueTotalRemaining)}</strong>
-                            </span>
-                            <span className="payment-total">
-                                ការប្រាក់សរុប <strong>{formatMoney(dueTotalInterest)}</strong>
-                            </span>
-                            <span className="payment-total">
-                                ពិន័យសរុប <strong>{formatMoney(dueTotalPenalty)}</strong>
-                            </span>
-                            <span className="payment-count">{dueCustomerRows.length} នាក់</span>
-                        </div>
-                    </div>
-                    <CustomerTable rows={dueCustomerRows} formatMoney={formatMoney} formatNumber={formatNumber} />
-                </div>
-
-                {/* Sub-section 2: ភ្ញៀវយឺត (Late / Overdue) */}
-                <div className="payment-section payment-section-late">
-                    <div className="payment-section-heading">
-                        <h4>
-                            <FaClock /> ភ្ញៀវយឺត
-                        </h4>
-                        <div className="payment-section-summary">
-                            <span className="payment-total">
-                                ពិន័យសរុប <strong>{formatMoney(lateTotalPenalty)}</strong>
-                            </span>
-                            <span className="payment-count">{overdueCustomerRows.length} នាក់</span>
-                            <select
-                                className="payment-filter-select"
-                                aria-label="តម្រងបញ្ជីភ្ញៀវយឺត"
-                                value={lateSectionFilter}
-                                onChange={(e) => setLateSectionFilter(e.target.value)}
-                            >
-                                <option value="all">ទាំងអស់</option>
-                                <option value="filtered">តាម Filter</option>
-                            </select>
-                        </div>
-                    </div>
-                    <CustomerTable
-                        rows={lateSectionFilter === 'all' ? overdueCustomerRows : overdueCustomerRows.slice(0, 10)}
-                        formatMoney={formatMoney}
-                        formatNumber={formatNumber}
-                    />
-                </div>
-
-                {/* Sub-section 3: ភ្ញៀវត្រូវពិន័យ (Penalty / Receipts) */}
-                <div className="payment-section payment-section-penalty">
-                    <div className="payment-section-heading">
-                        <h4>
-                            <FaTriangleExclamation /> ភ្ញៀវត្រូវពិន័យ
-                        </h4>
-                        <div className="payment-section-summary">
-                            <span className="payment-total">
-                                សរុប <strong>{formatMoney(penaltyTotalAmount)}</strong>
-                            </span>
-                            <span className="payment-count">{penaltyPaymentRows.length} នាក់</span>
-                        </div>
+                        <CustomerTable rows={dueCustomerRows} formatMoney={formatMoney} formatNumber={formatNumber} />
                     </div>
 
-                    {penaltyPaymentRows.length === 0 ? (
-                        <div className="table-responsive">
-                            <table className="analytics-table customer-payment-table">
-                                <tbody>
-                                    <tr>
-                                        <td colSpan={9} className="empty-table-cell">មិនមានទិន្នន័យ</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    {/* Sub-section 2: ភ្ញៀវយឺត (Late / Overdue) */}
+                    <div className="payment-section payment-section-late">
+                        <div className="payment-section-heading">
+                            <h4>
+                                <FaClock /> ភ្ញៀវយឺត
+                            </h4>
+                            <div className="payment-section-summary">
+                                <span className="payment-total">
+                                    ពិន័យសរុប <strong>{formatMoney(lateTotalPenalty)}</strong>
+                                </span>
+                                <span className="payment-count">{overdueCustomerRows.length} នាក់</span>
+                                <select
+                                    className="payment-filter-select"
+                                    aria-label="តម្រងបញ្ជីភ្ញៀវយឺត"
+                                    value={lateSectionFilter}
+                                    onChange={(e) => setLateSectionFilter(e.target.value)}
+                                >
+                                    <option value="all">ទាំងអស់</option>
+                                    <option value="filtered">តាម Filter</option>
+                                </select>
+                            </div>
                         </div>
-                    ) : (
-                        <div className="table-responsive">
-                            <table className="analytics-table customer-payment-table">
-                                <thead>
-                                    <tr>
-                                        <th>NO</th>
-                                        <th>DATE</th>
-                                        <th>PAYMENT TYPE</th>
-                                        <th>CUSTOMER NAME</th>
-                                        <th className="num">AMOUNT</th>
-                                        <th>DESCRIPTION</th>
-                                        <th>RECEIPT IMAGE</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {penaltyPaymentRows.map((p, idx) => (
-                                        <tr key={p.id}>
-                                            <td data-label="NO">{idx + 1}</td>
-                                            <td data-label="DATE">{p.dueDate}</td>
-                                            <td data-label="PAYMENT TYPE">{p.paymentMethod || '-'}</td>
-                                            <td data-label="CUSTOMER NAME">{p.category || '-'}</td>
-                                            <td data-label="AMOUNT" className="num color-red">{formatMoney(p.penaltyAmount)}</td>
-                                            <td data-label="DESCRIPTION">{p.description || '-'}</td>
-                                            <td data-label="RECEIPT IMAGE">
-                                                {p.photoUrl ? (
-                                                    <button
-                                                        type="button"
-                                                        className="receipt-preview-button"
-                                                        onClick={() => setPreviewImage(p.photoUrl)}
-                                                    >
-                                                        <FaImage /> View
-                                                    </button>
-                                                ) : 'No image'}
-                                            </td>
+                        <CustomerTable
+                            rows={lateSectionFilter === 'all' ? overdueCustomerRows : overdueCustomerRows.slice(0, 10)}
+                            formatMoney={formatMoney}
+                            formatNumber={formatNumber}
+                        />
+                    </div>
+
+                    {/* Sub-section 3: ភ្ញៀវត្រូវពិន័យ (Penalty / Receipts) */}
+                    <div className="payment-section payment-section-penalty">
+                        <div className="payment-section-heading">
+                            <h4>
+                                <FaTriangleExclamation /> ភ្ញៀវត្រូវពិន័យ
+                            </h4>
+                            <div className="payment-section-summary">
+                                <span className="payment-total">
+                                    សរុប <strong>{formatMoney(penaltyTotalAmount)}</strong>
+                                </span>
+                                <span className="payment-count">{penaltyPaymentRows.length} នាក់</span>
+                            </div>
+                        </div>
+
+                        {penaltyPaymentRows.length === 0 ? (
+                            <div className="table-responsive">
+                                <table className="analytics-table customer-payment-table">
+                                    <tbody>
+                                        <tr>
+                                            <td colSpan={9} className="empty-table-cell">មិនមានទិន្នន័យ</td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="table-responsive">
+                                <table className="analytics-table customer-payment-table">
+                                    <thead>
+                                        <tr>
+                                            <th>NO</th>
+                                            <th>DATE</th>
+                                            <th>PAYMENT TYPE</th>
+                                            <th>CUSTOMER NAME</th>
+                                            <th className="num">AMOUNT</th>
+                                            <th>DESCRIPTION</th>
+                                            <th>RECEIPT IMAGE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {penaltyPaymentRows.map((p, idx) => (
+                                            <tr key={p.id}>
+                                                <td data-label="NO">{idx + 1}</td>
+                                                <td data-label="DATE">{p.dueDate}</td>
+                                                <td data-label="PAYMENT TYPE">{p.paymentMethod || '-'}</td>
+                                                <td data-label="CUSTOMER NAME">{p.category || '-'}</td>
+                                                <td data-label="AMOUNT" className="num color-red">{formatMoney(p.penaltyAmount)}</td>
+                                                <td data-label="DESCRIPTION">{p.description || '-'}</td>
+                                                <td data-label="RECEIPT IMAGE">
+                                                    {p.photoUrl ? (
+                                                        <button
+                                                            type="button"
+                                                            className="receipt-preview-button"
+                                                            onClick={() => setPreviewImage(p.photoUrl)}
+                                                        >
+                                                            <FaImage /> View
+                                                        </button>
+                                                    ) : 'No image'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
             </div>
 
             {/* ── Receipt Image Modal ── */}

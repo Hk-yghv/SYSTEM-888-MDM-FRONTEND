@@ -284,37 +284,35 @@ const PrintIdCard = () => {
                         title="សម្អាតរូបភាព និង កំណត់ឡើងវិញទាំងអស់"
                     >
                         <FaUndoAlt size={12} className="text-rose-600" />
-                        <span>កំណត់ឡើងវិញ (Reset)</span>
+                        <span>កំណត់ឡើងវិញ</span>
                     </button>
 
                     {/* Adjust Margins Button */}
                     <button
                         type="button"
                         onClick={() => setShowAdjustments(!showAdjustments)}
-                        className={`h-[38px] px-3.5 rounded-lg border text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer active:scale-95 ${
-                            showAdjustments
-                                ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-2xs'
-                                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
-                        }`}
+                        className={`h-[38px] px-3.5 rounded-lg border text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer active:scale-95 ${showAdjustments
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-2xs'
+                            : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                            }`}
                         title="កំណត់គម្លាតបន្ថែម"
                     >
                         <FaSlidersH size={13} className="text-emerald-600" />
-                        <span>គម្លាត (Margins)</span>
+                        <span>គម្លាត</span>
                     </button>
 
                     {/* Print Button (Opens Custom Alert UI Confirmation) */}
                     <button
                         type="button"
                         onClick={handleInitiatePrint}
-                        className={`h-[38px] px-5 rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95 ${
-                            imageSrc
-                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/25 border border-emerald-500'
-                                : 'bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed shadow-none'
-                        }`}
+                        className={`h-[38px] px-5 rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95 ${imageSrc
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/25 border border-emerald-500'
+                            : 'bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed shadow-none'
+                            }`}
                         title={imageSrc ? `ចុចព្រីនចំនួន ${copies} សន្លឹក` : 'សូមបញ្ចូលរូបភាពជាមុនសិន'}
                     >
                         <FaPrint size={14} />
-                        <span>{t('printNow') || 'ចុចព្រីន (Print)'} ({copies})</span>
+                        <span>{t('printNow') || 'ចុចព្រីន'} ({copies})</span>
                     </button>
                 </div>
             </div>
@@ -323,7 +321,7 @@ const PrintIdCard = () => {
             {pasteSuccess && (
                 <div className="no-print bg-emerald-600 text-white px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200 shadow-md">
                     <FaCheck size={13} />
-                    <span>បានបិទភ្ជាប់រូបភាពដោយជោគជ័យពី Clipboard (Pasted successfully)!</span>
+                    <span>បានបិទភ្ជាប់រូបភាពដោយជោគជ័យពី Clipboard!</span>
                 </div>
             )}
 
@@ -351,7 +349,7 @@ const PrintIdCard = () => {
                                 title="ព័ត៌មានអំពីការព្រីនស្វ័យប្រវត្តិកុំឱ្យចេញផ្ទាំង Browser"
                             >
                                 <FaInfoCircle size={11} className="text-sky-600" />
-                                <span>ព្រីនយកម៉ង (Silent Print)</span>
+                                <span>ព្រីនយកម៉ង</span>
                             </button>
                         </div>
                     </div>
@@ -360,7 +358,7 @@ const PrintIdCard = () => {
                     {showKioskTip && (
                         <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 text-xs text-sky-900 space-y-1.5 animate-in fade-in duration-200">
                             <div className="flex items-center justify-between font-bold">
-                                <span>💡 របៀបព្រីនភ្លាមៗដោយមិនចាំបាច់ឆ្លងកាត់ផ្ទាំង Browser (Direct / Silent Printing):</span>
+                                <span>💡 របៀបព្រីនភ្លាមៗដោយមិនចាំបាច់ឆ្លងកាត់ផ្ទាំង Browser:</span>
                                 <button type="button" onClick={() => setShowKioskTip(false)} className="text-sky-600 hover:text-sky-800">
                                     <FaTimes size={12} />
                                 </button>
@@ -384,13 +382,12 @@ const PrintIdCard = () => {
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         onClick={() => fileInputRef.current?.click()}
-                        className={`relative rounded-xl border-2 border-dashed p-6 sm:p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center group ${
-                            isDragging
-                                ? 'border-emerald-500 bg-emerald-50/80 scale-[1.008] shadow-md'
-                                : imageSrc
+                        className={`relative rounded-xl border-2 border-dashed p-6 sm:p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center group ${isDragging
+                            ? 'border-emerald-500 bg-emerald-50/80 scale-[1.008] shadow-md'
+                            : imageSrc
                                 ? 'border-emerald-300 bg-emerald-50/20 hover:bg-emerald-50/40'
                                 : 'border-slate-300 hover:border-emerald-400 bg-slate-50/60 hover:bg-slate-50'
-                        }`}
+                            }`}
                     >
                         <input
                             ref={fileInputRef}
@@ -471,7 +468,7 @@ const PrintIdCard = () => {
                             {/* Top Margin Slider */}
                             <div className="space-y-1.5">
                                 <div className="flex justify-between font-semibold text-slate-700">
-                                    <span>គម្លាតពីលើ (Top Margin):</span>
+                                    <span>គម្លាតពីលើ:</span>
                                     <span className="font-mono text-emerald-700 font-bold">{topMargin}px</span>
                                 </div>
                                 <input
@@ -536,11 +533,10 @@ const PrintIdCard = () => {
                                     <button
                                         type="button"
                                         onClick={() => setShowBorder(!showBorder)}
-                                        className={`h-[32px] px-2.5 rounded-lg border font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                                            showBorder
-                                                ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                                                : 'bg-white border-slate-200 text-slate-600'
-                                        }`}
+                                        className={`h-[32px] px-2.5 rounded-lg border font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${showBorder
+                                            ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                                            : 'bg-white border-slate-200 text-slate-600'
+                                            }`}
                                         title="បង្ហាញបន្ទាត់គែម"
                                     >
                                         <span>បន្ទាត់កាត់</span>
@@ -636,11 +632,10 @@ const PrintIdCard = () => {
                                         <img
                                             src={imageSrc}
                                             alt="ID Card Preview"
-                                            className={`max-w-full h-auto object-contain transition-all ${
-                                                showBorder
-                                                    ? 'border-2 border-dashed border-slate-400 p-0.5'
-                                                    : 'shadow-xs'
-                                            }`}
+                                            className={`max-w-full h-auto object-contain transition-all ${showBorder
+                                                ? 'border-2 border-dashed border-slate-400 p-0.5'
+                                                : 'shadow-xs'
+                                                }`}
                                             style={{
                                                 maxHeight: '400px'
                                             }}
@@ -655,7 +650,7 @@ const PrintIdCard = () => {
                                             <FaIdCard size={24} />
                                         </div>
                                         <p className="text-xs font-bold text-slate-500">
-                                            ទីតាំងរូបភាពកាតសម្គាល់ខ្លួន (ID Card Position)
+                                            ទីតាំងរូបភាពកាតសម្គាល់ខ្លួន
                                         </p>
                                         <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
                                             រូបភាពនឹងស្ថិតនៅចំកណ្តាល ដោយមានគម្លាតសងខាង {sideMargin}px និង គម្លាតពីលើ {topMargin}px
@@ -723,9 +718,8 @@ const PrintIdCard = () => {
                                     <img
                                         src={imageSrc}
                                         alt={`Print ID Card Page ${pageIndex + 1}`}
-                                        className={`max-w-full h-auto object-contain ${
-                                            showBorder ? 'border border-dashed border-gray-400 p-0.5' : ''
-                                        }`}
+                                        className={`max-w-full h-auto object-contain ${showBorder ? 'border border-dashed border-gray-400 p-0.5' : ''
+                                            }`}
                                         style={{
                                             maxHeight: '400px'
                                         }}
@@ -748,7 +742,7 @@ const PrintIdCard = () => {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-800">
-                                        បញ្ជាក់ការព្រីន (Confirm Print)
+                                        បញ្ជាក់ការព្រីន
                                     </h3>
                                     <p className="text-[11px] text-slate-500">
                                         សូមពិនិត្យព័ត៌មានមុនពេលដំណើរការព្រីន
@@ -782,12 +776,12 @@ const PrintIdCard = () => {
                                 <div className="flex justify-between items-center">
                                     <span>ចំនួនសន្លឹកព្រីនចេញ:</span>
                                     <span className="font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded border border-emerald-200">
-                                        {copies} សន្លឹក (Pages)
+                                        {copies} សន្លឹក
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span>ទម្រង់ក្រដាស:</span>
-                                    <span className="font-semibold text-slate-800">A4 Portrait (បញ្ឈរ)</span>
+                                    <span className="font-semibold text-slate-800">A4 Portrait</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span>គម្លាតកំណត់:</span>
@@ -803,7 +797,7 @@ const PrintIdCard = () => {
                                 onClick={() => setShowConfirmModal(false)}
                                 className="h-[38px] px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer"
                             >
-                                បោះបង់ (Cancel)
+                                បោះបង់
                             </button>
                             <button
                                 type="button"
@@ -811,7 +805,7 @@ const PrintIdCard = () => {
                                 className="h-[38px] px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20 border border-emerald-500 flex items-center gap-2 cursor-pointer active:scale-95"
                             >
                                 <FaPrint size={13} />
-                                <span>ព្រីនឥឡូវនេះ (Print Now)</span>
+                                <span>ព្រីនឥឡូវនេះ</span>
                             </button>
                         </div>
                     </div>
@@ -839,7 +833,7 @@ const PrintIdCard = () => {
                                 onClick={() => setWarningModalMessage('')}
                                 className="w-full h-[36px] rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-md shadow-amber-600/20 cursor-pointer"
                             >
-                                យល់ព្រម (OK)
+                                យល់ព្រម
                             </button>
                         </div>
                     </div>

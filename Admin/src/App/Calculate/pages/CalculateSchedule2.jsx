@@ -670,7 +670,7 @@ const CalculateSchedule2 = () => {
                     <div>
                         <div>
                             <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                                កាលវិភាគបញ្ចាំ — Schedule 2
+                                កាលវិភាគបញ្ចាំ
                             </h1>
                         </div>
                     </div>
@@ -725,7 +725,7 @@ const CalculateSchedule2 = () => {
                                     type="button"
                                     onClick={handlePrint}
                                     className="px-4 py-2.5 rounded-[5px] bg-green-800 hover:bg-slate-800 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
-                                    <FaPrint /> បោះពុម្ព (Print)
+                                    <FaPrint /> បោះពុម្ព
                                 </button>
                             </>
                         )}
@@ -749,7 +749,7 @@ const CalculateSchedule2 = () => {
                             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
                                 <FaCalculator className="text-violet-600 text-base" />
                                 <h2 className="text-base text-slate-800">
-                                    បញ្ចូលព័ត៌មានកិច្ចសន្យា (Contract Inputs)
+                                    បញ្ចូលព័ត៌មានកិច្ចសន្យា
                                 </h2>
                             </div>
 
@@ -759,7 +759,7 @@ const CalculateSchedule2 = () => {
                                     {/* Start Date */}
                                     <div className="space-y-1.5">
                                         <label className="block text-xs text-slate-700">
-                                            ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ (Start Date) <span className="text-rose-500">*</span>
+                                            ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><FaCalendarAlt /></span>
@@ -776,7 +776,7 @@ const CalculateSchedule2 = () => {
                                     {/* Customer Name */}
                                     <div className="space-y-1.5">
                                         <label className="block text-xs text-slate-700">
-                                            ឈ្មោះអតិថិជន (Customer Name) <span className="text-rose-500">*</span>
+                                            ឈ្មោះអតិថិជន <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><FaUser /></span>
@@ -794,7 +794,7 @@ const CalculateSchedule2 = () => {
                                     {/* Asset Name with Droplist */}
                                     <div className="space-y-1.5">
                                         <label className="block text-xs text-slate-700">
-                                            ប្រភេទទ្រព្យបញ្ចាំ (Asset Name) <span className="text-rose-500">*</span>
+                                            ប្រភេទទ្រព្យបញ្ចាំ <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><FaGem /></span>
@@ -819,7 +819,7 @@ const CalculateSchedule2 = () => {
                                     {/* Duration */}
                                     <div className="space-y-1.5">
                                         <label className="block text-xs text-slate-700">
-                                            រយៈពេល (ខែ) <span className="text-rose-500">*</span>
+                                            រយៈពេល <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 text-sm">#</span>
@@ -869,7 +869,7 @@ const CalculateSchedule2 = () => {
                                     {/* Principal */}
                                     <div className="space-y-1.5">
                                         <label className="block text-xs text-slate-700">
-                                            ប្រាក់ដើម ($) <span className="text-rose-500">*</span>
+                                            ប្រាក់ដើម <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">$</span>
@@ -903,7 +903,7 @@ const CalculateSchedule2 = () => {
                                     {/* Rate */}
                                     <div className="space-y-1.5">
                                         <label className="block text-xs text-slate-700">
-                                            អត្រា %/ខែ <span className="text-rose-500">*</span>
+                                            អត្រា % <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">%</span>
@@ -947,7 +947,7 @@ const CalculateSchedule2 = () => {
                                         disabled={saving}
                                         className="px-5 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 cursor-pointer">
                                         {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
-                                        រក្សាទុក (Save)
+                                        រក្សាទុក
                                     </button>
 
                                     <button
@@ -967,7 +967,7 @@ const CalculateSchedule2 = () => {
                             <div className="flex items-center gap-2">
                                 <FaHistory className="text-violet-600" />
                                 <h3 className="font-bold text-sm text-slate-800">
-                                    បញ្ជីបានរក្សាទុក (Saved Props)
+                                    បញ្ជីបានរក្សាទុក
                                 </h3>
                                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-xs">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
