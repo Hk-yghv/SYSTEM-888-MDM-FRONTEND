@@ -137,7 +137,7 @@ export const resolveUserIsolation = async (req) => {
 /**
  * Applies brand and subBrand constraints directly to a MongoDB query filter object.
  */
-export const applyIsolationFilter = (filter = {}, isolation = {}) => {
+export const applyIsolationFilter = (filter = {}, isolation = {}, { includeUnassignedSubBrand = false } = {}) => {
     const { isMasterAdmin, brand, effectiveSubBrands, hasSubBrandRestriction } = isolation;
 
     if (!isMasterAdmin) {
@@ -145,7 +145,13 @@ export const applyIsolationFilter = (filter = {}, isolation = {}) => {
             filter.brand = { $regex: new RegExp(`^${brand.trim()}$`, 'i') };
         }
         if (hasSubBrandRestriction && effectiveSubBrands && effectiveSubBrands.length > 0) {
-            filter.subBrand = { $in: effectiveSubBrands };
+            const canIncludeUnassigned = includeUnassignedSubBrand &&
+                !effectiveSubBrands.includes('__UNAUTHORIZED__');
+            filter.subBrand = {
+                $in: canIncludeUnassigned
+                    ? [...effectiveSubBrands, '', null]
+                    : effectiveSubBrands
+            };
         }
     }
 
@@ -155,7 +161,7 @@ export const applyIsolationFilter = (filter = {}, isolation = {}) => {
 /**
  * Filters an array of in-memory objects according to isolation rules.
  */
-export const filterInMemoryRecords = (records = [], isolation = {}) => {
+export const filterInMemoryRecords = (records = [], isolation = {}, { includeUnassignedSubBrand = false } = {}) => {
     const { isMasterAdmin, brand, effectiveSubBrands, hasSubBrandRestriction } = isolation;
     if (isMasterAdmin) return records;
 
@@ -171,7 +177,9 @@ export const filterInMemoryRecords = (records = [], isolation = {}) => {
         // 2. Sub-brand match
         if (hasSubBrandRestriction && effectiveSubBrands && effectiveSubBrands.length > 0) {
             const itemSub = (item.subBrand || '').trim();
-            if (!itemSub || !effectiveSubBrands.includes(itemSub)) return false;
+            const canIncludeUnassigned = includeUnassignedSubBrand &&
+                !effectiveSubBrands.includes('__UNAUTHORIZED__');
+            if (itemSub ? !effectiveSubBrands.includes(itemSub) : !canIncludeUnassigned) return false;
         }
 
         return true;

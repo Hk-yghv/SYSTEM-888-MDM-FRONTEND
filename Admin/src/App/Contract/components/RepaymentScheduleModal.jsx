@@ -19,7 +19,7 @@ const formatMoney = (val) => {
 };
 
 const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', defaultMonthIdx = null, onSaved, onRedeem }) => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE1, user } = useAuth();
 
     const isMasterAdmin = Boolean(

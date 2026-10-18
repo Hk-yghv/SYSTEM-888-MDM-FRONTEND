@@ -79,11 +79,15 @@ router.get('/', async (req, res) => {
                     ];
                 }
                 // Enforce Brand and Sub-Brand isolation in MongoDB query
-                applyIsolationFilter(query, isolation);
+                applyIsolationFilter(query, isolation, { includeUnassignedSubBrand: true });
                 return await M.find(query).sort({ createdAt: -1 }).lean();
             });
         } else {
-            let list = filterInMemoryRecords([...MEM_DB.calculateSchedules], isolation);
+            let list = filterInMemoryRecords(
+                [...MEM_DB.calculateSchedules],
+                isolation,
+                { includeUnassignedSubBrand: true }
+            );
             if (search && search.trim()) {
                 const s = search.trim().toLowerCase();
                 list = list.filter(item =>
@@ -101,7 +105,11 @@ router.get('/', async (req, res) => {
 
         // Secondary safety in-memory filter
         if (!isolation.isMasterAdmin && records.length > 0) {
-            records = filterInMemoryRecords(records, isolation);
+            records = filterInMemoryRecords(
+                records,
+                isolation,
+                { includeUnassignedSubBrand: true }
+            );
         }
 
         res.json({ success: true, count: records.length, data: records });
