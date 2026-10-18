@@ -518,7 +518,7 @@ const SaveUrlPage = () => {
                                 e.currentTarget.scrollLeft += e.deltaY;
                             }
                         }}
-                        className="flex items-center gap-2 overflow-x-auto h-[250px] pb-1 scroll-smooth"
+                        className="flex items-center gap-2 overflow-x-auto pb-1 scroll-smooth"
                     >
                         {publicUrls.slice(0, visiblePublicCount).map((item, idx) => {
                             const domain = formatDomain(item.url);
@@ -527,7 +527,7 @@ const SaveUrlPage = () => {
                             return (
                                 <div
                                     key={item._id || item.id || idx}
-                                    className="min-w-[210px] max-w-[230px] h-[78px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-2 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
+                                    className="min-w-[210px] max-w-[230px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-2 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
                                 >
                                     <div className="space-y-1 min-w-0">
                                         {/* Category & Visibility Header */}
