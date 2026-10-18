@@ -415,7 +415,7 @@ const SaveUrlPage = () => {
     const displayedSeeAllList = filteredSeeAllList.slice(0, seeAllVisibleCount);
 
     return (
-        <div className="w-full bg-[#f4f6f8] p-2 select-none space-y-2 max-h-[calc(100vh-100px)]" data-allow-scroll="true">
+        <div className="w-full bg-[#f4f6f8] p-2 select-none space-y-2 max-h-screen" data-allow-scroll="true">
             {/* Top Header Bar */}
             <header className="p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                 <div className="flex items-center gap-3">
@@ -779,33 +779,43 @@ const SaveUrlPage = () => {
 
 
             <div
-                className="w-full overflow-x-auto overflow-y-auto rounded-[5px] border border-slate-200 bg-white shadow-md table-container"
+                className="w-full overflow-auto rounded-[5px] border border-slate-200 bg-white shadow-md table-container"
                 style={{
-                    height: "auto",
-                    minHeight: 0,
+                    height: "fit-content",
                     maxHeight: "220px",
                 }}
             >
                 <style>
                     {`
-                    .table-container {
-    height: fit-content !important;
-    min-height: 0 !important;
-    max-height: 220px;
-    overflow: auto;
-}
+        .table-container {
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: 220px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
 
-.table-container table {
-    height: auto !important;
-}
+        .table-container table {
+            height: auto !important;
+            border-collapse: collapse;
+        }
 
-.table-container tbody tr {
-    height: 34px;
-}
-                    `}
+        .table-container thead th {
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+
+        .table-container tbody tr {
+            height: 34px;
+        }
+
+        .table-container tbody td {
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+    `}
                 </style>
-
-                <table className="w-full max-h-20 text-left text-xs whitespace-nowrap">
+                <table className="w-full text-left text-xs whitespace-nowrap">
 
                     <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
 
