@@ -777,10 +777,14 @@ const SaveUrlPage = () => {
 
             {/* Saved URLs Table */}
 
+
             <div className="w-full max-h-[360px] overflow-auto rounded-[5px] border border-slate-200 bg-white shadow-md table-container">
 
+
                 <table className="w-full text-left text-xs whitespace-nowrap">
-                    <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
+
+                    <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
+
                         <tr>
                             <th className="px-4 py-1.5 text-center">No</th>
                             <th className="px-4 py-1.5">ចំណងជើង URL</th>
@@ -794,9 +798,7 @@ const SaveUrlPage = () => {
                             <th className="px-4 py-1.5 text-center">Actions</th>
                         </tr>
                     </thead>
-
-                    <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
-
+                    <tbody className="divide-y divide-slate-100 font-medium text-slate-800 whitespace-nowrap">
                         {loading ? (
                             <tr>
                                 <td colSpan={10} className="text-center py-10 text-slate-400 italic">
